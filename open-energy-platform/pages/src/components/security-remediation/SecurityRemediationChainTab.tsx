@@ -36,6 +36,7 @@ type ChainStatus =
 type Tier = 'critical' | 'high' | 'medium' | 'low' | 'informational';
 
 interface RemediationRow {
+  [key: string]: unknown;
   id: string;
   remediation_number: string;
   source_event: string | null;
@@ -146,8 +147,8 @@ interface KpiSummary {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   advisory_received:    { bg: '#e3e7ec', fg: '#557',    label: 'Advisory received' },
-  triaged:              { bg: '#dbecfb', fg: '#1a3a5c', label: 'Triaged' },
-  impact_assessment:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Impact assessment' },
+  triaged:              { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Triaged' },
+  impact_assessment:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Impact assessment' },
   mitigation_applied:   { bg: '#fff4d6', fg: '#a06200', label: 'Mitigated (interim)' },
   fleet_scoped:         { bg: '#fff4d6', fg: '#a06200', label: 'Fleet scoped' },
   remediation_approved: { bg: '#ffe9d6', fg: '#8a4a00', label: 'Remediation approved' },
@@ -163,7 +164,7 @@ const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
   critical:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical' },
   high:          { bg: '#ffe4b5', fg: '#8a4a00', label: 'High' },
   medium:        { bg: '#fff4d6', fg: '#a06200', label: 'Medium' },
-  low:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'Low' },
+  low:           { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Low' },
   informational: { bg: '#e3e7ec', fg: '#557',    label: 'Informational' },
 };
 
@@ -464,13 +465,13 @@ export function SecurityRemediationChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Remediation #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">CVE / OEM</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Severity</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">CVSS</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Fleet</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Remediation #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>CVE / OEM</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Severity</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>CVSS</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Fleet</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -483,7 +484,7 @@ export function SecurityRemediationChainTab() {
                     onClick={() => loadEvents(r.id)}
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 font-mono text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.remediation_number}
                       {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
                     </td>
@@ -496,8 +497,8 @@ export function SecurityRemediationChainTab() {
                         {tt.label}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{r.cvss_score != null ? r.cvss_score.toFixed(1) : '—'}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>{r.cvss_score != null ? r.cvss_score.toFixed(1) : '—'}</td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.affected_ci_count ? `${r.patched_ci_count}/${r.affected_ci_count}` : '—'}
                     </td>
                     <td className="px-3 py-2">
@@ -616,13 +617,13 @@ function Drawer({
             <Pair label="Reportable"        value={row.is_reportable ? 'Yes' : 'No'} />
           </div>
           {row.fleet_scope && (
-            <BasisBlock label="Fleet scope" tone="#1a3a5c" text={row.fleet_scope} />
+            <BasisBlock label="Fleet scope" tone="oklch(0.46 0.16 55)" text={row.fleet_scope} />
           )}
           {row.triage_basis && (
-            <BasisBlock label="Triage basis" tone="#1a3a5c" text={row.triage_basis} />
+            <BasisBlock label="Triage basis" tone="oklch(0.46 0.16 55)" text={row.triage_basis} />
           )}
           {row.assessment_basis && (
-            <BasisBlock label="Assessment basis" tone="#1a3a5c" text={row.assessment_basis} />
+            <BasisBlock label="Assessment basis" tone="oklch(0.46 0.16 55)" text={row.assessment_basis} />
           )}
           {row.mitigation_basis && (
             <BasisBlock label="Mitigation basis" tone="#a06200" text={row.mitigation_basis} />
@@ -726,7 +727,7 @@ function Drawer({
                       <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
                     )}
                   </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

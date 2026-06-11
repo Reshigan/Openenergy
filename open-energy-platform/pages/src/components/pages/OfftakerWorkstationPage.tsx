@@ -18,6 +18,7 @@ import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConn
 import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
 import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
 import { WheelingChargesTab } from '../grid/WheelingChargesTab';
+import { TakeOrPayChainTab } from '../take-or-pay/TakeOrPayChainTab';
 import { ReportPanel, type ReportConfig } from '../launch/ReportPanel';
 import type { WizardSpec } from '../launch/WizardModal';
 import type { TourDef } from '../launch/ProductTour';
@@ -634,7 +635,7 @@ export function OfftakerWorkstationPage() {
   const kpis = useWorkstationKpis('offtaker');
   const sitesPanel = useWorkstationPanel('Delivery points', '/offtaker-suite/sites', (r) => ({
     id: r.id,
-    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[#dbecfb] text-[#1a3a5c]">{r.tariff_type || r.tariff || 'tariff'}</span>,
+    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)]">{r.tariff_type || r.tariff || 'tariff'}</span>,
     text: <span>{r.name || r.site_name} · {r.suburb || r.city || ''}</span>,
     meta: <span className="font-mono text-[10px] text-[#6b7685]">{r.monthly_kwh ? `${Math.round(r.monthly_kwh).toLocaleString()} kWh/m` : ''}</span>,
   }), 'No delivery points yet.');
@@ -676,19 +677,7 @@ export function OfftakerWorkstationPage() {
           label: 'Take-or-pay obligations (W32)',
           group: 'Operations',
           chainKey: 'take_or_pay',
-          body: () => (
-            <ListingTable
-              endpoint="/take-or-pay/chain"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No take-or-pay obligations', description: 'IFRS 16 / NERSA s34 take-or-pay cases will appear here.' }}
-              columns={[
-                { key: 'ppa_ref', label: 'PPA ref' },
-                { key: 'quantum_zar', label: 'Quantum (ZAR)', render: (r) => r.quantum_zar != null ? `R ${Number(r.quantum_zar).toLocaleString()}` : '—' },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['settled','waived'].includes(r.chain_status) ? 'good' : ['defaulted','escalated'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
-                { key: 'created_at', label: 'Raised', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
+          body: () => <TakeOrPayChainTab />,
         },
         { key: 'unserved_energy_claims', label: 'USE Claims', group: 'Operations', chainKey: 'unserved_energy_claim', body: () => <OfftakerUseClaimTab /> },
         { key: 'payment_security', label: 'Payment security', group: 'Security', chainKey: 'ppa_payment_security', body: () => <PaymentSecurityChainTab /> },
@@ -707,7 +696,7 @@ export function OfftakerWorkstationPage() {
             <div className="space-y-8">
               {OFFTAKER_REPORTS.map(cfg => (
                 <div key={cfg.endpoint} className="space-y-2">
-                  <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">{cfg.title}</p>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{cfg.title}</p>
                   <ReportPanel config={cfg} />
                 </div>
               ))}
@@ -734,7 +723,7 @@ function SitesTab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button type="button" onClick={() => setCreating(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setCreating(true)} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
           + New site group
         </button>
       </div>
@@ -822,7 +811,7 @@ function BudgetsTab({ onRefresh }: { onRefresh: () => void }) {
           <span className="text-[#6b7685]">Period (YYYY-MM)</span>
           <input value={period} onChange={(e) => setPeriod(e.target.value)} placeholder="2026-05" className="mt-1 h-9 px-3 border border-[#dde4ec] rounded-md text-[13px]" />
         </label>
-        <button type="button" onClick={() => setCreating(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setCreating(true)} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
           + Set budget
         </button>
       </div>
@@ -895,7 +884,7 @@ function RecsTab({ onRefresh }: { onRefresh: () => void }) {
     <div className="space-y-4">
       <div className="flex justify-end gap-2">
         <button type="button" onClick={() => setTransferring(true)} className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold">Transfer certificate</button>
-        <button type="button" onClick={() => setRetiring(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">Retire certificate</button>
+        <button type="button" onClick={() => setRetiring(true)} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">Retire certificate</button>
       </div>
       {err && <div className="text-[12px] text-red-700">{err}</div>}
       {portfolio && (
@@ -959,7 +948,7 @@ function Scope2Tab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
           + New disclosure
         </button>
       </div>
@@ -1094,7 +1083,7 @@ function OptionGroup({
                   <button type="button"
                     onClick={() => onAct(o)}
                     disabled={busyId !== null}
-                    className="h-8 px-3 rounded-md bg-[#c2873a] text-white text-[11px] font-semibold disabled:opacity-60"
+                    className="h-8 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[11px] font-semibold disabled:opacity-60"
                   >
                     {busyId === o.option_id ? '…' : actionLabel}
                   </button>
@@ -1284,7 +1273,7 @@ function BillUploadTab({ onRefresh }: { onRefresh: () => void }) {
 
       {/* AI assist banner — "why" + 1-click */}
       <div className="rounded-xl border border-[#cfe0d6] bg-[#f4faf6] p-4 flex items-start gap-3">
-        <div className="h-8 w-8 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold flex items-center justify-center">AI</div>
+        <div className="h-8 w-8 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold flex items-center justify-center">AI</div>
         <div className="flex-1 text-[13px] text-[#0f1c2e]">
           <div className="font-semibold mb-1">Bill analyser</div>
           <div className="text-[#3d4756]">
@@ -1321,7 +1310,7 @@ function BillUploadTab({ onRefresh }: { onRefresh: () => void }) {
         <button type="button"
           onClick={upload}
           disabled={uploading}
-          className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-60"
+          className="h-9 px-4 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold disabled:opacity-60"
         >
           {uploading ? 'Analysing…' : 'Analyse bill'}
         </button>
@@ -1391,7 +1380,7 @@ function BillUploadTab({ onRefresh }: { onRefresh: () => void }) {
               <button type="button"
                 onClick={draftFromMix}
                 disabled={loiBusy !== null}
-                className="mt-3 h-9 px-4 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-60"
+                className="mt-3 h-9 px-4 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold disabled:opacity-60"
               >
                 {loiBusy === '__mix__' ? 'Drafting…' : 'Draft LOIs from this mix'}
               </button>
@@ -1540,7 +1529,7 @@ function SlbKpiTab({ onRefresh }: { onRefresh?: () => void }) {
     <div>
       <div className="flex justify-end mb-3">
         <button type="button"
-          className="px-3 py-1.5 rounded bg-[#c2873a] text-white text-sm font-medium hover:bg-[#a3702f]"
+          className="px-3 py-1.5 rounded bg-[oklch(0.46_0.16_55)] text-white text-sm font-medium hover:bg-[#1f4a78]"
           onClick={() => setModal('create')}
         >
           + New KPI period
@@ -1682,7 +1671,7 @@ function GreenTariffTab({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
           + New disclosure
         </button>
       </div>
@@ -1791,7 +1780,7 @@ function GreenTariffTab({ onRefresh }: { onRefresh?: () => void }) {
 
 // ── W219: Offtaker Wheeling Access Application ────────────────────────────────
 const WHEEL_TIER_TONE: Record<string, string> = {
-  small_embedded:      'bg-blue-50 text-blue-700',
+  small_embedded:      'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
   medium_distributed:  'bg-purple-50 text-purple-700',
   large_industrial:    'bg-amber-50 text-amber-700',
   bulk_transmission:   'bg-rose-50 text-rose-700',
@@ -1800,10 +1789,10 @@ const WHEEL_TIER_TONE: Record<string, string> = {
 function wheelStatusTone(s: string): string {
   if (['active'].includes(s)) return 'bg-emerald-100 text-emerald-800';
   if (['terminated', 'expired'].includes(s)) return 'bg-red-100 text-red-800';
-  if (['withdrawn'].includes(s)) return 'bg-[#eef2f7] text-[#3d4756]';
+  if (['withdrawn'].includes(s)) return 'bg-gray-100 text-gray-600';
   if (['renewal_due'].includes(s)) return 'bg-orange-100 text-orange-800';
   if (['agreement_signed'].includes(s)) return 'bg-green-100 text-green-800';
-  return 'bg-[#eef2f7] text-[#2d3748]';
+  return 'bg-slate-100 text-slate-700';
 }
 
 type WheelModal = { id: string; wheel_tier: string; requested_capacity_mw?: number } | null;
@@ -1938,7 +1927,7 @@ function VirtualPpaSettlementTab({ onRefresh }: { onRefresh?: () => void }) {
         <div className="flex shrink-0 items-center gap-2">
           <button type="button"
             onClick={() => setOpening(true)}
-            className="h-8 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold hover:bg-[#a3702f]"
+            className="h-8 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold hover:bg-[#16324f]"
           >
             Open settlement period
           </button>
@@ -2032,7 +2021,7 @@ function VirtualPpaSettlementTab({ onRefresh }: { onRefresh?: () => void }) {
                                   void act(r.id, a);
                                 }}
                                 disabled={rowBusy}
-                                className={`text-[11px] font-medium hover:underline disabled:opacity-40 ${VPPA_DESTRUCTIVE.has(a) ? 'text-[#b4453a]' : 'text-[#1a3a5c]'}`}
+                                className={`text-[11px] font-medium hover:underline disabled:opacity-40 ${VPPA_DESTRUCTIVE.has(a) ? 'text-[#b4453a]' : 'text-[oklch(0.46_0.16_55)]'}`}
                               >
                                 {VPPA_ACTION_LABELS[a] ?? a}
                               </button>
@@ -2139,55 +2128,55 @@ function WheelingAccessTab({ onRefresh }: { onRefresh?: () => void }) {
           { label: 'In progress', val: kpis.in_progress ?? 0 },
           { label: 'Renewal due', val: kpis.renewal_due ?? 0 },
         ].map(k => (
-          <div key={k.label} className="bg-white border border-[#dde4ec] rounded-lg p-3 text-center">
-            <div className="text-2xl font-semibold text-[#0f1c2e]">{k.val}</div>
-            <div className="text-xs text-[#6b7685] mt-0.5">{k.label}</div>
+          <div key={k.label} className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-semibold text-gray-900">{k.val}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{k.label}</div>
           </div>
         ))}
       </div>
 
       <div className="flex justify-between items-center">
-        <span className="text-sm text-[#6b7685]">{data.length} wheeling access applications</span>
+        <span className="text-sm text-gray-500">{data.length} wheeling access applications</span>
         <button type="button"
           onClick={() => setCreateModal(true)}
-          className="text-sm bg-[#c2873a] text-white px-3 py-1.5 rounded-md hover:bg-[#a3702f]"
+          className="text-sm bg-[oklch(0.46_0.16_55)] text-white px-3 py-1.5 rounded-md hover:bg-[oklch(0.40_0.15_55)]"
         >+ New access application</button>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-[#dde4ec] text-sm">
-          <thead className="bg-[#f8fafc]">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-gray-50">
             <tr>
               {['Tier', 'Capacity (MW)', 'Voltage (kV)', 'IPP ref', 'Status', 'SLA deadline', ''].map(h => (
-                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-[#6b7685] uppercase">{h}</th>
+                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-[#eef2f7]">
+          <tbody className="bg-white divide-y divide-gray-100">
             {data.map((row: any) => (
-              <tr key={row.id} className="hover:bg-[#eef2f7]">
+              <tr key={row.id} className="hover:bg-gray-50">
                 <td className="px-3 py-2">
-                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${WHEEL_TIER_TONE[row.wheel_tier] ?? 'bg-[#eef2f7] text-[#2d3748]'}`}>
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${WHEEL_TIER_TONE[row.wheel_tier] ?? 'bg-gray-100 text-gray-700'}`}>
                     {row.wheel_tier?.replace(/_/g, ' ')}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-[#2d3748]">{row.requested_capacity_mw ?? '—'}</td>
-                <td className="px-3 py-2 text-[#3d4756]">{row.voltage_level_kv ? `${row.voltage_level_kv} kV` : '—'}</td>
-                <td className="px-3 py-2 text-[#6b7685] text-xs">{row.ipp_ref ?? '—'}</td>
+                <td className="px-3 py-2 text-gray-700">{row.requested_capacity_mw ?? '—'}</td>
+                <td className="px-3 py-2 text-gray-600">{row.voltage_level_kv ? `${row.voltage_level_kv} kV` : '—'}</td>
+                <td className="px-3 py-2 text-gray-500 text-xs">{row.ipp_ref ?? '—'}</td>
                 <td className="px-3 py-2">
                   <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${wheelStatusTone(row.chain_status)}`}>
                     {row.chain_status?.replace(/_/g, ' ')}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-[#6b7685] text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
+                <td className="px-3 py-2 text-gray-500 text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
                 <td className="px-3 py-2">
                   <button type="button" onClick={() => setModal({ id: row.id, wheel_tier: row.wheel_tier, requested_capacity_mw: row.requested_capacity_mw })}
-                    className="text-xs text-blue-600 hover:underline">Action</button>
+                    className="text-xs text-[oklch(0.46_0.16_55)] hover:underline">Action</button>
                 </td>
               </tr>
             ))}
             {data.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-8 text-center text-[#9aa5b4]">No wheeling access applications found</td></tr>
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">No wheeling access applications found</td></tr>
             )}
           </tbody>
         </table>

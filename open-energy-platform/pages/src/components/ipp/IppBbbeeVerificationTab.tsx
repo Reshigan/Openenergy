@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface BbbeeVerificationRecord {
   id: string;
@@ -28,10 +28,10 @@ interface BbbeeVerificationKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   verification_triggered:   'bg-[#eef2f7] text-[#6b7685]',
-  documentation_preparation:'bg-blue-100 text-blue-700',
+  documentation_preparation:'',
   agency_engagement:        'bg-cyan-100 text-cyan-700',
   data_submission:          'bg-sky-100 text-sky-700',
-  agency_assessment:        'bg-indigo-100 text-indigo-700',
+  agency_assessment:        '',
   preliminary_score_issued: 'bg-violet-100 text-violet-700',
   ipp_review:               'bg-purple-100 text-purple-700',
   final_assessment:         'bg-yellow-100 text-yellow-800',
@@ -39,6 +39,11 @@ const STATUS_COLORS: Record<string, string> = {
   bbbee_verified:           'bg-green-100 text-green-700',
   bbbee_non_compliant:      'bg-red-100 text-red-700',
   certificate_lapsed:       'bg-orange-100 text-orange-700',
+};
+
+const STATUS_STYLES: Record<string, React.CSSProperties> = {
+  documentation_preparation: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' },
+  agency_assessment:         { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' },
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -59,10 +64,14 @@ const STATUS_LABELS: Record<string, string> = {
 // URGENT SLA — higher equity target = more DMRE scrutiny = tighter
 const TIER_BADGE_COLORS: Record<string, string> = {
   standard:      'bg-green-100 text-green-800',
-  enhanced:      'bg-blue-100 text-blue-800',
+  enhanced:      '',
   majority:      'bg-yellow-100 text-yellow-800',
   transformative:'bg-orange-100 text-orange-800',
   exemplary:     'bg-red-100 text-red-800',
+};
+
+const TIER_BADGE_STYLES: Record<string, React.CSSProperties> = {
+  enhanced: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.17 0.010 250)' },
 };
 
 const TERMINAL_STATUSES = new Set([
@@ -362,9 +371,10 @@ export function IppBbbeeVerificationTab() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3"
+          className="rounded-lg border p-4 space-y-3"
+          style={{ borderColor: 'oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
         >
-          <div className="text-sm font-semibold text-blue-800">New BBBEE Verification Record</div>
+          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New BBBEE Verification Record</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
@@ -508,7 +518,7 @@ export function IppBbbeeVerificationTab() {
                     <td className="py-2 pr-4 text-xs font-mono text-[#2d3748]">{item.project_ref}</td>
                     <td className="py-2 pr-4 text-xs tabular-nums text-[#3d4756]">{item.verification_year}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_BADGE_COLORS[item.equity_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_BADGE_COLORS[item.equity_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={TIER_BADGE_STYLES[item.equity_tier]}>
                         {item.equity_tier.charAt(0).toUpperCase() + item.equity_tier.slice(1)}
                       </span>
                     </td>
@@ -530,7 +540,7 @@ export function IppBbbeeVerificationTab() {
                       </span>
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_STYLES[item.chain_status]}>
                         {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                       </span>
                     </td>
@@ -554,7 +564,12 @@ export function IppBbbeeVerificationTab() {
                                 ? 'px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border border-yellow-200'
                                 : a.variant === 'success'
                                 ? 'px-2 py-0.5 text-xs rounded bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
-                                : 'px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                                : 'px-2 py-0.5 text-xs rounded border'
+                            }
+                            style={
+                              !a.variant
+                                ? { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.87 0.010 250)' }
+                                : undefined
                             }
                           >
                             {a.label}

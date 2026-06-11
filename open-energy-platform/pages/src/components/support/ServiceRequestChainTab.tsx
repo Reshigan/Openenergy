@@ -51,6 +51,7 @@ type Party =
   | 'verifier' | 'archiver' | 'system';
 
 interface SrRow {
+  [key: string]: unknown;
   id: string;
   request_number: string;
   source_event: string | null;
@@ -181,8 +182,8 @@ interface KpiData {
 }
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  submitted:               { bg: '#dbecfb', fg: '#1a3a5c', label: 'Submitted' },
-  entitlement_checked:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Entitlement OK' },
+  submitted:               { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Submitted' },
+  entitlement_checked:     { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Entitlement OK' },
   approval_pending:        { bg: '#fff4d6', fg: '#a06200', label: 'Approval pending' },
   approved:                { bg: '#fff4d6', fg: '#a06200', label: 'Approved' },
   assigned:                { bg: '#fff4d6', fg: '#a06200', label: 'Assigned' },
@@ -199,14 +200,14 @@ const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }>
 
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
   minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-  standard: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard' },
+  standard: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Standard' },
   material: { bg: '#fff4d6', fg: '#a06200', label: 'Material' },
   critical: { bg: '#fbd0d0', fg: '#7a1414', label: 'Critical' },
 };
 
 const URGENCY_TONE: Record<UrgencyBand, { bg: string; fg: string; label: string }> = {
   low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-  medium:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Medium' },
+  medium:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Medium' },
   high:     { bg: '#fff4d6', fg: '#a06200', label: 'High' },
   critical: { bg: '#fbd0d0', fg: '#7a1414', label: 'Critical' },
 };
@@ -219,7 +220,7 @@ const AUTH_LABEL: Record<Authority, string> = {
 };
 
 const PARTY_TONE: Record<string, { bg: string; fg: string }> = {
-  requester:    { bg: '#dbecfb', fg: '#1a3a5c' },
+  requester:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)' },
   approver:     { bg: '#fff4d6', fg: '#a06200' },
   service_desk: { bg: '#e8defc', fg: '#5320a3' },
   fulfiller:    { bg: '#daf5e2', fg: '#1f6b3a' },
@@ -378,7 +379,7 @@ export function ServiceRequestChainTab() {
             onClick={() => setFilter(f.key)}
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
               filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
+                ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]'
                 : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
             }`}>
             {f.label}
@@ -393,7 +394,7 @@ export function ServiceRequestChainTab() {
             onClick={() => setFilter(f.key)}
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
               filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
+                ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]'
                 : 'bg-white text-[#6b7685] border-[#eef2f6] hover:bg-[#eef2f7]'
             }`}>
             {f.label}
@@ -544,7 +545,7 @@ function SrDrawer({
                 <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">Regulator reportable</span>
               )}
               {authorityNow && (
-                <span className="px-2 py-0.5 rounded-full bg-[#dbecfb] text-[#1a3a5c] font-medium">Auth: {AUTH_LABEL[authorityNow]}</span>
+                <span className="px-2 py-0.5 rounded-full bg-[oklch(0.94_0.02_250)] font-medium" style={{ color: 'oklch(0.46 0.16 55)' }}>Auth: {AUTH_LABEL[authorityNow]}</span>
               )}
               {row.bridges_to_change_chain_live && (
                 <span className="px-2 py-0.5 rounded-full bg-[#e8defc] text-[#5320a3] font-medium">CAB bridge</span>

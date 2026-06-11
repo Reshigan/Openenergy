@@ -28,6 +28,20 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'limit_active' | 'exposure_warning' | 'margin_call_issued' | 'collateral_received'
@@ -37,6 +51,7 @@ type ChainStatus =
 type Tier = 'minor' | 'moderate' | 'material' | 'major' | 'systemic';
 
 interface MarginRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   source_event: string | null;
@@ -111,19 +126,6 @@ interface MarginRow {
   breach_crosses_regulator?: boolean;
 }
 
-interface MarginEvent {
-  id: string;
-  margin_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiSummary {
   total: number;
   active_count: number;
@@ -142,37 +144,19 @@ interface KpiSummary {
   total_write_off_zar: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  limit_active:         { bg: '#d4edda', fg: '#155724', label: 'Limit active' },
-  exposure_warning:     { bg: '#fff4d6', fg: '#a06200', label: 'Exposure warning' },
-  margin_call_issued:   { bg: '#ffe4b5', fg: '#8a4a00', label: 'Margin call issued' },
-  collateral_received:  { bg: '#dbecfb', fg: '#1a3a5c', label: 'Collateral received' },
-  position_restriction: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Position restriction' },
-  cure_period:          { bg: '#ffe4b5', fg: '#8a4a00', label: 'Cure period' },
-  default_declared:     { bg: '#f8d0d0', fg: '#6b1f1f', label: 'Default declared' },
-  close_out:            { bg: '#f8d0d0', fg: '#6b1f1f', label: 'Close-out' },
-  default_fund_draw:    { bg: '#f3c0c0', fg: '#5a1818', label: 'Default-fund draw' },
-  recovered:            { bg: '#d4edda', fg: '#155724', label: 'Recovered' },
-  written_off:          { bg: '#e3e7ec', fg: '#557',    label: 'Written off' },
-  withdrawn:            { bg: '#f3e0e0', fg: '#6b1f1f', label: 'Withdrawn' },
-};
+const ALL_STATES = [
+  'limit_active',
+  'exposure_warning',
+  'margin_call_issued',
+  'collateral_received',
+  'position_restriction',
+  'cure_period',
+  'default_declared',
+  'close_out',
+  'default_fund_draw',
+] as const;
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor (<R5m)' },
-  moderate: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Moderate (<R50m)' },
-  material: { bg: '#fff4d6', fg: '#a06200', label: 'Material (<R250m)' },
-  major:    { bg: '#ffe4b5', fg: '#8a4a00', label: 'Major (<R1bn)' },
-  systemic: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Systemic (≥R1bn)' },
-};
-
-const PRODUCT_LABEL: Record<string, string> = {
-  power_forward:        'Power forward',
-  power_spot:           'Power spot',
-  carbon:              'Carbon',
-  financial_derivative: 'Financial derivative',
-  repo:                'Repo',
-  mixed:               'Mixed',
-};
+const BRANCH_STATES = ['recovered', 'written_off', 'withdrawn'] as const;
 
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',               label: 'Active' },
@@ -198,72 +182,28 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'withdrawn',            label: 'Withdrawn' },
 ];
 
-type ActionKind =
-  | 'issue-warning' | 'issue-margin-call' | 'record-collateral' | 'cure-breach'
-  | 'restrict-positions' | 'open-cure-period' | 'declare-default' | 'begin-close-out'
-  | 'draw-default-fund' | 'record-recovery' | 'write-off' | 'withdraw';
+const TERMINAL_STATES: ChainStatus[] = ['recovered', 'written_off', 'withdrawn'];
 
-// Allowed actions per state, primary forward action first. Mirrors the spec
-// TRANSITIONS map so the UI never offers an invalid step.
-const ALLOWED_ACTIONS: Record<ChainStatus, ActionKind[]> = {
-  limit_active:         ['issue-warning'],
-  exposure_warning:     ['issue-margin-call', 'cure-breach', 'restrict-positions', 'withdraw'],
-  margin_call_issued:   ['record-collateral', 'open-cure-period', 'restrict-positions', 'withdraw'],
-  collateral_received:  ['cure-breach'],
-  position_restriction: ['open-cure-period', 'issue-margin-call', 'declare-default'],
-  cure_period:          ['record-collateral', 'declare-default'],
-  default_declared:     ['begin-close-out'],
-  close_out:            ['record-recovery', 'draw-default-fund', 'write-off'],
-  default_fund_draw:    ['record-recovery', 'write-off'],
-  recovered:            [],
-  written_off:          [],
-  withdrawn:            [],
+const PRODUCT_LABEL: Record<string, string> = {
+  power_forward:        'Power forward',
+  power_spot:           'Power spot',
+  carbon:               'Carbon',
+  financial_derivative: 'Financial derivative',
+  repo:                 'Repo',
+  mixed:                'Mixed',
 };
 
-// Party annotation per action. The clearing house / risk desk (trader role)
-// drives every step; the member posts collateral out-of-band.
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'issue-warning':      'Issue exposure warning (clearing house)',
-  'issue-margin-call':  'Issue margin call (clearing house)',
-  'record-collateral':  'Record collateral posted (member)',
-  'cure-breach':        'Cure breach — restore limit (clearing house)',
-  'restrict-positions': 'Restrict positions (clearing house)',
-  'open-cure-period':   'Open cure period (clearing house)',
-  'declare-default':    'Declare default (clearing house)',
-  'begin-close-out':    'Begin close-out (clearing house)',
-  'draw-default-fund':  'Draw default fund (clearing house)',
-  'record-recovery':    'Record recovery (clearing house)',
-  'write-off':          'Write off loss (clearing house)',
-  'withdraw':           'Withdraw (clearing house)',
+const TIER_LABEL: Record<Tier, string> = {
+  minor:    'Minor (<R5m)',
+  moderate: 'Moderate (<R50m)',
+  material: 'Material (<R250m)',
+  major:    'Major (<R1bn)',
+  systemic: 'Systemic (≥R1bn)',
 };
-
-// Button styling category per action.
-const ACTION_TONE: Record<ActionKind, 'primary' | 'danger' | 'warn' | 'good' | 'muted'> = {
-  'issue-warning':      'warn',
-  'issue-margin-call':  'warn',
-  'record-collateral':  'good',
-  'cure-breach':        'good',
-  'restrict-positions': 'warn',
-  'open-cure-period':   'warn',
-  'declare-default':    'danger',
-  'begin-close-out':    'danger',
-  'draw-default-fund':  'danger',
-  'record-recovery':    'good',
-  'write-off':          'danger',
-  'withdraw':           'muted',
-};
-
-function fmtMinutes(m: number | null | undefined): string {
-  if (m === null || m === undefined) return '—';
-  if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
-  if (Math.abs(m) >= 60) return `${Math.round(m / 60)}h`;
-  return `${m}m`;
-}
 
 function fmtDate(s: string | null): string {
   if (!s) return '—';
-  const d = new Date(s);
-  return d.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+  return new Date(s).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function fmtZar(n: number | null | undefined): string {
@@ -279,16 +219,396 @@ function fmtPct(n: number | null | undefined): string {
   return `${n.toFixed(1)}%`;
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['recovered', 'written_off', 'withdrawn'];
+function getActions(row: MarginRow): ChainAction[] {
+  const s = row.chain_status;
+
+  if (s === 'limit_active') {
+    return [{
+      key: 'issue-warning',
+      label: 'Issue exposure warning (clearing house)',
+      tone: 'warn',
+      cascadeTo: [],
+      fields: [
+        { key: 'warning_basis',         label: 'Warning basis — why exposure is approaching the credit limit', type: 'textarea', required: true },
+        { key: 'warning_ref',           label: 'Warning reference (e.g. WARN-2026-0011)', type: 'text', required: false },
+        { key: 'exposure_zar',          label: 'Exposure at risk (ZAR)', type: 'text', required: false },
+        { key: 'collateral_held_zar',   label: 'Collateral held (ZAR)', type: 'text', required: false },
+        { key: 'utilisation_pct',       label: 'Utilisation %', type: 'text', required: false },
+        { key: 'systemically_important', label: 'Systemically important counterparty? (yes/no)', type: 'text', required: false },
+      ],
+    }];
+  }
+
+  if (s === 'exposure_warning') {
+    return [
+      {
+        key: 'issue-margin-call',
+        label: 'Issue margin call (clearing house)',
+        tone: 'warn',
+        cascadeTo: [],
+        fields: [
+          { key: 'margin_call_basis', label: 'Margin-call basis — the shortfall the member must cover', type: 'textarea', required: true },
+          { key: 'margin_call_ref',   label: 'Margin-call reference (e.g. MC-2026-0011)', type: 'text', required: false },
+          { key: 'margin_call_zar',   label: 'Margin call amount (ZAR)', type: 'text', required: false },
+        ],
+      },
+      {
+        key: 'cure-breach',
+        label: 'Cure breach — restore limit (clearing house)',
+        tone: 'primary',
+        cascadeTo: [],
+        fields: [
+          { key: 'reason_code',        label: 'Reason code (e.g. collateral_sufficient / exposure_reduced)', type: 'text', required: true },
+          { key: 'resolution_summary', label: 'Resolution summary (one line for the audit record)', type: 'textarea', required: false },
+        ],
+      },
+      {
+        key: 'restrict-positions',
+        label: 'Restrict positions (clearing house)',
+        tone: 'warn',
+        cascadeTo: [],
+        fields: [
+          { key: 'restriction_basis', label: 'Restriction basis — why the member may not increase positions', type: 'textarea', required: true },
+          { key: 'restriction_ref',   label: 'Restriction reference (e.g. RES-2026-0011)', type: 'text', required: false },
+          { key: 'reason_code',       label: 'Reason code (e.g. call_unmet / concentration_risk)', type: 'text', required: false },
+        ],
+      },
+      {
+        key: 'withdraw',
+        label: 'Withdraw (clearing house)',
+        tone: 'ghost',
+        cascadeTo: [],
+        fields: [
+          { key: 'reason_code',        label: 'Withdrawal reason — false positive / position closed / netted out', type: 'text', required: true },
+          { key: 'resolution_summary', label: 'Resolution summary (one line for the audit record)', type: 'textarea', required: false },
+        ],
+      },
+    ];
+  }
+
+  if (s === 'margin_call_issued') {
+    return [
+      {
+        key: 'record-collateral',
+        label: 'Record collateral posted (member)',
+        tone: 'primary',
+        cascadeTo: [],
+        fields: [
+          { key: 'collateral_basis',    label: 'Collateral basis — what the member posted to meet the call', type: 'textarea', required: true },
+          { key: 'collateral_ref',      label: 'Collateral reference (e.g. COL-2026-0011)', type: 'text', required: false },
+          { key: 'collateral_posted_zar', label: 'Collateral posted (ZAR)', type: 'text', required: false },
+        ],
+      },
+      {
+        key: 'open-cure-period',
+        label: 'Open cure period (clearing house)',
+        tone: 'warn',
+        cascadeTo: [],
+        fields: [
+          { key: 'cure_basis', label: 'Cure-period basis — the grace window granted to remedy the shortfall', type: 'textarea', required: true },
+          { key: 'cure_ref',   label: 'Cure reference (e.g. CURE-2026-0011)', type: 'text', required: false },
+        ],
+      },
+      {
+        key: 'restrict-positions',
+        label: 'Restrict positions (clearing house)',
+        tone: 'warn',
+        cascadeTo: [],
+        fields: [
+          { key: 'restriction_basis', label: 'Restriction basis — why the member may not increase positions', type: 'textarea', required: true },
+          { key: 'restriction_ref',   label: 'Restriction reference (e.g. RES-2026-0011)', type: 'text', required: false },
+          { key: 'reason_code',       label: 'Reason code (e.g. call_unmet / concentration_risk)', type: 'text', required: false },
+        ],
+      },
+      {
+        key: 'withdraw',
+        label: 'Withdraw (clearing house)',
+        tone: 'ghost',
+        cascadeTo: [],
+        fields: [
+          { key: 'reason_code',        label: 'Withdrawal reason — false positive / position closed / netted out', type: 'text', required: true },
+          { key: 'resolution_summary', label: 'Resolution summary (one line for the audit record)', type: 'textarea', required: false },
+        ],
+      },
+    ];
+  }
+
+  if (s === 'collateral_received') {
+    return [{
+      key: 'cure-breach',
+      label: 'Cure breach — restore limit (clearing house)',
+      tone: 'primary',
+      cascadeTo: [],
+      fields: [
+        { key: 'reason_code',        label: 'Reason code (e.g. collateral_sufficient / exposure_reduced)', type: 'text', required: true },
+        { key: 'resolution_summary', label: 'Resolution summary (one line for the audit record)', type: 'textarea', required: false },
+      ],
+    }];
+  }
+
+  if (s === 'position_restriction') {
+    return [
+      {
+        key: 'open-cure-period',
+        label: 'Open cure period (clearing house)',
+        tone: 'warn',
+        cascadeTo: [],
+        fields: [
+          { key: 'cure_basis', label: 'Cure-period basis — the grace window granted to remedy the shortfall', type: 'textarea', required: true },
+          { key: 'cure_ref',   label: 'Cure reference (e.g. CURE-2026-0011)', type: 'text', required: false },
+        ],
+      },
+      {
+        key: 'issue-margin-call',
+        label: 'Issue margin call (clearing house)',
+        tone: 'warn',
+        cascadeTo: [],
+        fields: [
+          { key: 'margin_call_basis', label: 'Margin-call basis — the shortfall the member must cover', type: 'textarea', required: true },
+          { key: 'margin_call_ref',   label: 'Margin-call reference (e.g. MC-2026-0011)', type: 'text', required: false },
+          { key: 'margin_call_zar',   label: 'Margin call amount (ZAR)', type: 'text', required: false },
+        ],
+      },
+      {
+        key: 'declare-default',
+        label: 'Declare default (clearing house)',
+        tone: 'danger',
+        cascadeTo: ['regulator'],
+        fields: [
+          { key: 'default_basis',  label: 'Default basis — why the counterparty is declared in default', type: 'textarea', required: true },
+          { key: 'default_ref',    label: 'Default reference (e.g. DEF-2026-0011)', type: 'text', required: false },
+          { key: 'reason_code',    label: 'Reason code (e.g. call_unmet / cure_lapsed / insolvency)', type: 'text', required: false },
+          { key: 'shortfall_zar',  label: 'Shortfall (ZAR)', type: 'text', required: false },
+        ],
+      },
+    ];
+  }
+
+  if (s === 'cure_period') {
+    return [
+      {
+        key: 'record-collateral',
+        label: 'Record collateral posted (member)',
+        tone: 'primary',
+        cascadeTo: [],
+        fields: [
+          { key: 'collateral_basis',      label: 'Collateral basis — what the member posted to meet the call', type: 'textarea', required: true },
+          { key: 'collateral_ref',        label: 'Collateral reference (e.g. COL-2026-0011)', type: 'text', required: false },
+          { key: 'collateral_posted_zar', label: 'Collateral posted (ZAR)', type: 'text', required: false },
+        ],
+      },
+      {
+        key: 'declare-default',
+        label: 'Declare default (clearing house)',
+        tone: 'danger',
+        cascadeTo: ['regulator'],
+        fields: [
+          { key: 'default_basis', label: 'Default basis — why the counterparty is declared in default', type: 'textarea', required: true },
+          { key: 'default_ref',   label: 'Default reference (e.g. DEF-2026-0011)', type: 'text', required: false },
+          { key: 'reason_code',   label: 'Reason code (e.g. call_unmet / cure_lapsed / insolvency)', type: 'text', required: false },
+          { key: 'shortfall_zar', label: 'Shortfall (ZAR)', type: 'text', required: false },
+        ],
+      },
+    ];
+  }
+
+  if (s === 'default_declared') {
+    return [{
+      key: 'begin-close-out',
+      label: 'Begin close-out (clearing house)',
+      tone: 'danger',
+      cascadeTo: ['regulator'],
+      fields: [
+        { key: 'close_out_basis', label: 'Close-out basis — the orderly liquidation of the defaulter positions', type: 'textarea', required: true },
+        { key: 'close_out_ref',   label: 'Close-out reference (e.g. CO-2026-0011)', type: 'text', required: false },
+        { key: 'shortfall_zar',   label: 'Residual shortfall after collateral (ZAR)', type: 'text', required: false },
+      ],
+    }];
+  }
+
+  if (s === 'close_out') {
+    return [
+      {
+        key: 'record-recovery',
+        label: 'Record recovery (clearing house)',
+        tone: 'primary',
+        cascadeTo: [],
+        fields: [
+          { key: 'recovery_basis',     label: 'Recovery basis — recovery from collateral / estate / fund replenishment', type: 'textarea', required: true },
+          { key: 'recovery_zar',       label: 'Recovery amount (ZAR)', type: 'text', required: false },
+          { key: 'resolution_summary', label: 'Resolution summary (one line for the audit record)', type: 'textarea', required: false },
+        ],
+      },
+      {
+        key: 'draw-default-fund',
+        label: 'Draw default fund (clearing house)',
+        tone: 'danger',
+        cascadeTo: ['regulator'],
+        fields: [
+          { key: 'default_fund_basis',     label: 'Default-fund basis — the mutualised draw to cover the residual loss', type: 'textarea', required: true },
+          { key: 'default_fund_ref',       label: 'Default-fund reference (e.g. DF-2026-0011)', type: 'text', required: false },
+          { key: 'default_fund_draw_zar',  label: 'Default-fund draw (ZAR)', type: 'text', required: false },
+        ],
+      },
+      {
+        key: 'write-off',
+        label: 'Write off loss (clearing house)',
+        tone: 'danger',
+        cascadeTo: ['regulator'],
+        fields: [
+          { key: 'write_off_basis',    label: 'Write-off basis — the unrecoverable residual loss', type: 'textarea', required: true },
+          { key: 'write_off_zar',      label: 'Write-off amount (ZAR)', type: 'text', required: false },
+          { key: 'reason_code',        label: 'Reason code (e.g. estate_exhausted / unrecoverable)', type: 'text', required: false },
+          { key: 'resolution_summary', label: 'Resolution summary (one line for the audit record)', type: 'textarea', required: false },
+        ],
+      },
+    ];
+  }
+
+  if (s === 'default_fund_draw') {
+    return [
+      {
+        key: 'record-recovery',
+        label: 'Record recovery (clearing house)',
+        tone: 'primary',
+        cascadeTo: [],
+        fields: [
+          { key: 'recovery_basis',     label: 'Recovery basis — recovery from collateral / estate / fund replenishment', type: 'textarea', required: true },
+          { key: 'recovery_zar',       label: 'Recovery amount (ZAR)', type: 'text', required: false },
+          { key: 'resolution_summary', label: 'Resolution summary (one line for the audit record)', type: 'textarea', required: false },
+        ],
+      },
+      {
+        key: 'write-off',
+        label: 'Write off loss (clearing house)',
+        tone: 'danger',
+        cascadeTo: ['regulator'],
+        fields: [
+          { key: 'write_off_basis',    label: 'Write-off basis — the unrecoverable residual loss', type: 'textarea', required: true },
+          { key: 'write_off_zar',      label: 'Write-off amount (ZAR)', type: 'text', required: false },
+          { key: 'reason_code',        label: 'Reason code (e.g. estate_exhausted / unrecoverable)', type: 'text', required: false },
+          { key: 'resolution_summary', label: 'Resolution summary (one line for the audit record)', type: 'textarea', required: false },
+        ],
+      },
+    ];
+  }
+
+  return [];
+}
+
+function renderDetail(row: MarginRow): React.ReactNode {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px' }}>
+      <DetailPair label="State"               value={row.chain_status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} />
+      <DetailPair label="Tier"                value={TIER_LABEL[row.severity_tier]} />
+      <DetailPair label="Product class"       value={row.product_class ? (PRODUCT_LABEL[row.product_class] ?? row.product_class) : '—'} />
+      <DetailPair label="Account type"        value={row.account_type ?? '—'} />
+      <DetailPair label="Member code"         value={row.member_code ?? '—'} />
+      <DetailPair label="Systemically important" value={row.systemically_important ? 'Yes' : 'No'} />
+      <DetailPair label="Clearing party"      value={row.clearing_party_name ?? '—'} />
+      <DetailPair label="Member party"        value={row.member_party_name ?? row.counterparty_name} />
+      <DetailPair label="Exposure at risk"    value={fmtZar(row.exposure_zar)} />
+      <DetailPair label="Collateral held"     value={fmtZar(row.collateral_held_zar)} />
+      <DetailPair label="Margin call"         value={fmtZar(row.margin_call_zar)} />
+      <DetailPair label="Collateral posted"   value={fmtZar(row.collateral_posted_zar)} />
+      <DetailPair label="Shortfall"           value={fmtZar(row.shortfall_zar)} />
+      <DetailPair label="Default-fund draw"   value={fmtZar(row.default_fund_draw_zar)} />
+      <DetailPair label="Recovery"            value={fmtZar(row.recovery_zar)} />
+      <DetailPair label="Write-off"           value={fmtZar(row.write_off_zar)} />
+      <DetailPair label="Utilisation"         value={fmtPct(row.utilisation_pct)} />
+      <DetailPair label="Warning ref"         value={row.warning_ref ?? '—'} />
+      <DetailPair label="Margin-call ref"     value={row.margin_call_ref ?? '—'} />
+      <DetailPair label="Collateral ref"      value={row.collateral_ref ?? '—'} />
+      <DetailPair label="Restriction ref"     value={row.restriction_ref ?? '—'} />
+      <DetailPair label="Cure ref"            value={row.cure_ref ?? '—'} />
+      <DetailPair label="Default ref"         value={row.default_ref ?? '—'} />
+      <DetailPair label="Close-out ref"       value={row.close_out_ref ?? '—'} />
+      <DetailPair label="Default-fund ref"    value={row.default_fund_ref ?? '—'} />
+      <DetailPair label="Reason code"         value={row.reason_code ?? '—'} />
+      <DetailPair label="Cure round"          value={String(row.cure_round)} />
+      <DetailPair label="Escalation level"    value={String(row.escalation_level)} />
+      <DetailPair label="Reportable"          value={row.is_reportable ? 'Yes' : 'No'} />
+      <DetailPair label="Limit active since"  value={fmtDate(row.limit_active_at)} />
+      <DetailPair label="Warning at"          value={fmtDate(row.exposure_warning_at)} />
+      <DetailPair label="Margin call at"      value={fmtDate(row.margin_call_issued_at)} />
+      <DetailPair label="Collateral received" value={fmtDate(row.collateral_received_at)} />
+      <DetailPair label="Restriction at"      value={fmtDate(row.position_restriction_at)} />
+      <DetailPair label="Cure period at"      value={fmtDate(row.cure_period_at)} />
+      <DetailPair label="Default declared"    value={fmtDate(row.default_declared_at)} />
+      <DetailPair label="Close-out at"        value={fmtDate(row.close_out_at)} />
+      <DetailPair label="Fund draw at"        value={fmtDate(row.default_fund_draw_at)} />
+      <DetailPair label="Recovered at"        value={fmtDate(row.recovered_at)} />
+      <DetailPair label="Written off at"      value={fmtDate(row.written_off_at)} />
+      <DetailPair label="SLA deadline"        value={fmtDate(row.sla_deadline_at)} />
+      {row.source_wave && (
+        <DetailPair label="Source wave" value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}`} />
+      )}
+      {row.resolution_summary && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Resolution summary" value={row.resolution_summary} />
+        </div>
+      )}
+      {row.warning_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Warning basis" value={row.warning_basis} />
+        </div>
+      )}
+      {row.margin_call_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Margin-call basis" value={row.margin_call_basis} />
+        </div>
+      )}
+      {row.collateral_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Collateral basis (member)" value={row.collateral_basis} />
+        </div>
+      )}
+      {row.restriction_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Restriction basis" value={row.restriction_basis} />
+        </div>
+      )}
+      {row.cure_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Cure-period basis" value={row.cure_basis} />
+        </div>
+      )}
+      {row.default_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Default basis" value={row.default_basis} />
+        </div>
+      )}
+      {row.close_out_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Close-out basis" value={row.close_out_basis} />
+        </div>
+      )}
+      {row.default_fund_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Default-fund basis" value={row.default_fund_basis} />
+        </div>
+      )}
+      {row.recovery_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Recovery basis" value={row.recovery_basis} />
+        </div>
+      )}
+      {row.write_off_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Write-off basis" value={row.write_off_basis} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function CounterpartyMarginChainTab() {
   const [rows, setRows] = useState<MarginRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<MarginRow | null>(null);
-  const [events, setEvents] = useState<MarginEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -298,7 +618,7 @@ export function CounterpartyMarginChainTab() {
       setRows(res.data?.data?.items || []);
       const d = res.data?.data;
       if (d) {
-        setKpis({
+        setSummary({
           total: d.total, active_count: d.active_count, open_count: d.open_count,
           default_count: d.default_count, close_out_count: d.close_out_count,
           fund_draw_count: d.fund_draw_count, recovered_count: d.recovered_count,
@@ -317,186 +637,85 @@ export function CounterpartyMarginChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: MarginRow; events: MarginEvent[] } }>(
+      await api.post(`/counterparty-margin/chain/${rowId}/${key}`, values);
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
+    }
+  }, [load]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: MarginRow; events: ChainEvent[] } }>(
         `/counterparty-margin/chain/${id}`
       );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events || [] }));
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load margin history');
     }
-  }, []);
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (filter === 'all')        return true;
       if (filter === 'active')     return !TERMINAL_STATES.includes(r.chain_status);
-      if (filter === 'breached')   return r.sla_breached;
+      if (filter === 'breached')   return !!r.sla_breached;
       if (filter === 'reportable') return r.is_reportable;
-      if (filter === 'minor' || filter === 'moderate' || filter === 'material' || filter === 'major' || filter === 'systemic') {
+      if (['minor', 'moderate', 'material', 'major', 'systemic'].includes(filter)) {
         return r.severity_tier === filter;
       }
       return r.chain_status === filter;
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: MarginRow) => {
-    try {
-      let body: Record<string, string | number | boolean> = {};
-      if (action === 'issue-warning') {
-        const basis = window.prompt('Warning basis — why exposure is approaching the credit limit:');
-        if (!basis) return;
-        const ref = window.prompt('Warning reference (e.g. WARN-2026-0011):') || '';
-        const exp = window.prompt('Exposure at risk (ZAR):', String(row.exposure_zar ?? ''));
-        const coll = window.prompt('Collateral held (ZAR):', String(row.collateral_held_zar ?? ''));
-        const util = window.prompt('Utilisation %:', String(row.utilisation_pct ?? ''));
-        const sifi = window.confirm('Systemically important counterparty? OK = yes, Cancel = no');
-        body = { warning_basis: basis, systemically_important: sifi };
-        if (ref) body.warning_ref = ref;
-        if (exp && !Number.isNaN(Number(exp))) body.exposure_zar = Number(exp);
-        if (coll && !Number.isNaN(Number(coll))) body.collateral_held_zar = Number(coll);
-        if (util && !Number.isNaN(Number(util))) body.utilisation_pct = Number(util);
-      } else if (action === 'issue-margin-call') {
-        const basis = window.prompt('Margin-call basis — the shortfall the member must cover:');
-        if (!basis) return;
-        const ref = window.prompt('Margin-call reference (e.g. MC-2026-0011):') || '';
-        const amt = window.prompt('Margin call amount (ZAR):', String(row.margin_call_zar ?? ''));
-        body = { margin_call_basis: basis };
-        if (ref) body.margin_call_ref = ref;
-        if (amt && !Number.isNaN(Number(amt))) body.margin_call_zar = Number(amt);
-      } else if (action === 'record-collateral') {
-        const basis = window.prompt('Collateral basis — what the member posted to meet the call:');
-        if (!basis) return;
-        const ref = window.prompt('Collateral reference (e.g. COL-2026-0011):') || '';
-        const amt = window.prompt('Collateral posted (ZAR):', String(row.collateral_posted_zar ?? ''));
-        body = { collateral_basis: basis };
-        if (ref) body.collateral_ref = ref;
-        if (amt && !Number.isNaN(Number(amt))) body.collateral_posted_zar = Number(amt);
-      } else if (action === 'cure-breach') {
-        const reason = window.prompt('Reason code (e.g. collateral_sufficient / exposure_reduced):');
-        if (!reason) return;
-        const summary = window.prompt('Resolution summary (one line for the audit record):') || '';
-        body = { reason_code: reason };
-        if (summary) body.resolution_summary = summary;
-      } else if (action === 'restrict-positions') {
-        const basis = window.prompt('Restriction basis — why the member may not increase positions:');
-        if (!basis) return;
-        const ref = window.prompt('Restriction reference (e.g. RES-2026-0011):') || '';
-        const reason = window.prompt('Reason code (e.g. call_unmet / concentration_risk):') || '';
-        body = { restriction_basis: basis };
-        if (ref) body.restriction_ref = ref;
-        if (reason) body.reason_code = reason;
-      } else if (action === 'open-cure-period') {
-        const basis = window.prompt('Cure-period basis — the grace window granted to remedy the shortfall:');
-        if (!basis) return;
-        const ref = window.prompt('Cure reference (e.g. CURE-2026-0011):') || '';
-        body = { cure_basis: basis };
-        if (ref) body.cure_ref = ref;
-      } else if (action === 'declare-default') {
-        const basis = window.prompt('Default basis — why the counterparty is declared in default:');
-        if (!basis) return;
-        const ref = window.prompt('Default reference (e.g. DEF-2026-0011):') || '';
-        const reason = window.prompt('Reason code (e.g. call_unmet / cure_lapsed / insolvency):') || '';
-        const shortfall = window.prompt('Shortfall (ZAR):', String(row.shortfall_zar ?? ''));
-        body = { default_basis: basis };
-        if (ref) body.default_ref = ref;
-        if (reason) body.reason_code = reason;
-        if (shortfall && !Number.isNaN(Number(shortfall))) body.shortfall_zar = Number(shortfall);
-      } else if (action === 'begin-close-out') {
-        const basis = window.prompt('Close-out basis — the orderly liquidation of the defaulter positions:');
-        if (!basis) return;
-        const ref = window.prompt('Close-out reference (e.g. CO-2026-0011):') || '';
-        const shortfall = window.prompt('Residual shortfall after collateral (ZAR):', String(row.shortfall_zar ?? ''));
-        body = { close_out_basis: basis };
-        if (ref) body.close_out_ref = ref;
-        if (shortfall && !Number.isNaN(Number(shortfall))) body.shortfall_zar = Number(shortfall);
-      } else if (action === 'draw-default-fund') {
-        const basis = window.prompt('Default-fund basis — the mutualised draw to cover the residual loss:');
-        if (!basis) return;
-        const ref = window.prompt('Default-fund reference (e.g. DF-2026-0011):') || '';
-        const amt = window.prompt('Default-fund draw (ZAR):', String(row.default_fund_draw_zar ?? ''));
-        body = { default_fund_basis: basis };
-        if (ref) body.default_fund_ref = ref;
-        if (amt && !Number.isNaN(Number(amt))) body.default_fund_draw_zar = Number(amt);
-      } else if (action === 'record-recovery') {
-        const basis = window.prompt('Recovery basis — recovery from collateral / estate / fund replenishment:');
-        if (!basis) return;
-        const amt = window.prompt('Recovery amount (ZAR):', String(row.recovery_zar ?? ''));
-        const summary = window.prompt('Resolution summary (one line for the audit record):') || '';
-        body = { recovery_basis: basis };
-        if (amt && !Number.isNaN(Number(amt))) body.recovery_zar = Number(amt);
-        if (summary) body.resolution_summary = summary;
-      } else if (action === 'write-off') {
-        const basis = window.prompt('Write-off basis — the unrecoverable residual loss:');
-        if (!basis) return;
-        const amt = window.prompt('Write-off amount (ZAR):', String(row.write_off_zar ?? ''));
-        const reason = window.prompt('Reason code (e.g. estate_exhausted / unrecoverable):') || '';
-        const summary = window.prompt('Resolution summary (one line for the audit record):') || '';
-        body = { write_off_basis: basis };
-        if (amt && !Number.isNaN(Number(amt))) body.write_off_zar = Number(amt);
-        if (reason) body.reason_code = reason;
-        if (summary) body.resolution_summary = summary;
-      } else if (action === 'withdraw') {
-        const reason = window.prompt('Withdrawal reason — false positive / position closed / netted out:');
-        if (!reason) return;
-        const summary = window.prompt('Resolution summary (one line for the audit record):') || '';
-        body = { reason_code: reason };
-        if (summary) body.resolution_summary = summary;
-      }
-      await api.post(`/counterparty-margin/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Counterparty margin & default management</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-state counterparty-credit waterfall (Financial Markets Act 19/2012 · FSCA Conduct Standards ·
-            CPMI-IOSCO PFMI Principles 4/5/6/13) · limit active → exposure warning → margin call issued →
-            collateral received → (cure) → limit active. An unmet call can restrict positions or open a cure
-            period; a lapsed cure or unmet call declares a default, then close-out → default-fund draw →
-            recovered or written off. URGENT SLA: the larger the exposure tier, the tighter every window. Tier
-            by exposure-at-risk in ZAR with a systemic-importance floor at major. Single write — the clearing
-            house / risk desk drives every step; the member posts collateral out-of-band. The W68 signature —
-            a declared default crosses to the regulator for every tier; a default-fund draw, a write-off and an
-            SLA breach cross for the large tiers (major + systemic).
-          </p>
-        </div>
+    <div style={{ padding: '20px', background: BG, minHeight: '100%' }}>
+      <header style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: TX1, margin: 0 }}>
+          Counterparty margin &amp; default management
+        </h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 4, lineHeight: 1.5 }}>
+          12-state counterparty-credit waterfall (Financial Markets Act 19/2012 · FSCA Conduct Standards ·
+          CPMI-IOSCO PFMI Principles 4/5/6/13) · limit active → exposure warning → margin call issued →
+          collateral received → (cure) → limit active. URGENT SLA: larger exposure tier = tighter window.
+          Single write — clearing house / risk desk drives every step. Declared default crosses to regulator every tier.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Limit active" value={kpis?.active_count ?? 0} tone="ok" />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} tone={(kpis?.open_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="High open" value={kpis?.high_open ?? 0} tone={(kpis?.high_open ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Default" value={kpis?.default_count ?? 0} tone={(kpis?.default_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Close-out" value={kpis?.close_out_count ?? 0} tone={(kpis?.close_out_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Fund draw" value={kpis?.fund_draw_count ?? 0} tone={(kpis?.fund_draw_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Recovered" value={kpis?.recovered_count ?? 0} tone="ok" />
-        <Kpi label="Written off" value={kpis?.written_off_count ?? 0} tone={(kpis?.written_off_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Exposure at risk" value={fmtZar(kpis?.total_exposure_zar ?? 0)} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8, marginBottom: 16 }}>
+        <KpiTile label="Total"         value={summary?.total ?? rows.length} />
+        <KpiTile label="Limit active"  value={summary?.active_count ?? 0} tone="ok" />
+        <KpiTile label="Open"          value={summary?.open_count ?? 0} tone={(summary?.open_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="High open"     value={summary?.high_open ?? 0} tone={(summary?.high_open ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Default"       value={summary?.default_count ?? 0} tone={(summary?.default_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Close-out"     value={summary?.close_out_count ?? 0} tone={(summary?.close_out_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Fund draw"     value={summary?.fund_draw_count ?? 0} tone={(summary?.fund_draw_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="SLA breached"  value={summary?.breached ?? 0} tone={(summary?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Reportable"    value={summary?.reportable_total ?? 0} tone={(summary?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Recovered"     value={summary?.recovered_count ?? 0} tone="ok" />
+        <KpiTile label="Written off"   value={summary?.written_off_count ?? 0} tone={(summary?.written_off_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Exposure"      value={fmtZar(summary?.total_exposure_zar ?? 0)} />
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
         {FILTERS.map((f) => (
-          <button type="button"
+          <button
+            type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
+            style={{
+              padding: '3px 10px',
+              fontSize: 11,
+              fontWeight: 500,
+              borderRadius: 4,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+              background: filter === f.key ? ACC : BG1,
+              color: filter === f.key ? '#fff' : TX2,
+              cursor: 'pointer',
+            }}
           >
             {f.label}
           </button>
@@ -504,279 +723,70 @@ export function CounterpartyMarginChainTab() {
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Counterparty</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Product</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Exposure</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.severity_tier];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.case_number}
-                      {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to the regulator">●</span>}
-                      {r.systemically_important ? <span className="ml-1 text-[#8a4a00]" title="Systemically important">★</span> : null}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[180px] truncate" title={r.counterparty_name}>
-                      {r.counterparty_name}
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.product_class ? (PRODUCT_LABEL[r.product_class] ?? r.product_class) : '—'}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">
-                      {fmtZar(r.exposure_zar)}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No margin cases match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 4, border: `1px solid ${BAD}40`, background: `${BAD}10`, fontSize: 12, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: TX3, background: BG1, borderRadius: 6, border: `1px solid ${BORDER}` }}>
+          Loading...
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: TX3, background: BG1, borderRadius: 6, border: `1px solid ${BORDER}` }}>
+          No margin cases match.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {filtered.map((row) => (
+            <ChainCard
+              key={row.id}
+              item={row}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={row.counterparty_name}
+              meta={
+                <span>
+                  {TIER_LABEL[row.severity_tier]}
+                  {row.product_class ? ` · ${PRODUCT_LABEL[row.product_class] ?? row.product_class}` : ''}
+                  {row.account_type ? ` · ${row.account_type}` : ''}
+                  {row.member_code ? ` · ${row.member_code}` : ''}
+                  {row.systemically_important ? ' · ★ SIFI' : ''}
+                  {row.is_reportable ? ' · ● Reportable' : ''}
+                  {` · Exposure: ${fmtZar(row.exposure_zar)}`}
+                </span>
+              }
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div style={{ padding: '8px 12px', borderRadius: 6, border: `1px solid ${BORDER}`, background: BG1 }}>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 600, fontFamily: MONO, color }}>{value}</div>
     </div>
   );
 }
 
-const BTN_CLASS: Record<'primary' | 'danger' | 'warn' | 'good' | 'muted', string> = {
-  primary: 'rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]',
-  danger:  'rounded border border-red-400 bg-white px-3 py-1.5 text-[12px] font-medium text-red-800 hover:bg-red-50',
-  warn:    'rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-orange-700 hover:bg-orange-50',
-  good:    'rounded border border-green-300 bg-white px-3 py-1.5 text-[12px] font-medium text-green-800 hover:bg-green-50',
-  muted:   'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b1f1f] hover:bg-[#f3e0e0]',
-};
-
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: MarginRow;
-  events: MarginEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: MarginRow) => void;
-}) {
-  const actions = ALLOWED_ACTIONS[row.chain_status] || [];
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.case_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">
-                {row.counterparty_name}
-                {row.systemically_important ? <span className="ml-2 text-[#8a4a00]" title="Systemically important">★ SIFI</span> : null}
-              </div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.severity_tier].label}
-                {row.product_class ? ` · ${PRODUCT_LABEL[row.product_class] ?? row.product_class}` : ''}
-                {row.account_type ? ` · ${row.account_type}` : ''}
-                {row.member_code ? ` · ${row.member_code}` : ''}
-              </div>
-              <div className="mt-1 text-[11px] text-[#4a5568]">
-                {row.clearing_party_name || 'Clearing house'} → {row.member_party_name || row.counterparty_name}
-                {row.cure_round > 0 ? ` · cure round ${row.cure_round}` : ''}
-                {row.escalation_level > 0 ? ` · escalation lvl ${row.escalation_level}` : ''}
-              </div>
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"               value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier"                value={TIER_TONE[row.severity_tier].label} />
-            <Pair label="Product class"        value={row.product_class ? (PRODUCT_LABEL[row.product_class] ?? row.product_class) : '—'} />
-            <Pair label="Account type"         value={row.account_type ?? '—'} />
-            <Pair label="Member code"          value={row.member_code ?? '—'} />
-            <Pair label="Systemically important" value={row.systemically_important ? 'Yes' : 'No'} />
-            <Pair label="Exposure at risk"     value={fmtZar(row.exposure_zar)} />
-            <Pair label="Collateral held"      value={fmtZar(row.collateral_held_zar)} />
-            <Pair label="Margin call"          value={fmtZar(row.margin_call_zar)} />
-            <Pair label="Collateral posted"    value={fmtZar(row.collateral_posted_zar)} />
-            <Pair label="Shortfall"            value={fmtZar(row.shortfall_zar)} />
-            <Pair label="Default-fund draw"    value={fmtZar(row.default_fund_draw_zar)} />
-            <Pair label="Recovery"             value={fmtZar(row.recovery_zar)} />
-            <Pair label="Write-off"            value={fmtZar(row.write_off_zar)} />
-            <Pair label="Utilisation"          value={fmtPct(row.utilisation_pct)} />
-            <Pair label="Warning ref"          value={row.warning_ref ?? '—'} />
-            <Pair label="Margin-call ref"      value={row.margin_call_ref ?? '—'} />
-            <Pair label="Collateral ref"       value={row.collateral_ref ?? '—'} />
-            <Pair label="Restriction ref"      value={row.restriction_ref ?? '—'} />
-            <Pair label="Cure ref"             value={row.cure_ref ?? '—'} />
-            <Pair label="Default ref"          value={row.default_ref ?? '—'} />
-            <Pair label="Close-out ref"        value={row.close_out_ref ?? '—'} />
-            <Pair label="Default-fund ref"     value={row.default_fund_ref ?? '—'} />
-            <Pair label="Reason code"          value={row.reason_code ?? '—'} />
-            <Pair label="Limit active since"   value={fmtDate(row.limit_active_at)} />
-            <Pair label="Warning"              value={fmtDate(row.exposure_warning_at)} />
-            <Pair label="Margin call"          value={fmtDate(row.margin_call_issued_at)} />
-            <Pair label="Collateral received"  value={fmtDate(row.collateral_received_at)} />
-            <Pair label="Restriction"          value={fmtDate(row.position_restriction_at)} />
-            <Pair label="Cure period"          value={fmtDate(row.cure_period_at)} />
-            <Pair label="Default declared"     value={fmtDate(row.default_declared_at)} />
-            <Pair label="Close-out"            value={fmtDate(row.close_out_at)} />
-            <Pair label="Fund draw"            value={fmtDate(row.default_fund_draw_at)} />
-            <Pair label="Recovered"            value={fmtDate(row.recovered_at)} />
-            <Pair label="Written off"          value={fmtDate(row.written_off_at)} />
-            <Pair label="SLA deadline"         value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"           value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"       value={String(row.escalation_level)} />
-            <Pair label="Reportable"           value={row.is_reportable ? 'Yes' : 'No'} />
-          </div>
-          {row.resolution_summary && (
-            <BasisBlock label="Resolution summary" tone="#1a3a5c" text={row.resolution_summary} />
-          )}
-          {row.warning_basis && (
-            <BasisBlock label="Warning basis" tone="#a06200" text={row.warning_basis} />
-          )}
-          {row.margin_call_basis && (
-            <BasisBlock label="Margin-call basis" tone="#8a4a00" text={row.margin_call_basis} />
-          )}
-          {row.collateral_basis && (
-            <BasisBlock label="Collateral basis (member)" tone="#1a3a5c" text={row.collateral_basis} />
-          )}
-          {row.restriction_basis && (
-            <BasisBlock label="Restriction basis" tone="#9b1f1f" text={row.restriction_basis} />
-          )}
-          {row.cure_basis && (
-            <BasisBlock label="Cure-period basis" tone="#8a4a00" text={row.cure_basis} />
-          )}
-          {row.default_basis && (
-            <BasisBlock label="Default basis" tone="#6b1f1f" text={row.default_basis} />
-          )}
-          {row.close_out_basis && (
-            <BasisBlock label="Close-out basis" tone="#6b1f1f" text={row.close_out_basis} />
-          )}
-          {row.default_fund_basis && (
-            <BasisBlock label="Default-fund basis" tone="#5a1818" text={row.default_fund_basis} />
-          )}
-          {row.recovery_basis && (
-            <BasisBlock label="Recovery basis" tone="#155724" text={row.recovery_basis} />
-          )}
-          {row.write_off_basis && (
-            <BasisBlock label="Write-off basis" tone="#557" text={row.write_off_basis} />
-          )}
-        </section>
-
-        {actions.length > 0 && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {actions.map((a, idx) => (
-                <button type="button"
-                  key={a}
-                  onClick={() => onAct(a, row)}
-                  className={idx === 0 ? BTN_CLASS.primary : BTN_CLASS[ACTION_TONE[a]]}
-                >
-                  {ACTION_LABEL[a]}
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 12, color: TX1 }}>{value}</div>
     </div>
   );
 }
+
+export default CounterpartyMarginChainTab;

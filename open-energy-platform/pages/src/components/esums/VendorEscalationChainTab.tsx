@@ -5,14 +5,28 @@
 //   • KPI strip: total / safety open / systemic open / SLA breached /
 //     recalls / units affected / claim value (ZAR)
 //   • Filter pills by defect class + chain state + SLA breach
-//   • Listing with class pill + URGENT SLA countdown
-//   • Drill-down: timeline (operator/vendor/oem party tags) + per-state actions
+//   • ChainCard list (expandable inline) with class pill + URGENT SLA countdown
+//   • Actions via ActionModal — no window.prompt, no Drawer
 //
 // No create form — cases originate from W15 RMA / W24 PR provenance and the
 // operator field workflow; this surface drives the escalation forward.
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'filed' | 'vendor_triage' | 'vendor_decision' | 'escalated_to_oem'
@@ -22,6 +36,7 @@ type ChainStatus =
 type DefectClass = 'safety_recall' | 'fleet_systemic' | 'batch_defect' | 'single_unit';
 
 interface EscalationRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   source_event: string | null;
@@ -72,19 +87,6 @@ interface EscalationRow {
   created_at: string;
 }
 
-interface EscalationEvent {
-  id: string;
-  escalation_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiData {
   total: number;
   open_count: number;
@@ -101,34 +103,24 @@ interface KpiData {
   total_remedy_zar: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  filed:                   { bg: '#fde0e0', fg: '#9b1f1f', label: 'Filed' },
-  vendor_triage:           { bg: '#fff4d6', fg: '#a06200', label: 'Vendor triage' },
-  vendor_decision:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Vendor decision' },
-  escalated_to_oem:        { bg: '#fff4d6', fg: '#a06200', label: 'Escalated to OEM' },
-  oem_field_investigation: { bg: '#dbecfb', fg: '#1a3a5c', label: 'OEM field investigation' },
-  oem_decision:            { bg: '#dbecfb', fg: '#1a3a5c', label: 'OEM decision' },
-  remediation:             { bg: '#daf5e2', fg: '#1f6b3a', label: 'Remediation' },
-  closed:                  { bg: '#e3e7ec', fg: '#557',    label: 'Closed' },
-  recall_issued:           { bg: '#fde0e0', fg: '#9b1f1f', label: 'Recall issued' },
-  arbitration:             { bg: '#fde0e0', fg: '#9b1f1f', label: 'Arbitration' },
-  withdrawn:               { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'filed',
+  'vendor_triage',
+  'vendor_decision',
+  'escalated_to_oem',
+  'oem_field_investigation',
+  'oem_decision',
+  'remediation',
+  'closed',
+];
+const BRANCH_STATES: readonly string[] = [
+  'recall_issued',
+  'arbitration',
+  'withdrawn',
+];
 
-const CLASS_TONE: Record<DefectClass, { bg: string; fg: string; label: string }> = {
-  safety_recall: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Safety recall' },
-  fleet_systemic:{ bg: '#ffe7cc', fg: '#9a4d00', label: 'Fleet systemic' },
-  batch_defect:  { bg: '#fff4d6', fg: '#a06200', label: 'Batch defect' },
-  single_unit:   { bg: '#e3e7ec', fg: '#557',    label: 'Single unit' },
-};
-
-const PARTY_TONE: Record<string, { bg: string; fg: string }> = {
-  operator: { bg: '#dbecfb', fg: '#1a3a5c' },
-  vendor:   { bg: '#fff4d6', fg: '#a06200' },
-  oem:      { bg: '#ede0fb', fg: '#5b2a9b' },
-  system:   { bg: '#e3e7ec', fg: '#557' },
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',                  label: 'Active (pre-terminal)' },
   { key: 'all',                     label: 'All' },
@@ -149,6 +141,7 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'breached',                label: 'SLA breached' },
 ];
 
+// ── format helpers ────────────────────────────────────────────────────────
 function fmtZar(n: number): string {
   return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(n);
 }
@@ -160,47 +153,316 @@ function fmtMin(min: number | null | undefined): string {
   return `${min}m`;
 }
 
+// ── action builder ────────────────────────────────────────────────────────
+function getActions(row: EscalationRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const cs = row.chain_status;
+
+  if (cs === 'filed') {
+    actions.push({
+      key: 'triage',
+      label: 'Vendor triage',
+      tone: 'primary',
+      fields: [
+        { key: 'vendor_party_name', label: 'Vendor party name', type: 'text', required: false, placeholder: row.vendor_party_name ?? '' },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw',
+      tone: 'ghost',
+      fields: [
+        { key: 'withdrawal_basis', label: 'Withdrawal basis', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'vendor_triage') {
+    actions.push({
+      key: 'vendor-decide',
+      label: 'Vendor decision',
+      tone: 'primary',
+      fields: [
+        { key: 'liability_accepted', label: 'Vendor accepts liability? (yes / no)', type: 'text', required: false, placeholder: 'yes' },
+        { key: 'vendor_decision_basis', label: 'Vendor decision basis', type: 'textarea', required: false, placeholder: row.vendor_decision_basis ?? '' },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw',
+      tone: 'ghost',
+      fields: [
+        { key: 'withdrawal_basis', label: 'Withdrawal basis', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'vendor_decision') {
+    actions.push({
+      key: 'escalate-to-oem',
+      label: 'Escalate to OEM',
+      tone: 'warn',
+      fields: [
+        { key: 'oem_party_name', label: 'OEM party name', type: 'text', required: false, placeholder: row.oem_party_name ?? '' },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'escalate-to-arbitration',
+      label: 'Escalate to arbitration',
+      tone: 'danger',
+      fields: [
+        { key: 'arbitration_case_ref', label: 'Arbitration case reference', type: 'text', required: false, placeholder: row.arbitration_case_ref ?? '' },
+        { key: 'arbitration_basis', label: 'Arbitration basis', type: 'textarea', required: false, placeholder: row.arbitration_basis ?? '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+    actions.push({
+      key: 'close',
+      label: 'Close',
+      tone: 'ghost',
+      fields: [
+        { key: 'reason_code', label: 'Reason code', type: 'text', required: false, placeholder: row.reason_code ?? '' },
+        { key: 'rod_notes', label: 'Record of decision', type: 'textarea', required: false, placeholder: row.rod_notes ?? '' },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw',
+      tone: 'ghost',
+      fields: [
+        { key: 'withdrawal_basis', label: 'Withdrawal basis', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'escalated_to_oem') {
+    actions.push({
+      key: 'oem-investigate',
+      label: 'OEM field investigation',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'oem_field_investigation') {
+    actions.push({
+      key: 'oem-decide',
+      label: 'OEM decision',
+      tone: 'primary',
+      fields: [
+        { key: 'liability_accepted', label: 'OEM accepts liability? (yes / no)', type: 'text', required: false, placeholder: 'yes' },
+        { key: 'oem_decision_basis', label: 'OEM decision basis', type: 'textarea', required: false, placeholder: row.oem_decision_basis ?? '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'oem_decision') {
+    actions.push({
+      key: 'start-remediation',
+      label: 'Start remediation',
+      tone: 'primary',
+      fields: [
+        { key: 'remediation_plan', label: 'Remediation plan', type: 'textarea', required: false, placeholder: row.remediation_plan ?? '' },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'issue-recall',
+      label: 'Issue recall',
+      tone: 'danger',
+      fields: [
+        { key: 'recall_ref', label: 'NRCS / manufacturer recall reference', type: 'text', required: false, placeholder: row.recall_ref ?? '' },
+        { key: 'recall_basis', label: 'Recall basis', type: 'textarea', required: false, placeholder: row.recall_basis ?? '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+    actions.push({
+      key: 'escalate-to-arbitration',
+      label: 'Escalate to arbitration',
+      tone: 'danger',
+      fields: [
+        { key: 'arbitration_case_ref', label: 'Arbitration case reference', type: 'text', required: false, placeholder: row.arbitration_case_ref ?? '' },
+        { key: 'arbitration_basis', label: 'Arbitration basis', type: 'textarea', required: false, placeholder: row.arbitration_basis ?? '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+    actions.push({
+      key: 'close',
+      label: 'Close',
+      tone: 'ghost',
+      fields: [
+        { key: 'reason_code', label: 'Reason code', type: 'text', required: false, placeholder: row.reason_code ?? '' },
+        { key: 'rod_notes', label: 'Record of decision', type: 'textarea', required: false, placeholder: row.rod_notes ?? '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'remediation') {
+    actions.push({
+      key: 'issue-recall',
+      label: 'Issue recall',
+      tone: 'danger',
+      fields: [
+        { key: 'recall_ref', label: 'NRCS / manufacturer recall reference', type: 'text', required: false, placeholder: row.recall_ref ?? '' },
+        { key: 'recall_basis', label: 'Recall basis', type: 'textarea', required: false, placeholder: row.recall_basis ?? '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+    actions.push({
+      key: 'close',
+      label: 'Close',
+      tone: 'ghost',
+      fields: [
+        { key: 'reason_code', label: 'Reason code', type: 'text', required: false, placeholder: row.reason_code ?? '' },
+        { key: 'rod_notes', label: 'Record of decision', type: 'textarea', required: false, placeholder: row.rod_notes ?? '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  return actions;
+}
+
+// ── detail renderer ───────────────────────────────────────────────────────
+function renderDetail(row: EscalationRow): React.ReactNode {
+  const unitsLabel = `${row.fleet_units_affected}${row.fleet_units_total ? ` / ${row.fleet_units_total}` : ''}${row.fleet_fraction != null ? ` (${(row.fleet_fraction * 100).toFixed(1)}%)` : ''}`;
+  const siteLabel = row.site_name ? `${row.site_name}${row.site_province ? `, ${row.site_province}` : ''}` : null;
+  const provenanceLabel = row.source_wave
+    ? `${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}${row.source_event ? ` (${row.source_event})` : ''}`
+    : null;
+  const slaLabel = row.sla_deadline_at && !row.is_terminal
+    ? `${new Date(row.sla_deadline_at).toLocaleString()} (${fmtMin(row.minutes_until_sla)})${row.escalation_level > 0 ? ` · ${row.escalation_level} breach(es)` : ''}`
+    : null;
+
+  return (
+    <div className="space-y-3 text-[11px]">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+        <DetailPair label="Operator" value={row.operator_party_name} />
+        <DetailPair label="Vendor" value={row.vendor_party_name} />
+        <DetailPair label="OEM" value={row.oem_party_name ?? '—'} />
+        <DetailPair label="Units affected" value={unitsLabel} />
+        {siteLabel && <DetailPair label="Site" value={siteLabel} />}
+        {row.serial_range && <DetailPair label="Serial range" value={row.serial_range} />}
+        {row.warranty_clause && <DetailPair label="Warranty clause" value={row.warranty_clause} />}
+        {row.remedy_type && <DetailPair label="Remedy" value={row.remedy_type} />}
+        {row.claim_value_zar != null && <DetailPair label="Claim value" value={fmtZar(row.claim_value_zar)} />}
+        {row.remedy_cost_zar != null && <DetailPair label="Remedy cost" value={fmtZar(row.remedy_cost_zar)} />}
+        {row.recall_ref && <DetailPair label="Recall ref" value={row.recall_ref} />}
+        {row.arbitration_case_ref && <DetailPair label="Arbitration ref" value={row.arbitration_case_ref} />}
+        {row.vendor_decision_ref && <DetailPair label="Vendor ref" value={row.vendor_decision_ref} />}
+        {row.oem_decision_ref && <DetailPair label="OEM ref" value={row.oem_decision_ref} />}
+        {provenanceLabel && <DetailPair label="Provenance" value={provenanceLabel} />}
+        {slaLabel && <DetailPair label="Next SLA" value={slaLabel} />}
+        {row.is_reportable && <DetailPair label="NRCS" value="Reportable" />}
+      </div>
+
+      {row.defect_summary && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Defect summary</div>
+          <div style={{ color: TX2 }}>{row.defect_summary}</div>
+        </div>
+      )}
+      {row.vendor_decision_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Vendor decision</div>
+          <div style={{ color: TX2 }}>{row.vendor_decision_basis}</div>
+        </div>
+      )}
+      {row.oem_decision_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>OEM decision</div>
+          <div style={{ color: TX2 }}>{row.oem_decision_basis}</div>
+        </div>
+      )}
+      {row.remediation_plan && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Remediation plan</div>
+          <div style={{ color: TX2 }}>{row.remediation_plan}</div>
+        </div>
+      )}
+      {row.recall_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Recall basis</div>
+          <div style={{ color: TX2 }}>{row.recall_basis}</div>
+        </div>
+      )}
+      {row.arbitration_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Arbitration basis</div>
+          <div style={{ color: TX2 }}>{row.arbitration_basis}</div>
+        </div>
+      )}
+      {row.rod_notes && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Record of decision</div>
+          <div style={{ color: TX2 }}>{row.rod_notes}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function VendorEscalationChainTab() {
   const [rows, setRows] = useState<EscalationRow[]>([]);
-  const [kpis, setKpis] = useState<KpiData | null>(null);
+  const [summary, setSummary] = useState<KpiData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<EscalationRow | null>(null);
-  const [events, setEvents] = useState<EscalationEvent[]>([]);
+  const [filter, setFilter] = useState('active');
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setErr(null);
+    setLoading(true); setErr(null);
     try {
       const res = await api.get<{ data: KpiData & { items: EscalationRow[] } }>('/esums/vendor-escalation/chain');
       const d = res.data?.data;
       setRows(d?.items || []);
       if (d) {
         const { items: _items, ...rest } = d;
-        setKpis(rest as KpiData);
+        setSummary(rest as KpiData);
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load vendor escalations');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: EscalationRow; events: EscalationEvent[] } }>(`/esums/vendor-escalation/chain/${id}`);
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/esums/vendor-escalation/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/esums/vendor-escalation/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load escalation history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { events: ChainEvent[] } }>(`/esums/vendor-escalation/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
-    return rows.filter((r) => {
+    return rows.filter(r => {
       if (filter === 'all')      return true;
       if (filter === 'active')   return !r.is_terminal;
       if (filter === 'breached') return r.sla_breached;
@@ -211,311 +473,99 @@ export function VendorEscalationChainTab() {
     });
   }, [rows, filter]);
 
-  const doAction = useCallback(async (path: string, body?: object) => {
-    if (!selected) return;
-    try {
-      await api.post(`/esums/vendor-escalation/chain/${selected.id}/${path}`, body ?? {});
-      await load();
-      await loadEvents(selected.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Action failed');
-    }
-  }, [selected, load, loadEvents]);
+  const kpis = summary ?? {
+    total: 0, open_count: 0, closed_count: 0, recall_count: 0, arbitration_count: 0,
+    withdrawn_count: 0, breached: 0, reportable_total: 0, safety_open: 0,
+    systemic_open: 0, total_units_affected: 0, total_claim_zar: 0, total_remedy_zar: 0,
+  };
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-7 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? 0} />
-        <Kpi label="Safety open"   value={kpis?.safety_open ?? 0}   tone={(kpis?.safety_open ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Systemic open" value={kpis?.systemic_open ?? 0} tone={(kpis?.systemic_open ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached"  value={kpis?.breached ?? 0}      tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Recalls"       value={kpis?.recall_count ?? 0}  tone={(kpis?.recall_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Units affected" value={kpis?.total_units_affected ?? 0} />
-        <Kpi label="Claim value"   value={fmtZar(kpis?.total_claim_zar ?? 0)} small />
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Vendor Escalation Chain</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>CPA §56/§61 + NRCS supplier-defect escalation — safety recalls, fleet systemic, batch defect, single unit</p>
+      </header>
+
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total" value={kpis.total} />
+        <KpiTile label="Safety open"   value={kpis.safety_open}   tone={kpis.safety_open > 0 ? 'bad' : undefined} />
+        <KpiTile label="Systemic open" value={kpis.systemic_open} tone={kpis.systemic_open > 0 ? 'warn' : undefined} />
+        <KpiTile label="SLA breached"  value={kpis.breached}      tone={kpis.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Recalls"       value={kpis.recall_count}  tone={kpis.recall_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="Units affected" value={kpis.total_units_affected} />
+        <KpiTile label="Claim value"   value={fmtZar(kpis.total_claim_zar)} />
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
-                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
-            }`}>
+      {/* Filter pills */}
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{ background: filter === f.key ? ACC : BG2, color: filter === f.key ? '#fff' : TX2, border: `1px solid ${filter === f.key ? ACC : BORDER}` }}>
             {f.label}
           </button>
         ))}
       </div>
 
-      {err && <div className="px-3 py-2 bg-red-50 text-red-700 text-[12px] rounded-md">{err}</div>}
+      {err && <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>{err}</div>}
 
-      <div className="bg-white border border-[#e5ebf2] rounded-xl overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[#f7f9fb] text-[11px] uppercase tracking-wide text-[#6b7685]">
-            <tr>
-              <th className="px-3 py-2 text-left">Case #</th>
-              <th className="px-3 py-2 text-left">Component</th>
-              <th className="px-3 py-2 text-left">Vendor / OEM</th>
-              <th className="px-3 py-2 text-left">Class</th>
-              <th className="px-3 py-2 text-right">Units</th>
-              <th className="px-3 py-2 text-left">State</th>
-              <th className="px-3 py-2 text-right">Δ SLA</th>
-            </tr>
-          </thead>
-          <tbody className="text-[13px]">
-            {loading ? (
-              <tr><td colSpan={7} className="p-6 text-center text-[#6b7685]">Loading…</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={7} className="p-6 text-center text-[#6b7685]">No escalations match the current filter.</td></tr>
-            ) : filtered.map((r) => {
-              const stateTone = STATE_TONE[r.chain_status];
-              const clsTone   = CLASS_TONE[r.defect_class];
-              return (
-                <tr
-                  key={r.id}
-                  onClick={() => loadEvents(r.id)}
-                  className={`cursor-pointer hover:bg-[#f7f9fb] border-t border-[#eef2f6] ${selected?.id === r.id ? 'bg-[#fffae6]' : ''}`}>
-                  <td className="px-3 py-2 font-mono text-[11px]">{r.case_number}</td>
-                  <td className="px-3 py-2 max-w-xs truncate" title={`${r.component_type}${r.component_model ? ' · ' + r.component_model : ''}`}>
-                    {r.component_type}{r.component_model ? <span className="text-[#6b7685]"> · {r.component_model}</span> : null}
-                  </td>
-                  <td className="px-3 py-2 text-[#4a5568]">
-                    {r.vendor_party_name}{r.oem_party_name ? <span className="text-[#6b7685]"> → {r.oem_party_name}</span> : null}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: clsTone.bg, color: clsTone.fg }}>
-                      {clsTone.label}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-[12px]">
-                    {r.fleet_units_affected}{r.fleet_units_total ? <span className="text-[#6b7685]">/{r.fleet_units_total}</span> : null}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: stateTone.bg, color: stateTone.fg }}>
-                      {stateTone.label}
-                    </span>
-                  </td>
-                  <td className={`px-3 py-2 text-right text-[12px] tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                    {r.is_terminal ? '—' : fmtMin(r.minutes_until_sla)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {selected && (
-        <EscalationDrawer
-          row={selected}
-          events={events}
-          onClose={() => { setSelected(null); setEvents([]); }}
-          doAction={doAction}
-        />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>Loading…</div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => {
+            const componentTitle = `${row.component_type}${row.component_model ? ` · ${row.component_model}` : ''}`;
+            const vendorMeta = (
+              <span style={{ color: TX3, fontSize: 11 }}>
+                {row.vendor_party_name}{row.oem_party_name ? ` → ${row.oem_party_name}` : ''}{' · '}
+                {row.fleet_units_affected} units{' · '}
+                {row.defect_class.replace('_', ' ')}
+              </span>
+            );
+            return (
+              <ChainCard
+                key={row.id}
+                item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+                allStates={ALL_STATES}
+                branchStates={BRANCH_STATES}
+                title={componentTitle}
+                meta={vendorMeta}
+                actions={getActions(row)}
+                onAction={(key, values) => handleAction(row.id, key, values)}
+                cascadeTo={[]}
+                detail={renderDetail(row)}
+                events={expandedEvents[row.id]}
+                onExpand={handleExpand}
+              />
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>No escalations match the current filter.</div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone = 'ok', small = false }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad'; small?: boolean }) {
-  const fg = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0f1c2e';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="bg-white border border-[#e5ebf2] rounded-lg p-3">
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className={small ? 'text-[15px] font-semibold tabular-nums mt-0.5' : 'text-[20px] font-semibold tabular-nums mt-0.5'} style={{ color: fg }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function EscalationDrawer({
-  row, events, onClose, doAction,
-}: {
-  row: EscalationRow;
-  events: EscalationEvent[];
-  onClose: () => void;
-  doAction: (path: string, body?: object) => Promise<void>;
-}) {
-  const cs = row.chain_status;
-  const transitionable = !row.is_terminal;
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/30 flex items-stretch justify-end" onClick={onClose}>
-      <div className="bg-white w-full max-w-2xl shadow-xl overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-start justify-between sticky top-0 bg-white z-10">
-          <div>
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">Escalation {row.case_number}</div>
-            <h3 className="text-[16px] font-semibold text-[#0f1c2e] mt-0.5">
-              {row.component_type}{row.component_model ? ` · ${row.component_model}` : ''}
-            </h3>
-            <div className="flex flex-wrap gap-2 mt-2 text-[12px]">
-              <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: CLASS_TONE[row.defect_class].bg, color: CLASS_TONE[row.defect_class].fg }}>
-                {CLASS_TONE[row.defect_class].label}
-              </span>
-              <span className="px-2 py-0.5 rounded-full" style={{ background: STATE_TONE[cs].bg, color: STATE_TONE[cs].fg }}>
-                {STATE_TONE[cs].label}
-              </span>
-              {row.is_reportable && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">NRCS reportable</span>
-              )}
-            </div>
-          </div>
-          <button type="button" onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">✕</button>
-        </div>
-
-        <div className="p-5 space-y-4 text-[13px]">
-          <div className="grid grid-cols-2 gap-4">
-            <Pair label="Operator" value={row.operator_party_name} />
-            <Pair label="Vendor"   value={row.vendor_party_name} />
-            <Pair label="OEM"      value={row.oem_party_name ?? '—'} />
-            <Pair label="Units affected" value={`${row.fleet_units_affected}${row.fleet_units_total ? ` / ${row.fleet_units_total}` : ''}${row.fleet_fraction != null ? ` (${(row.fleet_fraction * 100).toFixed(1)}%)` : ''}`} />
-            {row.site_name && <Pair label="Site" value={`${row.site_name}${row.site_province ? `, ${row.site_province}` : ''}`} />}
-            {row.serial_range && <Pair label="Serial range" value={row.serial_range} />}
-          </div>
-
-          {row.defect_summary && <Pair label="Defect summary" value={row.defect_summary} />}
-          {row.warranty_clause && <Pair label="Warranty clause" value={row.warranty_clause} />}
-          {row.vendor_decision_basis && <Pair label="Vendor decision" value={row.vendor_decision_basis} />}
-          {row.oem_decision_basis && <Pair label="OEM decision" value={row.oem_decision_basis} />}
-          {row.remediation_plan && <Pair label="Remediation plan" value={row.remediation_plan} />}
-          {row.recall_basis && <Pair label="Recall basis" value={row.recall_basis} />}
-          {row.arbitration_basis && <Pair label="Arbitration basis" value={row.arbitration_basis} />}
-          {row.rod_notes && <Pair label="Record of decision" value={row.rod_notes} />}
-
-          <div className="grid grid-cols-2 gap-4">
-            {row.recall_ref && <Pair label="Recall ref" value={row.recall_ref} />}
-            {row.arbitration_case_ref && <Pair label="Arbitration ref" value={row.arbitration_case_ref} />}
-            {row.vendor_decision_ref && <Pair label="Vendor ref" value={row.vendor_decision_ref} />}
-            {row.oem_decision_ref && <Pair label="OEM ref" value={row.oem_decision_ref} />}
-            {row.remedy_type && <Pair label="Remedy" value={row.remedy_type} />}
-            {row.claim_value_zar != null && <Pair label="Claim value" value={fmtZar(row.claim_value_zar)} />}
-            {row.remedy_cost_zar != null && <Pair label="Remedy cost" value={fmtZar(row.remedy_cost_zar)} />}
-          </div>
-
-          {row.source_wave && (
-            <Pair label="Provenance" value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}${row.source_event ? ` (${row.source_event})` : ''}`} />
-          )}
-
-          {row.sla_deadline_at && !row.is_terminal && (
-            <Pair label="Next SLA" value={`${new Date(row.sla_deadline_at).toLocaleString()} (${fmtMin(row.minutes_until_sla)})${row.escalation_level > 0 ? ` · ${row.escalation_level} breach(es)` : ''}`} />
-          )}
-
-          {transitionable && (
-            <div className="border-t border-[#eef2f6] pt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Actions</div>
-              <div className="flex flex-wrap gap-2">
-                {cs === 'filed' && (
-                  <ActionBtn label="Vendor triage" onClick={() => {
-                    const vn = window.prompt('Vendor party name (optional):') ?? undefined;
-                    void doAction('triage', vn ? { vendor_party_name: vn } : {});
-                  }} />
-                )}
-                {cs === 'vendor_triage' && (
-                  <ActionBtn label="Vendor decision" onClick={() => {
-                    const accepted = window.confirm('Did the vendor accept liability? OK = yes, Cancel = no');
-                    const basis = window.prompt('Vendor decision basis:') ?? undefined;
-                    void doAction('vendor-decide', { liability_accepted: accepted, vendor_decision_basis: basis });
-                  }} />
-                )}
-                {cs === 'vendor_decision' && (
-                  <ActionBtn label="Escalate to OEM" onClick={() => {
-                    const on = window.prompt('OEM party name:') ?? undefined;
-                    void doAction('escalate-to-oem', on ? { oem_party_name: on } : {});
-                  }} />
-                )}
-                {cs === 'escalated_to_oem' && <ActionBtn label="OEM field investigation" onClick={() => doAction('oem-investigate')} />}
-                {cs === 'oem_field_investigation' && (
-                  <ActionBtn label="OEM decision" onClick={() => {
-                    const accepted = window.confirm('Did the OEM accept liability? OK = yes, Cancel = no');
-                    const basis = window.prompt('OEM decision basis:') ?? undefined;
-                    void doAction('oem-decide', { liability_accepted: accepted, oem_decision_basis: basis });
-                  }} />
-                )}
-                {cs === 'oem_decision' && (
-                  <ActionBtn label="Start remediation" tone="good" onClick={() => {
-                    const plan = window.prompt('Remediation plan:') ?? undefined;
-                    void doAction('start-remediation', plan ? { remediation_plan: plan } : {});
-                  }} />
-                )}
-                {(cs === 'oem_decision' || cs === 'remediation') && (
-                  <ActionBtn label="Issue recall" tone="bad" onClick={() => {
-                    const ref = window.prompt('NRCS / manufacturer recall reference:') ?? undefined;
-                    const basis = window.prompt('Recall basis:') ?? undefined;
-                    void doAction('issue-recall', { recall_ref: ref, recall_basis: basis });
-                  }} />
-                )}
-                {(cs === 'vendor_decision' || cs === 'oem_decision') && (
-                  <ActionBtn label="Escalate to arbitration" tone="bad" onClick={() => {
-                    const ref = window.prompt('Arbitration case reference:') ?? undefined;
-                    const basis = window.prompt('Arbitration basis:') ?? undefined;
-                    void doAction('escalate-to-arbitration', { arbitration_case_ref: ref, arbitration_basis: basis });
-                  }} />
-                )}
-                {(cs === 'vendor_decision' || cs === 'oem_decision' || cs === 'remediation') && (
-                  <ActionBtn label="Close" onClick={() => {
-                    const rc = window.prompt('Reason code (optional):') ?? undefined;
-                    const notes = window.prompt('Record of decision (optional):') ?? undefined;
-                    void doAction('close', { reason_code: rc, rod_notes: notes });
-                  }} />
-                )}
-                {(cs === 'filed' || cs === 'vendor_triage' || cs === 'vendor_decision') && (
-                  <ActionBtn label="Withdraw" onClick={() => {
-                    const basis = window.prompt('Withdrawal basis:') ?? undefined;
-                    void doAction('withdraw', basis ? { withdrawal_basis: basis } : {});
-                  }} />
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="border-t border-[#eef2f6] pt-4">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Timeline</div>
-            <div className="space-y-2">
-              {events.length === 0 ? (
-                <div className="text-[12px] text-[#6b7685]">No events yet.</div>
-              ) : events.map((e) => {
-                const partyTone = PARTY_TONE[e.actor_party ?? 'system'] ?? PARTY_TONE.system;
-                return (
-                  <div key={e.id} className="flex gap-3 text-[12px] border-l-2 border-[#e5ebf2] pl-3 py-1">
-                    <span className="font-mono text-[11px] text-[#6b7685] whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
-                    <div>
-                      <span className="font-semibold text-[#0f1c2e]">{e.event_type}</span>
-                      {e.actor_party && (
-                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-medium uppercase" style={{ background: partyTone.bg, color: partyTone.fg }}>
-                          {e.actor_party}
-                        </span>
-                      )}
-                      {e.from_status && e.to_status && e.from_status !== e.to_status && (
-                        <span className="text-[#6b7685]"> · {e.from_status} → {e.to_status}</span>
-                      )}
-                      {e.notes && <div className="text-[#4a5568] mt-0.5">{e.notes}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[#0f1c2e] mt-0.5">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1 }}>{value}</div>
     </div>
   );
 }
 
-function ActionBtn({ label, onClick, tone = 'neutral' }: { label: string; onClick: () => void; tone?: 'neutral' | 'good' | 'bad' }) {
-  const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#c2873a]';
-  return (
-    <button type="button" onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
-      {label}
-    </button>
-  );
-}
+export default VendorEscalationChainTab;

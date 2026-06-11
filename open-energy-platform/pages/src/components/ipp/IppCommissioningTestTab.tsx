@@ -31,15 +31,15 @@ interface Kpis {
 
 const STATUS_COLORS: Record<string, string> = {
   test_plan_submitted:              'bg-[#eef2f7] text-[#6b7685]',
-  witness_inspection:               'bg-blue-100 text-blue-700',
+  witness_inspection:               'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   hold_point_open:                  'bg-orange-100 text-orange-800',
   hold_point_cleared:               'bg-yellow-100 text-yellow-800',
-  performance_test_running:         'bg-indigo-100 text-indigo-700',
+  performance_test_running:         'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   punch_list_issued:                'bg-orange-200 text-orange-900',
   punch_list_cleared:               'bg-yellow-200 text-yellow-900',
   pac_recommended:                  'bg-cyan-100 text-cyan-700',
   pac_issued:                       'bg-cyan-200 text-cyan-900',
-  performance_test_running_post_pac:'bg-indigo-200 text-indigo-900',
+  performance_test_running_post_pac:'bg-[oklch(0.94_0.006_250)] text-[oklch(0.17_0.010_250)]',
   fac_recommended:                  'bg-lime-100 text-lime-800',
   performance_cert_issued:          'bg-green-200 text-green-900',
   test_failed:                      'bg-red-100 text-red-800',
@@ -48,7 +48,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   minor:        'bg-[#eef2f7] text-[#3d4756]',
-  moderate:     'bg-blue-100 text-blue-700',
+  moderate:     'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   significant:  'bg-yellow-100 text-yellow-800',
   major:        'bg-orange-100 text-orange-800',
   material:     'bg-red-100 text-red-800',
@@ -158,7 +158,7 @@ export function IppCommissioningTestTab() {
         ))}
         <span className="ml-1 text-[#9aa5b4]">|</span>
         {['minor','moderate','significant','major','material'].map(t => (
-          <button type="button" key={t} onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>{t}</button>
+          <button type="button" key={t} onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`} style={filterTier === t ? { background: 'oklch(0.46 0.16 55)' } : {}}>{t}</button>
         ))}
         <button type="button" onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]">+ New Test</button>
         <button type="button" onClick={() => load(filterStatus, filterTier)} className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border">Refresh</button>
@@ -193,7 +193,7 @@ export function IppCommissioningTestTab() {
                   <td className={`py-2 pr-4 text-xs ${ct.sla_breached ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                     {ct.sla_breached ? '⚠ BREACHED' : fmtDate(ct.sla_due_at)}
                   </td>
-                  <td className="py-2 text-xs text-indigo-600">View →</td>
+                  <td className="py-2 text-xs" style={{ color: 'oklch(0.46 0.16 55)' }}>View →</td>
                 </tr>
               ))}
               {items.length === 0 && <tr><td colSpan={9} className="py-6 text-center text-[#9aa5b4] text-sm">No commissioning test records found</td></tr>}
@@ -228,9 +228,9 @@ export function IppCommissioningTestTab() {
                 {ACTION_MAP[selected.chain_status].map(a => (
                   <button type="button" key={a.action} disabled={actionPending}
                     onClick={() => doAction(selected.id, a.action)}
-                    className={`w-full text-left px-3 py-2 rounded border text-sm ${a.danger ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-[#dde4ec] text-[#2d3748] hover:bg-indigo-50 hover:border-indigo-300'}`}>
+                    className={`w-full text-left px-3 py-2 rounded border text-sm ${a.danger ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-[#dde4ec] text-[#2d3748] hover:border-[oklch(0.87_0.010_250)]'}`}>
                     {a.label}
-                    {a.tag && <span className={`ml-2 text-xs px-1 rounded ${a.tag.includes('REGULATOR') ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{a.tag}</span>}
+                    {a.tag && <span className={`ml-2 text-xs px-1 rounded ${a.tag.includes('REGULATOR') ? 'bg-red-100 text-red-700' : ''}`} style={!a.tag.includes('REGULATOR') ? { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } : {}}>{a.tag}</span>}
                   </button>
                 ))}
               </div>

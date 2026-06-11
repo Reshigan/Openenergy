@@ -226,7 +226,7 @@ function FaultRegister({ faults }: { faults: FaultRow[] }) {
           <div className="widget-card-title">Fault register — live revenue impact</div>
           <div className="widget-card-subtitle">Sorted by severity then bleed rate. Every row updates as time passes.</div>
         </div>
-        <Link to="/esums/faults" className="text-[11px] font-semibold text-[#3b82c4] hover:underline">View all →</Link>
+        <Link to="/esums/faults" className="text-[11px] font-semibold text-[oklch(0.46_0.16_55)] hover:underline">View all →</Link>
       </header>
       <div className="overflow-x-auto">
         <table className="w-full text-[12px]">
@@ -255,7 +255,7 @@ function FaultRegister({ faults }: { faults: FaultRow[] }) {
                 <td className="text-right font-mono">{formatZAR(f.hourly_loss_zar)}</td>
                 <td className="text-right font-mono widget-tone-bad-text">{formatZAR(f.total_loss_zar)}</td>
                 <td className="text-right">
-                  <Link to={`/esums/faults/${f.id}`} className="text-[11px] font-semibold text-[#3b82c4] hover:underline">
+                  <Link to={`/esums/faults/${f.id}`} className="text-[11px] font-semibold text-[oklch(0.46_0.16_55)] hover:underline">
                     {f.status === 'open' ? 'Dispatch' : f.status === 'acknowledged' ? 'View' : 'Track'}
                   </Link>
                 </td>
@@ -286,9 +286,9 @@ function FleetHealthGrid({ sites }: { sites: SiteRow[] }) {
             : s.open_faults > 0 ? 'widget-tone-amber' : 'widget-tone-good';
           return (
             <Link key={s.id} to={`/esums/sites/${s.id}`}
-                  className="rounded-lg border border-[#e2e8f0] p-3 hover:border-[#3b82c4] hover:bg-[#f8fafc] transition-colors block">
+                  className="rounded-lg border border-[#e2e8f0] p-3 hover:border-[oklch(0.46_0.16_55)] hover:bg-[#f8fafc] transition-colors block">
               <div className="flex items-center gap-2">
-                <Icon size={14} className="text-[#3b82c4]" />
+                <Icon size={14} className="text-[oklch(0.46_0.16_55)]" />
                 <span className="text-[12px] font-semibold text-[#0f1c2e] flex-1 min-w-0 truncate">{s.name}</span>
                 <span className={`inline-flex w-2 h-2 rounded-full ${tone}`} />
               </div>
@@ -370,7 +370,7 @@ function BriefingIcon({ type }: { type: Insight['type'] }) {
     revenue_alert: <Banknote size={14} className="text-[#c0392b] mt-0.5" />,
     sla_warning:   <Clock    size={14} className="text-[#b04e0f] mt-0.5" />,
     predictive:    <Brain    size={14} className="text-[#6b3a82] mt-0.5" />,
-    maintenance:   <Gauge    size={14} className="text-[#3b82c4] mt-0.5" />,
+    maintenance:   <Gauge    size={14} className="text-[oklch(0.46_0.16_55)] mt-0.5" />,
   };
   return map[type];
 }
@@ -395,7 +395,7 @@ function WoKanban({ wos }: { wos: WoRow[] }) {
           <div className="widget-card-title">Active work orders</div>
           <div className="widget-card-subtitle">Drag-to-reassign in the WO Board · countdown shown for SLA</div>
         </div>
-        <Link to="/esums/workorders" className="text-[11px] font-semibold text-[#3b82c4] hover:underline">View board →</Link>
+        <Link to="/esums/workorders" className="text-[11px] font-semibold text-[oklch(0.46_0.16_55)] hover:underline">View board →</Link>
       </header>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 p-3">
         {lanes.map((lane) => (
@@ -428,7 +428,7 @@ function WoCard({ wo }: { wo: WoRow }) {
   const slaTone = minsLeft < 0 ? 'widget-tone-bad-text' : minsLeft < 60 ? 'widget-tone-warn-text' : 'widget-tone-good-text';
   return (
     <Link to={`/esums/workorders/${wo.id}`}
-          className="block rounded bg-white border border-[#e2e8f0] p-2 text-[11px] hover:border-[#3b82c4] transition-colors">
+          className="block rounded bg-white border border-[#e2e8f0] p-2 text-[11px] hover:border-[oklch(0.46_0.16_55)] transition-colors">
       <div className="flex items-center justify-between gap-1">
         <span className="font-mono font-semibold text-[#0f1c2e]">{wo.wo_number}</span>
         <span className={`inline-flex px-1.5 rounded text-[9px] font-bold uppercase ${PRIO_TONE[wo.priority]}`}>{wo.priority}</span>
@@ -443,7 +443,7 @@ function WoCard({ wo }: { wo: WoRow }) {
         </span>
       </div>
       {wo.technician_name && (
-        <div className="text-[10px] text-[#3b82c4] mt-0.5">👷 {wo.technician_name}</div>
+        <div className="text-[10px] text-[oklch(0.46_0.16_55)] mt-0.5">👷 {wo.technician_name}</div>
       )}
     </Link>
   );

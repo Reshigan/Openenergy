@@ -21,28 +21,23 @@
 //
 // 4-step authority ladder (outage_planner -> system_operator ->
 // reliability_committee_chair -> SO_CEO).
-//
-// Beats Hitachi Energy Lumada / ABB Network Manager / Siemens Spectrum /
-// GE PowerOn / OSI monarch / OATI WebTrans / Eskom NCC / PowerWorld /
-// Schneider EcoStruxure ADMS via LIVE coverage battery (sla hours
-// remaining, urgency band, authority required, regulator filing window,
-// security margin pct, hours to / in / past outage window, extension
-// imminent flag, emergency cancel risk flag, returned-to-service clean,
-// floor flag count, completeness 0-130, bridges to W18 / W34 / W50)
-// composed every fetch.
-//
-// SIGNATURE regulator crossings:
-//   emergency_cancel  -> regulator EVERY tier (W110 SIGNATURE)
-//   extend_outage     -> regulator high + critical
-//   approve_outage    -> regulator critical only when national_grid_backbone
-//   suspend_outage    -> regulator high + critical
-//   sla_breached      -> regulator high + critical
-//
-// Mounted on Grid workstation (primary write {admin,grid_operator}); READ
-// all 9 personas.
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'outage_requested' | 'security_assessment' | 'n1_contingency_run'
@@ -58,6 +53,7 @@ type UrgencyBand = 'critical' | 'high' | 'medium' | 'low';
 type Authority = 'outage_planner' | 'system_operator' | 'reliability_committee_chair' | 'SO_CEO';
 
 interface TxoRow {
+  [key: string]: unknown;
   id: string;
   outage_number: string;
   asset_id: string;
@@ -163,19 +159,6 @@ interface TxoRow {
   bridges_to_reserve_activation_chain_live?: boolean;
 }
 
-interface TxoEvent {
-  id: string;
-  outage_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiData {
   total: number;
   active_count: number;
@@ -192,86 +175,53 @@ interface KpiData {
   avg_lifecycle_hours: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  outage_requested:             { bg: '#dbecfb', fg: '#1a3a5c', label: 'Requested' },
-  security_assessment:          { bg: '#dbecfb', fg: '#1a3a5c', label: 'Security assess' },
-  n1_contingency_run:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'N-1 run' },
-  reliability_committee_review: { bg: '#fff4d6', fg: '#a06200', label: 'Committee' },
-  outage_approved:              { bg: '#fff4d6', fg: '#a06200', label: 'Approved' },
-  outage_window_open:           { bg: '#fff4d6', fg: '#a06200', label: 'Window open' },
-  outage_in_progress:           { bg: '#fde0e0', fg: '#9b1f1f', label: 'In progress' },
-  extended:                     { bg: '#fbd0d0', fg: '#7a1414', label: 'Extended' },
-  suspended:                    { bg: '#fbd0d0', fg: '#7a1414', label: 'Suspended' },
-  outage_completed:             { bg: '#daf5e2', fg: '#1f6b3a', label: 'Completed' },
-  return_to_service:            { bg: '#daf5e2', fg: '#1f6b3a', label: 'RTS' },
-  post_outage_review:           { bg: '#daf5e2', fg: '#1f6b3a', label: 'Post-review' },
-  archived:                     { bg: '#e3e7ec', fg: '#557',    label: 'Archived' },
-  rejected:                     { bg: '#e3e7ec', fg: '#557',    label: 'Rejected' },
-  withdrawn:                    { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
-  emergency_cancelled:          { bg: '#fbd0d0', fg: '#7a1414', label: 'Emergency cancel' },
-};
+const ALL_STATES = [
+  'outage_requested',
+  'security_assessment',
+  'n1_contingency_run',
+  'reliability_committee_review',
+  'outage_approved',
+  'outage_window_open',
+  'outage_in_progress',
+  'outage_completed',
+  'return_to_service',
+  'post_outage_review',
+  'archived',
+] as const;
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  low_sub132kv:        { bg: '#e3e7ec', fg: '#557',    label: 'Low <132kV' },
-  medium_132kv:        { bg: '#dbecfb', fg: '#1a3a5c', label: 'Medium 132kV' },
-  high_275kv:          { bg: '#fff4d6', fg: '#a06200', label: 'High 275kV' },
-  critical_400kv_plus: { bg: '#fbd0d0', fg: '#7a1414', label: 'Critical 400kV+' },
-};
+const BRANCH_STATES = [
+  'rejected',
+  'withdrawn',
+  'suspended',
+  'emergency_cancelled',
+  'extended',
+] as const;
 
-const URGENCY_TONE: Record<UrgencyBand, { bg: string; fg: string; label: string }> = {
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-  medium:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Medium' },
-  high:     { bg: '#fff4d6', fg: '#a06200', label: 'High' },
-  critical: { bg: '#fbd0d0', fg: '#7a1414', label: 'Critical' },
-};
-
-const AUTH_LABEL: Record<Authority, string> = {
-  outage_planner:              'Outage planner',
-  system_operator:             'System operator',
-  reliability_committee_chair: 'Reliability cmte chair',
-  SO_CEO:                      'SO CEO',
-};
-
-const PARTY_TONE: Record<string, { bg: string; fg: string }> = {
-  outage_planner:        { bg: '#dbecfb', fg: '#1a3a5c' },
-  system_operator:       { bg: '#e8defc', fg: '#5320a3' },
-  reliability_committee: { bg: '#fff4d6', fg: '#a06200' },
-  archive_clerk:         { bg: '#e3e7ec', fg: '#557' },
-  system:                { bg: '#e3e7ec', fg: '#557' },
-};
-
-// UX revisit 2026-05-30 - pills grouped action-first then state. The SO
-// dispatcher opens for in-progress outages, emergency cancellations,
-// suspensions, critical-tier exposure, and SLA breach first. Action row
-// carries those plus tier slicers and bridges to W18/W34/W50; state row
-// enumerates the 11 lifecycle states.
-const FILTER_ROW_ACTION: Array<{ key: string; label: string }> = [
-  { key: 'active',            label: 'Active (pre-terminal)' },
-  { key: 'all',               label: 'All' },
-  { key: 'in_progress',       label: 'In progress' },
-  { key: 'suspended',         label: 'Suspended' },
-  { key: 'emergency',         label: 'Emergency cancelled' },
-  { key: 'extended',          label: 'Extended' },
-  { key: 'breached',          label: 'SLA breached' },
-  { key: 'reportable',        label: 'Reportable' },
-  { key: 'critical_urgency',  label: 'Critical urgency' },
-  { key: 'planned_bridged',   label: 'Bridged to W18' },
-  { key: 'curtail_bridged',   label: 'Bridged to W34' },
-  { key: 'reserve_bridged',   label: 'Bridged to W50' },
+const FILTERS = [
+  { key: 'active',              label: 'Active (pre-terminal)' },
+  { key: 'all',                 label: 'All' },
+  { key: 'in_progress',         label: 'In progress' },
+  { key: 'suspended',           label: 'Suspended' },
+  { key: 'emergency',           label: 'Emergency cancelled' },
+  { key: 'extended',            label: 'Extended' },
+  { key: 'breached',            label: 'SLA breached' },
+  { key: 'reportable',          label: 'Reportable' },
+  { key: 'critical_urgency',    label: 'Critical urgency' },
+  { key: 'planned_bridged',     label: 'Bridged to W18' },
+  { key: 'curtail_bridged',     label: 'Bridged to W34' },
+  { key: 'reserve_bridged',     label: 'Bridged to W50' },
   { key: 'critical_400kv_plus', label: 'Critical 400kV+' },
-  { key: 'high_275kv',        label: 'High 275kV' },
-  { key: 'medium_132kv',      label: 'Medium 132kV' },
-  { key: 'low_sub132kv',      label: 'Low <132kV' },
-];
-
-const FILTER_ROW_STATE: Array<{ key: string; label: string }> = [
+  { key: 'high_275kv',          label: 'High 275kV' },
+  { key: 'medium_132kv',        label: 'Medium 132kV' },
+  { key: 'low_sub132kv',        label: 'Low <132kV' },
+  // state filters
   { key: 'outage_requested',             label: 'Requested' },
   { key: 'security_assessment',          label: 'Security assess' },
   { key: 'n1_contingency_run',           label: 'N-1 run' },
   { key: 'reliability_committee_review', label: 'Committee' },
   { key: 'outage_approved',              label: 'Approved' },
   { key: 'outage_window_open',           label: 'Window open' },
-  { key: 'outage_in_progress',           label: 'In progress' },
+  { key: 'outage_in_progress',           label: 'In progress (state)' },
   { key: 'outage_completed',             label: 'Completed' },
   { key: 'return_to_service',            label: 'RTS' },
   { key: 'post_outage_review',           label: 'Post-review' },
@@ -280,12 +230,19 @@ const FILTER_ROW_STATE: Array<{ key: string; label: string }> = [
 
 const TIERS = new Set<string>(['low_sub132kv', 'medium_132kv', 'high_275kv', 'critical_400kv_plus']);
 
-function fmtMin(min: number | null | undefined): string {
-  if (min === null || min === undefined) return '-';
-  if (Math.abs(min) >= 1440) return `${(min / 1440).toFixed(1)}d`;
-  if (Math.abs(min) >= 60)   return `${(min / 60).toFixed(1)}h`;
-  return `${min}m`;
-}
+const AUTH_LABEL: Record<Authority, string> = {
+  outage_planner:              'Outage planner',
+  system_operator:             'System operator',
+  reliability_committee_chair: 'Reliability cmte chair',
+  SO_CEO:                      'SO CEO',
+};
+
+const TIER_LABEL: Record<Tier, string> = {
+  low_sub132kv:        'Low <132kV',
+  medium_132kv:        'Medium 132kV',
+  high_275kv:          'High 275kV',
+  critical_400kv_plus: 'Critical 400kV+',
+};
 
 function fmtHours(v: number | null | undefined, digits = 1): string {
   if (v === null || v === undefined) return '-';
@@ -308,14 +265,296 @@ function fmtPct(v: number | null | undefined): string {
   return `${v.toFixed(1)}%`;
 }
 
+function getActions(row: TxoRow): ChainAction[] {
+  const cs = row.chain_status;
+  const actions: ChainAction[] = [];
+
+  if (cs === 'outage_requested') {
+    actions.push({
+      key: 'start-security-assessment',
+      label: 'Start security assessment (planner)',
+      tone: 'primary',
+      fields: [
+        { key: 'security_margin_pct', label: 'Initial security margin pct (optional)', type: 'text', required: false },
+        { key: 'actual_load_mw',      label: 'Actual load MW (optional)',              type: 'text', required: false },
+        { key: 'thermal_limit_mw',    label: 'Thermal limit MW (optional)',            type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'security_assessment') {
+    actions.push({
+      key: 'run-n1-contingency',
+      label: 'Run N-1 contingency (SO)',
+      tone: 'primary',
+      fields: [
+        { key: 'n1_pass_count', label: 'N-1 pass count',           type: 'text',     required: false },
+        { key: 'n1_fail_count', label: 'N-1 fail count',           type: 'text',     required: false },
+        { key: 'n1_summary',    label: 'N-1 summary (optional)',   type: 'textarea', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'n1_contingency_run') {
+    actions.push({
+      key: 'submit-to-reliability-committee',
+      label: 'Submit to committee (committee)',
+      tone: 'primary',
+    });
+  }
+
+  if (cs === 'reliability_committee_review') {
+    actions.push({
+      key: 'approve-outage',
+      label: 'Approve outage (committee)',
+      tone: 'primary',
+      cascadeTo: ['regulator'],
+    });
+    actions.push({
+      key: 'reject-outage',
+      label: 'Reject outage (committee)',
+      tone: 'danger',
+      fields: [
+        { key: 'reject_reason', label: 'Reject reason', type: 'textarea', required: true },
+      ],
+    });
+  }
+
+  if (cs === 'outage_approved') {
+    actions.push({
+      key: 'open-outage-window',
+      label: 'Open outage window (SO)',
+      tone: 'primary',
+      fields: [
+        { key: 'scheduled_start_at', label: 'Scheduled start ISO (optional)', type: 'text', required: false },
+        { key: 'scheduled_end_at',   label: 'Scheduled end ISO (optional)',   type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'outage_window_open') {
+    actions.push({
+      key: 'commence-outage',
+      label: 'Commence outage (SO)',
+      tone: 'primary',
+      fields: [
+        { key: 'actual_start_at', label: 'Actual start ISO (optional, defaults now)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'outage_in_progress') {
+    actions.push({
+      key: 'suspend-outage',
+      label: 'Suspend outage (SO)',
+      tone: 'danger',
+      fields: [
+        { key: 'suspend_reason', label: 'Suspend reason', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['regulator'],
+    });
+    actions.push({
+      key: 'extend-outage',
+      label: 'Extend outage (committee)',
+      tone: 'warn',
+      fields: [
+        { key: 'extension_hours_granted', label: 'Extension hours granted',          type: 'text', required: false },
+        { key: 'scheduled_end_at',        label: 'New scheduled end ISO (optional)', type: 'text', required: false },
+      ],
+      cascadeTo: ['regulator'],
+    });
+    actions.push({
+      key: 'complete-outage',
+      label: 'Complete outage (SO)',
+      tone: 'primary',
+      fields: [
+        { key: 'actual_end_at', label: 'Actual end ISO (optional, defaults now)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'suspended' || cs === 'extended') {
+    actions.push({
+      key: 'resume-outage',
+      label: 'Resume outage (SO)',
+      tone: 'primary',
+    });
+  }
+
+  if (cs === 'extended') {
+    actions.push({
+      key: 'complete-outage',
+      label: 'Complete outage (SO)',
+      tone: 'primary',
+      fields: [
+        { key: 'actual_end_at', label: 'Actual end ISO (optional, defaults now)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'outage_completed') {
+    actions.push({
+      key: 'verify-return-to-service',
+      label: 'Verify return to service (SO)',
+      tone: 'primary',
+      fields: [
+        { key: 'rts_test_passed', label: 'RTS test passed? (1 = yes, 0 = no)', type: 'text', required: true },
+      ],
+    });
+  }
+
+  if (cs === 'return_to_service') {
+    actions.push({
+      key: 'close-post-outage-review',
+      label: 'Close post-outage review (archiver)',
+      tone: 'primary',
+    });
+  }
+
+  if (cs === 'post_outage_review') {
+    actions.push({
+      key: 'archive-outage',
+      label: 'Archive outage (archiver)',
+      tone: 'ghost',
+    });
+  }
+
+  // emergency_cancel — universal, from any non-terminal
+  if (!row.is_terminal && cs !== 'emergency_cancelled') {
+    actions.push({
+      key: 'emergency-cancel',
+      label: 'Emergency cancel (SO)',
+      tone: 'danger',
+      fields: [
+        { key: 'emergency_cancel_reason', label: 'Emergency cancel reason', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  // withdraw — pre-approval only
+  if (
+    cs === 'outage_requested' || cs === 'security_assessment' ||
+    cs === 'n1_contingency_run' || cs === 'reliability_committee_review'
+  ) {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw (planner)',
+      tone: 'ghost',
+      fields: [
+        { key: 'withdraw_reason', label: 'Withdraw reason', type: 'textarea', required: false },
+      ],
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: TxoRow): React.ReactNode {
+  const floored = (row.floor_flag_count_live ?? 0) > 0;
+  const authorityNow = row.authority_required_live ?? row.authority_required ?? null;
+
+  return (
+    <div className="space-y-3 text-[12px]">
+      {/* Identity + voltage */}
+      <div className="grid grid-cols-3 gap-3">
+        <DetailPair label="Outage number"   value={row.outage_number} />
+        <DetailPair label="Asset"           value={row.asset_label ?? row.asset_id} />
+        <DetailPair label="Voltage"         value={fmtKv(row.transmission_voltage_kv)} />
+        <DetailPair label="Corridor"        value={row.corridor_name ?? '-'} />
+        <DetailPair label="Substation A"    value={row.substation_a ?? '-'} />
+        <DetailPair label="Substation B"    value={row.substation_b ?? '-'} />
+        <DetailPair label="Tier"            value={TIER_LABEL[row.current_tier]} />
+        <DetailPair label="Circuits"        value={`${row.affected_circuits_count}`} />
+        {authorityNow && <DetailPair label="Authority required" value={AUTH_LABEL[authorityNow]} />}
+      </div>
+
+      {/* Outage window */}
+      <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
+        <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: TX3 }}>Outage window</div>
+        <div className="grid grid-cols-3 gap-3">
+          <DetailPair label="Scheduled start"    value={row.scheduled_start_at ? new Date(row.scheduled_start_at).toLocaleString() : '-'} />
+          <DetailPair label="Scheduled end"      value={row.scheduled_end_at ? new Date(row.scheduled_end_at).toLocaleString() : '-'} />
+          <DetailPair label="Actual start"       value={row.actual_start_at ? new Date(row.actual_start_at).toLocaleString() : '-'} />
+          <DetailPair label="Actual end"         value={row.actual_end_at ? new Date(row.actual_end_at).toLocaleString() : '-'} />
+          <DetailPair label="Hours to window"    value={fmtHours(row.hours_to_outage_window_live)} />
+          <DetailPair label="Hours in outage"    value={fmtHours(row.hours_in_outage_live)} />
+          <DetailPair label="Hours to completion" value={fmtHours(row.hours_to_planned_completion_live)} />
+          <DetailPair label="Extension hrs"      value={`${row.extension_hours_granted}`} />
+          <DetailPair label="Suspensions"        value={`${row.suspension_count}`} />
+        </div>
+      </div>
+
+      {/* N-1 + security */}
+      <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
+        <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: TX3 }}>N-1 + security battery</div>
+        <div className="grid grid-cols-4 gap-3">
+          <DetailPair label="N-1 pass"        value={`${row.n1_pass_count}`} />
+          <DetailPair label="N-1 fail"        value={`${row.n1_fail_count}`} />
+          <DetailPair label="Security margin" value={fmtPct(row.security_margin_pct_live ?? row.security_margin_pct)} />
+          <DetailPair label="Thermal limit"   value={fmtMw(row.thermal_limit_mw)} />
+          <DetailPair label="Actual load"     value={fmtMw(row.actual_load_mw)} />
+          <DetailPair label="RTS test"        value={row.rts_test_passed ? 'PASS' : '-'} />
+          <DetailPair label="Completeness"    value={`${(row.outage_completeness_index_live ?? 0).toFixed(0)} / 130`} />
+          <DetailPair label="SLA hrs left"    value={row.sla_hours_remaining_live != null ? fmtHours(row.sla_hours_remaining_live) : '-'} />
+          <DetailPair label="Reg filing window" value={row.regulator_filing_window_hours_live != null ? `${row.regulator_filing_window_hours_live}h` : '-'} />
+          <DetailPair label="Escalations"     value={`${row.escalation_level}`} />
+          {row.n1_summary && <DetailPair label="N-1 summary" value={row.n1_summary} />}
+        </div>
+      </div>
+
+      {/* Floor flags */}
+      <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
+        <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: TX3 }}>Floor flags {floored && `(${row.floor_flag_count_live} active)`}</div>
+        <div className="grid grid-cols-2 gap-2">
+          <FlagPill on={!!row.peak_demand_period}        label="Peak demand period (HIGH)" />
+          <FlagPill on={!!row.single_circuit_radial}     label="Single-circuit radial (HIGH)" />
+          <FlagPill on={!!row.cross_border_interconnector} label="Cross-border interconnector (HIGH)" />
+          <FlagPill on={!!row.black_start_path}          label="Black-start path (CRITICAL)" />
+          <FlagPill on={!!row.national_grid_backbone}    label="National grid backbone (CRITICAL)" />
+          <FlagPill on={!!row.regulator_relevant}        label="Regulator relevant" />
+        </div>
+      </div>
+
+      {/* Cross-chain bridges */}
+      {(row.planned_outage_ref || row.curtailment_ref || row.reserve_activation_ref || row.regulator_inbox_ref || row.regulator_ref) && (
+        <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
+          <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: TX3 }}>Cross-chain references</div>
+          <div className="grid grid-cols-2 gap-3">
+            {row.planned_outage_ref    && <DetailPair label="W18 planned outage ref" value={row.planned_outage_ref} />}
+            {row.curtailment_ref       && <DetailPair label="W34 curtailment ref"    value={row.curtailment_ref} />}
+            {row.reserve_activation_ref && <DetailPair label="W50 reserve ref"       value={row.reserve_activation_ref} />}
+            {row.regulator_inbox_ref   && <DetailPair label="Regulator inbox"        value={row.regulator_inbox_ref} />}
+            {row.regulator_ref         && <DetailPair label="Regulator ref"          value={row.regulator_ref} />}
+          </div>
+        </div>
+      )}
+
+      {/* Reason codes */}
+      {(row.outage_reason || row.outage_type || row.reject_reason || row.withdraw_reason || row.suspend_reason || row.emergency_cancel_reason) && (
+        <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
+          <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: TX3 }}>Reason codes</div>
+          <div className="grid grid-cols-2 gap-3">
+            {row.outage_type              && <DetailPair label="Outage type"            value={row.outage_type} />}
+            {row.outage_reason            && <DetailPair label="Outage reason"          value={row.outage_reason} />}
+            {row.reject_reason            && <DetailPair label="Reject reason"          value={row.reject_reason} />}
+            {row.withdraw_reason          && <DetailPair label="Withdraw reason"        value={row.withdraw_reason} />}
+            {row.suspend_reason           && <DetailPair label="Suspend reason"         value={row.suspend_reason} />}
+            {row.emergency_cancel_reason  && <DetailPair label="Emergency cancel reason" value={row.emergency_cancel_reason} />}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TransmissionOutageChainTab() {
   const [rows, setRows] = useState<TxoRow[]>([]);
-  const [kpis, setKpis] = useState<KpiData | null>(null);
+  const [summary, setSummary] = useState<KpiData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<TxoRow | null>(null);
-  const [events, setEvents] = useState<TxoEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -326,7 +565,7 @@ export function TransmissionOutageChainTab() {
       setRows(d?.items || []);
       if (d) {
         const { items: _items, ...rest } = d as any;
-        setKpis(rest as KpiData);
+        setSummary(rest as KpiData);
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load transmission outages');
@@ -337,15 +576,34 @@ export function TransmissionOutageChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: TxoRow; events: TxoEvent[] } }>(`/grid/transmission-outage/chain/${id}`);
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      // Convert numeric string fields to numbers before posting
+      const numericFields = [
+        'security_margin_pct', 'actual_load_mw', 'thermal_limit_mw',
+        'n1_pass_count', 'n1_fail_count', 'extension_hours_granted', 'rts_test_passed',
+      ];
+      const body: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(values)) {
+        if (v === '' || v === undefined) continue;
+        body[k] = numericFields.includes(k) ? Number(v) : v;
+      }
+      await api.post(`/grid/transmission-outage/chain/${rowId}/${key}`, body);
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Action failed');
+    }
+  }, [load]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: TxoRow; events: ChainEvent[] } }>(`/grid/transmission-outage/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events || [] }));
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load outage history');
     }
-  }, []);
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -366,473 +624,157 @@ export function TransmissionOutageChainTab() {
     });
   }, [rows, filter]);
 
-  const doAction = useCallback(async (path: string, body?: object) => {
-    if (!selected) return;
-    try {
-      await api.post(`/grid/transmission-outage/chain/${selected.id}/${path}`, body ?? {});
-      await load();
-      await loadEvents(selected.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Action failed');
-    }
-  }, [selected, load, loadEvents]);
-
   return (
-    <div className="space-y-3">
-      {/* UX revisit 2026-05-30 - KPI strip ordered so the four numbers the
-          SO dispatcher opens for (SLA breach, in-progress, emergency
-          cancel, critical 400kV+ tier) sit left. Total circuits offline,
-          bridges to W18/W34/W50, and avg lifecycle hours anchor right
-          because those are the brag numbers vs Hitachi Lumada / ABB NMS /
-          Siemens Spectrum / GE PowerOn. */}
-      <div className="grid grid-cols-8 gap-3">
-        <Kpi label="SLA breached"      value={kpis?.breached ?? 0}                tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="In progress"       value={kpis?.in_progress_count ?? 0}       tone={(kpis?.in_progress_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Emergency cancel"  value={kpis?.emergency_count ?? 0}         tone={(kpis?.emergency_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Critical 400kV+"   value={kpis?.critical_tier_count ?? 0}     tone={(kpis?.critical_tier_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Active"            value={kpis?.active_count ?? 0} />
-        <Kpi label="Total"             value={kpis?.total ?? 0} />
-        <Kpi label="Circuits offline"  value={kpis?.total_circuits_offline ?? 0} />
-        <Kpi label="Avg lifecycle"     value={fmtHours(kpis?.avg_lifecycle_hours ?? 0)} />
+    <div style={{ background: BG, padding: 16, borderRadius: 12, minHeight: 400 }} className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1, margin: 0 }}>
+            Transmission Outage Coordination
+          </h2>
+          <p style={{ fontSize: 11, color: TX3, margin: '2px 0 0', fontFamily: MONO }}>
+            W110 · N-1 security assessment · 12-state P6 · URGENT SLA
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void load()}
+          style={{ fontSize: 11, color: TX2, background: BG2, border: `1px solid ${BORDER}`, borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}
+        >
+          Refresh
+        </button>
       </div>
 
+      {/* KPI strip */}
+      <div className="grid grid-cols-8 gap-2">
+        <KpiTile label="SLA breached"     value={summary?.breached ?? 0}              tone={(summary?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="In progress"      value={summary?.in_progress_count ?? 0}     tone={(summary?.in_progress_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Emergency cancel" value={summary?.emergency_count ?? 0}       tone={(summary?.emergency_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Critical 400kV+"  value={summary?.critical_tier_count ?? 0}   tone={(summary?.critical_tier_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Active"           value={summary?.active_count ?? 0} />
+        <KpiTile label="Total"            value={summary?.total ?? 0} />
+        <KpiTile label="Circuits offline" value={summary?.total_circuits_offline ?? 0} />
+        <KpiTile label="Avg lifecycle"    value={fmtHours(summary?.avg_lifecycle_hours ?? 0)} />
+      </div>
+
+      {/* Filter pills */}
       <div className="flex flex-wrap gap-1.5">
-        {FILTER_ROW_ACTION.map((f) => (
-          <button type="button"
+        {FILTERS.map((f) => (
+          <button
+            type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
-                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
-            }`}>
+            style={{
+              padding: '3px 10px',
+              borderRadius: 999,
+              fontSize: 11,
+              fontWeight: 500,
+              cursor: 'pointer',
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+              background: filter === f.key ? ACC : BG1,
+              color: filter === f.key ? '#fff' : TX2,
+              transition: 'background 120ms, color 120ms',
+            }}
+          >
             {f.label}
           </button>
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {FILTER_ROW_STATE.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
-                : 'bg-white text-[#6b7685] border-[#eef2f6] hover:bg-[#eef2f7]'
-            }`}>
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {err && <div className="px-3 py-2 bg-red-50 text-red-700 text-[12px] rounded-md">{err}</div>}
-
-      <div className="bg-white border border-[#e5ebf2] rounded-xl overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[#f7f9fb] text-[11px] uppercase tracking-wide text-[#6b7685]">
-            <tr>
-              <th className="px-3 py-2 text-left">Outage #</th>
-              <th className="px-3 py-2 text-left">Asset / corridor</th>
-              <th className="px-3 py-2 text-right">Voltage</th>
-              <th className="px-3 py-2 text-right">Circuits</th>
-              <th className="px-3 py-2 text-right">Completeness</th>
-              <th className="px-3 py-2 text-left">Tier</th>
-              <th className="px-3 py-2 text-left">State</th>
-              <th className="px-3 py-2 text-right">{'Δ'} SLA</th>
-            </tr>
-          </thead>
-          <tbody className="text-[13px]">
-            {loading ? (
-              <tr><td colSpan={8} className="p-6 text-center text-[#6b7685]">Loading...</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={8} className="p-6 text-center text-[#6b7685]">No transmission outages match the current filter.</td></tr>
-            ) : filtered.map((r) => {
-              const stateTone = STATE_TONE[r.chain_status];
-              const tierTone  = TIER_TONE[r.current_tier];
-              const floored = (r.floor_flag_count_live ?? 0) > 0;
-              return (
-                <tr
-                  key={r.id}
-                  onClick={() => loadEvents(r.id)}
-                  className={`cursor-pointer hover:bg-[#f7f9fb] border-t border-[#eef2f6] ${selected?.id === r.id ? 'bg-[#fffae6]' : ''}`}>
-                  <td className="px-3 py-2 font-mono text-[11px]">{r.outage_number}</td>
-                  <td className="px-3 py-2 max-w-xs truncate" title={`${r.asset_label ?? r.asset_id} - ${r.corridor_name ?? '-'}`}>
-                    {r.asset_label ?? r.asset_id}
-                    <span className="text-[#6b7685]"> - {r.corridor_name ?? '-'}</span>
-                    {floored && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fff4d6] text-[#a06200]">FLOOR {r.floor_flag_count_live}</span>}
-                    {r.bridges_to_planned_outage_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#dbecfb] text-[#1a3a5c]">W18</span>}
-                    {r.bridges_to_curtailment_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fff4d6] text-[#a06200]">W34</span>}
-                    {r.bridges_to_reserve_activation_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#e8defc] text-[#5320a3]">W50</span>}
-                    {r.emergency_cancel_risk_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fbd0d0] text-[#7a1414]">EC RISK</span>}
-                    {r.extension_imminent_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fbd0d0] text-[#7a1414]">EXT IMMINENT</span>}
-                  </td>
-                  <td className="px-3 py-2 text-right text-[12px] tabular-nums">{fmtKv(r.transmission_voltage_kv)}</td>
-                  <td className="px-3 py-2 text-right text-[12px] tabular-nums">{r.affected_circuits_count}</td>
-                  <td className="px-3 py-2 text-right text-[12px] tabular-nums">{(r.outage_completeness_index_live ?? r.outage_completeness_index ?? 0).toFixed(0)}</td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: tierTone.bg, color: tierTone.fg }}>
-                      {tierTone.label}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: stateTone.bg, color: stateTone.fg }}>
-                      {stateTone.label}
-                    </span>
-                  </td>
-                  <td className={`px-3 py-2 text-right text-[12px] tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                    {r.is_terminal ? '-' : fmtMin(r.minutes_until_sla)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {selected && (
-        <TxoDrawer
-          row={selected}
-          events={events}
-          onClose={() => { setSelected(null); setEvents([]); }}
-          doAction={doAction}
-        />
+      {err && (
+        <div style={{ padding: '8px 12px', background: 'oklch(0.97 0.04 20)', color: BAD, borderRadius: 6, fontSize: 12, border: `1px solid ${BAD}40` }}>
+          {err}
+        </div>
       )}
-    </div>
-  );
-}
 
-function Kpi({ label, value, tone = 'ok' }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const fg = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0f1c2e';
-  return (
-    <div className="bg-white border border-[#e5ebf2] rounded-lg p-3">
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[20px] font-semibold tabular-nums mt-0.5" style={{ color: fg }}>{value}</div>
-    </div>
-  );
-}
+      {/* Chain cards */}
+      <div className="space-y-2">
+        {loading ? (
+          <div style={{ textAlign: 'center', color: TX3, padding: 32, fontSize: 13 }}>Loading...</div>
+        ) : filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', color: TX3, padding: 32, fontSize: 13 }}>No transmission outages match the current filter.</div>
+        ) : filtered.map((row) => {
+          const floored = (row.floor_flag_count_live ?? 0) > 0;
+          const bridges = [
+            row.bridges_to_planned_outage_chain_live && 'W18',
+            row.bridges_to_curtailment_chain_live    && 'W34',
+            row.bridges_to_reserve_activation_chain_live && 'W50',
+          ].filter(Boolean).join(' · ');
 
-function TxoDrawer({
-  row, events, onClose, doAction,
-}: {
-  row: TxoRow;
-  events: TxoEvent[];
-  onClose: () => void;
-  doAction: (path: string, body?: object) => Promise<void>;
-}) {
-  const cs = row.chain_status;
-  const transitionable = !row.is_hard_terminal;
-  const urgencyTone = row.urgency_band_live ? URGENCY_TONE[row.urgency_band_live] : null;
-  const authorityNow = row.authority_required_live ?? row.authority_required ?? null;
-  const floored = (row.floor_flag_count_live ?? 0) > 0;
+          const metaParts: string[] = [
+            fmtKv(row.transmission_voltage_kv),
+            TIER_LABEL[row.current_tier],
+            row.corridor_name ?? '',
+            `${row.affected_circuits_count} circuits`,
+          ];
+          if (floored) metaParts.push(`FLOOR ${row.floor_flag_count_live}`);
+          if (bridges) metaParts.push(bridges);
+          if (row.emergency_cancel_risk_live) metaParts.push('EC RISK');
+          if (row.extension_imminent_live)    metaParts.push('EXT IMMINENT');
+          if (row.is_reportable_flag)         metaParts.push('Reportable');
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/30 flex items-stretch justify-end oe-overlay-in" onClick={onClose}>
-      <div className="bg-white w-full max-w-2xl shadow-xl overflow-y-auto oe-drawer-in" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-start justify-between sticky top-0 bg-white z-10">
-          <div>
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">Transmission outage {row.outage_number}</div>
-            <h3 className="text-[16px] font-semibold text-[#0f1c2e] mt-0.5">
-              {row.asset_label ?? row.asset_id} - {row.corridor_name ?? '-'} {' · '} {fmtKv(row.transmission_voltage_kv)}
-            </h3>
-            <div className="flex flex-wrap gap-2 mt-2 text-[12px]">
-              <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: TIER_TONE[row.current_tier].bg, color: TIER_TONE[row.current_tier].fg }}>
-                {TIER_TONE[row.current_tier].label}
-              </span>
-              <span className="px-2 py-0.5 rounded-full" style={{ background: STATE_TONE[cs].bg, color: STATE_TONE[cs].fg }}>
-                {STATE_TONE[cs].label}
-              </span>
-              {urgencyTone && (
-                <span className="px-2 py-0.5 rounded-full font-medium" style={{ background: urgencyTone.bg, color: urgencyTone.fg }}>
-                  {urgencyTone.label} urgency
-                </span>
-              )}
-              {floored && (
-                <span className="px-2 py-0.5 rounded-full font-bold bg-[#fff4d6] text-[#a06200]">FLOOR ({row.floor_flag_count_live})</span>
-              )}
-              {row.is_reportable_flag && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">Regulator reportable</span>
-              )}
-              {authorityNow && (
-                <span className="px-2 py-0.5 rounded-full bg-[#dbecfb] text-[#1a3a5c] font-medium">Auth: {AUTH_LABEL[authorityNow]}</span>
-              )}
-              {row.bridges_to_planned_outage_chain_live && (
-                <span className="px-2 py-0.5 rounded-full bg-[#dbecfb] text-[#1a3a5c] font-medium">W18 planned outage bridge</span>
-              )}
-              {row.bridges_to_curtailment_chain_live && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fff4d6] text-[#a06200] font-medium">W34 curtailment bridge</span>
-              )}
-              {row.bridges_to_reserve_activation_chain_live && (
-                <span className="px-2 py-0.5 rounded-full bg-[#e8defc] text-[#5320a3] font-medium">W50 reserve bridge</span>
-              )}
-              {row.emergency_cancel_risk_live && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fbd0d0] text-[#7a1414] font-medium">Emergency cancel risk</span>
-              )}
-              {row.extension_imminent_live && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fbd0d0] text-[#7a1414] font-medium">Extension imminent</span>
-              )}
-            </div>
-          </div>
-          <button type="button" onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">X</button>
-        </div>
-
-        <div className="p-5 space-y-4 text-[13px]">
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Outage window</div>
-            <div className="grid grid-cols-3 gap-3">
-              <Pair label="Scheduled start" value={row.scheduled_start_at ? new Date(row.scheduled_start_at).toLocaleString() : '-'} />
-              <Pair label="Scheduled end"   value={row.scheduled_end_at ? new Date(row.scheduled_end_at).toLocaleString() : '-'} />
-              <Pair label="Affected circuits" value={`${row.affected_circuits_count}`} />
-            </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="Actual start" value={row.actual_start_at ? new Date(row.actual_start_at).toLocaleString() : '-'} />
-              <Pair label="Actual end"   value={row.actual_end_at ? new Date(row.actual_end_at).toLocaleString() : '-'} />
-              <Pair label="Substations" value={`${row.substation_a ?? '-'} / ${row.substation_b ?? '-'}`} />
-            </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="Hours to window" value={fmtHours(row.hours_to_outage_window_live)} />
-              <Pair label="Hours in outage" value={fmtHours(row.hours_in_outage_live)} />
-              <Pair label="Hours to completion" value={fmtHours(row.hours_to_planned_completion_live)} />
-            </div>
-          </div>
-
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">N-1 + security battery</div>
-            <div className="grid grid-cols-4 gap-3">
-              <Pair label="N-1 pass" value={`${row.n1_pass_count}`} />
-              <Pair label="N-1 fail" value={`${row.n1_fail_count}`} />
-              <Pair label="Security margin" value={fmtPct(row.security_margin_pct_live ?? row.security_margin_pct)} />
-              <Pair label="Thermal limit" value={fmtMw(row.thermal_limit_mw)} />
-            </div>
-            <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="Actual load" value={fmtMw(row.actual_load_mw)} />
-              <Pair label="Suspensions" value={`${row.suspension_count}`} />
-              <Pair label="Extension hrs" value={`${row.extension_hours_granted}`} />
-              <Pair label="RTS test" value={row.rts_test_passed ? 'PASS' : '-'} />
-            </div>
-            <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="Completeness" value={`${(row.outage_completeness_index_live ?? 0).toFixed(0)} / 130`} />
-              <Pair label="SLA hrs left" value={row.sla_hours_remaining_live != null ? fmtHours(row.sla_hours_remaining_live) : '-'} />
-              <Pair label="Reg filing window" value={row.regulator_filing_window_hours_live != null ? `${row.regulator_filing_window_hours_live}h` : '-'} />
-              <Pair label="Escalations" value={`${row.escalation_level}`} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <FlagPill on={!!row.peak_demand_period} label="Peak demand period (HIGH)" />
-            <FlagPill on={!!row.single_circuit_radial} label="Single-circuit radial (HIGH)" />
-            <FlagPill on={!!row.cross_border_interconnector} label="Cross-border interconnector (HIGH)" />
-            <FlagPill on={!!row.black_start_path} label="Black-start path (CRITICAL)" />
-            <FlagPill on={!!row.national_grid_backbone} label="National grid backbone (CRITICAL)" />
-            <FlagPill on={!!row.regulator_relevant} label="Regulator relevant" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {row.planned_outage_ref && <Pair label="W18 planned outage ref" value={row.planned_outage_ref} />}
-            {row.curtailment_ref && <Pair label="W34 curtailment ref" value={row.curtailment_ref} />}
-            {row.reserve_activation_ref && <Pair label="W50 reserve ref" value={row.reserve_activation_ref} />}
-            {row.regulator_inbox_ref && <Pair label="Regulator inbox" value={row.regulator_inbox_ref} />}
-            {row.regulator_ref && <Pair label="Regulator ref" value={row.regulator_ref} />}
-            {row.n1_summary && <Pair label="N-1 summary" value={row.n1_summary} />}
-            {row.reject_reason && <Pair label="Reject reason" value={row.reject_reason} />}
-            {row.withdraw_reason && <Pair label="Withdraw reason" value={row.withdraw_reason} />}
-            {row.suspend_reason && <Pair label="Suspend reason" value={row.suspend_reason} />}
-            {row.emergency_cancel_reason && <Pair label="Emergency cancel reason" value={row.emergency_cancel_reason} />}
-            {row.outage_reason && <Pair label="Outage reason" value={row.outage_reason} />}
-            {row.outage_type && <Pair label="Outage type" value={row.outage_type} />}
-          </div>
-
-          {row.sla_deadline_at && !row.is_terminal && (
-            <Pair label="Next SLA" value={`${new Date(row.sla_deadline_at).toLocaleString()} (${fmtMin(row.minutes_until_sla)})${row.escalation_level > 0 ? ` - ${row.escalation_level} breach(es)` : ''}`} />
-          )}
-
-          {transitionable && (
-            <div className="border-t border-[#eef2f6] pt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Actions</div>
-              <div className="flex flex-wrap gap-2">
-                {cs === 'outage_requested' && (
-                  <ActionBtn label="Start security assessment (planner)" onClick={() => {
-                    const margin = window.prompt('Initial security margin pct (optional):') ?? undefined;
-                    const load = window.prompt('Actual load MW (optional):') ?? undefined;
-                    const lim = window.prompt('Thermal limit MW (optional):') ?? undefined;
-                    void doAction('start-security-assessment', {
-                      security_margin_pct: margin ? Number(margin) : undefined,
-                      actual_load_mw: load ? Number(load) : undefined,
-                      thermal_limit_mw: lim ? Number(lim) : undefined,
-                    });
-                  }} />
-                )}
-                {cs === 'security_assessment' && (
-                  <ActionBtn label="Run N-1 contingency (SO)" onClick={() => {
-                    const pass = window.prompt('N-1 pass count:') ?? undefined;
-                    const fail = window.prompt('N-1 fail count:') ?? undefined;
-                    const summary = window.prompt('N-1 summary (optional):') ?? undefined;
-                    void doAction('run-n1-contingency', {
-                      n1_pass_count: pass ? Number(pass) : undefined,
-                      n1_fail_count: fail ? Number(fail) : undefined,
-                      n1_summary: summary,
-                    });
-                  }} />
-                )}
-                {cs === 'n1_contingency_run' && (
-                  <ActionBtn label="Submit to committee (committee)" onClick={() => { void doAction('submit-to-reliability-committee', {}); }} />
-                )}
-                {cs === 'reliability_committee_review' && (
-                  <>
-                    <ActionBtn label="Approve outage (committee)" tone="good" onClick={() => { void doAction('approve-outage', {}); }} />
-                    <ActionBtn label="Reject outage (committee)" tone="bad" onClick={() => {
-                      const reason = window.prompt('Reject reason:') ?? undefined;
-                      void doAction('reject-outage', { reject_reason: reason });
-                    }} />
-                  </>
-                )}
-                {cs === 'outage_approved' && (
-                  <ActionBtn label="Open outage window (SO)" tone="good" onClick={() => {
-                    const start = window.prompt('Scheduled start ISO (optional):') ?? undefined;
-                    const end = window.prompt('Scheduled end ISO (optional):') ?? undefined;
-                    void doAction('open-outage-window', {
-                      scheduled_start_at: start,
-                      scheduled_end_at: end,
-                    });
-                  }} />
-                )}
-                {cs === 'outage_window_open' && (
-                  <ActionBtn label="Commence outage (SO)" onClick={() => {
-                    const start = window.prompt('Actual start ISO (optional, defaults now):') ?? undefined;
-                    void doAction('commence-outage', { actual_start_at: start });
-                  }} />
-                )}
-                {cs === 'outage_in_progress' && (
-                  <>
-                    <ActionBtn label="Suspend outage (SO)" tone="bad" onClick={() => {
-                      const reason = window.prompt('Suspend reason:') ?? undefined;
-                      void doAction('suspend-outage', { suspend_reason: reason });
-                    }} />
-                    <ActionBtn label="Extend outage (committee)" onClick={() => {
-                      const hrs = window.prompt('Extension hours granted:') ?? undefined;
-                      const end = window.prompt('New scheduled end ISO (optional):') ?? undefined;
-                      void doAction('extend-outage', {
-                        extension_hours_granted: hrs ? Number(hrs) : undefined,
-                        scheduled_end_at: end,
-                      });
-                    }} />
-                    <ActionBtn label="Complete outage (SO)" tone="good" onClick={() => {
-                      const end = window.prompt('Actual end ISO (optional, defaults now):') ?? undefined;
-                      void doAction('complete-outage', { actual_end_at: end });
-                    }} />
-                  </>
-                )}
-                {cs === 'suspended' && (
-                  <>
-                    <ActionBtn label="Resume outage (SO)" tone="good" onClick={() => { void doAction('resume-outage', {}); }} />
-                  </>
-                )}
-                {cs === 'extended' && (
-                  <>
-                    <ActionBtn label="Resume outage (SO)" tone="good" onClick={() => { void doAction('resume-outage', {}); }} />
-                    <ActionBtn label="Complete outage (SO)" tone="good" onClick={() => {
-                      const end = window.prompt('Actual end ISO (optional, defaults now):') ?? undefined;
-                      void doAction('complete-outage', { actual_end_at: end });
-                    }} />
-                  </>
-                )}
-                {cs === 'outage_completed' && (
-                  <ActionBtn label="Verify return to service (SO)" tone="good" onClick={() => {
-                    const pass = window.confirm('RTS test passed?');
-                    void doAction('verify-return-to-service', { rts_test_passed: pass ? 1 : 0 });
-                  }} />
-                )}
-                {cs === 'return_to_service' && (
-                  <ActionBtn label="Close post-outage review (archiver)" onClick={() => { void doAction('close-post-outage-review', {}); }} />
-                )}
-                {cs === 'post_outage_review' && (
-                  <ActionBtn label="Archive outage (archiver)" onClick={() => { void doAction('archive-outage', {}); }} />
-                )}
-
-                {/* emergency_cancel — universal, from any non-terminal */}
-                {!row.is_terminal && cs !== 'emergency_cancelled' && (
-                  <ActionBtn label="Emergency cancel (SO)" tone="bad" onClick={() => {
-                    const reason = window.prompt('Emergency cancel reason:') ?? undefined;
-                    void doAction('emergency-cancel', { emergency_cancel_reason: reason });
-                  }} />
-                )}
-
-                {/* withdraw — pre-approval only */}
-                {(cs === 'outage_requested' || cs === 'security_assessment'
-                  || cs === 'n1_contingency_run' || cs === 'reliability_committee_review') && (
-                  <ActionBtn label="Withdraw (planner)" onClick={() => {
-                    const reason = window.prompt('Withdraw reason:') ?? undefined;
-                    void doAction('withdraw', { withdraw_reason: reason });
-                  }} />
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="border-t border-[#eef2f6] pt-4">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Timeline</div>
-            <div className="space-y-2">
-              {events.length === 0 ? (
-                <div className="text-[12px] text-[#6b7685]">No events yet.</div>
-              ) : events.map((e) => {
-                const partyTone = PARTY_TONE[e.actor_party ?? 'system'] ?? PARTY_TONE.system;
-                return (
-                  <div key={e.id} className="flex gap-3 text-[12px] border-l-2 border-[#e5ebf2] pl-3 py-1">
-                    <span className="font-mono text-[11px] text-[#6b7685] whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
-                    <div>
-                      <span className="font-semibold text-[#0f1c2e]">{e.event_type}</span>
-                      {e.actor_party && (
-                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-medium uppercase" style={{ background: partyTone.bg, color: partyTone.fg }}>
-                          {e.actor_party}
-                        </span>
-                      )}
-                      {e.from_status && e.to_status && e.from_status !== e.to_status && (
-                        <span className="text-[#6b7685]"> {'· '}{e.from_status} {'→'} {e.to_status}</span>
-                      )}
-                      {e.notes && <div className="text-[#4a5568] mt-0.5">{e.notes}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+          return (
+            <ChainCard
+              key={row.id}
+              item={{
+                ...row,
+                case_number: row.outage_number,
+                sla_breached: row.sla_breached_live || !!row.sla_breached,
+              }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.asset_label ?? row.asset_id}${row.corridor_name ? ' — ' + row.corridor_name : ''}`}
+              meta={metaParts.filter(Boolean).join('  ·  ')}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              onExpand={handleExpand}
+              events={expandedEvents[row.id]}
+              detail={renderDetail(row)}
+              cascadeTo={['admin', 'grid_operator']}
+            />
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function Pair({ label, value }: { label: string; value: string }) {
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
+  return (
+    <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px' }}>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 20, fontWeight: 600, color, fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>{value}</div>
+    </div>
+  );
+}
+
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[#0f1c2e] mt-0.5">{value}</div>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 12, color: TX1, marginTop: 2, wordBreak: 'break-word' }}>{value}</div>
     </div>
   );
 }
 
 function FlagPill({ on, label }: { on: boolean; label: string }) {
   return (
-    <div className={`flex items-center gap-2 px-2 py-1 rounded-md text-[12px] ${on ? 'bg-[#fff4d6] text-[#a06200] border border-[#f4d68f]' : 'bg-[#f7f9fb] text-[#6b7685] border border-[#e5ebf2]'}`}>
-      <span className={`inline-block w-2 h-2 rounded-full ${on ? 'bg-[#a06200]' : 'bg-[#cbd5e0]'}`} />
-      <span>{label}</span>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      padding: '4px 8px',
+      borderRadius: 6,
+      fontSize: 11,
+      background: on ? 'oklch(0.96 0.05 55)' : BG2,
+      color: on ? WARN : TX3,
+      border: `1px solid ${on ? 'oklch(0.80 0.12 55)' : BORDER}`,
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: on ? WARN : TX3, flexShrink: 0, display: 'inline-block' }} />
+      {label}
     </div>
   );
 }
 
-function ActionBtn({ label, onClick, tone = 'neutral' }: { label: string; onClick: () => void; tone?: 'neutral' | 'good' | 'bad' }) {
-  const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#c2873a]';
-  return (
-    <button type="button" onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
-      {label}
-    </button>
-  );
-}
+export default TransmissionOutageChainTab;

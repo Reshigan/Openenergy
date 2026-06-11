@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface FacilityAmendmentItem {
   id: string;
@@ -35,19 +35,19 @@ interface AmendmentKpis {
 
 // ─── Status meta ──────────────────────────────────────────────────────────────
 
-const STATUS_COLORS: Record<string, string> = {
-  amendment_requested:    'bg-[#eef2f7] text-[#3d4756]',
-  eligibility_assessed:   'bg-blue-100 text-blue-700',
-  lender_circulated:      'bg-cyan-100 text-cyan-700',
-  majority_response:      'bg-indigo-100 text-indigo-700',
-  unanimous_required:     'bg-amber-100 text-amber-700',
-  consent_obtained:       'bg-teal-100 text-teal-700',
-  documentation_prepared: 'bg-violet-100 text-violet-700',
-  execution_signed:       'bg-purple-100 text-purple-700',
-  effective:              'bg-green-100 text-green-700',
-  refused:                'bg-red-100 text-red-700',
-  lapsed:                 'bg-[#eef2f7] text-[#9aa5b4]',
-  withdrawn:              'bg-[#eef2f7] text-[#6b7685]',
+const STATUS_COLORS: Record<string, { className: string; style?: React.CSSProperties }> = {
+  amendment_requested:    { className: 'bg-[#eef2f7] text-[#3d4756]' },
+  eligibility_assessed:   { className: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  lender_circulated:      { className: 'bg-cyan-100 text-cyan-700' },
+  majority_response:      { className: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  unanimous_required:     { className: 'bg-amber-100 text-amber-700' },
+  consent_obtained:       { className: 'bg-teal-100 text-teal-700' },
+  documentation_prepared: { className: 'bg-violet-100 text-violet-700' },
+  execution_signed:       { className: 'bg-purple-100 text-purple-700' },
+  effective:              { className: 'bg-green-100 text-green-700' },
+  refused:                { className: 'bg-red-100 text-red-700' },
+  lapsed:                 { className: 'bg-[#eef2f7] text-[#9aa5b4]' },
+  withdrawn:              { className: 'bg-[#eef2f7] text-[#6b7685]' },
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -67,12 +67,12 @@ const STATUS_LABELS: Record<string, string> = {
 
 // ─── Amendment class badges ───────────────────────────────────────────────────
 
-const CLASS_COLORS: Record<string, string> = {
-  unanimous_consent:        'bg-red-100 text-red-700',
-  majority_consent:         'bg-amber-100 text-amber-700',
-  technical_amendment:      'bg-blue-100 text-blue-700',
-  administrative_amendment: 'bg-cyan-100 text-cyan-700',
-  clerical_correction:      'bg-[#eef2f7] text-[#3d4756]',
+const CLASS_COLORS: Record<string, { className: string; style?: React.CSSProperties }> = {
+  unanimous_consent:        { className: 'bg-red-100 text-red-700' },
+  majority_consent:         { className: 'bg-amber-100 text-amber-700' },
+  technical_amendment:      { className: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  administrative_amendment: { className: 'bg-cyan-100 text-cyan-700' },
+  clerical_correction:      { className: 'bg-[#eef2f7] text-[#3d4756]' },
 };
 
 const CLASS_LABELS: Record<string, string> = {
@@ -458,9 +458,10 @@ export function LenderFacilityAmendmentTab() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3"
+          className="rounded-lg border p-4 space-y-3"
+          style={{ borderColor: 'oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
         >
-          <div className="text-sm font-semibold text-blue-800">New Facility Amendment Request</div>
+          <div className="text-sm font-semibold text-[oklch(0.40_0.009_250)]">New Facility Amendment Request</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-[#3d4756] mb-1">Facility ID *</label>
@@ -608,7 +609,10 @@ export function LenderFacilityAmendmentTab() {
                     </td>
                     <td className="py-2 pr-3">
                       <div className="flex flex-col gap-0.5">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[item.amendment_class] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[item.amendment_class]?.className ?? 'bg-[#eef2f7] text-[#6b7685]'}`}
+                          style={CLASS_COLORS[item.amendment_class]?.style}
+                        >
                           {CLASS_LABELS[item.amendment_class] ?? item.amendment_class}
                         </span>
                         <span className="text-xs text-[#9aa5b4]">{CLASS_SLA[item.amendment_class]}</span>
@@ -623,7 +627,10 @@ export function LenderFacilityAmendmentTab() {
                         : <span className="text-[#9aa5b4]">—</span>}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status]?.className ?? 'bg-[#eef2f7] text-[#6b7685]'}`}
+                        style={STATUS_COLORS[item.chain_status]?.style}
+                      >
                         {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                       </span>
                       {item.sla_breached === 1 && (
@@ -656,7 +663,8 @@ export function LenderFacilityAmendmentTab() {
                       {actions.length > 0 && (
                         <button type="button"
                           onClick={() => openActionPicker(item)}
-                          className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                          className="px-2 py-0.5 text-xs rounded border"
+                          style={{ background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.87 0.010 250)' }}
                         >
                           Actions
                         </button>
@@ -731,10 +739,16 @@ export function LenderFacilityAmendmentTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badges */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status]?.className ?? 'bg-[#eef2f7] text-[#6b7685]'}`}
+                  style={STATUS_COLORS[detailItem.chain_status]?.style}
+                >
                   {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[detailItem.amendment_class] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span
+                  className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[detailItem.amendment_class]?.className ?? 'bg-[#eef2f7] text-[#6b7685]'}`}
+                  style={CLASS_COLORS[detailItem.amendment_class]?.style}
+                >
                   {CLASS_LABELS[detailItem.amendment_class] ?? detailItem.amendment_class} — {CLASS_SLA[detailItem.amendment_class] ?? ''}
                 </span>
                 {detailItem.sla_breached === 1 && (

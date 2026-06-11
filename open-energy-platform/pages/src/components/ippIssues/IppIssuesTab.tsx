@@ -85,15 +85,15 @@ const PRIORITY_COLOR: Record<IssuePriority, string> = {
   p1_critical:      'bg-red-100 text-red-800',
   p2_high:          'bg-orange-100 text-orange-800',
   p3_medium:        'bg-yellow-100 text-yellow-700',
-  p4_low:           'bg-blue-100 text-blue-700',
+  p4_low:           'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   p5_informational: 'bg-[#eef2f7] text-[#3d4756]',
 };
 
 const STATUS_COLOR: Record<IssueStatus, string> = {
   raised:         'bg-[#eef2f7] text-[#2d3748]',
-  triaged:        'bg-blue-50 text-blue-700',
-  assigned:       'bg-blue-100 text-blue-800',
-  acknowledged:   'bg-indigo-100 text-indigo-700',
+  triaged:        'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
+  assigned:       'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
+  acknowledged:   'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   in_progress:    'bg-violet-100 text-violet-700',
   blocked:        'bg-red-100 text-red-700',
   under_review:   'bg-amber-100 text-amber-700',
@@ -393,7 +393,7 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
                     {!readOnly && (
                       <td className="px-3 py-2">
                         <button type="button"
-                          className="text-xs text-blue-600 hover:underline"
+                          className="text-xs text-[oklch(0.46_0.16_55)] hover:underline"
                           onClick={e => { e.stopPropagation(); setSelected(row); }}
                         >
                           Manage
@@ -597,7 +597,7 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
 }
 
 function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
-  const cls = color === 'red' ? 'text-red-600' : color === 'orange' ? 'text-orange-600' : color === 'blue' ? 'text-blue-600' : 'text-[#2d3748]';
+  const cls = color === 'red' ? 'text-red-600' : color === 'orange' ? 'text-orange-600' : color === 'blue' ? 'text-[oklch(0.46_0.16_55)]' : 'text-[#2d3748]';
   return (
     <div className="bg-white rounded-lg border border-[#dde4ec] p-3">
       <p className="text-[10px] text-[#6b7685] uppercase tracking-wide">{label}</p>

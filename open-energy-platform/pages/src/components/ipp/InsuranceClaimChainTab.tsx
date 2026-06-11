@@ -13,6 +13,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'notified' | 'assessing' | 'adjuster_assigned'
@@ -22,6 +37,7 @@ type ChainStatus =
 type Tier = 'catastrophic' | 'major' | 'minor' | 'small';
 
 interface ClaimRow {
+  [key: string]: unknown;
   id: string;
   claim_number: string;
   project_id: string | null;
@@ -67,38 +83,23 @@ interface ClaimRow {
   created_at: string;
 }
 
-interface ClaimEvent {
-  id: string;
-  claim_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'notified',
+  'assessing',
+  'adjuster_assigned',
+  'quantum_proposed',
+  'quantum_agreed',
+  'settled',
+  'closed',
+];
+const BRANCH_STATES: readonly string[] = [
+  'disputed',
+  'declined',
+  'withdrawn',
+];
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  notified:          { bg: '#dbecfb', fg: '#1a3a5c', label: 'Notified' },
-  assessing:         { bg: '#fff4d6', fg: '#a06200', label: 'Assessing' },
-  adjuster_assigned: { bg: '#fff4d6', fg: '#a06200', label: 'Adjuster assigned' },
-  quantum_proposed:  { bg: '#fde7c2', fg: '#8a4a00', label: 'Quantum proposed' },
-  quantum_agreed:    { bg: '#daf5e2', fg: '#1f6b3a', label: 'Quantum agreed' },
-  disputed:          { bg: '#fde0e0', fg: '#9b1f1f', label: 'Disputed' },
-  settled:           { bg: '#d4edda', fg: '#155724', label: 'Settled' },
-  declined:          { bg: '#fde0e0', fg: '#9b1f1f', label: 'Declined' },
-  closed:            { bg: '#e3e7ec', fg: '#557',    label: 'Closed' },
-  withdrawn:         { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
-};
-
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  catastrophic: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Catastrophic (≥R50m)' },
-  major:        { bg: '#fde7c2', fg: '#8a4a00', label: 'Major (R10m–R50m)' },
-  minor:        { bg: '#fff4d6', fg: '#a06200', label: 'Minor (R500k–R10m)' },
-  small:        { bg: '#e3e7ec', fg: '#557',    label: 'Small (<R500k)' },
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',            label: 'Active' },
   { key: 'all',               label: 'All' },
@@ -120,36 +121,7 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'withdrawn',         label: 'Withdrawn' },
 ];
 
-type PrimaryAction =
-  | 'begin-assessment' | 'assign-adjuster' | 'propose-quantum'
-  | 'agree-quantum' | 'resolve-dispute' | 'settle' | 'close';
-
-const ACTION_FOR_STATE: Record<ChainStatus, PrimaryAction | null> = {
-  notified:          'begin-assessment',
-  assessing:         'assign-adjuster',
-  adjuster_assigned: 'propose-quantum',
-  quantum_proposed:  'agree-quantum',
-  quantum_agreed:    'settle',
-  disputed:          'resolve-dispute',
-  settled:           'close',
-  declined:          'close',
-  closed:            null,
-  withdrawn:         null,
-};
-
-const ACTION_LABEL: Record<PrimaryAction | 'dispute' | 'decline' | 'withdraw', string> = {
-  'begin-assessment': 'Begin assessment',
-  'assign-adjuster':  'Assign loss adjuster',
-  'propose-quantum':  'Propose quantum',
-  'agree-quantum':    'Agree quantum',
-  'resolve-dispute':  'Resolve dispute',
-  'settle':           'Settle (payout)',
-  'close':            'Close claim',
-  'dispute':          'Dispute quantum',
-  'decline':          'Decline claim',
-  'withdraw':         'Withdraw claim',
-};
-
+// ── format helpers ────────────────────────────────────────────────────────
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
   if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
@@ -171,13 +143,238 @@ function fmtZar(n: number | null | undefined): string {
   return `R${n}`;
 }
 
+// ── actions ───────────────────────────────────────────────────────────────
+function getActions(row: ClaimRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
+
+  // Primary forward actions per state
+  if (s === 'notified') {
+    actions.push({
+      key: 'begin-assessment',
+      label: 'Begin assessment',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'assessing') {
+    actions.push({
+      key: 'assign-adjuster',
+      label: 'Assign loss adjuster',
+      fields: [
+        {
+          key: 'loss_adjuster_name',
+          label: 'Loss adjuster firm (e.g. Crawford & Co, McLarens Africa, Marsh JLT)',
+          type: 'text',
+          required: true,
+        },
+        {
+          key: 'loss_adjuster_ref',
+          label: 'Adjuster reference (e.g. ADJ-2026-XXX-0001)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'adjuster_assigned') {
+    actions.push({
+      key: 'propose-quantum',
+      label: 'Propose quantum',
+      fields: [
+        {
+          key: 'agreed_value_zar',
+          label: 'Adjuster-agreed quantum (ZAR, numeric)',
+          type: 'number',
+          required: true,
+        },
+        ...(row.claim_value_tier === 'catastrophic'
+          ? [{
+              key: 'fsca_report_ref',
+              label: 'FSCA Section 38 report reference (catastrophic only)',
+              type: 'text' as const,
+              required: false,
+            }]
+          : []),
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'quantum_proposed') {
+    actions.push({
+      key: 'agree-quantum',
+      label: 'Agree quantum',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'quantum_agreed') {
+    // settle — catastrophic crosses regulator per FSCA Section 38
+    actions.push({
+      key: 'settle',
+      label: 'Settle (payout)',
+      fields: [
+        {
+          key: 'settled_value_zar',
+          label: 'Settled value (ZAR — defaults to agreed quantum)',
+          type: 'number',
+          required: true,
+          placeholder: String(row.agreed_value_zar ?? row.claim_value_zar),
+        },
+      ],
+      cascadeTo: row.claim_value_tier === 'catastrophic' ? ['regulator'] : [],
+    });
+  }
+
+  if (s === 'disputed') {
+    actions.push({
+      key: 'resolve-dispute',
+      label: 'Resolve dispute',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'settled' || s === 'declined') {
+    actions.push({
+      key: 'close',
+      label: 'Close claim',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  // dispute — available from quantum_proposed or quantum_agreed
+  if (s === 'quantum_proposed' || s === 'quantum_agreed') {
+    actions.push({
+      key: 'dispute',
+      label: 'Dispute quantum',
+      fields: [
+        {
+          key: 'dispute_notes',
+          label: 'Dispute notes (required)',
+          type: 'textarea',
+          required: true,
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // decline — available from assessing, adjuster_assigned, quantum_proposed, disputed
+  // catastrophic decline crosses regulator per FSCA Section 38
+  if (['assessing', 'adjuster_assigned', 'quantum_proposed', 'disputed'].includes(s)) {
+    actions.push({
+      key: 'decline',
+      label: 'Decline claim',
+      fields: [
+        {
+          key: 'decline_reason',
+          label: 'Decline reason (policy citation expected)',
+          type: 'textarea',
+          required: true,
+        },
+      ],
+      cascadeTo: row.claim_value_tier === 'catastrophic' ? ['regulator'] : [],
+    });
+  }
+
+  // withdraw — available from notified, assessing, adjuster_assigned, quantum_proposed, disputed
+  if (['notified', 'assessing', 'adjuster_assigned', 'quantum_proposed', 'disputed'].includes(s)) {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw claim',
+      fields: [
+        {
+          key: 'withdrawal_reason',
+          label: 'Withdrawal reason',
+          type: 'textarea',
+          required: true,
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  return actions;
+}
+
+// ── detail panel ──────────────────────────────────────────────────────────
+function renderDetail(row: ClaimRow): React.ReactNode {
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+      <DetailPair label="State"             value={row.chain_status} />
+      <DetailPair label="Tier"              value={row.claim_value_tier} />
+      <DetailPair label="Insurer"           value={row.insurer_name} />
+      <DetailPair label="Policy"            value={row.policy_number} />
+      <DetailPair label="Cover type"        value={row.cover_type} />
+      <DetailPair label="Incident type"     value={row.incident_type} />
+      <DetailPair label="Incident date"     value={fmtDate(row.incident_date)} />
+      <DetailPair label="Claim value"       value={fmtZar(row.claim_value_zar)} />
+      <DetailPair label="Agreed quantum"    value={fmtZar(row.agreed_value_zar)} />
+      <DetailPair label="Settled value"     value={fmtZar(row.settled_value_zar)} />
+      <DetailPair label="Excess"            value={fmtZar(row.excess_zar)} />
+      <DetailPair label="Loss adjuster"     value={row.loss_adjuster_name ?? '—'} />
+      <DetailPair label="Adjuster ref"      value={row.loss_adjuster_ref ?? '—'} />
+      <DetailPair label="FSCA §38 ref"      value={row.fsca_report_ref ?? '—'} />
+      <DetailPair label="Reinsurance layer" value={row.reinsurance_layer ?? '—'} />
+      <DetailPair label="Notified at"       value={fmtDate(row.notified_at)} />
+      <DetailPair label="Assessing at"      value={fmtDate(row.assessing_at)} />
+      <DetailPair label="Adjuster assigned" value={fmtDate(row.adjuster_assigned_at)} />
+      <DetailPair label="Quantum proposed"  value={fmtDate(row.quantum_proposed_at)} />
+      <DetailPair label="Quantum agreed"    value={fmtDate(row.quantum_agreed_at)} />
+      <DetailPair label="Disputed at"       value={fmtDate(row.disputed_at)} />
+      <DetailPair label="Settled at"        value={fmtDate(row.settled_at)} />
+      <DetailPair label="Declined at"       value={fmtDate(row.declined_at)} />
+      <DetailPair label="Closed at"         value={fmtDate(row.closed_at)} />
+      <DetailPair label="Withdrawn at"      value={fmtDate(row.withdrawn_at)} />
+      <DetailPair label="SLA deadline"      value={fmtDate(row.sla_deadline_at)} />
+      <DetailPair
+        label="SLA status"
+        value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)}
+      />
+      <DetailPair label="Escalation" value={String(row.escalation_level)} />
+
+      {row.decline_reason && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: BAD }}>Decline reason</div>
+          <div style={{ color: BAD }}>{row.decline_reason}</div>
+        </div>
+      )}
+      {row.dispute_notes && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: WARN }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: WARN }}>Dispute notes</div>
+          <div style={{ color: TX2 }}>{row.dispute_notes}</div>
+        </div>
+      )}
+      {row.withdrawal_reason && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Withdrawal reason</div>
+          <div style={{ color: TX2 }}>{row.withdrawal_reason}</div>
+        </div>
+      )}
+      {row.claim_notes && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Claim notes</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.claim_notes}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function InsuranceClaimChainTab() {
   const [rows, setRows] = useState<ClaimRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<ClaimRow | null>(null);
-  const [events, setEvents] = useState<ClaimEvent[]>([]);
+  const [filter, setFilter] = useState('active');
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -194,27 +391,38 @@ export function InsuranceClaimChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { claim: ClaimRow; events: ClaimEvent[] } }>(
-        `/insurance/claim-chain/${id}`,
-      );
-      if (res.data?.data?.claim) setSelected(res.data.data.claim);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/insurance/claim-chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/insurance/claim-chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load claim');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { events: ChainEvent[] } }>(`/insurance/claim-chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (filter === 'all')          return true;
-      if (filter === 'active')       return !['settled','declined','closed','withdrawn'].includes(r.chain_status);
+      if (filter === 'active')       return !['settled', 'declined', 'closed', 'withdrawn'].includes(r.chain_status);
       if (filter === 'catastrophic') return r.claim_value_tier === 'catastrophic';
       if (filter === 'major')        return r.claim_value_tier === 'major';
       if (filter === 'minor')        return r.claim_value_tier === 'minor';
       if (filter === 'small')        return r.claim_value_tier === 'small';
-      if (filter === 'breached')     return r.sla_breached;
+      if (filter === 'breached')     return !!r.sla_breached;
       if (filter === 'escalated')    return r.escalation_level > 0;
       return r.chain_status === filter;
     });
@@ -225,7 +433,7 @@ export function InsuranceClaimChainTab() {
     let settled_count = 0, total_settled_zar = 0, total_claimed_zar = 0;
     for (const r of rows) {
       total_claimed_zar += r.claim_value_zar || 0;
-      if (r.claim_value_tier === 'catastrophic' && !['settled','declined','closed','withdrawn'].includes(r.chain_status)) catastrophic_open++;
+      if (r.claim_value_tier === 'catastrophic' && !['settled', 'declined', 'closed', 'withdrawn'].includes(r.chain_status)) catastrophic_open++;
       if (r.sla_breached) breached++;
       if (r.escalation_level > 0) escalated++;
       if (r.chain_status === 'disputed') disputed++;
@@ -237,329 +445,102 @@ export function InsuranceClaimChainTab() {
     return { total: rows.length, catastrophic_open, breached, escalated, disputed, settled_count, total_settled_zar, total_claimed_zar };
   }, [rows]);
 
-  const act = useCallback(async (action: PrimaryAction | 'dispute' | 'decline' | 'withdraw', row: ClaimRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'assign-adjuster') {
-        const name = window.prompt('Loss adjuster firm (e.g. Crawford & Co, McLarens Africa, Marsh JLT):');
-        if (!name) return;
-        const ref = window.prompt('Adjuster reference (e.g. ADJ-2026-XXX-0001):') || '';
-        body = { loss_adjuster_name: name };
-        if (ref) body.loss_adjuster_ref = ref;
-      } else if (action === 'propose-quantum') {
-        const valStr = window.prompt('Adjuster-agreed quantum (ZAR, numeric):');
-        if (!valStr) return;
-        const val = Number(valStr.replace(/[, ]/g, ''));
-        if (!isFinite(val) || val < 0) { setErr('Invalid amount'); return; }
-        body = { agreed_value_zar: val };
-        if (row.claim_value_tier === 'catastrophic') {
-          const fsca = window.prompt('FSCA Section 38 report reference (catastrophic only):');
-          if (fsca) body.fsca_report_ref = fsca;
-        }
-      } else if (action === 'settle') {
-        const valStr = window.prompt(
-          'Settled value (ZAR — defaults to agreed quantum):',
-          String(row.agreed_value_zar ?? row.claim_value_zar),
-        );
-        if (!valStr) return;
-        const val = Number(valStr.replace(/[, ]/g, ''));
-        if (!isFinite(val) || val < 0) { setErr('Invalid amount'); return; }
-        body = { settled_value_zar: val };
-      } else if (action === 'dispute') {
-        const notes = window.prompt('Dispute notes (required):');
-        if (!notes) return;
-        body = { dispute_notes: notes };
-      } else if (action === 'decline') {
-        const reason = window.prompt('Decline reason (policy citation expected):');
-        if (!reason) return;
-        body = { decline_reason: reason };
-      } else if (action === 'withdraw') {
-        const reason = window.prompt('Withdrawal reason:');
-        if (!reason) return;
-        body = { withdrawal_reason: reason };
-      }
-      await api.post(`/insurance/claim-chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Insurance claim chain</h2>
-          <p className="text-xs text-[#4a5568]">
-            10-state P6 chain · notified → assessing → adjuster assigned → quantum proposed → quantum agreed →
-            settled, with disputed branch and declined/withdrawn/closed terminals. Per-claim-value-tier SLA tiering
-            (catastrophic ≥R50m gets more diligence time at adjuster + dispute stages). Catastrophic-tier
-            settlement, decline, and SLA breaches escalate to the regulator inbox per FSCA Section 38 large-loss
-            filing.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Insurance claim chain</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          10-state P6 chain · notified → assessing → adjuster assigned → quantum proposed → quantum agreed →
+          settled, with disputed branch and declined/withdrawn/closed terminals. Per-claim-value-tier SLA tiering
+          (catastrophic ≥R50m gets more diligence time at adjuster + dispute stages). Catastrophic-tier
+          settlement, decline, and SLA breaches escalate to the regulator inbox per FSCA Section 38 large-loss filing.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total claims" value={kpis.total} />
-        <Kpi label="Catastrophic open" value={kpis.catastrophic_open} tone={kpis.catastrophic_open > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Disputed" value={kpis.disputed} tone={kpis.disputed > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Settled / closed" value={`${kpis.settled_count} · ${fmtZar(kpis.total_settled_zar)}`} />
-        <Kpi label="SLA breached" value={kpis.breached} tone={kpis.breached > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Total claimed" value={fmtZar(kpis.total_claimed_zar)} />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total claims"      value={kpis.total} />
+        <KpiTile label="Catastrophic open" value={kpis.catastrophic_open} tone={kpis.catastrophic_open > 0 ? 'warn' : undefined} />
+        <KpiTile label="Disputed"          value={kpis.disputed}          tone={kpis.disputed > 0 ? 'warn' : undefined} />
+        <KpiTile label="Settled / closed"  value={`${kpis.settled_count} · ${fmtZar(kpis.total_settled_zar)}`} />
+        <KpiTile label="SLA breached"      value={kpis.breached}          tone={kpis.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Total claimed"     value={fmtZar(kpis.total_claimed_zar)} />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Claim #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Asset</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Claim value</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Insurer</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.claim_value_tier];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">{r.claim_number}</td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[280px] truncate" title={r.asset_description}>{r.asset_description}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {r.claim_value_tier}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtZar(r.claim_value_zar)}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568] max-w-[180px] truncate" title={r.insurer_name}>{r.insurer_name}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No claims match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]"
+          style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]"
+          style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading...
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={row.claim_number}
+              meta={`${row.claim_value_tier} · ${fmtZar(row.claim_value_zar)} · ${row.insurer_name}`}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]"
+              style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No claims match.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: ClaimRow;
-  events: ClaimEvent[];
-  onClose: () => void;
-  onAct: (action: PrimaryAction | 'dispute' | 'decline' | 'withdraw', row: ClaimRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canDispute = ['quantum_proposed','quantum_agreed'].includes(row.chain_status);
-  const canDecline = ['assessing','adjuster_assigned','quantum_proposed','disputed'].includes(row.chain_status);
-  const canWithdraw = ['notified','assessing','adjuster_assigned','quantum_proposed','disputed'].includes(row.chain_status);
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[680px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.claim_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.asset_description}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.claim_value_tier].label} · {fmtZar(row.claim_value_zar)} · {row.insurer_name}
-              </div>
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"               value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier"                value={TIER_TONE[row.claim_value_tier].label} />
-            <Pair label="Insurer"             value={row.insurer_name} />
-            <Pair label="Policy"              value={row.policy_number} />
-            <Pair label="Cover type"          value={row.cover_type} />
-            <Pair label="Incident type"       value={row.incident_type} />
-            <Pair label="Incident date"       value={fmtDate(row.incident_date)} />
-            <Pair label="Claim value"         value={fmtZar(row.claim_value_zar)} />
-            <Pair label="Agreed quantum"      value={fmtZar(row.agreed_value_zar)} />
-            <Pair label="Settled value"       value={fmtZar(row.settled_value_zar)} />
-            <Pair label="Excess"              value={fmtZar(row.excess_zar)} />
-            <Pair label="Loss adjuster"       value={row.loss_adjuster_name ?? '—'} />
-            <Pair label="Adjuster ref"        value={row.loss_adjuster_ref ?? '—'} />
-            <Pair label="FSCA §38 ref"        value={row.fsca_report_ref ?? '—'} />
-            <Pair label="Reinsurance layer"   value={row.reinsurance_layer ?? '—'} />
-            <Pair label="Notified at"         value={fmtDate(row.notified_at)} />
-            <Pair label="Assessing at"        value={fmtDate(row.assessing_at)} />
-            <Pair label="Adjuster assigned"   value={fmtDate(row.adjuster_assigned_at)} />
-            <Pair label="Quantum proposed"    value={fmtDate(row.quantum_proposed_at)} />
-            <Pair label="Quantum agreed"      value={fmtDate(row.quantum_agreed_at)} />
-            <Pair label="Disputed at"         value={fmtDate(row.disputed_at)} />
-            <Pair label="Settled at"          value={fmtDate(row.settled_at)} />
-            <Pair label="Declined at"         value={fmtDate(row.declined_at)} />
-            <Pair label="Closed at"           value={fmtDate(row.closed_at)} />
-            <Pair label="Withdrawn at"        value={fmtDate(row.withdrawn_at)} />
-            <Pair label="SLA deadline"        value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"          value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation"          value={String(row.escalation_level)} />
-          </div>
-          {row.decline_reason && (
-            <div className="mt-3 text-[12px]">
-              <div className="text-[10px] uppercase tracking-wider text-[#9b1f1f]">Decline reason</div>
-              <div className="text-[#9b1f1f]">{row.decline_reason}</div>
-            </div>
-          )}
-          {row.dispute_notes && (
-            <div className="mt-3 text-[12px]">
-              <div className="text-[10px] uppercase tracking-wider text-[#a06200]">Dispute notes</div>
-              <div className="text-[#0c2a4d]">{row.dispute_notes}</div>
-            </div>
-          )}
-          {row.withdrawal_reason && (
-            <div className="mt-3 text-[12px]">
-              <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">Withdrawal reason</div>
-              <div className="text-[#1a3a5c]">{row.withdrawal_reason}</div>
-            </div>
-          )}
-          {row.claim_notes && (
-            <div className="mt-3 text-[12px]">
-              <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">Claim notes</div>
-              <div className="text-[#1a3a5c] whitespace-pre-wrap">{row.claim_notes}</div>
-            </div>
-          )}
-        </section>
-
-        {(nextAction || canDispute || canDecline || canWithdraw) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canDispute && (
-                <button type="button"
-                  onClick={() => onAct('dispute', row)}
-                  className="rounded border border-[#fac579] bg-white px-3 py-1.5 text-[12px] font-medium text-[#a06200] hover:bg-[#fff8ec]"
-                >
-                  {ACTION_LABEL.dispute}
-                </button>
-              )}
-              {canDecline && (
-                <button type="button"
-                  onClick={() => onAct('decline', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL.decline}
-                </button>
-              )}
-              {canWithdraw && (
-                <button type="button"
-                  onClick={() => onAct('withdraw', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#4a5568] hover:bg-[#f3f5f9]"
-                >
-                  {ACTION_LABEL.withdraw}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  {(e.from_status || e.to_status) && (
-                    <div className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</div>
-                  )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1 }}>{value}</div>
     </div>
   );
 }
+
+export default InsuranceClaimChainTab;

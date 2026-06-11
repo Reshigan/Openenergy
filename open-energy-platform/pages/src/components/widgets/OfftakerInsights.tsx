@@ -86,7 +86,7 @@ function TariffOptimizer({ annualMwh, peakPct, stdPct, offPeakPct }:
             <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(1)}m`} />
             <Tooltip formatter={(v: any) => formatZAR(Number(v))} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="energy" name="Energy" stackId="x" fill="#3b82c4" />
+            <Bar dataKey="energy" name="Energy" stackId="x" fill="oklch(0.46 0.16 55)" />
             <Bar dataKey="demand" name="Demand" stackId="x" fill="#b04e0f" />
           </BarChart>
         </ResponsiveContainer>
@@ -130,7 +130,7 @@ function LoadShapeClassifier({ profile }: { profile: ConsumptionProfile[] }) {
 
   const data = [
     { tier: 'Peak',    pct: buckets.peak,    fill: '#c0392b' },
-    { tier: 'Std',     pct: buckets.std,     fill: '#3b82c4' },
+    { tier: 'Std',     pct: buckets.std,     fill: 'oklch(0.46 0.16 55)' },
     { tier: 'Off-pk',  pct: buckets.offPeak, fill: '#1a8a5b' },
   ];
   const dominantTier = data.reduce((a, b) => a.pct > b.pct ? a : b);
@@ -163,7 +163,7 @@ function LoadShapeClassifier({ profile }: { profile: ConsumptionProfile[] }) {
                 <XAxis dataKey="hour" tick={{ fontSize: 9, fill: '#6b7685' }} />
                 <YAxis tick={{ fontSize: 9, fill: '#6b7685' }} />
                 <Tooltip />
-                <Area type="monotone" dataKey="kwh" stroke="#3b82c4" fill="#d4e7f6" />
+                <Area type="monotone" dataKey="kwh" stroke="oklch(0.46 0.16 55)" fill="#d4e7f6" />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -228,7 +228,7 @@ function RevenueRequirementCalc() {
   const requirement = opex + depreciation + wacc_part;
 
   const data = [
-    { component: 'Opex',         value: opex,         fill: '#3b82c4' },
+    { component: 'Opex',         value: opex,         fill: 'oklch(0.46 0.16 55)' },
     { component: 'Depreciation', value: depreciation, fill: '#6b3a82' },
     { component: 'WACC × RAB',   value: wacc_part,    fill: '#b04e0f' },
   ];
@@ -273,7 +273,7 @@ function Slider({ label, value, min, max, step, onChange, fmt }: {
   return (
     <label className="block text-[11px]">
       <div className="flex justify-between"><span className="text-[#3d4756] font-medium">{label}</span><span className="font-mono">{fmt(value)}</span></div>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[#1a3a5c]" />
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[oklch(0.46_0.16_55)]" />
     </label>
   );
 }
@@ -283,7 +283,7 @@ function Tile({ label, value, tone }: { label: string; value: string; tone: stri
     good: 'bg-[#e7f4ea] text-[#1a8a5b]',
     warn: 'bg-[#fef3e6] text-[#b04e0f]',
     bad:  'bg-[#fde0db] text-[#c0392b]',
-    info: 'bg-[#eef2f7] text-[#3b82c4]',
+    info: 'bg-[#eef2f7] text-[oklch(0.46_0.16_55)]',
   };
   return (
     <div className={`rounded p-2 ${map[tone] || map.info}`}>

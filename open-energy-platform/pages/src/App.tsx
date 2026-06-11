@@ -101,6 +101,7 @@ const VariationOrdersPage   = React.lazy(() => import('./components/pages/Variat
 const SettlementOpsPage     = React.lazy(() => import('./components/pages/SettlementOpsPage').then(m => ({ default: m.SettlementOpsPage })));
 const BulkOpsPage           = React.lazy(() => import('./components/pages/BulkOpsPage').then(m => ({ default: m.BulkOpsPage })));
 const PaiaAdminPage         = React.lazy(() => import('./components/pages/PaiaAdminPage').then(m => ({ default: m.PaiaAdminPage })));
+const AdminRevenuePage      = React.lazy(() => import('./components/pages/AdminRevenuePage').then(m => ({ default: m.AdminRevenuePage })));
 const PasskeysPage          = React.lazy(() => import('./components/pages/PasskeysPage').then(m => ({ default: m.PasskeysPage })));
 const EsumsSiteDetailPage   = React.lazy(() => import('./components/pages/EsumsSiteDetailPage').then(m => ({ default: m.EsumsSiteDetailPage })));
 
@@ -150,7 +151,7 @@ function LazyWorkbench({ children }: { children: ReactNode }) {
           <div className="p-6 w-full mx-auto space-y-4">
             <div className="skeleton h-8 w-64" />
             <div className="skeleton h-5 w-96" />
-            <div className="rounded-xl border border-[#dde4ec] bg-white p-6 space-y-3">
+            <div className="rounded-xl p-6 space-y-3" style={{ border: '1px solid oklch(0.87 0.006 250)', background: 'oklch(0.99 0.002 80)' }}>
               {[1,2,3,4].map((i) => <div key={i} className="skeleton h-5 w-full" />)}
             </div>
           </div>
@@ -215,6 +216,7 @@ function getNavigationForRole(role: string) {
         { path: '/grid-operator/workstation', label: 'Grid Ops', icon: ZapIcon },
         esums,
         { path: '/admin', label: 'Admin', icon: SettingsIcon },
+        { path: '/admin/revenue', label: 'Revenue', icon: DollarIcon },
         reports,
       ];
     case 'ipp_developer':
@@ -539,7 +541,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-[1.1fr_0.9fr] relative" style={{ background: '#f5f8fb' }}>
+    <div className="min-h-screen grid lg:grid-cols-[1.1fr_0.9fr] relative" style={{ background: 'oklch(0.96 0.003 250)' }}>
       <LtmLogo />
       {/* Brand panel — Navy with Teal/Sky accents */}
       <div
@@ -550,7 +552,7 @@ function LoginPage() {
             'radial-gradient(circle at 85% 25%, rgba(31,155,149,0.32) 0%, transparent 50%),' +
             'radial-gradient(circle at 70% 90%, rgba(59,130,196,0.32) 0%, transparent 50%),' +
             'radial-gradient(circle at 95% 95%, rgba(95,168,232,0.25) 0%, transparent 45%),' +
-            'linear-gradient(135deg, #061528 0%, #0a1c30 40%, #1a3a5c 100%)',
+            'linear-gradient(135deg, oklch(0.12 0.010 250) 0%, oklch(0.16 0.011 250) 40%, oklch(0.22 0.013 250) 100%)',
         }}
       >
         <div className="aurora" />
@@ -576,7 +578,7 @@ function LoginPage() {
         <div className="relative z-10 max-w-xl">
           <h1 className="text-[42px] lg:text-[52px] font-bold leading-[1.05] tracking-tight font-display">
             South Africa's{' '}
-            <span style={{ color: '#7fd5cf' }}>
+            <span style={{ color: 'oklch(0.70 0.10 190)' }}>
               unified energy exchange
             </span>
             .
@@ -595,9 +597,9 @@ function LoginPage() {
           {/* Mini feed preview */}
           <div className="mt-8 max-w-lg space-y-2">
             {[
-              { label: 'COD gate — Karoo Wind 1', note: '2 sign-offs pending', tint: '#c0392b' },
+              { label: 'COD gate — Karoo Wind 1', note: '2 sign-offs pending', tint: 'oklch(0.48 0.20 20)' },
               { label: 'DSCR covenant breach', note: 'Lender notification sent', tint: '#c97a14' },
-              { label: 'W64 PTW live-electrical', note: '4h 20m remaining', tint: '#3b82c4' },
+              { label: 'W64 PTW live-electrical', note: '4h 20m remaining', tint: 'oklch(0.46 0.16 55)' },
             ].map((item) => (
               <div
                 key={item.label}
@@ -631,10 +633,10 @@ function LoginPage() {
             <LogoBanner height={42} variant="colour" />
           </div>
 
-          <h2 className="text-[28px] font-bold tracking-tight font-display" style={{ color: '#0f1c2e' }}>
+          <h2 className="text-[28px] font-bold tracking-tight font-display" style={{ color: 'oklch(0.17 0.010 250)' }}>
             Sign in
           </h2>
-          <p className="mt-1 text-[14px]" style={{ color: '#3d4756' }}>
+          <p className="mt-1 text-[14px]" style={{ color: 'oklch(0.40 0.009 250)' }}>
             Welcome back to the Open Energy Platform.
           </p>
 
@@ -644,9 +646,9 @@ function LoginPage() {
               aria-live="polite"
               className="mt-5 rounded border px-3 py-2 text-[13px]"
               style={{
-                background: '#fde0db',
-                borderColor: '#c0392b',
-                color: '#410e08',
+                background: 'oklch(0.97 0.04 20)',
+                borderColor: 'oklch(0.48 0.20 20)',
+                color: 'oklch(0.48 0.20 20)',
               }}
             >
               {error}
@@ -676,7 +678,7 @@ function LoginPage() {
                 <Link
                   to="/forgot-password"
                   className="text-[12px] font-semibold inline-flex items-center px-2 py-1 -mr-2 rounded-sm hover:bg-slate-100"
-                  style={{ color: '#1a3a5c', minHeight: 24 }}
+                  style={{ color: 'oklch(0.46 0.16 55)', minHeight: 24 }}
                 >
                   Forgot?
                 </Link>
@@ -732,11 +734,11 @@ function LoginPage() {
           {ssoEnabled && (
             <>
               <div className="mt-5 flex items-center gap-3">
-                <div className="flex-1 h-px" style={{ background: '#c5cdd6' }} />
-                <span className="text-[11px] uppercase tracking-widest font-mono" style={{ color: '#525a66' }}>
+                <div className="flex-1 h-px" style={{ background: 'oklch(0.87 0.006 250)' }} />
+                <span className="text-[11px] uppercase tracking-widest font-mono" style={{ color: 'oklch(0.40 0.009 250)' }}>
                   or
                 </span>
-                <div className="flex-1 h-px" style={{ background: '#c5cdd6' }} />
+                <div className="flex-1 h-px" style={{ background: 'oklch(0.87 0.006 250)' }} />
               </div>
               <button
                 type="button"
@@ -744,17 +746,17 @@ function LoginPage() {
                 disabled={ssoLoading}
                 className="mt-4 flex items-center justify-center gap-2.5 w-full h-11 rounded border text-[14px] font-semibold transition-all hover:-translate-y-0.5"
                 style={{
-                  background: '#ffffff',
-                  borderColor: '#6b7685',
-                  color: '#0f1c2e',
+                  background: 'oklch(0.99 0.002 80)',
+                  borderColor: 'oklch(0.40 0.009 250)',
+                  color: 'oklch(0.17 0.010 250)',
                   boxShadow: '0 1px 2px rgba(25,28,24,0.05)',
                 }}
               >
                 {/* Microsoft 4-colour logo */}
                 <svg width="18" height="18" viewBox="0 0 21 21" aria-hidden="true">
-                  <rect x="1"  y="1"  width="9" height="9" fill="#c0392b" />
+                  <rect x="1"  y="1"  width="9" height="9" fill="oklch(0.48 0.20 20)" />
                   <rect x="11" y="1"  width="9" height="9" fill="#1a8a5b" />
-                  <rect x="1"  y="11" width="9" height="9" fill="#3b82c4" />
+                  <rect x="1"  y="11" width="9" height="9" fill="oklch(0.46 0.16 55)" />
                   <rect x="11" y="11" width="9" height="9" fill="#5fa8e8" />
                 </svg>
                 {ssoLoading ? 'Opening Microsoft…' : 'Sign in with Microsoft'}
@@ -763,22 +765,22 @@ function LoginPage() {
           )}
 
           <div className="mt-6 flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: '#c5cdd6' }} />
-            <span className="text-[11px] uppercase tracking-widest font-mono" style={{ color: '#525a66' }}>
+            <div className="flex-1 h-px" style={{ background: 'oklch(0.87 0.006 250)' }} />
+            <span className="text-[11px] uppercase tracking-widest font-mono" style={{ color: 'oklch(0.40 0.009 250)' }}>
               or sign in as a demo persona
             </span>
-            <div className="flex-1 h-px" style={{ background: '#c5cdd6' }} />
+            <div className="flex-1 h-px" style={{ background: 'oklch(0.87 0.006 250)' }} />
           </div>
 
           <DemoPersonaGrid onPick={fillDemo} />
 
-          <p className="mt-4 text-center text-[11px]" style={{ color: '#525a66' }}>
-            All demo accounts use the same password · <code className="font-mono text-[#1a3a5c]">Demo@2024!</code>
+          <p className="mt-4 text-center text-[11px]" style={{ color: 'oklch(0.40 0.009 250)' }}>
+            All demo accounts use the same password · <code className="font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>Demo@2024!</code>
           </p>
 
-          <p className="mt-6 text-center text-[13px]" style={{ color: '#3d4756' }}>
+          <p className="mt-6 text-center text-[13px]" style={{ color: 'oklch(0.40 0.009 250)' }}>
             Don't have an account?{' '}
-            <Link to="/register" className="font-semibold" style={{ color: '#1a3a5c' }}>
+            <Link to="/register" className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>
               Request access
             </Link>
           </p>
@@ -841,17 +843,17 @@ const PERSONAS: Persona[] = [
   { email: 'ipp@openenergy.co.za',       label: 'Solar Generator', subtitle: 'RenewCo Solar (Pty) Ltd',          icon: 'sun',      accent: '#c97a14', group: 'Producers' },
   { email: 'wind@openenergy.co.za',      label: 'Wind Generator',  subtitle: 'WindCapital (Pty) Ltd',            icon: 'wind',     accent: '#1f9b95', group: 'Producers' },
   // Markets — trader, carbon fund
-  { email: 'trader@openenergy.co.za',    label: 'Trader',          subtitle: 'Mkhize Energy Traders',            icon: 'trending-up', accent: '#3b82c4', group: 'Markets' },
+  { email: 'trader@openenergy.co.za',    label: 'Trader',          subtitle: 'Mkhize Energy Traders',            icon: 'trending-up', accent: 'oklch(0.46 0.16 55)', group: 'Markets' },
   { email: 'carbon@openenergy.co.za',    label: 'Carbon Fund',     subtitle: 'GreenFunds Carbon Fund',           icon: 'leaf',     accent: '#1a8a5b', group: 'Markets' },
   { email: 'offtaker@openenergy.co.za',  label: 'Offtaker',        subtitle: 'City Energy Municipality',         icon: 'building', accent: '#5d3a7e', group: 'Markets' },
   // Capital
   { email: 'lender@openenergy.co.za',    label: 'Lender',          subtitle: 'Infrastructure Capital Partners',  icon: 'piggy-bank', accent: '#a8385c', group: 'Capital' },
   // Network
-  { email: 'grid@openenergy.co.za',      label: 'Grid Operator',   subtitle: 'Eskom Holdings',                   icon: 'gridmap',  accent: '#1a3a5c', group: 'Network' },
+  { email: 'grid@openenergy.co.za',      label: 'Grid Operator',   subtitle: 'Eskom Holdings',                   icon: 'gridmap',  accent: 'oklch(0.17 0.010 250)', group: 'Network' },
   { email: 'esco@openenergy.co.za',      label: 'O&M Operator',    subtitle: 'SunServ O&M (Pty) Ltd',            icon: 'wrench',   accent: '#b45309', group: 'Network' },
   // Oversight
   { email: 'regulator@openenergy.co.za', label: 'Regulator',       subtitle: 'NERSA / Energy Research Institute', icon: 'shield',  accent: '#0e6d68', group: 'Oversight' },
-  { email: 'admin@openenergy.co.za',     label: 'Platform Admin',  subtitle: 'Open Energy Platform',            icon: 'settings', accent: '#0f2540', group: 'Oversight' },
+  { email: 'admin@openenergy.co.za',     label: 'Platform Admin',  subtitle: 'Open Energy Platform',            icon: 'settings', accent: 'oklch(0.17 0.010 250)', group: 'Oversight' },
 ];
 
 const GROUP_ORDER: Persona['group'][] = ['Producers', 'Markets', 'Capital', 'Network', 'Oversight'];
@@ -865,7 +867,7 @@ function DemoPersonaGrid({ onPick }: { onPick: (email: string) => void }) {
     <div className="mt-4 space-y-4">
       {groups.map((g) => (
         <div key={g.name}>
-          <div className="text-[10px] uppercase tracking-[0.1em] font-bold mb-1.5" style={{ color: '#525a66' }}>
+          <div className="text-[10px] uppercase tracking-[0.1em] font-bold mb-1.5" style={{ color: 'oklch(0.40 0.009 250)' }}>
             {g.name}
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -877,8 +879,8 @@ function DemoPersonaGrid({ onPick }: { onPick: (email: string) => void }) {
                 aria-label={`Use ${p.label} demo account`}
                 className="group flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left transition-all hover:-translate-y-0.5"
                 style={{
-                  background: '#ffffff',
-                  border: '1px solid #c5cdd6',
+                  background: 'oklch(0.99 0.002 80)',
+                  border: '1px solid oklch(0.87 0.006 250)',
                   boxShadow: '0 1px 2px rgba(15,28,46,0.04)',
                 }}
               >
@@ -889,8 +891,8 @@ function DemoPersonaGrid({ onPick }: { onPick: (email: string) => void }) {
                   <OEIcon name={p.icon} size={16} />
                 </span>
                 <span className="min-w-0 flex-1 leading-tight">
-                  <span className="block text-[12px] font-semibold truncate" style={{ color: '#0f1c2e' }}>{p.label}</span>
-                  <span className="block text-[10px] font-mono truncate" style={{ color: '#525a66' }}>{p.email.split('@')[0]}</span>
+                  <span className="block text-[12px] font-semibold truncate" style={{ color: 'oklch(0.17 0.010 250)' }}>{p.label}</span>
+                  <span className="block text-[10px] font-mono truncate" style={{ color: 'oklch(0.40 0.009 250)' }}>{p.email.split('@')[0]}</span>
                 </span>
               </button>
             ))}
@@ -928,14 +930,14 @@ function SsoLanding() {
   }, [acceptSsoTokens, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5f8fb' }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'oklch(0.96 0.003 250)' }}>
       <div className="text-center">
         {error ? (
-          <p className="text-[14px]" style={{ color: '#c0392b' }}>{error}</p>
+          <p className="text-[14px]" style={{ color: 'oklch(0.48 0.20 20)' }}>{error}</p>
         ) : (
           <>
             <div className="spinner mx-auto mb-4" />
-            <p className="text-[14px]" style={{ color: '#3d4756' }}>Completing Microsoft sign-in…</p>
+            <p className="text-[14px]" style={{ color: 'oklch(0.40 0.009 250)' }}>Completing Microsoft sign-in…</p>
           </>
         )}
       </div>
@@ -1033,7 +1035,7 @@ function RegisterPage() {
 
   if (inviteLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #061528 0%, #0f2540 50%, #1a3a5c 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, oklch(0.12 0.010 250) 0%, oklch(0.18 0.012 250) 50%, oklch(0.22 0.013 250) 100%)' }}>
         <p className="text-white/60 text-sm">Verifying invitation…</p>
       </div>
     );
@@ -1046,7 +1048,7 @@ function RegisterPage() {
         background:
           'radial-gradient(circle at 20% 20%, rgba(95,168,232,0.32) 0%, transparent 45%),' +
           'radial-gradient(circle at 80% 80%, rgba(95,168,232,0.25) 0%, transparent 50%),' +
-          'linear-gradient(135deg, #061528 0%, #0f2540 50%, #1a3a5c 100%)',
+          'linear-gradient(135deg, oklch(0.12 0.010 250) 0%, oklch(0.18 0.012 250) 50%, oklch(0.22 0.013 250) 100%)',
       }}
     >
       <div className="aurora" />
@@ -1059,21 +1061,21 @@ function RegisterPage() {
         <div className="card p-8">
           {/* Invite context banner */}
           {invite && (
-            <div className="mb-6 rounded-lg border border-[#1a3a5c]/30 bg-[#dbecfb]/60 p-4">
-              <p className="text-[11px] font-mono uppercase tracking-[0.15em] text-[#1a3a5c] mb-1">You've been invited</p>
-              <p className="text-sm font-semibold text-[#0f2540]">
+            <div className="mb-6 rounded-lg p-4" style={{ border: '1px solid oklch(0.46 0.16 55 / 0.30)', background: 'oklch(0.94 0.02 250 / 0.60)' }}>
+              <p className="text-[11px] font-mono uppercase tracking-[0.15em] mb-1" style={{ color: 'oklch(0.46 0.16 55)' }}>You've been invited</p>
+              <p className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>
                 {invite.invited_by_company || invite.invited_by_name} has invited you to join as{' '}
-                <span className="text-[#1a3a5c]">{ROLE_LABELS[invite.role] ?? invite.role}</span>
+                <span style={{ color: 'oklch(0.46 0.16 55)' }}>{ROLE_LABELS[invite.role] ?? invite.role}</span>
               </p>
               {invite.project_name && (
-                <p className="text-xs text-[#3d4756] mt-1">
+                <p className="text-xs mt-1" style={{ color: 'oklch(0.40 0.009 250)' }}>
                   Project: <span className="font-medium">{invite.project_name}</span>
                   {invite.capacity_mw ? ` · ${invite.capacity_mw} MW` : ''}
                   {invite.technology ? ` · ${invite.technology}` : ''}
                 </p>
               )}
               {invite.note && (
-                <p className="text-xs text-[#3d4756] mt-1 italic">"{invite.note}"</p>
+                <p className="text-xs mt-1 italic" style={{ color: 'oklch(0.40 0.009 250)' }}>"{invite.note}"</p>
               )}
             </div>
           )}
@@ -1085,8 +1087,8 @@ function RegisterPage() {
           {submitted ? (
             <div className="text-center py-4">
               <div className="text-4xl mb-3">✓</div>
-              <h2 className="text-xl font-semibold text-[#0f2540] mb-2">Registration submitted</h2>
-              <p className="text-sm text-[#3d4756]">
+              <h2 className="text-xl font-semibold mb-2" style={{ color: 'oklch(0.17 0.010 250)' }}>Registration submitted</h2>
+              <p className="text-sm" style={{ color: 'oklch(0.40 0.009 250)' }}>
                 Your account is under review. You will be notified once approved.
               </p>
               <Link to="/login" className="btn-primary mt-6 inline-block">Back to login</Link>
@@ -1160,18 +1162,18 @@ function RegisterPage() {
                     required
                     minLength={8}
                   />
-                  <p id="register-password-hint" className="text-[11px] text-[#3d4756] mt-1">
+                  <p id="register-password-hint" className="text-[11px] mt-1" style={{ color: 'oklch(0.40 0.009 250)' }}>
                     Minimum 8 characters, including uppercase, lowercase, and a number.
                   </p>
                 </div>
                 <div>
                   <label className="label">Role</label>
                   {invite ? (
-                    <div className="input flex items-center gap-2 bg-[#f5f8fb] cursor-default">
-                      <span className="px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-[#dbecfb] text-[#1a3a5c]">
+                    <div className="input flex items-center gap-2 cursor-default" style={{ background: 'oklch(0.96 0.003 250)' }}>
+                      <span className="px-2 py-0.5 rounded text-[11px] font-bold uppercase" style={{ background: 'oklch(0.94 0.02 250)', color: 'oklch(0.46 0.16 55)' }}>
                         {ROLE_LABELS[invite.role] ?? invite.role}
                       </span>
-                      <span className="text-xs text-[#6b7685]">set by invitation</span>
+                      <span className="text-xs" style={{ color: 'oklch(0.40 0.009 250)' }}>set by invitation</span>
                     </div>
                   ) : (
                     <select
@@ -1194,7 +1196,7 @@ function RegisterPage() {
                 </div>
                 {!invite && (
                   <div>
-                    <label className="label" htmlFor="register-motivation">Why are you joining? <span className="text-[#6b7685] font-normal">(optional)</span></label>
+                    <label className="label" htmlFor="register-motivation">Why are you joining? <span className="font-normal" style={{ color: 'oklch(0.40 0.009 250)' }}>(optional)</span></label>
                     <textarea
                       id="register-motivation"
                       name="motivation"
@@ -1215,9 +1217,9 @@ function RegisterPage() {
                 </button>
               </form>
 
-              <p className="text-center text-sm mt-6" style={{ color: '#3d4756' }}>
+              <p className="text-center text-sm mt-6" style={{ color: 'oklch(0.40 0.009 250)' }}>
                 Already have an account?{' '}
-                <Link to="/login" className="font-semibold hover:underline" style={{ color: '#1a3a5c' }}>
+                <Link to="/login" className="font-semibold hover:underline" style={{ color: 'oklch(0.46 0.16 55)' }}>
                   Sign in
                 </Link>
               </p>
@@ -1233,12 +1235,22 @@ function RegisterPage() {
 // /cockpit URL, check onboarding state then route to either /onboard (first
 // visit) or /launch/:role (returning user). Anonymous users were already
 // kicked to /login by the wrapping ProtectedRoute.
+const VALID_LAUNCH_ROLES = new Set([
+  'admin', 'trader', 'ipp_developer', 'ipp', 'grid_operator', 'grid',
+  'offtaker', 'lender', 'carbon_fund', 'carbon', 'regulator', 'support',
+]);
+
 function LaunchRedirect() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) return;
+    if (!VALID_LAUNCH_ROLES.has(user.role)) {
+      logout();
+      navigate('/login', { replace: true });
+      return;
+    }
     api.get('/onboarding/state')
       .then((r: any) => {
         const completed = r?.data?.completed ?? r?.data?.data?.completed ?? true;
@@ -1249,14 +1261,13 @@ function LaunchRedirect() {
         }
       })
       .catch(() => {
-        // If the check fails, fall through to the launch board
         navigate(`/launch/${user.role}`, { replace: true });
       });
-  }, [user, navigate]);
+  }, [user, navigate, logout]);
 
   return (
-    <div className="min-h-screen bg-[#f5f7fa] flex items-center justify-center">
-      <span className="text-[#6b7685] text-sm">Loading…</span>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'oklch(0.96 0.003 250)' }}>
+      <span className="text-sm" style={{ color: 'oklch(0.40 0.009 250)' }}>Loading…</span>
     </div>
   );
 }
@@ -1344,6 +1355,7 @@ function AppRoutes() {
       <Route path="/settlement-ops" element={<ProtectedRoute><Layout><LazyWorkbench><SettlementOpsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/admin/bulk-ops" element={<ProtectedRoute><Layout><LazyWorkbench><BulkOpsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/admin/paia" element={<ProtectedRoute><Layout><LazyWorkbench><PaiaAdminPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/admin/revenue" element={<ProtectedRoute><Layout><LazyWorkbench><AdminRevenuePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/settings/passkeys" element={<ProtectedRoute><Layout><LazyWorkbench><PasskeysPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       {/* Public status page — no auth required */}
       <Route path="/status" element={<LazyWorkbench><PublicStatusPage /></LazyWorkbench>} />

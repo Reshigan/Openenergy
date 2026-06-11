@@ -1,17 +1,31 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { DollarSign, RefreshCw, Plus, X, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
+import { RefreshCw, X } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
-import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
-import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
-import { StitchPage } from '../StitchPage';
 import { SettlementInsights } from '../widgets/SettlementInsights';
 import { DisclosureTab } from '../settlement/DisclosureTab';
 import { DvpPanel } from '../settlement/DvpPanel';
 import { MarginGateWidget } from '../clearing/MarginGateWidget';
 
+// ─── Design tokens ────────────────────────────────────────────────────
+const BG      = 'oklch(0.96 0.003 250)';
+const BG1     = 'oklch(0.99 0.002 80)';
+const BG2     = 'oklch(0.93 0.004 250)';
+const BORDER  = 'oklch(0.87 0.006 250)';
+const TX1     = 'oklch(0.17 0.010 250)';
+const TX2     = 'oklch(0.40 0.009 250)';
+const TX3     = 'oklch(0.60 0.007 250)';
+const ACC     = 'oklch(0.46 0.16 55)';
+const ACC_BG  = 'oklch(0.96 0.05 55)';
+const ACC_BDR = 'oklch(0.80 0.12 55)';
+const BAD     = 'oklch(0.48 0.20 20)';
+const WARN    = 'oklch(0.50 0.18 55)';
+const GOOD    = 'oklch(0.40 0.16 155)';
+const MONO    = '"IBM Plex Mono","Fira Code",monospace';
+
+// ─── Types ────────────────────────────────────────────────────────────
 type Tab = 'insights' | 'invoices' | 'payments' | 'disputes' | 'breaks' | 'confirmations' | 'fees' | 'disclosure' | 'dvp' | 'margin-gate';
 
 type SettlementFeeRow = {
@@ -25,15 +39,6 @@ type SettlementFeeRow = {
   calc_rule_version: string;
   applied_after: string | null;
   calculated_at: string;
-};
-
-const FEE_TYPE_PILL: Record<string, string> = {
-  dunning:         'bg-red-100 text-red-700',
-  late_payment:    'bg-amber-100 text-amber-800',
-  rebooking:       'bg-blue-100 text-blue-700',
-  admin:           'bg-[#eef2f7] text-[#2d3748]',
-  wheeling_uplift: 'bg-purple-100 text-purple-700',
-  imbalance_uplift:'bg-rose-100 text-rose-700',
 };
 
 type Break = {
@@ -53,12 +58,6 @@ type Break = {
   resolved_at: string | null;
 };
 
-const BREAK_SEVERITY_PILL: Record<string, string> = {
-  low: 'bg-[#eef2f7] text-[#2d3748]',
-  medium: 'bg-blue-100 text-blue-700',
-  high: 'bg-amber-100 text-amber-800',
-  critical: 'bg-red-100 text-red-700',
-};
 type InvoiceStatus = 'draft' | 'issued' | 'partial' | 'paid' | 'overdue' | 'disputed' | 'cancelled';
 
 interface Invoice {
@@ -74,9 +73,6 @@ interface Invoice {
   due_date: string;
   match_id: string | null;
   created_at: string;
-  // L4 settlement handshake state (migration 052). Pending until the
-  // issuer confirms; once issuer-confirmed, the payer can acknowledge.
-  // High/critical breaks auto-flip to 'disputed' server-side.
   confirmation_status?: 'pending' | 'issuer_confirmed' | 'payer_acknowledged' | 'disputed' | null;
 }
 
@@ -115,30 +111,55 @@ interface Dispute {
   resolved_at?: string | null;
 }
 
-const STATUS_PILL: Record<string, string> = {
-  draft: 'bg-[#eef2f7] text-[#2d3748]',
-  issued: 'bg-blue-100 text-blue-700',
-  partial: 'bg-amber-100 text-amber-800',
-  paid: 'bg-green-100 text-green-700',
-  overdue: 'bg-red-100 text-red-700',
-  disputed: 'bg-red-200 text-red-800',
-  cancelled: 'bg-[#e8ecf0] text-[#2d3748]',
-  open: 'bg-red-100 text-red-700',
-  under_review: 'bg-amber-100 text-amber-800',
-  resolved: 'bg-green-100 text-green-700',
-  rejected: 'bg-[#e8ecf0] text-[#2d3748]',
-};
+// ─── Helpers ──────────────────────────────────────────────────────────
+const formatZAR = (v: number) =>
+  new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(v || 0);
 
-const formatZAR = (v: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(v || 0);
+function KpiTile({ label, value, tone, sub }: { label: string; value: string | number; tone?: 'ok' | 'warn' | 'bad'; sub?: string }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
+  return (
+    <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 14px', minWidth: 100 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: TX3, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 20, fontWeight: 700, color, fontFamily: MONO }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, color: TX3, marginTop: 1 }}>{sub}</div>}
+    </div>
+  );
+}
 
+function StatusPill({ status }: { status: string }) {
+  const s = status?.toLowerCase();
+  const bg = s === 'paid' || s === 'resolved' || s === 'payer_acknowledged'
+    ? 'oklch(0.95 0.04 155)'
+    : s === 'pending' || s === 'issuer_confirmed' || s === 'issued' || s === 'open' || s === 'partial'
+    ? ACC_BG
+    : s === 'failed' || s === 'rejected' || s === 'expired' || s === 'overdue' || s === 'disputed'
+    ? 'oklch(0.97 0.04 20)'
+    : BG2;
+  const color = s === 'paid' || s === 'resolved' || s === 'payer_acknowledged'
+    ? GOOD
+    : s === 'pending' || s === 'issuer_confirmed' || s === 'issued' || s === 'open' || s === 'partial'
+    ? ACC
+    : s === 'failed' || s === 'rejected' || s === 'expired' || s === 'overdue' || s === 'disputed'
+    ? BAD
+    : TX2;
+  return (
+    <span style={{ fontSize: 10, fontWeight: 600, background: bg, color, padding: '1px 7px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+      {status.replace(/_/g, ' ')}
+    </span>
+  );
+}
+
+async function postConfirm(invoiceId: string, party: 'issuer' | 'payer', status: 'confirmed' | 'rejected', notes?: string) {
+  return api.post(`/settlement/invoices/${invoiceId}/confirm`, { party, status, notes });
+}
+
+// ─── Main component ───────────────────────────────────────────────────
 export function Settlement() {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>('insights');
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [disputes, setDisputes] = useState<Dispute[]>([]);
-  // Unfiltered datasets for the summary tiles — fetched independently of
-  // the active tab + filters so tiles are always accurate.
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [allPayments, setAllPayments] = useState<Payment[]>([]);
   const [allDisputes, setAllDisputes] = useState<Dispute[]>([]);
@@ -166,7 +187,6 @@ export function Settlement() {
       setAllPayments(pay.data?.data || []);
       setAllDisputes(dsp.data?.data || []);
       setAllBreaks((brk.data?.data as Break[]) || []);
-      // Insights needs fees too — gather from first ~30 invoices.
       const feesAggregate: SettlementFeeRow[] = [];
       const sourceInvoices = ((inv.data?.data as Invoice[]) || []).slice(0, 30);
       for (const i of sourceInvoices) {
@@ -176,13 +196,10 @@ export function Settlement() {
         } catch { /* skip */ }
       }
       setAllFees(feesAggregate);
-    } catch {
-      // Summary tile failures are non-blocking; silently skip in production.
-    }
+    } catch { /* non-blocking */ }
   }, []);
 
   const fetchData = useCallback(async () => {
-    // Wave 3 tabs manage their own data; skip the shared loader.
     if (tab === 'disclosure' || tab === 'dvp' || tab === 'margin-gate') {
       setLoading(false);
       return;
@@ -210,14 +227,9 @@ export function Settlement() {
         const res = await api.get(`/settlement/breaks?${params.toString()}`);
         setBreaks(res.data?.data || []);
       } else if (tab === 'confirmations') {
-        // The Confirmations tab reuses the invoices endpoint — we filter
-        // client-side by confirmation_status since the schema is the
-        // same. Pull a generous batch.
         const res = await api.get('/settlement/invoices');
         setInvoices(res.data?.data || []);
       } else if (tab === 'fees') {
-        // Aggregate fee ledger across the caller's invoices. Fetched
-        // per-invoice and flattened so the SPA renders one table.
         const invRes = await api.get('/settlement/invoices');
         const list = (invRes.data?.data as Invoice[]) || [];
         const all: SettlementFeeRow[] = [];
@@ -227,7 +239,7 @@ export function Settlement() {
             for (const f of (fr.data?.data as SettlementFeeRow[]) || []) {
               all.push({ ...f, invoice_number: inv.invoice_number });
             }
-          } catch { /* skip invoices with no fees */ }
+          } catch { /* skip */ }
         }
         setFees(all);
       }
@@ -239,7 +251,6 @@ export function Settlement() {
   }, [tab, directionFilter, statusFilter]);
 
   useEffect(() => { void fetchData(); }, [fetchData]);
-  // Summary loads once on mount; mutations refresh it explicitly.
   useEffect(() => { void fetchSummary(); }, [fetchSummary]);
 
   const refreshAll = useCallback(async () => {
@@ -248,7 +259,7 @@ export function Settlement() {
 
   const reconcilePayment = useCallback(async (p: Payment) => {
     const bankRef = prompt('Bank statement reference (optional):', p.bank_reference || '');
-    if (bankRef === null) return; // user cancelled — do NOT reconcile
+    if (bankRef === null) return;
     try {
       await api.post(`/settlement/payments/${p.id}/reconcile`, { bank_reference: bankRef || undefined });
       await refreshAll();
@@ -258,140 +269,284 @@ export function Settlement() {
   }, [refreshAll]);
 
   const summary = useMemo(() => {
-    const outstanding = allInvoices.filter(i => ['issued', 'partial', 'overdue'].includes(i.status))
+    const outstanding = allInvoices
+      .filter(i => ['issued', 'partial', 'overdue'].includes(i.status))
       .reduce((sum, i) => sum + (i.total_amount - Number(i.paid_amount || 0)), 0);
     const overdue = allInvoices.filter(i => i.status === 'overdue').length;
     const openDisputes = allDisputes.filter(d => ['open', 'under_review'].includes(d.status)).length;
     const unreconciled = allPayments.filter(p => p.reconciled === 0 && p.from_participant_id === user?.id).length;
-    return { outstanding, overdue, openDisputes, unreconciled };
-  }, [allInvoices, allDisputes, allPayments, user?.id]);
+    const totalPaid = allInvoices
+      .filter(i => i.status === 'paid')
+      .reduce((s, i) => s + i.total_amount, 0);
+    const totalInvoiced = allInvoices.reduce((s, i) => s + i.total_amount, 0);
+    const settleRate = totalInvoiced > 0 ? Math.round((totalPaid / totalInvoiced) * 100) : 0;
+    const openBreaks = allBreaks.filter(b => b.status === 'open' || b.status === 'investigating').length;
+    return { outstanding, overdue, openDisputes, unreconciled, totalPaid, settleRate, openBreaks };
+  }, [allInvoices, allDisputes, allPayments, allBreaks, user?.id]);
+
+  // Activity feed: derive recent events from allInvoices + allPayments + allDisputes
+  const recentActivity = useMemo(() => {
+    type Event = { id: string; label: string; sub: string; time: string; tone?: 'bad' | 'warn' | 'ok' };
+    const events: Event[] = [];
+    for (const inv of allInvoices.slice(0, 8)) {
+      events.push({
+        id: `inv-${inv.id}`,
+        label: `Invoice ${inv.invoice_number}`,
+        sub: `${inv.from_name} → ${inv.to_name} · ${formatZAR(inv.total_amount)}`,
+        time: inv.created_at,
+        tone: inv.status === 'overdue' || inv.status === 'disputed' ? 'bad' : inv.status === 'paid' ? 'ok' : undefined,
+      });
+    }
+    for (const pay of allPayments.slice(0, 5)) {
+      events.push({
+        id: `pay-${pay.id}`,
+        label: `Payment ${pay.payment_reference}`,
+        sub: `${pay.from_name} · ${formatZAR(pay.amount)}`,
+        time: pay.payment_date,
+        tone: pay.reconciled ? 'ok' : 'warn',
+      });
+    }
+    for (const dsp of allDisputes.slice(0, 4)) {
+      events.push({
+        id: `dsp-${dsp.id}`,
+        label: `Dispute · ${dsp.invoice_number}`,
+        sub: dsp.reason.slice(0, 60),
+        time: dsp.created_at,
+        tone: dsp.status === 'resolved' ? 'ok' : 'bad',
+      });
+    }
+    return events
+      .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+      .slice(0, 20);
+  }, [allInvoices, allPayments, allDisputes]);
+
+  const TABS: Array<{ k: Tab; label: string }> = [
+    { k: 'insights', label: 'Insights' },
+    { k: 'invoices', label: 'Invoices' },
+    { k: 'payments', label: 'Payments' },
+    { k: 'disputes', label: 'Disputes' },
+    { k: 'breaks', label: 'Breaks' },
+    { k: 'confirmations', label: 'Confirmations' },
+    { k: 'fees', label: 'Fees' },
+    ...(user && ['admin', 'support', 'regulator', 'lender', 'trader', 'risk'].includes(user.role)
+      ? [{ k: 'disclosure' as Tab, label: 'Disclosure' }] : []),
+    ...(user && ['admin', 'support'].includes(user.role)
+      ? [{ k: 'dvp' as Tab, label: 'DvP' }] : []),
+    ...(user && ['admin', 'support'].includes(user.role)
+      ? [{ k: 'margin-gate' as Tab, label: 'Margin Gate' }] : []),
+  ];
+
+  const isWave3Tab = tab === 'disclosure' || tab === 'dvp' || tab === 'margin-gate';
 
   return (
-    <StitchPage
-      eyebrowIcon={DollarSign}
-      eyebrowLabel="Settlement"
-      title="Settlement"
-      subtitle="Invoices, payments, reconciliation and disputes."
-      actions={
-        <button type="button" onClick={() => void refreshAll()} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]" aria-label="Refresh">
-          <RefreshCw className="w-4 h-4" />
-        </button>
-      }
-    >
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Tile label="Outstanding" value={formatZAR(summary.outstanding)} />
-        <Tile label="Overdue invoices" value={String(summary.overdue)} accent={summary.overdue ? 'text-red-600' : undefined} />
-        <Tile label="Open disputes" value={String(summary.openDisputes)} accent={summary.openDisputes ? 'text-amber-600' : undefined} />
-        <Tile label="Unreconciled payments" value={String(summary.unreconciled)} accent={summary.unreconciled ? 'text-amber-600' : undefined} />
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 16, height: 'calc(100vh - 50px)', overflow: 'hidden', background: BG, padding: '16px 20px' }}>
+      {/* LEFT column */}
+      <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Header */}
+        <header style={{ background: BG1, borderRadius: 10, border: `1px solid ${BORDER}`, padding: '14px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <div>
+              <h1 style={{ fontSize: 17, fontWeight: 700, color: TX1 }}>Settlement</h1>
+              <p style={{ fontSize: 11, color: TX2, marginTop: 3 }}>Invoices, payments, reconciliation and disputes.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void refreshAll()}
+              style={{ padding: '6px 10px', border: `1px solid ${BORDER}`, borderRadius: 6, background: BG1, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: TX2 }}
+              aria-label="Refresh"
+            >
+              <RefreshCw size={13} /> Refresh
+            </button>
+          </div>
+        </header>
+
+        {/* KPI strip */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <KpiTile label="Outstanding" value={formatZAR(summary.outstanding)} tone={summary.outstanding > 0 ? 'warn' : 'ok'} />
+          <KpiTile label="Total Settled" value={formatZAR(summary.totalPaid)} tone="ok" />
+          <KpiTile label="Settle Rate" value={`${summary.settleRate}%`} tone={summary.settleRate >= 80 ? 'ok' : summary.settleRate >= 50 ? 'warn' : 'bad'} />
+          <KpiTile label="Overdue" value={summary.overdue} tone={summary.overdue > 0 ? 'bad' : 'ok'} />
+          <KpiTile label="Open Disputes" value={summary.openDisputes} tone={summary.openDisputes > 0 ? 'bad' : 'ok'} />
+          <KpiTile label="Open Breaks" value={summary.openBreaks} tone={summary.openBreaks > 0 ? 'warn' : 'ok'} />
+          <KpiTile label="Unreconciled" value={summary.unreconciled} tone={summary.unreconciled > 0 ? 'warn' : 'ok'} />
+        </div>
+
+        {/* Tab bar */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '4px 8px', display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          {TABS.map(t => (
+            <button
+              key={t.k}
+              type="button"
+              onClick={() => { setTab(t.k); setStatusFilter('all'); }}
+              style={{
+                padding: '5px 12px',
+                borderRadius: 6,
+                border: 'none',
+                background: tab === t.k ? ACC_BG : 'transparent',
+                color: tab === t.k ? ACC : TX2,
+                fontWeight: tab === t.k ? 700 : 400,
+                fontSize: 12,
+                cursor: 'pointer',
+                letterSpacing: '0.01em',
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Filter pills */}
+        {tab === 'invoices' && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, color: TX3 }}>Direction:</span>
+            {(['all', 'incoming', 'outgoing'] as const).map(d => (
+              <FilterPill key={d} label={d} active={directionFilter === d} onClick={() => setDirectionFilter(d)} />
+            ))}
+            <span style={{ fontSize: 11, color: TX3, marginLeft: 8 }}>Status:</span>
+            {(['all', 'issued', 'partial', 'paid', 'overdue', 'disputed'] as const).map(s => (
+              <FilterPill key={s} label={s} active={statusFilter === s} onClick={() => setStatusFilter(s)} />
+            ))}
+          </div>
+        )}
+        {tab === 'disputes' && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, color: TX3 }}>Status:</span>
+            {(['all', 'open', 'under_review', 'resolved', 'rejected'] as const).map(s => (
+              <FilterPill key={s} label={s.replace(/_/g, ' ')} active={statusFilter === s} onClick={() => setStatusFilter(s)} />
+            ))}
+          </div>
+        )}
+        {tab === 'breaks' && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, color: TX3 }}>Status:</span>
+            {(['all', 'open', 'investigating', 'resolved', 'rejected'] as const).map(s => (
+              <FilterPill key={s} label={s.replace(/_/g, ' ')} active={statusFilter === s} onClick={() => setStatusFilter(s)} />
+            ))}
+          </div>
+        )}
+
+        {/* Error */}
+        {error && <ErrorBanner message={error} onRetry={() => void refreshAll()} />}
+
+        {/* Loading skeleton */}
+        {loading && !isWave3Tab && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} style={{ height: 52, background: BG2, borderRadius: 8, animation: 'pulse 1.5s ease-in-out infinite' }} />
+            ))}
+          </div>
+        )}
+
+        {/* Tab content */}
+        {tab === 'insights' && (
+          <SettlementInsights
+            invoices={allInvoices}
+            payments={allPayments}
+            breaks={allBreaks}
+            fees={allFees}
+            userId={user?.id}
+          />
+        )}
+
+        {!loading && !error && tab === 'invoices' && (
+          invoices.length === 0
+            ? <EmptyCard icon="$" title="No invoices" desc="Invoices issued to you or that you've issued will appear here." />
+            : <InvoiceList rows={invoices} userId={user?.id} onPay={setPayInvoice} onDispute={setDisputeInvoice} onBreak={setBreakInvoice} onAfterConfirm={() => void refreshAll()} />
+        )}
+
+        {!loading && !error && tab === 'payments' && (
+          payments.length === 0
+            ? <EmptyCard icon="$" title="No payments" desc="Recorded payments will appear here." />
+            : <PaymentList rows={payments} userId={user?.id} onReconcile={reconcilePayment} />
+        )}
+
+        {!loading && !error && tab === 'disputes' && (
+          disputes.length === 0
+            ? <EmptyCard icon="!" title="No disputes" desc="Invoice disputes filed by either party will appear here." />
+            : <DisputeList rows={disputes} />
+        )}
+
+        {!loading && !error && tab === 'breaks' && (
+          breaks.length === 0
+            ? <EmptyCard icon="!" title="No settlement breaks" desc="Exceptions filed against your invoices will appear here." />
+            : <BreaksList rows={breaks} onTransition={async (id, to, notes, outcome) => {
+                await api.post(`/settlement/breaks/${id}/transition`, { to, notes, outcome });
+                void refreshAll();
+              }} />
+        )}
+
+        {!loading && !error && tab === 'confirmations' && (
+          <ConfirmationsQueue rows={invoices} userId={user?.id} onAfterAction={() => void refreshAll()} />
+        )}
+
+        {!loading && !error && tab === 'fees' && (
+          fees.length === 0
+            ? <EmptyCard icon="$" title="No fees accrued" desc="Late-payment / dunning / rebooking fees automatically accrue against unpaid invoices once the engine runs." />
+            : <FeesLedger rows={fees} />
+        )}
+
+        {tab === 'disclosure' && <DisclosureTab />}
+        {tab === 'dvp' && <DvpPanel />}
+        {tab === 'margin-gate' && <MarginGateWidget />}
       </div>
 
-      <div className="border-b border-ionex-border-100 flex gap-6 flex-wrap">
-        {(([
-          { k: 'insights', label: 'Insights' },
-          { k: 'invoices', label: 'Invoices' },
-          { k: 'payments', label: 'Payments' },
-          { k: 'disputes', label: 'Disputes' },
-          { k: 'breaks', label: 'Breaks' },
-          { k: 'confirmations', label: 'Confirmations' },
-          { k: 'fees', label: 'Fees' },
-          // Wave 3 — CPMI/clearing surfaces, role-gated.
-          ...(user && ['admin', 'support', 'regulator', 'lender', 'trader', 'risk'].includes(user.role)
-            ? [{ k: 'disclosure' as Tab, label: 'Disclosure' }] : []),
-          ...(user && ['admin', 'support'].includes(user.role)
-            ? [{ k: 'dvp' as Tab, label: 'DvP' }] : []),
-          ...(user && ['admin', 'support'].includes(user.role)
-            ? [{ k: 'margin-gate' as Tab, label: 'Margin gate' }] : []),
-        ]) as Array<{ k: Tab; label: string }>).map(t => (
-          <button type="button"
-            key={t.k}
-            onClick={() => { setTab(t.k); setStatusFilter('all'); }}
-            className={`pb-3 border-b-2 transition-colors ${tab === t.k ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-[#0f1c2e]'}`}
-          >
-            {t.label}
-          </button>
-        ))}
+      {/* RIGHT column */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflow: 'hidden' }}>
+        {/* AI assist */}
+        <div style={{ background: ACC_BG, borderRadius: 10, border: `1px solid ${ACC_BDR}`, padding: '12px 14px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: ACC, marginBottom: 6, letterSpacing: '0.06em' }}>AI ASSIST</div>
+          <div style={{ fontSize: 12, color: TX1, lineHeight: 1.55 }}>
+            {summary.overdue > 0
+              ? `${summary.overdue} overdue invoice${summary.overdue > 1 ? 's' : ''} detected. Initiate dunning or file a break before the 30-day SLA window closes.`
+              : summary.openDisputes > 0
+              ? `${summary.openDisputes} open dispute${summary.openDisputes > 1 ? 's' : ''} pending review. Resolve early to avoid credit-hold escalation.`
+              : summary.unreconciled > 0
+              ? `${summary.unreconciled} payment${summary.unreconciled > 1 ? 's' : ''} unreconciled. Attach bank references to close the clearing gap.`
+              : 'Settlement is current. No urgent actions detected.'}
+          </div>
+          {(summary.overdue > 0 || summary.openDisputes > 0 || summary.unreconciled > 0) && (
+            <div style={{ marginTop: 8, fontSize: 11, color: TX3 }}>
+              Settlement rate: <span style={{ fontFamily: MONO, color: summary.settleRate >= 80 ? GOOD : WARN }}>{summary.settleRate}%</span>
+            </div>
+          )}
+        </div>
+
+        {/* Activity feed */}
+        <div style={{ flex: 1, background: BG1, borderRadius: 10, border: `1px solid ${BORDER}`, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, fontSize: 11, fontWeight: 700, color: TX3, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            Recent Activity
+          </div>
+          {recentActivity.length === 0 ? (
+            <div style={{ padding: 20, fontSize: 12, color: TX3, textAlign: 'center' }}>No activity yet.</div>
+          ) : (
+            recentActivity.map(ev => (
+              <ActivityRow key={ev.id} label={ev.label} sub={ev.sub} time={ev.time} tone={ev.tone} />
+            ))
+          )}
+        </div>
+
+        {/* Summary panel */}
+        <div style={{ background: BG1, borderRadius: 10, border: `1px solid ${BORDER}`, padding: '12px 14px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: TX3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>Portfolio</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[
+              { k: 'Total invoiced', v: formatZAR(allInvoices.reduce((s, i) => s + i.total_amount, 0)) },
+              { k: 'Total paid', v: formatZAR(summary.totalPaid) },
+              { k: 'Outstanding', v: formatZAR(summary.outstanding) },
+              { k: 'Invoices', v: String(allInvoices.length) },
+              { k: 'Payments', v: String(allPayments.length) },
+              { k: 'Disputes', v: String(allDisputes.length) },
+            ].map(row => (
+              <div key={row.k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                <span style={{ color: TX3 }}>{row.k}</span>
+                <span style={{ fontFamily: MONO, color: TX1, fontWeight: 600 }}>{row.v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {tab === 'invoices' && (
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-sm text-ionex-text-mute">Direction:</span>
-          {(['all', 'incoming', 'outgoing'] as const).map(d => (
-            <button type="button" key={d} onClick={() => setDirectionFilter(d)} className={`px-3 py-1 rounded-full text-xs capitalize ${directionFilter === d ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{d}</button>
-          ))}
-          <span className="text-sm text-ionex-text-mute ml-3">Status:</span>
-          {(['all', 'issued', 'partial', 'paid', 'overdue', 'disputed'] as const).map(s => (
-            <button type="button" key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${statusFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s}</button>
-          ))}
-        </div>
-      )}
-
-      {tab === 'disputes' && (
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-sm text-ionex-text-mute">Status:</span>
-          {(['all', 'open', 'under_review', 'resolved', 'rejected'] as const).map(s => (
-            <button type="button" key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${statusFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s.replace(/_/g, ' ')}</button>
-          ))}
-        </div>
-      )}
-
-      {tab === 'breaks' && (
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-sm text-ionex-text-mute">Status:</span>
-          {(['all', 'open', 'investigating', 'resolved', 'rejected'] as const).map(s => (
-            <button type="button" key={s} onClick={() => setStatusFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${statusFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s.replace(/_/g, ' ')}</button>
-          ))}
-        </div>
-      )}
-
-      {loading && <Skeleton variant="card" rows={4} />}
-      {error && <ErrorBanner message={error} onRetry={() => void refreshAll()} />}
-
-      {tab === 'insights' && (
-        <SettlementInsights
-          invoices={allInvoices}
-          payments={allPayments}
-          breaks={allBreaks}
-          fees={allFees}
-          userId={user?.id}
-        />
-      )}
-
-      {!loading && !error && tab === 'invoices' && (
-        invoices.length === 0
-          ? <EmptyState icon={<DollarSign className="w-8 h-8" />} title="No invoices" description="Invoices issued to you or that you've issued will appear here." />
-          : <InvoiceTable rows={invoices} userId={user?.id} onPay={setPayInvoice} onDispute={setDisputeInvoice} onBreak={setBreakInvoice} onAfterConfirm={() => void refreshAll()} />
-      )}
-      {!loading && !error && tab === 'payments' && (
-        payments.length === 0
-          ? <EmptyState icon={<DollarSign className="w-8 h-8" />} title="No payments" description="Recorded payments will appear here." />
-          : <PaymentTable rows={payments} userId={user?.id} onReconcile={reconcilePayment} />
-      )}
-      {!loading && !error && tab === 'disputes' && (
-        disputes.length === 0
-          ? <EmptyState icon={<AlertTriangle className="w-8 h-8" />} title="No disputes" description="Invoice disputes filed by either party will appear here." />
-          : <DisputeTable rows={disputes} />
-      )}
-      {!loading && !error && tab === 'breaks' && (
-        breaks.length === 0
-          ? <EmptyState icon={<AlertTriangle className="w-8 h-8" />} title="No settlement breaks" description="Exceptions filed against your invoices (quantity / price / timing / metering / tariff) will appear here." />
-          : <BreaksTable rows={breaks} onTransition={async (id, to, notes, outcome) => {
-              await api.post(`/settlement/breaks/${id}/transition`, { to, notes, outcome });
-              void refreshAll();
-            }} />
-      )}
-      {!loading && !error && tab === 'confirmations' && (
-        <ConfirmationsQueue rows={invoices} userId={user?.id} onAfterAction={() => void refreshAll()} />
-      )}
-      {!loading && !error && tab === 'fees' && (
-        fees.length === 0
-          ? <EmptyState icon={<DollarSign className="w-8 h-8" />} title="No fees accrued" description="Late-payment / dunning / rebooking fees automatically accrue against unpaid invoices once the engine runs." />
-          : <SettlementFeesTable rows={fees} />
-      )}
-
-      {tab === 'disclosure' && <DisclosureTab />}
-      {tab === 'dvp' && <DvpPanel />}
-      {tab === 'margin-gate' && <MarginGateWidget />}
-
+      {/* Modals */}
       {payInvoice && (
         <RecordPaymentModal invoice={payInvoice} onClose={() => setPayInvoice(null)} onDone={() => { setPayInvoice(null); void refreshAll(); }} />
       )}
@@ -401,156 +556,385 @@ export function Settlement() {
       {breakInvoice && (
         <FileBreakModal invoice={breakInvoice} onClose={() => setBreakInvoice(null)} onDone={() => { setBreakInvoice(null); setTab('breaks'); setStatusFilter('all'); void refreshAll(); }} />
       )}
-    </StitchPage>
-  );
-}
-
-function Tile({ label, value, accent }: { label: string; value: string; accent?: string }) {
-  return (
-    <div className="p-4 bg-white border border-ionex-border-100 rounded-xl">
-      <p className="text-xs uppercase tracking-wide text-ionex-text-mute">{label}</p>
-      <p className={`text-2xl font-semibold mt-1 ${accent || 'text-[#0f1c2e]'}`}>{value}</p>
     </div>
   );
 }
 
-const CONFIRMATION_PILL: Record<string, string> = {
-  pending: 'bg-[#eef2f7] text-[#2d3748]',
-  issuer_confirmed: 'bg-blue-100 text-blue-700',
-  payer_acknowledged: 'bg-green-100 text-green-700',
-  disputed: 'bg-red-100 text-red-700',
-};
+// ─── Sub-components ───────────────────────────────────────────────────
 
-async function postConfirm(invoiceId: string, party: 'issuer' | 'payer', status: 'confirmed' | 'rejected', notes?: string) {
-  return api.post(`/settlement/invoices/${invoiceId}/confirm`, { party, status, notes });
+function FilterPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        padding: '3px 10px',
+        borderRadius: 20,
+        border: `1px solid ${active ? ACC_BDR : BORDER}`,
+        background: active ? ACC_BG : BG1,
+        color: active ? ACC : TX2,
+        fontSize: 11,
+        fontWeight: active ? 700 : 400,
+        cursor: 'pointer',
+        textTransform: 'capitalize',
+      }}
+    >
+      {label}
+    </button>
+  );
 }
 
-function InvoiceTable({ rows, userId, onPay, onDispute, onBreak, onAfterConfirm }: { rows: Invoice[]; userId?: string; onPay: (i: Invoice) => void; onDispute: (i: Invoice) => void; onBreak?: (i: Invoice) => void; onAfterConfirm?: () => void }) {
+function EmptyCard({ icon, title, desc }: { icon: string; title: string; desc: string }) {
   return (
-    <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
-          <tr>
-            <Th>Invoice</Th><Th>From</Th><Th>To</Th><Th>Amount</Th><Th>Paid</Th><Th>Due</Th><Th>Status</Th><Th>Confirmation</Th><Th>Actions</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(r => {
+    <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '32px 20px', textAlign: 'center' }}>
+      <div style={{ fontSize: 28, marginBottom: 8, color: TX3 }}>{icon}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: TX1, marginBottom: 4 }}>{title}</div>
+      <div style={{ fontSize: 12, color: TX3 }}>{desc}</div>
+    </div>
+  );
+}
+
+function ActivityRow({ label, sub, time, tone }: { label: string; sub: string; time: string; tone?: 'bad' | 'warn' | 'ok' }) {
+  const dot = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX3;
+  return (
+    <div style={{ display: 'flex', gap: 10, padding: '9px 14px', borderBottom: `1px solid ${BORDER}`, alignItems: 'flex-start' }}>
+      <div style={{ width: 6, height: 6, borderRadius: '50%', background: dot, marginTop: 5, flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: TX1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
+        <div style={{ fontSize: 10, color: TX3, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>
+      </div>
+      <div style={{ fontSize: 10, color: TX3, fontFamily: MONO, flexShrink: 0, marginTop: 1 }}>
+        {new Date(time).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short' })}
+      </div>
+    </div>
+  );
+}
+
+function RowItem({ children, hover, onClick }: { children: React.ReactNode; hover?: boolean; onClick?: () => void }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '10px 16px',
+        borderBottom: `1px solid ${BORDER}`,
+        cursor: onClick ? 'pointer' : 'default',
+        background: hov && hover ? BG2 : BG1,
+        gap: 12,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ─── Invoice list ─────────────────────────────────────────────────────
+function InvoiceList({ rows, userId, onPay, onDispute, onBreak, onAfterConfirm }: {
+  rows: Invoice[];
+  userId?: string;
+  onPay: (i: Invoice) => void;
+  onDispute: (i: Invoice) => void;
+  onBreak?: (i: Invoice) => void;
+  onAfterConfirm?: () => void;
+}) {
+  return (
+    <div style={{ background: BG1, borderRadius: 10, border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr 120px 120px 100px', padding: '7px 16px', borderBottom: `1px solid ${BORDER}`, background: BG2 }}>
+        {['Invoice', 'From', 'To', 'Amount', 'Due', 'Status'].map(h => (
+          <div key={h} style={{ fontSize: 9, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
+        ))}
+      </div>
+      {rows.map(r => {
+        const isPayer = r.to_participant_id === userId;
+        const isIssuer = r.from_participant_id === userId;
+        const canPay = isPayer && ['issued', 'partial', 'overdue'].includes(r.status);
+        const canDispute = isPayer && ['issued', 'partial', 'overdue'].includes(r.status);
+        const conf = r.confirmation_status || 'pending';
+        const canIssuerConfirm = isIssuer && conf === 'pending';
+        const canPayerAck = isPayer && conf === 'issuer_confirmed';
+        return (
+          <div key={r.id} style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr 120px 120px 100px', padding: '10px 16px', alignItems: 'center' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: TX1, fontFamily: MONO }}>{r.invoice_number}</div>
+              <div style={{ fontSize: 12, color: TX2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{r.from_name}</div>
+              <div style={{ fontSize: 12, color: TX2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{r.to_name}</div>
+              <div style={{ fontSize: 12, fontFamily: MONO, color: TX1 }}>{formatZAR(r.total_amount)}</div>
+              <div style={{ fontSize: 11, color: TX3, fontFamily: MONO }}>{r.due_date ? new Date(r.due_date).toLocaleDateString('en-ZA') : '—'}</div>
+              <StatusPill status={r.status} />
+            </div>
+            <div style={{ display: 'flex', gap: 6, padding: '4px 16px 8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 10, color: TX3 }}>Confirmation:</span>
+              <StatusPill status={conf.replace(/_/g, ' ')} />
+              <div style={{ flex: 1 }} />
+              {canIssuerConfirm && (
+                <ActionBtn color="blue" onClick={async () => { try { await postConfirm(r.id, 'issuer', 'confirmed'); onAfterConfirm?.(); } catch { /* */ } }}>Confirm</ActionBtn>
+              )}
+              {canPayerAck && (
+                <ActionBtn color="green" onClick={async () => { try { await postConfirm(r.id, 'payer', 'confirmed'); onAfterConfirm?.(); } catch { /* */ } }}>Acknowledge</ActionBtn>
+              )}
+              {canPay && <ActionBtn color="accent" onClick={() => onPay(r)}>Pay</ActionBtn>}
+              {canDispute && <ActionBtn color="red" onClick={() => onDispute(r)}>Dispute</ActionBtn>}
+              {onBreak && (isPayer || isIssuer) && r.status !== 'cancelled' && (
+                <ActionBtn color="warn" onClick={() => onBreak(r)}>Break</ActionBtn>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Payment list ─────────────────────────────────────────────────────
+function PaymentList({ rows, userId, onReconcile }: { rows: Payment[]; userId?: string; onReconcile: (p: Payment) => void }) {
+  return (
+    <div style={{ background: BG1, borderRadius: 10, border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '150px 110px 110px 90px 100px 60px auto', padding: '7px 16px', borderBottom: `1px solid ${BORDER}`, background: BG2 }}>
+        {['Reference', 'Invoice', 'Amount', 'Method', 'Date', 'Rec', ''].map((h, i) => (
+          <div key={i} style={{ fontSize: 9, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
+        ))}
+      </div>
+      {rows.map(p => {
+        const canReconcile = p.reconciled === 0 && p.from_participant_id === userId;
+        return (
+          <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '150px 110px 110px 90px 100px 60px auto', padding: '10px 16px', alignItems: 'center', borderBottom: `1px solid ${BORDER}` }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX1, fontFamily: MONO, overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.payment_reference}</div>
+            <div style={{ fontSize: 12, color: TX2, fontFamily: MONO }}>{p.invoice_number}</div>
+            <div style={{ fontSize: 12, fontFamily: MONO, color: TX1 }}>{formatZAR(p.amount)}</div>
+            <div style={{ fontSize: 10, color: TX3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{p.payment_method}</div>
+            <div style={{ fontSize: 11, color: TX3, fontFamily: MONO }}>{new Date(p.payment_date).toLocaleDateString('en-ZA')}</div>
+            <div>
+              <span style={{ fontSize: 10, fontWeight: 700, color: p.reconciled ? GOOD : WARN }}>{p.reconciled ? 'YES' : 'NO'}</span>
+            </div>
+            <div>
+              {canReconcile && <ActionBtn color="accent" onClick={() => onReconcile(p)}>Reconcile</ActionBtn>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Dispute list ─────────────────────────────────────────────────────
+function DisputeList({ rows }: { rows: Dispute[] }) {
+  return (
+    <div style={{ background: BG1, borderRadius: 10, border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+      {rows.map(d => (
+        <RowItem key={d.id} hover>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: TX1, fontFamily: MONO }}>{d.invoice_number}</span>
+              <StatusPill status={d.status} />
+            </div>
+            <div style={{ fontSize: 11, color: TX2, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.reason}</div>
+            <div style={{ fontSize: 10, color: TX3, marginTop: 2 }}>Filed by {d.filed_by_name} · {formatZAR(d.total_amount)}</div>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontSize: 11, fontFamily: MONO, color: TX3 }}>{new Date(d.created_at).toLocaleDateString('en-ZA')}</div>
+            {d.resolved_at && <div style={{ fontSize: 10, color: GOOD, marginTop: 2 }}>Resolved {new Date(d.resolved_at).toLocaleDateString('en-ZA')}</div>}
+          </div>
+        </RowItem>
+      ))}
+    </div>
+  );
+}
+
+// ─── Breaks list ──────────────────────────────────────────────────────
+function BreaksList({ rows, onTransition }: {
+  rows: Break[];
+  onTransition: (id: string, to: 'investigating' | 'resolved' | 'rejected', notes: string, outcome?: string) => Promise<void>;
+}) {
+  const [transitioning, setTransitioning] = useState<Break | null>(null);
+  const severityColor = (s: string) =>
+    s === 'critical' ? BAD : s === 'high' ? WARN : s === 'medium' ? ACC : TX3;
+  return (
+    <div style={{ background: BG1, borderRadius: 10, border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+      {rows.map(b => (
+        <div key={b.id} style={{ borderBottom: `1px solid ${BORDER}`, padding: '10px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: TX1, fontFamily: MONO }}>{b.invoice_number}</span>
+            <span style={{ fontSize: 10, color: severityColor(b.severity), fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{b.severity}</span>
+            <StatusPill status={b.status} />
+            <span style={{ fontSize: 10, color: TX3, marginLeft: 4 }}>{b.break_type.replace(/_/g, ' ')}</span>
+          </div>
+          <div style={{ fontSize: 11, color: TX2, marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.reason}</div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <span style={{ fontSize: 10, color: TX3, fontFamily: MONO }}>{new Date(b.reported_at).toLocaleDateString('en-ZA')}</span>
+            <div style={{ flex: 1 }} />
+            {b.status === 'open' && (
+              <ActionBtn color="blue" onClick={() => onTransition(b.id, 'investigating', '')}>Investigate</ActionBtn>
+            )}
+            {(b.status === 'open' || b.status === 'investigating') && (
+              <>
+                <ActionBtn color="green" onClick={() => setTransitioning({ ...b, status: 'resolved' as any })}>Resolve</ActionBtn>
+                <ActionBtn color="neutral" onClick={() => setTransitioning({ ...b, status: 'rejected' as any })}>Reject</ActionBtn>
+              </>
+            )}
+            {(b.status === 'resolved' || b.status === 'rejected') && b.resolution_outcome && (
+              <span style={{ fontSize: 10, color: TX3 }}>outcome: {b.resolution_outcome.replace(/_/g, ' ')}</span>
+            )}
+          </div>
+        </div>
+      ))}
+      {transitioning && (
+        <ResolveBreakModal
+          breakRow={transitioning}
+          onClose={() => setTransitioning(null)}
+          onDone={async (notes, outcome) => {
+            const to = transitioning.status as 'resolved' | 'rejected';
+            setTransitioning(null);
+            await onTransition(transitioning.id, to, notes, outcome);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Confirmations queue ──────────────────────────────────────────────
+function ConfirmationsQueue({ rows, userId, onAfterAction }: { rows: Invoice[]; userId?: string; onAfterAction: () => void }) {
+  const buckets: Record<string, Invoice[]> = {
+    pending: [], issuer_confirmed: [], payer_acknowledged: [], disputed: [],
+  };
+  for (const r of rows) {
+    const k = (r.confirmation_status as string | undefined) || 'pending';
+    if (!buckets[k]) buckets[k] = [];
+    buckets[k].push(r);
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {(['pending', 'issuer_confirmed', 'payer_acknowledged', 'disputed'] as const).map(state => (
+        <div key={state} style={{ background: BG1, borderRadius: 10, border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+          <div style={{ padding: '8px 16px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: 8, background: BG2 }}>
+            <StatusPill status={state.replace(/_/g, ' ')} />
+            <span style={{ fontSize: 11, color: TX3 }}>{buckets[state].length} invoice{buckets[state].length === 1 ? '' : 's'}</span>
+          </div>
+          {buckets[state].length === 0 ? (
+            <div style={{ padding: '12px 16px', fontSize: 12, color: TX3 }}>None.</div>
+          ) : buckets[state].map(r => {
             const isPayer = r.to_participant_id === userId;
             const isIssuer = r.from_participant_id === userId;
-            const canPay = isPayer && ['issued', 'partial', 'overdue'].includes(r.status);
-            const canDispute = isPayer && ['issued', 'partial', 'overdue'].includes(r.status);
-            const conf = r.confirmation_status || 'pending';
-            // Issuer confirms first (pending → issuer_confirmed). Then payer can
-            // acknowledge. Either side can reject at any non-terminal stage.
-            const canIssuerConfirm = isIssuer && conf === 'pending';
-            const canPayerAck = isPayer && conf === 'issuer_confirmed';
+            const canIssuerConfirm = isIssuer && state === 'pending';
+            const canPayerAck = isPayer && state === 'issuer_confirmed';
             return (
-              <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
-                <Td><span className="font-medium">{r.invoice_number}</span></Td>
-                <Td>{r.from_name}</Td>
-                <Td>{r.to_name}</Td>
-                <Td>{formatZAR(r.total_amount)}</Td>
-                <Td>{formatZAR(Number(r.paid_amount || 0))}</Td>
-                <Td>{r.due_date ? new Date(r.due_date).toLocaleDateString() : '—'}</Td>
-                <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-[#eef2f7]'}`}>{r.status}</span></Td>
-                <Td>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${CONFIRMATION_PILL[conf] || 'bg-[#eef2f7]'}`}>
-                    {conf.replace(/_/g, ' ')}
-                  </span>
-                </Td>
-                <Td>
-                  <div className="flex gap-1">
-                    {canIssuerConfirm && (
-                      <button type="button"
-                        onClick={async () => { try { await postConfirm(r.id, 'issuer', 'confirmed'); onAfterConfirm?.(); } catch { /* surface via reload */ } }}
-                        className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded"
-                        title="Issuer confirms this invoice is correct as issued"
-                      >Confirm</button>
-                    )}
-                    {canPayerAck && (
-                      <button type="button"
-                        onClick={async () => { try { await postConfirm(r.id, 'payer', 'confirmed'); onAfterConfirm?.(); } catch { /* surface via reload */ } }}
-                        className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded"
-                        title="Payer acknowledges this invoice"
-                      >Acknowledge</button>
-                    )}
-                    {canPay && <button type="button" onClick={() => onPay(r)} className="px-2 py-1 text-xs bg-ionex-brand text-white rounded">Pay</button>}
-                    {canDispute && <button type="button" onClick={() => onDispute(r)} className="px-2 py-1 text-xs bg-red-50 text-red-700 rounded">Dispute</button>}
-                    {onBreak && (isPayer || isIssuer) && r.status !== 'cancelled' && (
-                      <button type="button" onClick={() => onBreak(r)} className="px-2 py-1 text-xs bg-amber-50 text-amber-800 rounded" title="File a settlement break">Break</button>
-                    )}
-                    {isIssuer && !canPay && !onBreak && !canIssuerConfirm && !canPayerAck && <span className="text-xs text-ionex-text-mute">—</span>}
-                  </div>
-                </Td>
-              </tr>
+              <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: `1px solid ${BORDER}` }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: TX1, fontFamily: MONO }}>{r.invoice_number}</div>
+                  <div style={{ fontSize: 11, color: TX2, marginTop: 2 }}>{r.from_name} → {r.to_name} · {formatZAR(r.total_amount)}</div>
+                </div>
+                <div style={{ fontSize: 11, color: TX3, fontFamily: MONO }}>{r.due_date ? new Date(r.due_date).toLocaleDateString('en-ZA') : '—'}</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {canIssuerConfirm && (
+                    <ActionBtn color="blue" onClick={async () => { try { await postConfirm(r.id, 'issuer', 'confirmed'); onAfterAction(); } catch { /* */ } }}>Confirm</ActionBtn>
+                  )}
+                  {canPayerAck && (
+                    <ActionBtn color="green" onClick={async () => { try { await postConfirm(r.id, 'payer', 'confirmed'); onAfterAction(); } catch { /* */ } }}>Acknowledge</ActionBtn>
+                  )}
+                  {!canIssuerConfirm && !canPayerAck && (
+                    <span style={{ fontSize: 11, color: TX3 }}>—</span>
+                  )}
+                </div>
+              </div>
             );
           })}
-        </tbody>
-      </table>
+        </div>
+      ))}
     </div>
   );
 }
 
-function PaymentTable({ rows, userId, onReconcile }: { rows: Payment[]; userId?: string; onReconcile: (p: Payment) => void }) {
+// ─── Fees ledger ──────────────────────────────────────────────────────
+function FeesLedger({ rows }: { rows: SettlementFeeRow[] }) {
+  const total = rows.reduce((s, r) => s + (r.amount_zar || 0), 0);
+  const byType: Record<string, number> = {};
+  for (const r of rows) byType[r.fee_type] = (byType[r.fee_type] || 0) + (r.amount_zar || 0);
   return (
-    <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
-          <tr>
-            <Th>Reference</Th><Th>Invoice</Th><Th>Amount</Th><Th>Method</Th><Th>Date</Th><Th>Bank ref</Th><Th>Reconciled</Th><Th>Actions</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(p => {
-            const canReconcile = p.reconciled === 0 && p.from_participant_id === userId;
-            return (
-              <tr key={p.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
-                <Td><span className="font-medium">{p.payment_reference}</span></Td>
-                <Td>{p.invoice_number}</Td>
-                <Td>{formatZAR(p.amount)}</Td>
-                <Td><span className="uppercase text-xs">{p.payment_method}</span></Td>
-                <Td>{new Date(p.payment_date).toLocaleDateString()}</Td>
-                <Td className="font-mono text-xs">{p.bank_reference || '—'}</Td>
-                <Td>{p.reconciled ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <Clock className="w-4 h-4 text-amber-500" />}</Td>
-                <Td>{canReconcile && <button type="button" onClick={() => onReconcile(p)} className="px-2 py-1 text-xs bg-ionex-brand text-white rounded">Reconcile</button>}</Td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function DisputeTable({ rows }: { rows: Dispute[] }) {
-  return (
-    <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
-          <tr>
-            <Th>Invoice</Th><Th>Filed by</Th><Th>Reason</Th><Th>Status</Th><Th>Filed</Th><Th>Resolved</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(d => (
-            <tr key={d.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
-              <Td><span className="font-medium">{d.invoice_number}</span><div className="text-xs text-ionex-text-mute">{formatZAR(d.total_amount)}</div></Td>
-              <Td>{d.filed_by_name}</Td>
-              <Td className="max-w-md"><div className="truncate" title={d.reason}>{d.reason}</div></Td>
-              <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[d.status] || 'bg-[#eef2f7]'}`}>{d.status.replace(/_/g, ' ')}</span></Td>
-              <Td>{new Date(d.created_at).toLocaleDateString()}</Td>
-              <Td>{d.resolved_at ? new Date(d.resolved_at).toLocaleDateString() : '—'}</Td>
-            </tr>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <KpiTile label="Total fees" value={formatZAR(total)} tone="warn" />
+        {Object.keys(byType).sort().map(k => (
+          <KpiTile key={k} label={k.replace(/_/g, ' ')} value={formatZAR(byType[k])} />
+        ))}
+      </div>
+      <div style={{ background: BG1, borderRadius: 10, border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '130px 110px 120px 1fr 80px', padding: '7px 16px', borderBottom: `1px solid ${BORDER}`, background: BG2 }}>
+          {['When', 'Type', 'Invoice', 'Reason', 'Amount'].map(h => (
+            <div key={h} style={{ fontSize: 9, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
           ))}
-        </tbody>
-      </table>
+        </div>
+        {rows.map(r => (
+          <div key={r.id} style={{ display: 'grid', gridTemplateColumns: '130px 110px 120px 1fr 80px', padding: '10px 16px', alignItems: 'center', borderBottom: `1px solid ${BORDER}` }}>
+            <div style={{ fontSize: 11, color: TX3, fontFamily: MONO }}>{new Date(r.calculated_at).toLocaleDateString('en-ZA')}</div>
+            <StatusPill status={r.fee_type.replace(/_/g, ' ')} />
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX1, fontFamily: MONO, overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.invoice_number || r.invoice_id.slice(0, 10) + '…'}</div>
+            <div style={{ fontSize: 11, color: TX2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }} title={r.reason || ''}>{r.reason || '—'}</div>
+            <div style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, color: WARN }}>{formatZAR(r.amount_zar)}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-function Th({ children }: { children: React.ReactNode }) { return <th className="px-4 py-2">{children}</th>; }
-function Td({ children, className = '' }: { children: React.ReactNode; className?: string }) { return <td className={`px-4 py-2 ${className}`}>{children}</td>; }
+// ─── Action button helper ─────────────────────────────────────────────
+function ActionBtn({ children, onClick, color = 'accent' }: { children: React.ReactNode; onClick: () => void; color?: 'accent' | 'red' | 'green' | 'blue' | 'warn' | 'neutral' }) {
+  const bg = color === 'accent' ? ACC_BG : color === 'red' ? 'oklch(0.97 0.04 20)' : color === 'green' ? 'oklch(0.95 0.04 155)' : color === 'blue' ? 'oklch(0.95 0.04 240)' : color === 'warn' ? 'oklch(0.97 0.04 55)' : BG2;
+  const c = color === 'accent' ? ACC : color === 'red' ? BAD : color === 'green' ? GOOD : color === 'blue' ? 'oklch(0.40 0.16 240)' : color === 'warn' ? WARN : TX2;
+  const bdr = color === 'accent' ? ACC_BDR : color === 'red' ? 'oklch(0.85 0.12 20)' : color === 'green' ? 'oklch(0.80 0.12 155)' : color === 'blue' ? 'oklch(0.80 0.12 240)' : color === 'warn' ? 'oklch(0.80 0.12 55)' : BORDER;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{ padding: '3px 10px', borderRadius: 5, border: `1px solid ${bdr}`, background: bg, color: c, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ─── Modals ───────────────────────────────────────────────────────────
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  useEscapeKey(onClose);
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        style={{ background: BG1, borderRadius: 12, border: `1px solid ${BORDER}`, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: TX1 }}>{title}</h3>
+          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: TX3 }} aria-label="Close"><X size={16} /></button>
+        </div>
+        <div style={{ padding: 18 }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function LabelInput({ label, value, onChange, type = 'text' }: { label: string; value: string | number; onChange: (v: string) => void; type?: string }) {
+  return (
+    <label style={{ display: 'block', marginTop: 12 }}>
+      <div style={{ fontSize: 11, color: TX3, marginBottom: 4 }}>{label}</div>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{ width: '100%', padding: '7px 10px', border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 13, color: TX1, background: BG, boxSizing: 'border-box', fontFamily: type === 'number' ? MONO : 'inherit' }}
+      />
+    </label>
+  );
+}
 
 function RecordPaymentModal({ invoice, onClose, onDone }: { invoice: Invoice; onClose: () => void; onDone: () => void }) {
   const balance = invoice.total_amount - Number(invoice.paid_amount || 0);
@@ -566,13 +950,7 @@ function RecordPaymentModal({ invoice, onClose, onDone }: { invoice: Invoice; on
     setSaving(true);
     setErr(null);
     try {
-      await api.post('/settlement/payments', {
-        invoice_id: invoice.id,
-        amount,
-        payment_method: method,
-        bank_reference: bankRef || undefined,
-        notes: notes || undefined,
-      });
+      await api.post('/settlement/payments', { invoice_id: invoice.id, amount, payment_method: method, bank_reference: bankRef || undefined, notes: notes || undefined });
       onDone();
     } catch (e: any) {
       setErr(e?.response?.data?.error || 'Failed to record payment');
@@ -583,14 +961,14 @@ function RecordPaymentModal({ invoice, onClose, onDone }: { invoice: Invoice; on
 
   return (
     <Modal title={`Record payment · ${invoice.invoice_number}`} onClose={onClose}>
-      <p className="text-sm text-ionex-text-mute mb-3">
-        Balance due: <span className="font-semibold text-[#0f1c2e]">{formatZAR(balance)}</span>
+      <p style={{ fontSize: 12, color: TX2, marginBottom: 12 }}>
+        Balance due: <span style={{ fontWeight: 700, color: TX1, fontFamily: MONO }}>{formatZAR(balance)}</span>
       </p>
       {err && <ErrorBanner message={err} />}
       <LabelInput label="Amount (ZAR)" type="number" value={amount} onChange={v => setAmount(Number(v) || 0)} />
-      <label className="block text-sm mt-3">
-        <span className="text-ionex-text-mute">Payment method</span>
-        <select value={method} onChange={e => setMethod(e.target.value)} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg">
+      <label style={{ display: 'block', marginTop: 12 }}>
+        <div style={{ fontSize: 11, color: TX3, marginBottom: 4 }}>Payment method</div>
+        <select value={method} onChange={e => setMethod(e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 13, background: BG, color: TX1 }}>
           <option value="eft">EFT</option>
           <option value="swift">SWIFT</option>
           <option value="rtgs">RTGS</option>
@@ -599,9 +977,9 @@ function RecordPaymentModal({ invoice, onClose, onDone }: { invoice: Invoice; on
       </label>
       <LabelInput label="Bank reference (optional)" value={bankRef} onChange={setBankRef} />
       <LabelInput label="Notes (optional)" value={notes} onChange={setNotes} />
-      <div className="flex justify-end gap-2 pt-4">
-        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
-        <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 16 }}>
+        <button type="button" onClick={onClose} style={{ padding: '7px 16px', border: `1px solid ${BORDER}`, borderRadius: 6, background: BG1, color: TX2, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+        <button type="button" onClick={submit} disabled={saving} style={{ padding: '7px 16px', border: `1px solid ${ACC_BDR}`, borderRadius: 6, background: ACC_BG, color: ACC, fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.5 : 1 }}>
           {saving ? 'Recording…' : 'Record payment'}
         </button>
       </div>
@@ -631,19 +1009,19 @@ function FileDisputeModal({ invoice, onClose, onDone }: { invoice: Invoice; onCl
   return (
     <Modal title={`File dispute · ${invoice.invoice_number}`} onClose={onClose}>
       {err && <ErrorBanner message={err} />}
-      <label className="block text-sm">
-        <span className="text-ionex-text-mute">Reason</span>
+      <label style={{ display: 'block' }}>
+        <div style={{ fontSize: 11, color: TX3, marginBottom: 4 }}>Reason</div>
         <textarea
           value={reason}
           onChange={e => setReason(e.target.value)}
           rows={5}
           placeholder="Describe the dispute reason (e.g. incorrect tariff, meter read error, duplicate invoice…)"
-          className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg resize-none"
+          style={{ width: '100%', padding: '7px 10px', border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 13, color: TX1, background: BG, resize: 'none', boxSizing: 'border-box' }}
         />
       </label>
-      <div className="flex justify-end gap-2 pt-4">
-        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
-        <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 16 }}>
+        <button type="button" onClick={onClose} style={{ padding: '7px 16px', border: `1px solid ${BORDER}`, borderRadius: 6, background: BG1, color: TX2, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+        <button type="button" onClick={submit} disabled={saving} style={{ padding: '7px 16px', border: `1px solid oklch(0.85 0.12 20)`, borderRadius: 6, background: 'oklch(0.97 0.04 20)', color: BAD, fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.5 : 1 }}>
           {saving ? 'Filing…' : 'File dispute'}
         </button>
       </div>
@@ -651,128 +1029,26 @@ function FileDisputeModal({ invoice, onClose, onDone }: { invoice: Invoice; onCl
   );
 }
 
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-  useEscapeKey(onClose);
-  return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-[#0f1c2e]">{title}</h3>
-          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
-        </div>
-        <div className="p-5">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function LabelInput({ label, value, onChange, type = 'text' }: { label: string; value: string | number; onChange: (v: string) => void; type?: string }) {
-  return (
-    <label className="block text-sm mt-3">
-      <span className="text-ionex-text-mute">{label}</span>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
-    </label>
-  );
-}
-
-
-// ─── Settlement breaks ────────────────────────────────────────────────
-//
-// A break is filed against an invoice when issuer + payer disagree on a
-// dimension that does NOT warrant a full dispute (quantity / price /
-// timing / metering / tariff / fx). The state machine is
-// open → investigating → resolved | rejected; terminal transitions
-// require notes. High/critical breaks auto-flip the invoice to
-// confirmation_status='disputed' on the backend.
-
-function BreaksTable({
-  rows,
-  onTransition,
-}: {
-  rows: Break[];
-  onTransition: (id: string, to: 'investigating' | 'resolved' | 'rejected', notes: string, outcome?: string) => Promise<void>;
-}) {
-  const [transitioning, setTransitioning] = useState<Break | null>(null);
-  return (
-    <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
-          <tr>
-            <Th>Invoice</Th><Th>Type</Th><Th>Severity</Th><Th>Status</Th><Th>Reported</Th><Th>Reason</Th><Th>Actions</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(b => (
-            <tr key={b.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
-              <Td><span className="font-medium">{b.invoice_number}</span></Td>
-              <Td className="capitalize">{b.break_type.replace(/_/g, ' ')}</Td>
-              <Td>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase ${BREAK_SEVERITY_PILL[b.severity] || 'bg-[#eef2f7]'}`}>{b.severity}</span>
-              </Td>
-              <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[b.status] || 'bg-[#eef2f7]'}`}>{b.status.replace(/_/g, ' ')}</span></Td>
-              <Td>{new Date(b.reported_at).toLocaleDateString()}</Td>
-              <Td className="max-w-md"><span className="block truncate" title={b.reason}>{b.reason}</span></Td>
-              <Td>
-                <div className="flex gap-1">
-                  {b.status === 'open' && (
-                    <button type="button" onClick={() => onTransition(b.id, 'investigating', '')} className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded">Investigate</button>
-                  )}
-                  {(b.status === 'open' || b.status === 'investigating') && (
-                    <>
-                      <button type="button" onClick={() => setTransitioning({ ...b, status: 'resolved' as any })} className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded">Resolve</button>
-                      <button type="button" onClick={() => setTransitioning({ ...b, status: 'rejected' as any })} className="px-2 py-1 text-xs bg-[#eef2f7] text-[#2d3748] rounded">Reject</button>
-                    </>
-                  )}
-                  {(b.status === 'resolved' || b.status === 'rejected') && (
-                    <span className="text-xs text-ionex-text-mute">{b.resolution_outcome ? `outcome: ${b.resolution_outcome.replace(/_/g, ' ')}` : '—'}</span>
-                  )}
-                </div>
-              </Td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {transitioning && (
-        <ResolveBreakModal
-          breakRow={transitioning}
-          onClose={() => setTransitioning(null)}
-          onDone={async (notes, outcome) => {
-            const to = transitioning.status as 'resolved' | 'rejected';
-            setTransitioning(null);
-            await onTransition(transitioning.id, to, notes, outcome);
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-function ResolveBreakModal({
-  breakRow,
-  onClose,
-  onDone,
-}: {
-  breakRow: Break;
-  onClose: () => void;
-  onDone: (notes: string, outcome: string) => Promise<void>;
-}) {
+function ResolveBreakModal({ breakRow, onClose, onDone }: { breakRow: Break; onClose: () => void; onDone: (notes: string, outcome: string) => Promise<void> }) {
   const [notes, setNotes] = useState('');
   const [outcome, setOutcome] = useState<string>(breakRow.status === 'resolved' ? 'corrected' : 'no_action');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
   const submit = async () => {
     if (notes.trim().length < 3) { setErr('Notes ≥3 chars required.'); return; }
     setSaving(true); setErr(null);
     try { await onDone(notes, outcome); } catch (e: any) { setErr(e?.message || 'Failed'); setSaving(false); }
   };
+
   const isResolved = breakRow.status === 'resolved';
   return (
     <Modal title={`${isResolved ? 'Resolve' : 'Reject'} break · ${breakRow.invoice_number}`} onClose={onClose}>
       {err && <ErrorBanner message={err} />}
-      <div className="text-sm text-ionex-text-mute mb-3">{breakRow.reason}</div>
-      <label className="block text-sm mt-3">
-        <span className="text-ionex-text-mute">Outcome</span>
-        <select value={outcome} onChange={e => setOutcome(e.target.value)} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg">
+      <div style={{ fontSize: 12, color: TX2, marginBottom: 8 }}>{breakRow.reason}</div>
+      <label style={{ display: 'block', marginTop: 12 }}>
+        <div style={{ fontSize: 11, color: TX3, marginBottom: 4 }}>Outcome</div>
+        <select value={outcome} onChange={e => setOutcome(e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 13, background: BG, color: TX1 }}>
           {isResolved ? (
             <>
               <option value="corrected">Corrected</option>
@@ -788,13 +1064,13 @@ function ResolveBreakModal({
           )}
         </select>
       </label>
-      <label className="block text-sm mt-3">
-        <span className="text-ionex-text-mute">Notes</span>
-        <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4} placeholder="What changed? Required ≥3 chars." className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg resize-none" />
+      <label style={{ display: 'block', marginTop: 12 }}>
+        <div style={{ fontSize: 11, color: TX3, marginBottom: 4 }}>Notes</div>
+        <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4} placeholder="What changed? Required ≥3 chars." style={{ width: '100%', padding: '7px 10px', border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 13, color: TX1, background: BG, resize: 'none', boxSizing: 'border-box' }} />
       </label>
-      <div className="flex justify-end gap-2 pt-4">
-        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
-        <button type="button" onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${isResolved ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 16 }}>
+        <button type="button" onClick={onClose} style={{ padding: '7px 16px', border: `1px solid ${BORDER}`, borderRadius: 6, background: BG1, color: TX2, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+        <button type="button" onClick={submit} disabled={saving} style={{ padding: '7px 16px', borderRadius: 6, border: 'none', background: isResolved ? 'oklch(0.40 0.16 155)' : TX2, color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.5 : 1 }}>
           {saving ? 'Saving…' : (isResolved ? 'Resolve' : 'Reject')}
         </button>
       </div>
@@ -810,29 +1086,25 @@ function FileBreakModal({ invoice, onClose, onDone }: { invoice: Invoice; onClos
   const [actual, setActual] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
   const submit = async () => {
     if (reason.trim().length < 3) { setErr('Reason ≥3 chars required.'); return; }
     setSaving(true); setErr(null);
     try {
-      await api.post(`/settlement/invoices/${invoice.id}/breaks`, {
-        break_type: breakType,
-        severity,
-        reason,
-        expected_value: expected ? Number(expected) : undefined,
-        actual_value: actual ? Number(actual) : undefined,
-      });
+      await api.post(`/settlement/invoices/${invoice.id}/breaks`, { break_type: breakType, severity, reason, expected_value: expected ? Number(expected) : undefined, actual_value: actual ? Number(actual) : undefined });
       onDone();
     } catch (e: any) {
       setErr(e?.response?.data?.error || e.message || 'Failed to file break');
       setSaving(false);
     }
   };
+
   return (
     <Modal title={`File a settlement break · ${invoice.invoice_number}`} onClose={onClose}>
       {err && <ErrorBanner message={err} />}
-      <label className="block text-sm mt-2">
-        <span className="text-ionex-text-mute">Break type</span>
-        <select value={breakType} onChange={e => setBreakType(e.target.value)} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg">
+      <label style={{ display: 'block', marginTop: 8 }}>
+        <div style={{ fontSize: 11, color: TX3, marginBottom: 4 }}>Break type</div>
+        <select value={breakType} onChange={e => setBreakType(e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 13, background: BG, color: TX1 }}>
           <option value="quantity">Quantity (volume mismatch)</option>
           <option value="price">Price (tariff or rate disagreement)</option>
           <option value="timing">Timing (period or due date)</option>
@@ -842,152 +1114,29 @@ function FileBreakModal({ invoice, onClose, onDone }: { invoice: Invoice; onClos
           <option value="other">Other</option>
         </select>
       </label>
-      <label className="block text-sm mt-3">
-        <span className="text-ionex-text-mute">Severity</span>
-        <select value={severity} onChange={e => setSeverity(e.target.value)} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg">
+      <label style={{ display: 'block', marginTop: 12 }}>
+        <div style={{ fontSize: 11, color: TX3, marginBottom: 4 }}>Severity</div>
+        <select value={severity} onChange={e => setSeverity(e.target.value)} style={{ width: '100%', padding: '7px 10px', border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 13, background: BG, color: TX1 }}>
           <option value="low">Low</option>
           <option value="medium">Medium</option>
           <option value="high">High — auto-disputes invoice</option>
           <option value="critical">Critical — auto-disputes invoice</option>
         </select>
       </label>
-      <div className="grid grid-cols-2 gap-3">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <LabelInput label="Expected value" type="number" value={expected} onChange={setExpected} />
         <LabelInput label="Actual value" type="number" value={actual} onChange={setActual} />
       </div>
-      <label className="block text-sm mt-3">
-        <span className="text-ionex-text-mute">Reason</span>
-        <textarea value={reason} onChange={e => setReason(e.target.value)} rows={4} placeholder="What disagreement? At least 3 characters." className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg resize-none" />
+      <label style={{ display: 'block', marginTop: 12 }}>
+        <div style={{ fontSize: 11, color: TX3, marginBottom: 4 }}>Reason</div>
+        <textarea value={reason} onChange={e => setReason(e.target.value)} rows={4} placeholder="What disagreement? At least 3 characters." style={{ width: '100%', padding: '7px 10px', border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 13, color: TX1, background: BG, resize: 'none', boxSizing: 'border-box' }} />
       </label>
-      <div className="flex justify-end gap-2 pt-4">
-        <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
-        <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50">
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 16 }}>
+        <button type="button" onClick={onClose} style={{ padding: '7px 16px', border: `1px solid ${BORDER}`, borderRadius: 6, background: BG1, color: TX2, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+        <button type="button" onClick={submit} disabled={saving} style={{ padding: '7px 16px', border: `1px solid ${ACC_BDR}`, borderRadius: 6, background: ACC_BG, color: ACC, fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.5 : 1 }}>
           {saving ? 'Filing…' : 'File break'}
         </button>
       </div>
     </Modal>
-  );
-}
-
-// ─── Settlement confirmations queue ──────────────────────────────────
-
-function ConfirmationsQueue({
-  rows,
-  userId,
-  onAfterAction,
-}: {
-  rows: Invoice[];
-  userId?: string;
-  onAfterAction: () => void;
-}) {
-  const buckets: Record<string, Invoice[]> = {
-    pending: [], issuer_confirmed: [], payer_acknowledged: [], disputed: [],
-  };
-  for (const r of rows) {
-    const k = (r.confirmation_status as string | undefined) || 'pending';
-    if (!buckets[k]) buckets[k] = [];
-    buckets[k].push(r);
-  }
-  return (
-    <div className="space-y-4">
-      {(['pending', 'issuer_confirmed', 'payer_acknowledged', 'disputed'] as const).map(state => (
-        <section key={state}>
-          <h3 className="text-[13px] font-semibold uppercase tracking-wide mb-2 flex items-center gap-2" style={{ color: '#6b7685' }}>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${CONFIRMATION_PILL[state]}`}>{state.replace(/_/g, ' ')}</span>
-            <span>{buckets[state].length} invoice{buckets[state].length === 1 ? '' : 's'}</span>
-          </h3>
-          {buckets[state].length === 0 ? (
-            <div className="rounded-xl border border-ionex-border-100 bg-white p-4 text-[12px] text-ionex-text-mute">None.</div>
-          ) : (
-            <div className="rounded-xl border border-ionex-border-100 bg-white overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
-                  <tr>
-                    <Th>Invoice</Th><Th>From</Th><Th>To</Th><Th>Amount</Th><Th>Due</Th><Th>Actions</Th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {buckets[state].map(r => {
-                    const isPayer = r.to_participant_id === userId;
-                    const isIssuer = r.from_participant_id === userId;
-                    const canIssuerConfirm = isIssuer && state === 'pending';
-                    const canPayerAck = isPayer && state === 'issuer_confirmed';
-                    return (
-                      <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
-                        <Td><span className="font-medium">{r.invoice_number}</span></Td>
-                        <Td>{r.from_name}</Td>
-                        <Td>{r.to_name}</Td>
-                        <Td>{formatZAR(r.total_amount)}</Td>
-                        <Td>{r.due_date ? new Date(r.due_date).toLocaleDateString() : '—'}</Td>
-                        <Td>
-                          <div className="flex gap-1">
-                            {canIssuerConfirm && (
-                              <button type="button" onClick={async () => { try { await postConfirm(r.id, 'issuer', 'confirmed'); onAfterAction(); } catch { /* */ } }} className="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded">Confirm</button>
-                            )}
-                            {canPayerAck && (
-                              <button type="button" onClick={async () => { try { await postConfirm(r.id, 'payer', 'confirmed'); onAfterAction(); } catch { /* */ } }} className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded">Acknowledge</button>
-                            )}
-                            {!canIssuerConfirm && !canPayerAck && (
-                              <span className="text-xs text-ionex-text-mute">—</span>
-                            )}
-                          </div>
-                        </Td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      ))}
-    </div>
-  );
-}
-
-// ─── Settlement fees ledger ──────────────────────────────────────────
-
-function SettlementFeesTable({ rows }: { rows: SettlementFeeRow[] }) {
-  const total = rows.reduce((s, r) => s + (r.amount_zar || 0), 0);
-  const byType: Record<string, number> = {};
-  for (const r of rows) byType[r.fee_type] = (byType[r.fee_type] || 0) + (r.amount_zar || 0);
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="rounded-xl border border-ionex-border-100 bg-white p-3">
-          <div className="text-[10px] uppercase tracking-wide text-ionex-text-mute">Total</div>
-          <div className="mt-1 text-[18px] font-bold">{formatZAR(total)}</div>
-        </div>
-        {Object.keys(byType).sort().map(k => (
-          <div key={k} className="rounded-xl border border-ionex-border-100 bg-white p-3">
-            <div className="text-[10px] uppercase tracking-wide text-ionex-text-mute">{k.replace(/_/g, ' ')}</div>
-            <div className="mt-1 text-[18px] font-bold">{formatZAR(byType[k])}</div>
-          </div>
-        ))}
-      </div>
-      <div className="rounded-xl border border-ionex-border-100 bg-white overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
-            <tr>
-              <Th>When</Th><Th>Type</Th><Th>Invoice</Th><Th>Basis</Th>
-              <Th>Reason</Th><Th>Rule</Th><Th>Amount</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(r => (
-              <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
-                <Td>{new Date(r.calculated_at).toLocaleString()}</Td>
-                <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${FEE_TYPE_PILL[r.fee_type] || 'bg-[#eef2f7]'}`}>{r.fee_type.replace(/_/g, ' ')}</span></Td>
-                <Td><span className="font-medium">{r.invoice_number || r.invoice_id.slice(0, 10) + '…'}</span></Td>
-                <Td>{r.basis}</Td>
-                <Td className="max-w-md"><span className="block truncate" title={r.reason || ''}>{r.reason || '—'}</span></Td>
-                <Td><span className="text-[10px] font-mono text-ionex-text-mute">{r.calc_rule_version}</span></Td>
-                <Td className="font-medium">{formatZAR(r.amount_zar)}</Td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
   );
 }

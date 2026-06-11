@@ -34,7 +34,7 @@ interface DunningRow {
 }
 
 const STATUS_TONE: Record<Status, { bg: string; fg: string; label: string }> = {
-  issued: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Issued' },
+  issued: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Issued' },
   acknowledged: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Acknowledged' },
   cured: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Cured' },
   overdue: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Overdue' },
@@ -43,7 +43,7 @@ const STATUS_TONE: Record<Status, { bg: string; fg: string; label: string }> = {
 };
 
 const CYCLE_TONE: Record<number, { bg: string; fg: string }> = {
-  1: { bg: '#dbecfb', fg: '#1a3a5c' },
+  1: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)' },
   2: { bg: '#fff4d6', fg: '#a06200' },
   3: { bg: '#fde0e0', fg: '#9b1f1f' },
 };
@@ -141,7 +141,7 @@ export function DunningTab() {
             {s === 'open' ? 'Open' : s === 'all' ? 'All' : STATUS_TONE[s as Status].label}
           </button>
         ))}
-        <button type="button" onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[#d8dee6] bg-white text-[#1a3a5c] ml-auto">
+        <button type="button" onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[#d8dee6] bg-white ml-auto" style={{ color: 'oklch(0.46 0.16 55)' }}>
           Refresh
         </button>
       </div>
@@ -208,7 +208,7 @@ export function DunningTab() {
               </div>
               <div className="text-[14px] font-bold text-[#a8385c]">{drillRow.title}</div>
             </div>
-            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685] hover:text-[#1a3a5c]">Close ×</button>
+            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685] hover:text-[oklch(0.46_0.16_55)]">Close ×</button>
           </div>
           <div className="grid grid-cols-2 gap-3 text-[12px]">
             <Field label="Status" value={STATUS_TONE[drillRow.status].label} />
@@ -295,7 +295,7 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
       <div className="text-[10px] uppercase font-bold text-[#6b7685]">{label}</div>
-      <div className="text-[12px] text-[#1a3a5c]">{value}</div>
+      <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>{value}</div>
     </div>
   );
 }

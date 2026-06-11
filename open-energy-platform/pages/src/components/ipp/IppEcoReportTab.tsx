@@ -29,7 +29,7 @@ interface Kpis {
 
 const STATUS_COLORS: Record<string, string> = {
   audit_due:                      'bg-[#eef2f7] text-[#6b7685]',
-  eco_appointed:                  'bg-blue-100 text-blue-700',
+  eco_appointed:                  'bg-[#eef2f7] text-[#3d4756]',
   site_inspection_in_progress:    'bg-yellow-100 text-yellow-800',
   report_drafting:                'bg-yellow-100 text-yellow-800',
   submitted_to_dffe:              'bg-amber-100 text-amber-700',
@@ -44,8 +44,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   small:     'bg-[#eef2f7] text-[#3d4756]',
-  medium:    'bg-blue-100 text-blue-700',
-  large:     'bg-indigo-100 text-indigo-700',
+  medium:    'bg-[#eef2f7] text-[#3d4756]',
+  large:     'bg-[#e8ecf0] text-[#3d4756]',
   utility:   'bg-orange-100 text-orange-800',
   strategic: 'bg-red-100 text-red-700',
 };

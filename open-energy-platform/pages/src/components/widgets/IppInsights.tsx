@@ -79,7 +79,7 @@ function EnvComplianceHeatmap({ conditions }: { conditions: EaCondition[] }) {
     good: 'bg-[#e7f4ea] text-[#1a8a5b]',
     warn: 'bg-[#fef3e6] text-[#b04e0f]',
     bad:  'bg-[#fde0db] text-[#c0392b]',
-    info: 'bg-[#eef2f7] text-[#3b82c4]',
+    info: 'bg-[#eef2f7] text-[oklch(0.46_0.16_55)]',
   };
   return (
     <section className="widget-card">
@@ -149,7 +149,7 @@ function MilestoneCriticalPath({ milestones }: { milestones: Milestone[] }) {
             <XAxis type="number" tick={{ fontSize: 10, fill: '#6b7685' }} />
             <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#6b7685' }} width={140} />
             <Tooltip formatter={(v: any) => `${Number(v)}d`} />
-            <ReferenceLine x={0} stroke="#1a3a5c" />
+            <ReferenceLine x={0} stroke="oklch(0.46 0.16 55)" />
             <Bar dataKey="slipDays" name="Slip days">
               {data.map((d, i) => (
                 <Cell key={i} fill={d.slipDays > 14 ? '#c0392b' : d.slipDays > 0 ? '#b04e0f' : '#1a8a5b'} />
@@ -186,7 +186,7 @@ function LdCalculator({ epcs }: { epcs: Epc[] }) {
       <div className="grid grid-cols-3 gap-3 px-4 py-3 widget-control-band">
         <label className="block text-[11px]">
           <div className="flex justify-between"><span>Delay days</span><span className="font-mono">{delayDays}</span></div>
-          <input type="range" min={0} max={365} value={delayDays} onChange={(e) => setDelayDays(Number(e.target.value))} className="w-full accent-[#1a3a5c]" />
+          <input type="range" min={0} max={365} value={delayDays} onChange={(e) => setDelayDays(Number(e.target.value))} className="w-full accent-[oklch(0.46_0.16_55)]" />
         </label>
         <Tile label="LD accrued (raw)"  value={formatZAR(rawLd)}    tone="warn" />
         <Tile label="LD payable (capped)" value={formatZAR(cappedLd)} tone={cappedLd >= capValue ? 'bad' : 'info'} />
@@ -201,7 +201,7 @@ function LdCalculator({ epcs }: { epcs: Epc[] }) {
             className="h-full"
             style={{
               width: `${utilisationPct}%`,
-              background: utilisationPct >= 100 ? '#c0392b' : utilisationPct >= 75 ? '#b04e0f' : '#3b82c4',
+              background: utilisationPct >= 100 ? '#c0392b' : utilisationPct >= 75 ? '#b04e0f' : 'oklch(0.46 0.16 55)',
             }}
           />
         </div>
@@ -234,11 +234,11 @@ function TariffComparison({ project }: { project: Project | null }) {
       <div className="grid grid-cols-2 gap-3 px-4 py-3 widget-control-band">
         <label className="block text-[11px]">
           <div className="flex justify-between"><span>PPA price (R/MWh)</span><span className="font-mono">{ppaPrice}</span></div>
-          <input type="range" min={500} max={3000} step={50} value={ppaPrice} onChange={(e) => setPpaPrice(Number(e.target.value))} className="w-full accent-[#1a3a5c]" />
+          <input type="range" min={500} max={3000} step={50} value={ppaPrice} onChange={(e) => setPpaPrice(Number(e.target.value))} className="w-full accent-[oklch(0.46_0.16_55)]" />
         </label>
         <label className="block text-[11px]">
           <div className="flex justify-between"><span>Utility price (R/MWh)</span><span className="font-mono">{utilityPrice}</span></div>
-          <input type="range" min={1000} max={3500} step={50} value={utilityPrice} onChange={(e) => setUtilityPrice(Number(e.target.value))} className="w-full accent-[#1a3a5c]" />
+          <input type="range" min={1000} max={3500} step={50} value={utilityPrice} onChange={(e) => setUtilityPrice(Number(e.target.value))} className="w-full accent-[oklch(0.46_0.16_55)]" />
         </label>
       </div>
       <div className="p-3">
@@ -328,7 +328,7 @@ function ProjectHealthScorecard({
 
 function Tile({ label, value, tone }: { label: string; value: string; tone: string }) {
   const map: Record<string, string> = {
-    good: 'text-[#1a8a5b]', warn: 'text-[#b04e0f]', bad: 'text-[#c0392b]', info: 'text-[#3b82c4]',
+    good: 'text-[#1a8a5b]', warn: 'text-[#b04e0f]', bad: 'text-[#c0392b]', info: 'text-[oklch(0.46_0.16_55)]',
   };
   return (
     <div>

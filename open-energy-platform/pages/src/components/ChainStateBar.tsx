@@ -1,35 +1,33 @@
 // ChainStateBar — shared progress indicator for state-machine chains.
-// Shows how far along a workflow is, with a filled track, node marker, and step counter.
-// Used by chain tab components: IppIssuesTab, IppRiskTab, StageGateTab, etc.
+// mockup-b design tokens: amber accent, OKLCH palette.
+// Used by all chain tab components.
 
 import React from 'react';
 
 export type ChainStateBarProps = {
-  /** All states in the chain, in order (main path). */
   allStates: readonly string[];
-  /** The current state value. */
   currentState: string;
-  /** States that are off the main path (terminal branches, error states, etc.). */
   branchStates?: readonly string[];
-  /** Display label for the current state. If omitted, underscores are replaced with spaces. */
   stateLabel?: string;
   /**
-   * 'full' — track + node + label + step counter (default).
+   * 'full'    — track + node + label + step counter (default).
    * 'compact' — mini bar only, no text. Suitable for table cells.
    */
   variant?: 'full' | 'compact';
 };
 
-/** Replace underscores with spaces and title-case each word. */
 function formatState(state: string): string {
-  return state
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return state.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-const BRAND_PURPLE = '#7e57c2';
-const TRACK_BG = '#e2d9f3';
-const NODE_BORDER = '#ffffff';
+// mockup-b tokens
+const ACC      = 'oklch(0.46 0.16 55)';   // amber
+const ACC_BG   = 'oklch(0.96 0.05 55)';
+const ACC_BDR  = 'oklch(0.80 0.12 55)';
+const BAD      = 'oklch(0.48 0.20 20)';   // red for branch/terminal
+const TRACK_BG = 'oklch(0.93 0.004 250)';
+const TX3      = 'oklch(0.60 0.007 250)';
+const TX2      = 'oklch(0.40 0.009 250)';
 
 export function ChainStateBar({
   allStates,
@@ -38,20 +36,13 @@ export function ChainStateBar({
   stateLabel,
   variant = 'full',
 }: ChainStateBarProps) {
-  const mainStates = allStates.filter((s) => !branchStates.includes(s));
-
-  // Index within mainStates (fall back to searching full list)
+  const mainStates = allStates.filter(s => !branchStates.includes(s));
   const indexInMain = mainStates.indexOf(currentState);
-  const indexInAll = allStates.indexOf(currentState);
-  const isBranch = branchStates.includes(currentState);
-
-  // Use main-path index when possible; for branch states show as end of main path
-  const effectiveIndex = indexInMain >= 0 ? indexInMain : indexInAll >= 0 ? indexInAll : 0;
+  const indexInAll  = allStates.indexOf(currentState);
+  const isBranch    = branchStates.includes(currentState);
+  const effectiveIndex = indexInMain >= 0 ? indexInMain : (indexInAll >= 0 ? indexInAll : 0);
   const total = mainStates.length > 0 ? mainStates.length : allStates.length;
-
-  // Fraction 0→1 representing progress along the main path
   const fraction = total <= 1 ? 1 : effectiveIndex / (total - 1);
-
   const displayLabel = stateLabel ?? formatState(currentState);
   const stepN = effectiveIndex + 1;
   const stepM = total;
@@ -65,43 +56,26 @@ export function ChainStateBar({
         aria-valuemax={total - 1}
         aria-label={`${displayLabel} — step ${stepN} of ${stepM}`}
         style={{
-          position: 'relative',
-          width: 60,
-          height: 4,
-          borderRadius: 2,
-          backgroundColor: TRACK_BG,
-          overflow: 'hidden',
-          display: 'inline-block',
-          verticalAlign: 'middle',
+          position: 'relative', width: 56, height: 4, borderRadius: 2,
+          background: TRACK_BG, overflow: 'hidden', display: 'inline-block', verticalAlign: 'middle',
         }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            height: '100%',
-            width: `${Math.min(100, fraction * 100)}%`,
-            backgroundColor: BRAND_PURPLE,
-            borderRadius: 2,
-            transition: 'width 0.3s ease',
-          }}
-        />
+        <div style={{
+          position: 'absolute', left: 0, top: 0, height: '100%',
+          width: `${Math.min(100, fraction * 100)}%`,
+          background: isBranch ? BAD : ACC,
+          borderRadius: 2, transition: 'width 0.3s cubic-bezier(0.23,1,0.32,1)',
+        }} />
       </div>
     );
   }
 
-  // ── Full variant ─────────────────────────────────────────────────────────────
-  const trackHeight = 6;
-  const nodeSize = 12;
-
-  // Node position as % across the track
+  const trackH = 5;
+  const nodeSize = 11;
   const nodePct = Math.min(100, Math.max(0, fraction * 100));
 
-  const hasBranches = branchStates.length > 0;
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 120 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 110 }}>
       {/* Track + node */}
       <div
         role="progressbar"
@@ -109,91 +83,43 @@ export function ChainStateBar({
         aria-valuemin={0}
         aria-valuemax={total - 1}
         aria-label={`${displayLabel} — step ${stepN} of ${stepM}`}
-        style={{
-          position: 'relative',
-          height: trackHeight,
-          backgroundColor: TRACK_BG,
-          borderRadius: trackHeight / 2,
-          overflow: 'visible',
-        }}
+        style={{ position: 'relative', height: trackH, background: TRACK_BG, borderRadius: trackH / 2, overflow: 'visible' }}
       >
-        {/* Filled portion */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            height: '100%',
-            width: `${Math.min(100, fraction * 100)}%`,
-            backgroundColor: BRAND_PURPLE,
-            borderRadius: trackHeight / 2,
-            transition: 'width 0.3s ease',
-          }}
-        />
-
-        {/* Node marker */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: `${nodePct}%`,
-            transform: 'translate(-50%, -50%)',
-            width: nodeSize,
-            height: nodeSize,
-            borderRadius: '50%',
-            backgroundColor: isBranch ? '#d97706' : BRAND_PURPLE,
-            border: `2px solid ${NODE_BORDER}`,
-            boxShadow: `0 0 0 2px ${isBranch ? '#d97706' : BRAND_PURPLE}`,
-            zIndex: 1,
-            flexShrink: 0,
-          }}
-        />
+        <div style={{
+          position: 'absolute', left: 0, top: 0, height: '100%',
+          width: `${Math.min(100, fraction * 100)}%`,
+          background: isBranch ? BAD : ACC, borderRadius: trackH / 2,
+          transition: 'width 0.3s cubic-bezier(0.23,1,0.32,1)',
+        }} />
+        <div style={{
+          position: 'absolute', top: '50%', left: `${nodePct}%`,
+          transform: 'translate(-50%, -50%)',
+          width: nodeSize, height: nodeSize, borderRadius: '50%',
+          background: isBranch ? BAD : ACC,
+          border: '2px solid white',
+          boxShadow: `0 0 0 2px ${isBranch ? BAD : ACC_BDR}`,
+          zIndex: 1,
+        }} />
       </div>
 
       {/* Label + step counter */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
         <span
-          style={{
-            fontSize: 12,
-            fontWeight: 500,
-            color: '#4c3d8f',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            maxWidth: 160,
-          }}
+          style={{ fontSize: 11, fontWeight: 600, color: TX2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 140 }}
           title={displayLabel}
         >
           {displayLabel}
         </span>
-        <span
-          style={{
-            fontSize: 11,
-            color: '#9ca3af',
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-          }}
-        >
-          {stepN} / {stepM}
+        <span style={{ fontSize: 10, color: TX3, whiteSpace: 'nowrap', flexShrink: 0, fontFamily: '"IBM Plex Mono","Fira Code",monospace' }}>
+          {stepN}/{stepM}
         </span>
       </div>
 
       {/* Branch indicator */}
-      {hasBranches && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            fontSize: 11,
-            color: '#9ca3af',
-          }}
-        >
-          <span style={{ fontSize: 10 }}>⬊</span>
-          <span>
-            {branchStates.length === 1
-              ? `1 branch state`
-              : `${branchStates.length} branch states`}
+      {branchStates.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '1px 5px', borderRadius: 3, background: 'oklch(0.97 0.04 20)', color: BAD, border: `1px solid oklch(0.88 0.08 20)` }}>
+            {branchStates.length === 1 ? '1 branch' : `${branchStates.length} branches`}
           </span>
         </div>
       )}

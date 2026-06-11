@@ -203,7 +203,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
     submitLabel: 'Submit drawdown request',
     onSubmit: async (values) => {
       const token = localStorage.getItem('token') || '';
-      const res = await fetch('/api/loan-drawdowns', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      const res = await fetch('/api/lender/drawdown-chain', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || 'Drawdown request failed'); }
     },
   },
@@ -237,7 +237,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
     cta: 'danger',
     onSubmit: async (values) => {
       const token = localStorage.getItem('token') || '';
-      const res = await fetch('/api/covenant-certificates', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      const res = await fetch('/api/covenant-certificate/chain', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || 'Covenant breach recording failed'); }
     },
   },
@@ -296,7 +296,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
     submitLabel: 'Submit drawdown',
     onSubmit: async (values) => {
       const token = localStorage.getItem('token') || '';
-      await fetch('/api/lender/drawdowns', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
+      await fetch('/api/lender/drawdown-chain', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
     },
   },
   {
@@ -386,7 +386,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/covenant-certificates', values); },
+    onSubmit: async (values) => { await api.post('/api/covenant-certificate/chain', values); },
   },
   {
     id: 'lender-dscr-monitor',
@@ -481,7 +481,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/loan-transfers', values); },
+    onSubmit: async (values) => { await api.post('/api/loan-transfer/chain', values); },
   },
   {
     id: 'lender-security',
@@ -512,7 +512,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/security-perfection', values); },
+    onSubmit: async (values) => { await api.post('/api/security-perfection/chain', values); },
   },
   {
     id: 'lender-restructure',
@@ -543,7 +543,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/loan-restructure', values); },
+    onSubmit: async (values) => { await api.post('/api/lender/loan-restructure/chain', values); },
   },
   {
     id: 'lender-esap-monitor',
@@ -745,7 +745,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
     cta: 'danger',
     onSubmit: async (values) => {
       const token = localStorage.getItem('token') || '';
-      await fetch('/api/lender/loan-defaults', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
+      await fetch('/api/loan-default/chain', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
     },
   },
 ];
@@ -766,7 +766,7 @@ export function LenderWorkstationPage() {
   const kpis = useWorkstationKpis('lender');
   const facilitiesPanel = useWorkstationPanel('Active facilities', '/funder/facilities', (r) => ({
     id: r.id,
-    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[#dbecfb] text-[#1a3a5c]">{r.facility_type || r.product_type || 'facility'}</span>,
+    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)]">{r.facility_type || r.product_type || 'facility'}</span>,
     text: <span>{r.facility_name || r.borrower_name || r.project_name || r.id} · {r.facility_amount_zar != null ? Number(r.facility_amount_zar).toLocaleString('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }) : ''}</span>,
     meta: <span className="font-mono text-[10px] text-[#6b7685]">{(r.lifecycle_stage || r.status || '').replace(/_/g, ' ')}</span>,
   }), 'No active facilities.');
@@ -811,7 +811,7 @@ export function LenderWorkstationPage() {
             <div className="space-y-8">
               {LENDER_REPORTS.map(cfg => (
                 <div key={cfg.endpoint} className="space-y-2">
-                  <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">{cfg.title}</p>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{cfg.title}</p>
                   <ReportPanel config={cfg} />
                 </div>
               ))}
@@ -871,7 +871,7 @@ function CapitalAdequacyTab({ onRefresh }: { onRefresh?: () => void }) {
     <div>
       <div className="flex justify-end mb-3">
         <button type="button"
-          className="px-3 py-1.5 rounded bg-[#c2873a] text-white text-sm font-medium hover:bg-[#a3702f]"
+          className="px-3 py-1.5 rounded bg-[oklch(0.46_0.16_55)] text-white text-sm font-medium hover:bg-[#1f4a78]"
           onClick={() => setModal('create')}
         >
           + New report
@@ -1014,7 +1014,7 @@ function EsapMonitoringTab({ onRefresh }: { onRefresh: () => void }) {
     <div>
       <button type="button"
         onClick={() => setModal('create')}
-        className="mb-4 px-4 py-2 bg-[#c2873a] text-white text-sm rounded hover:bg-[#a3702f]"
+        className="mb-4 px-4 py-2 bg-[oklch(0.46_0.16_55)] text-white text-sm rounded hover:bg-[oklch(0.40_0.15_55)]"
       >
         Issue ESAP record
       </button>
@@ -1179,7 +1179,7 @@ function CpClearanceTab({ onRefresh }: { onRefresh?: () => void }) {
     <div>
       <div className="flex justify-end mb-3">
         <button type="button"
-          className="px-3 py-1.5 rounded bg-[#c2873a] text-white text-sm font-medium hover:bg-[#a3702f]"
+          className="px-3 py-1.5 rounded bg-[oklch(0.46_0.16_55)] text-white text-sm font-medium hover:bg-[#1f4a78]"
           onClick={() => setModal('create')}
         >
           + New CP register
@@ -1390,7 +1390,7 @@ function ConstructionCostReportTab({ onRefresh }: { onRefresh?: () => void }) {
         <div className="flex gap-4 text-sm">
           {stats && (
             <>
-              <span className="text-[#6b7685]">Total <strong className="text-[#1a3a5c]">{stats.total}</strong></span>
+              <span className="text-[#6b7685]">Total <strong className="text-[oklch(0.46_0.16_55)]">{stats.total}</strong></span>
               <span className="text-[#6b7685]">Compliant <strong className="text-green-700">{stats.compliant}</strong></span>
               <span className="text-[#6b7685]">At risk <strong className="text-amber-700">{stats.at_risk}</strong></span>
               <span className="text-[#6b7685]">Defaulted <strong className="text-red-700">{stats.defaulted}</strong></span>
@@ -1399,7 +1399,7 @@ function ConstructionCostReportTab({ onRefresh }: { onRefresh?: () => void }) {
           )}
         </div>
         <button type="button"
-          className="px-3 py-1.5 rounded bg-[#c2873a] text-white text-sm font-medium hover:bg-[#a3702f]"
+          className="px-3 py-1.5 rounded bg-[oklch(0.46_0.16_55)] text-white text-sm font-medium hover:bg-[#1f4a78]"
           onClick={() => setModal('create')}
         >
           + New period
@@ -1431,7 +1431,7 @@ function ConstructionCostReportTab({ onRefresh }: { onRefresh?: () => void }) {
               return (
                 <tr key={r.id} className="border-b border-[#f0f4f8] hover:bg-[#f8fafc]">
                   <td className="py-2 pr-3 font-mono text-xs">
-                    <div className="font-medium text-[#1a3a5c]">{r.project_id.slice(0, 16)}</div>
+                    <div className="font-medium text-[oklch(0.46_0.16_55)]">{r.project_id.slice(0, 16)}</div>
                     <div className="text-[#6b7685]">{r.report_month}</div>
                   </td>
                   <td className="py-2 pr-3">
@@ -1459,7 +1459,7 @@ function ConstructionCostReportTab({ onRefresh }: { onRefresh?: () => void }) {
                   <td className="py-2">
                     {avail.length > 0 && (
                       <button type="button"
-                        className="px-2 py-1 rounded bg-[#f0f4f8] text-[#1a3a5c] text-xs font-medium hover:bg-[#e2e8f0]"
+                        className="px-2 py-1 rounded bg-[#f0f4f8] text-[oklch(0.46_0.16_55)] text-xs font-medium hover:bg-[#e2e8f0]"
                         onClick={() => setModal({ type: 'action', id: r.id, currentStatus: r.chain_status })}
                       >
                         Action

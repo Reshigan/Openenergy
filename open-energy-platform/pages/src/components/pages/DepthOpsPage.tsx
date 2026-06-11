@@ -34,7 +34,7 @@ export function DepthOpsPage() {
       title="Operations workbench"
       subtitle="Algo execution, position limits, margin calls, T+1 net settlement, default management, IPP drawdowns + LDs, lender IFRS 9 + watchlist, carbon PDDs."
     >
-      <div className="border-b border-[#dde4ec] flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1 border-b" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
         {([
           { k: 'algos',     label: 'Algos',          icon: <Activity     size={13} /> },
           { k: 'limits',    label: 'Limits',         icon: <BarChart3    size={13} /> },
@@ -48,7 +48,10 @@ export function DepthOpsPage() {
           { k: 'pdd',       label: 'Carbon PDDs',    icon: <Leaf         size={13} /> },
         ] as Array<{ k: Tab; label: string; icon: React.ReactNode }>).map((t) => (
           <button type="button" key={t.k} onClick={() => setTab(t.k)}
-            className={`h-10 px-3 text-[12px] font-semibold inline-flex items-center gap-1 border-b-2 transition-colors ${tab === t.k ? 'border-[#3b82c4] text-[#3b82c4]' : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'}`}>
+            className="h-10 px-3 text-[12px] font-semibold inline-flex items-center gap-1 border-b-2 transition-colors"
+            style={tab === t.k
+              ? { borderColor: 'oklch(0.46 0.16 55)', color: 'oklch(0.46 0.16 55)' }
+              : { borderColor: 'transparent', color: 'oklch(0.60 0.007 250)' }}>
             {t.icon} {t.label}
           </button>
         ))}
@@ -95,22 +98,22 @@ function AlgosTab() {
     <div className="mt-3 space-y-3">
       <Section title="New algo execution">
         <div className="p-3 grid grid-cols-2 md:grid-cols-6 gap-2 items-end">
-          <select value={draft.algo_type} onChange={(e) => setDraft({ ...draft, algo_type: e.target.value })} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]">
+          <select value={draft.algo_type} onChange={(e) => setDraft({ ...draft, algo_type: e.target.value })} className="h-9 px-2 rounded border text-[12px]" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
             <option value="twap">TWAP</option><option value="vwap">VWAP</option>
             <option value="pov">POV</option><option value="iceberg">Iceberg</option>
           </select>
-          <select value={draft.energy_type} onChange={(e) => setDraft({ ...draft, energy_type: e.target.value })} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]">
+          <select value={draft.energy_type} onChange={(e) => setDraft({ ...draft, energy_type: e.target.value })} className="h-9 px-2 rounded border text-[12px]" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
             <option value="solar">solar</option><option value="wind">wind</option>
             <option value="power">power</option><option value="carbon">carbon</option>
           </select>
-          <select value={draft.side} onChange={(e) => setDraft({ ...draft, side: e.target.value })} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]">
+          <select value={draft.side} onChange={(e) => setDraft({ ...draft, side: e.target.value })} className="h-9 px-2 rounded border text-[12px]" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
             <option value="buy">Buy</option><option value="sell">Sell</option>
           </select>
-          <input type="number" placeholder="Volume MWh" value={draft.total_volume_mwh} onChange={(e) => setDraft({ ...draft, total_volume_mwh: Number(e.target.value) })} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px] font-mono" />
-          <input type="datetime-local" value={draft.start_at} onChange={(e) => setDraft({ ...draft, start_at: e.target.value })} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]" />
-          <input type="datetime-local" value={draft.end_at}   onChange={(e) => setDraft({ ...draft, end_at: e.target.value })}   className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]" />
+          <input type="number" placeholder="Volume MWh" value={draft.total_volume_mwh} onChange={(e) => setDraft({ ...draft, total_volume_mwh: Number(e.target.value) })} className="h-9 px-2 rounded border text-[12px] font-mono" style={{ borderColor: 'oklch(0.87 0.006 250)' }} />
+          <input type="datetime-local" value={draft.start_at} onChange={(e) => setDraft({ ...draft, start_at: e.target.value })} className="h-9 px-2 rounded border text-[12px]" style={{ borderColor: 'oklch(0.87 0.006 250)' }} />
+          <input type="datetime-local" value={draft.end_at}   onChange={(e) => setDraft({ ...draft, end_at: e.target.value })}   className="h-9 px-2 rounded border text-[12px]" style={{ borderColor: 'oklch(0.87 0.006 250)' }} />
         </div>
-        <div className="px-3 pb-3"><button type="button" onClick={submit} disabled={submitting} className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">{submitting ? 'Submitting…' : 'Submit algo'}</button></div>
+        <div className="px-3 pb-3"><button type="button" onClick={submit} disabled={submitting} className="h-9 px-3 rounded text-white text-[12px] font-semibold disabled:opacity-50" style={{ background: 'oklch(0.46 0.16 55)' }}>{submitting ? 'Submitting…' : 'Submit algo'}</button></div>
       </Section>
       <Section title={`Active algos (${rows.length})`}>
         <Table headers={['Algo', 'Side', 'Volume', 'Filled', 'Window', 'Status', '']}>
@@ -125,7 +128,7 @@ function AlgosTab() {
               <td className="text-right space-x-2">
                 {r.status === 'running' && <button type="button" onClick={async () => { await api.post(`/trading-deep/algos/${r.id}/pause`, {}); void load(); }} className="text-[11px]">Pause</button>}
                 {r.status === 'paused'  && <button type="button" onClick={async () => { await api.post(`/trading-deep/algos/${r.id}/resume`, {}); void load(); }} className="text-[11px]">Resume</button>}
-                {!['completed','cancelled'].includes(r.status) && <button type="button" onClick={async () => { await api.post(`/trading-deep/algos/${r.id}/cancel`, {}); void load(); }} className="text-[11px] text-[#c0392b]">Cancel</button>}
+                {!['completed','cancelled'].includes(r.status) && <button type="button" onClick={async () => { await api.post(`/trading-deep/algos/${r.id}/cancel`, {}); void load(); }} className="text-[11px]" style={{ color: 'oklch(0.48 0.20 20)' }}>Cancel</button>}
               </td>
             </tr>
           ))}
@@ -229,8 +232,8 @@ function CyclesTab() {
             <td className="text-right font-mono">{r.netting_efficiency != null ? `${(r.netting_efficiency * 100).toFixed(1)}%` : '—'}</td>
             <td><Pill status={r.status} /></td>
             <td className="text-right space-x-1">
-              {r.status === 'open'           && <button type="button" onClick={() => action(r.id, 'net')}     className="text-[11px] text-[#3b82c4]">Net</button>}
-              {r.status === 'net_calculated' && <button type="button" onClick={() => action(r.id, 'novate')}  className="text-[11px] text-[#3b82c4]">Novate</button>}
+              {r.status === 'open'           && <button type="button" onClick={() => action(r.id, 'net')}     className="text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>Net</button>}
+              {r.status === 'net_calculated' && <button type="button" onClick={() => action(r.id, 'novate')}  className="text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>Novate</button>}
               {r.status === 'novated'        && <button type="button" onClick={() => action(r.id, 'settle')} className="text-[11px] widget-tone-good-text font-semibold">Settle</button>}
             </td>
           </tr>
@@ -287,16 +290,16 @@ function DrawdownsTab() {
               <td className="font-mono text-[11px]">{r.project_id}</td>
               <td className="text-right font-mono">{formatZAR(r.requested_amount_zar)}</td>
               <td><Pill status={r.status} /></td>
-              <td className="text-right"><button type="button" onClick={() => open(r.id)} className="text-[11px] text-[#3b82c4]">{expanded === r.id ? 'Hide CPs' : 'View CPs'}</button></td>
+              <td className="text-right"><button type="button" onClick={() => open(r.id)} className="text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>{expanded === r.id ? 'Hide CPs' : 'View CPs'}</button></td>
             </tr>
             {expanded === r.id && (
-              <tr><td colSpan={5} className="px-3 py-2 bg-[#f8fafc]">
+              <tr><td colSpan={5} className="px-3 py-2" style={{ background: 'oklch(0.96 0.003 250)' }}>
                 <ul className="space-y-1 text-[11px]">
                   {cps.map((cp) => (
                     <li key={cp.id} className="flex items-center gap-2">
                       <Pill status={cp.status} />
                       <span className="font-mono">{cp.cp_type}</span>
-                      <span className="text-[#6b7685]">{cp.description}</span>
+                      <span style={{ color: 'oklch(0.60 0.007 250)' }}>{cp.description}</span>
                     </li>
                   ))}
                 </ul>
@@ -330,7 +333,7 @@ function LdsTab() {
               <td className="text-right font-mono">{formatZAR(r.accrued_amount_zar)}</td>
               <td className="text-right font-mono">{formatZAR(cap)}</td>
               <td><Pill status={r.status} /></td>
-              <td className="text-right">{r.status === 'accruing' && <button type="button" onClick={() => accrue(r.id)} className="text-[11px] text-[#3b82c4]">Accrue now</button>}</td>
+              <td className="text-right">{r.status === 'accruing' && <button type="button" onClick={() => accrue(r.id)} className="text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>Accrue now</button>}</td>
             </tr>
           );
         })}
@@ -457,7 +460,7 @@ function Table({ headers, children }: { headers: string[]; children: React.React
   );
 }
 function Empty({ cols }: { cols: number }) {
-  return <tr><td colSpan={cols} className="text-[#6b7685] italic py-3">No records.</td></tr>;
+  return <tr><td colSpan={cols} className="italic py-3" style={{ color: 'oklch(0.60 0.007 250)' }}>No records.</td></tr>;
 }
 function Pill({ status }: { status: string }) {
   const s = String(status || '').toLowerCase();

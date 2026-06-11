@@ -12,24 +12,23 @@
 //   → drill_completed → recertified            (clean path).
 //   drill_completed → drill_failed → remediation_required → drill_scheduled (loop).
 //   contract_terminated terminal from any non-terminal.
-//
-// W84 distinctive layer (beats PJM Black Start Service / ERCOT Black Start / NGESO
-// Black Start / ENTSO-E System Defence & Restoration Plan / MISO Black Start
-// Resource): live restoration-readiness battery — contracted vs target MW, coverage
-// ratio, geographic diversity across 9 SA provinces, fuel-type diversity across 4
-// cranking sources, voltage-class coverage across 4 classes, days since last drill,
-// days until next drill due, rolling drill pass rate, restoration-path validity
-// gate (6 inputs), composite criticality score, predicted lifecycle days.
-//
-// SIGNATURE = RELIABILITY-driven reportability:
-//   fail_drill          crosses EVERY tier (loss of demonstrated readiness);
-//   terminate_contract  crosses EVERY tier (loss of contracted restoration unit);
-//   recertify           crosses material + island_critical;
-//   require_remediation crosses material + island_critical;
-//   sla_breached        crosses material + island_critical.
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'needs_assessed' | 'solicitation_issued' | 'bid_evaluation' | 'contract_awarded'
@@ -37,14 +36,12 @@ type ChainStatus =
   | 'recertified' | 'drill_failed' | 'remediation_required' | 'contract_terminated';
 
 type Tier = 'minor' | 'standard' | 'material' | 'island_critical';
-
 type VoltageClass = 'distribution' | 'sub_transmission' | 'transmission' | 'bulk';
-
 type RestorationRole = 'cranking_anchor' | 'restoration_unit' | 'auxiliary_unit';
-
 type CrankingSource = 'hydro' | 'diesel_starter' | 'battery_inverter' | 'compressed_air';
 
 interface BscRow {
+  [key: string]: unknown;
   id: string;
   capability_number: string;
   system_operator_name: string;
@@ -129,19 +126,6 @@ interface BscRow {
   predicted_lifecycle_days_live?: number;
 }
 
-interface BscEvent {
-  id: string;
-  capability_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiSummary {
   total: number;
   open_count: number;
@@ -160,47 +144,15 @@ interface KpiSummary {
   overdue_drill_count: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  needs_assessed:       { bg: '#e3e7ec', fg: '#557',    label: 'Needs assessed' },
-  solicitation_issued:  { bg: '#dbecfb', fg: '#1a3a5c', label: 'Solicitation issued' },
-  bid_evaluation:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Bid evaluation' },
-  contract_awarded:     { bg: '#fff4d6', fg: '#a06200', label: 'Contract awarded' },
-  contract_executed:    { bg: '#fff4d6', fg: '#a06200', label: 'Contract executed' },
-  drill_scheduled:      { bg: '#ffe9d6', fg: '#8a4a00', label: 'Drill scheduled' },
-  drill_in_progress:    { bg: '#ffe4b5', fg: '#8a4a00', label: 'Drill in progress' },
-  drill_completed:      { bg: '#dfe9f3', fg: '#1a3a5c', label: 'Drill completed' },
-  recertified:          { bg: '#d4edda', fg: '#155724', label: 'Recertified' },
-  drill_failed:         { bg: '#fde0e0', fg: '#9b1f1f', label: 'Drill FAILED' },
-  remediation_required: { bg: '#ffe0e0', fg: '#9b1f1f', label: 'Remediation required' },
-  contract_terminated:  { bg: '#f3e0e0', fg: '#6b1f1f', label: 'Contract terminated' },
-};
+const ALL_STATES = [
+  'needs_assessed', 'solicitation_issued', 'bid_evaluation', 'contract_awarded',
+  'contract_executed', 'drill_scheduled', 'drill_in_progress', 'drill_completed',
+  'recertified',
+] as const;
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:           { bg: '#e3e7ec', fg: '#557',    label: 'Minor (<50)' },
-  standard:        { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard (<250)' },
-  material:        { bg: '#ffe4b5', fg: '#8a4a00', label: 'Material (<500)' },
-  island_critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Island-critical (≥500)' },
-};
-
-const VOLTAGE_LABEL: Record<VoltageClass, string> = {
-  distribution:     'Distribution',
-  sub_transmission: 'Sub-transmission',
-  transmission:     'Transmission',
-  bulk:             'Bulk',
-};
-
-const ROLE_LABEL: Record<RestorationRole, string> = {
-  cranking_anchor:   'Cranking anchor',
-  restoration_unit:  'Restoration unit',
-  auxiliary_unit:    'Auxiliary unit',
-};
-
-const CRANKING_LABEL: Record<CrankingSource, string> = {
-  hydro:            'Hydro',
-  diesel_starter:   'Diesel starter',
-  battery_inverter: 'Battery inverter',
-  compressed_air:   'Compressed air',
-};
+const BRANCH_STATES = [
+  'drill_failed', 'remediation_required', 'contract_terminated',
+] as const;
 
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',               label: 'Active' },
@@ -221,42 +173,27 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'contract_terminated',  label: 'Terminated' },
 ];
 
-type ActionKind =
-  | 'issue-solicitation' | 'close-solicitation' | 'award-contract' | 'execute-contract'
-  | 'schedule-drill' | 'commence-drill' | 'complete-drill' | 'recertify'
-  | 'fail-drill' | 'require-remediation' | 'complete-remediation' | 'terminate-contract';
-
-const PRIMARY_ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  needs_assessed:       'issue-solicitation',
-  solicitation_issued:  'close-solicitation',
-  bid_evaluation:       'award-contract',
-  contract_awarded:     'execute-contract',
-  contract_executed:    'schedule-drill',
-  drill_scheduled:      'commence-drill',
-  drill_in_progress:    'complete-drill',
-  drill_completed:      'recertify',
-  remediation_required: 'complete-remediation',
-  drill_failed:         'require-remediation',
-  recertified:          null,
-  contract_terminated:  null,
-};
-
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'issue-solicitation':   'Issue solicitation (SO)',
-  'close-solicitation':   'Close solicitation → bid evaluation (SO)',
-  'award-contract':       'Award contract (SO)',
-  'execute-contract':     'Execute contract (SO + provider)',
-  'schedule-drill':       'Schedule annual drill (planner)',
-  'commence-drill':       'Commence drill (provider + observer)',
-  'complete-drill':       'Record drill completed (observer)',
-  'recertify':            'Recertify capability (planner)',
-  'fail-drill':           'Mark drill FAILED (observer)',
-  'require-remediation':  'Require remediation (planner)',
-  'complete-remediation': 'Remediation complete → reschedule drill',
-  'terminate-contract':   'Terminate contract (SO)',
-};
-
 const TERMINAL_STATES: ChainStatus[] = ['recertified', 'contract_terminated'];
+
+const VOLTAGE_LABEL: Record<VoltageClass, string> = {
+  distribution:     'Distribution',
+  sub_transmission: 'Sub-transmission',
+  transmission:     'Transmission',
+  bulk:             'Bulk',
+};
+
+const ROLE_LABEL: Record<RestorationRole, string> = {
+  cranking_anchor:  'Cranking anchor',
+  restoration_unit: 'Restoration unit',
+  auxiliary_unit:   'Auxiliary unit',
+};
+
+const CRANKING_LABEL: Record<CrankingSource, string> = {
+  hydro:            'Hydro',
+  diesel_starter:   'Diesel starter',
+  battery_inverter: 'Battery inverter',
+  compressed_air:   'Compressed air',
+};
 
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
@@ -267,8 +204,7 @@ function fmtMinutes(m: number | null | undefined): string {
 
 function fmtDate(s: string | null): string {
   if (!s) return '—';
-  const d = new Date(s);
-  return d.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+  return new Date(s).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function fmtMw(n: number | null | undefined): string {
@@ -285,14 +221,305 @@ function fmtZar(n: number | null | undefined): string {
   return `R ${n.toFixed(0)}`;
 }
 
+function getActions(row: BscRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
+  const notTerminal = !TERMINAL_STATES.includes(s);
+
+  if (s === 'needs_assessed') {
+    actions.push({
+      key: 'issue-solicitation',
+      label: 'Issue solicitation (SO)',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Solicitation basis — published RFP for black-start capability', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'solicitation_issued') {
+    actions.push({
+      key: 'close-solicitation',
+      label: 'Close solicitation → bid evaluation (SO)',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Close-solicitation basis — bid evaluation begins', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'bid_evaluation') {
+    actions.push({
+      key: 'award-contract',
+      label: 'Award contract (SO)',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Award basis — provider selected', type: 'textarea', required: true },
+        { key: 'contract_ref', label: 'Contract reference (e.g. BSC-2026-007)', type: 'text', required: false },
+        { key: 'contract_value_zar', label: 'Contract value (ZAR)', type: 'text', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'contract_awarded') {
+    actions.push({
+      key: 'execute-contract',
+      label: 'Execute contract (SO + provider)',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Execute-contract basis — counter-signed contract effective', type: 'textarea', required: true },
+        { key: 'contract_start_at', label: 'Contract start (ISO datetime, blank = now)', type: 'text', required: false },
+        { key: 'contract_end_at', label: 'Contract end (ISO datetime)', type: 'text', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'contract_executed') {
+    actions.push({
+      key: 'schedule-drill',
+      label: 'Schedule annual drill (planner)',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Schedule-drill basis — annual restoration drill scheduled', type: 'textarea', required: true },
+        { key: 'drill_scheduled_at', label: 'Drill scheduled at (ISO datetime)', type: 'text', required: false },
+        { key: 'drill_window_minutes', label: 'Drill window (minutes)', type: 'text', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'drill_scheduled') {
+    actions.push({
+      key: 'commence-drill',
+      label: 'Commence drill (provider + observer)',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Commence-drill basis — drill commenced on cranking power', type: 'textarea', required: true },
+        { key: 'drill_commenced_at', label: 'Drill commenced at (ISO datetime, blank = now)', type: 'text', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'drill_in_progress') {
+    actions.push({
+      key: 'complete-drill',
+      label: 'Record drill completed (observer)',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Complete-drill basis — drill completed (record gate flags below)', type: 'textarea', required: true },
+        { key: 'cranking_source_confirmed_flag', label: 'Cranking source confirmed? (1 = yes, 0 = no)', type: 'text', required: false },
+        { key: 'dead_bus_energisation_flag', label: 'Dead-bus energisation? (1 = yes, 0 = no)', type: 'text', required: false },
+        { key: 'frequency_hold_flag', label: 'Frequency hold within band? (1 = yes, 0 = no)', type: 'text', required: false },
+        { key: 'voltage_hold_flag', label: 'Voltage hold within band? (1 = yes, 0 = no)', type: 'text', required: false },
+        { key: 'auxiliary_load_pickup_flag', label: 'Auxiliary load pickup? (1 = yes, 0 = no)', type: 'text', required: false },
+        { key: 'backfeed_within_sla_flag', label: 'Backfeed within SLA window? (1 = yes, 0 = no)', type: 'text', required: false },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'fail-drill',
+      label: 'Mark drill FAILED (observer)',
+      tone: 'danger',
+      fields: [
+        { key: 'chain_basis', label: 'Fail-drill basis — drill FAILED (RELIABILITY — always crosses regulator)', type: 'textarea', required: true },
+        { key: 'reason_code', label: 'Reason code (e.g. cranking_failure / dead_bus_collapse / freq_excursion / backfeed_overrun)', type: 'text', required: false },
+      ],
+      cascadeTo: ['regulator', 'admin'],
+    });
+  }
+
+  if (s === 'drill_completed') {
+    actions.push({
+      key: 'recertify',
+      label: 'Recertify capability (planner)',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Recertification basis — restoration planner recertifies the capability (RELIABILITY — large tiers cross regulator)', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['regulator'],
+    });
+    actions.push({
+      key: 'fail-drill',
+      label: 'Mark drill FAILED (observer)',
+      tone: 'danger',
+      fields: [
+        { key: 'chain_basis', label: 'Fail-drill basis — drill FAILED (RELIABILITY — always crosses regulator)', type: 'textarea', required: true },
+        { key: 'reason_code', label: 'Reason code (e.g. cranking_failure / dead_bus_collapse / freq_excursion / backfeed_overrun)', type: 'text', required: false },
+      ],
+      cascadeTo: ['regulator', 'admin'],
+    });
+  }
+
+  if (s === 'drill_failed') {
+    actions.push({
+      key: 'require-remediation',
+      label: 'Require remediation (planner)',
+      tone: 'warn',
+      fields: [
+        { key: 'chain_basis', label: 'Remediation basis — provider must remediate (large tiers cross regulator)', type: 'textarea', required: true },
+        { key: 'reason_code', label: 'Reason code (e.g. retraining / equipment_repair / procedural_fix)', type: 'text', required: false },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'remediation_required') {
+    actions.push({
+      key: 'complete-remediation',
+      label: 'Remediation complete → reschedule drill',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Complete-remediation basis — remediation accepted, reschedule next drill', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (notTerminal) {
+    actions.push({
+      key: 'terminate-contract',
+      label: 'Terminate contract (SO)',
+      tone: 'danger',
+      fields: [
+        { key: 'chain_basis', label: 'Termination basis — terminate the BSC contract (RELIABILITY — always crosses regulator)', type: 'textarea', required: true },
+        { key: 'reason_code', label: 'Reason code (e.g. repeated_failure / commercial_default / provider_exit)', type: 'text', required: false },
+      ],
+      cascadeTo: ['regulator', 'admin'],
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: BscRow): React.ReactNode {
+  const passPct = Math.round((row.drill_pass_rate_live ?? 0) * 100);
+  const coverPct = Math.round((row.restoration_coverage_ratio_live ?? 0) * 100);
+  const geoPct = Math.round((row.geographic_diversity_index_live ?? 0) * 100);
+  const fuelPct = Math.round((row.fuel_diversity_index_live ?? 0) * 100);
+  const voltagePct = Math.round((row.voltage_class_coverage_live ?? 0) * 100);
+  const crit = row.criticality_score_live ?? 0;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Live restoration-readiness battery */}
+      <section>
+        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 8 }}>
+          Live restoration-readiness battery
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8 }}>
+          <DetailPair label="Contracted MW" value={`${row.black_start_capacity_mw.toFixed(0)} MW`} />
+          <DetailPair label="Target MW" value={`${row.target_capacity_mw.toFixed(0)} MW`} />
+          <DetailPair label="Coverage" value={`${coverPct}%`} />
+          <DetailPair label="Criticality" value={`${crit} / 100`} />
+          <DetailPair label="Geo diversity" value={`${geoPct}%`} />
+          <DetailPair label="Fuel diversity" value={`${fuelPct}%`} />
+          <DetailPair label="Voltage coverage" value={`${voltagePct}%`} />
+          <DetailPair label="Pass rate" value={row.drills_total_count > 0 ? `${passPct}% (${row.drills_passed_count}/${row.drills_total_count})` : '—'} />
+          <DetailPair label="Days since last drill" value={row.days_since_last_drill_live != null ? `${row.days_since_last_drill_live}d` : '—'} />
+          <DetailPair label="Days until next" value={row.days_until_next_drill_due_live != null ? `${row.days_until_next_drill_due_live}d` : '—'} />
+          <DetailPair label="Restoration path" value={row.restoration_path_valid_flag_live ? 'VALID' : 'INVALID'} />
+          <DetailPair label="Predicted lifecycle" value={`${row.predicted_lifecycle_days_live ?? 0}d`} />
+        </div>
+      </section>
+
+      {/* Drill gate flags */}
+      <section>
+        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 8 }}>
+          Drill gate flags
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8 }}>
+          <DetailPair label="Cranking source" value={row.cranking_source_confirmed_flag ? '✓' : '—'} />
+          <DetailPair label="Dead-bus energisation" value={row.dead_bus_energisation_flag ? '✓' : '—'} />
+          <DetailPair label="Frequency hold" value={row.frequency_hold_flag ? '✓' : '—'} />
+          <DetailPair label="Voltage hold" value={row.voltage_hold_flag ? '✓' : '—'} />
+          <DetailPair label="Aux load pickup" value={row.auxiliary_load_pickup_flag ? '✓' : '—'} />
+          <DetailPair label="Backfeed in SLA" value={row.backfeed_within_sla_flag ? '✓' : '—'} />
+          <DetailPair label="Cranking target" value={row.cranking_time_target_minutes > 0 ? `${row.cranking_time_target_minutes}m` : '—'} />
+          <DetailPair label="Backfeed target" value={row.backfeed_time_target_minutes > 0 ? `${row.backfeed_time_target_minutes}m` : '—'} />
+          <DetailPair label="Consec. failures" value={String(row.consecutive_failures)} />
+        </div>
+      </section>
+
+      {/* Zone diversity */}
+      <section>
+        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 8 }}>
+          Zone diversity
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8 }}>
+          <DetailPair label="Provinces" value={`${row.zone_provinces_represented} / 9`} />
+          <DetailPair label="Voltage classes" value={`${row.zone_voltage_classes_covered} / 4`} />
+          <DetailPair label="Hydro" value={String(row.zone_fuel_hydro_count)} />
+          <DetailPair label="Diesel" value={String(row.zone_fuel_diesel_count)} />
+          <DetailPair label="Battery" value={String(row.zone_fuel_battery_count)} />
+          <DetailPair label="Compressed air" value={String(row.zone_fuel_compressed_air_count)} />
+        </div>
+      </section>
+
+      {/* Lifecycle */}
+      <section>
+        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 8 }}>
+          Lifecycle
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8 }}>
+          <DetailPair label="Contract ref" value={row.contract_ref ?? '—'} />
+          <DetailPair label="Contract value" value={fmtZar(row.contract_value_zar)} />
+          <DetailPair label="Contract start" value={fmtDate(row.contract_start_at)} />
+          <DetailPair label="Contract end" value={fmtDate(row.contract_end_at)} />
+          <DetailPair label="Drill window" value={row.drill_window_minutes > 0 ? `${row.drill_window_minutes}m` : '—'} />
+          <DetailPair label="Drill scheduled" value={fmtDate(row.drill_scheduled_at)} />
+          <DetailPair label="Drill commenced" value={fmtDate(row.drill_commenced_at)} />
+          <DetailPair label="Drill completed" value={fmtDate(row.drill_completed_at)} />
+          <DetailPair label="Last drill" value={fmtDate(row.last_drill_at)} />
+          <DetailPair label="Needs assessed" value={fmtDate(row.needs_assessed_at)} />
+          <DetailPair label="Solicitation issued" value={fmtDate(row.solicitation_issued_at)} />
+          <DetailPair label="Bid evaluation" value={fmtDate(row.bid_evaluation_at)} />
+          <DetailPair label="Contract awarded" value={fmtDate(row.contract_awarded_at)} />
+          <DetailPair label="Contract executed" value={fmtDate(row.contract_executed_at)} />
+          <DetailPair label="Drill in progress" value={fmtDate(row.drill_in_progress_at)} />
+          <DetailPair label="Recertified at" value={fmtDate(row.recertified_at)} />
+          <DetailPair label="Drill failed at" value={fmtDate(row.drill_failed_at)} />
+          <DetailPair label="Remediation at" value={fmtDate(row.remediation_required_at)} />
+          <DetailPair label="Terminated at" value={fmtDate(row.contract_terminated_at)} />
+          <DetailPair label="SLA deadline" value={fmtDate(row.sla_deadline_at)} />
+          <DetailPair label="SLA status" value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+          <DetailPair label="Reportable" value={row.is_reportable_flag ? 'Yes' : 'No'} />
+          <DetailPair label="Reason code" value={row.reason_code ?? '—'} />
+          <DetailPair label="Last action ref" value={row.last_action_ref ?? '—'} />
+          <DetailPair label="Regulator ref" value={row.regulator_ref ?? '—'} />
+        </div>
+        {row.capability_summary && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX2, marginBottom: 4 }}>
+              Capability summary
+            </div>
+            <div style={{ fontSize: 12, color: TX1, whiteSpace: 'pre-wrap' }}>{row.capability_summary}</div>
+          </div>
+        )}
+        {row.chain_basis && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX2, marginBottom: 4 }}>
+              Chain basis
+            </div>
+            <div style={{ fontSize: 12, color: TX1, whiteSpace: 'pre-wrap' }}>{row.chain_basis}</div>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
 export function BlackStartChainTab() {
   const [rows, setRows] = useState<BscRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<BscRow | null>(null);
-  const [events, setEvents] = useState<BscEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -302,7 +529,7 @@ export function BlackStartChainTab() {
       setRows(res.data?.data?.items || []);
       const d = res.data?.data;
       if (d) {
-        setKpis({
+        setSummary({
           total: d.total, open_count: d.open_count, recertified_count: d.recertified_count,
           drill_failed_count: d.drill_failed_count, remediation_count: d.remediation_count,
           terminated_count: d.terminated_count, breached: d.breached,
@@ -322,13 +549,37 @@ export function BlackStartChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: BscRow; events: BscEvent[] } }>(
+      const body: Record<string, string | number> = {};
+      for (const [k, v] of Object.entries(values)) {
+        if (v === '') continue;
+        const numericKeys = ['contract_value_zar', 'drill_window_minutes', 'cranking_source_confirmed_flag',
+          'dead_bus_energisation_flag', 'frequency_hold_flag', 'voltage_hold_flag',
+          'auxiliary_load_pickup_flag', 'backfeed_within_sla_flag'];
+        if (numericKeys.includes(k) && !Number.isNaN(Number(v))) {
+          body[k] = Number(v);
+        } else {
+          body[k] = v;
+        }
+      }
+      await api.post(`/black-start/chain/${rowId}/${key}`, body);
+      await load();
+      // Refresh events if expanded
+      if (expandedEvents[rowId]) {
+        await handleExpand(rowId);
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
+    }
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    try {
+      const res = await api.get<{ data: { case: BscRow; events: ChainEvent[] } }>(
         `/black-start/chain/${id}`,
       );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events || [] }));
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load BSC history');
     }
@@ -338,9 +589,9 @@ export function BlackStartChainTab() {
     return rows.filter((r) => {
       if (filter === 'all')             return true;
       if (filter === 'active')          return !TERMINAL_STATES.includes(r.chain_status);
-      if (filter === 'breached')        return r.sla_breached;
-      if (filter === 'reportable')      return r.is_reportable_flag;
-      if (filter === 'system_critical') return r.is_system_critical_flag;
+      if (filter === 'breached')        return !!r.sla_breached;
+      if (filter === 'reportable')      return !!r.is_reportable_flag;
+      if (filter === 'system_critical') return !!r.is_system_critical_flag;
       if (filter === 'minor' || filter === 'standard' || filter === 'material' || filter === 'island_critical') {
         return r.capability_tier === filter;
       }
@@ -348,150 +599,56 @@ export function BlackStartChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: BscRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'issue-solicitation') {
-        const basis = window.prompt('Solicitation basis — published RFP for black-start capability:');
-        if (!basis) return;
-        body = { chain_basis: basis };
-      } else if (action === 'close-solicitation') {
-        const basis = window.prompt('Close-solicitation basis — bid evaluation begins:');
-        if (!basis) return;
-        body = { chain_basis: basis };
-      } else if (action === 'award-contract') {
-        const basis = window.prompt('Award basis — provider selected:');
-        if (!basis) return;
-        const ref = window.prompt('Contract reference (e.g. BSC-2026-007):', row.contract_ref || '') || '';
-        const value = window.prompt('Contract value (ZAR):', String(row.contract_value_zar || 0));
-        body = { chain_basis: basis };
-        if (ref) body.contract_ref = ref;
-        if (value && !Number.isNaN(Number(value))) body.contract_value_zar = Number(value);
-      } else if (action === 'execute-contract') {
-        const basis = window.prompt('Execute-contract basis — counter-signed contract effective:');
-        if (!basis) return;
-        const start = window.prompt('Contract start (ISO datetime, blank = now):') || '';
-        const end = window.prompt('Contract end (ISO datetime):') || '';
-        body = { chain_basis: basis };
-        if (start) body.contract_start_at = start;
-        if (end) body.contract_end_at = end;
-      } else if (action === 'schedule-drill') {
-        const basis = window.prompt('Schedule-drill basis — annual restoration drill scheduled:');
-        if (!basis) return;
-        const at = window.prompt('Drill scheduled at (ISO datetime):') || '';
-        const window_min = window.prompt('Drill window (minutes):', String(row.drill_window_minutes || 240));
-        body = { chain_basis: basis };
-        if (at) body.drill_scheduled_at = at;
-        if (window_min && !Number.isNaN(Number(window_min))) body.drill_window_minutes = Number(window_min);
-      } else if (action === 'commence-drill') {
-        const basis = window.prompt('Commence-drill basis — drill commenced on cranking power:');
-        if (!basis) return;
-        const at = window.prompt('Drill commenced at (ISO datetime, blank = now):') || '';
-        body = { chain_basis: basis };
-        if (at) body.drill_commenced_at = at;
-      } else if (action === 'complete-drill') {
-        const basis = window.prompt('Complete-drill basis — drill completed (record gate flags below):');
-        if (!basis) return;
-        const cs = window.confirm('Cranking source confirmed? (cancel = no)');
-        const db = window.confirm('Dead-bus energisation? (cancel = no)');
-        const fr = window.confirm('Frequency hold within band? (cancel = no)');
-        const vl = window.confirm('Voltage hold within band? (cancel = no)');
-        const al = window.confirm('Auxiliary load pickup? (cancel = no)');
-        const bf = window.confirm('Backfeed within SLA window? (cancel = no)');
-        body = {
-          chain_basis: basis,
-          cranking_source_confirmed_flag: cs ? 1 : 0,
-          dead_bus_energisation_flag: db ? 1 : 0,
-          frequency_hold_flag: fr ? 1 : 0,
-          voltage_hold_flag: vl ? 1 : 0,
-          auxiliary_load_pickup_flag: al ? 1 : 0,
-          backfeed_within_sla_flag: bf ? 1 : 0,
-        };
-      } else if (action === 'recertify') {
-        const basis = window.prompt('Recertification basis — restoration planner recertifies the capability (RELIABILITY — large tiers cross regulator):');
-        if (!basis) return;
-        body = { chain_basis: basis };
-      } else if (action === 'fail-drill') {
-        const basis = window.prompt('Fail-drill basis — drill FAILED (RELIABILITY — always crosses regulator):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. cranking_failure / dead_bus_collapse / freq_excursion / backfeed_overrun):', 'cranking_failure') || '';
-        body = { chain_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'require-remediation') {
-        const basis = window.prompt('Remediation basis — provider must remediate (large tiers cross regulator):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. retraining / equipment_repair / procedural_fix):', 'equipment_repair') || '';
-        body = { chain_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'complete-remediation') {
-        const basis = window.prompt('Complete-remediation basis — remediation accepted, reschedule next drill:');
-        if (!basis) return;
-        body = { chain_basis: basis };
-      } else if (action === 'terminate-contract') {
-        const basis = window.prompt('Termination basis — terminate the BSC contract (RELIABILITY — always crosses regulator):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. repeated_failure / commercial_default / provider_exit):', 'repeated_failure') || '';
-        body = { chain_basis: basis };
-        if (reason) body.reason_code = reason;
-      }
-      await api.post(`/black-start/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Black-start capability &amp; restoration drill</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-stage SA Grid Code OC-1 / OC-12 + NTCSA Black-Start Annex + NERSA System Defence &amp; Restoration Plan
-            black-start contracting chain · needs assessed → solicitation → bid evaluation → award → execute → schedule
-            drill → drill in progress → drill completed → recertified. Failure branch: drill_completed → drill_failed →
-            remediation_required → drill_scheduled (loops to re-prove readiness). Terminate-contract is a terminal exit.
-            URGENT SLA — the larger the BSC unit (island_critical ≥500 MW), the TIGHTER every window. Live restoration-
-            readiness battery on every record (contracted vs target MW, coverage ratio, geographic diversity across 9 SA
-            provinces, fuel-type diversity across 4 cranking sources, voltage-class coverage across 4 classes, days
-            since last drill, days until next drill due, rolling drill pass rate, restoration-path validity gate, composite
-            criticality score) — beats PJM Black Start / ERCOT Black Start / NGESO Black Start / ENTSO-E SDRP / MISO BSR
-            spreadsheet-driven registers. The W84 SIGNATURE is RELIABILITY: fail_drill + terminate_contract cross
-            regulator for EVERY tier (loss of demonstrated readiness or contracted restoration unit is always notifiable
-            under NRS 048-2); recertify + require_remediation + sla_breached cross material + island_critical only.
-          </p>
-        </div>
+    <div style={{ padding: 20, background: BG, minHeight: '100%' }}>
+      {/* Header */}
+      <header style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 700, color: TX1, margin: 0 }}>
+          Black-start capability &amp; restoration drill
+        </h2>
+        <p style={{ fontSize: 11, color: TX2, margin: '4px 0 0' }}>
+          12-stage SA Grid Code OC-1 / OC-12 + NTCSA Black-Start Annex + NERSA System Defence &amp; Restoration Plan.
+          SIGNATURE: fail_drill + terminate_contract cross regulator for every tier; recertify + require_remediation + sla_breached cross material + island_critical.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="Recertified" value={kpis?.recertified_count ?? 0} tone="ok" />
-        <Kpi label="Drill failed" value={kpis?.drill_failed_count ?? 0} tone={(kpis?.drill_failed_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Remediation" value={kpis?.remediation_count ?? 0} tone={(kpis?.remediation_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Terminated" value={kpis?.terminated_count ?? 0} tone={(kpis?.terminated_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="System-critical" value={kpis?.system_critical_count ?? 0} />
-        <Kpi label="Contracted" value={fmtMw(kpis?.total_contracted_mw ?? 0)} />
-        <Kpi label="Target" value={fmtMw(kpis?.total_target_mw ?? 0)} />
-        <Kpi label="Crit ≥60" value={kpis?.high_criticality_count ?? 0} tone={(kpis?.high_criticality_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Path invalid" value={kpis?.path_invalid_count ?? 0} tone={(kpis?.path_invalid_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Overdue drill" value={kpis?.overdue_drill_count ?? 0} tone={(kpis?.overdue_drill_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Cum. failures" value={kpis?.total_drill_failures ?? 0} />
+      {/* KPI strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 10, marginBottom: 16 }}>
+        <KpiTile label="Total" value={summary?.total ?? rows.length} />
+        <KpiTile label="Open" value={summary?.open_count ?? 0} />
+        <KpiTile label="Recertified" value={summary?.recertified_count ?? 0} tone="ok" />
+        <KpiTile label="Drill failed" value={summary?.drill_failed_count ?? 0} tone={(summary?.drill_failed_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Remediation" value={summary?.remediation_count ?? 0} tone={(summary?.remediation_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Terminated" value={summary?.terminated_count ?? 0} tone={(summary?.terminated_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="SLA breached" value={summary?.breached ?? 0} tone={(summary?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Reportable" value={summary?.reportable_total ?? 0} tone={(summary?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="System-critical" value={summary?.system_critical_count ?? 0} />
+        <KpiTile label="Contracted" value={fmtMw(summary?.total_contracted_mw ?? 0)} />
+        <KpiTile label="Target" value={fmtMw(summary?.total_target_mw ?? 0)} />
+        <KpiTile label="Crit ≥60" value={summary?.high_criticality_count ?? 0} tone={(summary?.high_criticality_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Path invalid" value={summary?.path_invalid_count ?? 0} tone={(summary?.path_invalid_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Overdue drill" value={summary?.overdue_drill_count ?? 0} tone={(summary?.overdue_drill_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Cum. failures" value={summary?.total_drill_failures ?? 0} />
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      {/* Filter pills */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
         {FILTERS.map((f) => (
-          <button type="button"
+          <button
+            type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
+            style={{
+              padding: '3px 10px',
+              borderRadius: 6,
+              fontSize: 11,
+              fontWeight: 500,
+              cursor: 'pointer',
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+              background: filter === f.key ? ACC : BG1,
+              color: filter === f.key ? '#fff' : TX2,
+              transition: 'all 120ms',
+            }}
           >
             {f.label}
           </button>
@@ -499,300 +656,74 @@ export function BlackStartChainTab() {
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">BSC #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Facility</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Role</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Cranking</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Voltage</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">MW</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Pass</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Crit</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.capability_tier];
-                const passPct = Math.round((r.drill_pass_rate_live ?? 0) * 100);
-                const crit = r.criticality_score_live ?? 0;
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.capability_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to NERSA">●</span>}
-                      {r.is_system_critical_flag && <span className="ml-1 text-[#8a4a00]" title="System-critical">★</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[200px] truncate" title={r.facility_name || ''}>
-                      {r.facility_name || '—'}
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{ROLE_LABEL[r.restoration_role]}</td>
-                    <td className="px-3 py-2 text-[#4a5568]">{CRANKING_LABEL[r.cranking_source]}</td>
-                    <td className="px-3 py-2 text-[#4a5568]">{VOLTAGE_LABEL[r.voltage_class]}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{r.black_start_capacity_mw.toFixed(0)}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${passPct < 70 ? 'text-[#a06200]' : 'text-[#155724]'}`}>
-                      {r.drills_total_count > 0 ? `${passPct}%` : '—'}
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${crit >= 60 ? 'text-[#9b1f1f] font-medium' : 'text-[#4a5568]'}`}>{crit}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={11} className="px-3 py-6 text-center text-[#4a5568]">No black-start capabilities match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 6, border: `1px solid ${BAD}40`, background: `${BAD}10`, fontSize: 12, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div style={{ padding: '24px 0', textAlign: 'center', fontSize: 13, color: TX3 }}>Loading...</div>
+      ) : filtered.length === 0 ? (
+        <div style={{ padding: '24px 0', textAlign: 'center', fontSize: 13, color: TX3 }}>No black-start capabilities match.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {filtered.map((row) => {
+            const passPct = Math.round((row.drill_pass_rate_live ?? 0) * 100);
+            const crit = row.criticality_score_live ?? 0;
+            const meta = (
+              <span>
+                {ROLE_LABEL[row.restoration_role]} · {CRANKING_LABEL[row.cranking_source]} · {VOLTAGE_LABEL[row.voltage_class]}
+                {' · '}{row.black_start_capacity_mw.toFixed(0)} MW
+                {row.drills_total_count > 0 ? ` · pass ${passPct}%` : ''}
+                {crit >= 60 ? ` · crit ${crit}` : ''}
+                {row.province ? ` · ${row.province}` : ''}
+                {row.is_reportable_flag ? ' · reportable' : ''}
+                {row.is_system_critical_flag ? ' · system-critical' : ''}
+              </span>
+            );
+
+            return (
+              <ChainCard
+                key={row.id}
+                item={{
+                  ...row,
+                  case_number: row.capability_number,
+                }}
+                allStates={ALL_STATES}
+                branchStates={BRANCH_STATES}
+                title={row.facility_name || row.bsc_provider_name || row.capability_number}
+                meta={meta}
+                actions={getActions(row)}
+                onAction={(key, values) => handleAction(row.id, key, values)}
+                onExpand={handleExpand}
+                events={expandedEvents[row.id]}
+                detail={renderDetail(row)}
+              />
+            );
+          })}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG1, padding: '8px 12px' }}>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: TX3, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: BscRow;
-  events: BscEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: BscRow) => void;
-}) {
-  const primary = PRIMARY_ACTION_FOR_STATE[row.chain_status];
-  const canFail = row.chain_status === 'drill_in_progress' || row.chain_status === 'drill_completed';
-  const canTerminate = !TERMINAL_STATES.includes(row.chain_status);
-  const passPct = Math.round((row.drill_pass_rate_live ?? 0) * 100);
-  const coverPct = Math.round((row.restoration_coverage_ratio_live ?? 0) * 100);
-  const geoPct = Math.round((row.geographic_diversity_index_live ?? 0) * 100);
-  const fuelPct = Math.round((row.fuel_diversity_index_live ?? 0) * 100);
-  const voltagePct = Math.round((row.voltage_class_coverage_live ?? 0) * 100);
-  const crit = row.criticality_score_live ?? 0;
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[780px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.capability_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.facility_name || row.bsc_provider_name || '—'}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.capability_tier].label} · {ROLE_LABEL[row.restoration_role]} · {CRANKING_LABEL[row.cranking_source]} · {VOLTAGE_LABEL[row.voltage_class]}
-                {row.is_system_critical_flag ? ' · system-critical' : ''}
-              </div>
-              <div className="mt-1 text-[11px] text-[#4a5568]">
-                {row.bsc_provider_name ? `Provider: ${row.bsc_provider_name} · ` : ''}
-                SO: {row.system_operator_name}
-                {row.province ? ` · ${row.province}` : ''}
-                {row.restoration_zone ? ` · ${row.restoration_zone}` : ''}
-                {row.escalation_level > 0 ? ` · escalation lvl ${row.escalation_level}` : ''}
-              </div>
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Live restoration-readiness battery</div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px]">
-            <Pair label="Contracted MW" value={`${row.black_start_capacity_mw.toFixed(0)} MW`} />
-            <Pair label="Target MW" value={`${row.target_capacity_mw.toFixed(0)} MW`} />
-            <Pair label="Coverage" value={`${coverPct}%`} />
-            <Pair label="Criticality" value={`${crit} / 100`} />
-            <Pair label="Geo diversity" value={`${geoPct}%`} />
-            <Pair label="Fuel diversity" value={`${fuelPct}%`} />
-            <Pair label="Voltage coverage" value={`${voltagePct}%`} />
-            <Pair label="Pass rate" value={row.drills_total_count > 0 ? `${passPct}% (${row.drills_passed_count}/${row.drills_total_count})` : '—'} />
-            <Pair label="Days since last drill" value={row.days_since_last_drill_live != null ? `${row.days_since_last_drill_live}d` : '—'} />
-            <Pair label="Days until next" value={row.days_until_next_drill_due_live != null ? `${row.days_until_next_drill_due_live}d` : '—'} />
-            <Pair label="Restoration path" value={row.restoration_path_valid_flag_live ? 'VALID' : 'INVALID'} />
-            <Pair label="Predicted lifecycle" value={`${row.predicted_lifecycle_days_live ?? 0}d`} />
-          </div>
-        </section>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Drill gate flags</div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-[12px]">
-            <Pair label="Cranking source" value={row.cranking_source_confirmed_flag ? '✓' : '—'} />
-            <Pair label="Dead-bus energisation" value={row.dead_bus_energisation_flag ? '✓' : '—'} />
-            <Pair label="Frequency hold" value={row.frequency_hold_flag ? '✓' : '—'} />
-            <Pair label="Voltage hold" value={row.voltage_hold_flag ? '✓' : '—'} />
-            <Pair label="Aux load pickup" value={row.auxiliary_load_pickup_flag ? '✓' : '—'} />
-            <Pair label="Backfeed in SLA" value={row.backfeed_within_sla_flag ? '✓' : '—'} />
-            <Pair label="Cranking target" value={row.cranking_time_target_minutes > 0 ? `${row.cranking_time_target_minutes}m` : '—'} />
-            <Pair label="Backfeed target" value={row.backfeed_time_target_minutes > 0 ? `${row.backfeed_time_target_minutes}m` : '—'} />
-            <Pair label="Consec. failures" value={String(row.consecutive_failures)} />
-          </div>
-        </section>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Zone diversity</div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px]">
-            <Pair label="Provinces" value={`${row.zone_provinces_represented} / 9`} />
-            <Pair label="Voltage classes" value={`${row.zone_voltage_classes_covered} / 4`} />
-            <Pair label="Hydro" value={String(row.zone_fuel_hydro_count)} />
-            <Pair label="Diesel" value={String(row.zone_fuel_diesel_count)} />
-            <Pair label="Battery" value={String(row.zone_fuel_battery_count)} />
-            <Pair label="Compressed air" value={String(row.zone_fuel_compressed_air_count)} />
-          </div>
-        </section>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Lifecycle</div>
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State" value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Contract ref" value={row.contract_ref ?? '—'} />
-            <Pair label="Contract value" value={fmtZar(row.contract_value_zar)} />
-            <Pair label="Contract start" value={fmtDate(row.contract_start_at)} />
-            <Pair label="Contract end" value={fmtDate(row.contract_end_at)} />
-            <Pair label="Drill window" value={row.drill_window_minutes > 0 ? `${row.drill_window_minutes}m` : '—'} />
-            <Pair label="Drill scheduled" value={fmtDate(row.drill_scheduled_at)} />
-            <Pair label="Drill commenced" value={fmtDate(row.drill_commenced_at)} />
-            <Pair label="Drill completed" value={fmtDate(row.drill_completed_at)} />
-            <Pair label="Last drill" value={fmtDate(row.last_drill_at)} />
-            <Pair label="Needs assessed" value={fmtDate(row.needs_assessed_at)} />
-            <Pair label="Solicitation issued" value={fmtDate(row.solicitation_issued_at)} />
-            <Pair label="Bid evaluation" value={fmtDate(row.bid_evaluation_at)} />
-            <Pair label="Contract awarded" value={fmtDate(row.contract_awarded_at)} />
-            <Pair label="Contract executed" value={fmtDate(row.contract_executed_at)} />
-            <Pair label="Drill in progress" value={fmtDate(row.drill_in_progress_at)} />
-            <Pair label="Recertified at" value={fmtDate(row.recertified_at)} />
-            <Pair label="Drill failed at" value={fmtDate(row.drill_failed_at)} />
-            <Pair label="Remediation at" value={fmtDate(row.remediation_required_at)} />
-            <Pair label="Terminated at" value={fmtDate(row.contract_terminated_at)} />
-            <Pair label="SLA deadline" value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status" value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Reportable" value={row.is_reportable_flag ? 'Yes' : 'No'} />
-            <Pair label="Reason code" value={row.reason_code ?? '—'} />
-            <Pair label="Last action ref" value={row.last_action_ref ?? '—'} />
-            <Pair label="Regulator ref" value={row.regulator_ref ?? '—'} />
-          </div>
-          {row.capability_summary && (
-            <BasisBlock label="Capability summary" tone="#1a3a5c" text={row.capability_summary} />
-          )}
-          {row.chain_basis && <BasisBlock label="Chain basis" tone="#1a3a5c" text={row.chain_basis} />}
-        </section>
-
-        {(primary || canFail || canTerminate) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {primary && (
-                <button type="button"
-                  onClick={() => onAct(primary, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[primary]}
-                </button>
-              )}
-              {canFail && (
-                <button type="button"
-                  onClick={() => onAct('fail-drill', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['fail-drill']}
-                </button>
-              )}
-              {canTerminate && (
-                <button type="button"
-                  onClick={() => onAct('terminate-contract', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['terminate-contract']}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: TX3, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 12, color: TX1 }}>{value}</div>
     </div>
   );
 }
+
+export default BlackStartChainTab;

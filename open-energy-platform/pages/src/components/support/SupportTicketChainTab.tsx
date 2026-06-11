@@ -59,7 +59,7 @@ interface TicketEvent {
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   open:          { bg: '#fde0e0', fg: '#9b1f1f', label: 'Open (untriaged)' },
   triaged:       { bg: '#fff4d6', fg: '#a06200', label: 'Triaged' },
-  in_progress:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'In progress' },
+  in_progress:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'In progress' },
   awaiting_user: { bg: '#e3e7ec', fg: '#557',    label: 'Awaiting user' },
   resolved:      { bg: '#daf5e2', fg: '#1f6b3a', label: 'Resolved' },
   closed:        { bg: '#e3e7ec', fg: '#557',    label: 'Closed' },
@@ -69,7 +69,7 @@ const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }>
 const PRIORITY_TONE: Record<Priority, { bg: string; fg: string; label: string }> = {
   urgent: { bg: '#fde0e0', fg: '#9b1f1f', label: 'P1' },
   high:   { bg: '#fff4d6', fg: '#a06200', label: 'P2' },
-  normal: { bg: '#dbecfb', fg: '#1a3a5c', label: 'P3' },
+  normal: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'P3' },
   low:    { bg: '#e3e7ec', fg: '#557',    label: 'P4' },
 };
 

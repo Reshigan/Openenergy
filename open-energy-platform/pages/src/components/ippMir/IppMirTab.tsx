@@ -140,8 +140,8 @@ const MATERIAL_CATEGORY_LABEL: Record<MaterialCategory, string> = {
 
 const STATUS_COLOR: Record<MirStatus, string> = {
   delivery_notified:    'bg-[#eef2f7] text-[#2d3748]',
-  delivered:            'bg-blue-50 text-blue-700',
-  initial_inspection:   'bg-indigo-100 text-indigo-700',
+  delivered:            'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
+  initial_inspection:   'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   detailed_inspection:  'bg-violet-100 text-violet-700',
   test_sampling:        'bg-purple-100 text-purple-700',
   results_pending:      'bg-cyan-100 text-cyan-700',
@@ -211,7 +211,7 @@ function Flag({ label, title, cls }: { label: string; title: string; cls: string
 
 function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
   const colors: Record<string, string> = {
-    blue: 'bg-blue-50 text-blue-900 border-blue-200',
+    blue: 'bg-[oklch(0.97_0.003_250)] text-[oklch(0.17_0.010_250)] border-[oklch(0.87_0.012_250)]',
     red: 'bg-red-50 text-red-900 border-red-200',
     orange: 'bg-orange-50 text-orange-900 border-orange-200',
     green: 'bg-green-50 text-green-900 border-green-200',
@@ -521,8 +521,8 @@ export default function IppMirTab({ readOnly = false }: Props) {
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex gap-1 flex-wrap">
-                      {!!row.floor_ie_witnessed && <Flag label="IE" title="IE physically witnessed inspection" cls="bg-indigo-200 text-indigo-900" />}
-                      {!!row.floor_lender_hold_point && <Flag label="LHP" title="Lender hold point — lender must release before use" cls="bg-blue-100 text-blue-800" />}
+                      {!!row.floor_ie_witnessed && <Flag label="IE" title="IE physically witnessed inspection" cls="bg-[oklch(0.90_0.015_250)] text-[oklch(0.17_0.010_250)]" />}
+                      {!!row.floor_lender_hold_point && <Flag label="LHP" title="Lender hold point — lender must release before use" cls="bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]" />}
                       {!!row.floor_nersa_material && <Flag label="NERSA" title="NERSA-regulated equipment (transformer, switchgear)" cls="bg-orange-100 text-orange-800" />}
                       {!!row.floor_critical_safety && <Flag label="SAFE" title="Safety-critical material (fire suppression, structural)" cls="bg-red-200 text-red-900" />}
                       {!!row.floor_manufacturer_warranty_at_risk && <Flag label="WRY" title="Rejection voids manufacturer warranty" cls="bg-amber-100 text-amber-800" />}
@@ -532,7 +532,7 @@ export default function IppMirTab({ readOnly = false }: Props) {
                   {!readOnly && (
                     <td className="px-3 py-2">
                       <button type="button"
-                        className="text-xs text-blue-600 hover:underline"
+                        className="text-xs text-[oklch(0.46_0.16_55)] hover:underline"
                         onClick={e => { e.stopPropagation(); setSelected(row); }}
                       >
                         Manage
@@ -777,8 +777,8 @@ export default function IppMirTab({ readOnly = false }: Props) {
               <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200">
                 <p className="text-xs font-semibold text-red-900 mb-1.5">Floor flags</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {!!selected.floor_ie_witnessed && <span className="px-2 py-0.5 rounded text-[10px] bg-indigo-200 text-indigo-900">IE witnessed</span>}
-                  {!!selected.floor_lender_hold_point && <span className="px-2 py-0.5 rounded text-[10px] bg-blue-100 text-blue-800">Lender hold point</span>}
+                  {!!selected.floor_ie_witnessed && <span className="px-2 py-0.5 rounded text-[10px] bg-[oklch(0.90_0.015_250)] text-[oklch(0.17_0.010_250)]">IE witnessed</span>}
+                  {!!selected.floor_lender_hold_point && <span className="px-2 py-0.5 rounded text-[10px] bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]">Lender hold point</span>}
                   {!!selected.floor_nersa_material && <span className="px-2 py-0.5 rounded text-[10px] bg-orange-100 text-orange-800">NERSA-regulated</span>}
                   {!!selected.floor_critical_safety && <span className="px-2 py-0.5 rounded text-[10px] bg-red-200 text-red-900">Critical safety</span>}
                   {!!selected.floor_manufacturer_warranty_at_risk && <span className="px-2 py-0.5 rounded text-[10px] bg-amber-100 text-amber-800">Warranty at risk</span>}
@@ -791,10 +791,10 @@ export default function IppMirTab({ readOnly = false }: Props) {
               <div className="mb-4">
                 <p className="text-xs text-[#6b7685] mb-1">Cross-references</p>
                 <div className="flex flex-wrap gap-2">
-                  {selected.ncr_ref && <span className="text-xs text-blue-600">NCR: {selected.ncr_ref}</span>}
-                  {selected.submittal_ref && <span className="text-xs text-blue-600">Submittal: {selected.submittal_ref}</span>}
-                  {selected.rfi_ref && <span className="text-xs text-blue-600">RFI: {selected.rfi_ref}</span>}
-                  {selected.change_order_ref && <span className="text-xs text-blue-600">CO: {selected.change_order_ref}</span>}
+                  {selected.ncr_ref && <span className="text-xs text-[oklch(0.46_0.16_55)]">NCR: {selected.ncr_ref}</span>}
+                  {selected.submittal_ref && <span className="text-xs text-[oklch(0.46_0.16_55)]">Submittal: {selected.submittal_ref}</span>}
+                  {selected.rfi_ref && <span className="text-xs text-[oklch(0.46_0.16_55)]">RFI: {selected.rfi_ref}</span>}
+                  {selected.change_order_ref && <span className="text-xs text-[oklch(0.46_0.16_55)]">CO: {selected.change_order_ref}</span>}
                 </div>
               </div>
             )}

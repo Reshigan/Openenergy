@@ -3,7 +3,7 @@
 // IFC Performance Standards 2012 + Equator Principles 4 + SARB + OHSA s8
 // Environmental and Social Action Plan (ESAP) compliance lifecycle.
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -49,9 +49,9 @@ interface TimelineEvent {
 
 const STATUS_COLORS: Record<string, string> = {
   monitoring_period_open:  'bg-[#eef2f7] text-[#3d4756]',
-  data_collection:         'bg-blue-100 text-blue-700',
+  data_collection:         '',
   site_verification:       'bg-cyan-100 text-cyan-700',
-  draft_report:            'bg-indigo-100 text-indigo-700',
+  draft_report:            '',
   lender_review:           'bg-purple-100 text-purple-700',
   minor_findings:          'bg-amber-100 text-amber-700',
   accepted:                'bg-green-100 text-green-700',
@@ -60,6 +60,11 @@ const STATUS_COLORS: Record<string, string> = {
   action_plan_submitted:   'bg-yellow-100 text-yellow-800',
   verified:                'bg-teal-100 text-teal-700',
   breach_declared:         'bg-red-200 text-red-900',
+};
+
+const STATUS_STYLES: Record<string, React.CSSProperties> = {
+  data_collection: { background: 'oklch(0.96 0.006 250)', color: 'oklch(0.40 0.12 250)' },
+  draft_report:    { background: 'oklch(0.94 0.01 270)',  color: 'oklch(0.40 0.09 270)' },
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -81,8 +86,12 @@ const TIER_COLORS: Record<string, string> = {
   systemic:    'bg-red-100 text-red-800',
   major:       'bg-orange-100 text-orange-700',
   significant: 'bg-amber-100 text-amber-700',
-  minor:       'bg-blue-100 text-blue-700',
+  minor:       '',
   routine:     'bg-[#eef2f7] text-[#3d4756]',
+};
+
+const TIER_STYLES: Record<string, React.CSSProperties> = {
+  minor: { background: 'oklch(0.96 0.006 250)', color: 'oklch(0.40 0.12 250)' },
 };
 
 const TIER_LABELS: Record<string, string> = {
@@ -475,9 +484,10 @@ export function LenderEsapTab() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3"
+          className="rounded-lg border p-4 space-y-3"
+          style={{ border: '1px solid oklch(0.87 0.006 250)', background: 'oklch(0.97 0.003 250)' }}
         >
-          <div className="text-sm font-semibold text-blue-800">New ESAP Monitoring Period</div>
+          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New ESAP Monitoring Period</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-[#3d4756] mb-1">Project ID *</label>
@@ -592,12 +602,12 @@ export function LenderEsapTab() {
                       {item.reporting_period}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.commitment_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.commitment_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={TIER_STYLES[item.commitment_tier]}>
                         {item.commitment_tier}
                       </span>
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_STYLES[item.chain_status]}>
                         {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                       </span>
                       {item.sla_breached === 1 && (
@@ -631,7 +641,8 @@ export function LenderEsapTab() {
                       {actions.length > 0 && (
                         <button type="button"
                           onClick={() => openActionPicker(item)}
-                          className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                          className="px-2 py-0.5 text-xs rounded border"
+                          style={{ background: 'oklch(0.96 0.006 250)', color: 'oklch(0.40 0.12 250)', borderColor: 'oklch(0.87 0.006 250)' }}
                         >
                           Actions
                         </button>
@@ -697,10 +708,10 @@ export function LenderEsapTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badges */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_STYLES[detailItem.chain_status]}>
                   {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.commitment_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.commitment_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={TIER_STYLES[detailItem.commitment_tier]}>
                   {TIER_LABELS[detailItem.commitment_tier] ?? detailItem.commitment_tier}
                 </span>
                 {detailItem.sla_breached === 1 && (

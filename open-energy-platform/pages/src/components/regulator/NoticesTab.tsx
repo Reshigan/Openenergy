@@ -30,7 +30,7 @@ interface Notice {
 
 const STATUS_TONE: Record<NoticeStatus, { bg: string; fg: string }> = {
   issued: { bg: '#fff4d6', fg: '#a06200' },
-  acknowledged: { bg: '#dbecfb', fg: '#1a3a5c' },
+  acknowledged: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)' },
   satisfied: { bg: '#daf5e2', fg: '#1f6b3a' },
   overdue: { bg: '#fde0e0', fg: '#9b1f1f' },
   escalated: { bg: '#fde0e0', fg: '#9b1f1f' },
@@ -118,7 +118,7 @@ export function NoticesTab() {
             key={s}
             data-testid={`regulator-notices-filter-${s}`}
             onClick={() => setFilter(s)}
-            className={`h-7 px-3 rounded-full text-[11px] font-semibold border ${filter === s ? 'bg-[#c2873a] text-white border-[#1a3a5c]' : 'bg-white text-[#445566] border-[#d8dee6]'}`}
+            className={`h-7 px-3 rounded-full text-[11px] font-semibold border ${filter === s ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]' : 'bg-white text-[#445566] border-[#d8dee6]'}`}
           >
             {s === 'all' ? 'All' : s.replace(/_/g, ' ')}
           </button>
@@ -130,7 +130,7 @@ export function NoticesTab() {
         >
           + Issue notice
         </button>
-        <button type="button" onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[#d8dee6] bg-white text-[#1a3a5c]">
+        <button type="button" onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[#d8dee6] bg-white text-[oklch(0.46_0.16_55)]">
           Refresh
         </button>
       </div>
@@ -184,15 +184,15 @@ export function NoticesTab() {
       {creating && <CreateNoticeForm onClose={() => { setCreating(false); load(); }} />}
 
       {drillRow && (
-        <div data-testid="regulator-notice-drill" className="border border-[#1a3a5c] rounded-md p-4 bg-[#f7f9fb] space-y-3">
+        <div data-testid="regulator-notice-drill" className="border border-[oklch(0.46_0.16_55)] rounded-md p-4 bg-[#f7f9fb] space-y-3">
           <div className="flex justify-between items-start">
             <div>
               <div className="text-[11px] uppercase font-bold text-[#6b7685]">
                 {drillRow.notice_type.replace(/_/g, ' ')} · to {drillRow.licensee_user_id}
               </div>
-              <div className="text-[14px] font-bold text-[#1a3a5c]">{drillRow.title}</div>
+              <div className="text-[14px] font-bold text-[oklch(0.46_0.16_55)]">{drillRow.title}</div>
             </div>
-            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685] hover:text-[#1a3a5c]">Close ×</button>
+            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685] hover:text-[oklch(0.46_0.16_55)]">Close ×</button>
           </div>
           <div className="text-[12px] whitespace-pre-wrap text-[#2a3a4a]">{drillRow.body}</div>
           <div className="grid grid-cols-2 gap-3 text-[12px]">
@@ -264,8 +264,8 @@ function CreateNoticeForm({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div data-testid="regulator-notice-form" className="border border-[#1a3a5c] rounded-md p-4 bg-white space-y-3">
-      <div className="text-[14px] font-bold text-[#1a3a5c]">Issue compliance notice</div>
+    <div data-testid="regulator-notice-form" className="border border-[oklch(0.46_0.16_55)] rounded-md p-4 bg-white space-y-3">
+      <div className="text-[14px] font-bold text-[oklch(0.46_0.16_55)]">Issue compliance notice</div>
       <div className="grid grid-cols-2 gap-3">
         <Input label="Licensee user_id" value={form.licensee_user_id} onChange={(v) => setForm({ ...form, licensee_user_id: v })} />
         <div>
@@ -335,7 +335,7 @@ function Input({ label, value, onChange, fullWidth }: { label: string; value: st
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'good' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'good' ? '#1f6b3a' : '#1a3a5c';
+  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'good' ? '#1f6b3a' : 'oklch(0.46 0.16 55)';
   return (
     <div className="bg-white border border-[#e5e9ee] rounded-md p-3">
       <div className="text-[10px] uppercase font-bold text-[#6b7685]">{label}</div>
@@ -348,7 +348,7 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
       <div className="text-[10px] uppercase font-bold text-[#6b7685]">{label}</div>
-      <div className="text-[12px] text-[#1a3a5c]">{value}</div>
+      <div className="text-[12px] text-[oklch(0.46_0.16_55)]">{value}</div>
     </div>
   );
 }

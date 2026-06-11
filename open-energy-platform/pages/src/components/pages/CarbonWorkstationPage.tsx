@@ -408,7 +408,7 @@ export function CarbonWorkstationPage() {
   const kpis = useWorkstationKpis('carbon_fund');
   const vintagesPanel = useWorkstationPanel('Active vintages', '/carbon-registry/vintages', (r) => ({
     id: r.id,
-    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[#dbecfb] text-[#1a3a5c]">{r.stage || r.status || '—'}</span>,
+    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)]">{r.stage || r.status || '—'}</span>,
     text: <span>{r.project_name || r.name || r.serial_number} · {r.tco2e ? `${Number(r.tco2e).toLocaleString()} tCO₂e` : ''}</span>,
     meta: <span className="font-mono text-[10px] text-[#6b7685]">{r.vintage_year || ''}</span>,
   }), 'No vintages yet.');
@@ -426,7 +426,7 @@ export function CarbonWorkstationPage() {
       wizards={CARBON_WIZARDS}
       tour={CARBON_TOUR}
       title="Carbon workstation"
-      subtitle="Vintage workflow · MRV submissions · Retirement certificates. All flows; no external tools needed."
+      subtitle="Project registration → MRV & verification → Issuance → Trading → Retirement & Article 6 compliance"
       backHref="/carbon-registry"
       backLabel="Carbon registry"
       kpis={kpis}
@@ -435,111 +435,130 @@ export function CarbonWorkstationPage() {
         {
           key: 'vintages',
           label: 'Vintage workflow',
+          group: 'Project pipeline',
           body: ({ onRefresh }) => <VintagesTab onRefresh={onRefresh} />,
         },
         {
           key: 'mrv',
           label: 'MRV submissions',
+          group: 'MRV & verification',
           body: ({ onRefresh }) => <MrvTab onRefresh={onRefresh} />,
         },
         {
           key: 'certificates',
           label: 'Retirement certificates',
+          group: 'Issuance & registry',
           body: ({ onRefresh }) => <CertificatesTab onRefresh={onRefresh} />,
         },
         {
           key: 'article6',
           label: 'Article 6 ITMO',
+          group: 'Article 6 & compliance',
           chainKey: 'article6_adjustment',
           body: () => <Article6Tab />,
         },
         {
           key: 'registration_chain',
           label: 'Project registration',
+          group: 'Project pipeline',
           chainKey: 'carbon_registration',
           body: () => <RegistrationChainTab />,
         },
         {
           key: 'mrv_chain',
           label: 'Verification chain',
+          group: 'MRV & verification',
           chainKey: 'mrv_submissions',
           body: () => <MrvChainTab />,
         },
         {
           key: 'retirement_chain',
           label: 'Retirement chain',
+          group: 'Retirement & offset',
           chainKey: 'carbon_retirement',
           body: () => <RetirementChainTab />,
         },
         {
           key: 'reversal_chain',
           label: 'Reversals',
+          group: 'Retirement & offset',
           chainKey: 'carbon_reversal',
           body: () => <CarbonReversalChainTab />,
         },
         {
           key: 'offset_claim_chain',
           label: 'Tax offset claims',
+          group: 'Retirement & offset',
           chainKey: 'carbon_offset_claim',
           body: () => <CarbonOffsetClaimChainTab />,
         },
         {
           key: 'crediting_renewal_chain',
           label: 'Crediting renewal',
+          group: 'Project pipeline',
           chainKey: 'crediting_period_renewal',
           body: () => <CreditingRenewalChainTab />,
         },
         {
           key: 'erpa_chain',
           label: 'Forward ERPA delivery',
+          group: 'Trading & markets',
           chainKey: 'carbon_erpa',
           body: () => <CarbonErpaChainTab />,
         },
         {
           key: 'poa_cpa_inclusion_chain',
           label: 'PoA / CPA inclusion',
+          group: 'Project pipeline',
           chainKey: 'poa_cpa_inclusion',
           body: () => <PoaCpaInclusionChainTab />,
         },
         {
           key: 'carbon_issuance_chain',
           label: 'Credit issuance',
+          group: 'Issuance & registry',
           chainKey: 'carbon_issuance',
           body: () => <CarbonIssuanceChainTab />,
         },
         {
           key: 'ccp_assessment_chain',
           label: 'CCP-eligibility assessment',
+          group: 'MRV & verification',
           chainKey: 'ccp_assessment',
           body: () => <CcpAssessmentChainTab />,
         },
         {
           key: 'credit_rating_chain',
           label: 'Credit quality rating',
+          group: 'Trading & markets',
           chainKey: 'carbon_credit_rating',
           body: () => <CreditRatingChainTab />,
         },
         {
           key: 'esg_disclosure_chain',
           label: 'ESG disclosure & assurance',
+          group: 'Article 6 & compliance',
           chainKey: 'esg_disclosure',
           body: () => <EsgDisclosureChainTab />,
         },
         {
           key: 'scope3_disclosure_chain',
           label: 'Scope 3 value-chain disclosure',
+          group: 'Article 6 & compliance',
           chainKey: 'carbon_scope3_disclosure',
           body: () => <Scope3DisclosureChainTab />,
         },
         {
           key: 'carbon_tax_returns',
           label: 'Carbon tax returns (W200)',
+          group: 'Retirement & offset',
           chainKey: 'carbon_tax_return',
           body: ({ onRefresh }) => <CarbonTaxReturnsTab onRefresh={onRefresh} />,
         },
         {
           key: 'carbon_budget',
           label: 'Carbon budget',
+          group: 'Retirement & offset',
           chainKey: 'carbon_budget',
           body: () => (
             <ListingTable
@@ -558,6 +577,7 @@ export function CarbonWorkstationPage() {
         {
           key: 'vcm_project_development',
           label: 'VCM project development',
+          group: 'Project pipeline',
           chainKey: 'vcm_project_development',
           body: () => (
             <ListingTable
@@ -576,6 +596,7 @@ export function CarbonWorkstationPage() {
         {
           key: 'certificate_bundle',
           label: 'Certificate bundles',
+          group: 'Issuance & registry',
           chainKey: 'certificate_bundle',
           body: () => (
             <ListingTable
@@ -593,19 +614,21 @@ export function CarbonWorkstationPage() {
         {
           key: 'registry_transfers',
           label: 'Registry transfers (W206)',
+          group: 'Trading & markets',
           chainKey: 'carbon_registry_transfer',
           body: ({ onRefresh }) => <CarbonRegistryTransferTab onRefresh={onRefresh} />,
         },
         {
           key: 'methodology_amendments',
           label: 'Methodology amendments (W213)',
-          group: 'Compliance',
+          group: 'Article 6 & compliance',
           chainKey: 'methodology_amendment',
           body: ({ onRefresh }) => <MethodologyAmendmentTab onRefresh={onRefresh} />,
         },
         {
           key: 'reports',
           label: 'Reports & Exports',
+          group: 'Article 6 & compliance',
           body: () => (
             <div className="space-y-8">
               {CARBON_REPORTS.map(cfg => (
@@ -620,6 +643,7 @@ export function CarbonWorkstationPage() {
         {
           key: 'audit',
           label: 'Audit & compliance',
+          group: 'Article 6 & compliance',
           body: ({ onRefresh }) => (
             <AuditPanel
               prefix="/carbon-registry"
@@ -869,7 +893,7 @@ function CarbonTaxReturnsTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'sla_deadline', label: 'SLA', render: (r) => r.sla_deadline ? String(r.sla_deadline) : '—' },
           { key: 'sla_breached', label: 'Breach', render: (r) => r.sla_breached ? <Pill tone="bad">BREACH</Pill> : <Pill tone="good">OK</Pill> },
           { key: 'actions', label: '', render: (r) => (
-            <button type="button" onClick={() => setActionRow(r)} className="text-[11px] text-[#1a3a5c] underline">Action</button>
+            <button type="button" onClick={() => setActionRow(r)} className="text-[11px] text-[oklch(0.46_0.16_55)] underline">Action</button>
           )},
         ]}
       />

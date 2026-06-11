@@ -46,7 +46,7 @@ const marketData = [
 const portfolioData = [
   { name: 'Solar',   value: 42, color: '#5fa8e8' }, /* Energy Amber */
   { name: 'Wind',    value: 28, color: '#1f9b95' }, /* Teal */
-  { name: 'Hybrid',  value: 18, color: '#1a3a5c' }, /* Forest */
+  { name: 'Hybrid',  value: 18, color: 'oklch(0.46 0.16 55)' }, /* Forest */
   { name: 'Storage', value: 8,  color: '#5d4099' }, /* Plum */
   { name: 'Carbon',  value: 4,  color: '#7faac9' }, /* Sage */
 ];
@@ -176,7 +176,7 @@ export function Cockpit() {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-3 min-w-0 lg:min-w-[560px]">
             <HeroKPI label="Active Projects" value={stats?.activeProjects ?? 12} tint="#cdf0dd" />
-            <HeroKPI label="Open Trades" value={stats?.openTrades ?? 38} tint="#dbecfb" />
+            <HeroKPI label="Open Trades" value={stats?.openTrades ?? 38} tint="oklch(0.94 0.02 250)" />
             <HeroKPI label="Pending Invoices" value={stats?.pendingInvoices ?? 6} tint="#ffbab2" />
             <HeroKPI
               label="Portfolio Value"
@@ -320,8 +320,8 @@ export function Cockpit() {
                   <stop offset="100%" stopColor="#1f9b95" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gradHybrid" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#1a3a5c" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#1a3a5c" stopOpacity={0} />
+                  <stop offset="0%" stopColor="oklch(0.46 0.16 55)" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="oklch(0.46 0.16 55)" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#dde4ec" />
@@ -362,7 +362,7 @@ export function Cockpit() {
               <Area
                 type="monotone"
                 dataKey="hybrid"
-                stroke="#1a3a5c"
+                stroke="oklch(0.46 0.16 55)"
                 strokeWidth={2}
                 fill="url(#gradHybrid)"
                 dot={false}
@@ -372,7 +372,7 @@ export function Cockpit() {
           <div className="flex items-center gap-4 pt-2 text-[12px] font-body" style={{ color: 'var(--oe-on-surface-variant)' }}>
             <LegendDot color="#5fa8e8" label="Solar" />
             <LegendDot color="#1f9b95" label="Wind" />
-            <LegendDot color="#1a3a5c" label="Hybrid" />
+            <LegendDot color="oklch(0.46 0.16 55)" label="Hybrid" />
           </div>
         </div>
 
@@ -450,8 +450,8 @@ export function Cockpit() {
           <BarChart data={volumeData} barSize={24}>
             <defs>
               <linearGradient id="gradBar" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#1a3a5c" stopOpacity={1} />
-                <stop offset="100%" stopColor="#1a3a5c" stopOpacity={1} />
+                <stop offset="0%" stopColor="oklch(0.46 0.16 55)" stopOpacity={1} />
+                <stop offset="100%" stopColor="oklch(0.46 0.16 55)" stopOpacity={1} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#dde4ec" vertical={false} />

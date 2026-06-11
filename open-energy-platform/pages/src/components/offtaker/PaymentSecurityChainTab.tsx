@@ -21,6 +21,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'security_required' | 'instrument_submitted' | 'under_verification'
@@ -31,6 +46,7 @@ type ChainStatus =
 type Tier = 'minor' | 'moderate' | 'material' | 'major' | 'critical';
 
 interface SecurityRow {
+  [key: string]: unknown;
   id: string;
   security_number: string;
   source_event: string | null;
@@ -107,19 +123,6 @@ interface SecurityRow {
   is_large_tier?: boolean;
 }
 
-interface SecurityEvent {
-  id: string;
-  security_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiSummary {
   total: number;
   open_count: number;
@@ -137,29 +140,26 @@ interface KpiSummary {
   total_drawn_zar_m: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  security_required:     { bg: '#e3e7ec', fg: '#557',    label: 'Security required' },
-  instrument_submitted:  { bg: '#dbecfb', fg: '#1a3a5c', label: 'Instrument submitted' },
-  under_verification:    { bg: '#fff4d6', fg: '#a06200', label: 'Under verification' },
-  active:                { bg: '#d4edda', fg: '#155724', label: 'Active' },
-  adequacy_review:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Adequacy review' },
-  drawdown_initiated:    { bg: '#ffe4e1', fg: '#a04040', label: 'Drawdown initiated' },
-  replenishment_pending: { bg: '#fff4d6', fg: '#a06200', label: 'Replenishment pending' },
-  expiry_pending:        { bg: '#fff4d6', fg: '#a06200', label: 'Expiry pending' },
-  substitution_pending:  { bg: '#fff4d6', fg: '#a06200', label: 'Substitution pending' },
-  released:              { bg: '#daf5e2', fg: '#1f6b3a', label: 'Released' },
-  forfeited:             { bg: '#fde0e0', fg: '#9b1f1f', label: 'Forfeited' },
-  rejected:              { bg: '#ede0e0', fg: '#6b3a3a', label: 'Rejected' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'security_required',
+  'instrument_submitted',
+  'under_verification',
+  'active',
+  'adequacy_review',
+  'drawdown_initiated',
+  'replenishment_pending',
+  'expiry_pending',
+  'substitution_pending',
+  'released',
+];
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-  moderate: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Moderate' },
-  material: { bg: '#fff4d6', fg: '#8a4a00', label: 'Material' },
-  major:    { bg: '#ffe4b5', fg: '#8a4a00', label: 'Major' },
-  critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical' },
-};
+const BRANCH_STATES: readonly string[] = [
+  'forfeited',
+  'rejected',
+];
 
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active_open',           label: 'Open' },
   { key: 'all',                   label: 'All' },
@@ -184,45 +184,9 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'rejected',              label: 'Rejected' },
 ];
 
-type ActionKind =
-  | 'submit-instrument' | 'begin-verification' | 'activate' | 'reject-instrument'
-  | 'open-adequacy-review' | 'confirm-adequate' | 'require-increase'
-  | 'initiate-drawdown' | 'open-replenishment' | 'flag-expiry'
-  | 'forfeit' | 'release';
+const TERMINAL_STATES: ChainStatus[] = ['released', 'forfeited', 'rejected'];
 
-// Primary forward action per state. `active` is a steady state with a fan-out
-// of branches (adequacy / drawdown / expiry / release) all surfaced in the
-// drawer, so it has no single "next".
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  security_required:     'submit-instrument',
-  instrument_submitted:  'begin-verification',
-  under_verification:    'activate',
-  active:                null,
-  adequacy_review:       'confirm-adequate',
-  drawdown_initiated:    'open-replenishment',
-  replenishment_pending: 'submit-instrument',
-  expiry_pending:        'submit-instrument',
-  substitution_pending:  'submit-instrument',
-  released:              null,
-  forfeited:             null,
-  rejected:              null,
-};
-
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'submit-instrument':    'Submit / re-post instrument (offtaker)',
-  'begin-verification':   'Begin verification (seller)',
-  'activate':             'Activate (seller)',
-  'reject-instrument':    'Reject instrument (seller)',
-  'open-adequacy-review': 'Open adequacy review (seller)',
-  'confirm-adequate':     'Confirm adequate (seller)',
-  'require-increase':     'Require increase → substitute (seller)',
-  'initiate-drawdown':    'Initiate drawdown (seller)',
-  'open-replenishment':   'Open replenishment (seller)',
-  'flag-expiry':          'Flag expiry (seller)',
-  'forfeit':              'Forfeit security (seller)',
-  'release':              'Release at PPA term (seller)',
-};
-
+// ── helpers ───────────────────────────────────────────────────────────────
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
   if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
@@ -249,33 +213,315 @@ function fmtZarM(n: number | null | undefined): string {
   return `R${n.toFixed(1)}m`;
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['released', 'forfeited', 'rejected'];
+// ── actions ───────────────────────────────────────────────────────────────
+function getActions(row: SecurityRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
 
+  // submit-instrument: security_required | replenishment_pending | expiry_pending | substitution_pending
+  if (
+    s === 'security_required' ||
+    s === 'replenishment_pending' ||
+    s === 'expiry_pending' ||
+    s === 'substitution_pending'
+  ) {
+    actions.push({
+      key: 'submit-instrument',
+      label: 'Submit / re-post instrument (offtaker)',
+      fields: [
+        { key: 'submission_ref', label: 'Submission reference (e.g. PS-SUB-2026-014)', type: 'text', required: true, placeholder: '' },
+        { key: 'instrument_name', label: 'Instrument name', type: 'text', required: false, placeholder: row.instrument_name || '' },
+        { key: 'instrument_type', label: 'Instrument type (letter_of_credit / bank_guarantee / parent_guarantee / cash_deposit)', type: 'text', required: false, placeholder: row.instrument_type || 'letter_of_credit' },
+        { key: 'issuer_name', label: 'Issuer / guarantor (issuing bank)', type: 'text', required: false, placeholder: row.issuer_name || '' },
+        { key: 'secured_amount_zar_m', label: 'Secured amount (ZAR millions) — drives the tier', type: 'number', required: false, placeholder: String(row.secured_amount_zar_m ?? '') },
+        { key: 'cover_months', label: 'Cover (months of invoices)', type: 'number', required: false, placeholder: String(row.cover_months ?? '') },
+        { key: 'expiry_date', label: 'Instrument expiry date (YYYY-MM-DD)', type: 'date', required: false, placeholder: row.expiry_date || '' },
+        { key: 'submission_basis', label: 'Submission basis — instrument terms / sizing', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // begin-verification: instrument_submitted
+  if (s === 'instrument_submitted') {
+    actions.push({
+      key: 'begin-verification',
+      label: 'Begin verification (seller)',
+      fields: [
+        { key: 'verification_ref', label: 'Verification reference', type: 'text', required: true, placeholder: '' },
+        { key: 'verification_basis', label: 'Verification basis — issuer-rating / wording / drawability checks', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // activate: under_verification (primary forward)
+  if (s === 'under_verification') {
+    actions.push({
+      key: 'activate',
+      label: 'Activate (seller)',
+      fields: [
+        { key: 'activation_ref', label: 'Activation reference', type: 'text', required: true, placeholder: '' },
+        { key: 'activation_basis', label: 'Activation basis — confirmation the instrument is live and conforming', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+    // reject-instrument: under_verification (branch)
+    actions.push({
+      key: 'reject-instrument',
+      label: 'Reject instrument (seller)',
+      fields: [
+        { key: 'reject_ref', label: 'Rejection reference', type: 'text', required: true, placeholder: '' },
+        { key: 'verification_basis', label: 'Rejection basis — why the instrument fails verification', type: 'textarea', required: true, placeholder: '' },
+        { key: 'decision_notes', label: 'Decision notes', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  // active state — fan-out of branches
+  if (s === 'active') {
+    actions.push({
+      key: 'open-adequacy-review',
+      label: 'Open adequacy review (seller)',
+      fields: [
+        { key: 'adequacy_ref', label: 'Adequacy review reference', type: 'text', required: true, placeholder: '' },
+        { key: 'adequacy_basis', label: 'Adequacy basis — exposure vs cover being reviewed', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'initiate-drawdown',
+      label: 'Initiate drawdown (seller)',
+      fields: [
+        { key: 'drawdown_ref', label: 'Drawdown reference (call on the instrument)', type: 'text', required: true, placeholder: '' },
+        { key: 'drawn_amount_zar_m', label: 'Amount drawn (ZAR millions)', type: 'number', required: true, placeholder: '' },
+        { key: 'outstanding_invoice_zar_m', label: 'Unpaid PPA invoice that triggered the call (ZAR millions)', type: 'number', required: false, placeholder: '' },
+        { key: 'drawdown_basis', label: 'Drawdown basis — buyer payment default detail', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+    actions.push({
+      key: 'flag-expiry',
+      label: 'Flag expiry (seller)',
+      fields: [
+        { key: 'expiry_ref', label: 'Expiry reference', type: 'text', required: true, placeholder: '' },
+        { key: 'expiry_date', label: 'Instrument expiry date (YYYY-MM-DD)', type: 'date', required: false, placeholder: row.expiry_date || '' },
+        { key: 'expiry_basis', label: 'Expiry basis — renewal / re-posting requirement', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'release',
+      label: 'Release at PPA term (seller)',
+      fields: [
+        { key: 'release_ref', label: 'Release reference (PPA term reached — clean close)', type: 'text', required: true, placeholder: '' },
+        { key: 'release_basis', label: 'Release basis — confirmation no further exposure', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // adequacy_review: confirm-adequate (primary) + require-increase (branch)
+  if (s === 'adequacy_review') {
+    actions.push({
+      key: 'confirm-adequate',
+      label: 'Confirm adequate (seller)',
+      fields: [
+        { key: 'adequacy_basis', label: 'Confirmation basis — why cover remains adequate', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'require-increase',
+      label: 'Require increase → substitute (seller)',
+      fields: [
+        { key: 'adequacy_shortfall_zar_m', label: 'Adequacy shortfall (ZAR millions) — cover gap vs exposure', type: 'number', required: true, placeholder: '' },
+        { key: 'required_amount_zar_m', label: 'New required cover (ZAR millions)', type: 'number', required: false, placeholder: String(row.required_amount_zar_m ?? '') },
+        { key: 'adequacy_basis', label: 'Basis — why a bigger instrument is required', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // drawdown_initiated: open-replenishment
+  if (s === 'drawdown_initiated') {
+    actions.push({
+      key: 'open-replenishment',
+      label: 'Open replenishment (seller)',
+      fields: [
+        { key: 'replenishment_ref', label: 'Replenishment reference', type: 'text', required: true, placeholder: '' },
+        { key: 'replenishment_due_zar_m', label: 'Amount required to restore the instrument (ZAR millions)', type: 'number', required: false, placeholder: String(row.drawn_amount_zar_m ?? '') },
+        { key: 'replenishment_basis', label: 'Replenishment basis / deadline note', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // forfeit: replenishment_pending | expiry_pending | substitution_pending
+  if (
+    s === 'replenishment_pending' ||
+    s === 'expiry_pending' ||
+    s === 'substitution_pending'
+  ) {
+    actions.push({
+      key: 'forfeit',
+      label: 'Forfeit security (seller)',
+      fields: [
+        { key: 'forfeit_ref', label: 'Forfeit reference', type: 'text', required: true, placeholder: '' },
+        { key: 'forfeit_basis', label: 'Forfeit basis — failed to replenish / renew / substitute', type: 'textarea', required: true, placeholder: '' },
+        { key: 'decision_notes', label: 'Decision notes', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  return actions;
+}
+
+// ── detail render ─────────────────────────────────────────────────────────
+function renderDetail(row: SecurityRow): React.ReactNode {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+        <DetailPair label="Instrument type"    value={row.instrument_type ?? '—'} />
+        <DetailPair label="Issuer"             value={row.issuer_name ?? '—'} />
+        <DetailPair label="Issuer rating"      value={row.issuer_rating ?? '—'} />
+        <DetailPair label="PPA reference"      value={row.ppa_reference ?? '—'} />
+        <DetailPair label="Project"            value={row.project_name ?? '—'} />
+        <DetailPair label="Sector"             value={row.sector ?? '—'} />
+        <DetailPair label="Secured"            value={fmtZarM(row.secured_amount_zar_m)} />
+        <DetailPair label="Required cover"     value={fmtZarM(row.required_amount_zar_m)} />
+        <DetailPair label="Cover months"       value={row.cover_months != null ? `${row.cover_months} mo` : '—'} />
+        <DetailPair label="Expiry"             value={fmtDay(row.expiry_date)} />
+        <DetailPair label="Drawn"              value={fmtZarM(row.drawn_amount_zar_m)} />
+        <DetailPair label="Outstanding inv."   value={fmtZarM(row.outstanding_invoice_zar_m)} />
+        <DetailPair label="Replenish due"      value={fmtZarM(row.replenishment_due_zar_m)} />
+        <DetailPair label="Adequacy shortfall" value={fmtZarM(row.adequacy_shortfall_zar_m)} />
+        <DetailPair label="Drawdown count"     value={String(row.drawdown_count)} />
+        <DetailPair label="Agent"              value={row.agent_name ?? '—'} />
+        <DetailPair label="Seller"             value={row.seller_party_name ?? '—'} />
+        <DetailPair label="Submission ref"     value={row.submission_ref ?? '—'} />
+        <DetailPair label="Verification ref"   value={row.verification_ref ?? '—'} />
+        <DetailPair label="Activation ref"     value={row.activation_ref ?? '—'} />
+        <DetailPair label="Adequacy ref"       value={row.adequacy_ref ?? '—'} />
+        <DetailPair label="Drawdown ref"       value={row.drawdown_ref ?? '—'} />
+        <DetailPair label="Replenishment ref"  value={row.replenishment_ref ?? '—'} />
+        <DetailPair label="Expiry ref"         value={row.expiry_ref ?? '—'} />
+        <DetailPair label="Release ref"        value={row.release_ref ?? '—'} />
+        <DetailPair label="Forfeit ref"        value={row.forfeit_ref ?? '—'} />
+        <DetailPair label="Reject ref"         value={row.reject_ref ?? '—'} />
+        <DetailPair label="Reason code"        value={row.reason_code ?? '—'} />
+        <DetailPair label="Required at"        value={fmtDate(row.security_required_at)} />
+        <DetailPair label="Submitted at"       value={fmtDate(row.instrument_submitted_at)} />
+        <DetailPair label="Verifying at"       value={fmtDate(row.under_verification_at)} />
+        <DetailPair label="Active at"          value={fmtDate(row.active_at)} />
+        <DetailPair label="Drawdown at"        value={fmtDate(row.drawdown_initiated_at)} />
+        <DetailPair label="Released at"        value={fmtDate(row.released_at)} />
+        <DetailPair label="SLA deadline"       value={fmtDate(row.sla_deadline_at)} />
+        <DetailPair label="SLA status"         value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+        <DetailPair label="Escalation lvl"     value={String(row.escalation_level)} />
+        <DetailPair label="Reportable"         value={row.is_reportable ? 'Yes' : 'No'} />
+        {row.source_wave && (
+          <DetailPair label="Source wave" value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}`} />
+        )}
+      </div>
+      {row.submission_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Submission basis</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.submission_basis}</div>
+        </div>
+      )}
+      {row.verification_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Verification basis</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.verification_basis}</div>
+        </div>
+      )}
+      {row.activation_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Activation basis</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.activation_basis}</div>
+        </div>
+      )}
+      {row.adequacy_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Adequacy basis</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.adequacy_basis}</div>
+        </div>
+      )}
+      {row.drawdown_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Drawdown basis</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.drawdown_basis}</div>
+        </div>
+      )}
+      {row.replenishment_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Replenishment basis</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.replenishment_basis}</div>
+        </div>
+      )}
+      {row.expiry_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Expiry basis</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.expiry_basis}</div>
+        </div>
+      )}
+      {row.forfeit_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: BAD }}>Forfeit basis</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.forfeit_basis}</div>
+        </div>
+      )}
+      {row.release_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: GOOD }}>Release basis</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.release_basis}</div>
+        </div>
+      )}
+      {row.decision_notes && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Decision notes</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.decision_notes}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function PaymentSecurityChainTab() {
   const [rows, setRows] = useState<SecurityRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active_open');
-  const [selected, setSelected] = useState<SecurityRow | null>(null);
-  const [events, setEvents] = useState<SecurityEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
       const res = await api.get<{ data: { items: SecurityRow[] } & KpiSummary }>('/payment-security/chain');
-      setRows(res.data?.data?.items || []);
       const d = res.data?.data;
+      setRows(d?.items || []);
       if (d) {
-        setKpis({
-          total: d.total, open_count: d.open_count, active_count: d.active_count,
-          released_count: d.released_count, forfeited_count: d.forfeited_count,
-          rejected_count: d.rejected_count, drawdown_open_count: d.drawdown_open_count,
-          breached: d.breached, reportable_total: d.reportable_total,
+        setSummary({
+          total: d.total,
+          open_count: d.open_count,
+          active_count: d.active_count,
+          released_count: d.released_count,
+          forfeited_count: d.forfeited_count,
+          rejected_count: d.rejected_count,
+          drawdown_open_count: d.drawdown_open_count,
+          breached: d.breached,
+          reportable_total: d.reportable_total,
           large_exposure_open: d.large_exposure_open,
-          total_secured_zar_m: d.total_secured_zar_m, total_required_zar_m: d.total_required_zar_m,
-          active_secured_zar_m: d.active_secured_zar_m, total_drawn_zar_m: d.total_drawn_zar_m,
+          total_secured_zar_m: d.total_secured_zar_m,
+          total_required_zar_m: d.total_required_zar_m,
+          active_secured_zar_m: d.active_secured_zar_m,
+          total_drawn_zar_m: d.total_drawn_zar_m,
         });
       }
     } catch (e) {
@@ -287,484 +533,153 @@ export function PaymentSecurityChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: SecurityRow; events: SecurityEvent[] } }>(
-        `/payment-security/chain/${id}`
-      );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/payment-security/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/payment-security/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load security history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { events: ChainEvent[] } }>(`/payment-security/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
-      if (filter === 'all')        return true;
+      if (filter === 'all')         return true;
       if (filter === 'active_open') return !TERMINAL_STATES.includes(r.chain_status);
-      if (filter === 'minor')      return r.security_tier === 'minor';
-      if (filter === 'moderate')   return r.security_tier === 'moderate';
-      if (filter === 'material')   return r.security_tier === 'material';
-      if (filter === 'major')      return r.security_tier === 'major';
-      if (filter === 'critical')   return r.security_tier === 'critical';
-      if (filter === 'breached')   return r.sla_breached;
-      if (filter === 'reportable') return r.is_reportable;
+      if (filter === 'minor')       return r.security_tier === 'minor';
+      if (filter === 'moderate')    return r.security_tier === 'moderate';
+      if (filter === 'material')    return r.security_tier === 'material';
+      if (filter === 'major')       return r.security_tier === 'major';
+      if (filter === 'critical')    return r.security_tier === 'critical';
+      if (filter === 'breached')    return !!r.sla_breached;
+      if (filter === 'reportable')  return !!r.is_reportable;
       return r.chain_status === filter;
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: SecurityRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'submit-instrument') {
-        const ref = window.prompt('Submission reference (e.g. PS-SUB-2026-014):');
-        if (!ref) return;
-        const name = window.prompt('Instrument name:', row.instrument_name || '') || row.instrument_name || '';
-        const type = window.prompt('Instrument type (letter_of_credit / bank_guarantee / parent_guarantee / cash_deposit):', row.instrument_type || 'letter_of_credit') || 'letter_of_credit';
-        const issuer = window.prompt('Issuer / guarantor (issuing bank):', row.issuer_name || '') || '';
-        const secured = window.prompt('Secured amount (ZAR millions) — drives the tier:', String(row.secured_amount_zar_m ?? ''));
-        const cover = window.prompt('Cover (months of invoices):', String(row.cover_months ?? ''));
-        const expiry = window.prompt('Instrument expiry date (YYYY-MM-DD):', row.expiry_date || '') || '';
-        const basis = window.prompt('Submission basis — instrument terms / sizing:') || '';
-        body = { submission_ref: ref, instrument_name: name, instrument_type: type, submission_basis: basis };
-        if (issuer) body.issuer_name = issuer;
-        if (secured) body.secured_amount_zar_m = Number(secured);
-        if (cover) body.cover_months = Number(cover);
-        if (expiry) body.expiry_date = expiry;
-      } else if (action === 'begin-verification') {
-        const ref = window.prompt('Verification reference:');
-        if (!ref) return;
-        const basis = window.prompt('Verification basis — issuer-rating / wording / drawability checks:') || '';
-        body = { verification_ref: ref, verification_basis: basis };
-      } else if (action === 'activate') {
-        const ref = window.prompt('Activation reference:');
-        if (!ref) return;
-        const basis = window.prompt('Activation basis — confirmation the instrument is live and conforming:') || '';
-        body = { activation_ref: ref, activation_basis: basis };
-      } else if (action === 'reject-instrument') {
-        const ref = window.prompt('Rejection reference:');
-        if (!ref) return;
-        const basis = window.prompt('Rejection basis — why the instrument fails verification:');
-        if (!basis) return;
-        const rod = window.prompt('Decision notes:') || '';
-        body = { reject_ref: ref, verification_basis: basis, reason_code: 'instrument_rejected', decision_notes: rod };
-      } else if (action === 'open-adequacy-review') {
-        const ref = window.prompt('Adequacy review reference:');
-        if (!ref) return;
-        const basis = window.prompt('Adequacy basis — exposure vs cover being reviewed:') || '';
-        body = { adequacy_ref: ref, adequacy_basis: basis };
-      } else if (action === 'confirm-adequate') {
-        const basis = window.prompt('Confirmation basis — why cover remains adequate:') || '';
-        body = { adequacy_basis: basis };
-      } else if (action === 'require-increase') {
-        const shortfall = window.prompt('Adequacy shortfall (ZAR millions) — cover gap vs exposure:');
-        if (!shortfall) return;
-        const required = window.prompt('New required cover (ZAR millions):', String(row.required_amount_zar_m ?? ''));
-        const basis = window.prompt('Basis — why a bigger instrument is required:') || '';
-        body = { adequacy_shortfall_zar_m: Number(shortfall), adequacy_basis: basis, reason_code: 'increase_required' };
-        if (required) body.required_amount_zar_m = Number(required);
-      } else if (action === 'initiate-drawdown') {
-        const ref = window.prompt('Drawdown reference (call on the instrument):');
-        if (!ref) return;
-        const drawn = window.prompt('Amount drawn (ZAR millions):');
-        if (!drawn) return;
-        const invoice = window.prompt('Unpaid PPA invoice that triggered the call (ZAR millions):') || '';
-        const basis = window.prompt('Drawdown basis — buyer payment default detail:') || '';
-        body = { drawdown_ref: ref, drawn_amount_zar_m: Number(drawn), drawdown_basis: basis };
-        if (invoice) body.outstanding_invoice_zar_m = Number(invoice);
-      } else if (action === 'open-replenishment') {
-        const ref = window.prompt('Replenishment reference:');
-        if (!ref) return;
-        const due = window.prompt('Amount required to restore the instrument (ZAR millions):', String(row.drawn_amount_zar_m ?? ''));
-        const basis = window.prompt('Replenishment basis / deadline note:') || '';
-        body = { replenishment_ref: ref, replenishment_basis: basis };
-        if (due) body.replenishment_due_zar_m = Number(due);
-      } else if (action === 'flag-expiry') {
-        const ref = window.prompt('Expiry reference:');
-        if (!ref) return;
-        const expiry = window.prompt('Instrument expiry date (YYYY-MM-DD):', row.expiry_date || '') || '';
-        const basis = window.prompt('Expiry basis — renewal / re-posting requirement:') || '';
-        body = { expiry_ref: ref, expiry_basis: basis };
-        if (expiry) body.expiry_date = expiry;
-      } else if (action === 'forfeit') {
-        const ref = window.prompt('Forfeit reference:');
-        if (!ref) return;
-        const basis = window.prompt('Forfeit basis — failed to replenish / renew / substitute:');
-        if (!basis) return;
-        const rod = window.prompt('Decision notes:') || '';
-        body = { forfeit_ref: ref, forfeit_basis: basis, reason_code: 'security_forfeited', decision_notes: rod };
-      } else if (action === 'release') {
-        const ref = window.prompt('Release reference (PPA term reached — clean close):');
-        if (!ref) return;
-        const basis = window.prompt('Release basis — confirmation no further exposure:') || '';
-        body = { release_ref: ref, release_basis: basis };
-      }
-      await api.post(`/payment-security/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
+  const kpis = summary ?? {
+    total: 0, open_count: 0, active_count: 0, released_count: 0,
+    forfeited_count: 0, rejected_count: 0, drawdown_open_count: 0,
+    breached: 0, reportable_total: 0, large_exposure_open: 0,
+    total_secured_zar_m: 0, total_required_zar_m: 0,
+    active_secured_zar_m: 0, total_drawn_zar_m: 0,
+  };
 
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Offtaker PPA payment security / credit support</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-stage P6 chain · security required → instrument submitted → under verification → active → adequacy review →
-            active. The financial-assurance backbone of a bankable PPA: the buyer (offtaker) posts and maintains a
-            payment-security instrument (letter of credit / on-demand bank guarantee / parent guarantee) sized to its
-            rolling payment exposure; the seller (IPP beneficiary, or facility agent) verifies, activates, runs periodic
-            adequacy review, draws down on a buyer payment default, forfeits an un-replenished instrument, and releases it
-            at PPA term. The buyer-side credit-support counterpart to the seller-side bonds. Drawdown / expiry /
-            substitution all route the re-posted instrument back through verification (submit-instrument). URGENT SLA:
-            critical tier tightest (a large IPP debt service left unsecured). Forfeit crosses to the regulator inbox for
-            every tier; drawdowns, rejections + SLA breaches cross for major + critical.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Offtaker PPA payment security / credit support</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          12-stage P6 chain · security required → instrument submitted → under verification → active → adequacy review →
+          active. Financial-assurance backbone of a bankable PPA. Buyer posts and maintains a payment-security instrument
+          (LC / bank guarantee / parent guarantee) sized to rolling payment exposure. Seller verifies, activates, runs
+          adequacy review, draws on buyer default, forfeits un-replenished instruments, and releases at PPA term. URGENT
+          SLA: critical tier tightest. Forfeit crosses to regulator every tier; drawdowns + rejections + SLA breaches
+          cross for major + critical.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="Active" value={kpis?.active_count ?? 0} tone="ok" />
-        <Kpi label="In drawdown" value={kpis?.drawdown_open_count ?? 0} tone={(kpis?.drawdown_open_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Large open" value={kpis?.large_exposure_open ?? 0} tone={(kpis?.large_exposure_open ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Forfeited" value={kpis?.forfeited_count ?? 0} tone={(kpis?.forfeited_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Rejected" value={kpis?.rejected_count ?? 0} tone={(kpis?.rejected_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Secured" value={fmtZarM(kpis?.total_secured_zar_m)} />
-        <Kpi label="Active cover" value={fmtZarM(kpis?.active_secured_zar_m)} />
-        <Kpi label="Drawn" value={fmtZarM(kpis?.total_drawn_zar_m)} tone={(kpis?.total_drawn_zar_m ?? 0) > 0 ? 'warn' : 'ok'} />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total"        value={kpis.total} />
+        <KpiTile label="Open"         value={kpis.open_count} />
+        <KpiTile label="Active"       value={kpis.active_count} tone="ok" />
+        <KpiTile label="In drawdown"  value={kpis.drawdown_open_count} tone={kpis.drawdown_open_count > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Large open"   value={kpis.large_exposure_open} tone={kpis.large_exposure_open > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Forfeited"    value={kpis.forfeited_count} tone={kpis.forfeited_count > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Rejected"     value={kpis.rejected_count} tone={kpis.rejected_count > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="SLA breached" value={kpis.breached} tone={kpis.breached > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Reportable"   value={kpis.reportable_total} tone={kpis.reportable_total > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Secured"      value={fmtZarM(kpis.total_secured_zar_m)} />
+        <KpiTile label="Active cover" value={fmtZarM(kpis.active_secured_zar_m)} />
+        <KpiTile label="Drawn"        value={fmtZarM(kpis.total_drawn_zar_m)} tone={kpis.total_drawn_zar_m > 0 ? 'warn' : 'ok'} />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Security #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Instrument / offtaker</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Secured</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Drawn</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.security_tier];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.security_number}
-                      {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[280px] truncate" title={`${r.instrument_name} · ${r.offtaker_party_name}`}>
-                      {r.instrument_name}
-                      <span className="text-[#4a5568]"> · {r.offtaker_party_name}</span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtZarM(r.secured_amount_zar_m)}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${(r.drawn_amount_zar_m ?? 0) > 0 ? 'text-[#a04040]' : 'text-[#4a5568]'}`}>{fmtZarM(r.drawn_amount_zar_m)}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No securities match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading...
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={row.instrument_name}
+              meta={`${row.security_tier.charAt(0).toUpperCase() + row.security_tier.slice(1)} · ${row.offtaker_party_name}${row.seller_party_name ? ` · seller ${row.seller_party_name}` : ''} · ${row.security_number}`}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No securities match.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: SecurityRow;
-  events: SecurityEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: SecurityRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const isActive = row.chain_status === 'active';
-  const canReject = row.chain_status === 'under_verification';
-  const canRequireIncrease = row.chain_status === 'adequacy_review';
-  const canForfeit = ['replenishment_pending', 'expiry_pending', 'substitution_pending'].includes(row.chain_status);
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.security_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.instrument_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.security_tier].label} · offtaker {row.offtaker_party_name}
-                {row.seller_party_name ? ` · seller ${row.seller_party_name}` : ''}
-                {row.issuer_name ? ` · issued by ${row.issuer_name}` : ''}
-              </div>
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"             value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier"              value={TIER_TONE[row.security_tier].label} />
-            <Pair label="Instrument type"   value={row.instrument_type ?? '—'} />
-            <Pair label="Issuer"            value={row.issuer_name ?? '—'} />
-            <Pair label="Issuer rating"     value={row.issuer_rating ?? '—'} />
-            <Pair label="PPA reference"     value={row.ppa_reference ?? '—'} />
-            <Pair label="Project"           value={row.project_name ?? '—'} />
-            <Pair label="Sector"            value={row.sector ?? '—'} />
-            <Pair label="Secured"           value={fmtZarM(row.secured_amount_zar_m)} />
-            <Pair label="Required cover"    value={fmtZarM(row.required_amount_zar_m)} />
-            <Pair label="Cover months"      value={row.cover_months != null ? `${row.cover_months} mo` : '—'} />
-            <Pair label="Expiry"            value={fmtDay(row.expiry_date)} />
-            <Pair label="Drawn"             value={fmtZarM(row.drawn_amount_zar_m)} />
-            <Pair label="Outstanding inv."  value={fmtZarM(row.outstanding_invoice_zar_m)} />
-            <Pair label="Replenish due"     value={fmtZarM(row.replenishment_due_zar_m)} />
-            <Pair label="Adequacy shortfall" value={fmtZarM(row.adequacy_shortfall_zar_m)} />
-            <Pair label="Drawdown count"    value={String(row.drawdown_count)} />
-            <Pair label="Agent"             value={row.agent_name ?? '—'} />
-            <Pair label="Submission ref"    value={row.submission_ref ?? '—'} />
-            <Pair label="Verification ref"  value={row.verification_ref ?? '—'} />
-            <Pair label="Activation ref"    value={row.activation_ref ?? '—'} />
-            <Pair label="Adequacy ref"      value={row.adequacy_ref ?? '—'} />
-            <Pair label="Drawdown ref"      value={row.drawdown_ref ?? '—'} />
-            <Pair label="Replenishment ref" value={row.replenishment_ref ?? '—'} />
-            <Pair label="Expiry ref"        value={row.expiry_ref ?? '—'} />
-            <Pair label="Release ref"       value={row.release_ref ?? '—'} />
-            <Pair label="Forfeit ref"       value={row.forfeit_ref ?? '—'} />
-            <Pair label="Reject ref"        value={row.reject_ref ?? '—'} />
-            <Pair label="Reason code"       value={row.reason_code ?? '—'} />
-            <Pair label="Required at"       value={fmtDate(row.security_required_at)} />
-            <Pair label="Submitted at"      value={fmtDate(row.instrument_submitted_at)} />
-            <Pair label="Verifying at"      value={fmtDate(row.under_verification_at)} />
-            <Pair label="Active at"         value={fmtDate(row.active_at)} />
-            <Pair label="Drawdown at"       value={fmtDate(row.drawdown_initiated_at)} />
-            <Pair label="Released at"       value={fmtDate(row.released_at)} />
-            <Pair label="SLA deadline"      value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"        value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"    value={String(row.escalation_level)} />
-            <Pair label="Reportable"        value={row.is_reportable ? 'Yes' : 'No'} />
-          </div>
-          {row.submission_basis && (
-            <BasisBlock label="Submission basis" tone="#1a3a5c" text={row.submission_basis} />
-          )}
-          {row.verification_basis && (
-            <BasisBlock label="Verification basis" tone="#a06200" text={row.verification_basis} />
-          )}
-          {row.activation_basis && (
-            <BasisBlock label="Activation basis" tone="#155724" text={row.activation_basis} />
-          )}
-          {row.adequacy_basis && (
-            <BasisBlock label="Adequacy basis" tone="#1a3a5c" text={row.adequacy_basis} />
-          )}
-          {row.drawdown_basis && (
-            <BasisBlock label="Drawdown basis" tone="#a04040" text={row.drawdown_basis} />
-          )}
-          {row.replenishment_basis && (
-            <BasisBlock label="Replenishment basis" tone="#a06200" text={row.replenishment_basis} />
-          )}
-          {row.expiry_basis && (
-            <BasisBlock label="Expiry basis" tone="#a06200" text={row.expiry_basis} />
-          )}
-          {row.forfeit_basis && (
-            <BasisBlock label="Forfeit basis" tone="#9b1f1f" text={row.forfeit_basis} />
-          )}
-          {row.release_basis && (
-            <BasisBlock label="Release basis" tone="#155724" text={row.release_basis} />
-          )}
-          {row.decision_notes && (
-            <BasisBlock label="Decision notes" tone="#6b3a3a" text={row.decision_notes} />
-          )}
-        </section>
-
-        {(nextAction || isActive || canReject || canRequireIncrease || canForfeit) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {isActive && (
-                <>
-                  <button type="button"
-                    onClick={() => onAct('open-adequacy-review', row)}
-                    className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                  >
-                    {ACTION_LABEL['open-adequacy-review']}
-                  </button>
-                  <button type="button"
-                    onClick={() => onAct('initiate-drawdown', row)}
-                    className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                  >
-                    {ACTION_LABEL['initiate-drawdown']}
-                  </button>
-                  <button type="button"
-                    onClick={() => onAct('flag-expiry', row)}
-                    className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#a06200] hover:bg-[#fff8e6]"
-                  >
-                    {ACTION_LABEL['flag-expiry']}
-                  </button>
-                  <button type="button"
-                    onClick={() => onAct('release', row)}
-                    className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#1f6b3a] hover:bg-[#eafaf0]"
-                  >
-                    {ACTION_LABEL.release}
-                  </button>
-                </>
-              )}
-              {canReject && (
-                <button type="button"
-                  onClick={() => onAct('reject-instrument', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['reject-instrument']}
-                </button>
-              )}
-              {canRequireIncrease && (
-                <button type="button"
-                  onClick={() => onAct('require-increase', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#a06200] hover:bg-[#fff8e6]"
-                >
-                  {ACTION_LABEL['require-increase']}
-                </button>
-              )}
-              {canForfeit && (
-                <button type="button"
-                  onClick={() => onAct('forfeit', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL.forfeit}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1, fontSize: 11 }}>{value}</div>
     </div>
   );
 }
+
+export default PaymentSecurityChainTab;

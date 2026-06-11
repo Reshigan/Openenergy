@@ -93,7 +93,7 @@ const URGENCY_LABEL: Record<QueryUrgency, string> = {
 const URGENCY_COLOR: Record<QueryUrgency, string> = {
   safety_critical: 'bg-red-100 text-red-800',
   construction_blocking: 'bg-orange-100 text-orange-700',
-  standard: 'bg-blue-50 text-blue-700',
+  standard: 'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
   information_only: 'bg-[#eef2f7] text-[#3d4756]',
 };
 
@@ -113,7 +113,7 @@ const DISCIPLINE_COLOR: Record<string, string> = {
   structural: 'bg-amber-100 text-amber-800',
   electrical: 'bg-yellow-100 text-yellow-800',
   civil: 'bg-green-100 text-green-800',
-  mechanical: 'bg-blue-100 text-blue-800',
+  mechanical: 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
   instrumentation: 'bg-purple-100 text-purple-800',
   process: 'bg-teal-100 text-teal-700',
   fire_protection: 'bg-red-100 text-red-700',
@@ -131,8 +131,8 @@ const RESPONSE_TYPE_LABEL: Record<string, string> = {
 
 const STATUS_COLOR: Record<TqStatus, string> = {
   raised:                  'bg-[#eef2f7] text-[#2d3748]',
-  logged:                  'bg-blue-50 text-blue-700',
-  allocated:               'bg-indigo-100 text-indigo-700',
+  logged:                  'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
+  allocated:               'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   under_review:            'bg-violet-100 text-violet-700',
   response_drafted:        'bg-cyan-100 text-cyan-700',
   response_approved:       'bg-teal-100 text-teal-700',
@@ -199,7 +199,7 @@ function Flag({ label, title, cls }: { label: string; title: string; cls: string
 
 function KpiCard({ label, value, color }: { label: string; value: string | number; color: string }) {
   const colors: Record<string, string> = {
-    blue:   'bg-blue-50 text-blue-900 border-blue-200',
+    blue:   'bg-[oklch(0.97_0.003_250)] text-[oklch(0.17_0.010_250)] border-[oklch(0.87_0.012_250)]',
     red:    'bg-red-50 text-red-900 border-red-200',
     orange: 'bg-orange-50 text-orange-900 border-orange-200',
     green:  'bg-green-50 text-green-900 border-green-200',
@@ -508,7 +508,7 @@ export default function IppTqTab({ readOnly = false }: Props) {
                         <Flag label="LDR" title="Lender notification required" cls="bg-purple-100 text-purple-800" />
                       )}
                       {!!row.floor_nersa_impact && (
-                        <Flag label="NERSA" title="NERSA permit condition impacted" cls="bg-blue-100 text-blue-800" />
+                        <Flag label="NERSA" title="NERSA permit condition impacted" cls="bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]" />
                       )}
                       {!!row.floor_specification_deviation && (
                         <Flag label="SPEC" title="Response allows specification deviation" cls="bg-amber-100 text-amber-700" />
@@ -517,13 +517,13 @@ export default function IppTqTab({ readOnly = false }: Props) {
                         <Flag label="SLA!" title="SLA breached" cls="bg-red-200 text-red-900" />
                       )}
                       {!!row.is_reportable && (
-                        <Flag label="RPT" title="Regulator notified" cls="bg-blue-100 text-blue-800" />
+                        <Flag label="RPT" title="Regulator notified" cls="bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]" />
                       )}
                     </div>
                   </td>
                   {!readOnly && (
                     <td className="px-3 py-2">
-                      <button type="button" className="text-[10px] text-blue-600 hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>
+                      <button type="button" className="text-[10px] text-[oklch(0.46_0.16_55)] hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>
                         Open
                       </button>
                     </td>
@@ -592,9 +592,9 @@ export default function IppTqTab({ readOnly = false }: Props) {
                 <div className="text-xs"><span className="font-medium text-[#6b7685]">Specification ref:</span> <span className="text-[#2d3748]">{selected.specification_ref}</span></div>
               )}
               {selected.proposed_solution && (
-                <div className="text-xs bg-blue-50 rounded p-2">
-                  <span className="font-semibold text-blue-800">Contractor's proposed solution:</span>
-                  <p className="mt-0.5 text-blue-700">{selected.proposed_solution}</p>
+                <div className="text-xs bg-[oklch(0.97_0.003_250)] rounded p-2">
+                  <span className="font-semibold text-[oklch(0.40_0.009_250)]">Contractor's proposed solution:</span>
+                  <p className="mt-0.5 text-[oklch(0.46_0.16_55)]">{selected.proposed_solution}</p>
                 </div>
               )}
             </div>
@@ -649,7 +649,7 @@ export default function IppTqTab({ readOnly = false }: Props) {
               {!!selected.floor_structural_safety && <Flag label="Structural safety impact" title="Structural integrity — SIGNATURE: crosses regulator" cls="bg-red-100 text-red-800" />}
               {!!selected.floor_ie_notification_required && <Flag label="IE notification required" title="IE must be informed" cls="bg-orange-100 text-orange-700" />}
               {!!selected.floor_lender_notification && <Flag label="Lender notification required" title="Lender must be informed" cls="bg-purple-100 text-purple-800" />}
-              {!!selected.floor_nersa_impact && <Flag label="NERSA permit condition" title="NERSA permit condition impacted" cls="bg-blue-100 text-blue-800" />}
+              {!!selected.floor_nersa_impact && <Flag label="NERSA permit condition" title="NERSA permit condition impacted" cls="bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]" />}
               {!!selected.floor_specification_deviation && <Flag label="Specification deviation" title="Response allows deviation from spec" cls="bg-amber-100 text-amber-700" />}
             </div>
 

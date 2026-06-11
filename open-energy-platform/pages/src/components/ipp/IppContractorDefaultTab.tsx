@@ -46,8 +46,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   small:     'bg-[#eef2f7] text-[#3d4756]',
-  medium:    'bg-blue-100 text-blue-700',
-  large:     'bg-indigo-100 text-indigo-700',
+  medium:    'bg-[#eef2f7] text-[#3d4756]',
+  large:     'bg-[#e8ecf0] text-[#3d4756]',
   utility:   'bg-orange-100 text-orange-800',
   strategic: 'bg-red-100 text-red-700',
 };

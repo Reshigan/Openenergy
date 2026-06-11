@@ -167,8 +167,8 @@ export function AiAssistantDock() {
             {proposed[m.id]?.length ? (
               <ul className="mt-1 ml-2 space-y-1">
                 {proposed[m.id].map((a) => (
-                  <li key={a.id} className="rounded-lg border border-[#3b82c4] bg-[#f8fbff] p-2">
-                    <div className="text-[11px] font-mono text-[#3b82c4]">{a.tool}</div>
+                  <li key={a.id} className="rounded-lg bg-[#f8fbff] p-2" style={{ border: '1px solid oklch(0.46 0.16 55)' }}>
+                    <div className="text-[11px] font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>{a.tool}</div>
                     <pre className="text-[10px] mt-1 text-[#3d4756] whitespace-pre-wrap">{JSON.stringify(a.params, null, 2)}</pre>
                     <div className="mt-1 flex gap-1">
                       <button type="button" onClick={() => acceptAction(m.id, a)}

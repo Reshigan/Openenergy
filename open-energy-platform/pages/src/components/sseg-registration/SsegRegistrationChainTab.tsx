@@ -38,6 +38,7 @@ type ChainStatus =
 type Tier = 'micro' | 'small' | 'medium' | 'large' | 'utility';
 
 interface RegistrationRow {
+  [key: string]: unknown;
   id: string;
   registration_number: string;
   source_event: string | null;
@@ -138,9 +139,9 @@ interface KpiSummary {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   registration_received:   { bg: '#e3e7ec', fg: '#557',    label: 'Received' },
-  eligibility_screening:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Eligibility screening' },
+  eligibility_screening:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Eligibility screening' },
   information_requested:   { bg: '#ffe9d6', fg: '#8a4a00', label: 'Info requested' },
-  technical_verification:  { bg: '#dbecfb', fg: '#1a3a5c', label: 'Technical verification' },
+  technical_verification:  { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Technical verification' },
   exemption_determination: { bg: '#fff4d6', fg: '#a06200', label: 'Exemption determination' },
   conditions_pending:      { bg: '#ffe9d6', fg: '#8a4a00', label: 'Conditions pending' },
   registration_approved:   { bg: '#daf5e2', fg: '#1f6b3a', label: 'Approved' },
@@ -153,7 +154,7 @@ const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }>
 
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
   micro:   { bg: '#e3e7ec', fg: '#557',    label: 'Micro' },
-  small:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Small' },
+  small:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Small' },
   medium:  { bg: '#fff4d6', fg: '#a06200', label: 'Medium' },
   large:   { bg: '#ffe4b5', fg: '#8a4a00', label: 'Large' },
   utility: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Utility' },
@@ -458,13 +459,13 @@ export function SsegRegistrationChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Registration #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Applicant / facility</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Purpose / tech</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Capacity</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Registration #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Applicant / facility</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Purpose / tech</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Capacity</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -477,7 +478,7 @@ export function SsegRegistrationChainTab() {
                     onClick={() => loadEvents(r.id)}
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 font-mono text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.registration_number}
                       {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
                     </td>
@@ -494,7 +495,7 @@ export function SsegRegistrationChainTab() {
                       {r.generation_purpose.replace(/_/g, ' ')}
                       {r.technology && r.technology !== 'na' && <span className="text-[10px] text-[#4a5568]"> · {r.technology.replace(/_/g, ' ')}</span>}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtKw(r.capacity_kw)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtKw(r.capacity_kw)}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
                         {cs.label}
@@ -624,16 +625,16 @@ function Drawer({
             <Pair label="Reportable"           value={row.is_reportable ? 'Yes' : 'No'} />
           </div>
           {row.application_basis && (
-            <BasisBlock label="Application basis" tone="#1a3a5c" text={row.application_basis} />
+            <BasisBlock label="Application basis" tone="oklch(0.46 0.16 55)" text={row.application_basis} />
           )}
           {row.screening_basis && (
-            <BasisBlock label="Screening basis" tone="#1a3a5c" text={row.screening_basis} />
+            <BasisBlock label="Screening basis" tone="oklch(0.46 0.16 55)" text={row.screening_basis} />
           )}
           {row.info_request_basis && (
             <BasisBlock label="Info-request basis" tone="#8a4a00" text={row.info_request_basis} />
           )}
           {row.verification_basis && (
-            <BasisBlock label="Verification basis" tone="#1a3a5c" text={row.verification_basis} />
+            <BasisBlock label="Verification basis" tone="oklch(0.46 0.16 55)" text={row.verification_basis} />
           )}
           {row.determination_basis && (
             <BasisBlock label="Determination basis" tone="#a06200" text={row.determination_basis} />
@@ -747,7 +748,7 @@ function Drawer({
                       <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
                     )}
                   </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

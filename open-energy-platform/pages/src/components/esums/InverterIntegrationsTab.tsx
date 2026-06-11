@@ -79,7 +79,7 @@ const MFR_LABEL: Record<string, string> = {
 const TECH_GROUPS: { tech: Tech; label: string; colour: string; bg: string; border: string }[] = [
   { tech: 'solar', label: 'Solar',         colour: 'text-amber-700',  bg: 'bg-amber-50',  border: 'border-amber-200' },
   { tech: 'wind',  label: 'Wind',          colour: 'text-sky-700',    bg: 'bg-sky-50',    border: 'border-sky-200' },
-  { tech: 'hydro', label: 'Hydro / Water', colour: 'text-blue-700',   bg: 'bg-blue-50',   border: 'border-blue-200' },
+  { tech: 'hydro', label: 'Hydro / Water', colour: 'text-[oklch(0.46_0.16_55)]',   bg: 'bg-[oklch(0.97_0.003_250)]',   border: 'border-[oklch(0.87_0.012_250)]' },
   { tech: 'waste', label: 'Waste / Biomass', colour: 'text-green-700', bg: 'bg-green-50',  border: 'border-green-200' },
 ];
 
@@ -172,7 +172,7 @@ function CredCard({
             onClick={() => onTest(cred.id)}
             disabled={testing || !isLive}
             title={isLive ? 'Test connection' : 'Adapter not yet implemented'}
-            className="px-2.5 py-1 text-xs rounded border border-[#dde4ec] text-[#3d4756] hover:border-blue-400 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-2.5 py-1 text-xs rounded border border-[#dde4ec] text-[#3d4756] hover:border-blue-400 hover:text-[oklch(0.46_0.16_55)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {testing ? '…' : 'Test'}
           </button>
@@ -613,7 +613,7 @@ function AccrualsPanel() {
     {
       label: 'Customer savings', sublabel: 'Customer — vs Eskom grid rate',
       value: totals ? fmtZar(totals.savings_zar) : '—',
-      colour: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200',
+      colour: 'text-[oklch(0.46_0.16_55)]', bg: 'bg-[oklch(0.97_0.003_250)]', border: 'border-[oklch(0.87_0.012_250)]',
     },
     {
       label: 'Generation', sublabel: 'Fleet total',
@@ -719,7 +719,7 @@ function AccrualsPanel() {
                   <td className="px-3 py-2 tabular-nums text-[#2d3748]">{st.total_kwh?.toFixed(1) ?? '—'}</td>
                   <td className="px-3 py-2 tabular-nums text-green-700 font-medium">{fmtTco2e(st.total_carbon_tco2e ?? 0)}</td>
                   <td className="px-3 py-2 tabular-nums text-emerald-700 font-medium">{fmtZar(st.total_revenue_zar ?? 0)}</td>
-                  <td className="px-3 py-2 tabular-nums text-blue-700">{fmtZar(st.total_savings_zar ?? 0)}</td>
+                  <td className="px-3 py-2 tabular-nums text-[oklch(0.46_0.16_55)]">{fmtZar(st.total_savings_zar ?? 0)}</td>
                   <td className="px-3 py-2 text-[#9aa5b4]">{st.last_accrual_at ? fmtTs(st.last_accrual_at) : '—'}</td>
                 </tr>
               ))}
@@ -914,12 +914,12 @@ export function InverterIntegrationsTab() {
                           setPrefillMfr(m);
                           setShowModal(true);
                         }}
-                        className="border border-dashed border-[#dde4ec] rounded-lg p-4 text-left hover:border-blue-300 hover:bg-blue-50/30 transition-colors group"
+                        className="border border-dashed border-[#dde4ec] rounded-lg p-4 text-left hover:border-[oklch(0.80_0.015_250)] hover:bg-[oklch(0.97_0.003_250)]/30 transition-colors group"
                       >
-                        <div className="text-sm font-medium text-[#9aa5b4] group-hover:text-blue-600">
+                        <div className="text-sm font-medium text-[#9aa5b4] group-hover:text-[oklch(0.46_0.16_55)]">
                           {MFR_LABEL[m] ?? m}
                         </div>
-                        <div className="text-xs text-[#9aa5b4] mt-0.5 group-hover:text-blue-400">
+                        <div className="text-xs text-[#9aa5b4] mt-0.5 group-hover:text-[oklch(0.60_0.08_250)]">
                           Click to connect
                         </div>
                       </button>

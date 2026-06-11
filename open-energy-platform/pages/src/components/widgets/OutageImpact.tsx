@@ -107,7 +107,7 @@ function Tile({ icon, label, value, tone }: { icon: React.ReactNode; label: stri
     good: 'bg-[#e7f4ea] text-[#1a8a5b]',
     warn: 'bg-[#fef3e6] text-[#b04e0f]',
     bad:  'bg-[#fde0db] text-[#c0392b]',
-    info: 'bg-[#eef2f7] text-[#3b82c4]',
+    info: 'bg-[#eef2f7] text-[oklch(0.46_0.16_55)]',
   };
   return (
     <div className={`rounded-lg p-3 ${map[tone] || map.info}`}>

@@ -20,6 +20,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'soiling_period_open' | 'inspection_scheduled' | 'field_inspected'
@@ -34,6 +49,7 @@ type UrgencyBand = 'low' | 'medium' | 'high' | 'critical';
 type Authority = 'site_supervisor' | 'plant_manager' | 'asset_director' | 'cfo';
 
 interface SoilRow {
+  [key: string]: unknown;
   id: string;
   audit_number: string;
   source_event: string | null;
@@ -143,19 +159,6 @@ interface SoilRow {
   days_in_court_live?: number;
 }
 
-interface SoilEvent {
-  id: string;
-  audit_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiData {
   total: number;
   open_count: number;
@@ -181,35 +184,6 @@ interface KpiData {
   post_dust_storm_count: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  soiling_period_open:      { bg: '#dbecfb', fg: '#1a3a5c', label: 'Period open' },
-  inspection_scheduled:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Inspection scheduled' },
-  field_inspected:          { bg: '#dbecfb', fg: '#1a3a5c', label: 'Field inspected' },
-  soiling_measured:         { bg: '#fff4d6', fg: '#a06200', label: 'Soiling measured' },
-  economic_assessment_done: { bg: '#fff4d6', fg: '#a06200', label: 'Economics assessed' },
-  cleaning_authorized:      { bg: '#fff4d6', fg: '#a06200', label: 'Cleaning authorized' },
-  cleaning_in_progress:     { bg: '#fde0e0', fg: '#9b1f1f', label: 'Cleaning in progress' },
-  post_clean_measured:      { bg: '#daf5e2', fg: '#1f6b3a', label: 'Post-clean measured' },
-  gain_validated:           { bg: '#daf5e2', fg: '#1f6b3a', label: 'Gain validated' },
-  settled:                  { bg: '#e3e7ec', fg: '#557',    label: 'Settled' },
-  disputed:                 { bg: '#fbd0d0', fg: '#7a1414', label: 'Disputed' },
-  cancelled:                { bg: '#e3e7ec', fg: '#557',    label: 'Cancelled' },
-};
-
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-  standard: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard' },
-  material: { bg: '#fff4d6', fg: '#a06200', label: 'Material' },
-  severe:   { bg: '#fbd0d0', fg: '#7a1414', label: 'Severe' },
-};
-
-const URGENCY_TONE: Record<UrgencyBand, { bg: string; fg: string; label: string }> = {
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-  medium:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Medium' },
-  high:     { bg: '#fff4d6', fg: '#a06200', label: 'High' },
-  critical: { bg: '#fbd0d0', fg: '#7a1414', label: 'Critical' },
-};
-
 const AUTH_LABEL: Record<Authority, string> = {
   site_supervisor: 'Site supervisor',
   plant_manager:   'Plant manager',
@@ -217,14 +191,32 @@ const AUTH_LABEL: Record<Authority, string> = {
   cfo:             'CFO',
 };
 
-const PARTY_TONE: Record<string, { bg: string; fg: string }> = {
-  site_supervisor:     { bg: '#dbecfb', fg: '#1a3a5c' },
-  cleaning_contractor: { bg: '#fff4d6', fg: '#a06200' },
-  plant_owner:         { bg: '#daf5e2', fg: '#1f6b3a' },
-  regulator_observer:  { bg: '#fde0e0', fg: '#9b1f1f' },
-  system:              { bg: '#e3e7ec', fg: '#557' },
+const TIER_LABEL: Record<Tier, string> = {
+  minor:    'Minor',
+  standard: 'Standard',
+  material: 'Material',
+  severe:   'Severe',
 };
 
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'soiling_period_open',
+  'inspection_scheduled',
+  'field_inspected',
+  'soiling_measured',
+  'economic_assessment_done',
+  'cleaning_authorized',
+  'cleaning_in_progress',
+  'post_clean_measured',
+  'gain_validated',
+  'settled',
+];
+const BRANCH_STATES: readonly string[] = [
+  'disputed',
+  'cancelled',
+];
+
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',                   label: 'Active (pre-terminal)' },
   { key: 'all',                      label: 'All' },
@@ -251,6 +243,7 @@ const FILTERS: Array<{ key: string; label: string }> = [
 
 const TIERS = new Set<string>(['minor', 'standard', 'material', 'severe']);
 
+// ── format helpers ────────────────────────────────────────────────────────
 function fmtMin(min: number | null | undefined): string {
   if (min === null || min === undefined) return '—';
   if (Math.abs(min) >= 1440) return `${(min / 1440).toFixed(1)}d`;
@@ -276,18 +269,436 @@ function fmtMwh(v: number | null | undefined): string {
   return `${v.toLocaleString(undefined, { maximumFractionDigits: 1 })} MWh`;
 }
 
+// ── actions ───────────────────────────────────────────────────────────────
+function getActions(row: SoilRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const cs = row.chain_status;
+  const transitionable = !row.is_terminal;
+  const disputable = ['soiling_measured', 'economic_assessment_done', 'gain_validated'].includes(cs);
+  const cancellable = !row.is_terminal;
+
+  if (cs === 'soiling_period_open') {
+    actions.push({
+      key: 'schedule-inspection',
+      label: 'Schedule inspection (supervisor)',
+      fields: [
+        {
+          key: 'inspection_method',
+          label: 'Inspection method (visual / drone_ir / both)',
+          type: 'text',
+          required: false,
+          placeholder: row.inspection_method ?? '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'inspection_scheduled') {
+    actions.push({
+      key: 'record-inspection',
+      label: 'Record inspection (supervisor)',
+      fields: [
+        {
+          key: 'inspection_method',
+          label: 'Inspection method actually used',
+          type: 'text',
+          required: false,
+          placeholder: row.inspection_method ?? '',
+        },
+        {
+          key: 'evidence_photo_uploaded',
+          label: 'Evidence photo uploaded? (true/false)',
+          type: 'text',
+          required: false,
+          placeholder: String(!!row.evidence_photo_uploaded),
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'field_inspected') {
+    actions.push({
+      key: 'measure-soiling',
+      label: 'Measure soiling ratio (supervisor)',
+      fields: [
+        {
+          key: 'soiling_ratio_pct',
+          label: 'Soiling ratio % (e.g. 5.4)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.soiling_ratio_pct ?? ''),
+        },
+        {
+          key: 'baseline_ratio_pct',
+          label: 'Baseline ratio % (optional)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.baseline_ratio_pct ?? ''),
+        },
+        {
+          key: 'days_since_baseline',
+          label: 'Days since baseline (optional)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.days_since_baseline ?? ''),
+        },
+        {
+          key: 'expected_pr_clean_pct',
+          label: 'Expected PR clean % (optional)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.expected_pr_clean_pct ?? ''),
+        },
+        {
+          key: 'current_pr_dirty_pct',
+          label: 'Current PR dirty % (optional)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.current_pr_dirty_pct ?? ''),
+        },
+        {
+          key: 'peak_sun_hours_per_day',
+          label: 'Peak sun hours/day (optional)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.peak_sun_hours_per_day ?? ''),
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'soiling_measured') {
+    actions.push({
+      key: 'assess-economics',
+      label: 'Assess economics (plant owner)',
+      fields: [
+        {
+          key: 'cleaning_method',
+          label: 'Cleaning method (manual_wet / robotic_dry / drone_water)',
+          type: 'text',
+          required: false,
+          placeholder: row.cleaning_method ?? '',
+        },
+        {
+          key: 'cleaning_cost_zar',
+          label: 'Cleaning cost (ZAR)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.cleaning_cost_zar ?? ''),
+        },
+        {
+          key: 'water_consumption_m3',
+          label: 'Water consumption (m³)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.water_consumption_m3 ?? ''),
+        },
+        {
+          key: 'recovery_horizon_days',
+          label: 'Recovery horizon (days)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.recovery_horizon_days ?? ''),
+        },
+        {
+          key: 'tariff_zar_per_mwh',
+          label: 'Tariff (ZAR/MWh, optional)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.tariff_zar_per_mwh ?? ''),
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'economic_assessment_done') {
+    actions.push({
+      key: 'authorize-cleaning',
+      label: 'Authorize cleaning',
+      fields: [
+        {
+          key: 'cleaning_contractor_id',
+          label: 'Contractor ID (optional)',
+          type: 'text',
+          required: false,
+          placeholder: row.cleaning_contractor_id ?? '',
+        },
+        {
+          key: 'cleaning_contractor_name',
+          label: 'Contractor name',
+          type: 'text',
+          required: false,
+          placeholder: row.cleaning_contractor_name ?? '',
+        },
+        {
+          key: 'wul_licence_ref',
+          label: 'DFFE WUL licence ref (optional)',
+          type: 'text',
+          required: false,
+          placeholder: row.wul_licence_ref ?? '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'cleaning_authorized') {
+    actions.push({
+      key: 'start-cleaning',
+      label: 'Start cleaning (contractor)',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'cleaning_in_progress') {
+    actions.push({
+      key: 'complete-cleaning',
+      label: 'Complete cleaning (contractor)',
+      fields: [
+        {
+          key: 'water_consumption_m3',
+          label: 'Actual water consumption (m³)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.water_consumption_m3 ?? ''),
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'post_clean_measured') {
+    actions.push({
+      key: 'measure-post-clean',
+      label: 'Measure post-clean PR (supervisor)',
+      fields: [
+        {
+          key: 'post_clean_pr_pct',
+          label: 'Post-clean PR % (e.g. 84.5)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.post_clean_pr_pct ?? ''),
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'gain_validated') {
+    actions.push({
+      key: 'validate-gain',
+      label: 'Validate gain (plant owner)',
+      fields: [
+        {
+          key: 'recovery_documented',
+          label: 'Recovery documented in W79 ledger? (true/false)',
+          type: 'text',
+          required: false,
+          placeholder: String(!!row.recovery_documented),
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'settle-audit',
+      label: 'Settle audit',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (disputable && transitionable) {
+    actions.push({
+      key: 'raise-dispute',
+      label: 'Raise dispute (regulator reportable)',
+      fields: [
+        {
+          key: 'disputed_reason',
+          label: 'Dispute reason',
+          type: 'textarea',
+          required: false,
+          placeholder: row.disputed_reason ?? '',
+        },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (cs === 'disputed') {
+    actions.push({
+      key: 'resolve-dispute',
+      label: 'Resolve dispute',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (cancellable) {
+    actions.push({
+      key: 'cancel-audit',
+      label: 'Cancel audit',
+      fields: [
+        {
+          key: 'cancelled_reason',
+          label: 'Cancellation reason',
+          type: 'textarea',
+          required: false,
+          placeholder: row.cancelled_reason ?? '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  return actions;
+}
+
+// ── detail panel ──────────────────────────────────────────────────────────
+function renderDetail(row: SoilRow): React.ReactNode {
+  const authorityNow = row.authority_required_live ?? row.authority_required ?? null;
+
+  return (
+    <div className="space-y-3 text-[11px]">
+      {/* Flags */}
+      <div className="grid grid-cols-2 gap-2">
+        {[
+          { on: !!row.rainy_season_window_strict, label: 'Rainy season strict' },
+          { on: !!row.post_dust_storm_event,      label: 'Post dust-storm event' },
+          { on: !!row.neighbour_complaint_filed,  label: 'Neighbour complaint' },
+          { on: !!row.water_restriction_active,   label: 'Water restriction active' },
+        ].map(({ on, label }) => (
+          <div key={label} style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px',
+            borderRadius: 6, border: `1px solid ${on ? 'oklch(0.80 0.12 55)' : BORDER}`,
+            background: on ? 'oklch(0.97 0.06 55)' : BG1,
+            color: on ? WARN : TX3,
+          }}>
+            <span style={{
+              display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
+              background: on ? WARN : TX3,
+            }} />
+            {label}
+          </div>
+        ))}
+      </div>
+
+      {/* Soiling measurement */}
+      <div style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px' }}>
+        <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 8 }}>
+          Soiling measurement
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          <DetailPair label="Current ratio"       value={fmtPct(row.soiling_ratio_pct, 2)} />
+          <DetailPair label="Baseline"            value={fmtPct(row.baseline_ratio_pct, 2)} />
+          <DetailPair label="Days since baseline" value={row.days_since_baseline != null ? `${row.days_since_baseline}d` : '—'} />
+          <DetailPair label="Velocity"            value={row.soiling_velocity_pct_per_day_live != null ? `${row.soiling_velocity_pct_per_day_live.toFixed(3)}%/d` : '—'} />
+        </div>
+        <div className="grid grid-cols-3 gap-3" style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${BORDER}` }}>
+          <DetailPair label="Expected PR (clean)" value={fmtPct(row.expected_pr_clean_pct, 1)} />
+          <DetailPair label="Current PR (dirty)"  value={fmtPct(row.current_pr_dirty_pct, 1)} />
+          <DetailPair label="PR loss"             value={fmtPct(row.pr_loss_pct_live, 2)} />
+        </div>
+      </div>
+
+      {/* Economic impact */}
+      <div style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px' }}>
+        <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 8 }}>
+          Economic impact ledger
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          <DetailPair label="Installed capacity" value={row.installed_capacity_mw != null ? `${row.installed_capacity_mw} MW` : '—'} />
+          <DetailPair label="Peak sun"           value={row.peak_sun_hours_per_day != null ? `${row.peak_sun_hours_per_day}h/d` : '—'} />
+          <DetailPair label="Tariff"             value={row.tariff_zar_per_mwh != null ? `R${row.tariff_zar_per_mwh.toFixed(0)}/MWh` : '—'} />
+          <DetailPair label="MWh loss / day"     value={fmtMwh(row.mwh_loss_per_day_live)} />
+        </div>
+        <div className="grid grid-cols-3 gap-3" style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${BORDER}` }}>
+          <DetailPair label="ZAR loss / day"         value={fmtZar(row.zar_loss_per_day_live)} />
+          <DetailPair label="ZAR loss to date"       value={fmtZar(row.zar_loss_to_date_live)} />
+          <DetailPair label="Next clean (predicted)" value={row.predicted_next_clean_date_live ? new Date(row.predicted_next_clean_date_live).toLocaleDateString() : '—'} />
+        </div>
+      </div>
+
+      {/* Cleaning & recovery */}
+      <div style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px' }}>
+        <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 8 }}>
+          Cleaning &amp; recovery
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          <DetailPair label="Method"  value={row.cleaning_method ?? '—'} />
+          <DetailPair label="Cost"    value={fmtZar(row.cleaning_cost_zar)} />
+          <DetailPair label="Water"   value={row.water_consumption_m3 != null ? `${row.water_consumption_m3} m³` : '—'} />
+          <DetailPair label="Horizon" value={row.recovery_horizon_days != null ? `${row.recovery_horizon_days}d` : '—'} />
+        </div>
+        <div className="grid grid-cols-4 gap-3" style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${BORDER}` }}>
+          <DetailPair label="ROI ratio"         value={row.cleaning_roi_ratio_live != null ? `${row.cleaning_roi_ratio_live.toFixed(2)}×` : '—'} />
+          <DetailPair label="Days to breakeven" value={row.days_to_breakeven_live != null ? `${row.days_to_breakeven_live.toFixed(1)}d` : '—'} />
+          <DetailPair label="Post-clean PR"     value={fmtPct(row.post_clean_pr_pct, 1)} />
+          <DetailPair label="Recovered"         value={fmtZar(row.recovered_zar_live)} />
+        </div>
+      </div>
+
+      {/* Metadata grid */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+        {row.plant_owner_party_name  && <DetailPair label="Plant owner"       value={row.plant_owner_party_name} />}
+        {row.cleaning_contractor_name && <DetailPair label="Contractor"       value={row.cleaning_contractor_name} />}
+        {row.wul_licence_ref         && <DetailPair label="DFFE WUL ref"      value={row.wul_licence_ref} />}
+        {row.regulator_inbox_ref     && <DetailPair label="Regulator inbox"   value={row.regulator_inbox_ref} />}
+        {row.inspection_method       && <DetailPair label="Inspection method" value={row.inspection_method} />}
+        {row.technology              && <DetailPair label="Technology"        value={row.technology} />}
+        {row.site_region             && <DetailPair label="Region"            value={row.site_region} />}
+        {authorityNow                && <DetailPair label="Authority req."    value={AUTH_LABEL[authorityNow]} />}
+        {row.soiling_compliance_index_live != null && (
+          <DetailPair label="Compliance index" value={`${row.soiling_compliance_index_live.toFixed(1)} / 130`} />
+        )}
+        {row.source_wave && (
+          <DetailPair
+            label="Provenance"
+            value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}${row.source_event ? ` (${row.source_event})` : ''}`}
+          />
+        )}
+        {row.sla_deadline_at && !row.is_terminal && (
+          <DetailPair
+            label="Next SLA"
+            value={`${new Date(row.sla_deadline_at).toLocaleString()} (${fmtMin(row.minutes_until_sla)})${row.escalation_level > 0 ? ` · ${row.escalation_level} breach(es)` : ''}`}
+          />
+        )}
+      </div>
+
+      {row.disputed_reason && (
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 6, padding: '8px 10px' }}>
+          <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 4 }}>Disputed reason</div>
+          <div style={{ color: TX2 }}>{row.disputed_reason}</div>
+        </div>
+      )}
+      {row.cancelled_reason && (
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 6, padding: '8px 10px' }}>
+          <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 4 }}>Cancelled reason</div>
+          <div style={{ color: TX2 }}>{row.cancelled_reason}</div>
+        </div>
+      )}
+      {row.reason_code && (
+        <DetailPair label="Reason code" value={row.reason_code} />
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function SoilingAuditChainTab() {
-  const [rows, setRows] = useState<SoilRow[]>([]);
-  const [kpis, setKpis] = useState<KpiData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<SoilRow | null>(null);
-  const [events, setEvents] = useState<SoilEvent[]>([]);
+  const [rows, setRows]           = useState<SoilRow[]>([]);
+  const [kpis, setKpis]           = useState<KpiData | null>(null);
+  const [loading, setLoading]     = useState(true);
+  const [err, setErr]             = useState<string | null>(null);
+  const [filter, setFilter]       = useState<string>('active');
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setErr(null);
+    setLoading(true); setErr(null);
     try {
       const res = await api.get<{ data: KpiData & { items: SoilRow[] } }>('/esums/soiling-audit/chain');
       const d = res.data?.data;
@@ -298,22 +709,33 @@ export function SoilingAuditChainTab() {
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load soiling audits');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: SoilRow; events: SoilEvent[] } }>(`/esums/soiling-audit/chain/${id}`);
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/esums/soiling-audit/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/esums/soiling-audit/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load audit history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: SoilRow; events: ChainEvent[] } }>(`/esums/soiling-audit/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -328,425 +750,111 @@ export function SoilingAuditChainTab() {
     });
   }, [rows, filter]);
 
-  const doAction = useCallback(async (path: string, body?: object) => {
-    if (!selected) return;
-    try {
-      await api.post(`/esums/soiling-audit/chain/${selected.id}/${path}`, body ?? {});
-      await load();
-      await loadEvents(selected.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Action failed');
-    }
-  }, [selected, load, loadEvents]);
+  const k = kpis;
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-8 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? 0} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="Cleaning live" value={kpis?.cleaning_live_count ?? 0} tone={(kpis?.cleaning_live_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Authorised" value={kpis?.authorised_count ?? 0} />
-        <Kpi label="Severe tier" value={kpis?.severe_tier_count ?? 0} tone={(kpis?.severe_tier_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Disputed" value={kpis?.disputed_count ?? 0} tone={(kpis?.disputed_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="ZAR loss / day" value={fmtZar(kpis?.total_zar_loss_per_day ?? 0)} tone={(kpis?.total_zar_loss_per_day ?? 0) > 0 ? 'warn' : 'ok'} />
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Soiling Audit</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          PV plant soiling periods — baseline measurement through cleaning authorisation, field execution, and gain validation.
+        </p>
+      </header>
+
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total"          value={k?.total ?? 0} />
+        <KpiTile label="Open"           value={k?.open_count ?? 0} />
+        <KpiTile label="Cleaning live"  value={k?.cleaning_live_count ?? 0} tone={(k?.cleaning_live_count ?? 0) > 0 ? 'warn' : undefined} />
+        <KpiTile label="Authorised"     value={k?.authorised_count ?? 0} />
+        <KpiTile label="Severe tier"    value={k?.severe_tier_count ?? 0} tone={(k?.severe_tier_count ?? 0) > 0 ? 'bad' : undefined} />
+        <KpiTile label="Disputed"       value={k?.disputed_count ?? 0} tone={(k?.disputed_count ?? 0) > 0 ? 'bad' : undefined} />
+        <KpiTile label="SLA breached"   value={k?.breached ?? 0} tone={(k?.breached ?? 0) > 0 ? 'bad' : undefined} />
+        <KpiTile label="ZAR loss / day" value={fmtZar(k?.total_zar_loss_per_day ?? 0)} tone={(k?.total_zar_loss_per_day ?? 0) > 0 ? 'warn' : undefined} />
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
-                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
-            }`}>
+      {/* Filter pills */}
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color:      filter === f.key ? '#fff' : TX2,
+              border:     `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
-      {err && <div className="px-3 py-2 bg-red-50 text-red-700 text-[12px] rounded-md">{err}</div>}
+      {err && (
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]"
+          style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
+        </div>
+      )}
 
-      <div className="bg-white border border-[#e5ebf2] rounded-xl overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[#f7f9fb] text-[11px] uppercase tracking-wide text-[#6b7685]">
-            <tr>
-              <th className="px-3 py-2 text-left">Audit #</th>
-              <th className="px-3 py-2 text-left">Facility / period</th>
-              <th className="px-3 py-2 text-right">Soiling</th>
-              <th className="px-3 py-2 text-right">MWh loss / d</th>
-              <th className="px-3 py-2 text-right">ZAR loss / d</th>
-              <th className="px-3 py-2 text-left">Tier</th>
-              <th className="px-3 py-2 text-left">State</th>
-              <th className="px-3 py-2 text-right">Δ SLA</th>
-            </tr>
-          </thead>
-          <tbody className="text-[13px]">
-            {loading ? (
-              <tr><td colSpan={8} className="p-6 text-center text-[#6b7685]">Loading…</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={8} className="p-6 text-center text-[#6b7685]">No soiling audits match the current filter.</td></tr>
-            ) : filtered.map((r) => {
-              const stateTone = STATE_TONE[r.chain_status];
-              const tierTone  = TIER_TONE[r.current_tier];
-              return (
-                <tr
-                  key={r.id}
-                  onClick={() => loadEvents(r.id)}
-                  className={`cursor-pointer hover:bg-[#f7f9fb] border-t border-[#eef2f6] ${selected?.id === r.id ? 'bg-[#fffae6]' : ''}`}>
-                  <td className="px-3 py-2 font-mono text-[11px]">{r.audit_number}</td>
-                  <td className="px-3 py-2 max-w-xs truncate" title={`${r.facility_name ?? r.facility_id} · ${r.period_label ?? '—'}`}>
-                    {r.facility_name ?? r.facility_id}
-                    <span className="text-[#6b7685]"> · {r.period_label ?? '—'}</span>
-                    {r.floor_at_material_flag && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fff4d6] text-[#a06200]">FLOOR</span>}
-                  </td>
-                  <td className="px-3 py-2 text-right text-[12px] tabular-nums">{fmtPct(r.soiling_ratio_pct, 1)}</td>
-                  <td className="px-3 py-2 text-right text-[12px] tabular-nums">{fmtMwh(r.mwh_loss_per_day_live)}</td>
-                  <td className={`px-3 py-2 text-right text-[12px] tabular-nums ${(r.zar_loss_per_day_live ?? 0) > 0 ? 'text-[#9b1f1f]' : 'text-[#4a5568]'}`}>
-                    {fmtZar(r.zar_loss_per_day_live)}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: tierTone.bg, color: tierTone.fg }}>
-                      {tierTone.label}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: stateTone.bg, color: stateTone.fg }}>
-                      {stateTone.label}
-                    </span>
-                  </td>
-                  <td className={`px-3 py-2 text-right text-[12px] tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                    {r.is_terminal ? '—' : fmtMin(r.minutes_until_sla)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {selected && (
-        <SoilingDrawer
-          row={selected}
-          events={events}
-          onClose={() => { setSelected(null); setEvents([]); }}
-          doAction={doAction}
-        />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]"
+          style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading…
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.facility_name ?? row.facility_id} · ${row.period_label ?? '—'}`}
+              meta={[
+                TIER_LABEL[row.current_tier],
+                row.audit_number,
+                row.urgency_band_live ? `${row.urgency_band_live} urgency` : null,
+                row.floor_at_material_flag ? 'FLOOR @ material' : null,
+                row.soiling_ratio_pct != null ? `${fmtPct(row.soiling_ratio_pct, 1)} soiling` : null,
+                fmtMwh(row.mwh_loss_per_day_live) !== '—' ? `${fmtMwh(row.mwh_loss_per_day_live)}/d loss` : null,
+                fmtZar(row.zar_loss_per_day_live) !== '—' ? `${fmtZar(row.zar_loss_per_day_live)}/d` : null,
+              ].filter(Boolean).join(' · ')}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]"
+              style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No soiling audits match the current filter.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone = 'ok' }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const fg = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0f1c2e';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="bg-white border border-[#e5ebf2] rounded-lg p-3">
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[20px] font-semibold tabular-nums mt-0.5" style={{ color: fg }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function SoilingDrawer({
-  row, events, onClose, doAction,
-}: {
-  row: SoilRow;
-  events: SoilEvent[];
-  onClose: () => void;
-  doAction: (path: string, body?: object) => Promise<void>;
-}) {
-  const cs = row.chain_status;
-  const transitionable = !row.is_terminal;
-  const disputable = ['soiling_measured', 'economic_assessment_done', 'gain_validated'].includes(cs);
-  const cancellable = !row.is_terminal;
-  const urgencyTone = row.urgency_band_live ? URGENCY_TONE[row.urgency_band_live] : null;
-  const authorityNow = row.authority_required_live ?? row.authority_required ?? null;
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/30 flex items-stretch justify-end oe-overlay-in" onClick={onClose}>
-      <div className="bg-white w-full max-w-2xl shadow-xl overflow-y-auto oe-drawer-in" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-start justify-between sticky top-0 bg-white z-10">
-          <div>
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">Soiling audit {row.audit_number}</div>
-            <h3 className="text-[16px] font-semibold text-[#0f1c2e] mt-0.5">
-              {row.facility_name ?? row.facility_id} · {row.period_label ?? '—'}
-            </h3>
-            <div className="flex flex-wrap gap-2 mt-2 text-[12px]">
-              <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: TIER_TONE[row.current_tier].bg, color: TIER_TONE[row.current_tier].fg }}>
-                {TIER_TONE[row.current_tier].label}
-              </span>
-              <span className="px-2 py-0.5 rounded-full" style={{ background: STATE_TONE[cs].bg, color: STATE_TONE[cs].fg }}>
-                {STATE_TONE[cs].label}
-              </span>
-              {urgencyTone && (
-                <span className="px-2 py-0.5 rounded-full font-medium" style={{ background: urgencyTone.bg, color: urgencyTone.fg }}>
-                  {urgencyTone.label} urgency
-                </span>
-              )}
-              {row.floor_at_material_flag && (
-                <span className="px-2 py-0.5 rounded-full font-bold bg-[#fff4d6] text-[#a06200]">FLOOR @ material</span>
-              )}
-              {row.is_reportable_flag && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">Regulator reportable</span>
-              )}
-              {authorityNow && (
-                <span className="px-2 py-0.5 rounded-full bg-[#dbecfb] text-[#1a3a5c] font-medium">Auth: {AUTH_LABEL[authorityNow]}</span>
-              )}
-            </div>
-          </div>
-          <button type="button" onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">✕</button>
-        </div>
-
-        <div className="p-5 space-y-4 text-[13px]">
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Soiling measurement</div>
-            <div className="grid grid-cols-4 gap-3">
-              <Pair label="Current ratio" value={fmtPct(row.soiling_ratio_pct, 2)} />
-              <Pair label="Baseline" value={fmtPct(row.baseline_ratio_pct, 2)} />
-              <Pair label="Days since baseline" value={row.days_since_baseline != null ? `${row.days_since_baseline}d` : '—'} />
-              <Pair label="Velocity" value={row.soiling_velocity_pct_per_day_live != null ? `${row.soiling_velocity_pct_per_day_live.toFixed(3)}%/d` : '—'} />
-            </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="Expected PR (clean)" value={fmtPct(row.expected_pr_clean_pct, 1)} />
-              <Pair label="Current PR (dirty)" value={fmtPct(row.current_pr_dirty_pct, 1)} />
-              <Pair label="PR loss" value={fmtPct(row.pr_loss_pct_live, 2)} />
-            </div>
-          </div>
-
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Economic impact ledger</div>
-            <div className="grid grid-cols-4 gap-3">
-              <Pair label="Installed capacity" value={row.installed_capacity_mw != null ? `${row.installed_capacity_mw} MW` : '—'} />
-              <Pair label="Peak sun" value={row.peak_sun_hours_per_day != null ? `${row.peak_sun_hours_per_day}h/d` : '—'} />
-              <Pair label="Tariff" value={row.tariff_zar_per_mwh != null ? `R${row.tariff_zar_per_mwh.toFixed(0)}/MWh` : '—'} />
-              <Pair label="MWh loss / day" value={fmtMwh(row.mwh_loss_per_day_live)} />
-            </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="ZAR loss / day" value={fmtZar(row.zar_loss_per_day_live)} />
-              <Pair label="ZAR loss to date" value={fmtZar(row.zar_loss_to_date_live)} />
-              <Pair label="Next clean (predicted)" value={row.predicted_next_clean_date_live ? new Date(row.predicted_next_clean_date_live).toLocaleDateString() : '—'} />
-            </div>
-          </div>
-
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Cleaning & recovery</div>
-            <div className="grid grid-cols-4 gap-3">
-              <Pair label="Method" value={row.cleaning_method ?? '—'} />
-              <Pair label="Cost" value={fmtZar(row.cleaning_cost_zar)} />
-              <Pair label="Water" value={row.water_consumption_m3 != null ? `${row.water_consumption_m3} m³` : '—'} />
-              <Pair label="Horizon" value={row.recovery_horizon_days != null ? `${row.recovery_horizon_days}d` : '—'} />
-            </div>
-            <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="ROI ratio" value={row.cleaning_roi_ratio_live != null ? `${row.cleaning_roi_ratio_live.toFixed(2)}×` : '—'} />
-              <Pair label="Days to breakeven" value={row.days_to_breakeven_live != null ? `${row.days_to_breakeven_live.toFixed(1)}d` : '—'} />
-              <Pair label="Post-clean PR" value={fmtPct(row.post_clean_pr_pct, 1)} />
-              <Pair label="Recovered" value={fmtZar(row.recovered_zar_live)} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <FlagPill on={!!row.rainy_season_window_strict} label="Rainy season strict" />
-            <FlagPill on={!!row.post_dust_storm_event} label="Post dust-storm event" />
-            <FlagPill on={!!row.neighbour_complaint_filed} label="Neighbour complaint" />
-            <FlagPill on={!!row.water_restriction_active} label="Water restriction active" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {row.plant_owner_party_name && <Pair label="Plant owner" value={row.plant_owner_party_name} />}
-            {row.cleaning_contractor_name && <Pair label="Contractor" value={row.cleaning_contractor_name} />}
-            {row.wul_licence_ref && <Pair label="DFFE WUL ref" value={row.wul_licence_ref} />}
-            {row.regulator_inbox_ref && <Pair label="Regulator inbox" value={row.regulator_inbox_ref} />}
-            {row.inspection_method && <Pair label="Inspection method" value={row.inspection_method} />}
-            {row.technology && <Pair label="Technology" value={row.technology} />}
-            {row.site_region && <Pair label="Region" value={row.site_region} />}
-            {row.soiling_compliance_index_live != null && (
-              <Pair label="Compliance index" value={`${row.soiling_compliance_index_live.toFixed(1)} / 130`} />
-            )}
-            {row.disputed_reason && <Pair label="Disputed reason" value={row.disputed_reason} />}
-            {row.cancelled_reason && <Pair label="Cancelled reason" value={row.cancelled_reason} />}
-            {row.reason_code && <Pair label="Reason code" value={row.reason_code} />}
-          </div>
-
-          {row.source_wave && (
-            <Pair label="Provenance" value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}${row.source_event ? ` (${row.source_event})` : ''}`} />
-          )}
-
-          {row.sla_deadline_at && !row.is_terminal && (
-            <Pair label="Next SLA" value={`${new Date(row.sla_deadline_at).toLocaleString()} (${fmtMin(row.minutes_until_sla)})${row.escalation_level > 0 ? ` · ${row.escalation_level} breach(es)` : ''}`} />
-          )}
-
-          {transitionable && (
-            <div className="border-t border-[#eef2f6] pt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Actions</div>
-              <div className="flex flex-wrap gap-2">
-                {cs === 'soiling_period_open' && (
-                  <ActionBtn label="Schedule inspection (supervisor)" onClick={() => {
-                    const method = window.prompt('Inspection method (visual / drone_ir / both):') ?? undefined;
-                    void doAction('schedule-inspection', { inspection_method: method });
-                  }} />
-                )}
-                {cs === 'inspection_scheduled' && (
-                  <ActionBtn label="Record inspection (supervisor)" onClick={() => {
-                    const method = window.prompt('Inspection method actually used:') ?? undefined;
-                    const photo  = window.confirm('Evidence photo uploaded?');
-                    void doAction('record-inspection', { inspection_method: method, evidence_photo_uploaded: photo });
-                  }} />
-                )}
-                {cs === 'field_inspected' && (
-                  <ActionBtn label="Measure soiling ratio (supervisor)" onClick={() => {
-                    const ratio = window.prompt('Soiling ratio % (e.g. 5.4):') ?? undefined;
-                    const base  = window.prompt('Baseline ratio % (optional):') ?? undefined;
-                    const days  = window.prompt('Days since baseline (optional):') ?? undefined;
-                    const prC   = window.prompt('Expected PR clean % (optional):') ?? undefined;
-                    const prD   = window.prompt('Current PR dirty % (optional):') ?? undefined;
-                    const psh   = window.prompt('Peak sun hours/day (optional):') ?? undefined;
-                    void doAction('measure-soiling', {
-                      soiling_ratio_pct: ratio ? Number(ratio) : undefined,
-                      baseline_ratio_pct: base ? Number(base) : undefined,
-                      days_since_baseline: days ? Number(days) : undefined,
-                      expected_pr_clean_pct: prC ? Number(prC) : undefined,
-                      current_pr_dirty_pct: prD ? Number(prD) : undefined,
-                      peak_sun_hours_per_day: psh ? Number(psh) : undefined,
-                    });
-                  }} />
-                )}
-                {cs === 'soiling_measured' && (
-                  <ActionBtn label="Assess economics (plant owner)" onClick={() => {
-                    const method = window.prompt('Cleaning method (manual_wet / robotic_dry / drone_water):') ?? undefined;
-                    const cost   = window.prompt('Cleaning cost (ZAR):') ?? undefined;
-                    const water  = window.prompt('Water consumption (m³):') ?? undefined;
-                    const horiz  = window.prompt('Recovery horizon (days):') ?? undefined;
-                    const tariff = window.prompt('Tariff (ZAR/MWh, optional):') ?? undefined;
-                    void doAction('assess-economics', {
-                      cleaning_method: method,
-                      cleaning_cost_zar: cost ? Number(cost) : undefined,
-                      water_consumption_m3: water ? Number(water) : undefined,
-                      recovery_horizon_days: horiz ? Number(horiz) : undefined,
-                      tariff_zar_per_mwh: tariff ? Number(tariff) : undefined,
-                    });
-                  }} />
-                )}
-                {cs === 'economic_assessment_done' && (
-                  <ActionBtn label="Authorize cleaning" tone="good" onClick={() => {
-                    const cId    = window.prompt('Contractor ID (optional):') ?? undefined;
-                    const cName  = window.prompt('Contractor name:') ?? undefined;
-                    const wul    = window.prompt('DFFE WUL licence ref (optional):') ?? undefined;
-                    void doAction('authorize-cleaning', {
-                      cleaning_contractor_id: cId,
-                      cleaning_contractor_name: cName,
-                      wul_licence_ref: wul,
-                    });
-                  }} />
-                )}
-                {cs === 'cleaning_authorized' && (
-                  <ActionBtn label="Start cleaning (contractor)" onClick={() => { void doAction('start-cleaning', {}); }} />
-                )}
-                {cs === 'cleaning_in_progress' && (
-                  <ActionBtn label="Complete cleaning (contractor)" tone="good" onClick={() => {
-                    const water = window.prompt('Actual water consumption (m³):') ?? undefined;
-                    void doAction('complete-cleaning', { water_consumption_m3: water ? Number(water) : undefined });
-                  }} />
-                )}
-                {cs === 'post_clean_measured' && (
-                  <ActionBtn label="Measure post-clean PR (supervisor)" onClick={() => {
-                    const pr = window.prompt('Post-clean PR % (e.g. 84.5):') ?? undefined;
-                    void doAction('measure-post-clean', { post_clean_pr_pct: pr ? Number(pr) : undefined });
-                  }} />
-                )}
-                {cs === 'gain_validated' && (
-                  <ActionBtn label="Validate gain (plant owner)" tone="good" onClick={() => {
-                    const doc = window.confirm('Recovery documented in W79 ledger?');
-                    void doAction('validate-gain', { recovery_documented: doc });
-                  }} />
-                )}
-                {cs === 'gain_validated' && (
-                  <ActionBtn label="Settle audit" tone="good" onClick={() => { void doAction('settle-audit', {}); }} />
-                )}
-                {disputable && (
-                  <ActionBtn label="Raise dispute (regulator reportable)" tone="bad" onClick={() => {
-                    const reason = window.prompt('Dispute reason:') ?? undefined;
-                    void doAction('raise-dispute', { disputed_reason: reason });
-                  }} />
-                )}
-                {cs === 'disputed' && (
-                  <ActionBtn label="Resolve dispute" tone="good" onClick={() => { void doAction('resolve-dispute', {}); }} />
-                )}
-                {cancellable && (
-                  <ActionBtn label="Cancel audit" onClick={() => {
-                    const reason = window.prompt('Cancellation reason:') ?? undefined;
-                    void doAction('cancel-audit', { cancelled_reason: reason });
-                  }} />
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="border-t border-[#eef2f6] pt-4">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Timeline</div>
-            <div className="space-y-2">
-              {events.length === 0 ? (
-                <div className="text-[12px] text-[#6b7685]">No events yet.</div>
-              ) : events.map((e) => {
-                const partyTone = PARTY_TONE[e.actor_party ?? 'system'] ?? PARTY_TONE.system;
-                return (
-                  <div key={e.id} className="flex gap-3 text-[12px] border-l-2 border-[#e5ebf2] pl-3 py-1">
-                    <span className="font-mono text-[11px] text-[#6b7685] whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
-                    <div>
-                      <span className="font-semibold text-[#0f1c2e]">{e.event_type}</span>
-                      {e.actor_party && (
-                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-medium uppercase" style={{ background: partyTone.bg, color: partyTone.fg }}>
-                          {e.actor_party}
-                        </span>
-                      )}
-                      {e.from_status && e.to_status && e.from_status !== e.to_status && (
-                        <span className="text-[#6b7685]"> · {e.from_status} → {e.to_status}</span>
-                      )}
-                      {e.notes && <div className="text-[#4a5568] mt-0.5">{e.notes}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[#0f1c2e] mt-0.5">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1 }}>{value}</div>
     </div>
   );
 }
 
-function FlagPill({ on, label }: { on: boolean; label: string }) {
-  return (
-    <div className={`flex items-center gap-2 px-2 py-1 rounded-md text-[12px] ${on ? 'bg-[#fff4d6] text-[#a06200] border border-[#f4d68f]' : 'bg-[#f7f9fb] text-[#6b7685] border border-[#e5ebf2]'}`}>
-      <span className={`inline-block w-2 h-2 rounded-full ${on ? 'bg-[#a06200]' : 'bg-[#cbd5e0]'}`} />
-      <span>{label}</span>
-    </div>
-  );
-}
-
-function ActionBtn({ label, onClick, tone = 'neutral' }: { label: string; onClick: () => void; tone?: 'neutral' | 'good' | 'bad' }) {
-  const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#c2873a]';
-  return (
-    <button type="button" onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
-      {label}
-    </button>
-  );
-}
+export default SoilingAuditChainTab;

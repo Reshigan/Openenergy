@@ -26,7 +26,7 @@ const toneColor: Record<NonNullable<ObjectKPI['tone']>, string> = {
   good: '#1a8a5b',
   critical: '#c97a14',
   negative: '#c0392b',
-  info: '#3b82c4',
+  info: 'oklch(0.46 0.16 55)',
 };
 
 export function ObjectPageHeader({

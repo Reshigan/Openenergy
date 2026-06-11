@@ -4,13 +4,26 @@ import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { ExportBar } from '../ExportBar';
-import { StitchPage, StitchCard, StitchKpi, StitchPill, StitchField } from '../StitchPage';
+import { StitchCard, StitchKpi, StitchPill, StitchField } from '../StitchPage';
 import { OEIcon, type IconName } from '../OEIcon';
 import {
   Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, PolarAngleAxis,
   PolarGrid, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+
+// ─── Design tokens ───────────────────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 /* ════════════════════════════════════════════════════════════════════════
  * ESG — Watershed-grade carbon accounting + disclosure suite
@@ -129,43 +142,162 @@ interface Initiative {
   start_date?: string; end_date?: string; status: string;
 }
 
+const TAB_DESCRIPTIONS: Partial<Record<Tab, string>> = {
+  overview:      'Current-year GHG rollup, scope split, intensity metrics, and data quality indicators.',
+  transactions:  'Per-activity emission ledger — drillable by Scope 1/2/3 category.',
+  targets:       'SBTi-aligned absolute and intensity reduction targets with progress tracking.',
+  initiatives:   'Emission reduction project portfolio with MACC analysis.',
+  macc:          'Marginal abatement cost curve — prioritise reduction investments by cost-effectiveness.',
+  financed:      'Scope 3 Category 15 financed emissions for lenders and investors.',
+  scenarios:     'Net-zero pathway modelling under 1.5°C, 2°C, and BAU trajectories.',
+  counterparties:'Scope 3 Category 11 downstream use-of-sold-products emissions by counterparty.',
+  removals:      'Carbon dioxide removal credits and nature-based offset portfolio.',
+  cfe:           '24/7 carbon-free energy hourly matching for RE100 compliance.',
+  rec_market:    'REC spot marketplace — buy, retire, and track certificate positions.',
+  pcf:           'Product carbon footprint per unit, batch, or SKU.',
+  pathways:      'SBTi-aligned decarbonisation pathway with annual waypoints.',
+  suppliers:     'Scope 3 upstream supplier engagement surveys and ratings.',
+  recs:          'REC / Guarantee of Origin certificates and retirement ledger.',
+  assurance:     'Third-party verification status and assurance opinion register.',
+  audit_chain:   'Hash-chained immutable audit log — tamper-evident chain verification.',
+  maturity:      'GHG accounting maturity model — data quality and process readiness.',
+  disclosures:   'One-click CDP, TCFD, CSRD, ISSB, JSE-SRL, GHG Protocol exports.',
+  jurisdictions: 'Regulatory obligations by jurisdiction (SA Carbon Tax, EU ETS, etc.).',
+  anomalies:     'AI-detected emission anomalies and data quality alerts.',
+  ai_classifier: 'AI-assisted activity-to-scope classification with confidence scoring.',
+  risks:         'TCFD physical and transition risk register with scenario impact.',
+};
+
 export function ESG() {
   const [tab, setTab] = useState<Tab>('overview');
+  const tabDesc = TAB_DESCRIPTIONS[tab] ?? '';
+  const activeLabel = TABS.find(t => t.id === tab)?.label ?? '';
 
   return (
-    <StitchPage
-      eyebrowIcon={() => <OEIcon name="leaf" size={12} />}
-      eyebrowLabel="Sustainability · GHG Protocol · CDP · TCFD · ISSB"
-      title="ESG & Carbon Accounting"
-      subtitle="Audit-grade Scope 1/2/3 transaction ledger with SBTi-aligned targets, supplier engagement, REC matching, and one-click disclosure exports."
-      tabs={TABS as any}
-      activeTab={tab}
-      onTabChange={setTab as (id: string) => void}
-    >
-      {tab === 'overview'     && <OverviewTab />}
-      {tab === 'transactions' && <TransactionsTab />}
-      {tab === 'targets'      && <TargetsTab />}
-      {tab === 'initiatives'  && <InitiativesTab />}
-      {tab === 'financed'     && <FinancedEmissionsTab />}
-      {tab === 'removals'     && <RemovalsTab />}
-      {tab === 'cfe'          && <CFETab />}
-      {tab === 'pcf'          && <PCFTab />}
-      {tab === 'suppliers'    && <SuppliersTab />}
-      {tab === 'recs'         && <RecsTab />}
-      {tab === 'assurance'    && <AssuranceTab />}
-      {tab === 'maturity'     && <MaturityTab />}
-      {tab === 'disclosures'  && <DisclosuresTab />}
-      {tab === 'jurisdictions'&& <JurisdictionsTab />}
-      {tab === 'anomalies'    && <AnomaliesTab />}
-      {tab === 'scenarios'    && <ScenariosTab />}
-      {tab === 'counterparties' && <CounterpartiesTab />}
-      {tab === 'macc'         && <MACCTab />}
-      {tab === 'pathways'     && <PathwaysTab />}
-      {tab === 'ai_classifier'&& <AIClassifierTab />}
-      {tab === 'rec_market'   && <RecMarketTab />}
-      {tab === 'audit_chain'  && <AuditChainTab />}
-      {tab === 'risks'        && <RisksTab />}
-    </StitchPage>
+    <div style={{
+      display: 'grid', gridTemplateColumns: '1fr 380px',
+      height: 'calc(100vh - 50px)', background: BG, overflow: 'hidden',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+    }}>
+      {/* ── LEFT COLUMN ─────────────────────────────────────────────────── */}
+      <div style={{ overflowY: 'auto', padding: '24px 28px' }}>
+        {/* Header */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <OEIcon name="leaf" size={14} />
+            <span style={{ fontSize: 11, fontWeight: 600, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Sustainability · GHG Protocol · CDP · TCFD · ISSB</span>
+          </div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: TX1, margin: 0 }}>ESG & Carbon Accounting</h1>
+          <p style={{ fontSize: 13, color: TX2, margin: '4px 0 0' }}>Audit-grade Scope 1/2/3 transaction ledger with SBTi-aligned targets, supplier engagement, REC matching, and one-click disclosure exports.</p>
+        </div>
+
+        {/* Tab bar — horizontal scroll for many tabs */}
+        <div style={{ overflowX: 'auto', marginBottom: 20 }}>
+          <div style={{ display: 'flex', gap: 2, borderBottom: `2px solid ${BORDER}`, minWidth: 'max-content' }}>
+            {TABS.map(t => (
+              <button key={t.id} type="button" onClick={() => setTab(t.id)} style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
+                fontSize: 13, fontWeight: tab === t.id ? 700 : 500,
+                color: tab === t.id ? ACC : TX2,
+                background: 'transparent', border: 'none',
+                borderBottom: `2px solid ${tab === t.id ? ACC : 'transparent'}`,
+                marginBottom: -2, cursor: 'pointer', whiteSpace: 'nowrap',
+              }}>
+                <OEIcon name={t.icon} size={13} />{t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab content */}
+        {tab === 'overview'       && <OverviewTab />}
+        {tab === 'transactions'   && <TransactionsTab />}
+        {tab === 'targets'        && <TargetsTab />}
+        {tab === 'initiatives'    && <InitiativesTab />}
+        {tab === 'financed'       && <FinancedEmissionsTab />}
+        {tab === 'removals'       && <RemovalsTab />}
+        {tab === 'cfe'            && <CFETab />}
+        {tab === 'pcf'            && <PCFTab />}
+        {tab === 'suppliers'      && <SuppliersTab />}
+        {tab === 'recs'           && <RecsTab />}
+        {tab === 'assurance'      && <AssuranceTab />}
+        {tab === 'maturity'       && <MaturityTab />}
+        {tab === 'disclosures'    && <DisclosuresTab />}
+        {tab === 'jurisdictions'  && <JurisdictionsTab />}
+        {tab === 'anomalies'      && <AnomaliesTab />}
+        {tab === 'scenarios'      && <ScenariosTab />}
+        {tab === 'counterparties' && <CounterpartiesTab />}
+        {tab === 'macc'           && <MACCTab />}
+        {tab === 'pathways'       && <PathwaysTab />}
+        {tab === 'ai_classifier'  && <AIClassifierTab />}
+        {tab === 'rec_market'     && <RecMarketTab />}
+        {tab === 'audit_chain'    && <AuditChainTab />}
+        {tab === 'risks'          && <RisksTab />}
+      </div>
+
+      {/* ── RIGHT COLUMN ────────────────────────────────────────────────── */}
+      <div style={{
+        borderLeft: `1px solid ${BORDER}`, background: BG1,
+        overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 16,
+      }}>
+        {/* Active tab context */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Current View</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: TX1, marginBottom: 6 }}>{activeLabel}</div>
+          {tabDesc && <p style={{ fontSize: 12, color: TX2, margin: 0, lineHeight: 1.6 }}>{tabDesc}</p>}
+        </div>
+
+        {/* Standards reference */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Standards Alignment</div>
+          {[
+            { code: 'GHG Protocol', desc: 'Scope 1/2/3 methodology', color: GOOD },
+            { code: 'SBTi',         desc: 'Science-based targets',     color: GOOD },
+            { code: 'CDP',          desc: 'Climate disclosure',         color: ACC  },
+            { code: 'TCFD',         desc: 'Climate risk framework',     color: ACC  },
+            { code: 'ISSB S2',      desc: 'IFRS sustainability',        color: ACC  },
+            { code: 'CSRD',         desc: 'EU reporting directive',     color: TX2  },
+            { code: 'JSE-SRL',      desc: 'SA listing requirements',   color: TX2  },
+            { code: 'Carbon Tax Act', desc: 'Section 13 offset claims',color: TX2  },
+          ].map(s => (
+            <div key={s.code} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: TX1, fontFamily: MONO }}>{s.code}</span>
+              <span style={{ fontSize: 11, color: s.color }}>{s.desc}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Scope quick reference */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Scope Reference</div>
+          {[
+            { scope: 'Scope 1', def: 'Direct combustion, process, fugitive', color: 'oklch(0.46 0.16 55)' },
+            { scope: 'Scope 2', def: 'Purchased electricity & heat',         color: 'oklch(0.46 0.16 55)' },
+            { scope: 'Scope 3', def: '15 upstream + downstream categories',  color: '#1f9b95' },
+          ].map(s => (
+            <div key={s.scope} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: s.color, minWidth: 56, fontFamily: MONO }}>{s.scope}</span>
+              <span style={{ fontSize: 11, color: TX2, lineHeight: 1.5 }}>{s.def}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Severity legend */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Data Quality</div>
+          {[
+            { label: 'Measured',   color: GOOD },
+            { label: 'Calculated', color: ACC  },
+            { label: 'Estimated',  color: BAD  },
+          ].map(q => (
+            <div key={q.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: q.color, display: 'inline-block', flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: TX2 }}>{q.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -208,8 +340,8 @@ function OverviewTab() {
   })();
 
   const scopeData = rollup ? [
-    { name: 'Scope 1',         tco2e: rollup.scope1_tco2e || 0,           color: '#1a3a5c' },
-    { name: 'Scope 2 (loc)',   tco2e: rollup.scope2_location_tco2e || 0,  color: '#3b82c4' },
+    { name: 'Scope 1',         tco2e: rollup.scope1_tco2e || 0,           color: 'oklch(0.46 0.16 55)' },
+    { name: 'Scope 2 (loc)',   tco2e: rollup.scope2_location_tco2e || 0,  color: 'oklch(0.46 0.16 55)' },
     { name: 'Scope 2 (mkt)',   tco2e: rollup.scope2_market_tco2e || 0,    color: '#5fa8e8' },
     { name: 'Scope 3',         tco2e: rollup.scope3_tco2e || 0,           color: '#1f9b95' },
   ] : [];
@@ -653,7 +785,7 @@ function InitiativesTab() {
               <YAxis fontSize={11} stroke="#3d4756" tickFormatter={(v) => `R${fmtN(v)}/t`} />
               <Tooltip formatter={(v: number) => fmtZ(v)} />
               <Bar dataKey="mac">
-                {macc.map((d, i) => <Cell key={i} fill={d.mac < 0 ? '#1a8a5b' : d.mac < 500 ? '#3b82c4' : '#c97a14'} />)}
+                {macc.map((d, i) => <Cell key={i} fill={d.mac < 0 ? '#1a8a5b' : d.mac < 500 ? 'oklch(0.46 0.16 55)' : '#c97a14'} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -1004,7 +1136,7 @@ function DisclosuresTab() {
                     <td className="px-4 py-2"><StitchPill label={String(d.assurance_level || 'none')} tone={d.assurance_level === 'reasonable' ? 'good' : d.assurance_level === 'limited' ? 'info' : 'neutral'} /></td>
                     <td className="px-4 py-2"><StitchPill status={String(d.status)} /></td>
                     <td className="px-4 py-2 text-right">
-                      <button type="button" onClick={() => preview(String(d.id), String(d.framework))} className="text-[12px] text-[#3b82c4] hover:underline inline-flex items-center gap-1">
+                      <button type="button" onClick={() => preview(String(d.id), String(d.framework))} className="text-[12px] text-[oklch(0.46_0.16_55)] hover:underline inline-flex items-center gap-1">
                         <OEIcon name="download" size={12} /> Export
                       </button>
                     </td>
@@ -1195,7 +1327,7 @@ function NewRiskModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 //  Shared bits
 // ════════════════════════════════════════════════════════════════════════
 function ScopePill({ scope, cat }: { scope: number; cat: number | null }) {
-  const tone = scope === 1 ? 'bg-[#c2873a] text-white' : scope === 2 ? 'bg-[#dbecfb] text-[#1a5d97]' : 'bg-[#b8eae6] text-[#0e6d68]';
+  const tone = scope === 1 ? 'bg-[#c2873a] text-white' : scope === 2 ? 'bg-[oklch(0.94_0.02_250)] text-[#1a5d97]' : 'bg-[#b8eae6] text-[#0e6d68]';
   const label = scope === 3 && cat ? `S3-${cat}` : `S${scope}`;
   return <span className={`px-2 py-[2px] text-[10px] uppercase font-bold rounded ${tone}`}>{label}</span>;
 }
@@ -1241,7 +1373,7 @@ function Field({ label, value, onChange, type = 'text', placeholder, className }
         value={value ?? ''}
         onChange={onChange}
         placeholder={placeholder}
-        className="mt-1 h-9 w-full px-3 rounded-md border border-[#dde4ec] text-[13px] focus:outline-none focus:ring-2 focus:ring-[#1a3a5c]/30"
+        className="mt-1 h-9 w-full px-3 rounded-md border border-[#dde4ec] text-[13px] focus:outline-none focus:ring-2 focus:ring-[oklch(0.46_0.16_55)]/30"
       />
     </label>
   );
@@ -1284,7 +1416,7 @@ function FinancedEmissionsTab() {
         <div className="flex items-center gap-2">
           {/* StitchField in this section is used legacy-style with value/onChange — cast to keep tsc green while we plan a proper wrapper. */}
           <StitchField {...({ label: 'Year', value: year, onChange: (e: any) => setYear(Number(e.target.value)), type: 'number', className: 'w-28' } as any)} />
-          <button type="button" onClick={() => { coverage.refresh(); rows.refresh(); }} className="text-sm text-blue-600 hover:underline">Refresh</button>
+          <button type="button" onClick={() => { coverage.refresh(); rows.refresh(); }} className="text-sm text-[oklch(0.46_0.16_55)] hover:underline">Refresh</button>
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => setTgtOpen(true)} className="px-3 py-1.5 text-sm border rounded-lg">+ NZBA/SBTi-FI target</button>
@@ -1506,7 +1638,7 @@ function RemovalsTab() {
                   <td>{fmtN(o.total_tco2e, 1)}</td>
                   <td>{fmtN(o.retired_tco2e, 1)}</td>
                   <td><StitchPill status={o.status} /></td>
-                  <td><button type="button" onClick={() => setRetireOpen(o.id)} className="text-blue-600 text-[12px] hover:underline">Retire</button></td>
+                  <td><button type="button" onClick={() => setRetireOpen(o.id)} className="text-[oklch(0.46_0.16_55)] text-[12px] hover:underline">Retire</button></td>
                 </tr>
               ))}
             </tbody>
@@ -1704,7 +1836,7 @@ function AssuranceTab() {
                   <td><StitchPill label={e.assurance_level} tone={e.assurance_level === 'reasonable' ? 'good' : 'info'} /></td>
                   <td>{e.engagement_status}</td>
                   <td>{e.opinion || '—'}</td>
-                  <td><button type="button" onClick={() => setFindingsOpen(e.id)} className="text-blue-600 text-[12px] hover:underline">Findings</button></td>
+                  <td><button type="button" onClick={() => setFindingsOpen(e.id)} className="text-[oklch(0.46_0.16_55)] text-[12px] hover:underline">Findings</button></td>
                 </tr>
               ))}
             </tbody>
@@ -1779,7 +1911,7 @@ function FindingsModal({ engagementId, onClose }: { engagementId: string; onClos
           <div className="flex justify-end gap-2"><button type="button" onClick={() => setAdding(false)} className="px-2 py-1 text-sm border rounded">Cancel</button><button type="button" onClick={add} className="px-2 py-1 text-sm bg-[#c2873a] text-white rounded">Add</button></div>
         </div>
       ) : (
-        <div className="flex justify-end"><button type="button" onClick={() => setAdding(true)} className="text-sm text-blue-600 hover:underline">+ Add finding</button></div>
+        <div className="flex justify-end"><button type="button" onClick={() => setAdding(true)} className="text-sm text-[oklch(0.46_0.16_55)] hover:underline">+ Add finding</button></div>
       )}
     </Modal>
   );
@@ -2018,7 +2150,7 @@ function ScenariosTab() {
                   <td className="text-amber-700">{fmtN(r.emissions_at_risk_tco2e, 1)}</td>
                   <td className="text-red-700">{fmtZ(r.financial_value_at_risk_zar, 0)}</td>
                   <td>{r.worst_sector_nace || '—'}</td>
-                  <td><button type="button" onClick={() => setDetail(r)} className="text-blue-600 text-[12px] hover:underline">Details</button></td>
+                  <td><button type="button" onClick={() => setDetail(r)} className="text-[oklch(0.46_0.16_55)] text-[12px] hover:underline">Details</button></td>
                 </tr>
               ))}
             </tbody>
@@ -2108,7 +2240,7 @@ function CounterpartiesTab() {
                   <td className="text-[12px]">{r.scope_requested}</td>
                   <td><StitchPill status={r.status} /></td>
                   <td className="text-[12px]">{r.sent_at?.slice(0, 10) || '—'}</td>
-                  <td><button type="button" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/api/portal/counterparty/${r.share_token}`); alert('Share link copied'); }} className="text-blue-600 text-[12px] hover:underline">Copy link</button></td>
+                  <td><button type="button" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/api/portal/counterparty/${r.share_token}`); alert('Share link copied'); }} className="text-[oklch(0.46_0.16_55)] text-[12px] hover:underline">Copy link</button></td>
                 </tr>
               ))}
             </tbody>
@@ -2162,7 +2294,7 @@ function MACCTab() {
               <Tooltip />
               <Bar dataKey="cost" name="MACC (ZAR/tCO₂e)">
                 {(rows.data || []).map((r: any, i: number) => (
-                  <Cell key={i} fill={(r.computed_macc_zar_per_tco2e || 0) < 0 ? '#1a8a5b' : (r.computed_macc_zar_per_tco2e || 0) < 500 ? '#3b82c4' : '#c97a14'} />
+                  <Cell key={i} fill={(r.computed_macc_zar_per_tco2e || 0) < 0 ? '#1a8a5b' : (r.computed_macc_zar_per_tco2e || 0) < 500 ? 'oklch(0.46 0.16 55)' : '#c97a14'} />
                 ))}
               </Bar>
             </BarChart>
@@ -2317,7 +2449,7 @@ function RecMarketTab() {
                   <td>{fmtN(l.remaining_kwh)}</td>
                   <td>{l.price_zar_per_kwh?.toFixed(2)}</td>
                   <td><StitchPill status={l.status} /></td>
-                  <td><button type="button" onClick={() => setBuyOpen(l)} disabled={l.status === 'sold_out'} className="text-blue-600 text-[12px] hover:underline disabled:opacity-40">Buy</button></td>
+                  <td><button type="button" onClick={() => setBuyOpen(l)} disabled={l.status === 'sold_out'} className="text-[oklch(0.46_0.16_55)] text-[12px] hover:underline disabled:opacity-40">Buy</button></td>
                 </tr>
               ))}
             </tbody>

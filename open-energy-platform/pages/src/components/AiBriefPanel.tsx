@@ -183,7 +183,7 @@ export function AiBriefPanel({ role, accentFrom = 'oklch(0.46 0.16 55)', accentT
 function PriorityDot({ priority }: { priority?: string }) {
   const color = priority === 'urgent' ? '#c0392b'
     : priority === 'high' ? '#b04e0f'
-    : priority === 'normal' ? '#3b82c4'
+    : priority === 'normal' ? 'oklch(0.46 0.16 55)'
     : '#6b7685';
   return (
     <span

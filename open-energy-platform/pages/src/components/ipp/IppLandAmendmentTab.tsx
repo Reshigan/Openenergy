@@ -23,9 +23,9 @@ interface LandAmendment {
 
 const STATUS_COLORS: Record<string, string> = {
   amendment_requested:  'bg-[#eef2f7] text-[#6b7685]',
-  surveyor_appointed:   'bg-blue-100 text-blue-700',
+  surveyor_appointed:   'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   survey_completed:     'bg-sky-100 text-sky-700',
-  application_submitted:'bg-indigo-100 text-indigo-700',
+  application_submitted:'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   authority_review:     'bg-yellow-100 text-yellow-800',
   public_notice:        'bg-amber-100 text-amber-700',
   objection_period:     'bg-orange-100 text-orange-700',

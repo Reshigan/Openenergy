@@ -18,6 +18,22 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainCardProps, type ChainEvent } from '../ChainCard';
+
+type ChainCardItem = ChainCardProps['item'];
+
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'period_open' | 'measurement_submitted' | 'adjustment_review' | 'reconciled'
@@ -29,6 +45,7 @@ type ShortfallTier =
   | 'severe_shortfall' | 'critical_shortfall';
 
 interface GuaranteeRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   source_event: string | null;
@@ -87,19 +104,6 @@ interface GuaranteeRow {
   created_at: string;
 }
 
-interface GuaranteeEvent {
-  id: string;
-  guarantee_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiData {
   total: number;
   open_count: number;
@@ -120,34 +124,23 @@ interface KpiData {
   total_settlement_zar: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  period_open:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'Period open' },
-  measurement_submitted: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Measurement submitted' },
-  adjustment_review:     { bg: '#fff4d6', fg: '#a06200', label: 'Adjustment review' },
-  reconciled:            { bg: '#dbecfb', fg: '#1a3a5c', label: 'Reconciled' },
-  meets_guarantee:       { bg: '#daf5e2', fg: '#1f6b3a', label: 'Meets guarantee' },
-  shortfall_flagged:     { bg: '#fde0e0', fg: '#9b1f1f', label: 'Shortfall flagged' },
-  ld_assessed:           { bg: '#fde0e0', fg: '#9b1f1f', label: 'LD assessed' },
-  cure_period:           { bg: '#fff4d6', fg: '#a06200', label: 'Cure period' },
-  settled:               { bg: '#e3e7ec', fg: '#557',    label: 'Settled' },
-  disputed:              { bg: '#fde0e0', fg: '#9b1f1f', label: 'Disputed' },
-  dispute_resolved:      { bg: '#e3e7ec', fg: '#557',    label: 'Dispute resolved' },
-  withdrawn:             { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
-};
+const ALL_STATES = [
+  'period_open',
+  'measurement_submitted',
+  'adjustment_review',
+  'reconciled',
+  'shortfall_flagged',
+  'ld_assessed',
+  'cure_period',
+  'settled',
+] as const;
 
-const TIER_TONE: Record<ShortfallTier, { bg: string; fg: string; label: string }> = {
-  minor_shortfall:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-  moderate_shortfall: { bg: '#fff4d6', fg: '#a06200', label: 'Moderate' },
-  material_shortfall: { bg: '#ffe7cc', fg: '#9a4d00', label: 'Material' },
-  severe_shortfall:   { bg: '#fde0e0', fg: '#9b1f1f', label: 'Severe' },
-  critical_shortfall: { bg: '#fbd0d0', fg: '#7a1414', label: 'Critical' },
-};
-
-const PARTY_TONE: Record<string, { bg: string; fg: string }> = {
-  asset_owner:  { bg: '#dbecfb', fg: '#1a3a5c' },
-  om_contractor:{ bg: '#fff4d6', fg: '#a06200' },
-  system:       { bg: '#e3e7ec', fg: '#557' },
-};
+const BRANCH_STATES = [
+  'meets_guarantee',
+  'disputed',
+  'dispute_resolved',
+  'withdrawn',
+] as const;
 
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',                label: 'Active (pre-terminal)' },
@@ -179,21 +172,207 @@ function fmtPct(n: number | null | undefined): string {
   return `${n.toFixed(2)}%`;
 }
 
-function fmtMin(min: number | null | undefined): string {
-  if (min === null || min === undefined) return '—';
-  if (Math.abs(min) >= 1440) return `${(min / 1440).toFixed(1)}d`;
-  if (Math.abs(min) >= 60)   return `${(min / 60).toFixed(1)}h`;
-  return `${min}m`;
+function getActions(row: GuaranteeRow): ChainAction[] {
+  const cs = row.chain_status;
+  if (row.is_terminal) return [];
+
+  const actions: ChainAction[] = [];
+
+  if (cs === 'period_open') {
+    actions.push({
+      key: 'submit-measurement',
+      label: 'Submit measurement (contractor)',
+      tone: 'primary',
+      fields: [
+        { key: 'measured_availability_pct', label: 'Measured availability (%)', type: 'text', required: false },
+        { key: 'measurement_ref', label: 'Measurement reference (optional)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'measurement_submitted') {
+    actions.push({
+      key: 'open-adjustment-review',
+      label: 'Open adjustment review',
+      tone: 'primary',
+      fields: [
+        { key: 'excused_downtime_hours', label: 'Excused downtime (hours, optional)', type: 'text', required: false },
+        { key: 'adjusted_availability_pct', label: 'Adjusted availability (%, optional)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'adjustment_review') {
+    actions.push({
+      key: 'reconcile',
+      label: 'Reconcile',
+      tone: 'primary',
+      fields: [
+        { key: 'adjusted_availability_pct', label: 'Adjusted availability (%, optional)', type: 'text', required: false },
+        { key: 'shortfall_pp', label: 'Shortfall (pp, optional — guaranteed minus adjusted)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'reconciled') {
+    actions.push({
+      key: 'confirm-meets-guarantee',
+      label: 'Confirm meets guarantee',
+      tone: 'primary',
+      fields: [
+        { key: 'bonus_zar', label: 'Availability bonus (ZAR, optional)', type: 'text', required: false },
+      ],
+    });
+    actions.push({
+      key: 'flag-shortfall',
+      label: 'Flag shortfall',
+      tone: 'danger',
+      fields: [
+        { key: 'shortfall_pp', label: 'Shortfall (pp)', type: 'text', required: false },
+        { key: 'shortfall_basis', label: 'Shortfall basis', type: 'textarea', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'shortfall_flagged') {
+    actions.push({
+      key: 'assess-ld',
+      label: 'Assess LD',
+      tone: 'danger',
+      fields: [
+        { key: 'ld_assessed_zar', label: 'Liquidated damages assessed (ZAR)', type: 'text', required: false },
+        { key: 'ld_basis', label: 'LD basis', type: 'textarea', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'ld_assessed') {
+    actions.push({
+      key: 'agree-cure-plan',
+      label: 'Agree cure plan (contractor)',
+      tone: 'primary',
+      fields: [
+        { key: 'cure_plan', label: 'Cure plan', type: 'textarea', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'meets_guarantee' || cs === 'ld_assessed' || cs === 'cure_period') {
+    actions.push({
+      key: 'settle',
+      label: 'Settle',
+      tone: 'primary',
+      fields: [
+        { key: 'settlement_zar', label: 'Net settlement (ZAR, optional)', type: 'text', required: false },
+        { key: 'settlement_basis', label: 'Settlement basis (optional)', type: 'textarea', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'ld_assessed' || cs === 'cure_period') {
+    actions.push({
+      key: 'waive-ld',
+      label: 'Waive LD',
+      tone: 'warn',
+      fields: [
+        { key: 'settlement_basis', label: 'Waiver basis', type: 'textarea', required: false },
+        { key: 'reason_code', label: 'Reason code (optional)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'shortfall_flagged' || cs === 'ld_assessed' || cs === 'cure_period') {
+    actions.push({
+      key: 'raise-dispute',
+      label: 'Raise dispute (contractor)',
+      tone: 'danger',
+      fields: [
+        { key: 'dispute_basis', label: 'Dispute basis', type: 'textarea', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'disputed') {
+    actions.push({
+      key: 'resolve-dispute',
+      label: 'Resolve dispute',
+      tone: 'primary',
+      fields: [
+        { key: 'dispute_basis', label: 'Resolution basis', type: 'textarea', required: false },
+        { key: 'settlement_zar', label: 'Settlement after resolution (ZAR, optional)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'period_open' || cs === 'measurement_submitted' || cs === 'adjustment_review') {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw',
+      tone: 'ghost',
+      fields: [
+        { key: 'reason_code', label: 'Reason code (optional)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: GuaranteeRow): React.ReactNode {
+  return (
+    <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+      <DetailPair label="Asset owner" value={row.owner_party_name} />
+      <DetailPair label="O&M contractor" value={row.contractor_party_name} />
+      <DetailPair label="Technology" value={`${row.technology}${row.capacity_mw != null ? ` · ${row.capacity_mw} MW` : ''}`} />
+      {row.site_province && <DetailPair label="Province" value={row.site_province} />}
+      <DetailPair label="Guaranteed" value={fmtPct(row.guaranteed_availability_pct)} />
+      {row.bonus_threshold_pct != null && <DetailPair label="Bonus threshold" value={fmtPct(row.bonus_threshold_pct)} />}
+      {row.measured_availability_pct != null && <DetailPair label="Measured" value={fmtPct(row.measured_availability_pct)} />}
+      {row.adjusted_availability_pct != null && <DetailPair label="Adjusted" value={fmtPct(row.adjusted_availability_pct)} />}
+      {row.excused_downtime_hours != null && <DetailPair label="Excused downtime" value={`${row.excused_downtime_hours} h`} />}
+      {row.shortfall_pp != null && <DetailPair label="Shortfall" value={`${row.shortfall_pp.toFixed(2)} pp`} />}
+      {row.contract_ref && <DetailPair label="O&M contract" value={row.contract_ref} />}
+      {row.ld_rate_zar_per_pp != null && <DetailPair label="LD rate / pp" value={fmtZar(row.ld_rate_zar_per_pp)} />}
+      {row.ld_cap_zar != null && <DetailPair label="LD cap" value={fmtZar(row.ld_cap_zar)} />}
+      {row.ld_assessed_zar != null && <DetailPair label="LD assessed" value={fmtZar(row.ld_assessed_zar)} />}
+      {row.bonus_zar != null && <DetailPair label="Bonus" value={fmtZar(row.bonus_zar)} />}
+      {row.settlement_zar != null && <DetailPair label="Settlement" value={fmtZar(row.settlement_zar)} />}
+      {row.dispute_round > 0 && <DetailPair label="Dispute round" value={String(row.dispute_round)} />}
+      {row.measurement_basis && <DetailPair label="Measurement basis" value={row.measurement_basis} />}
+      {row.adjustment_basis && <DetailPair label="Adjustment basis" value={row.adjustment_basis} />}
+      {row.shortfall_basis && <DetailPair label="Shortfall basis" value={row.shortfall_basis} />}
+      {row.ld_basis && <DetailPair label="LD basis" value={row.ld_basis} />}
+      {row.cure_plan && <DetailPair label="Cure plan" value={row.cure_plan} />}
+      {row.settlement_basis && <DetailPair label="Settlement basis" value={row.settlement_basis} />}
+      {row.dispute_basis && <DetailPair label="Dispute basis" value={row.dispute_basis} />}
+      {row.notes && <DetailPair label="Notes" value={row.notes} />}
+      {row.source_wave && (
+        <DetailPair
+          label="Provenance"
+          value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}${row.source_event ? ` (${row.source_event})` : ''}`}
+        />
+      )}
+      {row.is_reportable && (
+        <div className="col-span-2">
+          <span
+            className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold"
+            style={{ background: 'oklch(0.97 0.04 20)', color: BAD }}
+          >
+            Regulator reportable
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function AvailabilityGuaranteeChainTab() {
   const [rows, setRows] = useState<GuaranteeRow[]>([]);
-  const [kpis, setKpis] = useState<KpiData | null>(null);
+  const [summary, setSummary] = useState<KpiData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<GuaranteeRow | null>(null);
-  const [events, setEvents] = useState<GuaranteeEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -204,7 +383,7 @@ export function AvailabilityGuaranteeChainTab() {
       setRows(d?.items || []);
       if (d) {
         const { items: _items, ...rest } = d;
-        setKpis(rest as KpiData);
+        setSummary(rest as KpiData);
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load availability guarantees');
@@ -215,15 +394,33 @@ export function AvailabilityGuaranteeChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: GuaranteeRow; events: GuaranteeEvent[] } }>(`/availability-guarantee/chain/${id}`);
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      const body: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(values)) {
+        if (v === '' || v == null) continue;
+        const numericKeys = [
+          'measured_availability_pct', 'excused_downtime_hours', 'adjusted_availability_pct',
+          'shortfall_pp', 'bonus_zar', 'ld_assessed_zar', 'settlement_zar',
+        ];
+        body[k] = numericKeys.includes(k) ? Number(v) : v;
+      }
+      await api.post(`/availability-guarantee/chain/${rowId}/${key}`, body);
+      await load();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load guarantee history');
+      setErr(e instanceof Error ? e.message : 'Action failed');
     }
-  }, []);
+  }, [load]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: GuaranteeRow; events: ChainEvent[] } }>(`/availability-guarantee/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events || [] }));
+    } catch {
+      setExpandedEvents(prev => ({ ...prev, [id]: [] }));
+    }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -236,351 +433,96 @@ export function AvailabilityGuaranteeChainTab() {
     });
   }, [rows, filter]);
 
-  const doAction = useCallback(async (path: string, body?: object) => {
-    if (!selected) return;
-    try {
-      await api.post(`/availability-guarantee/chain/${selected.id}/${path}`, body ?? {});
-      await load();
-      await loadEvents(selected.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Action failed');
-    }
-  }, [selected, load, loadEvents]);
-
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-7 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? 0} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="Shortfall flagged" value={kpis?.shortfall_count ?? 0} tone={(kpis?.shortfall_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Critical open" value={kpis?.critical_open ?? 0} tone={(kpis?.critical_open ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="LD assessed" value={fmtZar(kpis?.total_ld_assessed_zar ?? 0)} small />
-        <Kpi label="Settlement" value={fmtZar(kpis?.total_settlement_zar ?? 0)} small />
+    <div style={{ background: BG, minHeight: '100%', padding: '12px 0' }}>
+      {/* KPI strip */}
+      <div
+        className="grid gap-3 mb-4"
+        style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}
+      >
+        <KpiTile label="Total" value={summary?.total ?? 0} />
+        <KpiTile label="Open" value={summary?.open_count ?? 0} />
+        <KpiTile label="Shortfall flagged" value={summary?.shortfall_count ?? 0} tone={(summary?.shortfall_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="SLA breached" value={summary?.breached ?? 0} tone={(summary?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Critical open" value={summary?.critical_open ?? 0} tone={(summary?.critical_open ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="LD assessed" value={fmtZar(summary?.total_ld_assessed_zar ?? 0)} />
+        <KpiTile label="Settlement" value={fmtZar(summary?.total_settlement_zar ?? 0)} />
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
+      {/* Filter pills */}
+      <div className="flex flex-wrap gap-1.5 mb-4">
         {FILTERS.map((f) => (
-          <button type="button"
+          <button
+            type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
+            className="px-2.5 py-1 rounded-full text-[11px] font-medium border"
+            style={
               filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
-                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
-            }`}>
+                ? { background: ACC, color: '#fff', borderColor: ACC }
+                : { background: BG1, color: TX2, borderColor: BORDER }
+            }
+          >
             {f.label}
           </button>
         ))}
       </div>
 
-      {err && <div className="px-3 py-2 bg-red-50 text-red-700 text-[12px] rounded-md">{err}</div>}
-
-      <div className="bg-white border border-[#e5ebf2] rounded-xl overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[#f7f9fb] text-[11px] uppercase tracking-wide text-[#6b7685]">
-            <tr>
-              <th className="px-3 py-2 text-left">Case #</th>
-              <th className="px-3 py-2 text-left">Site / period</th>
-              <th className="px-3 py-2 text-left">Contractor</th>
-              <th className="px-3 py-2 text-right">Guar. / Adj.</th>
-              <th className="px-3 py-2 text-left">Tier</th>
-              <th className="px-3 py-2 text-left">State</th>
-              <th className="px-3 py-2 text-right">Δ SLA</th>
-            </tr>
-          </thead>
-          <tbody className="text-[13px]">
-            {loading ? (
-              <tr><td colSpan={7} className="p-6 text-center text-[#6b7685]">Loading…</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={7} className="p-6 text-center text-[#6b7685]">No guarantees match the current filter.</td></tr>
-            ) : filtered.map((r) => {
-              const stateTone = STATE_TONE[r.chain_status];
-              const tierTone  = TIER_TONE[r.shortfall_tier];
-              return (
-                <tr
-                  key={r.id}
-                  onClick={() => loadEvents(r.id)}
-                  className={`cursor-pointer hover:bg-[#f7f9fb] border-t border-[#eef2f6] ${selected?.id === r.id ? 'bg-[#fffae6]' : ''}`}>
-                  <td className="px-3 py-2 font-mono text-[11px]">{r.case_number}</td>
-                  <td className="px-3 py-2 max-w-xs truncate" title={`${r.site_name} · ${r.reporting_period}`}>
-                    {r.site_name}<span className="text-[#6b7685]"> · {r.reporting_period}</span>
-                  </td>
-                  <td className="px-3 py-2 text-[#4a5568] max-w-[12rem] truncate" title={r.contractor_party_name}>{r.contractor_party_name}</td>
-                  <td className="px-3 py-2 text-right tabular-nums text-[12px]">
-                    {fmtPct(r.guaranteed_availability_pct)}
-                    <span className="text-[#6b7685]"> / {fmtPct(r.adjusted_availability_pct)}</span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: tierTone.bg, color: tierTone.fg }}>
-                      {tierTone.label}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: stateTone.bg, color: stateTone.fg }}>
-                      {stateTone.label}
-                    </span>
-                  </td>
-                  <td className={`px-3 py-2 text-right text-[12px] tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                    {r.is_terminal ? '—' : fmtMin(r.minutes_until_sla)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {selected && (
-        <GuaranteeDrawer
-          row={selected}
-          events={events}
-          onClose={() => { setSelected(null); setEvents([]); }}
-          doAction={doAction}
-        />
+      {err && (
+        <div
+          className="px-3 py-2 rounded-md text-[12px] mb-3"
+          style={{ background: 'oklch(0.97 0.04 20)', color: BAD, border: `1px solid ${BAD}30` }}
+        >
+          {err}
+        </div>
       )}
-    </div>
-  );
-}
 
-function Kpi({ label, value, tone = 'ok', small = false }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad'; small?: boolean }) {
-  const fg = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0f1c2e';
-  return (
-    <div className="bg-white border border-[#e5ebf2] rounded-lg p-3">
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className={small ? 'text-[15px] font-semibold tabular-nums mt-0.5' : 'text-[20px] font-semibold tabular-nums mt-0.5'} style={{ color: fg }}>{value}</div>
-    </div>
-  );
-}
-
-function GuaranteeDrawer({
-  row, events, onClose, doAction,
-}: {
-  row: GuaranteeRow;
-  events: GuaranteeEvent[];
-  onClose: () => void;
-  doAction: (path: string, body?: object) => Promise<void>;
-}) {
-  const cs = row.chain_status;
-  const transitionable = !row.is_terminal;
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/30 flex items-stretch justify-end oe-overlay-in" onClick={onClose}>
-      <div className="bg-white w-full max-w-2xl shadow-xl overflow-y-auto oe-drawer-in" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-start justify-between sticky top-0 bg-white z-10">
-          <div>
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">Guarantee {row.case_number}</div>
-            <h3 className="text-[16px] font-semibold text-[#0f1c2e] mt-0.5">
-              {row.site_name} · {row.reporting_period}
-            </h3>
-            <div className="flex flex-wrap gap-2 mt-2 text-[12px]">
-              <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: TIER_TONE[row.shortfall_tier].bg, color: TIER_TONE[row.shortfall_tier].fg }}>
-                {TIER_TONE[row.shortfall_tier].label}
-              </span>
-              <span className="px-2 py-0.5 rounded-full" style={{ background: STATE_TONE[cs].bg, color: STATE_TONE[cs].fg }}>
-                {STATE_TONE[cs].label}
-              </span>
-              {row.is_reportable && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">Regulator reportable</span>
-              )}
-            </div>
-          </div>
-          <button type="button" onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">✕</button>
-        </div>
-
-        <div className="p-5 space-y-4 text-[13px]">
-          <div className="grid grid-cols-2 gap-4">
-            <Pair label="Asset owner" value={row.owner_party_name} />
-            <Pair label="O&M contractor" value={row.contractor_party_name} />
-            <Pair label="Technology" value={`${row.technology}${row.capacity_mw != null ? ` · ${row.capacity_mw} MW` : ''}`} />
-            {row.site_province && <Pair label="Province" value={row.site_province} />}
-            <Pair label="Guaranteed" value={fmtPct(row.guaranteed_availability_pct)} />
-            {row.bonus_threshold_pct != null && <Pair label="Bonus threshold" value={fmtPct(row.bonus_threshold_pct)} />}
-            {row.measured_availability_pct != null && <Pair label="Measured" value={fmtPct(row.measured_availability_pct)} />}
-            {row.adjusted_availability_pct != null && <Pair label="Adjusted" value={fmtPct(row.adjusted_availability_pct)} />}
-            {row.excused_downtime_hours != null && <Pair label="Excused downtime" value={`${row.excused_downtime_hours} h`} />}
-            {row.shortfall_pp != null && <Pair label="Shortfall" value={`${row.shortfall_pp.toFixed(2)} pp`} />}
-            {row.contract_ref && <Pair label="O&M contract" value={row.contract_ref} />}
-          </div>
-
-          {row.measurement_basis && <Pair label="Measurement basis" value={row.measurement_basis} />}
-          {row.adjustment_basis && <Pair label="Adjustment basis" value={row.adjustment_basis} />}
-          {row.shortfall_basis && <Pair label="Shortfall basis" value={row.shortfall_basis} />}
-          {row.ld_basis && <Pair label="LD basis" value={row.ld_basis} />}
-          {row.cure_plan && <Pair label="Cure plan" value={row.cure_plan} />}
-          {row.settlement_basis && <Pair label="Settlement basis" value={row.settlement_basis} />}
-          {row.dispute_basis && <Pair label="Dispute basis" value={row.dispute_basis} />}
-          {row.notes && <Pair label="Notes" value={row.notes} />}
-
-          <div className="grid grid-cols-2 gap-4">
-            {row.ld_rate_zar_per_pp != null && <Pair label="LD rate / pp" value={fmtZar(row.ld_rate_zar_per_pp)} />}
-            {row.ld_cap_zar != null && <Pair label="LD cap" value={fmtZar(row.ld_cap_zar)} />}
-            {row.ld_assessed_zar != null && <Pair label="LD assessed" value={fmtZar(row.ld_assessed_zar)} />}
-            {row.bonus_zar != null && <Pair label="Bonus" value={fmtZar(row.bonus_zar)} />}
-            {row.settlement_zar != null && <Pair label="Settlement" value={fmtZar(row.settlement_zar)} />}
-            {row.dispute_round > 0 && <Pair label="Dispute round" value={String(row.dispute_round)} />}
-          </div>
-
-          {row.source_wave && (
-            <Pair label="Provenance" value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}${row.source_event ? ` (${row.source_event})` : ''}`} />
-          )}
-
-          {row.sla_deadline_at && !row.is_terminal && (
-            <Pair label="Next SLA" value={`${new Date(row.sla_deadline_at).toLocaleString()} (${fmtMin(row.minutes_until_sla)})${row.escalation_level > 0 ? ` · ${row.escalation_level} breach(es)` : ''}`} />
-          )}
-
-          {transitionable && (
-            <div className="border-t border-[#eef2f6] pt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Actions</div>
-              <div className="flex flex-wrap gap-2">
-                {cs === 'period_open' && (
-                  <ActionBtn label="Submit measurement (contractor)" onClick={() => {
-                    const m = window.prompt('Measured availability (%):');
-                    const ref = window.prompt('Measurement reference (optional):') ?? undefined;
-                    void doAction('submit-measurement', {
-                      measured_availability_pct: m != null && m !== '' ? Number(m) : undefined,
-                      measurement_ref: ref,
-                    });
-                  }} />
-                )}
-                {cs === 'measurement_submitted' && (
-                  <ActionBtn label="Open adjustment review" onClick={() => {
-                    const h = window.prompt('Excused downtime (hours, optional):') ?? undefined;
-                    const adj = window.prompt('Adjusted availability (%, optional):') ?? undefined;
-                    void doAction('open-adjustment-review', {
-                      excused_downtime_hours: h ? Number(h) : undefined,
-                      adjusted_availability_pct: adj ? Number(adj) : undefined,
-                    });
-                  }} />
-                )}
-                {cs === 'adjustment_review' && (
-                  <ActionBtn label="Reconcile" onClick={() => {
-                    const adj = window.prompt('Adjusted availability (%, optional):') ?? undefined;
-                    const pp = window.prompt('Shortfall (pp, optional — guaranteed minus adjusted):') ?? undefined;
-                    void doAction('reconcile', {
-                      adjusted_availability_pct: adj ? Number(adj) : undefined,
-                      shortfall_pp: pp ? Number(pp) : undefined,
-                    });
-                  }} />
-                )}
-                {cs === 'reconciled' && (
-                  <ActionBtn label="Confirm meets guarantee" tone="good" onClick={() => {
-                    const b = window.prompt('Availability bonus (ZAR, optional):') ?? undefined;
-                    void doAction('confirm-meets-guarantee', b ? { bonus_zar: Number(b) } : {});
-                  }} />
-                )}
-                {cs === 'reconciled' && (
-                  <ActionBtn label="Flag shortfall" tone="bad" onClick={() => {
-                    const pp = window.prompt('Shortfall (pp):') ?? undefined;
-                    const basis = window.prompt('Shortfall basis:') ?? undefined;
-                    void doAction('flag-shortfall', { shortfall_pp: pp ? Number(pp) : undefined, shortfall_basis: basis });
-                  }} />
-                )}
-                {cs === 'shortfall_flagged' && (
-                  <ActionBtn label="Assess LD" tone="bad" onClick={() => {
-                    const amt = window.prompt('Liquidated damages assessed (ZAR):') ?? undefined;
-                    const basis = window.prompt('LD basis:') ?? undefined;
-                    void doAction('assess-ld', { ld_assessed_zar: amt ? Number(amt) : undefined, ld_basis: basis });
-                  }} />
-                )}
-                {cs === 'ld_assessed' && (
-                  <ActionBtn label="Agree cure plan (contractor)" onClick={() => {
-                    const plan = window.prompt('Cure plan:') ?? undefined;
-                    void doAction('agree-cure-plan', plan ? { cure_plan: plan } : {});
-                  }} />
-                )}
-                {(cs === 'meets_guarantee' || cs === 'ld_assessed' || cs === 'cure_period') && (
-                  <ActionBtn label="Settle" tone="good" onClick={() => {
-                    const amt = window.prompt('Net settlement (ZAR, optional):') ?? undefined;
-                    const basis = window.prompt('Settlement basis (optional):') ?? undefined;
-                    void doAction('settle', { settlement_zar: amt ? Number(amt) : undefined, settlement_basis: basis });
-                  }} />
-                )}
-                {(cs === 'ld_assessed' || cs === 'cure_period') && (
-                  <ActionBtn label="Waive LD" onClick={() => {
-                    const basis = window.prompt('Waiver basis:') ?? undefined;
-                    const rc = window.prompt('Reason code (optional):') ?? undefined;
-                    void doAction('waive-ld', { settlement_basis: basis, reason_code: rc });
-                  }} />
-                )}
-                {(cs === 'shortfall_flagged' || cs === 'ld_assessed' || cs === 'cure_period') && (
-                  <ActionBtn label="Raise dispute (contractor)" tone="bad" onClick={() => {
-                    const basis = window.prompt('Dispute basis:') ?? undefined;
-                    void doAction('raise-dispute', basis ? { dispute_basis: basis } : {});
-                  }} />
-                )}
-                {cs === 'disputed' && (
-                  <ActionBtn label="Resolve dispute" onClick={() => {
-                    const basis = window.prompt('Resolution basis:') ?? undefined;
-                    const amt = window.prompt('Settlement after resolution (ZAR, optional):') ?? undefined;
-                    void doAction('resolve-dispute', { dispute_basis: basis, settlement_zar: amt ? Number(amt) : undefined });
-                  }} />
-                )}
-                {(cs === 'period_open' || cs === 'measurement_submitted' || cs === 'adjustment_review') && (
-                  <ActionBtn label="Withdraw" onClick={() => {
-                    const rc = window.prompt('Reason code (optional):') ?? undefined;
-                    void doAction('withdraw', rc ? { reason_code: rc } : {});
-                  }} />
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="border-t border-[#eef2f6] pt-4">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Timeline</div>
-            <div className="space-y-2">
-              {events.length === 0 ? (
-                <div className="text-[12px] text-[#6b7685]">No events yet.</div>
-              ) : events.map((e) => {
-                const partyTone = PARTY_TONE[e.actor_party ?? 'system'] ?? PARTY_TONE.system;
-                return (
-                  <div key={e.id} className="flex gap-3 text-[12px] border-l-2 border-[#e5ebf2] pl-3 py-1">
-                    <span className="font-mono text-[11px] text-[#6b7685] whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
-                    <div>
-                      <span className="font-semibold text-[#0f1c2e]">{e.event_type}</span>
-                      {e.actor_party && (
-                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-medium uppercase" style={{ background: partyTone.bg, color: partyTone.fg }}>
-                          {e.actor_party}
-                        </span>
-                      )}
-                      {e.from_status && e.to_status && e.from_status !== e.to_status && (
-                        <span className="text-[#6b7685]"> · {e.from_status} → {e.to_status}</span>
-                      )}
-                      {e.notes && <div className="text-[#4a5568] mt-0.5">{e.notes}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+      {/* Chain card list */}
+      <div className="space-y-2">
+        {loading ? (
+          <div className="py-10 text-center text-[12px]" style={{ color: TX3 }}>Loading…</div>
+        ) : filtered.length === 0 ? (
+          <div className="py-10 text-center text-[12px]" style={{ color: TX3 }}>No guarantees match the current filter.</div>
+        ) : filtered.map((row) => (
+          <ChainCard
+            key={row.id}
+            item={row as unknown as ChainCardItem}
+            allStates={ALL_STATES}
+            branchStates={BRANCH_STATES}
+            title={`${row.site_name} · ${row.reporting_period}`}
+            meta={`${row.contractor_party_name} · ${row.shortfall_tier.replace(/_/g, ' ')} · ${fmtPct(row.guaranteed_availability_pct)} guaranteed / ${fmtPct(row.adjusted_availability_pct)} adjusted`}
+            actions={getActions(row)}
+            onAction={(key, values) => handleAction(row.id, key, values)}
+            onExpand={handleExpand}
+            events={expandedEvents[row.id]}
+            detail={renderDetail(row)}
+          />
+        ))}
       </div>
     </div>
   );
 }
 
-function Pair({ label, value }: { label: string; value: string }) {
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
+  return (
+    <div
+      className="rounded-lg p-3"
+      style={{ background: BG1, border: `1px solid ${BORDER}` }}
+    >
+      <div className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-semibold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
+    </div>
+  );
+}
+
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[#0f1c2e] mt-0.5">{value}</div>
+      <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[12px] mt-0.5" style={{ color: TX1 }}>{value}</div>
     </div>
   );
 }
 
-function ActionBtn({ label, onClick, tone = 'neutral' }: { label: string; onClick: () => void; tone?: 'neutral' | 'good' | 'bad' }) {
-  const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#c2873a]';
-  return (
-    <button type="button" onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
-      {label}
-    </button>
-  );
-}
+export default AvailabilityGuaranteeChainTab;

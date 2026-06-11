@@ -12,6 +12,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { type FieldSpec } from '../launch/WorkstationShell';
 
 type ChainStatus =
   | 'accrual_open' | 'year_end' | 'statement_issued'
@@ -22,6 +23,7 @@ type ChainStatus =
 type Tier = 'catastrophic' | 'major' | 'moderate' | 'minor';
 
 interface TopRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   ppa_contract_id: string | null;
@@ -97,10 +99,10 @@ interface TopEvent {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   accrual_open:       { bg: '#e3e7ec', fg: '#557',    label: 'Accrual open' },
-  year_end:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'Year end' },
+  year_end:           { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Year end' },
   statement_issued:   { bg: '#fff4d6', fg: '#a06200', label: 'Statement' },
   evidence_required:  { bg: '#fbe7d0', fg: '#7a4500', label: 'Evidence req' },
-  evidence_submitted: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Evidence sub' },
+  evidence_submitted: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Evidence sub' },
   quantum_proposed:   { bg: '#fff4d6', fg: '#a06200', label: 'Quantum prop' },
   quantum_agreed:     { bg: '#daf5e2', fg: '#1f6b3a', label: 'Quantum agreed' },
   settled:            { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Settled' },
@@ -111,7 +113,7 @@ const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }>
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
   catastrophic: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Catastrophic' },
   major:        { bg: '#fff4d6', fg: '#a06200', label: 'Major' },
-  moderate:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Moderate' },
+  moderate:     { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Moderate' },
   minor:        { bg: '#daf5e2', fg: '#1f6b3a', label: 'Minor' },
 };
 
@@ -140,6 +142,38 @@ type ActionKind =
   | 'close-year' | 'issue-statement' | 'request-evidence'
   | 'submit-evidence' | 'propose-quantum' | 'accept-quantum'
   | 'settle' | 'dispute' | 'waive';
+
+const ACTION_FIELDS: Partial<Record<ActionKind, FieldSpec[]>> = {
+  'submit-evidence': [
+    { key: 'evidence_findings', label: 'Evidence findings (FM claim summary / curtailment chronology)', type: 'textarea', required: true },
+    { key: 'evidence_ref', label: 'Evidence pack reference (eg "EVID-PACK-KOU-2025-V1")', type: 'text' },
+  ],
+  'propose-quantum': [
+    { key: 'top_amount_proposed', label: 'Quantum proposed (ZAR, eg "165400000")', type: 'text', required: true },
+    { key: 'quantum_proposal_ref', label: 'Quantum proposal reference (eg "QP-KOU-2025-V1")', type: 'text' },
+  ],
+  'accept-quantum': [
+    { key: 'top_amount_agreed', label: 'Quantum agreed (ZAR)', type: 'text', required: true },
+    { key: 'quantum_acceptance_ref', label: 'Acceptance reference (eg "QA-KOU-2025-FINAL")', type: 'text' },
+  ],
+  'settle': [
+    { key: 'top_amount_settled', label: 'Amount settled (ZAR)', type: 'text', required: true },
+    { key: 'settlement_ref', label: 'Settlement reference (eg "STL-KOU-2025-09-30")', type: 'text' },
+    { key: 'nersa_top_return_ref', label: 'NERSA TOP annual return reference (optional)', type: 'text' },
+  ],
+  'dispute': [
+    { key: 'dispute_panel_ref', label: 'NERSA Section 34 panel reference (eg "NERSA-S34-PANEL-2026-0011")', type: 'text', required: true },
+    { key: 'section34_filing_ref', label: 'Section 34 filing reference (eg "NERSA-S34-FILING-2026-0011")', type: 'text' },
+    { key: 'reason_code', label: 'Reason code (eg "FM_REJECTED", "QUANTUM_DISPUTED")', type: 'text' },
+    { key: 'rod_notes', label: 'ROD notes (dispute rationale)', type: 'textarea', required: true },
+  ],
+  'waive': [
+    { key: 'waiver_basis', label: 'Waiver basis (FM coverage, regulator direction, etc.)', type: 'textarea', required: true },
+    { key: 'waiver_minute_ref', label: 'Board waiver minute reference (eg "BOARD-WAIVER-DEA-2026-002")', type: 'text' },
+    { key: 'reason_code', label: 'Reason code (eg "NDMA_FM", "GRID_FAULT_FM")', type: 'text' },
+    { key: 'rod_notes', label: 'ROD notes (waiver rationale)', type: 'textarea', required: true },
+  ],
+};
 
 const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
   accrual_open:       'close-year',
@@ -286,65 +320,17 @@ export function TakeOrPayChainTab() {
     total_shortfall_mwh: 0, total_proposed: 0, total_agreed: 0, total_settled: 0,
   };
 
-  const act = useCallback(async (action: ActionKind, row: TopRow) => {
+  const act = useCallback(async (action: ActionKind, row: TopRow, values: Record<string, string> = {}) => {
     try {
-      const body: Record<string, unknown> = {};
-      if (action === 'submit-evidence') {
-        const findings = window.prompt('Evidence findings (FM claim summary / curtailment chronology):');
-        if (!findings) return;
-        body.evidence_findings = findings;
-        const ref = window.prompt('Evidence pack reference (eg "EVID-PACK-KOU-2025-V1"):');
-        if (ref) body.evidence_ref = ref;
-      } else if (action === 'propose-quantum') {
-        const amt = window.prompt('Quantum proposed (ZAR, eg "165400000"):');
-        if (!amt) return;
-        const n = Number(amt);
-        if (!Number.isFinite(n)) return;
-        body.top_amount_proposed = n;
-        const ref = window.prompt('Quantum proposal reference (eg "QP-KOU-2025-V1"):');
-        if (ref) body.quantum_proposal_ref = ref;
-      } else if (action === 'accept-quantum') {
-        const amt = window.prompt('Quantum agreed (ZAR, eg "165400000"):',
-          String(row.top_amount_proposed ?? ''));
-        if (!amt) return;
-        const n = Number(amt);
-        if (!Number.isFinite(n)) return;
-        body.top_amount_agreed = n;
-        const ref = window.prompt('Acceptance reference (eg "QA-KOU-2025-FINAL"):');
-        if (ref) body.quantum_acceptance_ref = ref;
-      } else if (action === 'settle') {
-        const amt = window.prompt('Amount settled (ZAR):',
-          String(row.top_amount_agreed ?? row.top_amount_proposed ?? ''));
-        if (!amt) return;
-        const n = Number(amt);
-        if (!Number.isFinite(n)) return;
-        body.top_amount_settled = n;
-        const ref = window.prompt('Settlement reference (eg "STL-KOU-2025-09-30"):');
-        if (ref) body.settlement_ref = ref;
-        const rret = window.prompt('NERSA TOP annual return reference (optional):');
-        if (rret) body.nersa_top_return_ref = rret;
-      } else if (action === 'dispute') {
-        const panel = window.prompt('NERSA Section 34 panel reference (eg "NERSA-S34-PANEL-2026-0011"):');
-        if (!panel) return;
-        body.dispute_panel_ref = panel;
-        const filing = window.prompt('Section 34 filing reference (eg "NERSA-S34-FILING-2026-0011"):');
-        if (filing) body.section34_filing_ref = filing;
-        const reason = window.prompt('Reason code (eg "FM_REJECTED", "QUANTUM_DISPUTED"):');
-        if (reason) body.reason_code = reason;
-        const rod = window.prompt('ROD notes (dispute rationale):');
-        if (!rod) return;
-        body.rod_notes = rod;
-      } else if (action === 'waive') {
-        const basis = window.prompt('Waiver basis (FM coverage, regulator direction, etc.):');
-        if (!basis) return;
-        body.waiver_basis = basis;
-        const min = window.prompt('Board waiver minute reference (eg "BOARD-WAIVER-DEA-2026-002"):');
-        if (min) body.waiver_minute_ref = min;
-        const reason = window.prompt('Reason code (eg "NDMA_FM", "GRID_FAULT_FM"):');
-        if (reason) body.reason_code = reason;
-        const rod = window.prompt('ROD notes (waiver rationale):');
-        if (!rod) return;
-        body.rod_notes = rod;
+      const body: Record<string, unknown> = { ...values };
+      if (action === 'propose-quantum' || action === 'accept-quantum' || action === 'settle') {
+        const amtKey = action === 'propose-quantum' ? 'top_amount_proposed'
+          : action === 'accept-quantum' ? 'top_amount_agreed'
+          : 'top_amount_settled';
+        if (values[amtKey] !== undefined) {
+          const n = Number(values[amtKey]);
+          if (Number.isFinite(n)) body[amtKey] = n;
+        }
       }
       await api.post(`/take-or-pay/chain/${row.id}/${action}`, body);
       await load();
@@ -416,14 +402,14 @@ export function TakeOrPayChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Year</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">IPP / Offtaker</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Shortfall</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Proposed</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Case #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Year</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>IPP / Offtaker</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Shortfall</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Proposed</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -437,8 +423,8 @@ export function TakeOrPayChainTab() {
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
                     <td className="px-3 py-2 font-mono text-[#0c2a4d]">{r.case_number}</td>
-                    <td className="px-3 py-2 tabular-nums text-[#1a3a5c]">{r.reconciliation_year}</td>
-                    <td className="px-3 py-2 text-[#1a3a5c] max-w-[260px]">
+                    <td className="px-3 py-2 tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>{r.reconciliation_year}</td>
+                    <td className="px-3 py-2 max-w-[260px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       <div className="font-medium truncate" title={r.ipp_party_name}>{r.ipp_party_name}</div>
                       <div className="text-[10px] text-[#6b7685] truncate" title={r.offtaker_party_name}>→ {r.offtaker_party_name}</div>
                     </td>
@@ -472,7 +458,7 @@ export function TakeOrPayChainTab() {
       )}
 
       {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={(action, row, values) => void act(action, row, values)} />
       )}
     </div>
   );
@@ -494,11 +480,30 @@ function Drawer({
   row: TopRow;
   events: TopEvent[];
   onClose: () => void;
-  onAct: (action: ActionKind, row: TopRow) => void;
+  onAct: (action: ActionKind, row: TopRow, values: Record<string, string>) => void;
 }) {
   const nextAction = ACTION_FOR_STATE[row.chain_status];
   const canDispute = DISPUTABLE.includes(row.chain_status);
   const canWaive = WAIVABLE.includes(row.chain_status);
+  const [pendingAction, setPendingAction] = useState<ActionKind | null>(null);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+
+  const handleActionClick = (action: ActionKind) => {
+    const fields = ACTION_FIELDS[action];
+    if (fields && fields.length > 0) {
+      setPendingAction(action);
+      setFieldValues({});
+    } else {
+      onAct(action, row, {});
+    }
+  };
+
+  const handleModalSubmit = () => {
+    if (!pendingAction) return;
+    onAct(pendingAction, row, fieldValues);
+    setPendingAction(null);
+    setFieldValues({});
+  };
 
   return (
     <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
@@ -557,21 +562,21 @@ function Drawer({
             <Pair label="Settled at"          value={fmtDate(row.settled_at)} />
           </div>
           {row.evidence_findings && (
-            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Evidence findings</div>
-              {row.evidence_findings}
+              {row.evidence_findings as string}
             </div>
           )}
           {row.waiver_basis && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Waiver basis</div>
-              {row.waiver_basis}
+              {row.waiver_basis as string}
             </div>
           )}
           {row.rod_notes && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">ROD notes</div>
-              {row.rod_notes}
+              {row.rod_notes as string}
             </div>
           )}
         </section>
@@ -582,7 +587,7 @@ function Drawer({
             <div className="flex flex-wrap gap-2">
               {nextAction && (
                 <button type="button"
-                  onClick={() => onAct(nextAction, row)}
+                  onClick={() => handleActionClick(nextAction)}
                   className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
                 >
                   {ACTION_LABEL[nextAction]}
@@ -590,7 +595,7 @@ function Drawer({
               )}
               {canDispute && (
                 <button type="button"
-                  onClick={() => onAct('dispute', row)}
+                  onClick={() => handleActionClick('dispute')}
                   className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
                 >
                   {ACTION_LABEL['dispute']}
@@ -598,7 +603,7 @@ function Drawer({
               )}
               {canWaive && (
                 <button type="button"
-                  onClick={() => onAct('waive', row)}
+                  onClick={() => handleActionClick('waive')}
                   className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#3a1a5c] hover:bg-[#f3f5f9]"
                 >
                   {ACTION_LABEL['waive']}
@@ -606,6 +611,48 @@ function Drawer({
               )}
             </div>
           </section>
+        )}
+
+        {pendingAction && (
+          <div className="fixed inset-0 z-40 bg-black/50 flex items-center justify-center" onClick={() => setPendingAction(null)}>
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 p-5" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-4 text-base font-semibold text-[#0c2a4d]">{ACTION_LABEL[pendingAction]}</div>
+              <div className="space-y-3">
+                {(ACTION_FIELDS[pendingAction] ?? []).map((f) => (
+                  <div key={f.key}>
+                    <label className="block text-[11px] uppercase tracking-wider text-[#4a5568] mb-1">
+                      {f.label}{f.required && <span className="text-red-600 ml-0.5">*</span>}
+                    </label>
+                    {f.type === 'textarea' ? (
+                      <textarea
+                        className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[12px] text-[#0c2a4d] resize-none"
+                        rows={3}
+                        value={fieldValues[f.key] ?? ''}
+                        onChange={(e) => setFieldValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[12px] text-[#0c2a4d]"
+                        value={fieldValues[f.key] ?? ''}
+                        onChange={(e) => setFieldValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex justify-end gap-2">
+                <button type="button" onClick={() => setPendingAction(null)}
+                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] text-[#4a5568] hover:bg-[#f3f5f9]">
+                  Cancel
+                </button>
+                <button type="button" onClick={handleModalSubmit}
+                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#b07830]">
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         <section className="px-5 py-4">
@@ -625,7 +672,7 @@ function Drawer({
                       {e.from_status ?? '—'} → {e.to_status ?? '—'}{e.actor_party ? ` · by ${e.actor_party}` : ''}
                     </div>
                   )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

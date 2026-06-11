@@ -180,7 +180,7 @@ export function EsumsOmOpportunities() {
                       )}
                     </div>
                     <details className="mt-2 text-[11px]">
-                      <summary className="cursor-pointer text-[#3b82c4] hover:underline">
+                      <summary className="cursor-pointer text-[oklch(0.46_0.16_55)] hover:underline">
                         Evidence ({o.evidence.length})
                       </summary>
                       <ul className="mt-1 pl-4 list-disc text-[#3d4756] space-y-0.5">

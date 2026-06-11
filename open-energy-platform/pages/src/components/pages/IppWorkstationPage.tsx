@@ -84,6 +84,7 @@ const IppSubmittalChainTab = React.lazy(() => import('../ipp/IppSubmittalChainTa
 const IppRfiChainTab = React.lazy(() => import('../ipp/IppRfiChainTab').then(m => ({ default: m.IppRfiChainTab })));
 const IppChangeOrderChainTab = React.lazy(() => import('../ipp/IppChangeOrderChainTab').then(m => ({ default: m.IppChangeOrderChainTab })));
 const TakeOrPayChainTab = React.lazy(() => import('../take-or-pay/TakeOrPayChainTab').then(m => ({ default: m.TakeOrPayChainTab })));
+const DrawdownChainTab = React.lazy(() => import('../lender/DrawdownChainTab').then(m => ({ default: m.DrawdownChainTab })));
 const ScadaConnectorTab = React.lazy(() => import('../scadaConnector/ScadaConnectorTab').then(m => ({ default: m.ScadaConnectorTab })));
 const MqttOpcuaConnectorTab = React.lazy(() => import('../mqttOpcuaConnector/MqttOpcuaConnectorTab').then(m => ({ default: m.MqttOpcuaConnectorTab })));
 const AnomalyDetectionMlTab = React.lazy(() => import('../anomalyDetectionMl/AnomalyDetectionMlTab').then(m => ({ default: m.AnomalyDetectionMlTab })));
@@ -1209,7 +1210,7 @@ export function IppWorkstationPage() {
   const kpis = useWorkstationKpis('ipp_developer');
   const projectsPanel = useWorkstationPanel('Active projects', '/projects', (r) => ({
     id: r.id,
-    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[#dbecfb] text-[#1a3a5c]">{r.project_type || r.energy_type || '—'}</span>,
+    lead: <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)]">{r.project_type || r.energy_type || '—'}</span>,
     text: <span>{r.project_name || r.name} · {r.capacity_mw != null ? `${Number(r.capacity_mw).toFixed(1)} MW` : ''}</span>,
     meta: <span className="font-mono text-[10px] text-[#6b7685]">{(r.lifecycle_stage || r.status || '').replace(/_/g, ' ')}</span>,
   }), 'No active projects.');
@@ -1230,135 +1231,135 @@ export function IppWorkstationPage() {
         { key: 'projects', label: 'My projects', group: 'Project controls', body: () => <ProjectsTab /> },
         { key: 'milestones', label: 'Milestones', group: 'Project controls', body: ({ onRefresh }) => <MilestonesTab onRefresh={onRefresh} /> },
         { key: 'schedule', label: 'Schedule pulse', group: 'Project controls', body: () => <SchedulePulseTab /> },
-        { key: 'wbs_schedule', label: 'WBS & Gantt', group: 'Project controls', chainKey: 'ipp_schedule', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppScheduleChainTab /></React.Suspense> },
-        { key: 'cost-evm', label: 'Cost & EVM', group: 'Project controls', chainKey: 'ipp_evm', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppEvmChainTab /></React.Suspense> },
-        { key: 'document-control', label: 'Document control', group: 'Documents', chainKey: 'ipp_doc_control', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppDocumentControlChainTab /></React.Suspense> },
-        { key: 'submittals', label: 'Submittals', group: 'Documents', chainKey: 'ipp_submittal', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppSubmittalChainTab /></React.Suspense> },
-        { key: 'rfis', label: 'RFIs', group: 'Documents', chainKey: 'ipp_rfi', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppRfiChainTab /></React.Suspense> },
-        { key: 'change-orders', label: 'Change orders', group: 'Documents', chainKey: 'project_change_order', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppChangeOrderChainTab /></React.Suspense> },
-        { key: 'technical-queries', label: 'Technical queries', group: 'Documents', chainKey: 'ipp_tq', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppTqTab /></React.Suspense> },
-        { key: 'site-instructions', label: 'Site instructions (W144)', group: 'Documents', chainKey: 'site_instruction', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppSiteInstructionTab /></React.Suspense> },
-        { key: 'dlp-defects', label: 'DLP defects (W145)', group: 'Documents', chainKey: 'dlp_defect', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppDlpDefectTab /></React.Suspense> },
-        { key: 'variation-orders', label: 'Variation orders (W146)', group: 'Documents', chainKey: 'variation_order', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppVariationOrderTab /></React.Suspense> },
-        { key: 'payment-certs', label: 'Payment certs (W147)', group: 'Documents', chainKey: 'ipp_payment_cert', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppPaymentCertTab /></React.Suspense> },
-        { key: 'final-completion', label: 'Final completion (W148)', group: 'Documents', chainKey: 'ipp_final_completion', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppFinalCompletionTab /></React.Suspense> },
-        { key: 'om-handover', label: 'O&M handover (W149)', group: 'Documents', chainKey: 'ipp_om_handover', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppOmHandoverTab /></React.Suspense> },
-        { key: 'land-register', label: 'Land register (W150)', group: 'Documents', chainKey: 'ipp_land_register', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppLandRegisterTab /></React.Suspense> },
-        { key: 'env-closure', label: 'Env closure (W151)', group: 'Documents', chainKey: 'ipp_env_closure', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppEnvClosureTab /></React.Suspense> },
-        { key: 'commissioning-test', label: 'Commissioning test (W152)', group: 'Documents', chainKey: 'ipp_mc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppCommissioningTestTab /></React.Suspense> },
-        { key: 'ie-cert', label: 'IE certifications (W153)', group: 'Documents', chainKey: 'ipp_ie_cert', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppIeCertTab /></React.Suspense> },
-        { key: 'tpa-wheeling', label: 'TPA wheeling (W154)', group: 'Documents', chainKey: 'ipp_tpa', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppTpaTab /></React.Suspense> },
-        { key: 'ppa-variation', label: 'PPA variations (W155)', group: 'Documents', chainKey: 'ipp_ppavar', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppPpaVariationTab /></React.Suspense> },
-        { key: 'change-of-control', label: 'Change of control (W156)', group: 'Documents', chainKey: 'ipp_coc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppChangeOfControlTab /></React.Suspense> },
-        { key: 'refinancing', label: 'Refinancing (W157)', group: 'Documents', chainKey: 'ipp_refi', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppRefinancingTab /></React.Suspense> },
-        { key: 'force-majeure', label: 'Force majeure (W158)', group: 'Documents', chainKey: 'ipp_fm', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppFmTab /></React.Suspense> },
-        { key: 'annual-report', label: 'Annual compliance report (W159)', group: 'Documents', chainKey: 'ipp_acr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppAnnualReportTab /></React.Suspense> },
-        { key: 'contractor-default', label: 'Contractor default (W160)', group: 'Documents', chainKey: 'ipp_cd', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppContractorDefaultTab /></React.Suspense> },
-        { key: 'eco-report', label: 'ECO audit report (W161)', group: 'Documents', chainKey: 'ipp_eco', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppEcoReportTab /></React.Suspense> },
-        { key: 'lta-certificate', label: 'LTA drawdown cert (W162)', group: 'Documents', chainKey: 'ipp_lta', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppLtaCertificateTab /></React.Suspense> },
-        { key: 'land-amendment', label: 'Land & servitude amendment (W163)', group: 'Documents', chainKey: 'ipp_lam', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppLandAmendmentTab /></React.Suspense> },
-        { key: 'community-trust', label: 'Community trust disbursement (W164)', group: 'Documents', chainKey: 'ipp_ctr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppCommunityTrustTab /></React.Suspense> },
-        { key: 'grid-compliance', label: 'Grid code compliance (W165)', group: 'Technical', chainKey: 'ipp_gcc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppGridComplianceTab /></React.Suspense> },
-        { key: 'ccc', label: 'Connection cost contribution (W166)', group: 'Technical', chainKey: 'ipp_ccc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppCccTab /></React.Suspense> },
-        { key: 'om-contract', label: 'O&M contract renewal (W167)', group: 'Technical', chainKey: 'ipp_omc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppOmContractTab /></React.Suspense> },
-        { key: 'bfs', label: 'BFS re-certification (W168)', group: 'Technical', chainKey: 'ipp_bfs', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppBfsTab /></React.Suspense> },
-        { key: 'ea-amendment', label: 'EA amendment & compliance (W169)', group: 'Environmental', chainKey: 'ipp_eam', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppEaAmendmentTab /></React.Suspense> },
-        { key: 'wul', label: 'Water use licence (W170)', group: 'Environmental', chainKey: 'ipp_wul', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppWulTab /></React.Suspense> },
-        { key: 'hra', label: 'Heritage resources assessment (W171)', group: 'Environmental', chainKey: 'ipp_hra', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppHraTab /></React.Suspense> },
-        { key: 'ael', label: 'Atmospheric emission licence (W172)', group: 'Environmental', chainKey: 'ipp_ael', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppAelTab /></React.Suspense> },
-        { key: 'lc-report', label: 'Local content & SED compliance (W174)', group: 'Risk', chainKey: 'ipp_lcr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppLcReportTab /></React.Suspense> },
-        { key: 'milestone-cert', label: 'Milestone certification (W175)', group: 'Risk', chainKey: 'ipp_mc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppMilestoneCertTab /></React.Suspense> },
-        { key: 'esmr', label: 'DFI E&S monitoring report (W176)', group: 'Risk', chainKey: 'ipp_esmr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppEsmrTab /></React.Suspense> },
-        { key: 'iear', label: 'IE annual performance review (W177)', group: 'Risk', chainKey: 'ipp_iear', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppIearTab /></React.Suspense> },
-        { key: 'insr', label: 'Insurance renewal (W178)', group: 'Risk', chainKey: 'ipp_insr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppInsrTab /></React.Suspense> },
-        { key: 'perf-security', label: 'Performance security (W179)', group: 'Risk', chainKey: 'ipp_psec', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppPerfSecurityTab /></React.Suspense> },
-        { key: 'cep-compliance', label: 'Community equity participation (W180)', group: 'Risk', chainKey: 'ipp_cep', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppCepComplianceTab /></React.Suspense> },
-        { key: 'sed-compliance', label: 'SED annual spend compliance (W181)', group: 'Risk', chainKey: 'ipp_sed', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppSedComplianceTab /></React.Suspense> },
+        { key: 'wbs_schedule', label: 'WBS & Gantt', group: 'Project controls', chainKey: 'ipp_schedule', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppScheduleChainTab /></React.Suspense> },
+        { key: 'cost-evm', label: 'Cost & EVM', group: 'Project controls', chainKey: 'ipp_evm', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEvmChainTab /></React.Suspense> },
+        { key: 'document-control', label: 'Document control', group: 'Documents', chainKey: 'ipp_doc_control', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppDocumentControlChainTab /></React.Suspense> },
+        { key: 'submittals', label: 'Submittals', group: 'Documents', chainKey: 'ipp_submittal', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppSubmittalChainTab /></React.Suspense> },
+        { key: 'rfis', label: 'RFIs', group: 'Documents', chainKey: 'ipp_rfi', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppRfiChainTab /></React.Suspense> },
+        { key: 'change-orders', label: 'Change orders', group: 'Documents', chainKey: 'project_change_order', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppChangeOrderChainTab /></React.Suspense> },
+        { key: 'technical-queries', label: 'Technical queries', group: 'Documents', chainKey: 'ipp_tq', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppTqTab /></React.Suspense> },
+        { key: 'site-instructions', label: 'Site instructions (W144)', group: 'Documents', chainKey: 'site_instruction', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppSiteInstructionTab /></React.Suspense> },
+        { key: 'dlp-defects', label: 'DLP defects (W145)', group: 'Documents', chainKey: 'dlp_defect', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppDlpDefectTab /></React.Suspense> },
+        { key: 'variation-orders', label: 'Variation orders (W146)', group: 'Documents', chainKey: 'variation_order', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppVariationOrderTab /></React.Suspense> },
+        { key: 'payment-certs', label: 'Payment certs (W147)', group: 'Documents', chainKey: 'ipp_payment_cert', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppPaymentCertTab /></React.Suspense> },
+        { key: 'final-completion', label: 'Final completion (W148)', group: 'Documents', chainKey: 'ipp_final_completion', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppFinalCompletionTab /></React.Suspense> },
+        { key: 'om-handover', label: 'O&M handover (W149)', group: 'Documents', chainKey: 'ipp_om_handover', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppOmHandoverTab /></React.Suspense> },
+        { key: 'land-register', label: 'Land register (W150)', group: 'Documents', chainKey: 'ipp_land_register', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLandRegisterTab /></React.Suspense> },
+        { key: 'env-closure', label: 'Env closure (W151)', group: 'Documents', chainKey: 'ipp_env_closure', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEnvClosureTab /></React.Suspense> },
+        { key: 'commissioning-test', label: 'Commissioning test (W152)', group: 'Documents', chainKey: 'ipp_mc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppCommissioningTestTab /></React.Suspense> },
+        { key: 'ie-cert', label: 'IE certifications (W153)', group: 'Documents', chainKey: 'ipp_ie_cert', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppIeCertTab /></React.Suspense> },
+        { key: 'tpa-wheeling', label: 'TPA wheeling (W154)', group: 'Documents', chainKey: 'ipp_tpa', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppTpaTab /></React.Suspense> },
+        { key: 'ppa-variation', label: 'PPA variations (W155)', group: 'Documents', chainKey: 'ipp_ppavar', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppPpaVariationTab /></React.Suspense> },
+        { key: 'change-of-control', label: 'Change of control (W156)', group: 'Documents', chainKey: 'ipp_coc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppChangeOfControlTab /></React.Suspense> },
+        { key: 'refinancing', label: 'Refinancing (W157)', group: 'Documents', chainKey: 'ipp_refi', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppRefinancingTab /></React.Suspense> },
+        { key: 'force-majeure', label: 'Force majeure (W158)', group: 'Documents', chainKey: 'ipp_fm', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppFmTab /></React.Suspense> },
+        { key: 'annual-report', label: 'Annual compliance report (W159)', group: 'Documents', chainKey: 'ipp_acr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppAnnualReportTab /></React.Suspense> },
+        { key: 'contractor-default', label: 'Contractor default (W160)', group: 'Documents', chainKey: 'ipp_cd', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppContractorDefaultTab /></React.Suspense> },
+        { key: 'eco-report', label: 'ECO audit report (W161)', group: 'Documents', chainKey: 'ipp_eco', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEcoReportTab /></React.Suspense> },
+        { key: 'lta-certificate', label: 'LTA drawdown cert (W162)', group: 'Documents', chainKey: 'ipp_lta', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLtaCertificateTab /></React.Suspense> },
+        { key: 'land-amendment', label: 'Land & servitude amendment (W163)', group: 'Documents', chainKey: 'ipp_lam', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLandAmendmentTab /></React.Suspense> },
+        { key: 'community-trust', label: 'Community trust disbursement (W164)', group: 'Documents', chainKey: 'ipp_ctr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppCommunityTrustTab /></React.Suspense> },
+        { key: 'grid-compliance', label: 'Grid code compliance (W165)', group: 'Technical', chainKey: 'ipp_gcc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppGridComplianceTab /></React.Suspense> },
+        { key: 'ccc', label: 'Connection cost contribution (W166)', group: 'Technical', chainKey: 'ipp_ccc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppCccTab /></React.Suspense> },
+        { key: 'om-contract', label: 'O&M contract renewal (W167)', group: 'Technical', chainKey: 'ipp_omc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppOmContractTab /></React.Suspense> },
+        { key: 'bfs', label: 'BFS re-certification (W168)', group: 'Technical', chainKey: 'ipp_bfs', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppBfsTab /></React.Suspense> },
+        { key: 'ea-amendment', label: 'EA amendment & compliance (W169)', group: 'Environmental', chainKey: 'ipp_eam', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEaAmendmentTab /></React.Suspense> },
+        { key: 'wul', label: 'Water use licence (W170)', group: 'Environmental', chainKey: 'ipp_wul', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppWulTab /></React.Suspense> },
+        { key: 'hra', label: 'Heritage resources assessment (W171)', group: 'Environmental', chainKey: 'ipp_hra', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppHraTab /></React.Suspense> },
+        { key: 'ael', label: 'Atmospheric emission licence (W172)', group: 'Environmental', chainKey: 'ipp_ael', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppAelTab /></React.Suspense> },
+        { key: 'lc-report', label: 'Local content & SED compliance (W174)', group: 'Risk', chainKey: 'ipp_lcr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLcReportTab /></React.Suspense> },
+        { key: 'milestone-cert', label: 'Milestone certification (W175)', group: 'Risk', chainKey: 'ipp_mc', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppMilestoneCertTab /></React.Suspense> },
+        { key: 'esmr', label: 'DFI E&S monitoring report (W176)', group: 'Risk', chainKey: 'ipp_esmr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEsmrTab /></React.Suspense> },
+        { key: 'iear', label: 'IE annual performance review (W177)', group: 'Risk', chainKey: 'ipp_iear', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppIearTab /></React.Suspense> },
+        { key: 'insr', label: 'Insurance renewal (W178)', group: 'Risk', chainKey: 'ipp_insr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppInsrTab /></React.Suspense> },
+        { key: 'perf-security', label: 'Performance security (W179)', group: 'Risk', chainKey: 'ipp_psec', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppPerfSecurityTab /></React.Suspense> },
+        { key: 'cep-compliance', label: 'Community equity participation (W180)', group: 'Risk', chainKey: 'ipp_cep', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppCepComplianceTab /></React.Suspense> },
+        { key: 'sed-compliance', label: 'SED annual spend compliance (W181)', group: 'Risk', chainKey: 'ipp_sed', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppSedComplianceTab /></React.Suspense> },
         { key: 'cbt-sed-report', label: 'CBT/SED DMRE report review (W230)', group: 'Risk', chainKey: 'cbt_sed_report', body: ({ onRefresh }) => <CbtSedReportTab onRefresh={onRefresh} /> },
-        { key: 'bbbee-verification', label: 'BBBEE annual verification (W182)', group: 'Risk', chainKey: 'ipp_bbbee', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppBbbeeVerificationTab /></React.Suspense> },
-        { key: 'lender-reporting', label: 'Lender reporting covenant (W183)', group: 'Risk', chainKey: 'ipp_lrep', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppLenderReportingTab /></React.Suspense> },
-        { key: 'licence-returns', label: 'Annual NERSA licence return (W184)', group: 'Risk', chainKey: 'ipp_anr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppLicenceReturnsTab /></React.Suspense> },
-        { key: 'licence-obligations', label: 'Licence Obligations (W193)', group: 'Regulatory', chainKey: 'licence_obligation', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppLicenceObligationTab /></React.Suspense> },
-        { key: 'force_majeure', label: 'Force Majeure (W194)', group: 'Operations', chainKey: 'ipp_fm', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppForceMajeureTab /></React.Suspense> },
+        { key: 'bbbee-verification', label: 'BBBEE annual verification (W182)', group: 'Risk', chainKey: 'ipp_bbbee', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppBbbeeVerificationTab /></React.Suspense> },
+        { key: 'lender-reporting', label: 'Lender reporting covenant (W183)', group: 'Risk', chainKey: 'ipp_lrep', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLenderReportingTab /></React.Suspense> },
+        { key: 'licence-returns', label: 'Annual NERSA licence return (W184)', group: 'Risk', chainKey: 'ipp_anr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLicenceReturnsTab /></React.Suspense> },
+        { key: 'licence-obligations', label: 'Licence Obligations (W193)', group: 'Regulatory', chainKey: 'licence_obligation', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLicenceObligationTab /></React.Suspense> },
+        { key: 'force_majeure', label: 'Force Majeure (W194)', group: 'Operations', chainKey: 'ipp_fm', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppForceMajeureTab /></React.Suspense> },
         { key: 'export_curtailments', label: 'Grid export curtailments (W221)', group: 'Operations', chainKey: 'export_curtailment', body: ({ onRefresh }) => <ExportCurtailmentTab onRefresh={onRefresh} /> },
-        { key: 'reipppp-reports', label: 'REIPPPP annual progress report (W185)', group: 'Risk', chainKey: 'ipp_rpr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppReippppReportsTab /></React.Suspense> },
-        { key: 'equity-transfer', label: 'SPV equity transfer & consent (W186)', group: 'Risk', chainKey: 'ipp_eqt', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppEquityTransferTab /></React.Suspense> },
-        { key: 'quarterly-gen-report', label: 'DMRE quarterly generation report (W187)', group: 'Risk', chainKey: 'ipp_qgr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppQuarterlyGenReportTab /></React.Suspense> },
-        { key: 'annual-compliance-assessment', label: 'Annual grid code compliance self-assessment (W188)', group: 'Risk', chainKey: 'ipp_acs', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppAnnualComplianceAssessmentTab /></React.Suspense> },
-        { key: 'annual-audit', label: 'Annual financial statements & audit (W189)', group: 'Risk', chainKey: 'ipp_aud', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppAnnualAuditTab /></React.Suspense> },
-        { key: 'emp-compliance-report', label: 'EMP annual compliance report (W190)', group: 'Risk', chainKey: 'ipp_empr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppEmpComplianceReportTab /></React.Suspense> },
-        { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><StageGateTab /></React.Suspense> },
-        { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppIssuesTab /></React.Suspense> },
-        { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppRiskTab /></React.Suspense> },
-        { key: 'stakeholder-register', label: 'Stakeholder register', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppStakeholderTab /></React.Suspense> },
-        { key: 'lessons-learned', label: 'Lessons learned', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppLessonsLearnedTab /></React.Suspense> },
-        { key: 'ncr', label: 'Non-conformance (NCR)', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppNcrTab /></React.Suspense> },
-        { key: 'itp', label: 'ITP / Quality plan', group: 'Risk & quality', chainKey: 'itp', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><ItpChainTab /></React.Suspense> },
-        { key: 'project_risk', label: 'Risk analysis (EMV/SRA)', group: 'Risk & quality', chainKey: 'project_risk', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><ProjectRiskChainTab /></React.Suspense> },
+        { key: 'reipppp-reports', label: 'REIPPPP annual progress report (W185)', group: 'Risk', chainKey: 'ipp_rpr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppReippppReportsTab /></React.Suspense> },
+        { key: 'equity-transfer', label: 'SPV equity transfer & consent (W186)', group: 'Risk', chainKey: 'ipp_eqt', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEquityTransferTab /></React.Suspense> },
+        { key: 'quarterly-gen-report', label: 'DMRE quarterly generation report (W187)', group: 'Risk', chainKey: 'ipp_qgr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppQuarterlyGenReportTab /></React.Suspense> },
+        { key: 'annual-compliance-assessment', label: 'Annual grid code compliance self-assessment (W188)', group: 'Risk', chainKey: 'ipp_acs', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppAnnualComplianceAssessmentTab /></React.Suspense> },
+        { key: 'annual-audit', label: 'Annual financial statements & audit (W189)', group: 'Risk', chainKey: 'ipp_aud', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppAnnualAuditTab /></React.Suspense> },
+        { key: 'emp-compliance-report', label: 'EMP annual compliance report (W190)', group: 'Risk', chainKey: 'ipp_empr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEmpComplianceReportTab /></React.Suspense> },
+        { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><StageGateTab /></React.Suspense> },
+        { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppIssuesTab /></React.Suspense> },
+        { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppRiskTab /></React.Suspense> },
+        { key: 'stakeholder-register', label: 'Stakeholder register', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppStakeholderTab /></React.Suspense> },
+        { key: 'lessons-learned', label: 'Lessons learned', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLessonsLearnedTab /></React.Suspense> },
+        { key: 'ncr', label: 'Non-conformance (NCR)', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppNcrTab /></React.Suspense> },
+        { key: 'itp', label: 'ITP / Quality plan', group: 'Risk & quality', chainKey: 'itp', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><ItpChainTab /></React.Suspense> },
+        { key: 'project_risk', label: 'Risk analysis (EMV/SRA)', group: 'Risk & quality', chainKey: 'project_risk', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><ProjectRiskChainTab /></React.Suspense> },
         { key: 'reports', label: 'Reports & Exports', group: 'Risk & quality',
           body: () => (
             <div className="space-y-8">
               {IPP_REPORTS.map(cfg => (
                 <div key={cfg.endpoint} className="space-y-2">
-                  <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">{cfg.title}</p>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{cfg.title}</p>
                   <ReportPanel config={cfg} />
                 </div>
               ))}
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">Annual compliance report</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Annual compliance report</p>
                 <div className="flex gap-2 mb-4">
                   <button type="button" onClick={() => { const a = document.createElement('a'); a.href='/api/reports/export?section=ipp-annual&format=csv'; a.download='ipp-annual-report.csv'; document.body.appendChild(a); a.click(); a.remove(); }} className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700">Export CSV</button>
-                  <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-[#3d4756] text-white rounded hover:bg-[#2d3748]">Print / PDF</button>
+                  <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-slate-600 text-white rounded hover:bg-slate-700">Print / PDF</button>
                 </div>
-                <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] rounded-md" />}><IppAnnualReportTab /></React.Suspense>
+                <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 rounded-md" />}><IppAnnualReportTab /></React.Suspense>
               </div>
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">DMRE quarterly generation report</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">DMRE quarterly generation report</p>
                 <div className="flex gap-2 mb-4">
                   <button type="button" onClick={() => { const a = document.createElement('a'); a.href='/api/reports/export?section=ipp-quarterly-gen&format=csv'; a.download='ipp-quarterly-gen-report.csv'; document.body.appendChild(a); a.click(); a.remove(); }} className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700">Export CSV</button>
-                  <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-[#3d4756] text-white rounded hover:bg-[#2d3748]">Print / PDF</button>
+                  <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-slate-600 text-white rounded hover:bg-slate-700">Print / PDF</button>
                 </div>
-                <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] rounded-md" />}><IppQuarterlyGenReportTab /></React.Suspense>
+                <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 rounded-md" />}><IppQuarterlyGenReportTab /></React.Suspense>
               </div>
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">REIPPPP annual progress report</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">REIPPPP annual progress report</p>
                 <div className="flex gap-2 mb-4">
                   <button type="button" onClick={() => { const a = document.createElement('a'); a.href='/api/reports/export?section=ipp-reipppp&format=csv'; a.download='ipp-reipppp-report.csv'; document.body.appendChild(a); a.click(); a.remove(); }} className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700">Export CSV</button>
-                  <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-[#3d4756] text-white rounded hover:bg-[#2d3748]">Print / PDF</button>
+                  <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-slate-600 text-white rounded hover:bg-slate-700">Print / PDF</button>
                 </div>
-                <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] rounded-md" />}><IppReippppReportsTab /></React.Suspense>
+                <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 rounded-md" />}><IppReippppReportsTab /></React.Suspense>
               </div>
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">Lender reporting covenant</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Lender reporting covenant</p>
                 <div className="flex gap-2 mb-4">
                   <button type="button" onClick={() => { const a = document.createElement('a'); a.href='/api/reports/export?section=ipp-lender-reporting&format=csv'; a.download='ipp-lender-reporting.csv'; document.body.appendChild(a); a.click(); a.remove(); }} className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700">Export CSV</button>
-                  <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-[#3d4756] text-white rounded hover:bg-[#2d3748]">Print / PDF</button>
+                  <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-slate-600 text-white rounded hover:bg-slate-700">Print / PDF</button>
                 </div>
-                <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] rounded-md" />}><IppLenderReportingTab /></React.Suspense>
+                <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 rounded-md" />}><IppLenderReportingTab /></React.Suspense>
               </div>
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">EMP annual compliance report</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">EMP annual compliance report</p>
                 <div className="flex gap-2 mb-4">
                   <button type="button" onClick={() => { const a = document.createElement('a'); a.href='/api/reports/export?section=ipp-emp-compliance&format=csv'; a.download='ipp-emp-compliance-report.csv'; document.body.appendChild(a); a.click(); a.remove(); }} className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700">Export CSV</button>
-                  <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-[#3d4756] text-white rounded hover:bg-[#2d3748]">Print / PDF</button>
+                  <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-slate-600 text-white rounded hover:bg-slate-700">Print / PDF</button>
                 </div>
-                <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] rounded-md" />}><IppEmpComplianceReportTab /></React.Suspense>
+                <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 rounded-md" />}><IppEmpComplianceReportTab /></React.Suspense>
               </div>
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">ECO audit report</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">ECO audit report</p>
                 <div className="flex gap-2 mb-4">
                   <button type="button" onClick={() => { const a = document.createElement('a'); a.href='/api/reports/export?section=ipp-eco&format=csv'; a.download='ipp-eco-report.csv'; document.body.appendChild(a); a.click(); a.remove(); }} className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700">Export CSV</button>
-                  <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-[#3d4756] text-white rounded hover:bg-[#2d3748]">Print / PDF</button>
+                  <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-slate-600 text-white rounded hover:bg-slate-700">Print / PDF</button>
                 </div>
-                <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] rounded-md" />}><IppEcoReportTab /></React.Suspense>
+                <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 rounded-md" />}><IppEcoReportTab /></React.Suspense>
               </div>
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">Local content &amp; SED compliance</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Local content &amp; SED compliance</p>
                 <div className="flex gap-2 mb-4">
                   <button type="button" onClick={() => { const a = document.createElement('a'); a.href='/api/reports/export?section=ipp-lc&format=csv'; a.download='ipp-lc-report.csv'; document.body.appendChild(a); a.click(); a.remove(); }} className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700">Export CSV</button>
-                  <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-[#3d4756] text-white rounded hover:bg-[#2d3748]">Print / PDF</button>
+                  <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-slate-600 text-white rounded hover:bg-slate-700">Print / PDF</button>
                 </div>
-                <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] rounded-md" />}><IppLcReportTab /></React.Suspense>
+                <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 rounded-md" />}><IppLcReportTab /></React.Suspense>
               </div>
             </div>
           ),
@@ -1374,30 +1375,31 @@ export function IppWorkstationPage() {
           ),
         },
         { key: 'insurance', label: 'Insurance', group: 'Finance', body: ({ onRefresh }) => <InsuranceTab onRefresh={onRefresh} /> },
-        { key: 'insurance_claims', label: 'Insurance claims', group: 'Finance', chainKey: 'insurance_claim', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><InsuranceClaimChainTab /></React.Suspense> },
-        { key: 'bonds', label: 'Bonds', group: 'Finance', chainKey: 'ipp_performance_bonds', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><BondRegistryTab /></React.Suspense> },
-        { key: 'progress-claims', label: 'Progress claims', group: 'Finance', chainKey: 'ipp_progress_claim', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppProgressClaimTab /></React.Suspense> },
-        { key: 'cp-tracker', label: 'Conditions Precedent (W192)', group: 'Finance', chainKey: 'cp_tracker', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppCpTrackerTab /></React.Suspense> },
+        { key: 'insurance_claims', label: 'Insurance claims', group: 'Finance', chainKey: 'insurance_claim', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><InsuranceClaimChainTab /></React.Suspense> },
+        { key: 'bonds', label: 'Bonds', group: 'Finance', chainKey: 'ipp_performance_bonds', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><BondRegistryTab /></React.Suspense> },
+        { key: 'progress-claims', label: 'Progress claims', group: 'Finance', chainKey: 'ipp_progress_claim', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppProgressClaimTab /></React.Suspense> },
+        { key: 'cp-tracker', label: 'Conditions Precedent (W192)', group: 'Finance', chainKey: 'cp_tracker', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppCpTrackerTab /></React.Suspense> },
         { key: 'green-bond-reports', label: 'Green bond reports (W202)', group: 'Finance', chainKey: 'green_bond_report', body: ({ onRefresh }) => <GreenBondReportTab onRefresh={onRefresh} /> },
         { key: 'dscr-reports', label: 'DSCR reports (W212)', group: 'Finance', chainKey: 'dscr_report', body: ({ onRefresh }) => <DscrReportTab onRefresh={onRefresh} /> },
         { key: 'credit_insurance', label: 'Credit insurance (W218)', group: 'Finance', chainKey: 'credit_insurance', body: ({ onRefresh }) => <CreditInsuranceTab onRefresh={onRefresh} /> },
-        { key: 'take-or-pay-claims', label: 'Take-or-pay claims', group: 'Finance', chainKey: 'curtailment_claim', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><TakeOrPayChainTab /></React.Suspense> },
+        { key: 'take-or-pay-claims', label: 'Take-or-pay claims', group: 'Finance', chainKey: 'curtailment_claim', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><TakeOrPayChainTab /></React.Suspense> },
+        { key: 'drawdown_request', label: 'Drawdown requests (W21)', group: 'Finance', chainKey: 'drawdown', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><DrawdownChainTab /></React.Suspense> },
         { key: 'milestone-variance', label: 'Milestone variance reports (W207)', group: 'Project controls', chainKey: 'milestone_variance_report', body: ({ onRefresh }) => <MilestoneVarianceTab onRefresh={onRefresh} /> },
-        { key: 'subcontractors', label: 'Subcontractors', group: 'Construction', chainKey: 'ipp_subcontractor', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppSubcontractorTab /></React.Suspense> },
-        { key: 'procurement', label: 'Procurement / RFPs', group: 'Construction', chainKey: 'procurement_rfp', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><ProcurementChainTab /></React.Suspense> },
-        { key: 'cod', label: 'Construction / COD', group: 'Construction', chainKey: 'cod_chain', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><CodChainTab /></React.Suspense> },
-        { key: 'dfr', label: 'Daily field report', group: 'Construction', chainKey: 'dfr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><DfrChainTab /></React.Suspense> },
-        { key: 'site_diary', label: 'Site diary (W143)', group: 'Construction', chainKey: 'ipp_construction_diary', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppDiaryTab /></React.Suspense> },
-        { key: 'punch_list', label: 'Punch list', group: 'Construction', chainKey: 'punch_list', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><PunchListChainTab /></React.Suspense> },
-        { key: 'mir', label: 'Material inspections', group: 'Construction', chainKey: 'ipp_mir', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppMirTab /></React.Suspense> },
-        { key: 'handover_dossier', label: 'Handover dossier', group: 'Construction', chainKey: 'handover_dossier', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><HandoverDossierChainTab /></React.Suspense> },
-        { key: 'method-statements', label: 'Method statements', group: 'Safety & grid', chainKey: 'ipp_method_statement', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppMethodStatementTab /></React.Suspense> },
-        { key: 'env-monitoring', label: 'Environmental monitoring', group: 'Safety & grid', chainKey: 'ipp_env_monitoring', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><IppEnvMonitoringTab /></React.Suspense> },
-        { key: 'planned_outages', label: 'Planned outages', group: 'Safety & grid', chainKey: 'planned_outage', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><PlannedOutageChainTab /></React.Suspense> },
-        { key: 'hse_chain', label: 'HSE incidents', group: 'Safety & grid', chainKey: 'hse_incident', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><HseIncidentChainTab /></React.Suspense> },
-        { key: 'cyber_chain', label: 'Cyber incidents', group: 'Safety & grid', chainKey: 'cyber_incident', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><CyberIncidentChainTab /></React.Suspense> },
-        { key: 'ed_chain', label: 'ED commitments', group: 'Safety & grid', chainKey: 'ed_commitment', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><EdCommitmentChainTab /></React.Suspense> },
-        { key: 'gca_chain', label: 'Grid connection', group: 'Safety & grid', chainKey: 'gca_connection', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><GcaChainTab /></React.Suspense> },
+        { key: 'subcontractors', label: 'Subcontractors', group: 'Construction', chainKey: 'ipp_subcontractor', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppSubcontractorTab /></React.Suspense> },
+        { key: 'procurement', label: 'Procurement / RFPs', group: 'Construction', chainKey: 'procurement_rfp', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><ProcurementChainTab /></React.Suspense> },
+        { key: 'cod', label: 'Construction / COD', group: 'Construction', chainKey: 'cod_chain', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><CodChainTab /></React.Suspense> },
+        { key: 'dfr', label: 'Daily field report', group: 'Construction', chainKey: 'dfr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><DfrChainTab /></React.Suspense> },
+        { key: 'site_diary', label: 'Site diary (W143)', group: 'Construction', chainKey: 'ipp_construction_diary', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppDiaryTab /></React.Suspense> },
+        { key: 'punch_list', label: 'Punch list', group: 'Construction', chainKey: 'punch_list', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><PunchListChainTab /></React.Suspense> },
+        { key: 'mir', label: 'Material inspections', group: 'Construction', chainKey: 'ipp_mir', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppMirTab /></React.Suspense> },
+        { key: 'handover_dossier', label: 'Handover dossier', group: 'Construction', chainKey: 'handover_dossier', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><HandoverDossierChainTab /></React.Suspense> },
+        { key: 'method-statements', label: 'Method statements', group: 'Safety & grid', chainKey: 'ipp_method_statement', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppMethodStatementTab /></React.Suspense> },
+        { key: 'env-monitoring', label: 'Environmental monitoring', group: 'Safety & grid', chainKey: 'ipp_env_monitoring', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEnvMonitoringTab /></React.Suspense> },
+        { key: 'planned_outages', label: 'Planned outages', group: 'Safety & grid', chainKey: 'planned_outage', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><PlannedOutageChainTab /></React.Suspense> },
+        { key: 'hse_chain', label: 'HSE incidents', group: 'Safety & grid', chainKey: 'hse_incident', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><HseIncidentChainTab /></React.Suspense> },
+        { key: 'cyber_chain', label: 'Cyber incidents', group: 'Safety & grid', chainKey: 'cyber_incident', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><CyberIncidentChainTab /></React.Suspense> },
+        { key: 'ed_chain', label: 'ED commitments', group: 'Safety & grid', chainKey: 'ed_commitment', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><EdCommitmentChainTab /></React.Suspense> },
+        { key: 'gca_chain', label: 'Grid connection', group: 'Safety & grid', chainKey: 'gca_connection', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><GcaChainTab /></React.Suspense> },
         {
           key: 'warranty_claims',
           label: 'Warranty / RMA (W15)',
@@ -1437,11 +1439,11 @@ export function IppWorkstationPage() {
         },
         { key: 'gtia', label: 'GTIA (W224)', group: 'Safety & grid', body: ({ onRefresh }) => <GtiaTab onRefresh={onRefresh} /> },
         { key: 'community', label: 'Community', group: 'Safety & grid', body: ({ onRefresh }) => <CommunityTab onRefresh={onRefresh} /> },
-        { key: 'scada-connectors', label: 'SCADA connectors', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><ScadaConnectorTab /></React.Suspense> },
-        { key: 'mqtt-opcua-connectors', label: 'MQTT / OPC-UA', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><MqttOpcuaConnectorTab /></React.Suspense> },
-        { key: 'anomaly-detection-ml', label: 'Anomaly detection', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><AnomalyDetectionMlTab /></React.Suspense> },
-        { key: 'rul-prediction-ml', label: 'RUL prediction', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><RulPredictionMlTab /></React.Suspense> },
-        { key: 'fault-fingerprint-ml', label: 'Fault fingerprint', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-[#f8fafc] m-4 rounded-md" />}><FaultFingerprintMlTab /></React.Suspense> },
+        { key: 'scada-connectors', label: 'SCADA connectors', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><ScadaConnectorTab /></React.Suspense> },
+        { key: 'mqtt-opcua-connectors', label: 'MQTT / OPC-UA', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><MqttOpcuaConnectorTab /></React.Suspense> },
+        { key: 'anomaly-detection-ml', label: 'Anomaly detection', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><AnomalyDetectionMlTab /></React.Suspense> },
+        { key: 'rul-prediction-ml', label: 'RUL prediction', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><RulPredictionMlTab /></React.Suspense> },
+        { key: 'fault-fingerprint-ml', label: 'Fault fingerprint', group: 'Predictive ML', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><FaultFingerprintMlTab /></React.Suspense> },
         { key: 'invite-partners', label: 'Invite partners', group: 'Partnerships', body: () => <InvitePartnersTab /> },
       ]}
     />
@@ -1529,7 +1531,7 @@ function MilestonesTab({ onRefresh }: { onRefresh: () => void }) {
                   <td className="px-4 py-2"><Pill tone={m.status === 'satisfied' ? 'good' : m.status === 'overdue' ? 'bad' : 'warn'}>{m.status}</Pill></td>
                   <td className="px-4 py-2">
                     {m.status !== 'satisfied' && (
-                      <button type="button" onClick={() => setSatisfying(m)} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">Satisfy</button>
+                      <button type="button" onClick={() => setSatisfying(m)} className="px-2 py-1 text-[11px] bg-[oklch(0.46_0.16_55)] text-white rounded">Satisfy</button>
                     )}
                   </td>
                 </tr>
@@ -1586,7 +1588,7 @@ function InsuranceTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'period_end', label: 'Expires', render: (r) => r.period_end },
           { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'active' ? 'good' : 'bad'}>{r.status}</Pill> },
           { key: '_actions', label: '', render: (r) => (
-            <button type="button" onClick={() => setClaiming(r)} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">File claim</button>
+            <button type="button" onClick={() => setClaiming(r)} className="px-2 py-1 text-[11px] bg-[oklch(0.46_0.16_55)] text-white rounded">File claim</button>
           ) },
         ]}
       />
@@ -1648,7 +1650,7 @@ function CommunityTab({ onRefresh }: { onRefresh: () => void }) {
         </label>
         <div className="flex gap-2">
           <button type="button" onClick={() => setRegistering(true)} className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold">+ Register stakeholder</button>
-          <button type="button" onClick={() => setLogging(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">+ Log engagement</button>
+          <button type="button" onClick={() => setLogging(true)} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">+ Log engagement</button>
         </div>
       </div>
       {summary && (
@@ -1872,7 +1874,7 @@ function InvitePartnersTab() {
     <div className="space-y-6">
       {/* Send invite form */}
       <div className="rounded-lg border border-[#dde4ec] bg-white p-5">
-        <h3 className="text-sm font-semibold text-[#0f2540] mb-1">Invite a partner</h3>
+        <h3 className="text-sm font-semibold text-[oklch(0.17_0.010_250)] mb-1">Invite a partner</h3>
         <p className="text-xs text-[#6b7685] mb-4">
           Send a direct invitation. The partner registers via a unique link and their account is immediately active — no admin approval required.
         </p>
@@ -1880,13 +1882,13 @@ function InvitePartnersTab() {
         {err && <div className="mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{err}</div>}
 
         {sent && (
-          <div className="mb-4 rounded-lg border border-[#1a3a5c]/20 bg-[#dbecfb]/50 p-3">
-            <p className="text-xs font-semibold text-[#0f2540] mb-1">Invitation created</p>
-            <div className="flex items-center gap-2 font-mono text-xs text-[#1a3a5c] bg-white rounded border border-[#dde4ec] px-2 py-1.5 break-all">
+          <div className="mb-4 rounded-lg border border-[oklch(0.46_0.16_55)]/20 bg-[oklch(0.94_0.02_250)]/50 p-3">
+            <p className="text-xs font-semibold text-[oklch(0.17_0.010_250)] mb-1">Invitation created</p>
+            <div className="flex items-center gap-2 font-mono text-xs text-[oklch(0.46_0.16_55)] bg-white rounded border border-[#dde4ec] px-2 py-1.5 break-all">
               {window.location.origin}{sent.invite_url}
               <button type="button"
                 onClick={() => copyUrl(sent.invite_url)}
-                className="ml-auto shrink-0 text-[10px] uppercase tracking-wide font-bold text-[#1a3a5c] hover:underline"
+                className="ml-auto shrink-0 text-[10px] uppercase tracking-wide font-bold text-[oklch(0.46_0.16_55)] hover:underline"
               >
                 Copy
               </button>
@@ -1907,8 +1909,8 @@ function InvitePartnersTab() {
                   onClick={() => setSelectedRole(r.role)}
                   className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${
                     selectedRole === r.role
-                      ? 'border-[#1a3a5c] bg-[#dbecfb]/60 text-[#0f2540]'
-                      : 'border-[#dde4ec] bg-white text-[#6b7685] hover:border-[#1a3a5c]/40'
+                      ? 'border-[oklch(0.46_0.16_55)] bg-[oklch(0.94_0.02_250)]/60 text-[oklch(0.17_0.010_250)]'
+                      : 'border-[#dde4ec] bg-white text-[#6b7685] hover:border-[oklch(0.46_0.16_55)]/40'
                   }`}
                 >
                   <div className="text-xs font-semibold">{r.label.split(' /')[0]}</div>
@@ -1926,7 +1928,7 @@ function InvitePartnersTab() {
               <select
                 value={form.project_id}
                 onChange={(e) => setForm(f => ({ ...f, project_id: e.target.value }))}
-                className="w-full border border-[#dde4ec] rounded px-2.5 py-1.5 text-sm text-[#0f2540]"
+                className="w-full border border-[#dde4ec] rounded px-2.5 py-1.5 text-sm text-[oklch(0.17_0.010_250)]"
               >
                 <option value="">— no project —</option>
                 {projects.map(p => (
@@ -1979,7 +1981,7 @@ function InvitePartnersTab() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-[#c2873a] text-white text-sm font-semibold px-5 py-2 hover:bg-[#a3702f] transition-colors disabled:opacity-50"
+            className="rounded-lg bg-[oklch(0.46_0.16_55)] text-white text-sm font-semibold px-5 py-2 hover:bg-[#0f2540] transition-colors disabled:opacity-50"
           >
             {loading ? 'Generating link…' : 'Generate invite link'}
           </button>
@@ -1989,7 +1991,7 @@ function InvitePartnersTab() {
       {/* Invitation history */}
       <div className="rounded-lg border border-[#dde4ec] bg-white">
         <div className="px-4 py-3 border-b border-[#eef1f5]">
-          <h3 className="text-sm font-semibold text-[#0f2540]">Sent invitations</h3>
+          <h3 className="text-sm font-semibold text-[oklch(0.17_0.010_250)]">Sent invitations</h3>
         </div>
         {histLoading ? (
           <div className="px-4 py-4 text-xs text-[#6b7685]">Loading…</div>
@@ -2014,8 +2016,8 @@ function InvitePartnersTab() {
                   <td className="px-4 py-2">
                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
                       inv.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' :
-                      inv.status === 'pending'  ? 'bg-blue-100 text-blue-700' :
-                      'bg-[#eef2f7] text-[#6b7685]'
+                      inv.status === 'pending'  ? 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]' :
+                      'bg-gray-100 text-gray-500'
                     }`}>{inv.status}</span>
                   </td>
                   <td className="px-4 py-2 text-[#6b7685]">{inv.expires_at ? new Date(inv.expires_at).toLocaleDateString() : '—'}</td>
@@ -2023,7 +2025,7 @@ function InvitePartnersTab() {
                     {inv.status === 'pending' && inv.token && (
                       <button type="button"
                         onClick={() => copyUrl(`/register?token=${inv.token}`)}
-                        className="text-[10px] uppercase tracking-wide font-bold text-[#1a3a5c] hover:underline"
+                        className="text-[10px] uppercase tracking-wide font-bold text-[oklch(0.46_0.16_55)] hover:underline"
                       >
                         Copy link
                       </button>
@@ -2074,7 +2076,7 @@ function GreenBondReportTab({ onRefresh }: { onRefresh: () => void }) {
     <div>
       <div className="mb-3 flex justify-end">
         <button type="button" onClick={() => setCreating(true)}
-          className="px-3 py-1.5 bg-[#c2873a] text-white text-xs rounded hover:bg-[#a3702f]">
+          className="px-3 py-1.5 bg-[oklch(0.46_0.16_55)] text-white text-xs rounded hover:bg-[#1e4a72]">
           + New green bond report
         </button>
       </div>
@@ -2095,7 +2097,7 @@ function GreenBondReportTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'sla_breached',    label: '', render: (r) => r.sla_breached ? <Pill tone="bad">SLA</Pill> : null },
           { key: 'actions',         label: '', render: (r) => (
             <button type="button" onClick={() => setActing({ id: r.id, status: r.chain_status })}
-              className="text-[#1a3a5c] text-xs underline">Action</button>
+              className="text-[oklch(0.46_0.16_55)] text-xs underline">Action</button>
           )},
         ]}
       />
@@ -2174,7 +2176,7 @@ function MilestoneVarianceTab({ onRefresh }: { onRefresh?: () => void }) {
     <div>
       <div className="flex justify-end mb-3">
         <button type="button"
-          className="px-3 py-1.5 rounded bg-[#c2873a] text-white text-sm font-medium hover:bg-[#a3702f]"
+          className="px-3 py-1.5 rounded bg-[oklch(0.46_0.16_55)] text-white text-sm font-medium hover:bg-[#1f4a78]"
           onClick={() => setModal('create')}
         >
           + New variance report
@@ -2305,7 +2307,7 @@ function DscrReportTab({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
           + New DSCR report
         </button>
       </div>
@@ -2410,7 +2412,7 @@ function DscrReportTab({ onRefresh }: { onRefresh?: () => void }) {
 
 // ── W218: IPP Offtake Credit Insurance (ECIC/ATIDI/Lloyd's/MIGA) ─────────────
 const CI_TIER_TONE: Record<string, string> = {
-  short_term: 'bg-blue-50 text-blue-700',
+  short_term: 'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
   medium_term: 'bg-purple-50 text-purple-700',
   long_term: 'bg-amber-50 text-amber-700',
   project_finance: 'bg-rose-50 text-rose-700',
@@ -2419,10 +2421,10 @@ const CI_TIER_TONE: Record<string, string> = {
 function ciStatusTone(s: string): string {
   if (['claim_paid'].includes(s)) return 'bg-green-100 text-green-800';
   if (['lapsed', 'declined'].includes(s)) return 'bg-red-100 text-red-800';
-  if (['cancelled'].includes(s)) return 'bg-[#eef2f7] text-[#3d4756]';
+  if (['cancelled'].includes(s)) return 'bg-gray-100 text-gray-600';
   if (['claim_lodged', 'claim_assessed'].includes(s)) return 'bg-orange-100 text-orange-800';
   if (['active'].includes(s)) return 'bg-emerald-100 text-emerald-800';
-  return 'bg-[#eef2f7] text-[#2d3748]';
+  return 'bg-slate-100 text-slate-700';
 }
 
 type CiModal = { id: string; insurance_tier: string; insurer_name?: string } | null;
@@ -2450,55 +2452,55 @@ function CreditInsuranceTab({ onRefresh }: { onRefresh?: () => void }) {
           { label: 'Claims in progress', val: kpis.claims_in_progress ?? 0 },
           { label: 'Lapsed / cancelled', val: kpis.lapsed_or_cancelled ?? 0 },
         ].map(k => (
-          <div key={k.label} className="bg-white border border-[#dde4ec] rounded-lg p-3 text-center">
-            <div className="text-2xl font-semibold text-[#0f1c2e]">{k.val}</div>
-            <div className="text-xs text-[#6b7685] mt-0.5">{k.label}</div>
+          <div key={k.label} className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-semibold text-gray-900">{k.val}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{k.label}</div>
           </div>
         ))}
       </div>
 
       <div className="flex justify-between items-center">
-        <span className="text-sm text-[#6b7685]">{data.length} policies</span>
+        <span className="text-sm text-gray-500">{data.length} policies</span>
         <button type="button"
           onClick={() => setCreateModal(true)}
-          className="text-sm bg-[#c2873a] text-white px-3 py-1.5 rounded-md hover:bg-[#a3702f]"
+          className="text-sm bg-[oklch(0.46_0.16_55)] text-white px-3 py-1.5 rounded-md hover:bg-[oklch(0.40_0.15_55)]"
         >+ New policy application</button>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-[#dde4ec] text-sm">
-          <thead className="bg-[#f8fafc]">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-gray-50">
             <tr>
               {['Insurer', 'Tier', 'Type', 'Cover (ZAR)', 'Status', 'SLA deadline', ''].map(h => (
-                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-[#6b7685] uppercase">{h}</th>
+                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-[#eef2f7]">
+          <tbody className="bg-white divide-y divide-gray-100">
             {data.map((row: any) => (
-              <tr key={row.id} className="hover:bg-[#eef2f7]">
-                <td className="px-3 py-2 font-medium text-[#0f1c2e]">{row.insurer_name ?? row.policy_ref ?? row.id.slice(0, 8)}</td>
+              <tr key={row.id} className="hover:bg-gray-50">
+                <td className="px-3 py-2 font-medium text-gray-900">{row.insurer_name ?? row.policy_ref ?? row.id.slice(0, 8)}</td>
                 <td className="px-3 py-2">
-                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${CI_TIER_TONE[row.insurance_tier] ?? 'bg-[#eef2f7] text-[#2d3748]'}`}>
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${CI_TIER_TONE[row.insurance_tier] ?? 'bg-gray-100 text-gray-700'}`}>
                     {row.insurance_tier?.replace(/_/g, ' ')}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-[#3d4756]">{row.insurance_type?.replace(/_/g, ' ') ?? '—'}</td>
-                <td className="px-3 py-2 text-[#2d3748]">{row.cover_amount_zar ? `R${Number(row.cover_amount_zar).toLocaleString()}` : '—'}</td>
+                <td className="px-3 py-2 text-gray-600">{row.insurance_type?.replace(/_/g, ' ') ?? '—'}</td>
+                <td className="px-3 py-2 text-gray-700">{row.cover_amount_zar ? `R${Number(row.cover_amount_zar).toLocaleString()}` : '—'}</td>
                 <td className="px-3 py-2">
                   <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${ciStatusTone(row.chain_status)}`}>
                     {row.chain_status?.replace(/_/g, ' ')}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-[#6b7685] text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
+                <td className="px-3 py-2 text-gray-500 text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
                 <td className="px-3 py-2">
                   <button type="button" onClick={() => setModal({ id: row.id, insurance_tier: row.insurance_tier, insurer_name: row.insurer_name })}
-                    className="text-xs text-blue-600 hover:underline">Action</button>
+                    className="text-xs text-[oklch(0.46_0.16_55)] hover:underline">Action</button>
                 </td>
               </tr>
             ))}
             {data.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-8 text-center text-[#9aa5b4]">No credit insurance policies found</td></tr>
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">No credit insurance policies found</td></tr>
             )}
           </tbody>
         </table>
@@ -2605,7 +2607,7 @@ function CreditInsuranceTab({ onRefresh }: { onRefresh?: () => void }) {
 
 // ── W221: Grid Export Curtailment & Compensation Claim ────────────────────────
 const EC_TIER_TONE: Record<string, string> = {
-  minor:       'bg-blue-50 text-blue-700',
+  minor:       'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
   moderate:    'bg-purple-50 text-purple-700',
   significant: 'bg-amber-50 text-amber-700',
   systemic:    'bg-rose-50 text-rose-700',
@@ -2615,8 +2617,8 @@ function ecStatusTone(s: string): string {
   if (['settled'].includes(s)) return 'bg-green-100 text-green-800';
   if (['rejected', 'withdrawn', 'cancelled'].includes(s)) return 'bg-red-100 text-red-800';
   if (['disputed', 'arbitration'].includes(s)) return 'bg-orange-100 text-orange-800';
-  if (['claim_submitted', 'under_review'].includes(s)) return 'bg-blue-100 text-blue-800';
-  return 'bg-[#eef2f7] text-[#2d3748]';
+  if (['claim_submitted', 'under_review'].includes(s)) return 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]';
+  return 'bg-slate-100 text-slate-700';
 }
 
 type EcModal = { id: string; curtailment_tier: string; deemed_energy_mwh?: number } | null;
@@ -2644,9 +2646,9 @@ function ExportCurtailmentTab({ onRefresh }: { onRefresh?: () => void }) {
           { label: 'Settled', val: kpis.settled ?? 0 },
           { label: 'Disputed', val: kpis.disputed ?? 0 },
         ].map(k => (
-          <div key={k.label} className="bg-white border border-[#dde4ec] rounded-lg p-3 text-center">
-            <div className="text-2xl font-semibold text-[#0f1c2e]">{k.val}</div>
-            <div className="text-xs text-[#6b7685] mt-0.5">{k.label}</div>
+          <div key={k.label} className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+            <div className="text-2xl font-semibold text-gray-900">{k.val}</div>
+            <div className="text-xs text-gray-500 mt-0.5">{k.label}</div>
           </div>
         ))}
       </div>
@@ -2664,34 +2666,34 @@ function ExportCurtailmentTab({ onRefresh }: { onRefresh?: () => void }) {
       )}
 
       <div className="flex justify-between items-center">
-        <span className="text-sm text-[#6b7685]">{data.length} curtailment claims</span>
+        <span className="text-sm text-gray-500">{data.length} curtailment claims</span>
         <button type="button"
           onClick={() => setCreateModal(true)}
-          className="text-sm bg-[#c2873a] text-white px-3 py-1.5 rounded-md hover:bg-[#a3702f]"
+          className="text-sm bg-[oklch(0.46_0.16_55)] text-white px-3 py-1.5 rounded-md hover:bg-[oklch(0.40_0.15_55)]"
         >+ Log curtailment event</button>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-[#dde4ec] text-sm">
-          <thead className="bg-[#f8fafc]">
+        <table className="min-w-full divide-y divide-gray-200 text-sm">
+          <thead className="bg-gray-50">
             <tr>
               {['Tier', 'Type', 'Duration (h)', 'Deemed MWh', 'Claim (ZAR)', 'Status', ''].map(h => (
-                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-[#6b7685] uppercase">{h}</th>
+                <th key={h} className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-[#eef2f7]">
+          <tbody className="bg-white divide-y divide-gray-100">
             {data.map((row: any) => (
-              <tr key={row.id} className="hover:bg-[#eef2f7]">
+              <tr key={row.id} className="hover:bg-gray-50">
                 <td className="px-3 py-2">
-                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${EC_TIER_TONE[row.curtailment_tier] ?? 'bg-[#eef2f7] text-[#2d3748]'}`}>
+                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${EC_TIER_TONE[row.curtailment_tier] ?? 'bg-gray-100 text-gray-700'}`}>
                     {row.curtailment_tier}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-[#3d4756]">{row.curtailment_type?.replace(/_/g, ' ') ?? '—'}</td>
-                <td className="px-3 py-2 text-[#2d3748]">{row.curtailment_duration_h ?? '—'}</td>
-                <td className="px-3 py-2 text-[#2d3748]">{row.deemed_energy_mwh ? `${row.deemed_energy_mwh} MWh` : '—'}</td>
-                <td className="px-3 py-2 text-[#2d3748]">{row.claim_amount_zar ? `R${Number(row.claim_amount_zar).toLocaleString()}` : '—'}</td>
+                <td className="px-3 py-2 text-gray-600">{row.curtailment_type?.replace(/_/g, ' ') ?? '—'}</td>
+                <td className="px-3 py-2 text-gray-700">{row.curtailment_duration_h ?? '—'}</td>
+                <td className="px-3 py-2 text-gray-700">{row.deemed_energy_mwh ? `${row.deemed_energy_mwh} MWh` : '—'}</td>
+                <td className="px-3 py-2 text-gray-700">{row.claim_amount_zar ? `R${Number(row.claim_amount_zar).toLocaleString()}` : '—'}</td>
                 <td className="px-3 py-2">
                   <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${ecStatusTone(row.chain_status)}`}>
                     {row.chain_status?.replace(/_/g, ' ')}
@@ -2699,12 +2701,12 @@ function ExportCurtailmentTab({ onRefresh }: { onRefresh?: () => void }) {
                 </td>
                 <td className="px-3 py-2">
                   <button type="button" onClick={() => setModal({ id: row.id, curtailment_tier: row.curtailment_tier, deemed_energy_mwh: row.deemed_energy_mwh })}
-                    className="text-xs text-blue-600 hover:underline">Action</button>
+                    className="text-xs text-[oklch(0.46_0.16_55)] hover:underline">Action</button>
                 </td>
               </tr>
             ))}
             {data.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-8 text-center text-[#9aa5b4]">No curtailment claims found</td></tr>
+              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">No curtailment claims found</td></tr>
             )}
           </tbody>
         </table>
@@ -2833,7 +2835,7 @@ function GtiaTab({ onRefresh }: { onRefresh?: () => void }) {
     <div>
       <div className="flex justify-end mb-3">
         <button type="button"
-          className="px-3 py-1.5 rounded bg-[#c2873a] text-white text-sm font-medium hover:bg-[#a3702f]"
+          className="px-3 py-1.5 rounded bg-[oklch(0.46_0.16_55)] text-white text-sm font-medium hover:bg-[#1f4a78]"
           onClick={() => setModal('create')}
         >
           + New GTIA
@@ -3083,7 +3085,7 @@ function CbtSedReportTab({ onRefresh }: { onRefresh?: () => void }) {
         <div className="flex shrink-0 items-center gap-2">
           <button type="button"
             onClick={() => setOpening(true)}
-            className="h-8 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold hover:bg-[#a3702f]"
+            className="h-8 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold hover:bg-[#16324f]"
           >
             Open reporting period
           </button>
@@ -3172,7 +3174,7 @@ function CbtSedReportTab({ onRefresh }: { onRefresh?: () => void }) {
                                 key={a}
                                 onClick={() => void act(r.id, a)}
                                 disabled={rowBusy}
-                                className={`text-[11px] font-medium hover:underline disabled:opacity-40 ${CBT_DESTRUCTIVE.has(a) ? 'text-[#b4453a]' : 'text-[#1a3a5c]'}`}
+                                className={`text-[11px] font-medium hover:underline disabled:opacity-40 ${CBT_DESTRUCTIVE.has(a) ? 'text-[#b4453a]' : 'text-[oklch(0.46_0.16_55)]'}`}
                               >
                                 {CBT_ACTION_LABELS[a] ?? a}
                               </button>

@@ -20,7 +20,7 @@
 
 :root {
   /* Brand */
-  --oe-primary: #1a3a5c;
+  --oe-primary: oklch(0.46 0.16 55);
   --oe-primary-deep: #0f2540;
   --oe-primary-container: #d6e3ef;
   --oe-on-primary: #ffffff;
@@ -71,7 +71,7 @@
   --oe-info: #3b82c4;
   --oe-info-container: #d4e7f6;
 
-  --shell-height: 56px;
+  --shell-height: 50px;
   --sidebar-width: 256px;
   --sidebar-collapsed: 56px;
   --tile-size-std: 176px;
@@ -80,7 +80,7 @@
 
   /* Legacy aliases */
   --fiori-shell: #0f2540;
-  --fiori-brand: #1a3a5c;
+  --fiori-brand: oklch(0.46 0.16 55);
   --fiori-brand-hover: #0f2540;
   --fiori-brand-light: #3b82c4;
   --fiori-canvas: #f5f8fb;
@@ -153,7 +153,7 @@ h1, h2, h3, h4, h5, h6, .font-display, .font-headline {
 
 /* ═══ Shell Bar ═══ */
 .fiori-shell, .oe-shell {
-  background: linear-gradient(90deg, #0a1c30 0%, #0f2540 35%, #1a3a5c 70%, #1f9b95 100%);
+  background: linear-gradient(90deg, #0a1c30 0%, #0f2540 35%, oklch(0.46 0.16 55) 70%, #1f9b95 100%);
   color: #ffffff;
   box-shadow: 0 1px 0 rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.12);
   position: relative;
@@ -316,7 +316,7 @@ h1, h2, h3, h4, h5, h6, .font-display, .font-headline {
 .fiori-tile::before, .oe-tile::before {
   content: '';
   position: absolute; inset: 0 0 auto 0; height: 4px;
-  background: var(--tile-accent, linear-gradient(90deg,#1a3a5c,#3b82c4));
+  background: var(--tile-accent, linear-gradient(90deg,oklch(0.46 0.16 55),#3b82c4));
   opacity: 0.95;
 }
 .fiori-tile::after, .oe-tile::after {
@@ -335,7 +335,7 @@ h1, h2, h3, h4, h5, h6, .font-display, .font-headline {
 .fiori-tile:hover::after, .oe-tile:hover::after { transform: scale(1.2); }
 
 /* Tile accents — Navy / Blue / Teal / Sky / Plum / Red */
-.fiori-tile.accent-navy,   .oe-tile.accent-navy   { --tile-accent: linear-gradient(90deg,#0f2540,#1a3a5c); --tile-glow: radial-gradient(circle at center, rgba(26,58,92,0.18) 0%, transparent 70%); }
+.fiori-tile.accent-navy,   .oe-tile.accent-navy   { --tile-accent: linear-gradient(90deg,#0f2540,oklch(0.46 0.16 55)); --tile-glow: radial-gradient(circle at center, rgba(26,58,92,0.18) 0%, transparent 70%); }
 .fiori-tile.accent-blue,   .oe-tile.accent-blue   { --tile-accent: linear-gradient(90deg,#1a5d97,#3b82c4); --tile-glow: radial-gradient(circle at center, rgba(59,130,196,0.18) 0%, transparent 70%); }
 .fiori-tile.accent-teal,   .oe-tile.accent-teal   { --tile-accent: linear-gradient(90deg,#1f9b95,#0e6d68); --tile-glow: radial-gradient(circle at center, rgba(31,155,149,0.18) 0%, transparent 70%); }
 .fiori-tile.accent-sky,    .oe-tile.accent-sky    { --tile-accent: linear-gradient(90deg,#5fa8e8,#3082c8); --tile-glow: radial-gradient(circle at center, rgba(95,168,232,0.20) 0%, transparent 70%); }
@@ -344,7 +344,7 @@ h1, h2, h3, h4, h5, h6, .font-display, .font-headline {
 .fiori-tile.accent-red,    .oe-tile.accent-red    { --tile-accent: linear-gradient(90deg,#c0392b,#7a1c10); --tile-glow: radial-gradient(circle at center, rgba(192,57,43,0.14) 0%, transparent 70%); }
 
 /* Legacy accent shims (forest/sage/indigo/pink/green map onto OE palette) */
-.fiori-tile.accent-forest, .oe-tile.accent-forest { --tile-accent: linear-gradient(90deg,#0f2540,#1a3a5c); --tile-glow: radial-gradient(circle at center, rgba(26,58,92,0.18) 0%, transparent 70%); }
+.fiori-tile.accent-forest, .oe-tile.accent-forest { --tile-accent: linear-gradient(90deg,#0f2540,oklch(0.46 0.16 55)); --tile-glow: radial-gradient(circle at center, rgba(26,58,92,0.18) 0%, transparent 70%); }
 .fiori-tile.accent-sage,   .oe-tile.accent-sage   { --tile-accent: linear-gradient(90deg,#1f9b95,#69c2bc); --tile-glow: radial-gradient(circle at center, rgba(31,155,149,0.20) 0%, transparent 70%); }
 .fiori-tile.accent-indigo, .oe-tile.accent-indigo { --tile-accent: linear-gradient(90deg,#5d3a7e,#7e57c2); --tile-glow: radial-gradient(circle at center, rgba(125,87,194,0.16) 0%, transparent 70%); }
 .fiori-tile.accent-pink,   .oe-tile.accent-pink   { --tile-accent: linear-gradient(90deg,#c2417e,#5d3a7e); --tile-glow: radial-gradient(circle at center, rgba(194,65,126,0.14) 0%, transparent 70%); }
@@ -353,19 +353,19 @@ h1, h2, h3, h4, h5, h6, .font-display, .font-headline {
 /* Filled "feature" tile */
 .fiori-tile.feature, .oe-tile.feature {
   color: #ffffff; border: none;
-  background: var(--tile-bg, linear-gradient(135deg, #1a3a5c 0%, #3b82c4 100%));
+  background: var(--tile-bg, linear-gradient(135deg, oklch(0.46 0.16 55) 0%, #3b82c4 100%));
   box-shadow: 0 8px 20px rgba(26,58,92,0.25);
 }
 .fiori-tile.feature::before, .oe-tile.feature::before { opacity: 0; }
 .fiori-tile.feature::after,  .oe-tile.feature::after  { background: radial-gradient(circle at center, rgba(255,255,255,0.20) 0%, transparent 70%); }
 .fiori-tile.feature:hover,  .oe-tile.feature:hover  { box-shadow: 0 16px 36px rgba(26,58,92,0.35); }
-.fiori-tile.feature.bg-navy   { --tile-bg: linear-gradient(135deg,#0a1c30 0%,#1a3a5c 100%); }
+.fiori-tile.feature.bg-navy   { --tile-bg: linear-gradient(135deg,#0a1c30 0%,oklch(0.46 0.16 55) 100%); }
 .fiori-tile.feature.bg-blue   { --tile-bg: linear-gradient(135deg,#1a5d97 0%,#3b82c4 100%); }
 .fiori-tile.feature.bg-teal   { --tile-bg: linear-gradient(135deg,#1f9b95 0%,#0e6d68 100%); }
 .fiori-tile.feature.bg-sky    { --tile-bg: linear-gradient(135deg,#5fa8e8 0%,#1a5d97 100%); }
-.fiori-tile.feature.bg-ocean  { --tile-bg: linear-gradient(135deg,#1f9b95 0%,#1a3a5c 100%); }
+.fiori-tile.feature.bg-ocean  { --tile-bg: linear-gradient(135deg,#1f9b95 0%,oklch(0.46 0.16 55) 100%); }
 .fiori-tile.feature.bg-sunset { --tile-bg: linear-gradient(135deg,#3b82c4 0%,#5d3a7e 100%); }
-.fiori-tile.feature.bg-forest { --tile-bg: linear-gradient(135deg,#0a1c30 0%,#1a3a5c 100%); }
+.fiori-tile.feature.bg-forest { --tile-bg: linear-gradient(135deg,#0a1c30 0%,oklch(0.46 0.16 55) 100%); }
 .fiori-tile.feature.bg-amber  { --tile-bg: linear-gradient(135deg,#5fa8e8 0%,#3082c8 100%); }
 .fiori-tile.feature.bg-indigo { --tile-bg: linear-gradient(135deg,#5d3a7e 0%,#7e57c2 100%); }
 
@@ -629,7 +629,7 @@ select.input {
 /* Data grid (legacy) */
 .data-grid { @apply w-full; border-collapse: separate; border-spacing: 0; }
 .data-grid-header {
-  background: linear-gradient(135deg,#0f2540,#1a3a5c);
+  background: linear-gradient(135deg,#0f2540,oklch(0.46 0.16 55));
   color: #ffffff; font-weight: 600; font-family: Metropolis, sans-serif;
 }
 .data-grid-row { border-bottom: 1px solid var(--oe-surface-container); }

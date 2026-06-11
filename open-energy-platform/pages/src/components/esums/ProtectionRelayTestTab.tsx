@@ -33,9 +33,9 @@ interface RelayKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   test_scheduled:         'bg-[#eef2f7] text-[#3d4756]',
-  pre_test_inspection:    'bg-blue-100 text-blue-700',
+  pre_test_inspection:    'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   site_ready:             'bg-cyan-100 text-cyan-700',
-  test_executing:         'bg-indigo-100 text-indigo-700',
+  test_executing:         'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   preliminary_results:    'bg-purple-100 text-purple-700',
   certified_pass:         'bg-green-100 text-green-700',
   minor_deficiency:       'bg-amber-100 text-amber-700',
@@ -67,7 +67,7 @@ const CLASS_COLORS: Record<string, string> = {
   safety_critical: 'bg-red-100 text-red-800',
   transmission:    'bg-orange-100 text-orange-700',
   distribution:    'bg-amber-100 text-amber-700',
-  embedded:        'bg-blue-100 text-blue-700',
+  embedded:        'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   routine:         'bg-[#eef2f7] text-[#3d4756]',
 };
 
@@ -475,9 +475,9 @@ export function ProtectionRelayTestTab() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3"
+          className="rounded-lg border border-[oklch(0.87_0.012_250)] bg-[oklch(0.97_0.003_250)] p-4 space-y-3"
         >
-          <div className="text-sm font-semibold text-blue-800">Schedule Protection Relay Test</div>
+          <div className="text-sm font-semibold text-[oklch(0.40_0.009_250)]">Schedule Protection Relay Test</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-[#3d4756] mb-1">Site ID *</label>
@@ -666,7 +666,7 @@ export function ProtectionRelayTestTab() {
                       {actions.length > 0 && (
                         <button type="button"
                           onClick={() => openActionPicker(item)}
-                          className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                          className="px-2 py-0.5 text-xs rounded bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)] hover:bg-[oklch(0.94_0.008_250)] border border-[oklch(0.87_0.012_250)]"
                         >
                           Actions
                         </button>

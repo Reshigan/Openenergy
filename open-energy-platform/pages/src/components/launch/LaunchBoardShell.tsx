@@ -68,13 +68,13 @@ const toneBg: Record<Tone, string> = {
   good: '#cdf0dd',
   warn: '#fef3e6',
   bad: '#fde7e9',
-  neutral: '#dbecfb',
+  neutral: 'oklch(0.94 0.02 250)',
 };
 const toneText: Record<Tone, string> = {
   good: '#1f7a4a',
   warn: '#b04e0f',
   bad: '#c0392b',
-  neutral: '#3b82c4',
+  neutral: 'oklch(0.46 0.16 55)',
 };
 
 function formatValue(v: number | string): string {
@@ -103,7 +103,7 @@ function KpiTile({ kpi }: { kpi: Kpi }) {
       onMouseEnter={
         clickable
           ? (e) => {
-              (e.currentTarget as HTMLButtonElement).style.borderColor = '#3b82c4';
+              (e.currentTarget as HTMLButtonElement).style.borderColor = 'oklch(0.46 0.16 55)';
               (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 2px 8px rgba(59,130,196,0.15)';
             }
           : undefined
@@ -157,7 +157,7 @@ function WorkflowCard({ wf }: { wf: Workflow }) {
       className="text-left rounded-lg border p-3 transition-all w-full h-full flex flex-col"
       style={{ background: '#ffffff', borderColor: '#dde4ec' }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLButtonElement).style.borderColor = '#3b82c4';
+        (e.currentTarget as HTMLButtonElement).style.borderColor = 'oklch(0.46 0.16 55)';
         (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 12px rgba(59,130,196,0.18)';
       }}
       onMouseLeave={(e) => {
@@ -183,7 +183,7 @@ function WorkflowCard({ wf }: { wf: Workflow }) {
       </p>
       <div
         className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-semibold"
-        style={{ color: '#3b82c4' }}
+        style={{ color: 'oklch(0.46 0.16 55)' }}
       >
         {wf.cta_label} <ArrowRight size={12} />
       </div>

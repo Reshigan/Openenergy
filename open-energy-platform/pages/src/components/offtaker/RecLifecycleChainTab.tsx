@@ -32,6 +32,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'issuance_requested' | 'eligibility_review' | 'issued' | 'listed_for_transfer'
@@ -41,6 +56,7 @@ type ChainStatus =
 type Tier = 'minor' | 'moderate' | 'material' | 'major' | 'critical';
 
 interface RecRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   source_event: string | null;
@@ -147,29 +163,6 @@ interface KpiSummary {
   clawed_back_mwh: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  issuance_requested:  { bg: '#e3e7ec', fg: '#557',    label: 'Issuance requested' },
-  eligibility_review:  { bg: '#fff4d6', fg: '#a06200', label: 'Eligibility review' },
-  issued:              { bg: '#dbecfb', fg: '#1a3a5c', label: 'Issued' },
-  listed_for_transfer: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Listed for transfer' },
-  transferred:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Transferred' },
-  allocated:           { bg: '#cfe8e0', fg: '#0d5c47', label: 'Allocated' },
-  retired:             { bg: '#d4edda', fg: '#155724', label: 'Retired' },
-  cancelled:           { bg: '#e3e7ec', fg: '#557',    label: 'Cancelled' },
-  rejected:            { bg: '#f8d0d0', fg: '#6b1f1f', label: 'Rejected' },
-  disputed:            { bg: '#fde0e0', fg: '#9b1f1f', label: 'Disputed' },
-  clawed_back:         { bg: '#f3c0c0', fg: '#5a1818', label: 'Clawed back' },
-  expired:             { bg: '#e3e7ec', fg: '#557',    label: 'Expired' },
-};
-
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor (<1k MWh)' },
-  moderate: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Moderate (<10k MWh)' },
-  material: { bg: '#fff4d6', fg: '#a06200', label: 'Material (<50k MWh)' },
-  major:    { bg: '#ffe4b5', fg: '#8a4a00', label: 'Major (<200k MWh)' },
-  critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical (≥200k MWh)' },
-};
-
 const STANDARD_LABEL: Record<string, string> = {
   i_rec:               'I-REC',
   sarec:               'SAREC',
@@ -205,6 +198,34 @@ const PURPOSE_LABEL: Record<string, string> = {
   other:                 'Other',
 };
 
+const TIER_LABEL: Record<Tier, string> = {
+  minor:    'Minor (<1k MWh)',
+  moderate: 'Moderate (<10k MWh)',
+  material: 'Material (<50k MWh)',
+  major:    'Major (<200k MWh)',
+  critical: 'Critical (≥200k MWh)',
+};
+
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'issuance_requested',
+  'eligibility_review',
+  'issued',
+  'listed_for_transfer',
+  'transferred',
+  'allocated',
+  'retired',
+];
+
+const BRANCH_STATES: readonly string[] = [
+  'rejected',
+  'disputed',
+  'clawed_back',
+  'cancelled',
+  'expired',
+];
+
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'open',                label: 'Open' },
   { key: 'all',                 label: 'All' },
@@ -229,61 +250,9 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'cancelled',           label: 'Cancelled' },
 ];
 
-type ActionKind =
-  | 'begin-eligibility-review' | 'approve-issuance' | 'reject-issuance' | 'list-for-transfer'
-  | 'transfer-certificate' | 'allocate-consumption' | 'retire-certificate' | 'raise-dispute'
-  | 'resolve-dispute' | 'claw-back' | 'cancel-certificate' | 'expire-certificate';
+const TERMINAL_STATES: ChainStatus[] = ['retired', 'cancelled', 'rejected', 'clawed_back', 'expired'];
 
-// Allowed actions per state, primary forward action first. Mirrors the spec
-// TRANSITIONS map so the UI never offers an invalid step.
-const ALLOWED_ACTIONS: Record<ChainStatus, ActionKind[]> = {
-  issuance_requested:  ['begin-eligibility-review', 'cancel-certificate'],
-  eligibility_review:  ['approve-issuance', 'reject-issuance'],
-  issued:              ['list-for-transfer', 'cancel-certificate', 'expire-certificate'],
-  listed_for_transfer: ['transfer-certificate', 'cancel-certificate', 'expire-certificate'],
-  transferred:         ['allocate-consumption', 'raise-dispute', 'expire-certificate'],
-  allocated:           ['retire-certificate', 'raise-dispute', 'expire-certificate'],
-  disputed:            ['resolve-dispute', 'claw-back'],
-  retired:             [],
-  cancelled:           [],
-  rejected:            [],
-  clawed_back:         [],
-  expired:             [],
-};
-
-// Party annotation per action. The issuer / registry (generator side) drives
-// issuance, listing, transfer, dispute resolution, claw-back, cancel and expiry;
-// the holder (offtaker) allocates consumption, retires and raises integrity disputes.
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'begin-eligibility-review': 'Begin eligibility review (issuer/registry)',
-  'approve-issuance':         'Approve issuance (issuer/registry)',
-  'reject-issuance':          'Reject — eligibility fail (issuer/registry)',
-  'list-for-transfer':        'List for transfer (issuer/registry)',
-  'transfer-certificate':     'Transfer certificate (issuer/registry)',
-  'allocate-consumption':     'Allocate consumption (offtaker/holder)',
-  'retire-certificate':       'Retire certificate (offtaker/holder)',
-  'raise-dispute':            'Raise integrity dispute (offtaker/holder)',
-  'resolve-dispute':          'Resolve dispute — restore (issuer/registry)',
-  'claw-back':                'Claw back — revoke (issuer/registry)',
-  'cancel-certificate':       'Cancel certificate (issuer/registry)',
-  'expire-certificate':       'Expire — vintage lapse (issuer/registry)',
-};
-
-const ACTION_TONE: Record<ActionKind, 'primary' | 'danger' | 'warn' | 'good' | 'muted'> = {
-  'begin-eligibility-review': 'primary',
-  'approve-issuance':         'good',
-  'reject-issuance':          'danger',
-  'list-for-transfer':        'primary',
-  'transfer-certificate':     'primary',
-  'allocate-consumption':     'good',
-  'retire-certificate':       'good',
-  'raise-dispute':            'warn',
-  'resolve-dispute':          'good',
-  'claw-back':                'danger',
-  'cancel-certificate':       'muted',
-  'expire-certificate':       'muted',
-};
-
+// ── helpers ───────────────────────────────────────────────────────────────
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
   if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
@@ -304,33 +273,574 @@ function fmtMwh(n: number | null | undefined): string {
   return `${n.toLocaleString('en-ZA')} MWh`;
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['retired', 'cancelled', 'rejected', 'clawed_back', 'expired'];
+// ── actions ───────────────────────────────────────────────────────────────
+function getActions(row: RecRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
 
+  if (s === 'issuance_requested') {
+    actions.push({
+      key: 'begin-eligibility-review',
+      label: 'Begin eligibility review (issuer/registry)',
+      fields: [
+        {
+          key: 'eligibility_basis',
+          label: 'Eligibility basis — accreditation / vintage / metering check on the generation',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'eligibility_ref',
+          label: 'Eligibility reference (e.g. ELG-2026-0011)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'mwh_represented',
+          label: 'MWh represented (restate certified volume)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.mwh_represented ?? ''),
+        },
+        {
+          key: 'compliance_critical',
+          label: 'Compliance / regulatory claim (carbon-tax offset / mandated obligation)? (1 = yes, 0 = no)',
+          type: 'text',
+          required: false,
+          placeholder: String(row.compliance_critical ?? '0'),
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'cancel-certificate',
+      label: 'Cancel certificate (issuer/registry)',
+      fields: [
+        {
+          key: 'reason_code',
+          label: 'Cancellation reason — certificate withdrawn before issuance / listing (voluntary)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'eligibility_review') {
+    actions.push({
+      key: 'approve-issuance',
+      label: 'Approve issuance (issuer/registry)',
+      fields: [
+        {
+          key: 'issuance_basis',
+          label: 'Issuance basis — the registry issuing the certificate against verified generation',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'issuance_ref',
+          label: 'Issuance reference (e.g. ISS-2026-0011)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'certificate_serial',
+          label: 'Certificate serial (registry-assigned)',
+          type: 'text',
+          required: false,
+          placeholder: row.certificate_serial ?? '',
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'reject-issuance',
+      label: 'Reject — eligibility fail (issuer/registry)',
+      fields: [
+        {
+          key: 'rejection_basis',
+          label: 'Rejection basis — why eligibility failed (accreditation / vintage / metering)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. eligibility_fail / vintage_lapsed / metering_gap)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      // reject-issuance crosses regulator for major + critical
+      cascadeTo: (row.severity_tier === 'major' || row.severity_tier === 'critical') ? ['regulator'] : [],
+    });
+  }
+
+  if (s === 'issued') {
+    actions.push({
+      key: 'list-for-transfer',
+      label: 'List for transfer (issuer/registry)',
+      fields: [
+        {
+          key: 'transfer_basis',
+          label: 'Listing basis — putting the issued certificate up for transfer to the offtaker',
+          type: 'textarea',
+          required: true,
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'cancel-certificate',
+      label: 'Cancel certificate (issuer/registry)',
+      fields: [
+        {
+          key: 'reason_code',
+          label: 'Cancellation reason — certificate withdrawn before issuance / listing (voluntary)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'expire-certificate',
+      label: 'Expire — vintage lapse (issuer/registry)',
+      fields: [
+        {
+          key: 'reason_code',
+          label: 'Expiry reason — the certificate vintage has lapsed (no longer claimable)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'listed_for_transfer') {
+    actions.push({
+      key: 'transfer-certificate',
+      label: 'Transfer certificate (issuer/registry)',
+      fields: [
+        {
+          key: 'transfer_basis',
+          label: 'Transfer basis — moving ownership of the certificate to the holder',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'transfer_ref',
+          label: 'Transfer reference (e.g. TRF-2026-0011)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'holder_id',
+          label: 'Holder id (the offtaker now owning the certificate)',
+          type: 'text',
+          required: false,
+          placeholder: row.holder_id ?? '',
+        },
+        {
+          key: 'holder_name',
+          label: 'Holder name',
+          type: 'text',
+          required: false,
+          placeholder: row.holder_name ?? row.offtaker_name ?? '',
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'cancel-certificate',
+      label: 'Cancel certificate (issuer/registry)',
+      fields: [
+        {
+          key: 'reason_code',
+          label: 'Cancellation reason — certificate withdrawn before issuance / listing (voluntary)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'expire-certificate',
+      label: 'Expire — vintage lapse (issuer/registry)',
+      fields: [
+        {
+          key: 'reason_code',
+          label: 'Expiry reason — the certificate vintage has lapsed (no longer claimable)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'transferred') {
+    actions.push({
+      key: 'allocate-consumption',
+      label: 'Allocate consumption (offtaker/holder)',
+      fields: [
+        {
+          key: 'allocation_basis',
+          label: 'Allocation basis — matching the certificate to a consumption period / reporting boundary',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'allocation_ref',
+          label: 'Allocation reference (e.g. ALC-2026-0011)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'raise-dispute',
+      label: 'Raise integrity dispute (offtaker/holder)',
+      fields: [
+        {
+          key: 'dispute_basis',
+          label: 'Dispute basis — the integrity challenge (double counting / wrong vintage / metering error)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'dispute_ref',
+          label: 'Dispute reference (e.g. DSP-2026-0011)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. double_counting / vintage_mismatch / metering_error)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'expire-certificate',
+      label: 'Expire — vintage lapse (issuer/registry)',
+      fields: [
+        {
+          key: 'reason_code',
+          label: 'Expiry reason — the certificate vintage has lapsed (no longer claimable)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'allocated') {
+    actions.push({
+      key: 'retire-certificate',
+      label: 'Retire certificate (offtaker/holder)',
+      fields: [
+        {
+          key: 'retirement_basis',
+          label: 'Retirement basis — the renewable-consumption claim being substantiated (RE100 / Scope 2 / carbon-tax)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'retirement_ref',
+          label: 'Retirement reference (e.g. RET-2026-0011)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'claim_certificate_number',
+          label: 'Claim certificate number (the retirement claim record)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'raise-dispute',
+      label: 'Raise integrity dispute (offtaker/holder)',
+      fields: [
+        {
+          key: 'dispute_basis',
+          label: 'Dispute basis — the integrity challenge (double counting / wrong vintage / metering error)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'dispute_ref',
+          label: 'Dispute reference (e.g. DSP-2026-0011)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. double_counting / vintage_mismatch / metering_error)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'expire-certificate',
+      label: 'Expire — vintage lapse (issuer/registry)',
+      fields: [
+        {
+          key: 'reason_code',
+          label: 'Expiry reason — the certificate vintage has lapsed (no longer claimable)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'disputed') {
+    actions.push({
+      key: 'resolve-dispute',
+      label: 'Resolve dispute — restore (issuer/registry)',
+      fields: [
+        {
+          key: 'dispute_basis',
+          label: 'Resolution basis — dismissing the dispute and restoring the certificate to allocated',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'claw-back',
+      label: 'Claw back — revoke (issuer/registry)',
+      fields: [
+        {
+          key: 'clawback_basis',
+          label: 'Claw-back basis — upholding the dispute and revoking the certificate (double-counting / fraud)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. double_counting / fraudulent_issuance / metering_void)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      // claw_back crosses regulator EVERY tier — signature action
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  return actions;
+}
+
+// ── renderDetail ──────────────────────────────────────────────────────────
+function renderDetail(row: RecRow): React.ReactNode {
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+        <DetailPair label="State"               value={row.chain_status.replace(/_/g, ' ')} />
+        <DetailPair label="Tier"                value={TIER_LABEL[row.severity_tier]} />
+        <DetailPair label="Standard"            value={STANDARD_LABEL[row.certificate_standard] ?? row.certificate_standard} />
+        <DetailPair label="Energy source"       value={row.energy_source ? (SOURCE_LABEL[row.energy_source] ?? row.energy_source) : '—'} />
+        <DetailPair label="Registry"            value={row.registry ? (REGISTRY_LABEL[row.registry] ?? row.registry) : '—'} />
+        <DetailPair label="Claim purpose"       value={row.claim_purpose ? (PURPOSE_LABEL[row.claim_purpose] ?? row.claim_purpose) : '—'} />
+        <DetailPair label="MWh represented"     value={fmtMwh(row.mwh_represented)} />
+        <DetailPair label="Vintage year"        value={row.vintage_year != null ? String(row.vintage_year) : '—'} />
+        <DetailPair label="Generation period"   value={row.generation_period_start ? `${fmtDate(row.generation_period_start)} → ${fmtDate(row.generation_period_end)}` : '—'} />
+        <DetailPair label="Certificate serial"  value={row.certificate_serial ?? '—'} />
+        <DetailPair label="Compliance claim"    value={row.compliance_critical ? 'Yes' : 'No'} />
+        <DetailPair label="Double-counting check" value={row.double_counting_checked ? 'Complete' : 'Pending'} />
+        <DetailPair label="Issuance ref"        value={row.issuance_ref ?? '—'} />
+        <DetailPair label="Eligibility ref"     value={row.eligibility_ref ?? '—'} />
+        <DetailPair label="Transfer ref"        value={row.transfer_ref ?? '—'} />
+        <DetailPair label="Allocation ref"      value={row.allocation_ref ?? '—'} />
+        <DetailPair label="Retirement ref"      value={row.retirement_ref ?? '—'} />
+        <DetailPair label="Dispute ref"         value={row.dispute_ref ?? '—'} />
+        <DetailPair label="Claim certificate #" value={row.claim_certificate_number ?? '—'} />
+        <DetailPair label="Reason code"         value={row.reason_code ?? '—'} />
+        <DetailPair label="Dispute round"       value={String(row.dispute_round)} />
+        <DetailPair label="Issuer"              value={row.issuer_name ?? row.generator_name ?? '—'} />
+        <DetailPair label="Holder"              value={row.holder_name ?? row.offtaker_name} />
+        {row.generator_name && <DetailPair label="Generator"   value={row.generator_name} />}
+        {row.project_name   && <DetailPair label="Project"     value={row.project_name} />}
+        {row.source_wave    && <DetailPair label="Source wave" value={row.source_wave + (row.source_entity_id ? ` · ${row.source_entity_id}` : '')} />}
+        <DetailPair label="Requested"           value={fmtDate(row.issuance_requested_at)} />
+        <DetailPair label="Eligibility review"  value={fmtDate(row.eligibility_review_at)} />
+        <DetailPair label="Issued"              value={fmtDate(row.issued_at)} />
+        <DetailPair label="Listed"              value={fmtDate(row.listed_for_transfer_at)} />
+        <DetailPair label="Transferred"         value={fmtDate(row.transferred_at)} />
+        <DetailPair label="Allocated"           value={fmtDate(row.allocated_at)} />
+        <DetailPair label="Retired"             value={fmtDate(row.retired_at)} />
+        <DetailPair label="Disputed"            value={fmtDate(row.disputed_at)} />
+        <DetailPair label="Clawed back"         value={fmtDate(row.clawed_back_at)} />
+        <DetailPair label="Rejected"            value={fmtDate(row.rejected_at)} />
+        <DetailPair label="Expired"             value={fmtDate(row.expired_at)} />
+        <DetailPair label="Vintage expiry"      value={fmtDate(row.vintage_expiry_at)} />
+        <DetailPair label="SLA deadline"        value={fmtDate(row.sla_deadline_at)} />
+        <DetailPair label="SLA status"          value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+        <DetailPair label="Escalation lvl"      value={String(row.escalation_level)} />
+        <DetailPair label="Reportable"          value={row.is_reportable ? 'Yes' : 'No'} />
+      </div>
+
+      {row.resolution_summary && (
+        <BasisBlock label="Resolution summary" text={row.resolution_summary} />
+      )}
+      {row.eligibility_basis && (
+        <BasisBlock label="Eligibility basis" text={row.eligibility_basis} />
+      )}
+      {row.issuance_basis && (
+        <BasisBlock label="Issuance basis" text={row.issuance_basis} />
+      )}
+      {row.transfer_basis && (
+        <BasisBlock label="Transfer / listing basis" text={row.transfer_basis} />
+      )}
+      {row.allocation_basis && (
+        <BasisBlock label="Allocation basis (holder)" text={row.allocation_basis} />
+      )}
+      {row.retirement_basis && (
+        <BasisBlock label="Retirement basis (holder)" text={row.retirement_basis} />
+      )}
+      {row.dispute_basis && (
+        <BasisBlock label="Dispute basis" text={row.dispute_basis} />
+      )}
+      {row.clawback_basis && (
+        <BasisBlock label="Claw-back basis" text={row.clawback_basis} />
+      )}
+      {row.rejection_basis && (
+        <BasisBlock label="Rejection basis" text={row.rejection_basis} />
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function RecLifecycleChainTab() {
   const [rows, setRows] = useState<RecRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('open');
-  const [selected, setSelected] = useState<RecRow | null>(null);
-  const [events, setEvents] = useState<RecEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
       const res = await api.get<{ data: { items: RecRow[] } & KpiSummary }>('/rec-lifecycle/chain');
-      setRows(res.data?.data?.items || []);
       const d = res.data?.data;
+      setRows(d?.items || []);
       if (d) {
-        setKpis({
-          total: d.total, open_count: d.open_count, issued_count: d.issued_count,
-          retired_count: d.retired_count, disputed_count: d.disputed_count,
-          clawed_back_count: d.clawed_back_count, rejected_count: d.rejected_count,
-          expired_count: d.expired_count, cancelled_count: d.cancelled_count,
-          breached: d.breached, reportable_total: d.reportable_total,
-          compliance_open: d.compliance_open, high_open: d.high_open,
-          total_mwh: d.total_mwh, retired_mwh: d.retired_mwh, clawed_back_mwh: d.clawed_back_mwh,
+        setSummary({
+          total: d.total,
+          open_count: d.open_count,
+          issued_count: d.issued_count,
+          retired_count: d.retired_count,
+          disputed_count: d.disputed_count,
+          clawed_back_count: d.clawed_back_count,
+          rejected_count: d.rejected_count,
+          expired_count: d.expired_count,
+          cancelled_count: d.cancelled_count,
+          breached: d.breached,
+          reportable_total: d.reportable_total,
+          compliance_open: d.compliance_open,
+          high_open: d.high_open,
+          total_mwh: d.total_mwh,
+          retired_mwh: d.retired_mwh,
+          clawed_back_mwh: d.clawed_back_mwh,
         });
       }
     } catch (e) {
@@ -342,23 +852,34 @@ export function RecLifecycleChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: RecRow; events: RecEvent[] } }>(
-        `/rec-lifecycle/chain/${id}`
-      );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/rec-lifecycle/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/rec-lifecycle/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load certificate history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: RecRow; events: ChainEvent[] } }>(`/rec-lifecycle/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
-    return rows.filter((r) => {
+    return rows.filter(r => {
       if (filter === 'all')        return true;
       if (filter === 'open')       return !TERMINAL_STATES.includes(r.chain_status);
-      if (filter === 'breached')   return r.sla_breached;
+      if (filter === 'breached')   return !!r.sla_breached;
       if (filter === 'reportable') return r.is_reportable;
       if (filter === 'minor' || filter === 'moderate' || filter === 'material' || filter === 'major' || filter === 'critical') {
         return r.severity_tier === filter;
@@ -367,153 +888,63 @@ export function RecLifecycleChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: RecRow) => {
-    try {
-      let body: Record<string, string | number | boolean> = {};
-      if (action === 'begin-eligibility-review') {
-        const basis = window.prompt('Eligibility basis — accreditation / vintage / metering check on the generation:');
-        if (!basis) return;
-        const ref = window.prompt('Eligibility reference (e.g. ELG-2026-0011):') || '';
-        const mwh = window.prompt('MWh represented (restate certified volume):', String(row.mwh_represented ?? ''));
-        const comp = window.confirm('Compliance / regulatory claim (carbon-tax offset / mandated obligation)? OK = yes, Cancel = no');
-        body = { eligibility_basis: basis, compliance_critical: comp };
-        if (ref) body.eligibility_ref = ref;
-        if (mwh && !Number.isNaN(Number(mwh))) body.mwh_represented = Number(mwh);
-      } else if (action === 'approve-issuance') {
-        const basis = window.prompt('Issuance basis — the registry issuing the certificate against verified generation:');
-        if (!basis) return;
-        const ref = window.prompt('Issuance reference (e.g. ISS-2026-0011):') || '';
-        const serial = window.prompt('Certificate serial (registry-assigned):', row.certificate_serial ?? '') || '';
-        body = { issuance_basis: basis };
-        if (ref) body.issuance_ref = ref;
-        if (serial) body.certificate_serial = serial;
-      } else if (action === 'reject-issuance') {
-        const basis = window.prompt('Rejection basis — why eligibility failed (accreditation / vintage / metering):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. eligibility_fail / vintage_lapsed / metering_gap):') || '';
-        body = { rejection_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'list-for-transfer') {
-        const basis = window.prompt('Listing basis — putting the issued certificate up for transfer to the offtaker:');
-        if (!basis) return;
-        body = { transfer_basis: basis };
-      } else if (action === 'transfer-certificate') {
-        const basis = window.prompt('Transfer basis — moving ownership of the certificate to the holder:');
-        if (!basis) return;
-        const ref = window.prompt('Transfer reference (e.g. TRF-2026-0011):') || '';
-        const hid = window.prompt('Holder id (the offtaker now owning the certificate):', row.holder_id ?? '') || '';
-        const hname = window.prompt('Holder name:', row.holder_name ?? row.offtaker_name ?? '') || '';
-        body = { transfer_basis: basis };
-        if (ref) body.transfer_ref = ref;
-        if (hid) body.holder_id = hid;
-        if (hname) body.holder_name = hname;
-      } else if (action === 'allocate-consumption') {
-        const basis = window.prompt('Allocation basis — matching the certificate to a consumption period / reporting boundary:');
-        if (!basis) return;
-        const ref = window.prompt('Allocation reference (e.g. ALC-2026-0011):') || '';
-        body = { allocation_basis: basis };
-        if (ref) body.allocation_ref = ref;
-      } else if (action === 'retire-certificate') {
-        const basis = window.prompt('Retirement basis — the renewable-consumption claim being substantiated (RE100 / Scope 2 / carbon-tax):');
-        if (!basis) return;
-        const ref = window.prompt('Retirement reference (e.g. RET-2026-0011):') || '';
-        const claim = window.prompt('Claim certificate number (the retirement claim record):') || '';
-        const summary = window.prompt('Resolution summary (one line for the audit record):') || '';
-        body = { retirement_basis: basis };
-        if (ref) body.retirement_ref = ref;
-        if (claim) body.claim_certificate_number = claim;
-        if (summary) body.resolution_summary = summary;
-      } else if (action === 'raise-dispute') {
-        const basis = window.prompt('Dispute basis — the integrity challenge (double counting / wrong vintage / metering error):');
-        if (!basis) return;
-        const ref = window.prompt('Dispute reference (e.g. DSP-2026-0011):') || '';
-        const reason = window.prompt('Reason code (e.g. double_counting / vintage_mismatch / metering_error):') || '';
-        body = { dispute_basis: basis };
-        if (ref) body.dispute_ref = ref;
-        if (reason) body.reason_code = reason;
-      } else if (action === 'resolve-dispute') {
-        const basis = window.prompt('Resolution basis — dismissing the dispute and restoring the certificate to allocated:');
-        if (!basis) return;
-        const summary = window.prompt('Resolution summary (one line for the audit record):') || '';
-        body = { dispute_basis: basis };
-        if (summary) body.resolution_summary = summary;
-      } else if (action === 'claw-back') {
-        const basis = window.prompt('Claw-back basis — upholding the dispute and revoking the certificate (double-counting / fraud):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. double_counting / fraudulent_issuance / metering_void):') || '';
-        const summary = window.prompt('Resolution summary (one line for the audit record):') || '';
-        body = { clawback_basis: basis };
-        if (reason) body.reason_code = reason;
-        if (summary) body.resolution_summary = summary;
-      } else if (action === 'cancel-certificate') {
-        const reason = window.prompt('Cancellation reason — certificate withdrawn before issuance / listing (voluntary):');
-        if (!reason) return;
-        const summary = window.prompt('Resolution summary (one line for the audit record):') || '';
-        body = { reason_code: reason };
-        if (summary) body.resolution_summary = summary;
-      } else if (action === 'expire-certificate') {
-        const reason = window.prompt('Expiry reason — the certificate vintage has lapsed (no longer claimable):');
-        if (!reason) return;
-        const summary = window.prompt('Resolution summary (one line for the audit record):') || '';
-        body = { reason_code: reason };
-        if (summary) body.resolution_summary = summary;
-      }
-      await api.post(`/rec-lifecycle/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
+  const kpis = summary ?? {
+    total: 0, open_count: 0, issued_count: 0, retired_count: 0,
+    disputed_count: 0, clawed_back_count: 0, rejected_count: 0,
+    expired_count: 0, cancelled_count: 0, breached: 0,
+    reportable_total: 0, compliance_open: 0, high_open: 0,
+    total_mwh: 0, retired_mwh: 0, clawed_back_mwh: 0,
+  };
 
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">REC / Guarantee-of-Origin certificate lifecycle</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-state renewable-attribute certificate chain (I-REC Standard · SAREC / AReP · EU Guarantee-of-Origin
-            · GHG Protocol Scope 2 market-based method) · requested → eligibility → issued → listed → transferred
-            → allocated → retired. The offtaker retires the certificate to substantiate a renewable-consumption
-            claim (RE100 / CDP / carbon-tax offset); the lifecycle integrity prevents DOUBLE COUNTING — one MWh
-            attribute is issued once, owned by one party at a time, and retired once. A failed eligibility review
-            rejects the issuance; a post-issuance integrity challenge sends the certificate to dispute, then either
-            restored (dismissed) or clawed back (revoked). INVERTED SLA: the larger the volume / the more it is a
-            compliance claim, the more time each verification window allows. Tier by MWh represented with a
-            compliance floor at major. Two-party write — the issuer / registry drives issuance, listing, transfer,
-            dispute resolution, claw-back, cancel and expiry; the holder (offtaker) allocates consumption, retires
-            and raises integrity disputes. The W70 signature — a CLAWED-BACK certificate crosses to the regulator
-            for every tier (always a double-counting / integrity event); a rejected issuance and an SLA breach
-            cross for major + critical.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>
+          REC / Guarantee-of-Origin certificate lifecycle
+        </h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          12-state renewable-attribute certificate chain (I-REC Standard · SAREC / AReP · EU Guarantee-of-Origin
+          · GHG Protocol Scope 2 market-based method) · requested → eligibility → issued → listed → transferred
+          → allocated → retired. The offtaker retires the certificate to substantiate a renewable-consumption
+          claim (RE100 / CDP / carbon-tax offset); the lifecycle integrity prevents DOUBLE COUNTING. A failed
+          eligibility review rejects the issuance; a post-issuance integrity challenge sends the certificate to
+          dispute, then either restored (dismissed) or clawed back (revoked). INVERTED SLA: the larger the volume
+          / the more it is a compliance claim, the more time each verification window allows. Two-party write —
+          the issuer / registry drives issuance, listing, transfer, dispute resolution, claw-back, cancel and
+          expiry; the holder (offtaker) allocates consumption, retires and raises integrity disputes. W70 signature:
+          a CLAWED-BACK certificate crosses to the regulator for every tier.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} tone={(kpis?.open_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Compliance open" value={kpis?.compliance_open ?? 0} tone={(kpis?.compliance_open ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="High open" value={kpis?.high_open ?? 0} tone={(kpis?.high_open ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Issued" value={kpis?.issued_count ?? 0} tone="ok" />
-        <Kpi label="Retired" value={kpis?.retired_count ?? 0} tone="ok" />
-        <Kpi label="Disputed" value={kpis?.disputed_count ?? 0} tone={(kpis?.disputed_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Clawed back" value={kpis?.clawed_back_count ?? 0} tone={(kpis?.clawed_back_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Retired MWh" value={fmtMwh(kpis?.retired_mwh ?? 0)} tone="ok" />
-        <Kpi label="Total MWh" value={fmtMwh(kpis?.total_mwh ?? 0)} />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total"           value={kpis.total} />
+        <KpiTile label="Open"            value={kpis.open_count}        tone={kpis.open_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="Compliance open" value={kpis.compliance_open}   tone={kpis.compliance_open > 0 ? 'warn' : undefined} />
+        <KpiTile label="High open"       value={kpis.high_open}         tone={kpis.high_open > 0 ? 'warn' : undefined} />
+        <KpiTile label="Issued"          value={kpis.issued_count}      tone="ok" />
+        <KpiTile label="Retired"         value={kpis.retired_count}     tone="ok" />
+        <KpiTile label="Disputed"        value={kpis.disputed_count}    tone={kpis.disputed_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="Clawed back"     value={kpis.clawed_back_count} tone={kpis.clawed_back_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="SLA breached"    value={kpis.breached}          tone={kpis.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Reportable"      value={kpis.reportable_total}  tone={kpis.reportable_total > 0 ? 'warn' : undefined} />
+        <KpiTile label="Retired MWh"     value={fmtMwh(kpis.retired_mwh)}  tone="ok" />
+        <KpiTile label="Total MWh"       value={fmtMwh(kpis.total_mwh)} />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
+        {FILTERS.map(f => (
+          <button
             key={f.key}
+            type="button"
             onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}
           >
             {f.label}
           </button>
@@ -521,277 +952,85 @@ export function RecLifecycleChainTab() {
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Offtaker</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Standard</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">MWh</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.severity_tier];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.case_number}
-                      {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to the regulator">●</span>}
-                      {r.compliance_critical ? <span className="ml-1 text-[#8a4a00]" title="Compliance / regulatory claim">★</span> : null}
-                      {r.double_counting_checked ? <span className="ml-1 text-[#0d5c47]" title="Double-counting check complete">⊘</span> : null}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[180px] truncate" title={r.offtaker_name}>
-                      {r.offtaker_name}
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{STANDARD_LABEL[r.certificate_standard] ?? r.certificate_standard}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">
-                      {fmtMwh(r.mwh_represented)}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No certificates match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div
+          className="mb-3 rounded border px-3 py-2 text-[11px]"
+          style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}
+        >
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div
+          className="rounded border px-4 py-6 text-center text-[12px]"
+          style={{ background: BG1, borderColor: BORDER, color: TX3 }}
+        >
+          Loading...
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.case_number} — ${row.offtaker_name}`}
+              meta={[
+                TIER_LABEL[row.severity_tier],
+                STANDARD_LABEL[row.certificate_standard] ?? row.certificate_standard,
+                fmtMwh(row.mwh_represented),
+                row.compliance_critical ? 'Compliance' : null,
+                row.is_reportable ? 'Reportable' : null,
+              ].filter(Boolean).join(' · ')}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div
+              className="rounded border px-4 py-6 text-center text-[12px]"
+              style={{ background: BG1, borderColor: BORDER, color: TX3 }}
+            >
+              No certificates match.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-const BTN_CLASS: Record<'primary' | 'danger' | 'warn' | 'good' | 'muted', string> = {
-  primary: 'rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]',
-  danger:  'rounded border border-red-400 bg-white px-3 py-1.5 text-[12px] font-medium text-red-800 hover:bg-red-50',
-  warn:    'rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-orange-700 hover:bg-orange-50',
-  good:    'rounded border border-green-300 bg-white px-3 py-1.5 text-[12px] font-medium text-green-800 hover:bg-green-50',
-  muted:   'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b1f1f] hover:bg-[#f3e0e0]',
-};
-
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: RecRow;
-  events: RecEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: RecRow) => void;
-}) {
-  const actions = ALLOWED_ACTIONS[row.chain_status] || [];
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.case_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">
-                {row.offtaker_name}
-                {row.compliance_critical ? <span className="ml-2 text-[#8a4a00]" title="Compliance / regulatory claim">★ Compliance</span> : null}
-              </div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.severity_tier].label}
-                {` · ${STANDARD_LABEL[row.certificate_standard] ?? row.certificate_standard}`}
-                {row.energy_source ? ` · ${SOURCE_LABEL[row.energy_source] ?? row.energy_source}` : ''}
-                {row.registry ? ` · ${REGISTRY_LABEL[row.registry] ?? row.registry}` : ''}
-              </div>
-              <div className="mt-1 text-[11px] text-[#4a5568]">
-                {row.issuer_name || row.generator_name || 'Issuer/registry'} → {row.holder_name || row.offtaker_name}
-                {row.dispute_round > 0 ? ` · dispute round ${row.dispute_round}` : ''}
-                {row.escalation_level > 0 ? ` · escalation lvl ${row.escalation_level}` : ''}
-              </div>
-              {row.generator_name && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Generator {row.generator_name}{row.project_name ? ` · ${row.project_name}` : ''}
-                </div>
-              )}
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"                value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier"                 value={TIER_TONE[row.severity_tier].label} />
-            <Pair label="Standard"             value={STANDARD_LABEL[row.certificate_standard] ?? row.certificate_standard} />
-            <Pair label="Energy source"        value={row.energy_source ? (SOURCE_LABEL[row.energy_source] ?? row.energy_source) : '—'} />
-            <Pair label="Registry"             value={row.registry ? (REGISTRY_LABEL[row.registry] ?? row.registry) : '—'} />
-            <Pair label="Claim purpose"        value={row.claim_purpose ? (PURPOSE_LABEL[row.claim_purpose] ?? row.claim_purpose) : '—'} />
-            <Pair label="MWh represented"      value={fmtMwh(row.mwh_represented)} />
-            <Pair label="Vintage year"         value={row.vintage_year != null ? String(row.vintage_year) : '—'} />
-            <Pair label="Generation period"    value={row.generation_period_start ? `${fmtDate(row.generation_period_start)} → ${fmtDate(row.generation_period_end)}` : '—'} />
-            <Pair label="Certificate serial"   value={row.certificate_serial ?? '—'} />
-            <Pair label="Compliance claim"     value={row.compliance_critical ? 'Yes' : 'No'} />
-            <Pair label="Double-counting check" value={row.double_counting_checked ? 'Complete' : 'Pending'} />
-            <Pair label="Issuance ref"         value={row.issuance_ref ?? '—'} />
-            <Pair label="Eligibility ref"      value={row.eligibility_ref ?? '—'} />
-            <Pair label="Transfer ref"         value={row.transfer_ref ?? '—'} />
-            <Pair label="Allocation ref"       value={row.allocation_ref ?? '—'} />
-            <Pair label="Retirement ref"       value={row.retirement_ref ?? '—'} />
-            <Pair label="Dispute ref"          value={row.dispute_ref ?? '—'} />
-            <Pair label="Claim certificate #"  value={row.claim_certificate_number ?? '—'} />
-            <Pair label="Reason code"          value={row.reason_code ?? '—'} />
-            <Pair label="Dispute round"        value={String(row.dispute_round)} />
-            <Pair label="Requested"            value={fmtDate(row.issuance_requested_at)} />
-            <Pair label="Eligibility review"   value={fmtDate(row.eligibility_review_at)} />
-            <Pair label="Issued"               value={fmtDate(row.issued_at)} />
-            <Pair label="Listed"               value={fmtDate(row.listed_for_transfer_at)} />
-            <Pair label="Transferred"          value={fmtDate(row.transferred_at)} />
-            <Pair label="Allocated"            value={fmtDate(row.allocated_at)} />
-            <Pair label="Retired"              value={fmtDate(row.retired_at)} />
-            <Pair label="Disputed"             value={fmtDate(row.disputed_at)} />
-            <Pair label="Clawed back"          value={fmtDate(row.clawed_back_at)} />
-            <Pair label="Rejected"             value={fmtDate(row.rejected_at)} />
-            <Pair label="Expired"              value={fmtDate(row.expired_at)} />
-            <Pair label="Vintage expiry"       value={fmtDate(row.vintage_expiry_at)} />
-            <Pair label="SLA deadline"         value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"           value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"       value={String(row.escalation_level)} />
-            <Pair label="Reportable"           value={row.is_reportable ? 'Yes' : 'No'} />
-          </div>
-          {row.resolution_summary && (
-            <BasisBlock label="Resolution summary" tone="#1a3a5c" text={row.resolution_summary} />
-          )}
-          {row.eligibility_basis && (
-            <BasisBlock label="Eligibility basis" tone="#a06200" text={row.eligibility_basis} />
-          )}
-          {row.issuance_basis && (
-            <BasisBlock label="Issuance basis" tone="#1a3a5c" text={row.issuance_basis} />
-          )}
-          {row.transfer_basis && (
-            <BasisBlock label="Transfer / listing basis" tone="#8a4a00" text={row.transfer_basis} />
-          )}
-          {row.allocation_basis && (
-            <BasisBlock label="Allocation basis (holder)" tone="#0d5c47" text={row.allocation_basis} />
-          )}
-          {row.retirement_basis && (
-            <BasisBlock label="Retirement basis (holder)" tone="#155724" text={row.retirement_basis} />
-          )}
-          {row.dispute_basis && (
-            <BasisBlock label="Dispute basis" tone="#9b1f1f" text={row.dispute_basis} />
-          )}
-          {row.clawback_basis && (
-            <BasisBlock label="Claw-back basis" tone="#5a1818" text={row.clawback_basis} />
-          )}
-          {row.rejection_basis && (
-            <BasisBlock label="Rejection basis" tone="#6b1f1f" text={row.rejection_basis} />
-          )}
-        </section>
-
-        {actions.length > 0 && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {actions.map((a, idx) => (
-                <button type="button"
-                  key={a}
-                  onClick={() => onAct(a, row)}
-                  className={idx === 0 ? BTN_CLASS.primary : BTN_CLASS[ACTION_TONE[a]]}
-                >
-                  {ACTION_LABEL[a]}
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1, fontSize: 11 }}>{value}</div>
     </div>
   );
 }
+
+function BasisBlock({ label, text }: { label: string; text: string }) {
+  return (
+    <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="whitespace-pre-wrap text-[11px]" style={{ color: TX2 }}>{text}</div>
+    </div>
+  );
+}
+
+export default RecLifecycleChainTab;

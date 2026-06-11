@@ -15,7 +15,7 @@ export interface StepProps {
 // ─── Shared primitives ──────────────────────────────────────────────────────
 
 const LABEL_CLS = 'block text-[12px] font-medium text-[#3a4658] mb-1';
-const INPUT_CLS = 'w-full h-9 px-3 rounded border border-[#dde4ec] text-[13px] text-[#0f1c2e] bg-white focus:outline-none focus:border-[#1a3a5c]';
+const INPUT_CLS = 'w-full h-9 px-3 rounded border border-[#dde4ec] text-[13px] text-[#0f1c2e] bg-white focus:outline-none focus:border-[oklch(0.46_0.16_55)]';
 const SELECT_CLS = INPUT_CLS;
 const FIELD_CLS = 'space-y-1';
 const GRID2 = 'grid grid-cols-2 gap-x-4 gap-y-3';
@@ -44,7 +44,7 @@ function CheckRow({
       <input
         id={id}
         type="checkbox"
-        className="h-3.5 w-3.5 rounded border-[#dde4ec] accent-[#1a3a5c]"
+        className="h-3.5 w-3.5 rounded border-[#dde4ec] accent-[oklch(0.46_0.16_55)]"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />
@@ -372,7 +372,7 @@ export function EsumsDataSourcesStep({ data, onChange, accentColor = '#16a34a' }
       <button
         type="button"
         onClick={addEntry}
-        className="w-full h-9 rounded border border-dashed border-[#dde4ec] text-[12px] font-medium hover:border-[#1a3a5c] hover:text-[#1a3a5c] transition-colors"
+        className="w-full h-9 rounded border border-dashed border-[#dde4ec] text-[12px] font-medium hover:border-[oklch(0.46_0.16_55)] hover:text-[oklch(0.46_0.16_55)] transition-colors"
         style={{ color: '#6b7685' }}
       >
         + Add data source
@@ -403,7 +403,7 @@ export function EsumsAlertsStep({ data, onChange }: StepProps) {
       <Field label={`Alert threshold: ${data.alert_threshold_pct ?? 90}%`}>
         <input
           type="range" min="80" max="100" step="1"
-          className="w-full accent-[#1a3a5c]"
+          className="w-full accent-[oklch(0.46_0.16_55)]"
           value={(data.alert_threshold_pct as number) ?? 90}
           onChange={(e) => onChange('alert_threshold_pct', Number(e.target.value))}
         />
@@ -661,7 +661,7 @@ export function OfftakerPpaPrefsStep({ data, onChange }: StepProps) {
       <Field label={`Green sourcing target: ${data.green_commitment_pct ?? 0}% of consumption`}>
         <input
           type="range" min="0" max="100" step="5"
-          className="w-full accent-[#1a3a5c]"
+          className="w-full accent-[oklch(0.46_0.16_55)]"
           value={(data.green_commitment_pct as number) ?? 0}
           onChange={(e) => onChange('green_commitment_pct', Number(e.target.value))}
         />
@@ -670,7 +670,7 @@ export function OfftakerPpaPrefsStep({ data, onChange }: StepProps) {
       <Field label={`Required availability: ${data.required_availability_pct ?? 95}%`}>
         <input
           type="range" min="80" max="100" step="1"
-          className="w-full accent-[#1a3a5c]"
+          className="w-full accent-[oklch(0.46_0.16_55)]"
           value={(data.required_availability_pct as number) ?? 95}
           onChange={(e) => onChange('required_availability_pct', Number(e.target.value))}
         />

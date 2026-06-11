@@ -301,7 +301,7 @@ export function DataSourcesTab() {
                     : (
                       <button type="button"
                         onClick={() => setEditingInterval(src.id)}
-                        className="text-xs text-blue-600 hover:text-blue-800 underline-offset-2 hover:underline"
+                        className="text-xs text-[oklch(0.46_0.16_55)] hover:text-[oklch(0.40_0.009_250)] underline-offset-2 hover:underline"
                         title="Click to edit"
                       >
                         {src.polling_interval_sec}s
@@ -324,7 +324,7 @@ export function DataSourcesTab() {
                   <div className="flex items-center justify-end gap-2">
                     <button type="button"
                       onClick={() => setLiveSource(src)}
-                      className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
+                      className="px-2.5 py-1 text-xs font-medium text-[oklch(0.46_0.16_55)] bg-[oklch(0.97_0.003_250)] rounded hover:bg-[oklch(0.94_0.008_250)] transition-colors"
                       title="Open live graph for this data source"
                     >
                       Live

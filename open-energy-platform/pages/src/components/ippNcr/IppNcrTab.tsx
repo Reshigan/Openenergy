@@ -107,9 +107,9 @@ const SEVERITY_LABEL: Record<NcrSeverity, string> = {
 
 const STATUS_COLOR: Record<NcrStatus, string> = {
   raised:                   'bg-[#eef2f7] text-[#2d3748]',
-  acknowledged:             'bg-blue-50 text-blue-700',
-  under_investigation:      'bg-blue-100 text-blue-800',
-  disposition_proposed:     'bg-indigo-100 text-indigo-700',
+  acknowledged:             'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
+  under_investigation:      'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
+  disposition_proposed:     'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   disposition_reviewed:     'bg-violet-100 text-violet-700',
   rework_in_progress:       'bg-amber-100 text-amber-800',
   reinspection:             'bg-cyan-100 text-cyan-700',
@@ -455,14 +455,14 @@ export default function IppNcrTab({ readOnly = false }: Props) {
                       {!!row.floor_safety_stop_work && <Flag label="STOP" title="Safety stop-work order active" cls="bg-red-200 text-red-900" />}
                       {!!row.floor_hold_point_triggered && <Flag label="HP" title="Hold point triggered — IE sign-off required" cls="bg-violet-100 text-violet-800" />}
                       {!!row.floor_ie_notification_required && <Flag label="IE" title="IE notification required" cls="bg-orange-100 text-orange-700" />}
-                      {!!row.floor_lender_consent_required && <Flag label="LC" title="Lender consent required" cls="bg-blue-100 text-blue-700" />}
-                      {!!row.floor_nersa_reportable && <Flag label="N" title="NERSA reportable" cls="bg-indigo-100 text-indigo-700" />}
+                      {!!row.floor_lender_consent_required && <Flag label="LC" title="Lender consent required" cls="bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]" />}
+                      {!!row.floor_nersa_reportable && <Flag label="N" title="NERSA reportable" cls="bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]" />}
                       {!!row.is_reportable && <Flag label="⚑" title="Regulator crossed (W136 SIGNATURE)" cls="bg-red-200 text-red-800" />}
                     </div>
                   </td>
                   {!readOnly && (
                     <td className="px-3 py-2">
-                      <button type="button" className="text-xs text-blue-600 hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>Manage</button>
+                      <button type="button" className="text-xs text-[oklch(0.46_0.16_55)] hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>Manage</button>
                     </td>
                   )}
                 </tr>
@@ -570,7 +570,7 @@ export default function IppNcrTab({ readOnly = false }: Props) {
                 {selected.disposition && (
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] text-[#9aa5b4] uppercase">Disposition:</span>
-                    <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-xs font-medium">{DISPOSITION_LABEL[selected.disposition] ?? selected.disposition}</span>
+                    <span className="px-2 py-0.5 rounded bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)] text-xs font-medium">{DISPOSITION_LABEL[selected.disposition] ?? selected.disposition}</span>
                   </div>
                 )}
                 {selected.rca_method && selected.rca_method !== 'none' && (
@@ -812,7 +812,7 @@ export default function IppNcrTab({ readOnly = false }: Props) {
 function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
   const cls = color === 'red' ? 'text-red-600'
     : color === 'green' ? 'text-green-600'
-    : color === 'blue' ? 'text-blue-600'
+    : color === 'blue' ? 'text-[oklch(0.46_0.16_55)]'
     : color === 'orange' ? 'text-orange-600'
     : 'text-[#2d3748]';
   return (

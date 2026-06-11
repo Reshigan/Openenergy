@@ -52,7 +52,7 @@ interface CountryRouting {
 const STATUS_TONE: Record<CaStatus, { bg: string; fg: string; label: string }> = {
   draft: { bg: '#f0f3f7', fg: '#445566', label: 'Draft' },
   dffe_pending: { bg: '#fff4d6', fg: '#a06200', label: 'DFFE pending' },
-  dffe_cleared: { bg: '#dbecfb', fg: '#1a3a5c', label: 'DFFE cleared' },
+  dffe_cleared: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'DFFE cleared' },
   unfccc_ledger: { bg: '#daf5e2', fg: '#1f6b3a', label: 'UNFCCC ledger' },
   blocked: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Blocked' },
 };
@@ -170,7 +170,7 @@ export function Article6Tab() {
             onClick={() => setFilter(s)}
             data-testid={`article6-filter-${s}`}
             className={`px-2 py-1 rounded text-[11px] font-semibold border ${
-              filter === s ? 'bg-[#c2873a] text-white border-[#1a3a5c]' : 'bg-white text-[#445566] border-[#dde4ed]'
+              filter === s ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]' : 'bg-white text-[#445566] border-[#dde4ed]'
             }`}
           >
             {s === 'all' ? 'All' : STATUS_TONE[s].label}
@@ -254,7 +254,7 @@ export function Article6Tab() {
 
           {drill.registry_uri && (
             <div className="text-[11px] text-[#6b7685] mb-2 break-all">
-              Registry anchor: <a href={drill.registry_uri} target="_blank" rel="noreferrer" className="text-[#1a3a5c] underline font-mono">{drill.registry_uri}</a>
+              Registry anchor: <a href={drill.registry_uri} target="_blank" rel="noreferrer" className="underline font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>{drill.registry_uri}</a>
             </div>
           )}
           {drill.blocked_reason && (
@@ -307,7 +307,7 @@ export function Article6Tab() {
               <button type="button"
                 disabled={actionBusy}
                 onClick={() => transition(drill.id, 'unblock')}
-                className="px-2 py-1 text-[11px] rounded bg-white border border-[#1a3a5c] text-[#1a3a5c]"
+                className="px-2 py-1 text-[11px] rounded bg-white border border-[oklch(0.46_0.16_55)]" style={{ color: 'oklch(0.46 0.16 55)' }}
                 data-testid="article6-unblock"
               >Unblock</button>
             )}
@@ -328,7 +328,7 @@ export function Article6Tab() {
       )}
 
       <div className="mt-6">
-        <div className="text-[12px] font-semibold text-[#1a3a5c] mb-2">Country routing</div>
+        <div className="text-[12px] font-semibold mb-2" style={{ color: 'oklch(0.46 0.16 55)' }}>Country routing</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2" data-testid="article6-routing">
           {routing.map((r) => (
             <div key={r.country_iso} className="p-2 rounded border border-[#dde4ed] bg-white">
@@ -349,7 +349,7 @@ export function Article6Tab() {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: string; tone?: 'good' | 'warn' | 'bad' }) {
-  const palette = tone === 'good' ? '#1f6b3a' : tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#1a3a5c';
+  const palette = tone === 'good' ? '#1f6b3a' : tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : 'oklch(0.46 0.16 55)';
   return (
     <div className="p-2 rounded-md bg-white border border-[#dde4ed]">
       <div className="text-[10px] uppercase text-[#6b7685]">{label}</div>

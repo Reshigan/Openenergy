@@ -22,7 +22,7 @@ type ActionItem = {
 const priorityColor: Record<string, { bg: string; text: string; dot: string }> = {
   urgent: { bg: '#fde7e9', text: '#c0392b', dot: '#c0392b' },
   high: { bg: '#fef3e6', text: '#b04e0f', dot: '#c97a14' },
-  normal: { bg: '#d4e7f6', text: '#3b82c4', dot: '#3b82c4' },
+  normal: { bg: '#d4e7f6', text: 'oklch(0.46 0.16 55)', dot: 'oklch(0.46 0.16 55)' },
   low: { bg: '#eef1f4', text: '#6b7685', dot: '#8c8f94' },
 };
 
@@ -120,7 +120,7 @@ export function ActionQueueCard() {
         </div>
         <div
           className="text-[12px] font-semibold px-2.5 py-1 rounded-full"
-          style={{ background: items.length ? '#d4e7f6' : '#eef1f4', color: items.length ? '#3b82c4' : '#6b7685' }}
+          style={{ background: items.length ? '#d4e7f6' : '#eef1f4', color: items.length ? 'oklch(0.46 0.16 55)' : '#6b7685' }}
         >
           {loading ? '…' : `${items.length} open`}
         </div>
@@ -196,7 +196,7 @@ export function ActionQueueCard() {
                 <button type="button"
                   onClick={() => navigate(href)}
                   className="text-[12px] font-semibold px-2.5 h-8 rounded-md flex items-center gap-1 hover:bg-[#e5ebf2]"
-                  style={{ color: '#3b82c4' }}
+                  style={{ color: 'oklch(0.46 0.16 55)' }}
                 >
                   Open <ArrowRight size={12} />
                 </button>

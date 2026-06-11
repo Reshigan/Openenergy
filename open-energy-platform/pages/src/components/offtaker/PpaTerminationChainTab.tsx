@@ -29,6 +29,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'termination_triggered' | 'notice_served' | 'cure_period' | 'termination_review'
@@ -39,6 +54,7 @@ type Tier = 'minor' | 'moderate' | 'material' | 'major' | 'critical';
 type Cause = 'seller_default' | 'buyer_default' | 'no_fault' | 'change_in_law' | 'prolonged_force_majeure';
 
 interface TerminationRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   source_event: string | null;
@@ -129,19 +145,6 @@ interface TerminationRow {
   breach_crosses_regulator?: boolean;
 }
 
-interface TerminationEvent {
-  id: string;
-  termination_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiSummary {
   total: number;
   open_count: number;
@@ -157,37 +160,25 @@ interface KpiSummary {
   settled_buyout_zar_m: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  termination_triggered: { bg: '#e3e7ec', fg: '#557',    label: 'Triggered' },
-  notice_served:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Notice served' },
-  cure_period:           { bg: '#fff4d6', fg: '#a06200', label: 'Cure period' },
-  termination_review:    { bg: '#fff4d6', fg: '#8a4a00', label: 'Termination review' },
-  termination_confirmed: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Confirmed' },
-  eta_assessment:        { bg: '#dbecfb', fg: '#1a3a5c', label: 'ETA assessment' },
-  eta_agreed:            { bg: '#d4edda', fg: '#155724', label: 'ETA agreed' },
-  disputed:              { bg: '#ffe4e1', fg: '#a04040', label: 'Disputed' },
-  settlement_pending:    { bg: '#fde7c2', fg: '#8a4a00', label: 'Settlement pending' },
-  closed:                { bg: '#daf5e2', fg: '#1f6b3a', label: 'Closed' },
-  reinstated:            { bg: '#daf5e2', fg: '#1f6b3a', label: 'Reinstated' },
-  withdrawn:             { bg: '#ede0e0', fg: '#6b3a3a', label: 'Withdrawn' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'termination_triggered',
+  'notice_served',
+  'cure_period',
+  'termination_review',
+  'termination_confirmed',
+  'eta_assessment',
+  'eta_agreed',
+  'disputed',
+  'settlement_pending',
+  'closed',
+];
+const BRANCH_STATES: readonly string[] = [
+  'reinstated',
+  'withdrawn',
+];
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-  moderate: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Moderate' },
-  material: { bg: '#fff4d6', fg: '#8a4a00', label: 'Material' },
-  major:    { bg: '#ffe4b5', fg: '#8a4a00', label: 'Major' },
-  critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical' },
-};
-
-const CAUSE_LABEL: Record<Cause, string> = {
-  seller_default:          'Seller default',
-  buyer_default:           'Buyer default',
-  no_fault:                'No fault (mutual)',
-  change_in_law:           'Change in law',
-  prolonged_force_majeure: 'Prolonged FM',
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active_open',           label: 'Open' },
   { key: 'all',                   label: 'All' },
@@ -213,48 +204,20 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'withdrawn',             label: 'Withdrawn' },
 ];
 
-type ActionKind =
-  | 'serve-notice' | 'open-cure' | 'confirm-cure' | 'escalate-review'
-  | 'confirm-termination' | 'open-eta-assessment' | 'agree-eta' | 'dispute-eta'
-  | 'resolve-dispute' | 'initiate-settlement' | 'confirm-settlement' | 'withdraw';
-
-// Primary forward action per state. The branch states surface their secondary
-// actions (escalate / dispute / withdraw) in the drawer.
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  termination_triggered: 'serve-notice',
-  notice_served:         'open-cure',
-  cure_period:           'confirm-cure',
-  termination_review:    'confirm-termination',
-  termination_confirmed: 'open-eta-assessment',
-  eta_assessment:        'agree-eta',
-  eta_agreed:            'initiate-settlement',
-  disputed:              'resolve-dispute',
-  settlement_pending:    'confirm-settlement',
-  closed:                null,
-  reinstated:            null,
-  withdrawn:             null,
-};
-
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'serve-notice':        'Serve notice (offtaker)',
-  'open-cure':           'Open cure period (offtaker)',
-  'confirm-cure':        'Confirm cure → reinstate (offtaker)',
-  'escalate-review':     'Escalate to termination review (offtaker)',
-  'confirm-termination': 'Confirm termination (offtaker)',
-  'open-eta-assessment': 'Open ETA assessment (offtaker)',
-  'agree-eta':           'Agree buy-out (offtaker)',
-  'dispute-eta':         'Dispute buy-out (seller / IPP)',
-  'resolve-dispute':     'Resolve dispute (independent expert)',
-  'initiate-settlement': 'Initiate settlement (offtaker)',
-  'confirm-settlement':  'Confirm settlement → close (offtaker)',
-  'withdraw':            'Withdraw termination (offtaker)',
-};
-
+const TERMINAL_STATES: ChainStatus[] = ['closed', 'reinstated', 'withdrawn'];
 const WITHDRAW_FROM: ChainStatus[] = [
   'termination_triggered', 'notice_served', 'cure_period', 'termination_review',
 ];
-const TERMINAL_STATES: ChainStatus[] = ['closed', 'reinstated', 'withdrawn'];
 
+const CAUSE_LABEL: Record<Cause, string> = {
+  seller_default:          'Seller default',
+  buyer_default:           'Buyer default',
+  no_fault:                'No fault (mutual)',
+  change_in_law:           'Change in law',
+  prolonged_force_majeure: 'Prolonged FM',
+};
+
+// ── format helpers ────────────────────────────────────────────────────────
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
   if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
@@ -275,24 +238,279 @@ function fmtZarM(n: number | null | undefined): string {
   return `R${n.toFixed(1)}m`;
 }
 
+// ── action builder ────────────────────────────────────────────────────────
+function getActions(row: TerminationRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const st = row.chain_status;
+
+  // serve-notice: termination_triggered
+  if (st === 'termination_triggered') {
+    actions.push({
+      key: 'serve-notice',
+      label: 'Serve notice (offtaker)',
+      fields: [
+        { key: 'notice_ref', label: 'Notice reference (e.g. PTN-2026-014)', type: 'text', required: true, placeholder: '' },
+        { key: 'notice_basis', label: 'Notice basis — the termination event being notified', type: 'textarea', required: false, placeholder: '' },
+      ],
+    });
+  }
+
+  // open-cure: notice_served (primary forward action)
+  if (st === 'notice_served') {
+    actions.push({
+      key: 'open-cure',
+      label: 'Open cure period (offtaker)',
+      fields: [
+        { key: 'cure_ref', label: 'Cure reference', type: 'text', required: true, placeholder: '' },
+        { key: 'cure_basis', label: 'Cure basis — the cure required + the window granted', type: 'textarea', required: false, placeholder: '' },
+      ],
+    });
+  }
+
+  // confirm-cure: cure_period (primary forward action)
+  if (st === 'cure_period') {
+    actions.push({
+      key: 'confirm-cure',
+      label: 'Confirm cure → reinstate (offtaker)',
+      fields: [
+        { key: 'reinstatement_ref', label: 'Reinstatement reference (counterparty cured — PPA reinstated)', type: 'text', required: true, placeholder: '' },
+        { key: 'reinstatement_basis', label: 'Reinstatement basis — confirmation the default was cured', type: 'textarea', required: false, placeholder: '' },
+      ],
+    });
+  }
+
+  // escalate-review: notice_served or cure_period (secondary action)
+  if (st === 'notice_served' || st === 'cure_period') {
+    actions.push({
+      key: 'escalate-review',
+      label: 'Escalate to termination review (offtaker)',
+      fields: [
+        { key: 'review_ref', label: 'Review reference', type: 'text', required: true, placeholder: '' },
+        { key: 'review_basis', label: 'Review basis — why the matter proceeds to termination (no/failed cure)', type: 'textarea', required: false, placeholder: '' },
+      ],
+    });
+  }
+
+  // confirm-termination: termination_review
+  if (st === 'termination_review') {
+    actions.push({
+      key: 'confirm-termination',
+      label: 'Confirm termination (offtaker)',
+      // confirm_termination crosses regulator EVERY tier when cause is INVOLUNTARY
+      cascadeTo: ['regulator'],
+      fields: [
+        { key: 'confirmation_ref', label: 'Confirmation reference (PPA terminates)', type: 'text', required: true, placeholder: '' },
+        { key: 'confirmation_basis', label: 'Confirmation basis — the determination to terminate', type: 'textarea', required: true, placeholder: '' },
+        { key: 'regulator_ref', label: 'Regulator reference (NERSA security-of-supply notification), if any', type: 'text', required: false, placeholder: '' },
+      ],
+    });
+  }
+
+  // open-eta-assessment: termination_confirmed
+  if (st === 'termination_confirmed') {
+    actions.push({
+      key: 'open-eta-assessment',
+      label: 'Open ETA assessment (offtaker)',
+      fields: [
+        { key: 'assessment_ref', label: 'Assessment reference (early-termination amount calculation)', type: 'text', required: true, placeholder: '' },
+        { key: 'assessment_basis', label: 'Assessment basis — debt schedule / equity-IRR make-whole method', type: 'textarea', required: false, placeholder: '' },
+      ],
+    });
+  }
+
+  // agree-eta: eta_assessment (primary) + dispute-eta secondary
+  if (st === 'eta_assessment') {
+    actions.push({
+      key: 'agree-eta',
+      label: 'Agree buy-out (offtaker)',
+      fields: [
+        { key: 'agreement_ref', label: 'Agreement reference', type: 'text', required: true, placeholder: '' },
+        { key: 'buyout_zar_m', label: 'Agreed buy-out / early-termination amount (ZAR millions) — drives the tier', type: 'number', required: false, placeholder: String(row.buyout_zar_m ?? '') },
+        { key: 'debt_outstanding_zar_m', label: 'Senior debt outstanding component (ZAR millions)', type: 'number', required: false, placeholder: String(row.debt_outstanding_zar_m ?? '') },
+        { key: 'equity_makewhole_zar_m', label: 'Equity make-whole component (ZAR millions)', type: 'number', required: false, placeholder: String(row.equity_makewhole_zar_m ?? '') },
+        { key: 'agreement_basis', label: 'Agreement basis — how the buy-out was struck', type: 'textarea', required: false, placeholder: '' },
+      ],
+    });
+    actions.push({
+      key: 'dispute-eta',
+      label: 'Dispute buy-out (seller / IPP)',
+      fields: [
+        { key: 'dispute_ref', label: 'Dispute reference (seller / IPP disputes the calculated buy-out)', type: 'text', required: true, placeholder: '' },
+        { key: 'dispute_basis', label: 'Dispute basis — why the seller contests the amount', type: 'textarea', required: true, placeholder: '' },
+      ],
+    });
+  }
+
+  // eta_agreed: dispute-eta secondary
+  if (st === 'eta_agreed') {
+    actions.push({
+      key: 'initiate-settlement',
+      label: 'Initiate settlement (offtaker)',
+      fields: [
+        { key: 'settlement_ref', label: 'Settlement reference', type: 'text', required: true, placeholder: '' },
+        { key: 'settlement_basis', label: 'Settlement basis — payment instruction / schedule', type: 'textarea', required: false, placeholder: '' },
+      ],
+    });
+    actions.push({
+      key: 'dispute-eta',
+      label: 'Dispute buy-out (seller / IPP)',
+      fields: [
+        { key: 'dispute_ref', label: 'Dispute reference (seller / IPP disputes the calculated buy-out)', type: 'text', required: true, placeholder: '' },
+        { key: 'dispute_basis', label: 'Dispute basis — why the seller contests the amount', type: 'textarea', required: true, placeholder: '' },
+      ],
+    });
+  }
+
+  // resolve-dispute: disputed
+  if (st === 'disputed') {
+    actions.push({
+      key: 'resolve-dispute',
+      label: 'Resolve dispute (independent expert)',
+      fields: [
+        { key: 'resolution_ref', label: 'Resolution reference (independent expert determination)', type: 'text', required: true, placeholder: '' },
+        { key: 'buyout_zar_m', label: 'Determined buy-out (ZAR millions) — re-derives the tier', type: 'number', required: false, placeholder: String(row.buyout_zar_m ?? '') },
+        { key: 'resolution_basis', label: 'Resolution basis — the expert determination', type: 'textarea', required: false, placeholder: '' },
+      ],
+    });
+  }
+
+  // confirm-settlement: settlement_pending — crosses regulator for major + critical
+  if (st === 'settlement_pending') {
+    actions.push({
+      key: 'confirm-settlement',
+      label: 'Confirm settlement → close (offtaker)',
+      cascadeTo: ['regulator'],
+      fields: [
+        { key: 'closure_ref', label: 'Closure reference (buy-out paid — clean close)', type: 'text', required: true, placeholder: '' },
+        { key: 'settlement_zar_m', label: 'Amount settled (ZAR millions)', type: 'number', required: false, placeholder: String(row.settlement_zar_m ?? row.buyout_zar_m ?? '') },
+        { key: 'settlement_basis', label: 'Settlement basis — confirmation of payment', type: 'textarea', required: false, placeholder: '' },
+        { key: 'regulator_ref', label: 'Regulator reference (large buy-out notification), if any', type: 'text', required: false, placeholder: '' },
+      ],
+    });
+  }
+
+  // withdraw: termination_triggered / notice_served / cure_period / termination_review
+  if (WITHDRAW_FROM.includes(st)) {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw termination (offtaker)',
+      fields: [
+        { key: 'withdrawal_ref', label: 'Withdrawal reference (termination withdrawn before confirmation)', type: 'text', required: true, placeholder: '' },
+        { key: 'withdrawal_basis', label: 'Withdrawal basis — why the termination is withdrawn', type: 'textarea', required: true, placeholder: '' },
+      ],
+    });
+  }
+
+  return actions;
+}
+
+// ── detail panel ──────────────────────────────────────────────────────────
+function renderDetail(row: TerminationRow): React.ReactNode {
+  return (
+    <div style={{ fontSize: 11, color: TX2 }}>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5" style={{ marginBottom: 8 }}>
+        <DetailPair label="Case #" value={row.case_number} />
+        <DetailPair label="Cause" value={CAUSE_LABEL[row.termination_cause]} />
+        <DetailPair label="ETA basis" value={row.eta_basis} />
+        <DetailPair label="PPA code" value={row.ppa_code ?? '—'} />
+        <DetailPair label="Currency" value={row.ppa_currency ?? '—'} />
+        <DetailPair label="Buy-out (ETA)" value={fmtZarM(row.buyout_zar_m)} />
+        <DetailPair label="Debt component" value={fmtZarM(row.debt_outstanding_zar_m)} />
+        <DetailPair label="Equity make-whole" value={fmtZarM(row.equity_makewhole_zar_m)} />
+        <DetailPair label="Settled" value={fmtZarM(row.settlement_zar_m)} />
+        <DetailPair label="Independent expert" value={row.independent_party_name ?? '—'} />
+        <DetailPair label="Dispute round" value={String(row.dispute_round)} />
+        <DetailPair label="Plant" value={row.plant_name ?? '—'} />
+        <DetailPair label="Technology" value={row.technology ?? '—'} />
+        <DetailPair label="Capacity (MW)" value={row.ppa_capacity_mw != null ? String(row.ppa_capacity_mw) : '—'} />
+        <DetailPair label="Remaining term (mo)" value={row.remaining_term_months != null ? String(row.remaining_term_months) : '—'} />
+        <DetailPair label="Offtaker" value={row.offtaker_party_name} />
+        <DetailPair label="Seller" value={row.seller_party_name} />
+        <DetailPair label="Notice ref" value={row.notice_ref ?? '—'} />
+        <DetailPair label="Cure ref" value={row.cure_ref ?? '—'} />
+        <DetailPair label="Review ref" value={row.review_ref ?? '—'} />
+        <DetailPair label="Confirmation ref" value={row.confirmation_ref ?? '—'} />
+        <DetailPair label="Assessment ref" value={row.assessment_ref ?? '—'} />
+        <DetailPair label="Agreement ref" value={row.agreement_ref ?? '—'} />
+        <DetailPair label="Dispute ref" value={row.dispute_ref ?? '—'} />
+        <DetailPair label="Resolution ref" value={row.resolution_ref ?? '—'} />
+        <DetailPair label="Settlement ref" value={row.settlement_ref ?? '—'} />
+        <DetailPair label="Closure ref" value={row.closure_ref ?? '—'} />
+        <DetailPair label="Regulator ref" value={row.regulator_ref ?? '—'} />
+        <DetailPair label="Reason code" value={row.reason_code ?? '—'} />
+        <DetailPair label="Triggered at" value={fmtDate(row.termination_triggered_at)} />
+        <DetailPair label="Notice at" value={fmtDate(row.notice_served_at)} />
+        <DetailPair label="Cure at" value={fmtDate(row.cure_period_at)} />
+        <DetailPair label="Review at" value={fmtDate(row.termination_review_at)} />
+        <DetailPair label="Confirmed at" value={fmtDate(row.termination_confirmed_at)} />
+        <DetailPair label="Assessment at" value={fmtDate(row.eta_assessment_at)} />
+        <DetailPair label="Agreed at" value={fmtDate(row.eta_agreed_at)} />
+        <DetailPair label="Settlement at" value={fmtDate(row.settlement_pending_at)} />
+        <DetailPair label="Closed at" value={fmtDate(row.closed_at)} />
+        <DetailPair label="SLA deadline" value={fmtDate(row.sla_deadline_at)} />
+        <DetailPair label="SLA status" value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+        <DetailPair label="Escalation lvl" value={String(row.escalation_level)} />
+        <DetailPair label="Reportable" value={row.is_reportable_flag ? 'Yes' : 'No'} />
+        {row.source_wave && <DetailPair label="Source wave" value={row.source_wave + (row.source_entity_id ? ` · ${row.source_entity_id}` : '')} />}
+      </div>
+      {row.notice_basis && (
+        <BasisBlock label="Notice basis" text={row.notice_basis} />
+      )}
+      {row.cure_basis && (
+        <BasisBlock label="Cure basis" text={row.cure_basis} />
+      )}
+      {row.review_basis && (
+        <BasisBlock label="Review basis" text={row.review_basis} />
+      )}
+      {row.confirmation_basis && (
+        <BasisBlock label="Confirmation basis" text={row.confirmation_basis} />
+      )}
+      {row.assessment_basis && (
+        <BasisBlock label="Assessment basis" text={row.assessment_basis} />
+      )}
+      {row.agreement_basis && (
+        <BasisBlock label="Agreement basis" text={row.agreement_basis} />
+      )}
+      {row.dispute_basis && (
+        <BasisBlock label="Dispute basis" text={row.dispute_basis} />
+      )}
+      {row.resolution_basis && (
+        <BasisBlock label="Resolution basis" text={row.resolution_basis} />
+      )}
+      {row.settlement_basis && (
+        <BasisBlock label="Settlement basis" text={row.settlement_basis} />
+      )}
+      {row.reinstatement_basis && (
+        <BasisBlock label="Reinstatement basis" text={row.reinstatement_basis} />
+      )}
+      {row.withdrawal_basis && (
+        <BasisBlock label="Withdrawal basis" text={row.withdrawal_basis} />
+      )}
+      {row.notes && (
+        <BasisBlock label="Notes" text={row.notes} />
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function PpaTerminationChainTab() {
   const [rows, setRows] = useState<TerminationRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active_open');
-  const [selected, setSelected] = useState<TerminationRow | null>(null);
-  const [events, setEvents] = useState<TerminationEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
       const res = await api.get<{ data: { items: TerminationRow[] } & KpiSummary }>('/ppa-termination/chain');
-      setRows(res.data?.data?.items || []);
       const d = res.data?.data;
+      setRows(d?.items || []);
       if (d) {
-        setKpis({
+        setSummary({
           total: d.total, open_count: d.open_count, closed_count: d.closed_count,
           in_cure: d.in_cure, in_assessment: d.in_assessment, in_dispute: d.in_dispute,
           breached: d.breached, reportable_total: d.reportable_total,
@@ -309,17 +527,28 @@ export function PpaTerminationChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: TerminationRow; events: TerminationEvent[] } }>(
-        `/ppa-termination/chain/${id}`
-      );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/ppa-termination/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/ppa-termination/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load termination history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { events: ChainEvent[] } }>(`/ppa-termination/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -331,415 +560,137 @@ export function PpaTerminationChainTab() {
       if (filter === 'major')       return r.termination_tier === 'major';
       if (filter === 'critical')    return r.termination_tier === 'critical';
       if (filter === 'involuntary') return r.termination_cause !== 'no_fault';
-      if (filter === 'breached')    return r.sla_breached;
-      if (filter === 'reportable')  return r.is_reportable_flag;
+      if (filter === 'breached')    return !!r.sla_breached;
+      if (filter === 'reportable')  return !!r.is_reportable_flag;
       return r.chain_status === filter;
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: TerminationRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'serve-notice') {
-        const ref = window.prompt('Notice reference (e.g. PTN-2026-014):');
-        if (!ref) return;
-        const basis = window.prompt('Notice basis — the termination event being notified:') || '';
-        body = { notice_ref: ref, notice_basis: basis };
-      } else if (action === 'open-cure') {
-        const ref = window.prompt('Cure reference:');
-        if (!ref) return;
-        const basis = window.prompt('Cure basis — the cure required + the window granted:') || '';
-        body = { cure_ref: ref, cure_basis: basis };
-      } else if (action === 'confirm-cure') {
-        const ref = window.prompt('Reinstatement reference (counterparty cured — PPA reinstated):');
-        if (!ref) return;
-        const basis = window.prompt('Reinstatement basis — confirmation the default was cured:') || '';
-        body = { reinstatement_ref: ref, reinstatement_basis: basis, reason_code: 'cured' };
-      } else if (action === 'escalate-review') {
-        const ref = window.prompt('Review reference:');
-        if (!ref) return;
-        const basis = window.prompt('Review basis — why the matter proceeds to termination (no/failed cure):') || '';
-        body = { review_ref: ref, review_basis: basis };
-      } else if (action === 'confirm-termination') {
-        const ref = window.prompt('Confirmation reference (PPA terminates):');
-        if (!ref) return;
-        const basis = window.prompt('Confirmation basis — the determination to terminate:');
-        if (!basis) return;
-        const reg = window.prompt('Regulator reference (NERSA security-of-supply notification), if any:') || '';
-        body = { confirmation_ref: ref, confirmation_basis: basis };
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'open-eta-assessment') {
-        const ref = window.prompt('Assessment reference (early-termination amount calculation):');
-        if (!ref) return;
-        const basis = window.prompt('Assessment basis — debt schedule / equity-IRR make-whole method:') || '';
-        body = { assessment_ref: ref, assessment_basis: basis };
-      } else if (action === 'agree-eta') {
-        const ref = window.prompt('Agreement reference:');
-        if (!ref) return;
-        const buyout = window.prompt('Agreed buy-out / early-termination amount (ZAR millions) — drives the tier:', String(row.buyout_zar_m ?? ''));
-        const debt = window.prompt('Senior debt outstanding component (ZAR millions):', String(row.debt_outstanding_zar_m ?? ''));
-        const equity = window.prompt('Equity make-whole component (ZAR millions):', String(row.equity_makewhole_zar_m ?? ''));
-        const basis = window.prompt('Agreement basis — how the buy-out was struck:') || '';
-        body = { agreement_ref: ref, agreement_basis: basis };
-        if (buyout) body.buyout_zar_m = Number(buyout);
-        if (debt) body.debt_outstanding_zar_m = Number(debt);
-        if (equity) body.equity_makewhole_zar_m = Number(equity);
-      } else if (action === 'dispute-eta') {
-        const ref = window.prompt('Dispute reference (seller / IPP disputes the calculated buy-out):');
-        if (!ref) return;
-        const basis = window.prompt('Dispute basis — why the seller contests the amount:');
-        if (!basis) return;
-        body = { dispute_ref: ref, dispute_basis: basis, reason_code: 'eta_disputed' };
-      } else if (action === 'resolve-dispute') {
-        const ref = window.prompt('Resolution reference (independent expert determination):');
-        if (!ref) return;
-        const buyout = window.prompt('Determined buy-out (ZAR millions) — re-derives the tier:', String(row.buyout_zar_m ?? ''));
-        const basis = window.prompt('Resolution basis — the expert determination:') || '';
-        body = { resolution_ref: ref, resolution_basis: basis };
-        if (buyout) body.buyout_zar_m = Number(buyout);
-      } else if (action === 'initiate-settlement') {
-        const ref = window.prompt('Settlement reference:');
-        if (!ref) return;
-        const basis = window.prompt('Settlement basis — payment instruction / schedule:') || '';
-        body = { settlement_ref: ref, settlement_basis: basis };
-      } else if (action === 'confirm-settlement') {
-        const ref = window.prompt('Closure reference (buy-out paid — clean close):');
-        if (!ref) return;
-        const settled = window.prompt('Amount settled (ZAR millions):', String(row.settlement_zar_m ?? row.buyout_zar_m ?? ''));
-        const basis = window.prompt('Settlement basis — confirmation of payment:') || '';
-        const reg = window.prompt('Regulator reference (large buy-out notification), if any:') || '';
-        body = { closure_ref: ref, settlement_basis: basis };
-        if (settled) body.settlement_zar_m = Number(settled);
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'withdraw') {
-        const ref = window.prompt('Withdrawal reference (termination withdrawn before confirmation):');
-        if (!ref) return;
-        const basis = window.prompt('Withdrawal basis — why the termination is withdrawn:');
-        if (!basis) return;
-        body = { withdrawal_ref: ref, withdrawal_basis: basis, reason_code: 'withdrawn' };
-      }
-      await api.post(`/ppa-termination/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
+  const kpis = summary ?? {
+    total: rows.length, open_count: 0, closed_count: 0,
+    in_cure: 0, in_assessment: 0, in_dispute: 0,
+    breached: 0, reportable_total: 0, involuntary_total: 0, large_tier_open: 0,
+    total_buyout_zar_m: 0, settled_buyout_zar_m: 0,
+  };
 
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Offtaker PPA termination &amp; early-termination amount (buy-out)</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-stage P6 chain · triggered → notice served → cure period → termination review → confirmed → ETA assessment →
-            ETA agreed → settlement → closed. The EXIT of the offtake relationship: a termination event arises, notice is
-            served, a cure window runs, and — if uncured — the PPA terminates and an early-termination amount (the buy-out)
-            is calculated, agreed and settled. The buy-out basis turns on the CAUSE: seller default / prolonged FM = debt
-            only; buyer default / change in law = debt + equity make-whole; no-fault = negotiated. The seller (IPP) can
-            dispute the calculated buy-out; an independent expert resolves it. MIXED SLA: cure / assessment / dispute
-            windows INVERTED (bigger buy-out = longer), settlement URGENT (a larger agreed buy-out is paid faster for
-            security of supply). Confirming a termination for an INVOLUNTARY cause crosses to the regulator inbox for every
-            tier; a no-fault mutual termination + settlement + SLA breaches cross for major + critical.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>
+          Offtaker PPA termination &amp; early-termination amount (buy-out)
+        </h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          12-stage P6 chain · triggered → notice served → cure period → termination review → confirmed → ETA assessment →
+          ETA agreed → settlement → closed. The EXIT of the offtake relationship: a termination event arises, notice is
+          served, a cure window runs, and — if uncured — the PPA terminates and an early-termination amount (the buy-out)
+          is calculated, agreed and settled. The buy-out basis turns on the CAUSE: seller default / prolonged FM = debt
+          only; buyer default / change in law = debt + equity make-whole; no-fault = negotiated. The seller (IPP) can
+          dispute the calculated buy-out; an independent expert resolves it. MIXED SLA: cure / assessment / dispute
+          windows INVERTED (bigger buy-out = longer), settlement URGENT (a larger agreed buy-out is paid faster for
+          security of supply). Confirming a termination for an INVOLUNTARY cause crosses to the regulator inbox for every
+          tier; a no-fault mutual termination + settlement + SLA breaches cross for major + critical.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="In cure" value={kpis?.in_cure ?? 0} tone={(kpis?.in_cure ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="In assessment" value={kpis?.in_assessment ?? 0} />
-        <Kpi label="In dispute" value={kpis?.in_dispute ?? 0} tone={(kpis?.in_dispute ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Large open" value={kpis?.large_tier_open ?? 0} tone={(kpis?.large_tier_open ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Closed" value={kpis?.closed_count ?? 0} tone="ok" />
-        <Kpi label="Involuntary" value={kpis?.involuntary_total ?? 0} tone={(kpis?.involuntary_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Buy-out total" value={fmtZarM(kpis?.total_buyout_zar_m)} />
-        <Kpi label="Settled" value={fmtZarM(kpis?.settled_buyout_zar_m)} tone="ok" />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total" value={kpis.total} />
+        <KpiTile label="Open" value={kpis.open_count} />
+        <KpiTile label="In cure" value={kpis.in_cure} tone={kpis.in_cure > 0 ? 'warn' : undefined} />
+        <KpiTile label="In assessment" value={kpis.in_assessment} />
+        <KpiTile label="In dispute" value={kpis.in_dispute} tone={kpis.in_dispute > 0 ? 'bad' : undefined} />
+        <KpiTile label="Large open" value={kpis.large_tier_open} tone={kpis.large_tier_open > 0 ? 'warn' : undefined} />
+        <KpiTile label="Closed" value={kpis.closed_count} tone="ok" />
+        <KpiTile label="Involuntary" value={kpis.involuntary_total} tone={kpis.involuntary_total > 0 ? 'warn' : undefined} />
+        <KpiTile label="Reportable" value={kpis.reportable_total} tone={kpis.reportable_total > 0 ? 'warn' : undefined} />
+        <KpiTile label="SLA breached" value={kpis.breached} tone={kpis.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Buy-out total" value={fmtZarM(kpis.total_buyout_zar_m)} />
+        <KpiTile label="Settled" value={fmtZarM(kpis.settled_buyout_zar_m)} tone="ok" />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">PPA / offtaker</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Cause</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Buy-out</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.termination_tier];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.case_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[280px] truncate" title={`${r.ppa_name} · ${r.offtaker_party_name}`}>
-                      {r.ppa_name}
-                      <span className="text-[#4a5568]"> · {r.seller_party_name}</span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{CAUSE_LABEL[r.termination_cause]}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtZarM(r.buyout_zar_m)}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No terminations match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]"
+          style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]"
+          style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading...
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={row.ppa_name}
+              meta={`${row.termination_tier.charAt(0).toUpperCase() + row.termination_tier.slice(1)} · ${CAUSE_LABEL[row.termination_cause]} · ${row.case_number}`}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]"
+              style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No terminations match.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: TerminationRow;
-  events: TerminationEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: TerminationRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canEscalate = row.chain_status === 'notice_served' || row.chain_status === 'cure_period';
-  const canDispute = row.chain_status === 'eta_assessment' || row.chain_status === 'eta_agreed';
-  const canWithdraw = WITHDRAW_FROM.includes(row.chain_status);
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.case_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.ppa_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.termination_tier].label} · {CAUSE_LABEL[row.termination_cause]} · offtaker {row.offtaker_party_name}
-                {row.seller_party_name ? ` · seller ${row.seller_party_name}` : ''}
-              </div>
-              {row.plant_name && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  {row.plant_name}{row.technology ? ` · ${row.technology}` : ''}
-                  {row.ppa_capacity_mw != null ? ` · ${row.ppa_capacity_mw} MW` : ''}
-                  {row.remaining_term_months != null ? ` · ${row.remaining_term_months} mo remaining` : ''}
-                </div>
-              )}
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"            value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier"             value={TIER_TONE[row.termination_tier].label} />
-            <Pair label="Cause"            value={CAUSE_LABEL[row.termination_cause]} />
-            <Pair label="ETA basis"        value={row.eta_basis} />
-            <Pair label="PPA code"         value={row.ppa_code ?? '—'} />
-            <Pair label="Currency"         value={row.ppa_currency ?? '—'} />
-            <Pair label="Buy-out (ETA)"    value={fmtZarM(row.buyout_zar_m)} />
-            <Pair label="Debt component"   value={fmtZarM(row.debt_outstanding_zar_m)} />
-            <Pair label="Equity make-whole" value={fmtZarM(row.equity_makewhole_zar_m)} />
-            <Pair label="Settled"          value={fmtZarM(row.settlement_zar_m)} />
-            <Pair label="Independent expert" value={row.independent_party_name ?? '—'} />
-            <Pair label="Dispute round"    value={String(row.dispute_round)} />
-            <Pair label="Notice ref"       value={row.notice_ref ?? '—'} />
-            <Pair label="Cure ref"         value={row.cure_ref ?? '—'} />
-            <Pair label="Review ref"       value={row.review_ref ?? '—'} />
-            <Pair label="Confirmation ref" value={row.confirmation_ref ?? '—'} />
-            <Pair label="Assessment ref"   value={row.assessment_ref ?? '—'} />
-            <Pair label="Agreement ref"    value={row.agreement_ref ?? '—'} />
-            <Pair label="Dispute ref"      value={row.dispute_ref ?? '—'} />
-            <Pair label="Resolution ref"   value={row.resolution_ref ?? '—'} />
-            <Pair label="Settlement ref"   value={row.settlement_ref ?? '—'} />
-            <Pair label="Closure ref"      value={row.closure_ref ?? '—'} />
-            <Pair label="Regulator ref"    value={row.regulator_ref ?? '—'} />
-            <Pair label="Reason code"      value={row.reason_code ?? '—'} />
-            <Pair label="Triggered at"     value={fmtDate(row.termination_triggered_at)} />
-            <Pair label="Notice at"        value={fmtDate(row.notice_served_at)} />
-            <Pair label="Cure at"          value={fmtDate(row.cure_period_at)} />
-            <Pair label="Review at"        value={fmtDate(row.termination_review_at)} />
-            <Pair label="Confirmed at"     value={fmtDate(row.termination_confirmed_at)} />
-            <Pair label="Assessment at"    value={fmtDate(row.eta_assessment_at)} />
-            <Pair label="Agreed at"        value={fmtDate(row.eta_agreed_at)} />
-            <Pair label="Settlement at"    value={fmtDate(row.settlement_pending_at)} />
-            <Pair label="Closed at"        value={fmtDate(row.closed_at)} />
-            <Pair label="SLA deadline"     value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"       value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"   value={String(row.escalation_level)} />
-            <Pair label="Reportable"       value={row.is_reportable_flag ? 'Yes' : 'No'} />
-          </div>
-          {row.notice_basis && <BasisBlock label="Notice basis" tone="#1a3a5c" text={row.notice_basis} />}
-          {row.cure_basis && <BasisBlock label="Cure basis" tone="#a06200" text={row.cure_basis} />}
-          {row.review_basis && <BasisBlock label="Review basis" tone="#8a4a00" text={row.review_basis} />}
-          {row.confirmation_basis && <BasisBlock label="Confirmation basis" tone="#8a4a00" text={row.confirmation_basis} />}
-          {row.assessment_basis && <BasisBlock label="Assessment basis" tone="#1a3a5c" text={row.assessment_basis} />}
-          {row.agreement_basis && <BasisBlock label="Agreement basis" tone="#155724" text={row.agreement_basis} />}
-          {row.dispute_basis && <BasisBlock label="Dispute basis" tone="#a04040" text={row.dispute_basis} />}
-          {row.resolution_basis && <BasisBlock label="Resolution basis" tone="#1a3a5c" text={row.resolution_basis} />}
-          {row.settlement_basis && <BasisBlock label="Settlement basis" tone="#8a4a00" text={row.settlement_basis} />}
-          {row.reinstatement_basis && <BasisBlock label="Reinstatement basis" tone="#155724" text={row.reinstatement_basis} />}
-          {row.withdrawal_basis && <BasisBlock label="Withdrawal basis" tone="#6b3a3a" text={row.withdrawal_basis} />}
-          {row.notes && <BasisBlock label="Notes" tone="#4a5568" text={row.notes} />}
-        </section>
-
-        {(nextAction || canEscalate || canDispute || canWithdraw) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canEscalate && (
-                <button type="button"
-                  onClick={() => onAct('escalate-review', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#8a4a00] hover:bg-[#fff8e6]"
-                >
-                  {ACTION_LABEL['escalate-review']}
-                </button>
-              )}
-              {canDispute && (
-                <button type="button"
-                  onClick={() => onAct('dispute-eta', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['dispute-eta']}
-                </button>
-              )}
-              {canWithdraw && (
-                <button type="button"
-                  onClick={() => onAct('withdraw', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b3a3a] hover:bg-[#f3eded]"
-                >
-                  {ACTION_LABEL.withdraw}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1 }}>{value}</div>
     </div>
   );
 }
+
+function BasisBlock({ label, text }: { label: string; text: string }) {
+  return (
+    <div className="col-span-2 rounded border px-2 py-1.5 mt-2" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{text}</div>
+    </div>
+  );
+}
+
+export default PpaTerminationChainTab;

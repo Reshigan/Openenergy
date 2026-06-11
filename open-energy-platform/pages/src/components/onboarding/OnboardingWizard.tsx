@@ -37,7 +37,7 @@ import type { StepProps } from './steps';
 
 const ROLE_COLORS: Record<string, string> = {
   esums_owner:   '#16a34a',
-  ipp_developer: '#1a3a5c',
+  ipp_developer: 'oklch(0.46 0.16 55)',
   trader:        '#7c3aed',
   lender:        '#b45309',
   offtaker:      '#0369a1',

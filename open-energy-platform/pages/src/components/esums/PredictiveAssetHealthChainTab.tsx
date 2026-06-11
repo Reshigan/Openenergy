@@ -21,6 +21,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type PStatus =
   | 'predicted' | 'triaged' | 'diagnosed' | 'action_planned' | 'wo_raised'
@@ -37,6 +52,7 @@ interface AiSuggestion {
 }
 
 interface PrognosticRow {
+  [key: string]: unknown;
   id: string;
   site_id: string;
   device_id: string | null;
@@ -120,29 +136,26 @@ interface KpiData {
   avg_health_score: number;
 }
 
-const STATE_TONE: Record<PStatus, { bg: string; fg: string; label: string }> = {
-  predicted:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Predicted' },
-  triaged:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'Triaged' },
-  diagnosed:         { bg: '#fff4d6', fg: '#a06200', label: 'Diagnosed' },
-  action_planned:    { bg: '#fff4d6', fg: '#a06200', label: 'Action planned' },
-  wo_raised:         { bg: '#fff4d6', fg: '#a06200', label: 'WO raised' },
-  monitoring:        { bg: '#dbecfb', fg: '#1a3a5c', label: 'Monitoring' },
-  resolved:          { bg: '#daf5e2', fg: '#1f6b3a', label: 'Resolved' },
-  dismissed:         { bg: '#e3e7ec', fg: '#557',    label: 'Dismissed' },
-  escalated:         { bg: '#fde0e0', fg: '#9b1f1f', label: 'Escalated' },
-  auto_suppressed:   { bg: '#e3e7ec', fg: '#557',    label: 'Auto-suppressed' },
-  expired:           { bg: '#e3e7ec', fg: '#557',    label: 'Expired' },
-  confirmed_failure: { bg: '#fbd0d0', fg: '#7a1414', label: 'Confirmed failure' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'predicted',
+  'triaged',
+  'diagnosed',
+  'action_planned',
+  'wo_raised',
+  'monitoring',
+  'resolved',
+];
 
-const TIER_TONE: Record<PTier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-  moderate: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Moderate' },
-  material: { bg: '#fff4d6', fg: '#a06200', label: 'Material' },
-  major:    { bg: '#fde0e0', fg: '#9b1f1f', label: 'Major' },
-  critical: { bg: '#fbd0d0', fg: '#7a1414', label: 'Critical' },
-};
+const BRANCH_STATES: readonly string[] = [
+  'dismissed',
+  'escalated',
+  'auto_suppressed',
+  'expired',
+  'confirmed_failure',
+];
 
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',            label: 'Active (pre-terminal)' },
   { key: 'all',               label: 'All' },
@@ -167,12 +180,7 @@ const FILTERS: Array<{ key: string; label: string }> = [
 
 const TIERS = new Set<string>(['minor', 'moderate', 'material', 'major', 'critical']);
 
-const PARTY_TONE: Record<string, { bg: string; fg: string }> = {
-  admin:   { bg: '#dbecfb', fg: '#1a3a5c' },
-  support: { bg: '#fff4d6', fg: '#a06200' },
-  system:  { bg: '#e3e7ec', fg: '#557' },
-};
-
+// ── format helpers ────────────────────────────────────────────────────────
 function fmtZar(n: number): string {
   return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(n);
 }
@@ -185,19 +193,273 @@ function fmtMin(min: number | null | undefined): string {
 }
 
 function healthColor(score: number): string {
-  if (score >= 70) return '#1f6b3a';
-  if (score >= 40) return '#a06200';
-  return '#9b1f1f';
+  if (score >= 70) return GOOD;
+  if (score >= 40) return WARN;
+  return BAD;
 }
 
+// ── actions ───────────────────────────────────────────────────────────────
+function getActions(row: PrognosticRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const cs = row.status;
+
+  if (row.is_terminal) return actions;
+
+  if (cs === 'predicted') {
+    actions.push({
+      key: 'triage-prediction',
+      label: 'Triage',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'triaged' || cs === 'monitoring') {
+    actions.push({
+      key: 'diagnose-root-cause',
+      label: 'Diagnose root cause',
+      tone: 'primary',
+      fields: [
+        {
+          key: 'fault_mode',
+          label: 'Fault mode (optional override)',
+          type: 'text',
+          required: false,
+          placeholder: row.fault_mode ?? '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'diagnosed') {
+    actions.push({
+      key: 'plan-action',
+      label: 'Plan intervention',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'action_planned' || cs === 'escalated') {
+    actions.push({
+      key: 'raise-work-order',
+      label: 'Raise work order',
+      tone: 'warn',
+      fields: [
+        {
+          key: 'work_order_id',
+          label: 'Work order ID (optional)',
+          type: 'text',
+          required: false,
+          placeholder: row.work_order_id ?? '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'wo_raised') {
+    actions.push({
+      key: 'begin-monitoring',
+      label: 'Begin monitoring',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'monitoring') {
+    actions.push({
+      key: 'confirm-resolved',
+      label: 'Confirm resolved',
+      tone: 'primary',
+      fields: [
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (optional)',
+          type: 'textarea',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+
+    actions.push({
+      key: 'reopen-recurrence',
+      label: 'Reopen (recurrence)',
+      tone: 'danger',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'triaged' || cs === 'diagnosed' || cs === 'action_planned' || cs === 'monitoring') {
+    actions.push({
+      key: 'escalate-prognostic',
+      label: 'Escalate',
+      tone: 'danger',
+      fields: [],
+      // record_failure crosses safety||high — escalate itself has no explicit regulator crossing
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'predicted' || cs === 'triaged') {
+    actions.push({
+      key: 'dismiss-prediction',
+      label: 'Dismiss (false positive)',
+      tone: 'ghost',
+      fields: [
+        {
+          key: 'resolution_summary',
+          label: 'Why is this a false positive?',
+          type: 'textarea',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'predicted') {
+    actions.push({
+      key: 'auto-suppress',
+      label: 'Auto-suppress',
+      tone: 'ghost',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'predicted' || cs === 'triaged' || cs === 'diagnosed') {
+    actions.push({
+      key: 'expire-prognostic',
+      label: 'Expire (stale)',
+      tone: 'ghost',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  // record-failure crosses regulator when safety || high (critical/major tiers)
+  const recordFailureCascade = (row.safety_implicated || row.tier === 'critical' || row.tier === 'major')
+    ? ['regulator']
+    : [];
+  actions.push({
+    key: 'record-failure',
+    label: 'Record failure',
+    tone: 'danger',
+    description: 'Record that this asset has actually failed. This closes the loop for confidence tuning.',
+    fields: [],
+    cascadeTo: recordFailureCascade,
+  });
+
+  return actions;
+}
+
+// ── detail renderer ───────────────────────────────────────────────────────
+function renderDetail(row: PrognosticRow): React.ReactNode {
+  return (
+    <div className="space-y-3 text-[12px]">
+      {/* Health + prediction headline */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+        <div>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Health score</div>
+          <HealthBar score={row.health_score} />
+        </div>
+        <DetailPair label="Prediction type" value={row.prediction_type ?? '—'} />
+        <DetailPair label="Fault mode" value={row.fault_mode ? `${row.fault_mode} (${Math.round(row.fault_mode_confidence * 100)}%)` : '—'} />
+        <DetailPair label="Site / device" value={`${row.site_id}${row.device_id ? ` · ${row.device_id}` : ''}`} />
+        {row.safety_implicated && (
+          <div className="col-span-2">
+            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: 'oklch(0.97 0.04 20)', color: BAD }}>⚠ Safety-implicated</span>
+          </div>
+        )}
+        {row.is_reportable && (
+          <div className="col-span-2">
+            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium" style={{ background: 'oklch(0.97 0.05 20)', color: BAD }}>Regulator reportable</span>
+          </div>
+        )}
+      </div>
+
+      {/* Predictive analytics */}
+      <div className="rounded border px-3 py-2.5" style={{ background: BG1, borderColor: BORDER }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: TX3 }}>Predictive analytics</div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+          <DetailPair label="Anomaly score" value={`${row.anomaly_score.toFixed(2)} (conf ${row.anomaly_confidence.toFixed(2)})`} />
+          {row.performance_ratio != null && <DetailPair label="Performance ratio" value={row.performance_ratio.toFixed(2)} />}
+          <DetailPair label="Degradation" value={`${row.degradation_direction} · ${row.degradation_slope_per_day.toFixed(4)}/day (R² ${row.degradation_r_squared.toFixed(2)})`} />
+          <DetailPair label="RUL" value={row.rul_basis === 'already_failed' ? 'Already failed' : `${row.rul_days ?? '—'} days (${row.rul_basis ?? '—'}, conf ${row.rul_confidence.toFixed(2)})`} />
+          {row.lead_time_days > 0 && <DetailPair label="Lead time caught" value={`${row.lead_time_days} days early`} />}
+          {row.predicted_failure_at && <DetailPair label="Predicted failure" value={new Date(row.predicted_failure_at).toLocaleString()} />}
+        </div>
+        {row.methods_triggered.length > 0 && (
+          <div className="mt-2">
+            <div className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: TX3 }}>Methods triggered</div>
+            <div className="flex flex-wrap gap-1.5">
+              {row.methods_triggered.map((m) => (
+                <span key={m} className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: 'oklch(0.95 0.04 240)', color: 'oklch(0.35 0.14 240)' }}>{m}</span>
+              ))}
+            </div>
+          </div>
+        )}
+        {row.evidence.length > 0 && (
+          <div className="mt-2">
+            <div className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: TX3 }}>Evidence</div>
+            <ul className="list-disc list-inside space-y-0.5" style={{ color: TX2 }}>
+              {row.evidence.map((e, i) => <li key={i}>{e}</li>)}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* O&M savings ledger vs NTT benchmark */}
+      <div className="rounded border px-3 py-2.5" style={{ background: BG1, borderColor: BORDER }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: TX3 }}>O&M savings ledger (vs reactive &amp; vs NTT 30% benchmark)</div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+          <DetailPair label="Revenue at risk" value={fmtZar(row.revenue_at_risk_zar)} />
+          <DetailPair label="Reactive cost (run-to-fail)" value={fmtZar(row.reactive_cost_zar)} />
+          <DetailPair label="Predictive cost (planned)" value={fmtZar(row.predictive_cost_zar)} />
+          <DetailPair label="Savings" value={`${fmtZar(row.savings_zar)} (${Math.round(row.savings_pct * 100)}%)`} />
+          <DetailPair label="NTT 30% benchmark would save" value={fmtZar(row.benchmark_savings_zar)} />
+          <DetailPair label="Incremental vs NTT benchmark" value={fmtZar(row.incremental_vs_benchmark_zar)} />
+        </div>
+      </div>
+
+      {/* Operational */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+        {row.work_order_id && <DetailPair label="Work order" value={row.work_order_id} />}
+        {row.assigned_to && <DetailPair label="Assigned to" value={row.assigned_to} />}
+        {row.recurrence_count > 0 && <DetailPair label="Recurrence count" value={String(row.recurrence_count)} />}
+        {row.detected_at && <DetailPair label="Detected" value={new Date(row.detected_at).toLocaleString()} />}
+        {row.sla_deadline && !row.is_terminal && (
+          <DetailPair label="SLA deadline" value={`${new Date(row.sla_deadline).toLocaleString()} (${fmtMin(row.minutes_until_sla)})`} />
+        )}
+      </div>
+
+      {row.notes && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Notes</div>
+          <div style={{ color: TX2 }}>{row.notes}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function PredictiveAssetHealthChainTab() {
   const [rows, setRows] = useState<PrognosticRow[]>([]);
-  const [kpis, setKpis] = useState<KpiData | null>(null);
+  const [summary, setSummary] = useState<KpiData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<PrognosticRow | null>(null);
-  const [events, setEvents] = useState<PrognosticEvent[]>([]);
+  const [filter, setFilter] = useState('active');
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -208,7 +470,7 @@ export function PredictiveAssetHealthChainTab() {
       setRows(d?.items || []);
       if (d) {
         const { items: _items, ...rest } = d;
-        setKpis(rest as KpiData);
+        setSummary(rest as KpiData);
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load prognostics');
@@ -219,15 +481,48 @@ export function PredictiveAssetHealthChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
+    try {
+      await api.post(`/asset-prognostics/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: PrognosticEvent[] } }>(`/asset-prognostics/chain/${rowId}`);
+          const evts = (res.data?.data?.events ?? []).map(e => ({
+            id: e.id,
+            event_type: e.event_type,
+            from_status: e.from_status,
+            to_status: e.to_status,
+            actor_party: e.actor_party,
+            actor_id: e.actor_id,
+            notes: e.detail,
+            created_at: e.created_at,
+          }));
+          setExpandedEvents(prev => ({ ...prev, [rowId]: evts }));
+        } catch { /* silent */ }
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
+    }
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
     try {
       const res = await api.get<{ data: { prognostic: PrognosticRow; events: PrognosticEvent[] } }>(`/asset-prognostics/chain/${id}`);
-      if (res.data?.data?.prognostic) setSelected(res.data.data.prognostic);
-      setEvents(res.data?.data?.events || []);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load prognostic history');
-    }
-  }, []);
+      const evts = (res.data?.data?.events ?? []).map(e => ({
+        id: e.id,
+        event_type: e.event_type,
+        from_status: e.from_status,
+        to_status: e.to_status,
+        actor_party: e.actor_party,
+        actor_id: e.actor_id,
+        notes: e.detail,
+        created_at: e.created_at,
+      }));
+      setExpandedEvents(prev => ({ ...prev, [id]: evts }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -241,116 +536,152 @@ export function PredictiveAssetHealthChainTab() {
     });
   }, [rows, filter]);
 
-  const doAction = useCallback(async (path: string, body?: object) => {
-    if (!selected) return;
-    try {
-      await api.post(`/asset-prognostics/chain/${selected.id}/${path}`, body ?? {});
-      await load();
-      await loadEvents(selected.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Action failed');
-    }
-  }, [selected, load, loadEvents]);
+  const kpis = summary ?? {
+    total: 0,
+    open_count: 0,
+    monitoring_count: 0,
+    escalated_count: 0,
+    confirmed_failures: 0,
+    resolved_count: 0,
+    dismissed_count: 0,
+    breached: 0,
+    reportable_total: 0,
+    safety_open: 0,
+    high_open: 0,
+    total_revenue_at_risk_zar: 0,
+    total_savings_zar: 0,
+    total_incremental_vs_benchmark_zar: 0,
+    total_benchmark_savings_zar: 0,
+    avg_health_score: 100,
+  };
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-7 gap-3">
-        <Kpi label="Fleet health" value={kpis?.avg_health_score ?? 100} tone={(kpis?.avg_health_score ?? 100) < 50 ? 'bad' : (kpis?.avg_health_score ?? 100) < 70 ? 'warn' : 'ok'} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="Safety open" value={kpis?.safety_open ?? 0} tone={(kpis?.safety_open ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Confirmed failures" value={kpis?.confirmed_failures ?? 0} tone={(kpis?.confirmed_failures ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="O&M savings" value={fmtZar(kpis?.total_savings_zar ?? 0)} tone="ok" small />
-        <Kpi label="Beat NTT 30% by" value={fmtZar(kpis?.total_incremental_vs_benchmark_zar ?? 0)} tone="ok" small />
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Predictive Asset Health &amp; Prognostics</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          NTT-beating predictive O&M brain — anomaly ensemble, RUL, fault-mode fingerprinting, revenue-weighted savings ledger.
+        </p>
+      </header>
+
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile
+          label="Fleet health"
+          value={kpis.avg_health_score}
+          tone={kpis.avg_health_score < 50 ? 'bad' : kpis.avg_health_score < 70 ? 'warn' : 'ok'}
+        />
+        <KpiTile label="Open" value={kpis.open_count} />
+        <KpiTile
+          label="Safety open"
+          value={kpis.safety_open}
+          tone={kpis.safety_open > 0 ? 'bad' : 'ok'}
+        />
+        <KpiTile
+          label="SLA breached"
+          value={kpis.breached}
+          tone={kpis.breached > 0 ? 'bad' : 'ok'}
+        />
+        <KpiTile
+          label="Confirmed failures"
+          value={kpis.confirmed_failures}
+          tone={kpis.confirmed_failures > 0 ? 'warn' : 'ok'}
+        />
+        <KpiTile
+          label="O&M savings"
+          value={fmtZar(kpis.total_savings_zar)}
+          tone="ok"
+        />
+        <KpiTile
+          label="Beat NTT 30% by"
+          value={fmtZar(kpis.total_incremental_vs_benchmark_zar)}
+          tone="ok"
+        />
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
+      {/* Filter pills */}
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {FILTERS.map(f => (
+          <button
             key={f.key}
+            type="button"
             onClick={() => setFilter(f.key)}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
-                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
-            }`}>
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}
+          >
             {f.label}
           </button>
         ))}
       </div>
 
-      {err && <div className="px-3 py-2 bg-red-50 text-red-700 text-[12px] rounded-md">{err}</div>}
+      {err && (
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
+        </div>
+      )}
 
-      <div className="bg-white border border-[#e5ebf2] rounded-xl overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[#f7f9fb] text-[11px] uppercase tracking-wide text-[#6b7685]">
-            <tr>
-              <th className="px-3 py-2 text-left">Asset</th>
-              <th className="px-3 py-2 text-left">Health</th>
-              <th className="px-3 py-2 text-left">Fault mode</th>
-              <th className="px-3 py-2 text-right">RUL</th>
-              <th className="px-3 py-2 text-right">Rev at risk</th>
-              <th className="px-3 py-2 text-left">Tier</th>
-              <th className="px-3 py-2 text-left">State</th>
-              <th className="px-3 py-2 text-right">Δ SLA</th>
-            </tr>
-          </thead>
-          <tbody className="text-[13px]">
-            {loading ? (
-              <tr><td colSpan={8} className="p-6 text-center text-[#6b7685]">Loading…</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={8} className="p-6 text-center text-[#6b7685]">No prognostics match the current filter.</td></tr>
-            ) : filtered.map((r) => {
-              const stateTone = STATE_TONE[r.status];
-              const tierTone  = TIER_TONE[r.tier];
-              const breached = r.sla_breached_now || !!r.sla_breached;
-              return (
-                <tr
-                  key={r.id}
-                  onClick={() => loadEvents(r.id)}
-                  className={`cursor-pointer hover:bg-[#f7f9fb] border-t border-[#eef2f6] ${selected?.id === r.id ? 'bg-[#fffae6]' : ''}`}>
-                  <td className="px-3 py-2 max-w-[14rem] truncate" title={`${r.asset_label ?? r.id} · ${r.technology ?? ''}`}>
-                    {r.asset_label ?? r.id}
-                    {r.safety_implicated && <span className="ml-1.5 text-[#9b1f1f]" title="Safety-implicated">⚠</span>}
-                  </td>
-                  <td className="px-3 py-2">
-                    <HealthBar score={r.health_score} />
-                  </td>
-                  <td className="px-3 py-2 text-[#4a5568] text-[12px] max-w-[12rem] truncate" title={r.fault_mode ?? ''}>
-                    {r.fault_mode ?? '—'}
-                    {r.fault_mode_confidence > 0 && <span className="text-[#6b7685]"> · {Math.round(r.fault_mode_confidence * 100)}%</span>}
-                  </td>
-                  <td className="px-3 py-2 text-right text-[12px] tabular-nums text-[#4a5568]">
-                    {r.rul_basis === 'already_failed' ? 'failed' : r.rul_days != null ? `${r.rul_days}d` : '—'}
-                  </td>
-                  <td className="px-3 py-2 text-right text-[12px] tabular-nums">{fmtZar(r.revenue_at_risk_zar)}</td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: tierTone.bg, color: tierTone.fg }}>
-                      {tierTone.label}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: stateTone.bg, color: stateTone.fg }}>
-                      {stateTone.label}
-                    </span>
-                  </td>
-                  <td className={`px-3 py-2 text-right text-[12px] tabular-nums ${breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                    {r.is_terminal ? '—' : fmtMin(r.minutes_until_sla)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {selected && (
-        <PrognosticDrawer
-          row={selected}
-          events={events}
-          onClose={() => { setSelected(null); setEvents([]); }}
-          doAction={doAction}
-        />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading…
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => {
+            const breached = row.sla_breached_now || !!row.sla_breached;
+            const rulLabel = row.rul_basis === 'already_failed'
+              ? 'failed'
+              : row.rul_days != null
+              ? `RUL ${row.rul_days}d`
+              : null;
+            const meta = (
+              <span style={{ color: TX3, fontSize: 11, fontFamily: MONO }}>
+                {row.tier.charAt(0).toUpperCase() + row.tier.slice(1)}
+                {row.technology ? ` · ${row.technology}` : ''}
+                {row.fault_mode ? ` · ${row.fault_mode}` : ''}
+                {rulLabel ? ` · ${rulLabel}` : ''}
+                {' · '}
+                <span style={{ color: healthColor(row.health_score) }}>
+                  {`health ${row.health_score}`}
+                </span>
+                {' · '}
+                {fmtZar(row.revenue_at_risk_zar)}
+                {row.safety_implicated ? ' · ⚠ safety' : ''}
+                {!row.is_terminal && breached ? ' · SLA !' : ''}
+                {!row.is_terminal && !breached && row.minutes_until_sla != null ? ` · ${fmtMin(row.minutes_until_sla)}` : ''}
+              </span>
+            );
+            return (
+              <ChainCard
+                key={row.id}
+                item={{
+                  ...row,
+                  chain_status: row.status,
+                  sla_deadline_at: row.sla_deadline ?? null,
+                  sla_breached: breached,
+                }}
+                allStates={ALL_STATES}
+                branchStates={BRANCH_STATES}
+                title={row.asset_label ?? row.id}
+                meta={meta}
+                actions={getActions(row)}
+                onAction={(key, values) => handleAction(row.id, key, values)}
+                cascadeTo={[]}
+                detail={renderDetail(row)}
+                events={expandedEvents[row.id]}
+                onExpand={handleExpand}
+              />
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No prognostics match the current filter.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -360,260 +691,31 @@ function HealthBar({ score }: { score: number }) {
   const color = healthColor(score);
   return (
     <div className="flex items-center gap-2">
-      <div className="w-20 h-1.5 rounded-full bg-[#eef2f6] overflow-hidden">
+      <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: BG2 }}>
         <div className="h-full rounded-full" style={{ width: `${Math.max(2, Math.min(100, score))}%`, background: color }} />
       </div>
-      <span className="text-[12px] tabular-nums font-semibold" style={{ color }}>{score}</span>
+      <span className="text-[12px] tabular-nums font-semibold" style={{ color, fontFamily: MONO }}>{score}</span>
     </div>
   );
 }
 
-function Kpi({ label, value, tone = 'ok', small = false }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad'; small?: boolean }) {
-  const fg = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0f1c2e';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="bg-white border border-[#e5ebf2] rounded-lg p-3">
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className={small ? 'text-[15px] font-semibold tabular-nums mt-0.5' : 'text-[20px] font-semibold tabular-nums mt-0.5'} style={{ color: fg }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[90px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[16px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function PrognosticDrawer({
-  row, events, onClose, doAction,
-}: {
-  row: PrognosticRow;
-  events: PrognosticEvent[];
-  onClose: () => void;
-  doAction: (path: string, body?: object) => Promise<void>;
-}) {
-  const cs = row.status;
-  const transitionable = !row.is_terminal;
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/30 flex items-stretch justify-end oe-overlay-in" onClick={onClose}>
-      <div className="bg-white w-full max-w-2xl shadow-xl overflow-y-auto oe-drawer-in" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-start justify-between sticky top-0 bg-white z-10">
-          <div>
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">Prognostic {row.id}</div>
-            <h3 className="text-[16px] font-semibold text-[#0f1c2e] mt-0.5">
-              {row.asset_label ?? row.id}
-              <span className="text-[#6b7685] font-normal"> · {row.technology ?? ''}</span>
-            </h3>
-            <div className="flex flex-wrap gap-2 mt-2 text-[12px]">
-              <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: TIER_TONE[row.tier].bg, color: TIER_TONE[row.tier].fg }}>
-                {TIER_TONE[row.tier].label}
-              </span>
-              <span className="px-2 py-0.5 rounded-full" style={{ background: STATE_TONE[cs].bg, color: STATE_TONE[cs].fg }}>
-                {STATE_TONE[cs].label}
-              </span>
-              {row.safety_implicated && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fbd0d0] text-[#7a1414] font-semibold">⚠ Safety-implicated</span>
-              )}
-              {row.is_reportable && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">Regulator reportable</span>
-              )}
-            </div>
-          </div>
-          <button type="button" onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">✕</button>
-        </div>
-
-        <div className="p-5 space-y-4 text-[13px]">
-          {/* Inline AI next-step card — 1-click accept */}
-          {transitionable && row.ai && (
-            <div className="bg-[#f0f7ff] border border-[#cfe2f7] rounded-lg p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-[11px] uppercase tracking-wide text-[#1a3a5c] font-semibold">AI suggests</div>
-                  <div className="text-[#0f1c2e] mt-0.5">{row.ai.why}</div>
-                </div>
-                <button type="button"
-                  onClick={() => row.ai && void doAction(row.ai.endpoint)}
-                  className="shrink-0 px-3 py-1.5 bg-[#c2873a] text-white text-[12px] rounded-md hover:opacity-90">
-                  {row.ai.label}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Health + predictive headline */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">Health score</div>
-              <div className="mt-1"><HealthBar score={row.health_score} /></div>
-            </div>
-            <Pair label="Prediction type" value={row.prediction_type ?? '—'} />
-            <Pair label="Fault mode" value={row.fault_mode ? `${row.fault_mode} (${Math.round(row.fault_mode_confidence * 100)}%)` : '—'} />
-            <Pair label="Site / device" value={`${row.site_id}${row.device_id ? ` · ${row.device_id}` : ''}`} />
-          </div>
-
-          {/* Anomaly + degradation + RUL */}
-          <div className="border-t border-[#eef2f6] pt-4">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Predictive analytics</div>
-            <div className="grid grid-cols-2 gap-4">
-              <Pair label="Anomaly score" value={`${row.anomaly_score.toFixed(2)} (conf ${row.anomaly_confidence.toFixed(2)})`} />
-              {row.performance_ratio != null && <Pair label="Performance ratio" value={row.performance_ratio.toFixed(2)} />}
-              <Pair label="Degradation" value={`${row.degradation_direction} · ${row.degradation_slope_per_day.toFixed(4)}/day (R² ${row.degradation_r_squared.toFixed(2)})`} />
-              <Pair label="RUL" value={row.rul_basis === 'already_failed' ? 'Already failed' : `${row.rul_days ?? '—'} days (${row.rul_basis ?? '—'}, conf ${row.rul_confidence.toFixed(2)})`} />
-              {row.lead_time_days > 0 && <Pair label="Lead time caught" value={`${row.lead_time_days} days early`} />}
-              {row.predicted_failure_at && <Pair label="Predicted failure" value={new Date(row.predicted_failure_at).toLocaleString()} />}
-            </div>
-            {row.methods_triggered.length > 0 && (
-              <div className="mt-2">
-                <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-1">Methods triggered</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {row.methods_triggered.map((m) => (
-                    <span key={m} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#dbecfb] text-[#1a3a5c]">{m}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {row.evidence.length > 0 && (
-              <div className="mt-2">
-                <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-1">Evidence</div>
-                <ul className="list-disc list-inside text-[12px] text-[#4a5568] space-y-0.5">
-                  {row.evidence.map((e, i) => <li key={i}>{e}</li>)}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* O&M savings ledger vs NTT benchmark */}
-          <div className="border-t border-[#eef2f6] pt-4">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">O&M savings ledger (vs reactive &amp; vs NTT 30% benchmark)</div>
-            <div className="grid grid-cols-2 gap-4">
-              <Pair label="Revenue at risk" value={fmtZar(row.revenue_at_risk_zar)} />
-              <Pair label="Reactive cost (run-to-fail)" value={fmtZar(row.reactive_cost_zar)} />
-              <Pair label="Predictive cost (planned)" value={fmtZar(row.predictive_cost_zar)} />
-              <Pair label="Savings" value={`${fmtZar(row.savings_zar)} (${Math.round(row.savings_pct * 100)}%)`} />
-              <Pair label="NTT 30% benchmark would save" value={fmtZar(row.benchmark_savings_zar)} />
-              <Pair label="Incremental vs NTT benchmark" value={fmtZar(row.incremental_vs_benchmark_zar)} />
-            </div>
-          </div>
-
-          {/* Operational */}
-          <div className="grid grid-cols-2 gap-4 border-t border-[#eef2f6] pt-4">
-            {row.work_order_id && <Pair label="Work order" value={row.work_order_id} />}
-            {row.assigned_to && <Pair label="Assigned to" value={row.assigned_to} />}
-            {row.recurrence_count > 0 && <Pair label="Recurrence count" value={String(row.recurrence_count)} />}
-            {row.detected_at && <Pair label="Detected" value={new Date(row.detected_at).toLocaleString()} />}
-            {row.sla_deadline && !row.is_terminal && (
-              <Pair label="SLA deadline" value={`${new Date(row.sla_deadline).toLocaleString()} (${fmtMin(row.minutes_until_sla)})`} />
-            )}
-            {row.notes && <Pair label="Notes" value={row.notes} />}
-          </div>
-
-          {transitionable && (
-            <div className="border-t border-[#eef2f6] pt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Actions</div>
-              <div className="flex flex-wrap gap-2">
-                {cs === 'predicted' && (
-                  <ActionBtn label="Triage" onClick={() => void doAction('triage-prediction')} />
-                )}
-                {(cs === 'triaged' || cs === 'monitoring') && (
-                  <ActionBtn label="Diagnose root cause" onClick={() => {
-                    const fm = window.prompt('Fault mode (optional override):') ?? undefined;
-                    void doAction('diagnose-root-cause', fm ? { fault_mode: fm } : {});
-                  }} />
-                )}
-                {cs === 'diagnosed' && (
-                  <ActionBtn label="Plan intervention" onClick={() => void doAction('plan-action')} />
-                )}
-                {(cs === 'action_planned' || cs === 'escalated') && (
-                  <ActionBtn label="Raise work order" tone="good" onClick={() => {
-                    const wo = window.prompt('Work order ID (optional):') ?? undefined;
-                    void doAction('raise-work-order', wo ? { work_order_id: wo } : {});
-                  }} />
-                )}
-                {cs === 'wo_raised' && (
-                  <ActionBtn label="Begin monitoring" onClick={() => void doAction('begin-monitoring')} />
-                )}
-                {cs === 'monitoring' && (
-                  <ActionBtn label="Confirm resolved" tone="good" onClick={() => {
-                    const s = window.prompt('Resolution summary (optional):') ?? undefined;
-                    void doAction('confirm-resolved', s ? { resolution_summary: s } : {});
-                  }} />
-                )}
-                {cs === 'monitoring' && (
-                  <ActionBtn label="Reopen (recurrence)" tone="bad" onClick={() => void doAction('reopen-recurrence')} />
-                )}
-                {(cs === 'triaged' || cs === 'diagnosed' || cs === 'action_planned' || cs === 'monitoring') && (
-                  <ActionBtn label="Escalate" tone="bad" onClick={() => void doAction('escalate-prognostic')} />
-                )}
-                {(cs === 'predicted' || cs === 'triaged') && (
-                  <ActionBtn label="Dismiss (false positive)" onClick={() => {
-                    const s = window.prompt('Why is this a false positive?') ?? undefined;
-                    void doAction('dismiss-prediction', s ? { resolution_summary: s } : {});
-                  }} />
-                )}
-                {cs === 'predicted' && (
-                  <ActionBtn label="Auto-suppress" onClick={() => void doAction('auto-suppress')} />
-                )}
-                {(cs === 'predicted' || cs === 'triaged' || cs === 'diagnosed') && (
-                  <ActionBtn label="Expire (stale)" onClick={() => void doAction('expire-prognostic')} />
-                )}
-                <ActionBtn label="Record failure" tone="bad" onClick={() => {
-                  if (!window.confirm('Record that this asset has actually failed? This closes the loop for confidence tuning.')) return;
-                  void doAction('record-failure');
-                }} />
-              </div>
-            </div>
-          )}
-
-          <div className="border-t border-[#eef2f6] pt-4">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Timeline</div>
-            <div className="space-y-2">
-              {events.length === 0 ? (
-                <div className="text-[12px] text-[#6b7685]">No events yet.</div>
-              ) : events.map((e) => {
-                const partyTone = PARTY_TONE[e.actor_party ?? 'system'] ?? PARTY_TONE.system;
-                return (
-                  <div key={e.id} className="flex gap-3 text-[12px] border-l-2 border-[#e5ebf2] pl-3 py-1">
-                    <span className="font-mono text-[11px] text-[#6b7685] whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
-                    <div>
-                      <span className="font-semibold text-[#0f1c2e]">{e.event_type}</span>
-                      {e.actor_party && (
-                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-medium uppercase" style={{ background: partyTone.bg, color: partyTone.fg }}>
-                          {e.actor_party}
-                        </span>
-                      )}
-                      {e.from_status && e.to_status && e.from_status !== e.to_status && (
-                        <span className="text-[#6b7685]"> · {e.from_status} → {e.to_status}</span>
-                      )}
-                      {e.detail && <div className="text-[#4a5568] mt-0.5">{e.detail}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[#0f1c2e] mt-0.5">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1 }}>{value}</div>
     </div>
   );
 }
 
-function ActionBtn({ label, onClick, tone = 'neutral' }: { label: string; onClick: () => void; tone?: 'neutral' | 'good' | 'bad' }) {
-  const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#c2873a]';
-  return (
-    <button type="button" onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
-      {label}
-    </button>
-  );
-}
+export default PredictiveAssetHealthChainTab;

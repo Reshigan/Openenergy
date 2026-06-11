@@ -18,6 +18,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'year_opened' | 'data_collected' | 'variance_classified'
@@ -30,6 +45,7 @@ type Urgency = 'critical' | 'high' | 'medium' | 'low';
 type Authority = 'settlement_analyst' | 'finance_controller' | 'finance_director' | 'cfo';
 
 interface ParRow {
+  [key: string]: unknown;
   id: string;
   recon_number: string;
   ppa_id: string;
@@ -164,42 +180,26 @@ interface KpiSummary {
   floor_at_material_count: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  year_opened:           { bg: '#e3e7ec', fg: '#557',    label: 'Year opened' },
-  data_collected:        { bg: '#dbecfb', fg: '#1a3a5c', label: 'Data collected' },
-  variance_classified:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Variance classified' },
-  top_residual_computed: { bg: '#fff4d6', fg: '#a06200', label: 'ToP residual' },
-  cpi_capacity_applied:  { bg: '#fff4d6', fg: '#a06200', label: 'CPI + capacity' },
-  reconciled:            { bg: '#daf5e2', fg: '#1f6b3a', label: 'Reconciled' },
-  disputed:              { bg: '#ffe4e1', fg: '#a04040', label: 'Disputed' },
-  signed_off:            { bg: '#daf5e2', fg: '#155724', label: 'Signed off' },
-  invoiced:              { bg: '#dbecfb', fg: '#1a3a5c', label: 'Invoiced' },
-  settled:               { bg: '#d4edda', fg: '#155724', label: 'Settled' },
-  restated:              { bg: '#ede0e0', fg: '#6b3a3a', label: 'Restated' },
-  cancelled:             { bg: '#ede0e0', fg: '#6b3a3a', label: 'Cancelled' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'year_opened',
+  'data_collected',
+  'variance_classified',
+  'top_residual_computed',
+  'cpi_capacity_applied',
+  'reconciled',
+  'signed_off',
+  'invoiced',
+  'settled',
+];
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-  standard: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard' },
-  material: { bg: '#fff4d6', fg: '#8a4a00', label: 'Material' },
-  major:    { bg: '#fde0e0', fg: '#9b1f1f', label: 'Major' },
-};
+const BRANCH_STATES: readonly string[] = [
+  'disputed',
+  'restated',
+  'cancelled',
+];
 
-const URGENCY_TONE: Record<Urgency, { bg: string; fg: string; label: string }> = {
-  critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical' },
-  high:     { bg: '#ffe4b5', fg: '#a06200', label: 'High' },
-  medium:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Medium' },
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-};
-
-const AUTHORITY_LABEL: Record<Authority, string> = {
-  settlement_analyst: 'Settlement analyst',
-  finance_controller: 'Finance controller',
-  finance_director:   'Finance director',
-  cfo:                'CFO',
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active_open',           label: 'Open' },
   { key: 'all',                   label: 'All' },
@@ -223,44 +223,17 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'cancelled',             label: 'Cancelled' },
 ];
 
-type ActionKind =
-  | 'collect-data' | 'classify-variance' | 'compute-top-residual'
-  | 'apply-cpi-capacity' | 'reconcile' | 'raise-dispute' | 'resolve-dispute'
-  | 'sign-off' | 'invoice' | 'settle' | 'restate-year' | 'cancel-year';
-
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  year_opened:           'collect-data',
-  data_collected:        'classify-variance',
-  variance_classified:   'compute-top-residual',
-  top_residual_computed: 'apply-cpi-capacity',
-  cpi_capacity_applied:  'reconcile',
-  reconciled:            'sign-off',
-  disputed:              'resolve-dispute',
-  signed_off:            'invoice',
-  invoiced:              'settle',
-  settled:               null,
-  restated:              null,
-  cancelled:             null,
-};
-
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'collect-data':         'Collect annual data (settlement analyst)',
-  'classify-variance':    'Classify variance (settlement analyst)',
-  'compute-top-residual': 'Compute take-or-pay residual (settlement analyst)',
-  'apply-cpi-capacity':   'Apply CPI true-up + capacity roll (settlement analyst)',
-  'reconcile':            'Reconcile annual ledger (settlement analyst)',
-  'raise-dispute':        'Raise dispute → NERSA s30 (counterparty)',
-  'resolve-dispute':      'Resolve dispute → back to reconciled',
-  'sign-off':             'Sign off (finance controller + auditor + counterparty)',
-  'invoice':              'Issue annual invoice',
-  'settle':               'Mark settled (rest state — restate door stays open)',
-  'restate-year':         'Restate year — IFRS 15 + NERSA s34 hard line',
-  'cancel-year':          'Cancel year (pre-data abandonment)',
-};
-
 const TERMINAL_STATES: ChainStatus[] = ['settled', 'restated', 'cancelled'];
 const CANCEL_FROM: ChainStatus[] = ['year_opened', 'data_collected'];
 
+const AUTHORITY_LABEL: Record<Authority, string> = {
+  settlement_analyst: 'Settlement analyst',
+  finance_controller: 'Finance controller',
+  finance_director:   'Finance director',
+  cfo:                'CFO',
+};
+
+// ── format helpers ────────────────────────────────────────────────────────
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
   if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
@@ -293,29 +266,306 @@ function fmtPct(n: number | null | undefined): string {
   return `${n.toFixed(1)}%`;
 }
 
+// ── actions ───────────────────────────────────────────────────────────────
+function getActions(row: ParRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const status = row.chain_status;
+
+  // Primary forward action per state
+  if (status === 'year_opened') {
+    actions.push({
+      key: 'collect-data',
+      label: 'Collect annual data (settlement analyst)',
+      fields: [
+        { key: 'contracted_mwh', label: 'Contracted energy for year (MWh)', type: 'number', required: true, placeholder: String(row.contracted_mwh ?? '') },
+        { key: 'delivered_mwh', label: 'Delivered energy for year (MWh)', type: 'number', required: false, placeholder: String(row.delivered_mwh ?? '') },
+        { key: 'min_offtake_mwh', label: 'Minimum offtake / take-or-pay (MWh)', type: 'number', required: false, placeholder: String(row.min_offtake_mwh ?? '') },
+        { key: 'curtailed_mwh', label: 'Curtailed energy for year (MWh)', type: 'number', required: false, placeholder: String(row.curtailed_mwh ?? '0') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'data_collected') {
+    actions.push({
+      key: 'classify-variance',
+      label: 'Classify variance (settlement analyst)',
+      fields: [
+        { key: 'variance_mwh', label: 'Variance (MWh = delivered − contracted)', type: 'number', required: false, placeholder: String(row.variance_mwh ?? '') },
+        { key: 'variance_pct', label: 'Variance %', type: 'number', required: false, placeholder: String(row.variance_pct ?? '') },
+        { key: 'offtake_shortfall_pct', label: 'Offtake shortfall %', type: 'number', required: false, placeholder: String(row.offtake_shortfall_pct ?? '0') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'variance_classified') {
+    actions.push({
+      key: 'compute-top-residual',
+      label: 'Compute take-or-pay residual (settlement analyst)',
+      fields: [
+        { key: 'top_residual_zar', label: 'Take-or-pay residual (ZAR)', type: 'number', required: false, placeholder: String(row.top_residual_zar ?? '') },
+        { key: 'prior_year_overpayment_zar', label: 'Prior year overpayment to recover (ZAR)', type: 'number', required: false, placeholder: String(row.prior_year_overpayment_zar ?? '0') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'top_residual_computed') {
+    actions.push({
+      key: 'apply-cpi-capacity',
+      label: 'Apply CPI true-up + capacity roll (settlement analyst)',
+      fields: [
+        { key: 'cpi_true_up_zar', label: 'CPI true-up (ZAR)', type: 'number', required: false, placeholder: String(row.cpi_true_up_zar ?? '') },
+        { key: 'capacity_payment_zar', label: 'Capacity payment for year (ZAR)', type: 'number', required: false, placeholder: String(row.capacity_payment_zar ?? '') },
+        { key: 'deemed_energy_credit_zar', label: 'Deemed-energy credit (ZAR)', type: 'number', required: false, placeholder: String(row.deemed_energy_credit_zar ?? '0') },
+        { key: 'energy_revenue_zar', label: 'Energy revenue for year (ZAR)', type: 'number', required: false, placeholder: String(row.energy_revenue_zar ?? '') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'cpi_capacity_applied') {
+    actions.push({
+      key: 'reconcile',
+      label: 'Reconcile annual ledger (settlement analyst)',
+      fields: [
+        { key: 'net_cash_position_zar', label: 'Net cash position for year (ZAR)', type: 'number', required: false, placeholder: String(row.net_cash_position_zar_live ?? row.net_cash_position_zar ?? '') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'reconciled') {
+    // Primary: sign-off (crosses material + major)
+    actions.push({
+      key: 'sign-off',
+      label: 'Sign off (finance controller + auditor + counterparty)',
+      fields: [
+        { key: 'auditor_party', label: 'Auditor confirming signoff', type: 'text', required: false, placeholder: 'PwC' },
+        { key: 'counterparty_party', label: 'Counterparty confirming signoff', type: 'text', required: false, placeholder: String(row.seller_party_name ?? '') },
+      ],
+      cascadeTo: ['regulator'],
+    });
+    // Branch: raise dispute → crosses EVERY tier
+    actions.push({
+      key: 'raise-dispute',
+      label: 'Raise dispute → NERSA s30 (counterparty)',
+      fields: [
+        { key: 'disputed_reason', label: 'Dispute reason (variance / tariff / curtailment / other)', type: 'textarea', required: true, placeholder: '' },
+        { key: 'regulator_ref', label: 'NERSA s30 reference (if known)', type: 'text', required: false, placeholder: '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (status === 'disputed') {
+    actions.push({
+      key: 'resolve-dispute',
+      label: 'Resolve dispute → back to reconciled',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'signed_off') {
+    actions.push({
+      key: 'invoice',
+      label: 'Issue annual invoice',
+      fields: [
+        { key: 'invoice_ref', label: 'Invoice reference', type: 'text', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'invoiced') {
+    actions.push({
+      key: 'settle',
+      label: 'Mark settled (rest state — restate door stays open)',
+      fields: [
+        { key: 'payment_ref', label: 'Payment reference', type: 'text', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // Post-settled restate (crosses EVERY tier — IFRS 15 + NERSA s34 hard line)
+  if (status === 'settled') {
+    actions.push({
+      key: 'restate-year',
+      label: 'Restate year — IFRS 15 + NERSA s34 hard line',
+      fields: [
+        { key: 'restated_reason', label: 'Restatement reason (IFRS 15 + NERSA s34 disclosable)', type: 'textarea', required: true, placeholder: '' },
+        { key: 'regulator_ref', label: 'NERSA inbox reference', type: 'text', required: false, placeholder: '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  // Cancel from year_opened or data_collected (crosses EVERY tier when year had delivery)
+  if (CANCEL_FROM.includes(status)) {
+    actions.push({
+      key: 'cancel-year',
+      label: 'Cancel year (pre-data abandonment)',
+      fields: [
+        { key: 'cancelled_reason', label: 'Cancellation reason', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: row.year_had_delivery ? ['regulator'] : [],
+    });
+  }
+
+  return actions;
+}
+
+// ── detail panel ──────────────────────────────────────────────────────────
+function renderDetail(row: ParRow): React.ReactNode {
+  const authority = (row.authority_required_live ?? row.authority_required) as Authority | null;
+  return (
+    <div style={{ fontSize: 11, color: TX2 }}>
+      {/* Annual close battery */}
+      <div className="mb-2" style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3 }}>Annual close battery</div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-3">
+        <DetailPair label="Completeness index" value={row.reconciliation_completeness_index_live != null ? `${row.reconciliation_completeness_index_live}` : '—'} />
+        <DetailPair label="Days to signoff" value={row.days_to_signoff_live != null ? `${row.days_to_signoff_live.toFixed(1)}d` : '—'} />
+        <DetailPair label="Days in court" value={row.days_in_court_live != null ? `${row.days_in_court_live}d` : '—'} />
+        <DetailPair label="SLA window" value={fmtMinutes(row.sla_window_minutes)} />
+        <DetailPair label="SLA days remaining" value={row.sla_days_remaining_live != null ? `${row.sla_days_remaining_live.toFixed(1)}d` : '—'} />
+        <DetailPair label="Urgency" value={row.urgency_band_live ?? '—'} />
+        <DetailPair label="ToP residual (live)" value={fmtZar(row.top_residual_zar_live ?? row.top_residual_zar)} />
+        <DetailPair label="CPI true-up (live)" value={fmtZar(row.cpi_true_up_zar_live ?? row.cpi_true_up_zar)} />
+        <DetailPair label="Capacity payment (live)" value={fmtZar(row.capacity_payment_year_zar_live ?? row.capacity_payment_zar)} />
+        <DetailPair label="Deemed energy (live)" value={fmtZar(row.deemed_energy_credit_zar_live ?? row.deemed_energy_credit_zar)} />
+        <DetailPair label="Net cash (live)" value={fmtZar(row.net_cash_position_zar_live ?? row.net_cash_position_zar)} />
+        <DetailPair label="MWh contracted%delivered" value={fmtPct(row.mwh_contracted_pct_delivered_live)} />
+        {authority && AUTHORITY_LABEL[authority] && (
+          <DetailPair label="Authority required" value={AUTHORITY_LABEL[authority]} />
+        )}
+        {row.predicted_year_close_date_live && (
+          <DetailPair label="Predicted close" value={fmtDate(row.predicted_year_close_date_live)} />
+        )}
+      </div>
+
+      {/* Year inputs */}
+      <div className="mb-2" style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3 }}>Year inputs</div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-3">
+        <DetailPair label="Contracted MWh" value={fmtMwh(row.contracted_mwh)} />
+        <DetailPair label="Delivered MWh" value={fmtMwh(row.delivered_mwh)} />
+        <DetailPair label="Metered MWh" value={fmtMwh(row.metered_mwh)} />
+        <DetailPair label="Curtailed MWh" value={fmtMwh(row.curtailed_mwh)} />
+        <DetailPair label="Variance MWh" value={fmtMwh(row.variance_mwh)} />
+        <DetailPair label="Variance %" value={fmtPct(row.variance_pct)} />
+        <DetailPair label="Min offtake MWh" value={fmtMwh(row.min_offtake_mwh)} />
+        <DetailPair label="Offtake shortfall %" value={fmtPct(row.offtake_shortfall_pct)} />
+        <DetailPair label="Installed MW" value={row.installed_capacity_mw != null ? `${row.installed_capacity_mw} MW` : '—'} />
+        <DetailPair label="Availability" value={fmtPct(row.availability_factor_decimal != null ? row.availability_factor_decimal * 100 : null)} />
+        <DetailPair label="Base tariff" value={row.base_tariff_zar_per_mwh != null ? `R${row.base_tariff_zar_per_mwh.toFixed(0)}/MWh` : '—'} />
+        <DetailPair label="Indexed tariff" value={row.indexed_tariff_zar_per_mwh != null ? `R${row.indexed_tariff_zar_per_mwh.toFixed(0)}/MWh` : '—'} />
+        <DetailPair label="Deviation tariff" value={row.deviation_tariff_zar_per_mwh != null ? `R${row.deviation_tariff_zar_per_mwh.toFixed(0)}/MWh` : '—'} />
+        <DetailPair label="Deemed tariff" value={row.deemed_tariff_zar_per_mwh != null ? `R${row.deemed_tariff_zar_per_mwh.toFixed(0)}/MWh` : '—'} />
+        <DetailPair label="Capacity tariff" value={row.capacity_tariff_zar_per_mw_year != null ? `R${(row.capacity_tariff_zar_per_mw_year / 1000).toFixed(0)}k/MW·yr` : '—'} />
+        <DetailPair label="Energy revenue" value={fmtZar(row.energy_revenue_zar)} />
+        <DetailPair label="Prior overpayment" value={fmtZar(row.prior_year_overpayment_zar)} />
+        <DetailPair label="Year-end strict" value={row.contract_year_end_strict ? 'Yes (milestone)' : 'No'} />
+      </div>
+
+      {/* Floor & signoff flags */}
+      <div className="mb-2" style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3 }}>Floor &amp; signoff flags</div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-3">
+        <DetailPair label="ToP > R100m" value={row.top_residual_over_r100m ? 'Yes — floor@material' : 'No'} />
+        <DetailPair label="CPI true-up > R50m" value={row.cpi_true_up_over_r50m ? 'Yes — floor@material' : 'No'} />
+        <DetailPair label="Shortfall > 20%" value={row.offtake_shortfall_over_20_pct ? 'Yes — floor@material' : 'No'} />
+        <DetailPair label="Dispute count" value={String(row.dispute_count)} />
+        <DetailPair label="Restate count" value={String(row.restate_count)} />
+        <DetailPair label="Year had delivery" value={row.year_had_delivery ? 'Yes' : 'No'} />
+        <DetailPair label="Reportable" value={row.is_reportable_flag ? 'Yes' : 'No'} />
+        <DetailPair label="Breach crosses NERSA" value={row.breach_crosses_regulator ? 'Yes' : 'No'} />
+        <DetailPair label="Invoice ref" value={row.invoice_ref ?? '—'} />
+        <DetailPair label="Payment ref" value={row.payment_ref ?? '—'} />
+        <DetailPair label="Reason code" value={row.reason_code ?? '—'} />
+        <DetailPair label="Dispute count" value={String(row.dispute_count)} />
+        <DetailPair label="PPA contract ref" value={row.ppa_contract_ref ?? '—'} />
+        <DetailPair label="Regulator ref" value={row.regulator_ref ?? '—'} />
+        <DetailPair label="Escalation level" value={String(row.escalation_level)} />
+        <DetailPair label="Year opened" value={fmtDate(row.year_opened_at)} />
+        <DetailPair label="Data collected" value={fmtDate(row.data_collected_at)} />
+        <DetailPair label="Variance classified" value={fmtDate(row.variance_classified_at)} />
+        <DetailPair label="ToP residual computed" value={fmtDate(row.top_residual_computed_at)} />
+        <DetailPair label="CPI + capacity applied" value={fmtDate(row.cpi_capacity_applied_at)} />
+        <DetailPair label="Reconciled at" value={fmtDate(row.reconciled_at)} />
+        <DetailPair label="Disputed at" value={fmtDate(row.disputed_at)} />
+        <DetailPair label="Signed off at" value={fmtDate(row.signed_off_at)} />
+        <DetailPair label="Invoiced at" value={fmtDate(row.invoiced_at)} />
+        <DetailPair label="Settled at" value={fmtDate(row.settled_at)} />
+        <DetailPair label="Restated at" value={fmtDate(row.restated_at)} />
+        <DetailPair label="Cancelled at" value={fmtDate(row.cancelled_at)} />
+        <DetailPair label="SLA deadline" value={fmtDate(row.sla_deadline_at)} />
+        <DetailPair label="SLA status" value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+      </div>
+
+      {row.disputed_reason && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Disputed reason</div>
+          <div style={{ color: TX2 }}>{row.disputed_reason}</div>
+        </div>
+      )}
+      {row.restated_reason && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Restated reason</div>
+          <div style={{ color: TX2 }}>{row.restated_reason}</div>
+        </div>
+      )}
+      {row.cancelled_reason && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Cancelled reason</div>
+          <div style={{ color: TX2 }}>{row.cancelled_reason}</div>
+        </div>
+      )}
+      {row.narrative && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Narrative</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.narrative}</div>
+        </div>
+      )}
+      {row.result_text && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Result</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.result_text}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function PpaAnnualReconChainTab() {
   const [rows, setRows] = useState<ParRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active_open');
-  const [selected, setSelected] = useState<ParRow | null>(null);
-  const [events, setEvents] = useState<ParEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
       const res = await api.get<{ data: { items: ParRow[] } & KpiSummary }>('/offtaker/ppa-annual-recon/chain');
-      setRows(res.data?.data?.items || []);
       const d = res.data?.data;
+      setRows(d?.items || []);
       if (d) {
-        setKpis({
-          total: d.total, open_count: d.open_count, settled_count: d.settled_count,
-          signed_off_count: d.signed_off_count, invoiced_count: d.invoiced_count,
-          reconciled_count: d.reconciled_count, disputed_count: d.disputed_count,
-          restated_count: d.restated_count, cancelled_count: d.cancelled_count,
-          signoff_pending_count: d.signoff_pending_count, breached: d.breached,
+        setSummary({
+          total: d.total,
+          open_count: d.open_count,
+          settled_count: d.settled_count,
+          signed_off_count: d.signed_off_count,
+          invoiced_count: d.invoiced_count,
+          reconciled_count: d.reconciled_count,
+          disputed_count: d.disputed_count,
+          restated_count: d.restated_count,
+          cancelled_count: d.cancelled_count,
+          signoff_pending_count: d.signoff_pending_count,
+          breached: d.breached,
           reportable_total: d.reportable_total,
           total_top_residual_zar: d.total_top_residual_zar,
           total_cpi_true_up_zar: d.total_cpi_true_up_zar,
@@ -338,15 +588,28 @@ export function PpaAnnualReconChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: ParRow; events: ParEvent[] } }>(`/offtaker/ppa-annual-recon/chain/${id}`);
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/offtaker/ppa-annual-recon/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/offtaker/ppa-annual-recon/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load reconciliation history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: ParRow; events: ChainEvent[] } }>(`/offtaker/ppa-annual-recon/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -362,449 +625,110 @@ export function PpaAnnualReconChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: ParRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'collect-data') {
-        const contracted = window.prompt('Contracted energy for year (MWh):', String(row.contracted_mwh ?? ''));
-        if (!contracted) return;
-        const delivered = window.prompt('Delivered energy for year (MWh):', String(row.delivered_mwh ?? ''));
-        const minOfftake = window.prompt('Minimum offtake / take-or-pay (MWh):', String(row.min_offtake_mwh ?? ''));
-        const curtailed = window.prompt('Curtailed energy for year (MWh):', String(row.curtailed_mwh ?? '0'));
-        body = { contracted_mwh: Number(contracted) };
-        if (delivered)  body.delivered_mwh = Number(delivered);
-        if (minOfftake) body.min_offtake_mwh = Number(minOfftake);
-        if (curtailed)  body.curtailed_mwh = Number(curtailed);
-      } else if (action === 'classify-variance') {
-        const variance = window.prompt('Variance (MWh = delivered − contracted):', String(row.variance_mwh ?? ''));
-        const pct = window.prompt('Variance %:', String(row.variance_pct ?? ''));
-        const shortfall = window.prompt('Offtake shortfall %:', String(row.offtake_shortfall_pct ?? '0'));
-        if (variance)  body.variance_mwh = Number(variance);
-        if (pct)       body.variance_pct = Number(pct);
-        if (shortfall) body.offtake_shortfall_pct = Number(shortfall);
-      } else if (action === 'compute-top-residual') {
-        const residual = window.prompt('Take-or-pay residual (ZAR):', String(row.top_residual_zar ?? ''));
-        const overpay = window.prompt('Prior year overpayment to recover (ZAR):', String(row.prior_year_overpayment_zar ?? '0'));
-        if (residual) body.top_residual_zar = Number(residual);
-        if (overpay)  body.prior_year_overpayment_zar = Number(overpay);
-      } else if (action === 'apply-cpi-capacity') {
-        const cpi = window.prompt('CPI true-up (ZAR):', String(row.cpi_true_up_zar ?? ''));
-        const cap = window.prompt('Capacity payment for year (ZAR):', String(row.capacity_payment_zar ?? ''));
-        const deemed = window.prompt('Deemed-energy credit (ZAR):', String(row.deemed_energy_credit_zar ?? '0'));
-        const energy = window.prompt('Energy revenue for year (ZAR):', String(row.energy_revenue_zar ?? ''));
-        if (cpi)    body.cpi_true_up_zar = Number(cpi);
-        if (cap)    body.capacity_payment_zar = Number(cap);
-        if (deemed) body.deemed_energy_credit_zar = Number(deemed);
-        if (energy) body.energy_revenue_zar = Number(energy);
-      } else if (action === 'reconcile') {
-        const net = window.prompt('Net cash position for year (ZAR):', String(row.net_cash_position_zar_live ?? row.net_cash_position_zar ?? ''));
-        if (net) body.net_cash_position_zar = Number(net);
-      } else if (action === 'raise-dispute') {
-        const reason = window.prompt('Dispute reason (variance / tariff / curtailment / other):');
-        if (!reason) return;
-        const ref = window.prompt('NERSA s30 reference (if known):') || '';
-        body = { disputed_reason: reason };
-        if (ref) body.regulator_ref = ref;
-      } else if (action === 'sign-off') {
-        const auditor = window.prompt('Auditor confirming signoff:', 'PwC') || '';
-        const counter = window.prompt('Counterparty confirming signoff:', row.seller_party_name ?? '') || '';
-        if (auditor) body.auditor_party = auditor;
-        if (counter) body.counterparty_party = counter;
-      } else if (action === 'invoice') {
-        const ref = window.prompt('Invoice reference:');
-        if (!ref) return;
-        body = { invoice_ref: ref };
-      } else if (action === 'settle') {
-        const ref = window.prompt('Payment reference:');
-        if (!ref) return;
-        body = { payment_ref: ref };
-      } else if (action === 'restate-year') {
-        const reason = window.prompt('Restatement reason (IFRS 15 + NERSA s34 disclosable):');
-        if (!reason) return;
-        const ref = window.prompt('NERSA inbox reference:') || '';
-        body = { restated_reason: reason };
-        if (ref) body.regulator_ref = ref;
-      } else if (action === 'cancel-year') {
-        const reason = window.prompt('Cancellation reason:');
-        if (!reason) return;
-        body = { cancelled_reason: reason };
-      }
-      await api.post(`/offtaker/ppa-annual-recon/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
+  const kpis = summary;
 
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Offtaker PPA annual reconciliation &amp; true-up</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-stage P6 chain · year_opened → data_collected → variance_classified → top_residual_computed →
-            cpi_capacity_applied → reconciled → signed_off → invoiced → settled (rest state · restate door open). Dispute
-            branch loops via NERSA s30. Closes the annual financial year for every PPA: pulls in W87 nominations, W32
-            take-or-pay annual residual, W39 CPI tariff indexation, W46 deemed-energy curtailment credits, W54 payment
-            security, capacity payment annual roll into one signed-off ledger. INVERTED SLA (larger variance + residual =
-            MORE time for forensic reconciliation, audit, counterparty signoff). Live annual-close battery surfaces
-            reconciliation_completeness_index 0-130, top_residual ZAR, CPI true-up ZAR, capacity payment ZAR, deemed
-            energy ZAR, net cash position ZAR, MWh contracted-vs-delivered %, days_to_signoff, urgency, predicted close
-            date, and the authority required (settlement analyst → finance controller → finance director → CFO).
-            Restating a settled year crosses to the regulator inbox for EVERY tier (IFRS 15 + NERSA s34 hard line);
-            raising a dispute crosses to NERSA s30 for EVERY tier; signoff and SLA breaches cross for material + major;
-            cancelling a year that had any delivery crosses for EVERY tier.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Offtaker PPA annual reconciliation &amp; true-up</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          12-stage P6 chain · year_opened → data_collected → variance_classified → top_residual_computed →
+          cpi_capacity_applied → reconciled → signed_off → invoiced → settled (rest state · restate door open).
+          Dispute branch loops via NERSA s30. INVERTED SLA — larger variance + residual = MORE time for forensic
+          reconciliation, audit, counterparty signoff. Aggregates W87 nominations, W32 ToP residual, W39 CPI
+          indexation, W46 deemed-energy credits, W54 payment security into one signed-off ledger per year.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="Signoff pending" value={kpis?.signoff_pending_count ?? 0} />
-        <Kpi label="Signed off" value={kpis?.signed_off_count ?? 0} tone="ok" />
-        <Kpi label="Invoiced" value={kpis?.invoiced_count ?? 0} tone="ok" />
-        <Kpi label="Settled" value={kpis?.settled_count ?? 0} tone="ok" />
-        <Kpi label="Disputed" value={kpis?.disputed_count ?? 0} tone={(kpis?.disputed_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Restated" value={kpis?.restated_count ?? 0} tone={(kpis?.restated_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Cancelled" value={kpis?.cancelled_count ?? 0} />
-        <Kpi label="Major tier" value={kpis?.major_tier_count ?? 0} tone={(kpis?.major_tier_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Critical urgency" value={kpis?.critical_urgency_count ?? 0} tone={(kpis?.critical_urgency_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Floor@material" value={kpis?.floor_at_material_count ?? 0} tone={(kpis?.floor_at_material_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Completeness avg" value={kpis ? kpis.avg_completeness_index.toFixed(1) : '—'} tone="ok" />
-        <Kpi label="ToP residual total" value={fmtZar(kpis?.total_top_residual_zar)} tone="warn" />
-        <Kpi label="CPI true-up total" value={fmtZar(kpis?.total_cpi_true_up_zar)} />
-        <Kpi label="Capacity total" value={fmtZar(kpis?.total_capacity_payment_zar)} />
-        <Kpi label="Deemed energy total" value={fmtZar(kpis?.total_deemed_energy_zar)} />
-        <Kpi label="Net cash total" value={fmtZar(kpis?.total_net_cash_position_zar)} tone="ok" />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total" value={kpis?.total ?? rows.length} />
+        <KpiTile label="Open" value={kpis?.open_count ?? 0} />
+        <KpiTile label="Signoff pending" value={kpis?.signoff_pending_count ?? 0} />
+        <KpiTile label="Signed off" value={kpis?.signed_off_count ?? 0} tone="ok" />
+        <KpiTile label="Invoiced" value={kpis?.invoiced_count ?? 0} tone="ok" />
+        <KpiTile label="Settled" value={kpis?.settled_count ?? 0} tone="ok" />
+        <KpiTile label="Disputed" value={kpis?.disputed_count ?? 0} tone={(kpis?.disputed_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Restated" value={kpis?.restated_count ?? 0} tone={(kpis?.restated_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Cancelled" value={kpis?.cancelled_count ?? 0} />
+        <KpiTile label="Major tier" value={kpis?.major_tier_count ?? 0} tone={(kpis?.major_tier_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Critical urgency" value={kpis?.critical_urgency_count ?? 0} tone={(kpis?.critical_urgency_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Floor@material" value={kpis?.floor_at_material_count ?? 0} tone={(kpis?.floor_at_material_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Completeness avg" value={kpis ? kpis.avg_completeness_index.toFixed(1) : '—'} tone="ok" />
+        <KpiTile label="ToP residual total" value={fmtZar(kpis?.total_top_residual_zar)} tone="warn" />
+        <KpiTile label="CPI true-up total" value={fmtZar(kpis?.total_cpi_true_up_zar)} />
+        <KpiTile label="Capacity total" value={fmtZar(kpis?.total_capacity_payment_zar)} />
+        <KpiTile label="Deemed energy total" value={fmtZar(kpis?.total_deemed_energy_zar)} />
+        <KpiTile label="Net cash total" value={fmtZar(kpis?.total_net_cash_position_zar)} tone="ok" />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{ background: filter === f.key ? ACC : BG2, color: filter === f.key ? '#fff' : TX2, border: `1px solid ${filter === f.key ? ACC : BORDER}` }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>{err}</div>
       )}
+
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Recon #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Facility / seller</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Year</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">|Δ%|</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">ToP residual</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Net cash</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Urgency</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.current_tier];
-                const urgency = r.urgency_band_live ? URGENCY_TONE[r.urgency_band_live] : null;
-                const topRes = r.top_residual_zar_live ?? r.top_residual_zar;
-                const netCash = r.net_cash_position_zar_live ?? r.net_cash_position_zar;
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.recon_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
-                      {r.floor_at_material_flag && <span className="ml-1 text-[#a06200]" title="Floored at material">▲</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[260px] truncate" title={`${r.facility_name ?? ''} · ${r.seller_party_name ?? ''}`}>
-                      {r.facility_name ?? r.ppa_name ?? '—'}
-                      <span className="text-[#4a5568]"> · {r.seller_party_name ?? '—'}</span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568] font-mono text-[11px]">{r.contract_year_label ?? r.contract_year}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#4a5568]">{fmtPct(r.variance_pct)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#a06200]">{fmtZar(topRes)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtZar(netCash)}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      {urgency ? (
-                        <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: urgency.bg, color: urgency.fg }}>
-                          {urgency.label}
-                        </span>
-                      ) : '—'}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={10} className="px-3 py-6 text-center text-[#4a5568]">No reconciliations match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {filtered.map(row => {
+            const topRes = row.top_residual_zar_live ?? row.top_residual_zar;
+            const netCash = row.net_cash_position_zar_live ?? row.net_cash_position_zar;
+            return (
+              <ChainCard
+                key={row.id}
+                item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+                allStates={ALL_STATES}
+                branchStates={BRANCH_STATES}
+                title={row.facility_name ?? row.ppa_name ?? row.recon_number}
+                meta={`${row.recon_number} · Year ${row.contract_year_label ?? row.contract_year} · ${row.current_tier} · ${fmtZar(topRes)} ToP · ${fmtZar(netCash)} net`}
+                actions={getActions(row)}
+                onAction={(key, values) => handleAction(row.id, key, values)}
+                cascadeTo={[]}
+                detail={renderDetail(row)}
+                events={expandedEvents[row.id]}
+                onExpand={handleExpand}
+              />
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>No reconciliations match.</div>
+          )}
         </div>
       )}
-
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
-      )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: ParRow;
-  events: ParEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: ParRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canRaiseDispute = row.chain_status === 'reconciled';
-  const canRestate = row.chain_status === 'settled';
-  const canCancel = CANCEL_FROM.includes(row.chain_status);
-  const authority = (row.authority_required_live ?? row.authority_required) as Authority | null;
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[820px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.recon_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.facility_name ?? row.ppa_name ?? '—'}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.current_tier].label} · year {row.contract_year_label ?? row.contract_year} ·
-                seller {row.seller_party_name ?? '—'} · buyer {row.buyer_party_name ?? '—'}
-              </div>
-              {row.ppa_contract_ref && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">PPA {row.ppa_contract_ref}</div>
-              )}
-              {authority && AUTHORITY_LABEL[authority] && (
-                <div className="mt-1 text-[11px] text-[#1a3a5c]">Authority required: {AUTHORITY_LABEL[authority]}</div>
-              )}
-              {row.regulator_ref && (
-                <div className="mt-1 text-[11px] text-[#a04040]">NERSA: {row.regulator_ref}</div>
-              )}
-              {row.predicted_year_close_date_live && (
-                <div className="mt-1 text-[11px] text-[#1a3a5c]">Predicted close: {fmtDate(row.predicted_year_close_date_live)}</div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Annual close battery</div>
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="Completeness index" value={row.reconciliation_completeness_index_live != null ? `${row.reconciliation_completeness_index_live}` : '—'} />
-            <Pair label="Days to signoff"    value={row.days_to_signoff_live != null ? `${row.days_to_signoff_live.toFixed(1)}d` : '—'} />
-            <Pair label="Days in court"      value={row.days_in_court_live != null ? `${row.days_in_court_live}d` : '—'} />
-            <Pair label="SLA window"         value={fmtMinutes(row.sla_window_minutes)} />
-            <Pair label="SLA days remaining" value={row.sla_days_remaining_live != null ? `${row.sla_days_remaining_live.toFixed(1)}d` : '—'} />
-            <Pair label="Urgency"            value={row.urgency_band_live ? URGENCY_TONE[row.urgency_band_live].label : '—'} />
-            <Pair label="ToP residual (live)"      value={fmtZar(row.top_residual_zar_live ?? row.top_residual_zar)} />
-            <Pair label="CPI true-up (live)"       value={fmtZar(row.cpi_true_up_zar_live ?? row.cpi_true_up_zar)} />
-            <Pair label="Capacity payment (live)"  value={fmtZar(row.capacity_payment_year_zar_live ?? row.capacity_payment_zar)} />
-            <Pair label="Deemed energy (live)"     value={fmtZar(row.deemed_energy_credit_zar_live ?? row.deemed_energy_credit_zar)} />
-            <Pair label="Net cash (live)"          value={fmtZar(row.net_cash_position_zar_live ?? row.net_cash_position_zar)} />
-            <Pair label="MWh contracted%delivered" value={fmtPct(row.mwh_contracted_pct_delivered_live)} />
-          </div>
-        </section>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Year inputs</div>
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="Contracted MWh"   value={fmtMwh(row.contracted_mwh)} />
-            <Pair label="Delivered MWh"    value={fmtMwh(row.delivered_mwh)} />
-            <Pair label="Metered MWh"      value={fmtMwh(row.metered_mwh)} />
-            <Pair label="Curtailed MWh"    value={fmtMwh(row.curtailed_mwh)} />
-            <Pair label="Variance MWh"     value={fmtMwh(row.variance_mwh)} />
-            <Pair label="Variance %"       value={fmtPct(row.variance_pct)} />
-            <Pair label="Min offtake MWh"  value={fmtMwh(row.min_offtake_mwh)} />
-            <Pair label="Offtake shortfall %" value={fmtPct(row.offtake_shortfall_pct)} />
-            <Pair label="Installed MW"     value={row.installed_capacity_mw != null ? `${row.installed_capacity_mw} MW` : '—'} />
-            <Pair label="Availability"     value={fmtPct(row.availability_factor_decimal != null ? row.availability_factor_decimal * 100 : null)} />
-            <Pair label="Base tariff"      value={row.base_tariff_zar_per_mwh != null ? `R${row.base_tariff_zar_per_mwh.toFixed(0)}/MWh` : '—'} />
-            <Pair label="Indexed tariff"   value={row.indexed_tariff_zar_per_mwh != null ? `R${row.indexed_tariff_zar_per_mwh.toFixed(0)}/MWh` : '—'} />
-            <Pair label="Deviation tariff" value={row.deviation_tariff_zar_per_mwh != null ? `R${row.deviation_tariff_zar_per_mwh.toFixed(0)}/MWh` : '—'} />
-            <Pair label="Deemed tariff"    value={row.deemed_tariff_zar_per_mwh != null ? `R${row.deemed_tariff_zar_per_mwh.toFixed(0)}/MWh` : '—'} />
-            <Pair label="Capacity tariff"  value={row.capacity_tariff_zar_per_mw_year != null ? `R${(row.capacity_tariff_zar_per_mw_year / 1000).toFixed(0)}k/MW·yr` : '—'} />
-            <Pair label="Energy revenue"   value={fmtZar(row.energy_revenue_zar)} />
-            <Pair label="Prior overpayment" value={fmtZar(row.prior_year_overpayment_zar)} />
-            <Pair label="Year-end strict"  value={row.contract_year_end_strict ? 'Yes (milestone)' : 'No'} />
-          </div>
-        </section>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Floor &amp; signoff flags</div>
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="ToP &gt; R100m"          value={row.top_residual_over_r100m ? 'Yes — floor@material' : 'No'} />
-            <Pair label="CPI true-up &gt; R50m"   value={row.cpi_true_up_over_r50m ? 'Yes — floor@material' : 'No'} />
-            <Pair label="Shortfall &gt; 20%"      value={row.offtake_shortfall_over_20_pct ? 'Yes — floor@material' : 'No'} />
-            <Pair label="Dispute count"           value={String(row.dispute_count)} />
-            <Pair label="Restate count"           value={String(row.restate_count)} />
-            <Pair label="Year had delivery"       value={row.year_had_delivery ? 'Yes' : 'No'} />
-            <Pair label="Reportable"              value={row.is_reportable_flag ? 'Yes' : 'No'} />
-            <Pair label="Breach crosses NERSA"    value={row.breach_crosses_regulator ? 'Yes' : 'No'} />
-            <Pair label="Invoice ref"             value={row.invoice_ref ?? '—'} />
-            <Pair label="Payment ref"             value={row.payment_ref ?? '—'} />
-            <Pair label="Reason code"             value={row.reason_code ?? '—'} />
-            <Pair label="Disputed reason"         value={row.disputed_reason ?? '—'} />
-            <Pair label="Restated reason"         value={row.restated_reason ?? '—'} />
-            <Pair label="Cancelled reason"        value={row.cancelled_reason ?? '—'} />
-            <Pair label="Year opened"             value={fmtDate(row.year_opened_at)} />
-            <Pair label="Data collected"          value={fmtDate(row.data_collected_at)} />
-            <Pair label="Variance classified"     value={fmtDate(row.variance_classified_at)} />
-            <Pair label="ToP residual computed"   value={fmtDate(row.top_residual_computed_at)} />
-            <Pair label="CPI + capacity applied"  value={fmtDate(row.cpi_capacity_applied_at)} />
-            <Pair label="Reconciled at"           value={fmtDate(row.reconciled_at)} />
-            <Pair label="Disputed at"             value={fmtDate(row.disputed_at)} />
-            <Pair label="Signed off at"           value={fmtDate(row.signed_off_at)} />
-            <Pair label="Invoiced at"             value={fmtDate(row.invoiced_at)} />
-            <Pair label="Settled at"              value={fmtDate(row.settled_at)} />
-            <Pair label="Restated at"             value={fmtDate(row.restated_at)} />
-            <Pair label="Cancelled at"            value={fmtDate(row.cancelled_at)} />
-            <Pair label="SLA deadline"            value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"              value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"          value={String(row.escalation_level)} />
-          </div>
-          {row.narrative && <BasisBlock label="Narrative" tone="#1a3a5c" text={row.narrative} />}
-          {row.result_text && <BasisBlock label="Result" tone="#557" text={row.result_text} />}
-        </section>
-
-        {(nextAction || canRaiseDispute || canRestate || canCancel) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canRaiseDispute && (
-                <button type="button"
-                  onClick={() => onAct('raise-dispute', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['raise-dispute']}
-                </button>
-              )}
-              {canRestate && (
-                <button type="button"
-                  onClick={() => onAct('restate-year', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                  title="IFRS 15 + NERSA s34 — post-signoff restatement crosses regulator EVERY tier."
-                >
-                  {ACTION_LABEL['restate-year']}
-                </button>
-              )}
-              {canCancel && (
-                <button type="button"
-                  onClick={() => onAct('cancel-year', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b3a3a] hover:bg-[#f3eded]"
-                >
-                  {ACTION_LABEL['cancel-year']}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1, fontSize: 11 }}>{value}</div>
     </div>
   );
 }
+
+export default PpaAnnualReconChainTab;

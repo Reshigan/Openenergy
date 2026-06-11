@@ -33,9 +33,9 @@ interface WulApplication {
 
 const STATUS_COLORS: Record<string, string> = {
   wul_application_triggered:   'bg-[#eef2f7] text-[#6b7685]',
-  site_assessment:              'bg-blue-100 text-blue-700',
+  site_assessment:              'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   application_preparation:      'bg-sky-100 text-sky-700',
-  application_submitted:        'bg-indigo-100 text-indigo-700',
+  application_submitted:        'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   dws_completeness_review:      'bg-yellow-100 text-yellow-800',
   public_participation_open:    'bg-teal-100 text-teal-700',
   public_participation_closed:  'bg-cyan-100 text-cyan-700',

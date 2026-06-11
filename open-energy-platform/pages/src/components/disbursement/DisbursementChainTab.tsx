@@ -21,6 +21,7 @@ type ChainStatus =
 type Tier = 'senior_a' | 'senior_b' | 'mezzanine' | 'bridge';
 
 interface DisbursementRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   lender_party: string;
@@ -81,10 +82,10 @@ interface DisbursementEvent {
 }
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  tranche_released:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Tranche released' },
+  tranche_released:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Tranche released' },
   invoices_pending:   { bg: '#fff4d6', fg: '#a06200', label: 'Invoices pending' },
   invoices_submitted: { bg: '#fbe7d0', fg: '#7a4500', label: 'Invoices submitted' },
-  bank_validating:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Bank validating' },
+  bank_validating:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Bank validating' },
   ie_certifying:      { bg: '#fbe7d0', fg: '#7a4500', label: 'IE certifying' },
   uop_certified:      { bg: '#daf5e2', fg: '#1f6b3a', label: 'UoP certified' },
   reconciled:         { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Reconciled' },
@@ -95,7 +96,7 @@ const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }>
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
   senior_a:  { bg: '#fde0e0', fg: '#9b1f1f', label: 'Senior A (R500m+)' },
   senior_b:  { bg: '#fff4d6', fg: '#a06200', label: 'Senior B' },
-  mezzanine: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Mezzanine' },
+  mezzanine: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Mezzanine' },
   bridge:    { bg: '#daf5e2', fg: '#1f6b3a', label: 'Bridge' },
 };
 
@@ -341,7 +342,7 @@ export function DisbursementChainTab() {
         <span>Reconciled total: <span className="font-semibold text-[#1f6b3a]">{fmtZar(kpis.reconciled_total_zar)}</span></span>
         <span>Clawback total: <span className="font-semibold text-[#9b1f1f]">{fmtZar(kpis.clawback_total_zar)}</span></span>
         <span>Waived: <span className="font-semibold text-[#557]">{kpis.waived_count}</span></span>
-        <span>Open cases: <span className="font-semibold text-[#1a3a5c]">{kpis.open_count}</span></span>
+        <span>Open cases: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.open_count}</span></span>
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -370,16 +371,16 @@ export function DisbursementChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Lender ↔ Borrower</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Facility / drawdown</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Released</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Reconciled</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">SARB / EP</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Clawback</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Case #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Lender ↔ Borrower</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Facility / drawdown</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Released</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Reconciled</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>SARB / EP</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Clawback</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -394,7 +395,7 @@ export function DisbursementChainTab() {
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
                     <td className="px-3 py-2 font-mono text-[#0c2a4d]">{r.case_number}</td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">
+                    <td className="px-3 py-2" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       <div className="font-medium">{r.lender_party}</div>
                       <div className="text-[10px] text-[#6b7685]">↔ {r.borrower_party}</div>
                     </td>
@@ -407,7 +408,7 @@ export function DisbursementChainTab() {
                       <div className="font-mono text-[11px]">{r.facility_ref}</div>
                       <div className="text-[10px] text-[#6b7685]">{r.drawdown_ref ?? '—'}</div>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtZar(r.released_zar ?? r.tranche_amount_zar)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtZar(r.released_zar ?? r.tranche_amount_zar)}</td>
                     <td className="px-3 py-2 text-right tabular-nums text-[#1f5b3a]">{fmtZar(r.reconciled_amount_zar)}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
@@ -506,7 +507,7 @@ function Drawer({
             <Pair label="Reason code"           value={row.reason_code ?? '—'} />
           </div>
           {row.rod_notes && (
-            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">ROD notes</div>
               {row.rod_notes}
             </div>
@@ -560,7 +561,7 @@ function Drawer({
                   {(e.from_status || e.to_status) && (
                     <div className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</div>
                   )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

@@ -19,6 +19,7 @@ type ChainStatus =
 type Tier = 'fatal' | 'major' | 'environmental' | 'minor' | 'near_miss';
 
 interface HseRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   site_id: string;
@@ -67,8 +68,8 @@ interface HseEvent {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   reported:                     { bg: '#fff4d6', fg: '#a06200', label: 'Reported' },
-  triaged:                      { bg: '#dbecfb', fg: '#1a3a5c', label: 'Triaged' },
-  notified_authority:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'Authority notified' },
+  triaged:                      { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Triaged' },
+  notified_authority:           { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Authority notified' },
   investigating:                { bg: '#ffe4b5', fg: '#8a4a00', label: 'Investigating' },
   corrective_actions_planned:   { bg: '#ffe4b5', fg: '#8a4a00', label: 'CAPA planned' },
   corrective_actions_executing: { bg: '#ffe4b5', fg: '#8a4a00', label: 'CAPA executing' },
@@ -294,15 +295,15 @@ export function HseIncidentChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Site</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Type</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Affected</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Occurred</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Auth ref</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Case #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Site</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Type</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Affected</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Occurred</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Auth ref</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -316,14 +317,14 @@ export function HseIncidentChainTab() {
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
                     <td className="px-3 py-2 font-mono text-[#0c2a4d]">{r.case_number}</td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">{r.site_name}</td>
+                    <td className="px-3 py-2" style={{ color: 'oklch(0.46 0.16 55)' }}>{r.site_name}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tier.bg, color: tier.fg }}>
                         {tier.label}
                       </span>
                     </td>
                     <td className="px-3 py-2 text-[#4a5568]">{r.incident_type}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{r.persons_affected}</td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>{r.persons_affected}</td>
                     <td className="px-3 py-2 tabular-nums text-[#4a5568]">{fmtDate(r.occurred_at)}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
@@ -415,37 +416,37 @@ function Drawer({
             <Pair label="SLA status"      value={row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
           </div>
           {row.injury_description && (
-            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Injury description</div>
               {row.injury_description}
             </div>
           )}
           {row.environmental_release_description && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Environmental release</div>
               {row.environmental_release_description}
             </div>
           )}
           {row.immediate_actions_taken && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Immediate actions taken</div>
               {row.immediate_actions_taken}
             </div>
           )}
           {row.rca_summary && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">RCA summary</div>
               {row.rca_summary}
             </div>
           )}
           {row.capa_plan && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">CAPA plan</div>
               {row.capa_plan}
             </div>
           )}
           {row.closure_notes && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Closure notes</div>
               {row.closure_notes}
             </div>
@@ -507,7 +508,7 @@ function Drawer({
                   {(e.from_status || e.to_status) && (
                     <div className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</div>
                   )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

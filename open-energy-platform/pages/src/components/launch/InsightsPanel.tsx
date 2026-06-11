@@ -28,7 +28,7 @@ function Sparkline({ points }: { points: number[] }) {
     .map((p, i) => `${i === 0 ? 'M' : 'L'} ${(i * step).toFixed(1)} ${(h - (p / max) * h).toFixed(1)}`)
     .join(' ');
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden className="text-[#1a3a5c]">
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden className="text-[oklch(0.46_0.16_55)]">
       <path d={d} fill="none" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   );
@@ -61,7 +61,7 @@ export default function InsightsPanel({ chainKey, label, className }: InsightsPa
     <section className={`rounded-xl bg-white border border-[#dde4ec] ${className ?? ''}`}>
       <header className="flex items-center justify-between px-4 py-2.5 border-b border-[#eef2f7]">
         <div className="flex items-center gap-2 text-[#0f1c2e]">
-          <BarChart3 className="h-4 w-4 text-[#1a3a5c]" aria-hidden />
+          <BarChart3 className="h-4 w-4 text-[oklch(0.46_0.16_55)]" aria-hidden />
           <h2 className="text-[13px] font-display font-semibold">Insights</h2>
           {label && <span className="text-[11px] text-[#6b7685] truncate max-w-[8rem]">{label}</span>}
         </div>

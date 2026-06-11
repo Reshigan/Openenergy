@@ -14,7 +14,6 @@ import { ExportBar } from '../ExportBar';
 import { EntityLink } from '../EntityLink';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { NarrativeText } from '../NarrativeText';
-import { StitchPage } from '../StitchPage';
 
 /* ════════════════════════════════════════════════════════════════════════
  * Carbon — Carbon Fund role
@@ -27,14 +26,27 @@ import { StitchPage } from '../StitchPage';
  *   5. Marketplace        — Listings, options book
  * ═══════════════════════════════════════════════════════════════════════ */
 
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
+
 type Tab = 'holdings' | 'issuance' | 'retire' | 'nav' | 'market';
 
-const TABS: { id: Tab; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
-  { id: 'holdings', label: 'Holdings',         icon: Leaf },
-  { id: 'issuance', label: 'Issuance Pipeline', icon: GitMerge },
-  { id: 'retire',   label: 'Retirement',        icon: Award },
-  { id: 'nav',      label: 'Fund NAV',          icon: BarChart3 },
-  { id: 'market',   label: 'Marketplace',       icon: TrendingUp },
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'holdings', label: 'Holdings' },
+  { id: 'issuance', label: 'Issuance Pipeline' },
+  { id: 'retire',   label: 'Retirement' },
+  { id: 'nav',      label: 'Fund NAV' },
+  { id: 'market',   label: 'Marketplace' },
 ];
 
 const formatZAR = (val: number) =>
@@ -69,22 +81,81 @@ interface PipelineProject {
 export function Carbon() {
   const [tab, setTab] = useState<Tab>('holdings');
 
+  const tabDescriptions: Record<Tab, string> = {
+    holdings: 'VCU/REC inventory by vintage and methodology',
+    issuance: 'Registry pipeline — project verification stages',
+    retire:   'Retire credits and generate R2-stored certificates',
+    nav:      'AI-computed fund NAV by methodology and vintage',
+    market:   'Active listings and options book',
+  };
+
   return (
-    <StitchPage
-      eyebrowIcon={Leaf}
-      eyebrowLabel="Carbon Markets"
-      title="Carbon portfolio"
-      subtitle="Track VCU/REC holdings, issuance pipeline, retirement certificates and AI-computed fund NAV."
-      tabs={TABS}
-      activeTab={tab}
-      onTabChange={(id) => setTab(id as Tab)}
-    >
-      {tab === 'holdings' && <HoldingsTab />}
-      {tab === 'issuance' && <IssuanceTab />}
-      {tab === 'retire' && <RetirementTab />}
-      {tab === 'nav' && <NavTab />}
-      {tab === 'market' && <MarketTab />}
-    </StitchPage>
+    <div style={{ background: BG, minHeight: 'calc(100vh - 50px)', display: 'grid', gridTemplateColumns: '1fr 380px', gap: 0 }}>
+      {/* LEFT */}
+      <div style={{ overflowY: 'auto', padding: '20px 20px 20px 24px' }}>
+        <header style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <Leaf size={16} style={{ color: ACC }} />
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.10em', color: ACC }}>Carbon Markets</span>
+          </div>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: TX1, margin: 0 }}>Carbon portfolio</h1>
+          <p style={{ fontSize: 12, color: TX2, margin: '4px 0 0' }}>{tabDescriptions[tab]}</p>
+        </header>
+
+        {/* Tab strip */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+          {TABS.map(t => (
+            <button key={t.id} type="button" onClick={() => setTab(t.id)}
+              style={{ height: 28, padding: '0 10px', borderRadius: 6, fontSize: 11, fontWeight: 500, cursor: 'pointer',
+                background: tab === t.id ? ACC : BG2, color: tab === t.id ? '#fff' : TX2,
+                border: `1px solid ${tab === t.id ? ACC : BORDER}` }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'holdings' && <HoldingsTab />}
+        {tab === 'issuance' && <IssuanceTab />}
+        {tab === 'retire'   && <RetirementTab />}
+        {tab === 'nav'      && <NavTab />}
+        {tab === 'market'   && <MarketTab />}
+      </div>
+
+      {/* RIGHT */}
+      <div style={{ width: 380, borderLeft: `1px solid ${BORDER}`, background: BG1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, padding: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Sparkles size={12} /> AI Assist
+          </div>
+          <p style={{ fontSize: 12, color: TX2, margin: 0 }}>
+            {tab === 'holdings' && 'Portfolio skewed toward pre-2022 vintages — newer credits command a 12–18% premium. Consider rebalancing toward 2023–2024 vintage for mark-value uplift.'}
+            {tab === 'issuance' && 'Three projects are stalled in the Verifying stage beyond the 90-day benchmark. Early verifier engagement can reduce slippage by ~30 days.'}
+            {tab === 'retire'   && 'Retiring Article 6 credits before fiscal year-end locks in the carbon-tax offset at current rates. Review the Cap 10% annex-2 limit before submitting.'}
+            {tab === 'nav'      && 'Fund NAV is sensitive to Gold Standard methodology credits — they trade 22% above VCS equivalents. Recompute after any large issuance event.'}
+            {tab === 'market'   && 'Implied volatility on near-dated call options has widened to 34%. Consider delta-hedging open positions before next registry settlement window.'}
+          </p>
+        </div>
+
+        <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, padding: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Quick actions</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <QuickAction icon={Award} label="Retire credits" sub="Generate certificate" onClick={() => setTab('retire')} />
+            <QuickAction icon={GitMerge} label="View pipeline" sub="Registry stages" onClick={() => setTab('issuance')} />
+            <QuickAction icon={BarChart3} label="Recompute NAV" sub="AI valuation" onClick={() => setTab('nav')} />
+          </div>
+        </div>
+
+        <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, padding: 16, flex: 1 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Compliance</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <ComplianceRow label="Carbon Tax Act §13" status="ok" detail="Offset cap within 10% limit" />
+            <ComplianceRow label="UNFCCC Art. 6 ledger" status="ok" detail="Corresponding adjustments current" />
+            <ComplianceRow label="Verra VCS audit" status="warn" detail="Periodic review due in 18 days" />
+            <ComplianceRow label="DFFE DNA approval" status="ok" detail="Registration confirmed" />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -127,7 +198,14 @@ function HoldingsTab() {
       const k = c.methodology || 'Other';
       map.set(k, (map.get(k) || 0) + (c.quantity || 0));
     }
-    const colours = ['#1a3a5c', '#3b82c4', '#1f9b95', '#5fa8e8', '#7e57c2', '#c97a14'];
+    const colours = [
+      'oklch(0.46 0.16 55)',
+      'oklch(0.52 0.14 200)',
+      'oklch(0.40 0.16 155)',
+      'oklch(0.55 0.15 280)',
+      'oklch(0.50 0.18 30)',
+      'oklch(0.45 0.12 140)',
+    ];
     return Array.from(map.entries()).map(([name, value], i) => ({ name, value, color: colours[i % colours.length] }));
   }, [credits]);
 
@@ -135,85 +213,80 @@ function HoldingsTab() {
   if (error) return <ErrorBanner message={error} onRetry={refresh} />;
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KPI label="Total holdings" value={`${num(balance.total)} tCO₂e`} icon={Leaf} />
-        <KPI label="Available"      value={`${num(balance.available)} tCO₂e`} icon={CheckCircle2} tone="up" />
-        <KPI label="Retired"        value={`${num(balance.retired)} tCO₂e`} icon={Award} />
-        <KPI label="Mark value"     value={formatZAR(balance.value)} icon={Target} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        <KpiTile label="Total holdings" value={`${num(balance.total)} tCO₂e`} />
+        <KpiTile label="Available" value={`${num(balance.available)} tCO₂e`} tone="ok" />
+        <KpiTile label="Retired" value={`${num(balance.retired)} tCO₂e`} />
+        <KpiTile label="Mark value" value={formatZAR(balance.value)} tone="ok" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card title="Vintage distribution">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <SectionCard title="Vintage distribution">
           {vintageData.length === 0 ? <EmptyMsg>No credits yet.</EmptyMsg> : (
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={200}>
               <BarChart data={vintageData}>
-                <XAxis dataKey="vintage" fontSize={10} stroke="#6b7685" />
-                <YAxis fontSize={10} stroke="#6b7685" />
+                <XAxis dataKey="vintage" fontSize={10} stroke={TX3} />
+                <YAxis fontSize={10} stroke={TX3} />
                 <Tooltip formatter={(v: number) => [`${num(v)} tCO₂e`, 'Credits']} />
-                <Bar dataKey="qty" radius={[4, 4, 0, 0]} fill="#3b82c4" />
+                <Bar dataKey="qty" radius={[4, 4, 0, 0]} fill={ACC} />
               </BarChart>
             </ResponsiveContainer>
           )}
-        </Card>
-        <Card title="By methodology">
+        </SectionCard>
+        <SectionCard title="By methodology">
           {methodologyData.length === 0 ? <EmptyMsg>No credits yet.</EmptyMsg> : (
-            <div className="grid grid-cols-2 items-center">
-              <ResponsiveContainer width="100%" height={220}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'center' }}>
+              <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
-                  <Pie data={methodologyData} dataKey="value" nameKey="name" innerRadius={45} outerRadius={75} paddingAngle={2} stroke="#fff">
+                  <Pie data={methodologyData} dataKey="value" nameKey="name" innerRadius={40} outerRadius={68} paddingAngle={2} stroke="none">
                     {methodologyData.map((d, i) => <Cell key={i} fill={d.color} />)}
                   </Pie>
                   <Tooltip formatter={(v: number, n: string) => [`${num(v)} tCO₂e`, n]} />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="space-y-1">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {methodologyData.map((d) => (
-                  <div key={d.name} className="flex items-center gap-2 text-[12px]">
-                    <span className="w-2.5 h-2.5 rounded-sm" style={{ background: d.color }} />
-                    <span className="text-[#3d4756]">{d.name}</span>
-                    <span className="ml-auto font-mono">{num(d.value)}</span>
+                  <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 2, background: d.color, flexShrink: 0 }} />
+                    <span style={{ color: TX2, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.name}</span>
+                    <span style={{ fontFamily: MONO, color: TX1, fontSize: 10 }}>{num(d.value)}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </Card>
+        </SectionCard>
       </div>
 
-      <Card title="Credit holdings">
-        {credits.length === 0 ? <EmptyState icon={<Leaf className="w-8 h-8" />} title="No carbon credits" description="Purchase credits or wait for project issuance." /> : (
-          <>
-            <ExportBar data={credits} filename="carbon_credits" />
-            <div className="overflow-auto">
-              <table className="w-full text-[13px]">
-                <thead className="bg-[#fafbfd]">
-                  <tr className="text-[11px] uppercase text-[#6b7685]">
-                    <th className="px-4 py-2 text-left">Project</th>
-                    <th className="px-4 py-2 text-left">Methodology</th>
-                    <th className="px-4 py-2 text-left">Vintage</th>
-                    <th className="px-4 py-2 text-right">Quantity</th>
-                    <th className="px-4 py-2 text-right">Price</th>
-                    <th className="px-4 py-2 text-left">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {credits.map((c, i) => (
-                    <tr key={c.id || i} className="border-t border-[#eef2f7] hover:bg-[#fafbfd]">
-                      <td className="px-4 py-2">{c.project_id ? <EntityLink id={c.project_id} type="project" /> : (c.project_name || '—')}</td>
-                      <td className="px-4 py-2 text-[#3d4756]">{c.methodology || '—'}</td>
-                      <td className="px-4 py-2 font-mono">{c.vintage || '—'}</td>
-                      <td className="px-4 py-2 text-right font-mono">{num(c.quantity || 0)} tCO₂e</td>
-                      <td className="px-4 py-2 text-right font-mono">{formatZAR(c.price_per_credit || 150)}</td>
-                      <td className="px-4 py-2"><StatusPill status={c.status || 'available'} /></td>
-                    </tr>
+      <SectionCard title="Credit holdings">
+        {credits.length === 0
+          ? <EmptyState icon={<Leaf size={28} />} title="No carbon credits" description="Purchase credits or wait for project issuance." />
+          : (
+            <>
+              <ExportBar data={credits} filename="carbon_credits" />
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 60px 100px 90px 80px', gap: 0, padding: '4px 0', borderBottom: `1px solid ${BORDER}` }}>
+                  {['Project', 'Methodology', 'Vintage', 'Quantity', 'Price', 'Status'].map(h => (
+                    <div key={h} style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: TX3, padding: '0 8px' }}>{h}</div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </Card>
+                </div>
+                {credits.map((c, i) => (
+                  <div key={c.id || i} style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 60px 100px 90px 80px', gap: 0, padding: '7px 0', borderBottom: `1px solid ${BORDER}` }}>
+                    <div style={{ fontSize: 12, color: TX1, padding: '0 8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {c.project_id ? <EntityLink id={c.project_id} type="project" /> : (c.project_name || '—')}
+                    </div>
+                    <div style={{ fontSize: 12, color: TX2, padding: '0 8px' }}>{c.methodology || '—'}</div>
+                    <div style={{ fontSize: 12, fontFamily: MONO, color: TX2, padding: '0 8px' }}>{c.vintage || '—'}</div>
+                    <div style={{ fontSize: 12, fontFamily: MONO, color: TX1, padding: '0 8px', textAlign: 'right' }}>{num(c.quantity || 0)} tCO₂e</div>
+                    <div style={{ fontSize: 12, fontFamily: MONO, color: TX1, padding: '0 8px', textAlign: 'right' }}>{formatZAR(c.price_per_credit || 150)}</div>
+                    <div style={{ padding: '0 8px' }}><StatusPill status={c.status || 'available'} /></div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+      </SectionCard>
     </div>
   );
 }
@@ -244,35 +317,37 @@ function IssuanceTab() {
   if (loading) return <Skeleton variant="card" rows={4} />;
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
-        <div className="text-[13px] text-[#3d4756]">{pipeline.length} projects across the registry pipeline.</div>
-        <button type="button" className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-1"><Plus size={14} /> Register project</button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG1, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 12, color: TX2 }}>{pipeline.length} projects across the registry pipeline.</div>
+        <button type="button" style={{ height: 30, padding: '0 12px', borderRadius: 6, background: ACC, color: '#fff', fontSize: 11, fontWeight: 600, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Plus size={13} /> Register project
+        </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
         {stages.map((s) => {
           const items = grouped.get(s) || [];
           return (
-            <div key={s} className="rounded-xl border border-[#dde4ec] bg-[#fafbfd] flex flex-col">
-              <header className="px-3 py-2 border-b border-[#eef2f7] flex items-center justify-between">
-                <div className="text-[11px] uppercase font-semibold tracking-wider text-[#3d4756]">{stageLabels[s]}</div>
-                <div className="text-[11px] font-mono text-[#6b7685]">{items.length}</div>
-              </header>
-              <div className="p-2 space-y-2 min-h-[200px]">
+            <div key={s} style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG1, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '8px 10px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX2 }}>{stageLabels[s]}</span>
+                <span style={{ fontSize: 10, fontFamily: MONO, color: TX3 }}>{items.length}</span>
+              </div>
+              <div style={{ padding: 8, display: 'flex', flexDirection: 'column', gap: 6, minHeight: 200 }}>
                 {items.map((p) => (
-                  <div key={p.id} className="rounded-md border border-[#dde4ec] bg-white p-3 hover:shadow-md transition-shadow">
-                    <div className="text-[12px] font-semibold text-[#0f1c2e] truncate">{p.project_name}</div>
-                    <div className="text-[10px] text-[#6b7685] mt-1 flex items-center gap-1"><Factory size={10} /> {p.methodology}</div>
-                    <div className="mt-2 flex items-baseline gap-1">
-                      <span className="text-[14px] font-mono font-semibold">{num(p.estimated_credits || 0)}</span>
-                      <span className="text-[10px] text-[#6b7685]">tCO₂e</span>
+                  <div key={p.id} style={{ borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, padding: 10 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: TX1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.project_name}</div>
+                    <div style={{ fontSize: 10, color: TX3, marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}><Factory size={9} /> {p.methodology}</div>
+                    <div style={{ marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 3 }}>
+                      <span style={{ fontSize: 13, fontFamily: MONO, fontWeight: 700, color: TX1 }}>{num(p.estimated_credits || 0)}</span>
+                      <span style={{ fontSize: 10, color: TX3 }}>tCO₂e</span>
                     </div>
-                    <div className="mt-1 text-[10px] text-[#6b7685] font-mono">Vintage {p.vintage}</div>
-                    {p.verifier && <div className="mt-1 text-[10px] text-[#3d4756]">Verifier: {p.verifier}</div>}
+                    <div style={{ marginTop: 2, fontSize: 10, fontFamily: MONO, color: TX3 }}>Vintage {p.vintage}</div>
+                    {p.verifier && <div style={{ marginTop: 2, fontSize: 10, color: TX2 }}>Verifier: {p.verifier}</div>}
                   </div>
                 ))}
-                {items.length === 0 && <div className="text-[11px] text-[#6b7685] text-center pt-8">—</div>}
+                {items.length === 0 && <div style={{ fontSize: 11, color: TX3, textAlign: 'center', paddingTop: 32 }}>—</div>}
               </div>
             </div>
           );
@@ -305,59 +380,51 @@ function RetirementTab() {
   if (loading) return <Skeleton variant="card" rows={4} />;
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <KPI label="Total retired"      value={`${num(totalRetired)} tCO₂e`} icon={Award} />
-        <KPI label="Certificates"       value={num(retired.length)}          icon={FileText} />
-        <KPI label="Available to retire" value={`${num(available.reduce((s, c) => s + (c.quantity || 0), 0))} tCO₂e`} icon={Leaf} tone="up" />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        <KpiTile label="Total retired" value={`${num(totalRetired)} tCO₂e`} />
+        <KpiTile label="Certificates" value={num(retired.length)} />
+        <KpiTile label="Available to retire" value={`${num(available.reduce((s, c) => s + (c.quantity || 0), 0))} tCO₂e`} tone="ok" />
       </div>
 
-      <div className="rounded-xl border border-[#dde4ec] bg-white p-5 flex items-center justify-between">
+      <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG1, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <div className="font-display font-semibold text-[14px] text-[#0f1c2e]">Retire carbon credits</div>
-          <div className="text-[12px] text-[#3d4756] mt-1">Generate a verifiable retirement certificate stored in the platform vault.</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: TX1 }}>Retire carbon credits</div>
+          <div style={{ fontSize: 11, color: TX2, marginTop: 2 }}>Generate a verifiable retirement certificate stored in the platform vault.</div>
         </div>
-        <button type="button" onClick={() => setShowModal(true)} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold inline-flex items-center gap-2">
-          <Award size={14} /> Retire credits
+        <button type="button" onClick={() => setShowModal(true)}
+          style={{ height: 32, padding: '0 14px', borderRadius: 6, background: ACC, color: '#fff', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Award size={13} /> Retire credits
         </button>
       </div>
 
-      <Card title="Retirement certificates">
+      <SectionCard title="Retirement certificates">
         {retired.length === 0 ? <EmptyMsg>No retirements yet.</EmptyMsg> : (
-          <div className="overflow-auto">
-            <table className="w-full text-[13px]">
-              <thead className="bg-[#fafbfd]">
-                <tr className="text-[11px] uppercase text-[#6b7685]">
-                  <th className="px-4 py-2 text-left">Project</th>
-                  <th className="px-4 py-2 text-left">Methodology</th>
-                  <th className="px-4 py-2 text-left">Vintage</th>
-                  <th className="px-4 py-2 text-right">Quantity</th>
-                  <th className="px-4 py-2 text-left">Serial</th>
-                  <th className="px-4 py-2 text-right">Certificate</th>
-                </tr>
-              </thead>
-              <tbody>
-                {retired.map((c, i) => (
-                  <tr key={c.id || i} className="border-t border-[#eef2f7]">
-                    <td className="px-4 py-2">{c.project_name || '—'}</td>
-                    <td className="px-4 py-2 text-[#3d4756]">{c.methodology || '—'}</td>
-                    <td className="px-4 py-2 font-mono">{c.vintage || '—'}</td>
-                    <td className="px-4 py-2 text-right font-mono">{num(c.quantity || 0)} tCO₂e</td>
-                    <td className="px-4 py-2 font-mono text-[11px] text-[#6b7685]">{c.serial_number || '—'}</td>
-                    <td className="px-4 py-2 text-right">
-                      {c.retirement_certificate_url ? (
-                        <a href={c.retirement_certificate_url} target="_blank" rel="noreferrer" className="text-[12px] text-[#3b82c4] inline-flex items-center gap-1 hover:underline">
-                          <ExternalLink size={12} /> Open
-                        </a>
-                      ) : <span className="text-[11px] text-[#6b7685]">Pending</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 60px 100px 1fr 80px', gap: 0, padding: '4px 0', borderBottom: `1px solid ${BORDER}` }}>
+              {['Project', 'Methodology', 'Vintage', 'Quantity', 'Serial', 'Certificate'].map(h => (
+                <div key={h} style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: TX3, padding: '0 8px' }}>{h}</div>
+              ))}
+            </div>
+            {retired.map((c, i) => (
+              <div key={c.id || i} style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 60px 100px 1fr 80px', gap: 0, padding: '7px 0', borderBottom: `1px solid ${BORDER}` }}>
+                <div style={{ fontSize: 12, color: TX1, padding: '0 8px' }}>{c.project_name || '—'}</div>
+                <div style={{ fontSize: 12, color: TX2, padding: '0 8px' }}>{c.methodology || '—'}</div>
+                <div style={{ fontSize: 12, fontFamily: MONO, color: TX2, padding: '0 8px' }}>{c.vintage || '—'}</div>
+                <div style={{ fontSize: 12, fontFamily: MONO, color: TX1, padding: '0 8px', textAlign: 'right' }}>{num(c.quantity || 0)} tCO₂e</div>
+                <div style={{ fontSize: 11, fontFamily: MONO, color: TX3, padding: '0 8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.serial_number || '—'}</div>
+                <div style={{ padding: '0 8px', textAlign: 'right' }}>
+                  {c.retirement_certificate_url
+                    ? <a href={c.retirement_certificate_url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: ACC, display: 'inline-flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}>
+                        <ExternalLink size={11} /> Open
+                      </a>
+                    : <span style={{ fontSize: 11, color: TX3 }}>Pending</span>}
+                </div>
+              </div>
+            ))}
           </div>
         )}
-      </Card>
+      </SectionCard>
 
       {showModal && <RetireModal credits={available} onClose={() => setShowModal(false)} onRetired={refresh} />}
     </div>
@@ -385,25 +452,48 @@ function RetireModal({ credits, onClose, onRetired }: { credits: Credit[]; onClo
     finally { setLoading(false); }
   };
 
+  const inputStyle = { width: '100%', height: 34, padding: '0 10px', borderRadius: 6, border: `1px solid ${BORDER}`, fontSize: 12, color: TX1, background: BG, outline: 'none', boxSizing: 'border-box' as const };
+  const labelStyle = { fontSize: 10, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: TX3, display: 'block', marginBottom: 4 };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
-        <div className="px-5 py-3 border-b border-[#eef2f7] flex items-center gap-2">
-          <Award size={16} /> <h3 className="font-display font-semibold text-[15px] text-[#0f1c2e]">Retire carbon credits</h3>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)' }} role="dialog" aria-modal="true">
+      <div style={{ background: BG1, borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', width: '100%', maxWidth: 440, margin: '0 16px' }}>
+        <div style={{ padding: '12px 16px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Award size={15} style={{ color: ACC }} />
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: TX1, margin: 0 }}>Retire carbon credits</h3>
         </div>
-        <form onSubmit={submit} className="p-5 space-y-3">
+        <form onSubmit={submit} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
           {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
-          <Field label="Credit"><select required value={creditId} onChange={(e) => setCreditId(e.target.value)} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
-            {credits.map((c) => <option key={c.id} value={c.id}>{c.project_name || c.id} · {c.methodology} · {c.vintage} · {num(c.quantity || 0)} tCO₂e</option>)}
-            {credits.length === 0 && <option>— no available credits —</option>}
-          </select></Field>
-          <Field label="Quantity (tCO₂e)"><input type="number" required value={quantity} onChange={(e) => setQuantity(e.target.value)} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></Field>
-          <Field label="Beneficiary (optional)"><input value={beneficiary} onChange={(e) => setBeneficiary(e.target.value)} placeholder="On behalf of…" className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></Field>
-          <Field label="Reason"><textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-md border border-[#dde4ec] text-[13px]" placeholder="Reason / claim period / project alignment" /></Field>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
-            <button type="submit" disabled={loading || !creditId} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">
-              {loading ? 'Retiring…' : 'Retire & generate certificate'}
+          <label>
+            <span style={labelStyle}>Credit</span>
+            <select required value={creditId} onChange={(e) => setCreditId(e.target.value)}
+              style={{ ...inputStyle, height: 34, padding: '0 10px' }}>
+              {credits.map((c) => <option key={c.id} value={c.id}>{c.project_name || c.id} · {c.methodology} · {c.vintage} · {num(c.quantity || 0)} tCO₂e</option>)}
+              {credits.length === 0 && <option>— no available credits —</option>}
+            </select>
+          </label>
+          <label>
+            <span style={labelStyle}>Quantity (tCO₂e)</span>
+            <input type="number" required value={quantity} onChange={(e) => setQuantity(e.target.value)} style={inputStyle} />
+          </label>
+          <label>
+            <span style={labelStyle}>Beneficiary (optional)</span>
+            <input value={beneficiary} onChange={(e) => setBeneficiary(e.target.value)} placeholder="On behalf of…" style={inputStyle} />
+          </label>
+          <label>
+            <span style={labelStyle}>Reason</span>
+            <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3}
+              placeholder="Reason / claim period / project alignment"
+              style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: `1px solid ${BORDER}`, fontSize: 12, color: TX1, background: BG, outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+          </label>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
+            <button type="button" onClick={onClose}
+              style={{ height: 32, padding: '0 12px', borderRadius: 6, border: `1px solid ${BORDER}`, background: BG, color: TX2, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+              Cancel
+            </button>
+            <button type="submit" disabled={loading || !creditId}
+              style={{ height: 32, padding: '0 14px', borderRadius: 6, background: ACC, color: '#fff', fontSize: 12, fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading || !creditId ? 0.55 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+              {loading ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Retiring…</> : 'Retire & generate certificate'}
             </button>
           </div>
         </form>
@@ -432,26 +522,31 @@ function NavTab() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KPI label="Fund NAV"        value={formatZAR(summary?.nav || 0)} icon={BarChart3} />
-        <KPI label="Total credits"   value={`${num(summary?.total_credits || 0)} tCO₂e`} icon={Leaf} />
-        <KPI label="Weighted price"  value={formatZAR(summary?.weighted_price || 0)} icon={Target} />
-        <KPI label="Last computed"   value={summary?.updated_at ? new Date(summary.updated_at).toLocaleDateString() : '—'} icon={Clock} sub={summary?.updated_at ? new Date(summary.updated_at).toLocaleTimeString() : undefined} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        <KpiTile label="Fund NAV" value={formatZAR(summary?.nav || 0)} tone="ok" />
+        <KpiTile label="Total credits" value={`${num(summary?.total_credits || 0)} tCO₂e`} />
+        <KpiTile label="Weighted price" value={formatZAR(summary?.weighted_price || 0)} />
+        <KpiTile label="Last computed" value={summary?.updated_at ? new Date(summary.updated_at).toLocaleDateString() : '—'} />
       </div>
-      <div className="rounded-xl border border-[#dde4ec] bg-white p-5 flex items-center justify-between">
+
+      <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG1, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <div className="font-display font-semibold text-[14px] text-[#0f1c2e] flex items-center gap-2"><Sparkles size={14} /> AI NAV computation</div>
-          <div className="text-[12px] text-[#3d4756] mt-1">Rebuilds the methodology / vintage breakdown using live market prices.</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: TX1, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Sparkles size={13} style={{ color: ACC }} /> AI NAV computation
+          </div>
+          <div style={{ fontSize: 11, color: TX2, marginTop: 2 }}>Rebuilds the methodology / vintage breakdown using live market prices.</div>
         </div>
-        <button type="button" onClick={compute} disabled={computing} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold inline-flex items-center gap-2 disabled:opacity-50">
-          {computing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Compute now
+        <button type="button" onClick={compute} disabled={computing}
+          style={{ height: 32, padding: '0 14px', borderRadius: 6, background: ACC, color: '#fff', fontSize: 12, fontWeight: 600, border: 'none', cursor: computing ? 'not-allowed' : 'pointer', opacity: computing ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+          {computing ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Computing…</> : <><RefreshCw size={12} /> Compute now</>}
         </button>
       </div>
+
       {narrative && (
-        <Card title="NAV commentary">
+        <SectionCard title="NAV commentary">
           <NarrativeText text={narrative} />
-        </Card>
+        </SectionCard>
       )}
     </div>
   );
@@ -463,74 +558,104 @@ function MarketTab() {
   useEffect(() => {
     api.get('/carbon/options').catch(() => ({ data: { success: true, data: [] } })).then((r) => setOptions((r.data?.data || []) as Array<Record<string, unknown>>));
   }, []);
+
   return (
-    <Card title="Options book">
+    <SectionCard title="Options book">
       {options.length === 0 ? <EmptyMsg>No active options.</EmptyMsg> : (
-        <div className="overflow-auto">
-          <table className="w-full text-[13px]">
-            <thead className="bg-[#fafbfd]">
-              <tr className="text-[11px] uppercase text-[#6b7685]">
-                <th className="px-4 py-2 text-left">Type</th>
-                <th className="px-4 py-2 text-right">Strike</th>
-                <th className="px-4 py-2 text-right">Expiry</th>
-                <th className="px-4 py-2 text-right">Δ / Γ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {options.map((o, i) => (
-                <tr key={i} className="border-t border-[#eef2f7]">
-                  <td className="px-4 py-2">
-                    <span className={`px-2 py-[2px] text-[10px] uppercase font-semibold rounded ${(o.type as string) === 'call' ? 'bg-[#cdf0dd] text-[#1a8a5b]' : 'bg-[#fde0db] text-[#c0392b]'}`}>
-                      {(o.type as string)?.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 text-right font-mono">{formatZAR(Number(o.strike || 0))}</td>
-                  <td className="px-4 py-2 text-right font-mono">{(o.expiry as string) || '—'}</td>
-                  <td className="px-4 py-2 text-right font-mono">Δ {o.delta as number} | Γ {o.gamma as number}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 1fr', gap: 0, padding: '4px 0', borderBottom: `1px solid ${BORDER}` }}>
+            {['Type', 'Strike', 'Expiry', 'Δ / Γ'].map(h => (
+              <div key={h} style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: TX3, padding: '0 8px' }}>{h}</div>
+            ))}
+          </div>
+          {options.map((o, i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 1fr', gap: 0, padding: '7px 0', borderBottom: `1px solid ${BORDER}` }}>
+              <div style={{ padding: '0 8px' }}>
+                <span style={{
+                  padding: '2px 7px', borderRadius: 20, fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+                  background: (o.type as string) === 'call' ? 'oklch(0.93 0.06 155)' : 'oklch(0.93 0.06 20)',
+                  color: (o.type as string) === 'call' ? GOOD : BAD,
+                }}>
+                  {(o.type as string)?.toUpperCase()}
+                </span>
+              </div>
+              <div style={{ fontSize: 12, fontFamily: MONO, color: TX1, padding: '0 8px' }}>{formatZAR(Number(o.strike || 0))}</div>
+              <div style={{ fontSize: 12, fontFamily: MONO, color: TX2, padding: '0 8px' }}>{(o.expiry as string) || '—'}</div>
+              <div style={{ fontSize: 12, fontFamily: MONO, color: TX2, padding: '0 8px' }}>Δ {o.delta as number} | Γ {o.gamma as number}</div>
+            </div>
+          ))}
         </div>
       )}
-    </Card>
+    </SectionCard>
   );
 }
 
-// ────────────── shared ──────────────
-function KPI({ label, value, sub, icon: Icon, tone }: { label: string; value: string; sub?: string; icon: React.ComponentType<{ size?: number }>; tone?: 'up' | 'down' }) {
+// ────────────── shared primitives ──────────────
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white p-4">
-      <div className="flex items-center justify-between">
-        <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
-        <Icon size={14} />
-      </div>
-      <div className={`mt-1 text-[22px] font-semibold font-mono ${tone === 'up' ? 'text-[#1a8a5b]' : tone === 'down' ? 'text-[#c0392b]' : 'text-[#0f1c2e]'}`}>{value}</div>
-      {sub && <div className="text-[11px] text-[#6b7685] mt-1">{sub}</div>}
+    <div style={{ borderRadius: 6, border: `1px solid ${BORDER}`, background: BG1, padding: '8px 12px', minWidth: 90 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, fontFamily: MONO, color }}>{value}</div>
     </div>
   );
 }
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white">
-      <header className="px-5 py-3 border-b border-[#eef2f7] font-display font-semibold text-[14px] text-[#0f1c2e]">{title}</header>
-      <div className="p-5">{children}</div>
+    <section style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG1, overflow: 'hidden' }}>
+      <header style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, fontSize: 12, fontWeight: 700, color: TX1 }}>{title}</header>
+      <div style={{ padding: 14 }}>{children}</div>
     </section>
   );
 }
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="block"><span className="text-[11px] font-semibold uppercase tracking-wider text-[#6b7685]">{label}</span><div className="mt-1">{children}</div></label>;
+
+function EmptyMsg({ children }: { children: React.ReactNode }) {
+  return <div style={{ padding: '24px 0', textAlign: 'center', fontSize: 12, color: TX3 }}>{children}</div>;
 }
-function EmptyMsg({ children }: { children: React.ReactNode }) { return <div className="py-6 text-center text-[13px] text-[#6b7685]">{children}</div>; }
+
 function StatusPill({ status }: { status: string }) {
-  const c: Record<string, string> = {
-    available: 'bg-[#cdf0dd] text-[#1a8a5b]',
-    issued: 'bg-[#dbecfb] text-[#3b82c4]',
-    pending: 'bg-[#fce5c4] text-[#c97a14]',
-    verifying: 'bg-[#fce5c4] text-[#c97a14]',
-    retired: 'bg-[#eef2f7] text-[#6b7685]',
+  const styles: Record<string, { bg: string; color: string }> = {
+    available:  { bg: 'oklch(0.93 0.06 155)', color: GOOD },
+    issued:     { bg: 'oklch(0.93 0.05 220)', color: 'oklch(0.42 0.14 220)' },
+    pending:    { bg: 'oklch(0.94 0.06 55)',  color: WARN },
+    verifying:  { bg: 'oklch(0.94 0.06 55)',  color: WARN },
+    retired:    { bg: BG2, color: TX3 },
   };
-  return <span className={`px-2 py-[2px] text-[10px] uppercase font-semibold rounded ${c[status] || 'bg-[#eef2f7] text-[#6b7685]'}`}>{status}</span>;
+  const s = styles[status] || { bg: BG2, color: TX3 };
+  return (
+    <span style={{ padding: '2px 8px', borderRadius: 20, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', background: s.bg, color: s.color }}>
+      {status}
+    </span>
+  );
+}
+
+function QuickAction({ icon: Icon, label, sub, onClick }: { icon: React.ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>; label: string; sub: string; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button type="button" onClick={onClick}
+      onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 6, border: `1px solid ${hovered ? ACC : BORDER}`, background: hovered ? 'oklch(0.97 0.01 55)' : BG, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+      <Icon size={14} style={{ color: ACC, flexShrink: 0 }} />
+      <div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: TX1 }}>{label}</div>
+        <div style={{ fontSize: 10, color: TX3 }}>{sub}</div>
+      </div>
+    </button>
+  );
+}
+
+function ComplianceRow({ label, status, detail }: { label: string; status: 'ok' | 'warn' | 'bad'; detail: string }) {
+  const dot = status === 'ok' ? GOOD : status === 'warn' ? WARN : BAD;
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+      <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, marginTop: 3, flexShrink: 0 }} />
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 600, color: TX1 }}>{label}</div>
+        <div style={{ fontSize: 10, color: TX3 }}>{detail}</div>
+      </div>
+    </div>
+  );
 }
 
 export default Carbon;

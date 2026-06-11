@@ -29,6 +29,7 @@ type HaltBand = 'none' | 'partial' | 'full';
 type Authority = 'junior_trader' | 'desk_head' | 'market_risk_manager' | 'CRO';
 
 interface PtcRow {
+  [key: string]: unknown;
   id: string;
   check_number: string;
   order_ref: string;
@@ -143,8 +144,8 @@ interface PtcEvent {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   order_submitted:           { bg: '#e3e7ec', fg: '#445',    label: 'Order submitted' },
-  kyc_verified:              { bg: '#dbecfb', fg: '#1a3a5c', label: 'KYC verified' },
-  credit_line_checked:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Credit line checked' },
+  kyc_verified:              { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'KYC verified' },
+  credit_line_checked:       { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Credit line checked' },
   settlement_risk_assessed:  { bg: '#fff4d6', fg: '#a06200', label: 'Settlement risk assessed' },
   concentration_checked:     { bg: '#fff4d6', fg: '#a06200', label: 'Concentration checked' },
   halt_status_verified:      { bg: '#fff4d6', fg: '#a06200', label: 'Halt status verified' },
@@ -376,58 +377,40 @@ export function PreTradeCreditChainTab() {
     counterparty_margin_bridged_count: 0, total_notional_zar: 0,
   };
 
-  const act = useCallback(async (action: ActionKind, row: PtcRow) => {
+  const act = useCallback(async (action: ActionKind, row: PtcRow, values: Record<string, string>) => {
     try {
       const body: Record<string, unknown> = {};
       if (action === 'verify-kyc') {
-        const stamp = window.prompt('KYC verified at (ISO; leave blank for now):', '');
-        if (stamp) body.kyc_verified_at = stamp;
+        if (values.kyc_verified_at) body.kyc_verified_at = values.kyc_verified_at;
       } else if (action === 'check-credit-line') {
-        const used = window.prompt('Credit line used ZAR (leave blank to keep):', String(row.credit_line_used_zar));
-        if (used && !isNaN(Number(used))) body.credit_line_used_zar = Number(used);
-        const limit = window.prompt('Credit line limit ZAR (leave blank to keep):', String(row.credit_line_limit_zar));
-        if (limit && !isNaN(Number(limit))) body.credit_line_limit_zar = Number(limit);
+        if (values.credit_line_used_zar && !isNaN(Number(values.credit_line_used_zar))) body.credit_line_used_zar = Number(values.credit_line_used_zar);
+        if (values.credit_line_limit_zar && !isNaN(Number(values.credit_line_limit_zar))) body.credit_line_limit_zar = Number(values.credit_line_limit_zar);
       } else if (action === 'assess-settlement-risk') {
-        const dvp = window.prompt('DvP/PvP unavailable? (1/0):', String(row.dvp_pvp_unavailable));
-        if (dvp !== null && dvp !== '') body.dvp_pvp_unavailable = Number(dvp) ? 1 : 0;
-        const ccy = window.prompt('Currency mismatch? (1/0):', String(row.currency_mismatch));
-        if (ccy !== null && ccy !== '') body.currency_mismatch = Number(ccy) ? 1 : 0;
-        const tenor = window.prompt('Tenor days:', String(row.tenor_days));
-        if (tenor && !isNaN(Number(tenor))) body.tenor_days = Number(tenor);
+        if (values.dvp_pvp_unavailable !== undefined && values.dvp_pvp_unavailable !== '') body.dvp_pvp_unavailable = Number(values.dvp_pvp_unavailable) ? 1 : 0;
+        if (values.currency_mismatch !== undefined && values.currency_mismatch !== '') body.currency_mismatch = Number(values.currency_mismatch) ? 1 : 0;
+        if (values.tenor_days && !isNaN(Number(values.tenor_days))) body.tenor_days = Number(values.tenor_days);
       } else if (action === 'check-concentration') {
-        const sne = window.prompt('Single-name exposure ZAR:', String(row.single_name_exposure_zar));
-        if (sne && !isNaN(Number(sne))) body.single_name_exposure_zar = Number(sne);
-        const bv = window.prompt('Book value ZAR:', String(row.book_value_zar));
-        if (bv && !isNaN(Number(bv))) body.book_value_zar = Number(bv);
+        if (values.single_name_exposure_zar && !isNaN(Number(values.single_name_exposure_zar))) body.single_name_exposure_zar = Number(values.single_name_exposure_zar);
+        if (values.book_value_zar && !isNaN(Number(values.book_value_zar))) body.book_value_zar = Number(values.book_value_zar);
       } else if (action === 'verify-halt-status') {
-        const halted = window.prompt('Underlying halted? (1/0):', String(row.underlying_halted));
-        if (halted !== null && halted !== '') body.underlying_halted = Number(halted) ? 1 : 0;
-        const partial = window.prompt('Partial halt? (1/0):', String(row.partial_halt_flag));
-        if (partial !== null && partial !== '') body.partial_halt_flag = Number(partial) ? 1 : 0;
+        if (values.underlying_halted !== undefined && values.underlying_halted !== '') body.underlying_halted = Number(values.underlying_halted) ? 1 : 0;
+        if (values.partial_halt_flag !== undefined && values.partial_halt_flag !== '') body.partial_halt_flag = Number(values.partial_halt_flag) ? 1 : 0;
       } else if (action === 'validate-mark-age') {
-        const mark = window.prompt('Last mark at (ISO; blank for now):', '');
-        if (mark) body.last_mark_at = mark;
+        if (values.last_mark_at) body.last_mark_at = values.last_mark_at;
       } else if (action === 'hold-for-review') {
-        const reason = window.prompt('Hold reason (required for audit):', row.hold_reason ?? '');
-        if (!reason) return;
-        body.hold_reason = reason;
-        const sla = window.prompt('Triggered by SLA pressure? (1/0):', String(row.hold_triggered_by_sla));
-        if (sla !== null && sla !== '') body.hold_triggered_by_sla = Number(sla) ? 1 : 0;
+        if (!values.hold_reason) return;
+        body.hold_reason = values.hold_reason;
+        if (values.hold_triggered_by_sla !== undefined && values.hold_triggered_by_sla !== '') body.hold_triggered_by_sla = Number(values.hold_triggered_by_sla) ? 1 : 0;
       } else if (action === 'manually-reject') {
-        const reason = window.prompt('Manual reject reason (required for audit):', '');
-        if (!reason) return;
-        body.reject_reason = reason;
+        if (!values.reject_reason) return;
+        body.reject_reason = values.reject_reason;
       } else if (action === 'reject-order') {
-        const reason = window.prompt('Reject reason (required for audit). NOTE: B-grade counterparty crosses regulator EVERY tier:', row.reject_reason ?? '');
-        if (!reason) return;
-        body.reject_reason = reason;
+        if (!values.reject_reason) return;
+        body.reject_reason = values.reject_reason;
       } else if (action === 'override-rejection') {
-        const reason = window.prompt('Override reason — compliance override crosses regulator EVERY tier:', '');
-        if (!reason) return;
-        body.override_reason = reason;
-        const by = window.prompt('Override by (compliance officer ID, required):', '');
-        if (!by) return;
-        body.override_by = by;
+        if (!values.override_reason || !values.override_by) return;
+        body.override_reason = values.override_reason;
+        body.override_by = values.override_by;
       }
       await api.post(`/trader/pretrade-credit/chain/${row.id}/${action}`, body);
       await load();
@@ -472,9 +455,9 @@ export function PreTradeCreditChainTab() {
         <span>Reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
         <span>Cross-border: <span className="font-semibold text-[#7a4500]">{kpis.cross_border_count}</span></span>
         <span>Overridden: <span className="font-semibold text-[#9b1f1f]">{kpis.overridden_count}</span></span>
-        <span>Bridges to W2 (trading risk): <span className="font-semibold text-[#1a3a5c]">{kpis.trading_risk_bridged_count}</span></span>
-        <span>Bridges to W29 (position limit): <span className="font-semibold text-[#1a3a5c]">{kpis.position_limit_bridged_count}</span></span>
-        <span>Bridges to W68 (counterparty margin): <span className="font-semibold text-[#1a3a5c]">{kpis.counterparty_margin_bridged_count}</span></span>
+        <span>Bridges to W2 (trading risk): <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.trading_risk_bridged_count}</span></span>
+        <span>Bridges to W29 (position limit): <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.position_limit_bridged_count}</span></span>
+        <span>Bridges to W68 (counterparty margin): <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.counterparty_margin_bridged_count}</span></span>
         <span>Total notional: <span className="font-semibold text-[#1f5b3a]">{fmtZar(kpis.total_notional_zar)}</span></span>
       </div>
 
@@ -504,15 +487,15 @@ export function PreTradeCreditChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Check #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Order / Counterparty</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Notional</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Credit util</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Settle risk</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Urgency</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Check #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Order / Counterparty</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Notional</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Credit util</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Settle risk</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Urgency</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -530,7 +513,7 @@ export function PreTradeCreditChainTab() {
                       {r.check_number}
                       {r.is_reportable_flag && <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">REG</span>}
                     </td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">
+                    <td className="px-3 py-2" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       <div className="text-[11px] font-medium">{r.order_ref}</div>
                       <div className="text-[10px] text-[#6b7685]">
                         {r.counterparty_name ?? r.counterparty_id}
@@ -571,7 +554,7 @@ export function PreTradeCreditChainTab() {
       )}
 
       {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={(action, row, values) => act(action, row, values)} />
       )}
     </div>
   );
@@ -587,14 +570,78 @@ function Kpi({ label, value, tone }: { label: string; value: number | string; to
   );
 }
 
+type ActionField = { key: string; label: string; placeholder?: string; required?: boolean };
+
+const ACTION_FIELDS: Partial<Record<ActionKind, ActionField[]>> = {
+  'verify-kyc': [
+    { key: 'kyc_verified_at', label: 'KYC verified at (ISO timestamp, leave blank for now)', placeholder: '' },
+  ],
+  'check-credit-line': [
+    { key: 'credit_line_used_zar', label: 'Credit line used (ZAR)', placeholder: '0' },
+    { key: 'credit_line_limit_zar', label: 'Credit line limit (ZAR)', placeholder: '0' },
+  ],
+  'assess-settlement-risk': [
+    { key: 'dvp_pvp_unavailable', label: 'DvP/PvP unavailable? (1=yes, 0=no)', placeholder: '0' },
+    { key: 'currency_mismatch', label: 'Currency mismatch? (1=yes, 0=no)', placeholder: '0' },
+    { key: 'tenor_days', label: 'Tenor days', placeholder: '0' },
+  ],
+  'check-concentration': [
+    { key: 'single_name_exposure_zar', label: 'Single-name exposure (ZAR)', placeholder: '0' },
+    { key: 'book_value_zar', label: 'Book value (ZAR)', placeholder: '0' },
+  ],
+  'verify-halt-status': [
+    { key: 'underlying_halted', label: 'Underlying halted? (1=yes, 0=no)', placeholder: '0' },
+    { key: 'partial_halt_flag', label: 'Partial halt? (1=yes, 0=no)', placeholder: '0' },
+  ],
+  'validate-mark-age': [
+    { key: 'last_mark_at', label: 'Last mark at (ISO timestamp, leave blank for now)', placeholder: '' },
+  ],
+  'hold-for-review': [
+    { key: 'hold_reason', label: 'Hold reason (required for audit)', required: true, placeholder: '' },
+    { key: 'hold_triggered_by_sla', label: 'Triggered by SLA pressure? (1=yes, 0=no)', placeholder: '0' },
+  ],
+  'manually-reject': [
+    { key: 'reject_reason', label: 'Manual reject reason (required for audit)', required: true, placeholder: '' },
+  ],
+  'reject-order': [
+    { key: 'reject_reason', label: 'Reject reason (required for audit — B-grade crosses regulator EVERY tier)', required: true, placeholder: '' },
+  ],
+  'override-rejection': [
+    { key: 'override_reason', label: 'Override reason (compliance override crosses regulator EVERY tier)', required: true, placeholder: '' },
+    { key: 'override_by', label: 'Override by (compliance officer ID)', required: true, placeholder: '' },
+  ],
+};
+
 function Drawer({
   row, events, onClose, onAct,
 }: {
   row: PtcRow;
   events: PtcEvent[];
   onClose: () => void;
-  onAct: (action: ActionKind, row: PtcRow) => void;
+  onAct: (action: ActionKind, row: PtcRow, values: Record<string, string>) => void;
 }) {
+  const [pendingAction, setPendingAction] = React.useState<ActionKind | null>(null);
+  const [fieldValues, setFieldValues] = React.useState<Record<string, string>>({});
+
+  const openModal = (action: ActionKind) => {
+    const fields = ACTION_FIELDS[action];
+    if (fields && fields.length > 0) {
+      const defaults: Record<string, string> = {};
+      for (const f of fields) defaults[f.key] = f.placeholder ?? '';
+      setFieldValues(defaults);
+      setPendingAction(action);
+    } else {
+      onAct(action, row, {});
+    }
+  };
+
+  const submitModal = () => {
+    if (!pendingAction) return;
+    onAct(pendingAction, row, fieldValues);
+    setPendingAction(null);
+    setFieldValues({});
+  };
+
   const nextAction = ACTION_FOR_STATE[row.chain_status];
   const isPreClear = PRE_CLEAR_STATES.includes(row.chain_status);
   const canHold = isPreClear;
@@ -720,42 +767,73 @@ function Drawer({
           <Section title="Actions">
             <div className="flex flex-wrap gap-2">
               {nextAction && (
-                <ActionButton tone="primary" onClick={() => onAct(nextAction, row)}>
+                <ActionButton tone="primary" onClick={() => openModal(nextAction)}>
                   {ACTION_LABEL[nextAction]}
                 </ActionButton>
               )}
               {canHold && (
-                <ActionButton tone="warn" onClick={() => onAct('hold-for-review', row)}>
+                <ActionButton tone="warn" onClick={() => openModal('hold-for-review')}>
                   {ACTION_LABEL['hold-for-review']}
                 </ActionButton>
               )}
               {canManuallyClear && (
-                <ActionButton tone="ok" onClick={() => onAct('manually-clear', row)}>
+                <ActionButton tone="ok" onClick={() => openModal('manually-clear')}>
                   {ACTION_LABEL['manually-clear']}
                 </ActionButton>
               )}
               {canManuallyReject && (
-                <ActionButton tone="bad" onClick={() => onAct('manually-reject', row)}>
+                <ActionButton tone="bad" onClick={() => openModal('manually-reject')}>
                   {ACTION_LABEL['manually-reject']}
                 </ActionButton>
               )}
               {canReject && (
-                <ActionButton tone="bad" onClick={() => onAct('reject-order', row)}>
+                <ActionButton tone="bad" onClick={() => openModal('reject-order')}>
                   {ACTION_LABEL['reject-order']}
                 </ActionButton>
               )}
               {canOverride && (
-                <ActionButton tone="bad" onClick={() => onAct('override-rejection', row)}>
+                <ActionButton tone="bad" onClick={() => openModal('override-rejection')}>
                   {ACTION_LABEL['override-rejection']}
                 </ActionButton>
               )}
               {row.chain_status === 'cleared' && (
-                <ActionButton tone="neutral" onClick={() => onAct('archive-check', row)}>
+                <ActionButton tone="neutral" onClick={() => openModal('archive-check')}>
                   {ACTION_LABEL['archive-check']}
                 </ActionButton>
               )}
             </div>
           </Section>
+
+          {pendingAction && ACTION_FIELDS[pendingAction] && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              <div className="w-full max-w-md rounded-lg border border-[#d8dde6] bg-white p-5 shadow-2xl">
+                <h3 className="mb-4 text-[13px] font-semibold text-[#0c2a4d]">{ACTION_LABEL[pendingAction]}</h3>
+                <div className="space-y-3">
+                  {(ACTION_FIELDS[pendingAction] ?? []).map((f) => (
+                    <div key={f.key}>
+                      <label className="mb-1 block text-[11px] font-medium text-[#4a5568]">
+                        {f.label}{f.required && <span className="ml-1 text-red-600">*</span>}
+                      </label>
+                      <input
+                        type="text"
+                        value={fieldValues[f.key] ?? ''}
+                        onChange={(e) => setFieldValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                        className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[12px] text-[#0c2a4d] outline-none focus:border-[#c2873a]"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 flex justify-end gap-2">
+                  <ActionButton tone="neutral" onClick={() => { setPendingAction(null); setFieldValues({}); }}>
+                    Cancel
+                  </ActionButton>
+                  <ActionButton tone="primary" onClick={submitModal}>
+                    Confirm
+                  </ActionButton>
+                </div>
+              </div>
+            </div>
+          )}
 
           <Section title="Timeline">
             <div className="space-y-2">

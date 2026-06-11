@@ -148,7 +148,7 @@ export function ProductTour({
               top: rect.top, left: rect.left,
               width: rect.width, height: rect.height,
               borderRadius: 8,
-              boxShadow: '0 0 0 2px #3b82c4, 0 0 20px rgba(59,130,196,0.5)',
+              boxShadow: '0 0 0 2px oklch(0.46 0.16 55), 0 0 20px rgba(59,130,196,0.5)',
               pointerEvents: 'none',
             }}
           />
@@ -174,7 +174,7 @@ export function ProductTour({
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#3b82c4', marginBottom: 3 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'oklch(0.46 0.16 55)', marginBottom: 3 }}>
               Step {stepIndex + 1} of {def.steps.length}
             </div>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#0f1c2e', lineHeight: 1.25 }}>
@@ -204,7 +204,7 @@ export function ProductTour({
                 width: i === stepIndex ? 18 : 6,
                 height: 6,
                 borderRadius: 3,
-                background: i === stepIndex ? '#3b82c4' : i < stepIndex ? '#1a8a5b' : '#dde4ec',
+                background: i === stepIndex ? 'oklch(0.46 0.16 55)' : i < stepIndex ? '#1a8a5b' : '#dde4ec',
                 transition: 'width 0.2s, background 0.2s',
               }}
             />

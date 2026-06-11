@@ -212,9 +212,9 @@ interface RattEvent {
 
 const STATE_TONE: Record<RattStatus, { bg: string; fg: string; label: string }> = {
   attestation_proposed:          { bg: '#e3e7ec', fg: '#445',    label: 'Proposed' },
-  scope_defined:                 { bg: '#dbecfb', fg: '#1a3a5c', label: 'Scope defined' },
-  feeds_ingested:                { bg: '#dbecfb', fg: '#1a3a5c', label: 'Feeds ingested' },
-  blocks_paired:                 { bg: '#dbecfb', fg: '#1a3a5c', label: 'Blocks paired' },
+  scope_defined:                 { bg: 'oklch(0.94 0.006 250)', fg: 'oklch(0.46 0.16 55)', label: 'Scope defined' },
+  feeds_ingested:                { bg: 'oklch(0.94 0.006 250)', fg: 'oklch(0.46 0.16 55)', label: 'Feeds ingested' },
+  blocks_paired:                 { bg: 'oklch(0.94 0.006 250)', fg: 'oklch(0.46 0.16 55)', label: 'Blocks paired' },
   variance_computed:             { bg: '#fff4d6', fg: '#a06200', label: 'Variance computed' },
   break_classified:              { bg: '#fff4d6', fg: '#a06200', label: 'Break classified' },
   root_cause_logged:             { bg: '#fff4d6', fg: '#a06200', label: 'Root cause logged' },
@@ -231,7 +231,7 @@ const STATE_TONE: Record<RattStatus, { bg: string; fg: string; label: string }> 
 
 const TIER_TONE: Record<RattTier, { bg: string; fg: string; label: string }> = {
   daily_tactical:        { bg: '#e3e7ec', fg: '#557',    label: 'Daily' },
-  weekly_management:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Weekly' },
+  weekly_management:     { bg: 'oklch(0.94 0.006 250)', fg: 'oklch(0.46 0.16 55)', label: 'Weekly' },
   monthly_management:    { bg: '#daf5e2', fg: '#1f6b3a', label: 'Monthly' },
   quarterly_attestation: { bg: '#fff4d6', fg: '#a06200', label: 'Quarterly' },
   annual_audit:          { bg: '#7a0e0e', fg: '#fff',    label: 'Annual audit' },
@@ -628,7 +628,7 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
   }, [load]);
 
   return (
-    <div className="text-[12px] text-[#1a3a5c]">
+    <div className="text-[12px]" style={{ color: 'oklch(0.17 0.010 250)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-base font-semibold text-[#0c2a4d]">Reconciliation attestation (W120)</h2>
@@ -664,10 +664,10 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
 
       {/* Drill rail */}
       <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[#d8dde6] bg-white px-3 py-2 text-[11px] text-[#4a5568]">
-        <span>Proposed: <span className="font-semibold text-[#1a3a5c]">{kpis.proposed_count}</span></span>
-        <span>Scope: <span className="font-semibold text-[#1a3a5c]">{kpis.scope_count}</span></span>
-        <span>Feeds: <span className="font-semibold text-[#1a3a5c]">{kpis.feeds_count}</span></span>
-        <span>Paired: <span className="font-semibold text-[#1a3a5c]">{kpis.paired_count}</span></span>
+        <span>Proposed: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.proposed_count}</span></span>
+        <span>Scope: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.scope_count}</span></span>
+        <span>Feeds: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.feeds_count}</span></span>
+        <span>Paired: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.paired_count}</span></span>
         <span>Variance: <span className="font-semibold text-[#a06200]">{kpis.variance_count}</span></span>
         <span>Break: <span className="font-semibold text-[#a06200]">{kpis.break_count}</span></span>
         <span>Root cause: <span className="font-semibold text-[#a06200]">{kpis.root_cause_count}</span></span>
@@ -677,17 +677,17 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
         <span>Suspended: <span className="font-semibold text-[#6b7685]">{kpis.suspended_count}</span></span>
         <span>Restated: <span className="font-semibold text-[#a06200]">{kpis.restated_count}</span></span>
         <span>Reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
-        <span>Completeness avg: <span className="font-semibold text-[#1a3a5c]">{kpis.completeness_avg}/140</span></span>
-        <span>ICFR avg: <span className="font-semibold text-[#1a3a5c]">{kpis.icfr_avg}/140</span></span>
-        <span>Variance avg: <span className="font-semibold text-[#1a3a5c]">{kpis.variance_avg}/140</span></span>
-        <span>Remediation avg: <span className="font-semibold text-[#1a3a5c]">{kpis.remediation_avg}/140</span></span>
-        <span>W118: <span className="font-semibold text-[#1a3a5c]">{kpis.w118_bridged_count}</span></span>
-        <span>W119: <span className="font-semibold text-[#1a3a5c]">{kpis.w119_bridged_count}</span></span>
-        <span>W113: <span className="font-semibold text-[#1a3a5c]">{kpis.w113_bridged_count}</span></span>
-        <span>W114: <span className="font-semibold text-[#1a3a5c]">{kpis.w114_bridged_count}</span></span>
-        <span>W115: <span className="font-semibold text-[#1a3a5c]">{kpis.w115_bridged_count}</span></span>
-        <span>W116: <span className="font-semibold text-[#1a3a5c]">{kpis.w116_bridged_count}</span></span>
-        <span>W117: <span className="font-semibold text-[#1a3a5c]">{kpis.w117_bridged_count}</span></span>
+        <span>Completeness avg: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.completeness_avg}/140</span></span>
+        <span>ICFR avg: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.icfr_avg}/140</span></span>
+        <span>Variance avg: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.variance_avg}/140</span></span>
+        <span>Remediation avg: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.remediation_avg}/140</span></span>
+        <span>W118: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w118_bridged_count}</span></span>
+        <span>W119: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w119_bridged_count}</span></span>
+        <span>W113: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w113_bridged_count}</span></span>
+        <span>W114: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w114_bridged_count}</span></span>
+        <span>W115: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w115_bridged_count}</span></span>
+        <span>W116: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w116_bridged_count}</span></span>
+        <span>W117: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w117_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / priority pills */}
@@ -751,16 +751,16 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Attestation #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Cadence</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Health</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">ICFR</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Variance</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Var ZAR</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Flags</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>Attestation #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>Cadence</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>Health</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.17 0.010 250)' }}>ICFR</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.17 0.010 250)' }}>Variance</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.17 0.010 250)' }}>Var ZAR</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.17 0.010 250)' }}>Flags</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.17 0.010 250)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -785,7 +785,7 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
                       {r.cfo_attestation_signed ? <span className="ml-1 text-[9px] font-semibold text-[#1f5b3a]">CFO</span> : null}
                       {r.audit_committee_briefed ? <span className="ml-1 text-[9px] font-semibold text-[#1f5b3a]">AC</span> : null}
                     </td>
-                    <td className="px-3 py-2 text-[11px] text-[#1a3a5c]">{r.cadence.replace(/_/g, ' ')}</td>
+                    <td className="px-3 py-2 text-[11px]" style={{ color: 'oklch(0.17 0.010 250)' }}>{r.cadence.replace(/_/g, ' ')}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tier.bg, color: tier.fg }}>
                         {tier.label}
@@ -885,12 +885,14 @@ function Drawer({
         ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
         : tone === 'amber'
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
-          : 'bg-white border border-[#d8dde6] text-[#1a3a5c] hover:bg-[#f3f5f9]';
+          : 'bg-white border border-[#d8dde6] hover:bg-[#f3f5f9]';
+    const plainStyle = tone === 'plain' ? { color: 'oklch(0.17 0.010 250)' } : undefined;
     return (
       <button type="button"
         key={action}
         onClick={() => onAct(action, row)}
         className={`rounded px-3 py-1.5 text-[11px] font-semibold ${cls}`}
+        style={plainStyle}
         title={ACTION_LABEL[action]}
       >
         {label}
@@ -912,7 +914,7 @@ function Drawer({
               )}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.17 0.010 250)' }}>Close</button>
         </div>
 
         {/* 4 scoring indexes */}
@@ -972,7 +974,7 @@ function Drawer({
               <li>Cross-border feed break: <span className={row.cross_border_feed_break ? 'text-[#9b1f1f] font-semibold' : 'text-[#6b7685]'}>{row.cross_border_feed_break ? 'YES' : 'no'}</span></li>
               <li>ICFR deficiency suspected: <span className={row.icfr_deficiency_suspected ? 'text-[#9b1f1f] font-semibold' : 'text-[#6b7685]'}>{row.icfr_deficiency_suspected ? 'YES' : 'no'}</span></li>
             </ul>
-            <div className="mt-2 text-[10px] text-[#6b7685]">Feeds: <span className="font-mono text-[#1a3a5c]">{row.feeds_paired_count}/{row.feeds_in_scope}</span> paired {'•'} {row.feeds_paired_pct}%</div>
+            <div className="mt-2 text-[10px] text-[#6b7685]">Feeds: <span className="font-mono" style={{ color: 'oklch(0.17 0.010 250)' }}>{row.feeds_paired_count}/{row.feeds_in_scope}</span> paired {'•'} {row.feeds_paired_pct}%</div>
             {row.feed_sources_csv && <div className="mt-1 text-[10px] text-[#6b7685] break-all">{row.feed_sources_csv}</div>}
           </div>
         </div>
@@ -1014,7 +1016,7 @@ function Drawer({
             {events.map((e) => (
               <li key={e.id} className="px-3 py-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[#1a3a5c]">{e.event_type}</span>
+                  <span className="font-mono" style={{ color: 'oklch(0.17 0.010 250)' }}>{e.event_type}</span>
                   <span className="text-[#6b7685]">{fmtDate(e.created_at)}</span>
                 </div>
                 <div className="text-[#4a5568]">
@@ -1132,7 +1134,7 @@ function ProposeModal({
           </div>
         </div>
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
+          <button type="button" onClick={onClose} className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.17 0.010 250)' }}>Cancel</button>
           <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose</button>
         </div>
       </div>

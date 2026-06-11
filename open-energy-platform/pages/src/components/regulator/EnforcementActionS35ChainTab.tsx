@@ -52,6 +52,7 @@ type Party = 'nersa' | 'respondent' | 'panel' | 'council' | 'archiver' | 'system
 type AppealBand = 'none' | 'window_open' | 'appealed' | 'decided' | 'past_window';
 
 interface EnfRow {
+  [key: string]: unknown;
   id: string;
   enforcement_case_number: string;
   respondent_party_id: string;
@@ -185,9 +186,9 @@ interface KpiData {
 }
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  triggered:                { bg: '#dbecfb', fg: '#1a3a5c', label: 'Triggered' },
-  notice_drafted:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'Notice drafted' },
-  notice_issued:            { bg: '#dbecfb', fg: '#1a3a5c', label: 'Notice issued' },
+  triggered:                { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Triggered' },
+  notice_drafted:           { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Notice drafted' },
+  notice_issued:            { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Notice issued' },
   respondent_acknowledged:  { bg: '#fff4d6', fg: '#a06200', label: 'Acknowledged' },
   response_received:        { bg: '#fff4d6', fg: '#a06200', label: 'Response in' },
   adjudication_in_progress: { bg: '#fff4d6', fg: '#a06200', label: 'Adjudicating' },
@@ -205,14 +206,14 @@ const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }>
 
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
   minor:     { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-  standard:  { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard' },
+  standard:  { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Standard' },
   material:  { bg: '#fff4d6', fg: '#a06200', label: 'Material' },
   strategic: { bg: '#fbd0d0', fg: '#7a1414', label: 'Strategic' },
 };
 
 const URGENCY_TONE: Record<UrgencyBand, { bg: string; fg: string; label: string }> = {
   low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-  medium:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Medium' },
+  medium:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Medium' },
   high:     { bg: '#fff4d6', fg: '#a06200', label: 'High' },
   critical: { bg: '#fbd0d0', fg: '#7a1414', label: 'Critical' },
 };
@@ -233,7 +234,7 @@ const AUTH_LABEL: Record<Authority, string> = {
 };
 
 const PARTY_TONE: Record<string, { bg: string; fg: string }> = {
-  nersa:      { bg: '#dbecfb', fg: '#1a3a5c' },
+  nersa:      { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)' },
   respondent: { bg: '#fff4d6', fg: '#a06200' },
   panel:      { bg: '#e8defc', fg: '#5320a3' },
   council:    { bg: '#fde0e0', fg: '#9b1f1f' },
@@ -394,7 +395,7 @@ export function EnforcementActionS35ChainTab() {
             onClick={() => setFilter(f.key)}
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
               filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
+                ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]'
                 : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
             }`}>
             {f.label}
@@ -409,7 +410,7 @@ export function EnforcementActionS35ChainTab() {
             onClick={() => setFilter(f.key)}
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
               filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
+                ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]'
                 : 'bg-white text-[#6b7685] border-[#eef2f6] hover:bg-[#eef2f7]'
             }`}>
             {f.label}
@@ -458,7 +459,7 @@ export function EnforcementActionS35ChainTab() {
                     {r.respondent_party_label ?? r.respondent_party_id}
                     <span className="text-[#6b7685]"> - {r.respondent_licence_class ?? '-'}</span>
                     {floored && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fff4d6] text-[#a06200]">FLOOR</span>}
-                    {r.bridges_to_inspection_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#dbecfb] text-[#1a3a5c]">W40</span>}
+                    {r.bridges_to_inspection_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)]">W40</span>}
                     {r.bridges_to_complaint_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#e8defc] text-[#5320a3]">W66</span>}
                     {r.gazette_publication_required_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fde0e0] text-[#9b1f1f]">GAZETTE</span>}
                     {r.paja_fairness_at_risk_flag_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fbd0d0] text-[#7a1414]">PAJA</span>}
@@ -518,6 +519,68 @@ function Kpi({ label, value, tone = 'ok' }: { label: string; value: number | str
   );
 }
 
+type FieldSpec = { key: string; label: string; type?: 'text' | 'textarea' | 'number' | 'checkbox'; placeholder?: string; required?: boolean };
+type ActionSpec = { path: string; label: string; tone?: 'neutral' | 'good' | 'bad'; fields?: FieldSpec[]; multiAction?: Array<{ path: string; fields?: FieldSpec[] }> };
+
+function ActionModal({ spec, onSubmit, onClose }: { spec: ActionSpec; onSubmit: (paths: Array<{ path: string; body: Record<string, unknown> }>) => void; onClose: () => void; }) {
+  const [vals, setVals] = useState<Record<string, string | boolean>>({});
+  const fields = spec.fields ?? [];
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (spec.multiAction) {
+      onSubmit(spec.multiAction.map((a) => {
+        const body: Record<string, unknown> = {};
+        (a.fields ?? []).forEach((f) => {
+          const v = vals[f.key];
+          if (v !== undefined && v !== '') {
+            body[f.key] = f.type === 'number' ? Number(v) : f.type === 'checkbox' ? (v ? 1 : 0) : v;
+          }
+        });
+        return { path: a.path, body };
+      }));
+    } else {
+      const body: Record<string, unknown> = {};
+      fields.forEach((f) => {
+        const v = vals[f.key];
+        if (v !== undefined && v !== '') {
+          body[f.key] = f.type === 'number' ? Number(v) : f.type === 'checkbox' ? (v ? 1 : 0) : v;
+        }
+      });
+      onSubmit([{ path: spec.path, body }]);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="text-[14px] font-semibold text-[#0f1c2e] mb-4">{spec.label}</div>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          {fields.map((f) => (
+            <div key={f.key}>
+              <label className="block text-[11px] uppercase tracking-wide text-[#6b7685] mb-1">{f.label}{f.required && ' *'}</label>
+              {f.type === 'textarea' ? (
+                <textarea className="w-full border border-[#dde4ec] rounded-md px-2.5 py-1.5 text-[13px] text-[#0f1c2e] focus:outline-none focus:border-[#c2873a] resize-none" rows={3} placeholder={f.placeholder} value={(vals[f.key] as string) ?? ''} onChange={(e) => setVals((p) => ({ ...p, [f.key]: e.target.value }))} />
+              ) : f.type === 'checkbox' ? (
+                <label className="flex items-center gap-2 text-[13px] text-[#0f1c2e]">
+                  <input type="checkbox" checked={!!(vals[f.key])} onChange={(e) => setVals((p) => ({ ...p, [f.key]: e.target.checked }))} className="w-4 h-4" />
+                  {f.placeholder}
+                </label>
+              ) : (
+                <input type={f.type ?? 'text'} className="w-full border border-[#dde4ec] rounded-md px-2.5 py-1.5 text-[13px] text-[#0f1c2e] focus:outline-none focus:border-[#c2873a]" placeholder={f.placeholder} value={(vals[f.key] as string) ?? ''} onChange={(e) => setVals((p) => ({ ...p, [f.key]: e.target.value }))} />
+              )}
+            </div>
+          ))}
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} className="px-3 py-1.5 text-[12px] text-[#6b7685] hover:text-[#0f1c2e]">Cancel</button>
+            <button type="submit" className="px-3 py-1.5 bg-[#c2873a] text-white text-[12px] rounded-md hover:opacity-90">Confirm</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function EnfDrawer({
   row, events, onClose, doAction,
 }: {
@@ -537,16 +600,28 @@ function EnfDrawer({
     || row.enforcement_floor_flag_public_safety_impact_strict
     || row.enforcement_floor_flag_financial_quantum_over_50m
     || row.enforcement_floor_flag_criminal_referral_recommended);
+  const [activeAction, setActiveAction] = useState<ActionSpec | null>(null);
+
+  const handleActionSubmit = useCallback(async (paths: Array<{ path: string; body: Record<string, unknown> }>) => {
+    setActiveAction(null);
+    for (const { path, body } of paths) {
+      await doAction(path, body);
+    }
+  }, [doAction]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { if (activeAction) { setActiveAction(null); } else { onClose(); } } };
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
+  }, [onClose, activeAction]);
 
   return (
+    <>
+    {activeAction && (
+      <ActionModal spec={activeAction} onSubmit={handleActionSubmit} onClose={() => setActiveAction(null)} />
+    )}
     <div className="fixed inset-0 z-50 bg-black/30 flex items-stretch justify-end oe-overlay-in" onClick={onClose}>
       <div className="bg-white w-full max-w-2xl shadow-xl overflow-y-auto oe-drawer-in" onClick={(e) => e.stopPropagation()}>
         <div className="p-5 border-b border-[#e5ebf2] flex items-start justify-between sticky top-0 bg-white z-10">
@@ -583,10 +658,10 @@ function EnfDrawer({
                 <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">PAJA fairness at risk</span>
               )}
               {authorityNow && (
-                <span className="px-2 py-0.5 rounded-full bg-[#dbecfb] text-[#1a3a5c] font-medium">Auth: {AUTH_LABEL[authorityNow]}</span>
+                <span className="px-2 py-0.5 rounded-full bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)] font-medium">Auth: {AUTH_LABEL[authorityNow]}</span>
               )}
               {row.bridges_to_inspection_chain_live && (
-                <span className="px-2 py-0.5 rounded-full bg-[#dbecfb] text-[#1a3a5c] font-medium">W40 inspection bridge</span>
+                <span className="px-2 py-0.5 rounded-full bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)] font-medium">W40 inspection bridge</span>
               )}
               {row.bridges_to_complaint_chain_live && (
                 <span className="px-2 py-0.5 rounded-full bg-[#e8defc] text-[#5320a3] font-medium">W66 complaint bridge</span>
@@ -673,141 +748,150 @@ function EnfDrawer({
               <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Actions</div>
               <div className="flex flex-wrap gap-2">
                 {cs === 'triggered' && (
-                  <ActionBtn label="Draft notice (NERSA)" onClick={() => {
-                    const ref = window.prompt('Notice reference (optional):') ?? undefined;
-                    const prov = window.prompt('Legal provisions (optional):') ?? undefined;
-                    void doAction('draft-notice', { notice_reference: ref, notice_legal_provisions: prov });
-                  }} />
+                  <ActionBtn label="Draft notice (NERSA)" onClick={() => setActiveAction({
+                    path: 'draft-notice', label: 'Draft notice (NERSA)',
+                    fields: [
+                      { key: 'notice_reference', label: 'Notice reference', placeholder: 'optional' },
+                      { key: 'notice_legal_provisions', label: 'Legal provisions', placeholder: 'optional' },
+                    ],
+                  })} />
                 )}
                 {cs === 'notice_drafted' && (
-                  <ActionBtn label="Issue notice (NERSA)" tone="good" onClick={() => {
-                    const ref = window.prompt('Notice reference (optional):') ?? undefined;
-                    const due = window.prompt('Respondent response due ISO (optional, default +21d):') ?? undefined;
-                    void doAction('issue-notice', { notice_reference: ref, respondent_response_due_at: due });
-                  }} />
+                  <ActionBtn label="Issue notice (NERSA)" tone="good" onClick={() => setActiveAction({
+                    path: 'issue-notice', label: 'Issue notice (NERSA)',
+                    fields: [
+                      { key: 'notice_reference', label: 'Notice reference', placeholder: 'optional' },
+                      { key: 'respondent_response_due_at', label: 'Response due (ISO date)', placeholder: 'optional — default +21d' },
+                    ],
+                  })} />
                 )}
                 {cs === 'notice_issued' && (
                   <>
                     <ActionBtn label="Acknowledge notice (respondent)" onClick={() => { void doAction('acknowledge-notice', {}); }} />
-                    <ActionBtn label="Submit response (respondent)" onClick={() => {
-                      const pos = window.prompt('Respondent position text:') ?? undefined;
-                      void doAction('submit-response', { respondent_position_text: pos });
-                    }} />
+                    <ActionBtn label="Submit response (respondent)" onClick={() => setActiveAction({
+                      path: 'submit-response', label: 'Submit response (respondent)',
+                      fields: [{ key: 'respondent_position_text', label: 'Respondent position', type: 'textarea', placeholder: 'Respondent position text' }],
+                    })} />
                   </>
                 )}
                 {cs === 'respondent_acknowledged' && (
                   <>
-                    <ActionBtn label="Submit response (respondent)" onClick={() => {
-                      const pos = window.prompt('Respondent position text:') ?? undefined;
-                      void doAction('submit-response', { respondent_position_text: pos });
-                    }} />
-                    <ActionBtn label="Start adjudication (panel)" onClick={() => {
-                      const panel = window.prompt('Adjudication panel label:') ?? undefined;
-                      void doAction('start-adjudication', { adjudication_panel_label: panel });
-                    }} />
+                    <ActionBtn label="Submit response (respondent)" onClick={() => setActiveAction({
+                      path: 'submit-response', label: 'Submit response (respondent)',
+                      fields: [{ key: 'respondent_position_text', label: 'Respondent position', type: 'textarea', placeholder: 'Respondent position text' }],
+                    })} />
+                    <ActionBtn label="Start adjudication (panel)" onClick={() => setActiveAction({
+                      path: 'start-adjudication', label: 'Start adjudication (panel)',
+                      fields: [{ key: 'adjudication_panel_label', label: 'Adjudication panel label', placeholder: 'optional' }],
+                    })} />
                   </>
                 )}
                 {cs === 'response_received' && (
-                  <ActionBtn label="Start adjudication (panel)" onClick={() => {
-                    const panel = window.prompt('Adjudication panel label:') ?? undefined;
-                    void doAction('start-adjudication', { adjudication_panel_label: panel });
-                  }} />
+                  <ActionBtn label="Start adjudication (panel)" onClick={() => setActiveAction({
+                    path: 'start-adjudication', label: 'Start adjudication (panel)',
+                    fields: [{ key: 'adjudication_panel_label', label: 'Adjudication panel label', placeholder: 'optional' }],
+                  })} />
                 )}
                 {cs === 'adjudication_in_progress' && (
-                  <ActionBtn label="Adjudicate (Council)" onClick={() => {
-                    const text = window.prompt('Adjudication decision text:') ?? undefined;
-                    void doAction('adjudicate', { adjudication_decision_text: text });
-                  }} />
+                  <ActionBtn label="Adjudicate (Council)" onClick={() => setActiveAction({
+                    path: 'adjudicate', label: 'Adjudicate (Council)',
+                    fields: [{ key: 'adjudication_decision_text', label: 'Adjudication decision', type: 'textarea', placeholder: 'Decision text' }],
+                  })} />
                 )}
                 {(cs === 'adjudicated' || cs === 're_adjudicated') && (
-                  <ActionBtn label="Impose sanction (Council)" tone="bad" onClick={() => {
-                    const typ = window.prompt('Sanction type (fine/licence_suspended/licence_revoked/criminal_referral/order_to_cease):') ?? undefined;
-                    const q = window.prompt('Sanction quantum ZAR (optional):') ?? undefined;
-                    const eff = window.prompt('Sanction effective ISO (optional):') ?? undefined;
-                    const lr = window.confirm('Is licence revocation proposed? (signature - crosses regulator every tier)');
-                    void doAction('impose-sanction', {
-                      sanction_type: typ,
-                      sanction_quantum_zar: q ? Number(q) : undefined,
-                      sanction_effective_at: eff,
-                      enforcement_floor_flag_licence_revocation_proposed: lr ? 1 : 0,
-                    });
-                  }} />
+                  <ActionBtn label="Impose sanction (Council)" tone="bad" onClick={() => setActiveAction({
+                    path: 'impose-sanction', label: 'Impose sanction (Council)',
+                    fields: [
+                      { key: 'sanction_type', label: 'Sanction type', placeholder: 'fine / licence_suspended / licence_revoked / criminal_referral / order_to_cease' },
+                      { key: 'sanction_quantum_zar', label: 'Sanction quantum ZAR', type: 'number', placeholder: 'optional' },
+                      { key: 'sanction_effective_at', label: 'Sanction effective (ISO date)', placeholder: 'optional' },
+                      { key: 'enforcement_floor_flag_licence_revocation_proposed', label: 'Licence revocation proposed?', type: 'checkbox', placeholder: 'Signature — crosses regulator every tier' },
+                    ],
+                  })} />
                 )}
                 {cs === 'sanction_imposed' && (
                   <>
-                    <ActionBtn label="Open appeal window (NERSA)" onClick={() => {
-                      const close = window.prompt('Appeal window close ISO (optional, default +30d):') ?? undefined;
-                      void doAction('open-appeal-window', { appeal_window_close_at: close });
-                    }} />
-                    <ActionBtn label="Commence enforcement (NERSA)" tone="bad" onClick={() => {
-                      const meth = window.prompt('Enforcement method (writ/sheriff/garnishee/contempt):') ?? undefined;
-                      void doAction('commence-enforcement', { enforcement_method: meth });
-                    }} />
-                    <ActionBtn label="Mark settled (bilateral)" tone="good" onClick={() => {
-                      const amt = window.prompt('Amount collected ZAR (optional):') ?? undefined;
-                      void doAction('mark-settled', { amount_collected_zar: amt ? Number(amt) : undefined });
-                    }} />
+                    <ActionBtn label="Open appeal window (NERSA)" onClick={() => setActiveAction({
+                      path: 'open-appeal-window', label: 'Open appeal window (NERSA)',
+                      fields: [{ key: 'appeal_window_close_at', label: 'Appeal window close (ISO date)', placeholder: 'optional — default +30d' }],
+                    })} />
+                    <ActionBtn label="Commence enforcement (NERSA)" tone="bad" onClick={() => setActiveAction({
+                      path: 'commence-enforcement', label: 'Commence enforcement (NERSA)',
+                      fields: [{ key: 'enforcement_method', label: 'Enforcement method', placeholder: 'writ / sheriff / garnishee / contempt' }],
+                    })} />
+                    <ActionBtn label="Mark settled (bilateral)" tone="good" onClick={() => setActiveAction({
+                      path: 'mark-settled', label: 'Mark settled (bilateral)',
+                      fields: [{ key: 'amount_collected_zar', label: 'Amount collected ZAR', type: 'number', placeholder: 'optional' }],
+                    })} />
                   </>
                 )}
                 {cs === 'appeal_window_open' && (
                   <>
-                    <ActionBtn label="Lodge appeal (respondent)" tone="bad" onClick={() => {
-                      const gr = window.prompt('Appeal grounds text:') ?? undefined;
-                      void doAction('lodge-appeal', { appeal_grounds_text: gr });
-                    }} />
-                    <ActionBtn label="Commence enforcement (NERSA)" tone="bad" onClick={() => {
-                      const meth = window.prompt('Enforcement method:') ?? undefined;
-                      void doAction('commence-enforcement', { enforcement_method: meth });
-                    }} />
-                    <ActionBtn label="Mark settled (bilateral)" tone="good" onClick={() => {
-                      const amt = window.prompt('Amount collected ZAR (optional):') ?? undefined;
-                      void doAction('mark-settled', { amount_collected_zar: amt ? Number(amt) : undefined });
-                    }} />
+                    <ActionBtn label="Lodge appeal (respondent)" tone="bad" onClick={() => setActiveAction({
+                      path: 'lodge-appeal', label: 'Lodge appeal (respondent)',
+                      fields: [{ key: 'appeal_grounds_text', label: 'Appeal grounds', type: 'textarea', placeholder: 'Grounds for appeal' }],
+                    })} />
+                    <ActionBtn label="Commence enforcement (NERSA)" tone="bad" onClick={() => setActiveAction({
+                      path: 'commence-enforcement', label: 'Commence enforcement (NERSA)',
+                      fields: [{ key: 'enforcement_method', label: 'Enforcement method', placeholder: 'writ / sheriff / garnishee / contempt' }],
+                    })} />
+                    <ActionBtn label="Mark settled (bilateral)" tone="good" onClick={() => setActiveAction({
+                      path: 'mark-settled', label: 'Mark settled (bilateral)',
+                      fields: [{ key: 'amount_collected_zar', label: 'Amount collected ZAR', type: 'number', placeholder: 'optional' }],
+                    })} />
                   </>
                 )}
                 {cs === 'appealed' && (
-                  <ActionBtn label="Decide appeal (Council)" onClick={() => {
-                    const out = window.prompt('Appeal outcome (upheld/varied/dismissed/remitted):') ?? undefined;
-                    const text = window.prompt('Re-adjudication decision text (optional):') ?? undefined;
-                    void doAction('decide-appeal', { appeal_outcome: out, re_adjudication_decision_text: text });
-                  }} />
+                  <ActionBtn label="Decide appeal (Council)" onClick={() => setActiveAction({
+                    path: 'decide-appeal', label: 'Decide appeal (Council)',
+                    fields: [
+                      { key: 'appeal_outcome', label: 'Appeal outcome', placeholder: 'upheld / varied / dismissed / remitted' },
+                      { key: 're_adjudication_decision_text', label: 'Re-adjudication decision (optional)', type: 'textarea', placeholder: 'optional' },
+                    ],
+                  })} />
                 )}
                 {cs === 're_adjudicated' && (
                   <>
-                    <ActionBtn label="Re-impose sanction (Council)" tone="bad" onClick={() => {
-                      const typ = window.prompt('Sanction type:') ?? undefined;
-                      const q = window.prompt('Sanction quantum ZAR (optional):') ?? undefined;
-                      void doAction('re-adjudicate', { re_adjudication_decision_text: typ });
-                      void doAction('impose-sanction', {
-                        sanction_type: typ,
-                        sanction_quantum_zar: q ? Number(q) : undefined,
-                      });
-                    }} />
-                    <ActionBtn label="Commence enforcement (NERSA)" tone="bad" onClick={() => {
-                      const meth = window.prompt('Enforcement method:') ?? undefined;
-                      void doAction('commence-enforcement', { enforcement_method: meth });
-                    }} />
+                    <ActionBtn label="Re-impose sanction (Council)" tone="bad" onClick={() => setActiveAction({
+                      path: 're-adjudicate', label: 'Re-impose sanction (Council)',
+                      multiAction: [
+                        { path: 're-adjudicate', fields: [{ key: 're_adjudication_decision_text', label: 'Re-adjudication decision', type: 'textarea' }] },
+                        { path: 'impose-sanction', fields: [
+                          { key: 'sanction_type', label: 'Sanction type', placeholder: 'fine / licence_suspended / licence_revoked / criminal_referral / order_to_cease' },
+                          { key: 'sanction_quantum_zar', label: 'Sanction quantum ZAR', type: 'number', placeholder: 'optional' },
+                        ]},
+                      ],
+                      fields: [
+                        { key: 're_adjudication_decision_text', label: 'Re-adjudication decision', type: 'textarea' },
+                        { key: 'sanction_type', label: 'Sanction type', placeholder: 'fine / licence_suspended / licence_revoked / criminal_referral / order_to_cease' },
+                        { key: 'sanction_quantum_zar', label: 'Sanction quantum ZAR', type: 'number', placeholder: 'optional' },
+                      ],
+                    })} />
+                    <ActionBtn label="Commence enforcement (NERSA)" tone="bad" onClick={() => setActiveAction({
+                      path: 'commence-enforcement', label: 'Commence enforcement (NERSA)',
+                      fields: [{ key: 'enforcement_method', label: 'Enforcement method', placeholder: 'writ / sheriff / garnishee / contempt' }],
+                    })} />
                   </>
                 )}
                 {cs === 'enforcement_in_progress' && (
-                  <ActionBtn label="Mark settled (bilateral)" tone="good" onClick={() => {
-                    const amt = window.prompt('Amount collected ZAR (optional):') ?? undefined;
-                    void doAction('mark-settled', { amount_collected_zar: amt ? Number(amt) : undefined });
-                  }} />
+                  <ActionBtn label="Mark settled (bilateral)" tone="good" onClick={() => setActiveAction({
+                    path: 'mark-settled', label: 'Mark settled (bilateral)',
+                    fields: [{ key: 'amount_collected_zar', label: 'Amount collected ZAR', type: 'number', placeholder: 'optional' }],
+                  })} />
                 )}
                 {cs === 'settled' && (
                   <ActionBtn label="Archive action (archiver)" onClick={() => { void doAction('archive-action', {}); }} />
                 )}
                 {cancellable && (
                   <>
-                    <ActionBtn label="Withdraw action (NERSA)" onClick={() => {
-                      const code = window.prompt('Withdrawal reason code:') ?? undefined;
-                      void doAction('withdraw-action', { withdrawal_reason_code: code });
-                    }} />
-                    <ActionBtn label="Cancel action (NERSA)" onClick={() => {
-                      const reason = window.prompt('Cancellation reason:') ?? undefined;
-                      void doAction('cancel-action', { cancellation_reason_text: reason });
-                    }} />
+                    <ActionBtn label="Withdraw action (NERSA)" onClick={() => setActiveAction({
+                      path: 'withdraw-action', label: 'Withdraw action (NERSA)',
+                      fields: [{ key: 'withdrawal_reason_code', label: 'Withdrawal reason code', placeholder: 'reason code' }],
+                    })} />
+                    <ActionBtn label="Cancel action (NERSA)" onClick={() => setActiveAction({
+                      path: 'cancel-action', label: 'Cancel action (NERSA)',
+                      fields: [{ key: 'cancellation_reason_text', label: 'Cancellation reason', type: 'textarea', placeholder: 'reason' }],
+                    })} />
                   </>
                 )}
               </div>
@@ -844,6 +928,7 @@ function EnfDrawer({
         </div>
       </div>
     </div>
+    </>
   );
 }
 

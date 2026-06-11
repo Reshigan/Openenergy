@@ -11,11 +11,27 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type Status = 'pending' | 'delivered' | 'shortfall' | 'cured' | 'take_or_pay';
 type VerifyStatus = 'submitted' | 'verified' | 'rejected' | 'reversed';
 
 interface ObligationRow {
+  [key: string]: unknown;
   id: string;
   ppa_id: string;
   participant_id: string;
@@ -45,30 +61,20 @@ interface VerificationRow {
   notes: string | null;
 }
 
-const STATUS_TONE: Record<Status, { bg: string; fg: string; label: string }> = {
-  pending: { bg: '#f0f3f7', fg: '#445566', label: 'Pending' },
-  delivered: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Delivered' },
-  shortfall: { bg: '#fff4d6', fg: '#a06200', label: 'Shortfall' },
-  cured: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Cured' },
-  take_or_pay: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Take-or-pay' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+// Obligation status is a status field (not a full chain), but we model it
+// as an ordered progression for the ChainCard state bar.
+const ALL_STATES: readonly string[] = [
+  'pending',
+  'shortfall',
+  'cured',
+  'delivered',
+];
+const BRANCH_STATES: readonly string[] = [
+  'take_or_pay',
+];
 
-function cureCountdown(deadline: string | null): { bg: string; fg: string; label: string } {
-  if (!deadline) return { bg: '#f0f3f7', fg: '#445566', label: '—' };
-  const due = new Date(deadline).getTime();
-  const now = Date.now();
-  if (due < now) return { bg: '#fde0e0', fg: '#9b1f1f', label: `Overdue ${msAgo(now - due)}` };
-  return { bg: '#daf5e2', fg: '#1f6b3a', label: `In ${msAgo(due - now)}` };
-}
-
-function msAgo(ms: number): string {
-  const min = Math.round(ms / 60_000);
-  if (min < 60) return `${min}m`;
-  const hr = Math.round(min / 60);
-  if (hr < 48) return `${hr}h`;
-  return `${Math.round(hr / 24)}d`;
-}
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'open', label: 'Open' },
   { key: 'all', label: 'All' },
@@ -78,31 +84,157 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'cured', label: 'Cured' },
 ];
 
-function Kpi({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+// ── helpers ───────────────────────────────────────────────────────────────
+function msAgo(ms: number): string {
+  const min = Math.round(ms / 60_000);
+  if (min < 60) return `${min}m`;
+  const hr = Math.round(min / 60);
+  if (hr < 48) return `${hr}h`;
+  return `${Math.round(hr / 24)}d`;
+}
+
+function cureCountdown(deadline: string | null): { label: string; tone: 'ok' | 'warn' | 'bad' | 'neutral' } {
+  if (!deadline) return { label: '—', tone: 'neutral' };
+  const due = new Date(deadline).getTime();
+  const now = Date.now();
+  if (due < now) return { label: `Overdue ${msAgo(now - due)}`, tone: 'bad' };
+  return { label: `In ${msAgo(due - now)}`, tone: 'ok' };
+}
+
+function getActions(
+  row: ObligationRow,
+  verifications: VerificationRow[],
+  onVerify: (dvId: string) => void,
+  onReject: (dvId: string) => void,
+): ChainAction[] {
+  const actions: ChainAction[] = [];
+
+  // Cure action — only available in shortfall
+  if (row.status === 'shortfall') {
+    actions.push({
+      key: 'cure',
+      label: 'Cure (with evidence)',
+      tone: 'primary',
+      fields: [
+        {
+          key: 'evidence_r2_key',
+          label: 'R2 evidence key (signed remediation plan)',
+          type: 'text',
+          required: true,
+          placeholder: 'e.g. remediation-plan-2024-01.pdf',
+        },
+      ],
+      cascadeTo: ['regulator'],
+      description: 'Submit a signed remediation plan to cure the shortfall.',
+    });
+  }
+
+  // Verification sub-row actions — inline for submitted readings
+  // These are surfaced as secondary ChainActions per submitted reading
+  verifications
+    .filter(dv => dv.status === 'submitted')
+    .forEach(dv => {
+      actions.push({
+        key: `verify__${dv.id}`,
+        label: `Verify reading ${Math.round(dv.reading_mwh)} MWh (${dv.submitted_at?.slice(0, 10)})`,
+        tone: 'primary',
+        fields: [],
+        cascadeTo: [],
+        description: 'Confirm this meter reading as accurate.',
+      });
+      actions.push({
+        key: `reject__${dv.id}`,
+        label: `Reject reading ${Math.round(dv.reading_mwh)} MWh (${dv.submitted_at?.slice(0, 10)})`,
+        tone: 'danger',
+        fields: [
+          {
+            key: 'reason',
+            label: 'Rejection reason',
+            type: 'textarea',
+            required: true,
+            placeholder: 'Explain why this reading is being rejected',
+          },
+        ],
+        cascadeTo: [],
+        description: 'Reject this meter reading with a reason.',
+      });
+    });
+
+  return actions;
+}
+
+function renderDetail(row: ObligationRow, verifications: VerificationRow[]): React.ReactNode {
+  const pct = row.contracted_mwh > 0 ? Math.round((row.delivered_mwh / row.contracted_mwh) * 1000) / 10 : 0;
+  const cure = cureCountdown(row.cure_deadline_at);
+
   return (
-    <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
-      <div style={{ fontSize: 11, color: '#557', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#0f1c2e', marginTop: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: '#7a8a9a', marginTop: 2 }}>{sub}</div>}
+    <div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+        <DetailPair label="PPA ID" value={row.ppa_id} />
+        <DetailPair label="Period" value={row.period_month} />
+        <DetailPair label="Contracted MWh" value={`${Math.round(row.contracted_mwh).toLocaleString()} MWh`} />
+        <DetailPair label="Delivered MWh" value={`${Math.round(row.delivered_mwh).toLocaleString()} MWh`} />
+        <DetailPair label="% of contracted" value={`${pct}%`} />
+        <DetailPair label="Threshold" value={`${row.threshold_pct}%`} />
+        {row.cure_deadline_at && (
+          <DetailPair label="Cure window" value={cure.label} />
+        )}
+        {row.take_or_pay_amount_zar > 0 && (
+          <DetailPair label="Take-or-pay (ZAR)" value={`R${Math.round(row.take_or_pay_amount_zar).toLocaleString()}`} />
+        )}
+        {row.cured_at && (
+          <DetailPair label="Cured at" value={row.cured_at.slice(0, 16)} />
+        )}
+        {row.escalated_at && (
+          <DetailPair label="Escalated at" value={row.escalated_at.slice(0, 16)} />
+        )}
+      </div>
+      {row.notes && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Notes</div>
+          <div style={{ color: TX2 }}>{row.notes}</div>
+        </div>
+      )}
+      {verifications.length > 0 && (
+        <div className="mt-3">
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: TX3 }}>Delivery readings</div>
+          <div className="space-y-1">
+            {verifications.map(dv => (
+              <div key={dv.id} className="flex items-center gap-2 text-[11px] rounded px-2 py-1.5 border"
+                   style={{ background: BG1, borderColor: BORDER }}>
+                <span style={{ color: TX3, minWidth: 90 }}>{dv.submitted_at?.slice(0, 10)}</span>
+                <span style={{ color: TX1, fontFamily: MONO, minWidth: 80 }}>{Math.round(dv.reading_mwh)} MWh</span>
+                <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{
+                  background: dv.status === 'verified' ? 'oklch(0.95 0.04 155)' : dv.status === 'rejected' ? 'oklch(0.97 0.04 20)' : 'oklch(0.96 0.05 55)',
+                  color: dv.status === 'verified' ? GOOD : dv.status === 'rejected' ? BAD : WARN,
+                }}>{dv.status}</span>
+                <span style={{ color: TX3, flex: 1 }}>{dv.rejection_reason || dv.notes || ''}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
+// ── component ─────────────────────────────────────────────────────────────
 export function ObligationsTab() {
   const [rows, setRows] = useState<ObligationRow[]>([]);
   const [filter, setFilter] = useState<string>('open');
-  const [drillRow, setDrillRow] = useState<ObligationRow | null>(null);
-  const [drillVer, setDrillVer] = useState<VerificationRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
+  const [verificationsByObligation, setVerificationsByObligation] = useState<Record<string, VerificationRow[]>>({});
 
   const load = useCallback(async () => {
-    setLoading(true); setError(null);
+    setLoading(true); setErr(null);
     try {
       const r = await api.get<{ data: ObligationRow[] }>('/offtaker/obligations');
       setRows(r.data?.data || []);
-    } catch (e: any) {
-      setError(e?.response?.data?.error || e?.message || 'Failed to load obligations.');
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string } }; message?: string };
+      setErr(err?.response?.data?.error || err?.message || 'Failed to load obligations.');
     } finally {
       setLoading(false);
     }
@@ -110,216 +242,170 @@ export function ObligationsTab() {
 
   useEffect(() => { void load(); }, [load]);
 
+  const handleExpand = useCallback(async (id: string) => {
+    if (verificationsByObligation[id]) return;
+    try {
+      const r = await api.get<{ data: { obligation: ObligationRow; verifications: VerificationRow[] } }>(`/offtaker/obligations/${id}`);
+      setVerificationsByObligation(prev => ({ ...prev, [id]: r.data?.data?.verifications || [] }));
+      setExpandedEvents(prev => ({ ...prev, [id]: [] }));
+    } catch { /* silent */ }
+  }, [verificationsByObligation]);
+
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
+    setErr(null);
+    try {
+      // Detect if this is a reading action (verify__<dvId> or reject__<dvId>)
+      if (key.startsWith('verify__')) {
+        const dvId = key.replace('verify__', '');
+        await api.post(`/offtaker/obligations/readings/${dvId}/verify`, {});
+      } else if (key.startsWith('reject__')) {
+        const dvId = key.replace('reject__', '');
+        await api.post(`/offtaker/obligations/readings/${dvId}/reject`, values);
+      } else if (key === 'cure') {
+        await api.post(`/offtaker/obligations/${rowId}/cure`, values);
+      }
+      await load();
+      // Reload verifications for this row if expanded
+      if (verificationsByObligation[rowId]) {
+        try {
+          const r = await api.get<{ data: { obligation: ObligationRow; verifications: VerificationRow[] } }>(`/offtaker/obligations/${rowId}`);
+          setVerificationsByObligation(prev => ({ ...prev, [rowId]: r.data?.data?.verifications || [] }));
+        } catch { /* silent */ }
+      }
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string } }; message?: string };
+      setErr(err?.response?.data?.error || err?.message || `Failed to ${key}.`);
+    }
+  }, [load, verificationsByObligation]);
+
   const filtered = useMemo(() => {
     if (filter === 'all') return rows;
-    if (filter === 'open') return rows.filter((r) => r.status === 'shortfall' || r.status === 'take_or_pay' || r.status === 'pending');
-    return rows.filter((r) => r.status === filter);
+    if (filter === 'open') return rows.filter(r => r.status === 'shortfall' || r.status === 'take_or_pay' || r.status === 'pending');
+    return rows.filter(r => r.status === filter);
   }, [rows, filter]);
 
   const kpis = useMemo(() => ({
     total: rows.length,
     contracted: rows.reduce((acc, r) => acc + Number(r.contracted_mwh || 0), 0),
     delivered: rows.reduce((acc, r) => acc + Number(r.delivered_mwh || 0), 0),
-    shortfall: rows.filter((r) => r.status === 'shortfall').length,
-    take_or_pay: rows.filter((r) => r.status === 'take_or_pay').length,
+    shortfall: rows.filter(r => r.status === 'shortfall').length,
+    take_or_pay: rows.filter(r => r.status === 'take_or_pay').length,
     take_or_pay_zar: rows.reduce((acc, r) => acc + Number(r.take_or_pay_amount_zar || 0), 0),
   }), [rows]);
 
-  const openDrill = useCallback(async (row: ObligationRow) => {
-    setDrillRow(row); setDrillVer([]);
-    try {
-      const r = await api.get<{ data: { obligation: ObligationRow; verifications: VerificationRow[] } }>(`/offtaker/obligations/${row.id}`);
-      setDrillVer(r.data?.data?.verifications || []);
-    } catch {/* leave empty */}
-  }, []);
-
-  const act = useCallback(async (
-    action: 'verify' | 'reject' | 'cure',
-    payload: any,
-    targetId: string,
-  ) => {
-    setError(null);
-    try {
-      if (action === 'verify') await api.post(`/offtaker/obligations/readings/${targetId}/verify`, {});
-      else if (action === 'reject') await api.post(`/offtaker/obligations/readings/${targetId}/reject`, payload);
-      else if (action === 'cure') await api.post(`/offtaker/obligations/${targetId}/cure`, payload);
-      await load();
-      if (drillRow) await openDrill({ ...drillRow });
-    } catch (e: any) {
-      setError(e?.response?.data?.error || e?.message || 'Action failed.');
-    }
-  }, [load, openDrill, drillRow]);
-
   return (
-    <div data-testid="offtaker-obligations-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1c2e', marginTop: 0 }}>PPA delivery obligations</h2>
-      <p style={{ fontSize: 13, color: '#557', marginTop: 4 }}>
-        Monthly contracted-vs-delivered tracking. Shortfalls open a 14-day cure window; expired
-        rows flip to take-or-pay and feed the regulator inbox automatically.
-      </p>
+    <div data-testid="offtaker-obligations-tab" className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>PPA delivery obligations</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          Monthly contracted-vs-delivered tracking. Shortfalls open a 14-day cure window; expired
+          rows flip to take-or-pay and feed the regulator inbox automatically.
+        </p>
+      </header>
 
-      <div data-testid="offtaker-obligations-kpis" style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
-        <Kpi label="Total periods" value={kpis.total} />
-        <Kpi label="Contracted (MWh)" value={Math.round(kpis.contracted).toLocaleString()} />
-        <Kpi label="Delivered (MWh)" value={Math.round(kpis.delivered).toLocaleString()} />
-        <Kpi label="Open shortfalls" value={kpis.shortfall} />
-        <Kpi label="Take-or-pay (count)" value={kpis.take_or_pay} />
-        <Kpi label="Take-or-pay (ZAR)" value={`R${Math.round(kpis.take_or_pay_zar).toLocaleString()}`} sub="across all expired" />
+      {/* KPI strip */}
+      <div data-testid="offtaker-obligations-kpis" className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total periods" value={kpis.total} />
+        <KpiTile label="Contracted (MWh)" value={Math.round(kpis.contracted).toLocaleString()} />
+        <KpiTile label="Delivered (MWh)" value={Math.round(kpis.delivered).toLocaleString()} />
+        <KpiTile label="Open shortfalls" value={kpis.shortfall} tone={kpis.shortfall > 0 ? 'warn' : undefined} />
+        <KpiTile label="Take-or-pay (count)" value={kpis.take_or_pay} tone={kpis.take_or_pay > 0 ? 'bad' : undefined} />
+        <KpiTile label="Take-or-pay (ZAR)" value={`R${Math.round(kpis.take_or_pay_zar).toLocaleString()}`} tone={kpis.take_or_pay_zar > 0 ? 'bad' : undefined} />
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
-        {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            type="button"
+      {/* Filter pills */}
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {FILTERS.map(f => (
+          <button key={f.key} type="button"
             data-testid={`offtaker-obligations-filter-${f.key}`}
             onClick={() => setFilter(f.key)}
-            style={{
-              padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
-              background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff',
-              color: filter === f.key ? '#fff' : '#0f1c2e', fontSize: 12, fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >{f.label}</button>
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{ background: filter === f.key ? ACC : BG2, color: filter === f.key ? '#fff' : TX2, border: `1px solid ${filter === f.key ? ACC : BORDER}` }}>
+            {f.label}
+          </button>
         ))}
       </div>
 
-      {error && (
-        <div style={{ marginTop: 12, padding: '8px 12px', background: '#fde0e0', color: '#9b1f1f', borderRadius: 6, fontSize: 13 }}>
-          {error}
-        </div>
+      {err && (
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]"
+             style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>{err}</div>
       )}
 
-      <div data-testid="offtaker-obligations-table" style={{ marginTop: 14, background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-          <thead>
-            <tr style={{ background: '#f6f8fb', textAlign: 'left', color: '#557' }}>
-              <th style={{ padding: '8px 12px' }}>Period</th>
-              <th style={{ padding: '8px 12px' }}>PPA</th>
-              <th style={{ padding: '8px 12px' }}>Contracted MWh</th>
-              <th style={{ padding: '8px 12px' }}>Delivered MWh</th>
-              <th style={{ padding: '8px 12px' }}>% of contracted</th>
-              <th style={{ padding: '8px 12px' }}>Status</th>
-              <th style={{ padding: '8px 12px' }}>Cure</th>
-              <th style={{ padding: '8px 12px' }}>Take-or-pay (ZAR)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && !loading && (
-              <tr><td colSpan={8} style={{ padding: 20, textAlign: 'center', color: '#7a8a9a' }}>
-                No obligations match this filter.
-              </td></tr>
-            )}
-            {filtered.map((r) => {
-              const tone = STATUS_TONE[r.status];
-              const cure = cureCountdown(r.cure_deadline_at);
-              const pct = r.contracted_mwh > 0 ? Math.round((r.delivered_mwh / r.contracted_mwh) * 1000) / 10 : 0;
-              return (
-                <tr key={r.id}
-                    data-testid={`offtaker-obligations-row-${r.id}`}
-                    onClick={() => void openDrill(r)}
-                    style={{ borderTop: '1px solid #eef0f4', cursor: 'pointer' }}>
-                  <td style={{ padding: '8px 12px', fontWeight: 600 }}>{r.period_month}</td>
-                  <td style={{ padding: '8px 12px', color: '#7a8a9a' }}>{r.ppa_id}</td>
-                  <td style={{ padding: '8px 12px' }}>{Math.round(r.contracted_mwh).toLocaleString()}</td>
-                  <td style={{ padding: '8px 12px' }}>{Math.round(r.delivered_mwh).toLocaleString()}</td>
-                  <td style={{ padding: '8px 12px' }}>{pct}%</td>
-                  <td style={{ padding: '8px 12px' }}>
-                    <span style={{ background: tone.bg, color: tone.fg, padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700 }}>
-                      {tone.label}
-                    </span>
-                  </td>
-                  <td style={{ padding: '8px 12px' }}>
-                    <span style={{ background: cure.bg, color: cure.fg, padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 600 }}>
-                      {cure.label}
-                    </span>
-                  </td>
-                  <td style={{ padding: '8px 12px' }}>
-                    {r.take_or_pay_amount_zar > 0 ? `R${Math.round(r.take_or_pay_amount_zar).toLocaleString()}` : '—'}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]"
+             style={{ background: BG1, borderColor: BORDER, color: TX3 }}>Loading...</div>
+      ) : (
+        <div data-testid="offtaker-obligations-table" className="space-y-2">
+          {filtered.map(row => {
+            const verifications = verificationsByObligation[row.id] ?? [];
+            const cure = cureCountdown(row.cure_deadline_at);
+            const pct = row.contracted_mwh > 0 ? Math.round((row.delivered_mwh / row.contracted_mwh) * 1000) / 10 : 0;
+            const isTerminal = row.status === 'delivered' || row.status === 'cured' || row.status === 'take_or_pay';
 
-      {drillRow && (
-        <div data-testid="offtaker-obligations-drill" style={{ marginTop: 16, padding: 16, background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <h3 style={{ margin: 0, fontSize: 16 }}>{drillRow.ppa_id} · {drillRow.period_month}</h3>
-              <div style={{ fontSize: 12, color: '#7a8a9a', marginTop: 2 }}>
-                Contracted {Math.round(drillRow.contracted_mwh).toLocaleString()} MWh · Delivered {Math.round(drillRow.delivered_mwh).toLocaleString()} MWh · Threshold {drillRow.threshold_pct}%
-              </div>
-              {drillRow.notes && <div style={{ fontSize: 12, color: '#445566', marginTop: 6 }}>{drillRow.notes}</div>}
-            </div>
-            <button type="button" onClick={() => setDrillRow(null)}
-                    style={{ background: 'transparent', border: 'none', color: '#7a8a9a', cursor: 'pointer', fontSize: 18 }}>✕</button>
-          </div>
+            const chainItem = {
+              id: row.id,
+              chain_status: row.status,
+              sla_deadline_at: row.cure_deadline_at ?? null,
+              sla_breached: row.cure_deadline_at ? new Date(row.cure_deadline_at).getTime() < Date.now() : false,
+              is_terminal: isTerminal,
+            };
 
-          <div data-testid="offtaker-obligations-readings" style={{ marginTop: 12 }}>
-            <div style={{ fontWeight: 600, marginBottom: 6 }}>Delivery readings</div>
-            {drillVer.length === 0 && <div style={{ fontSize: 12, color: '#7a8a9a' }}>No readings yet.</div>}
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <tbody>
-                {drillVer.map((dv) => (
-                  <tr key={dv.id} style={{ borderTop: '1px solid #eef0f4' }}>
-                    <td style={{ padding: '6px 8px', width: 120 }}>{dv.submitted_at?.slice(0, 16)}</td>
-                    <td style={{ padding: '6px 8px', width: 80 }}>{Math.round(dv.reading_mwh)} MWh</td>
-                    <td style={{ padding: '6px 8px' }}>
-                      <span style={{
-                        background: dv.status === 'verified' ? '#daf5e2' : dv.status === 'rejected' ? '#fde0e0' : '#fff4d6',
-                        color: dv.status === 'verified' ? '#1f6b3a' : dv.status === 'rejected' ? '#9b1f1f' : '#a06200',
-                        padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-                      }}>{dv.status}</span>
-                    </td>
-                    <td style={{ padding: '6px 8px', color: '#7a8a9a' }}>{dv.notes || dv.rejection_reason || ''}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right' }}>
-                      {dv.status === 'submitted' && (
-                        <>
-                          <button data-testid={`offtaker-obligations-verify-${dv.id}`}
-                                  type="button"
-                                  onClick={() => act('verify', null, dv.id)}
-                                  style={{ marginRight: 6, padding: '4px 10px', background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>
-                            Verify
-                          </button>
-                          <button data-testid={`offtaker-obligations-reject-${dv.id}`}
-                                  type="button"
-                                  onClick={() => {
-                                    const reason = window.prompt('Rejection reason?');
-                                    if (reason) act('reject', { reason }, dv.id);
-                                  }}
-                                  style={{ padding: '4px 10px', background: '#fff', color: '#9b1f1f', border: '1px solid #9b1f1f', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>
-                            Reject
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            const meta = (
+              <span style={{ color: TX3, fontSize: 11 }}>
+                {row.ppa_id}
+                {' · '}
+                {Math.round(row.contracted_mwh).toLocaleString()} MWh contracted
+                {' · '}
+                {pct}% delivered
+                {row.cure_deadline_at ? ` · Cure: ${cure.label}` : ''}
+                {row.take_or_pay_amount_zar > 0 ? ` · R${Math.round(row.take_or_pay_amount_zar).toLocaleString()} ToP` : ''}
+              </span>
+            );
 
-          <div data-testid="offtaker-obligations-actions" style={{ marginTop: 14, display: 'flex', gap: 8 }}>
-            <button data-testid="offtaker-obligations-cure"
-                    type="button"
-                    disabled={drillRow.status !== 'shortfall'}
-                    onClick={() => {
-                      const key = window.prompt('R2 evidence key (signed remediation plan)?');
-                      if (key) act('cure', { evidence_r2_key: key }, drillRow.id);
-                    }}
-                    style={{
-                      padding: '6px 14px', background: drillRow.status === 'shortfall' ? '#1f6b3a' : '#bbc',
-                      color: '#fff', border: 'none', borderRadius: 4,
-                      cursor: drillRow.status === 'shortfall' ? 'pointer' : 'not-allowed', fontSize: 12, fontWeight: 600,
-                    }}>
-              Cure (with evidence)
-            </button>
-          </div>
+            return (
+              <ChainCard
+                key={row.id}
+                item={chainItem}
+                allStates={ALL_STATES}
+                branchStates={BRANCH_STATES}
+                title={`${row.period_month} · ${row.ppa_id}`}
+                meta={meta}
+                actions={getActions(row, verifications, () => {}, () => {})}
+                onAction={(key, values) => handleAction(row.id, key, values)}
+                cascadeTo={[]}
+                detail={renderDetail(row, verifications)}
+                events={expandedEvents[row.id]}
+                onExpand={handleExpand}
+              />
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]"
+                 style={{ background: BG1, borderColor: BORDER, color: TX3 }}>No obligations match this filter.</div>
+          )}
         </div>
       )}
     </div>
   );
 }
+
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
+  return (
+    <div className="rounded border px-3 py-2 min-w-[100px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
+    </div>
+  );
+}
+
+function DetailPair({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1 }}>{value}</div>
+    </div>
+  );
+}
+
+export default ObligationsTab;

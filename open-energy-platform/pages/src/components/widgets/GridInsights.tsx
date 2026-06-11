@@ -55,7 +55,7 @@ function GenerationProfile({ schedules }: { schedules: DispatchSchedule[] }) {
   }, [profile]);
 
   const COLOUR: Record<string, string> = {
-    solar: '#f6c44a', wind: '#3b82c4', battery: '#6b3a82',
+    solar: '#f6c44a', wind: 'oklch(0.46 0.16 55)', battery: '#6b3a82',
     hydro: '#1a8a5b', coal: '#3d3d3d', gas: '#e63946', mixed: '#6b7685',
   };
 
@@ -91,7 +91,7 @@ function GenerationProfile({ schedules }: { schedules: DispatchSchedule[] }) {
               <XAxis dataKey="pctTime" tick={{ fontSize: 9, fill: '#6b7685' }} tickFormatter={(v) => `${Number(v).toFixed(0)}%`} unit="" />
               <YAxis tick={{ fontSize: 9, fill: '#6b7685' }} unit=" MW" />
               <Tooltip formatter={(v: any) => `${Number(v).toFixed(0)} MW`} labelFormatter={(l) => `${Number(l).toFixed(0)}% of hours`} />
-              <Area type="monotone" dataKey="mw" stroke="#1a3a5c" fill="#d4e7f6" />
+              <Area type="monotone" dataKey="mw" stroke="oklch(0.46 0.16 55)" fill="#d4e7f6" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -138,7 +138,7 @@ function OutageMttrTrend({ outages }: { outages: Outage[] }) {
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Bar dataKey="max"   name="Worst (h)" fill="#fde0db" />
             <Line type="monotone" dataKey="mean" name="MTTR (h)" stroke="#c0392b" strokeWidth={2} dot={true} />
-            <Line type="monotone" dataKey="count" name="# outages" stroke="#3b82c4" strokeWidth={1} dot={false} yAxisId={0} />
+            <Line type="monotone" dataKey="count" name="# outages" stroke="oklch(0.46 0.16 55)" strokeWidth={1} dot={false} yAxisId={0} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

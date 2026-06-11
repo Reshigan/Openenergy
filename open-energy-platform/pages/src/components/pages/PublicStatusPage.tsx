@@ -9,6 +9,13 @@
 import React, { useEffect, useState } from 'react';
 import { Activity, AlertOctagon, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 
+const BG      = 'oklch(0.96 0.003 250)';
+const BG1     = 'oklch(0.99 0.002 80)';
+const BORDER  = 'oklch(0.87 0.006 250)';
+const TX1     = 'oklch(0.17 0.010 250)';
+const TX3     = 'oklch(0.60 0.007 250)';
+const ACC     = 'oklch(0.46 0.16 55)';
+
 type Component = { name: string; status: string; metric?: string };
 type StatusData = {
   overall_status: 'operational' | 'degraded' | 'major_outage';
@@ -44,39 +51,39 @@ export function PublicStatusPage() {
   }, []);
 
   if (err && !data) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--oe-surface)' }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: BG }}>
       <div className="widget-card widget-tone-bad p-6 max-w-md text-center">
         <AlertOctagon size={28} className="mx-auto" />
         <div className="mt-2 text-[16px] font-semibold">Status page unreachable</div>
         <div className="text-[12px] mt-1">{err}</div>
-        <button type="button" onClick={load} className="mt-3 h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold">Retry</button>
+        <button type="button" onClick={load} className="mt-3 h-9 px-3 rounded text-white text-[12px] font-semibold" style={{ background: ACC }}>Retry</button>
       </div>
     </div>
   );
-  if (!data) return <div className="min-h-screen grid place-items-center text-[12px] text-[#6b7685]">Loading…</div>;
+  if (!data) return <div className="min-h-screen grid place-items-center text-[12px]" style={{ color: TX3 }}>Loading…</div>;
 
   const meta = STATUS_META[data.overall_status] || STATUS_META.operational;
   const Icon = meta.icon;
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--oe-surface)' }}>
+    <div className="min-h-screen" style={{ background: BG }}>
       <header className="p-6 lg:p-10 pb-4">
         <div className="max-w-4xl mx-auto flex items-start justify-between gap-3 flex-wrap">
           <div>
-            <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1 mb-2">
+            <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider rounded-full px-3 py-1 mb-2 border" style={{ color: TX3, background: BG1, borderColor: BORDER }}>
               <Activity size={12} /> Platform · status
             </div>
-            <h1 className="font-display text-[28px] font-bold tracking-tight leading-tight" style={{ color: 'var(--oe-on-surface)' }}>
+            <h1 className="font-display text-[28px] font-bold tracking-tight leading-tight" style={{ color: TX1 }}>
               Platform status
             </h1>
             <div className={`mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] font-semibold ${meta.tone}`}>
               <Icon size={14} /> {meta.label}
             </div>
-            <p className="text-[12px] text-[#6b7685] mt-2">
+            <p className="text-[12px] mt-2" style={{ color: TX3 }}>
               Updated {new Date(data.generated_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })} · DB round-trip {data.live_db_latency_ms} ms
             </p>
           </div>
-          <button type="button" onClick={load} className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] hover:bg-[#eef2f7] text-[#0f1c2e] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={load} className="h-9 px-3 rounded-md border text-[12px] font-semibold inline-flex items-center gap-1" style={{ background: BG1, borderColor: BORDER, color: TX1 }}>
             <RefreshCw size={13} /> Refresh
           </button>
         </div>
@@ -85,16 +92,17 @@ export function PublicStatusPage() {
       <main className="max-w-4xl mx-auto p-6 lg:p-10 pt-0 space-y-4">
         <section className="widget-card">
           <header className="widget-card-header"><div className="widget-card-title">Components</div></header>
-          <ul className="divide-y divide-[#eef2f7]">
+          <ul className="divide-y" style={{ borderColor: BORDER }}>
             {data.components.map((c) => {
               const m = STATUS_META[c.status] || STATUS_META.operational;
               const I = m.icon;
+              const iconColor = c.status === 'operational' ? 'oklch(0.45 0.15 150)' : c.status === 'degraded' ? 'oklch(0.50 0.16 50)' : 'oklch(0.48 0.20 20)';
               return (
                 <li key={c.name} className="px-4 py-3 flex items-center gap-3">
-                  <I size={14} className={c.status === 'operational' ? 'text-[#1a8a5b]' : c.status === 'degraded' ? 'text-[#b04e0f]' : 'text-[#c0392b]'} />
+                  <span style={{ color: iconColor, display: 'flex' }}><I size={14} /></span>
                   <div className="flex-1">
-                    <div className="text-[13px] font-semibold text-[#0f1c2e]">{c.name}</div>
-                    {c.metric && <div className="text-[11px] text-[#6b7685]">{c.metric}</div>}
+                    <div className="text-[13px] font-semibold" style={{ color: TX1 }}>{c.name}</div>
+                    {c.metric && <div className="text-[11px]" style={{ color: TX3 }}>{c.metric}</div>}
                   </div>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${m.tone}`}>{c.status.replace('_', ' ')}</span>
                 </li>
@@ -114,7 +122,7 @@ export function PublicStatusPage() {
               <thead><tr><th className="text-left">Metric</th><th className="text-right">Avg (24h)</th><th className="text-right">Max (24h)</th></tr></thead>
               <tbody>
                 {data.metrics_24h.length === 0 ? (
-                  <tr><td colSpan={3} className="text-[#6b7685] italic py-2">No metrics ingested yet — the per-minute cron fires every 15 min.</td></tr>
+                  <tr><td colSpan={3} className="italic py-2" style={{ color: TX3 }}>No metrics ingested yet — the per-minute cron fires every 15 min.</td></tr>
                 ) : data.metrics_24h.map((m: any) => (
                   <tr key={m.metric}>
                     <td className="font-mono">{m.metric}</td>
@@ -126,7 +134,7 @@ export function PublicStatusPage() {
             </table>
           </div>
         </section>
-        <footer className="text-center text-[11px] text-[#6b7685] pt-2">
+        <footer className="text-center text-[11px] pt-2" style={{ color: TX3 }}>
           Consolidated Energy Cockpit · oe.vantax.co.za · operated by GONXT Technology (Pty) Ltd
         </footer>
       </main>

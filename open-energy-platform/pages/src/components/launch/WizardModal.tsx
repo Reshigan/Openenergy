@@ -414,14 +414,14 @@ export function WizardPicker({
                 key={w.id}
                 type="button"
                 onClick={() => onSelect(w)}
-                className="w-full text-left rounded-xl border p-3.5 transition-all hover:border-[#3b82c4] hover:shadow-sm"
+                className="w-full text-left rounded-xl border p-3.5 transition-all hover:border-[oklch(0.46_0.16_55)] hover:shadow-sm"
                 style={{ borderColor: '#e5ebf2', background: '#fafbfc' }}
               >
                 <div className="text-[13px] font-semibold" style={{ color: '#0f1c2e' }}>{w.title}</div>
                 {w.subtitle && (
                   <div className="mt-0.5 text-[11px]" style={{ color: '#6b7685' }}>{w.subtitle}</div>
                 )}
-                <div className="mt-1.5 text-[10px] font-semibold uppercase tracking-wide" style={{ color: '#3b82c4' }}>
+                <div className="mt-1.5 text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'oklch(0.46 0.16 55)' }}>
                   {w.steps.length} steps
                 </div>
               </button>

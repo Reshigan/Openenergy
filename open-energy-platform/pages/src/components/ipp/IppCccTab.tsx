@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface CccNegotiation {
   id: string;
@@ -21,19 +21,20 @@ interface CccNegotiation {
   updated_at: string;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  ccc_initiated:             'bg-[#eef2f7] text-[#6b7685]',
-  load_flow_study:           'bg-blue-100 text-blue-700',
-  cost_assessment:           'bg-sky-100 text-sky-700',
-  ipp_review:                'bg-indigo-100 text-indigo-700',
-  negotiation_in_progress:   'bg-yellow-100 text-yellow-800',
-  expert_determination:      'bg-amber-100 text-amber-700',
-  provisional_agreement:     'bg-teal-100 text-teal-700',
-  dispute_filed:             'bg-rose-100 text-rose-700',
-  arbitration_in_progress:   'bg-orange-100 text-orange-700',
-  ccc_agreed:                'bg-green-100 text-green-700',
-  ccc_rejected:              'bg-red-100 text-red-700',
-  regulatory_determination:  'bg-purple-100 text-purple-700',
+type StatusStyle = { cls: string; style?: React.CSSProperties };
+const STATUS_COLORS: Record<string, StatusStyle> = {
+  ccc_initiated:             { cls: 'bg-[#eef2f7] text-[#6b7685]' },
+  load_flow_study:           { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  cost_assessment:           { cls: 'bg-sky-100 text-sky-700' },
+  ipp_review:                { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  negotiation_in_progress:   { cls: 'bg-yellow-100 text-yellow-800' },
+  expert_determination:      { cls: 'bg-amber-100 text-amber-700' },
+  provisional_agreement:     { cls: 'bg-teal-100 text-teal-700' },
+  dispute_filed:             { cls: 'bg-rose-100 text-rose-700' },
+  arbitration_in_progress:   { cls: 'bg-orange-100 text-orange-700' },
+  ccc_agreed:                { cls: 'bg-green-100 text-green-700' },
+  ccc_rejected:              { cls: 'bg-red-100 text-red-700' },
+  regulatory_determination:  { cls: 'bg-purple-100 text-purple-700' },
 };
 
 const TIER_COLORS: Record<string, string> = {
@@ -183,7 +184,7 @@ export function IppCccTab() {
                       <span className="px-2 py-0.5 rounded text-xs text-white font-medium" style={{ backgroundColor: tierColor }}>{item.ccc_tier}</span>
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>{item.chain_status.replace(/_/g, ' ')}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${(STATUS_COLORS[item.chain_status] ?? { cls: 'bg-[#eef2f7] text-[#6b7685]' }).cls}`} style={(STATUS_COLORS[item.chain_status] ?? {}).style}>{item.chain_status.replace(/_/g, ' ')}</span>
                     </td>
                     <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}

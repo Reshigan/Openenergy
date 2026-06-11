@@ -2,6 +2,16 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../context/AuthContext';
 
+const BG      = 'oklch(0.96 0.003 250)';
+const BG1     = 'oklch(0.99 0.002 80)';
+const BORDER  = 'oklch(0.87 0.006 250)';
+const TX1     = 'oklch(0.17 0.010 250)';
+const TX2     = 'oklch(0.40 0.009 250)';
+const ACC     = 'oklch(0.46 0.16 55)';
+const BAD     = 'oklch(0.48 0.20 20)';
+const BAD_BG  = 'oklch(0.97 0.04 20)';
+const BAD_BDR = 'oklch(0.85 0.08 20)';
+
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
@@ -27,19 +37,19 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: '#f5f8fb' }}>
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border p-8" style={{ borderColor: '#dde4ec' }}>
-        <h2 className="text-[24px] font-bold" style={{ color: '#0f1c2e' }}>Forgot password</h2>
-        <p className="mt-1 text-[13px]" style={{ color: '#525a66' }}>
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: BG }}>
+      <div className="w-full max-w-md rounded-2xl shadow-sm border p-8" style={{ background: BG1, borderColor: BORDER }}>
+        <h2 className="text-[24px] font-bold" style={{ color: TX1 }}>Forgot password</h2>
+        <p className="mt-1 text-[13px]" style={{ color: TX2 }}>
           Enter your account email. We'll send a reset link.
         </p>
 
         {sent ? (
           <div className="mt-6 space-y-4">
-            <div className="rounded-lg border px-3 py-2 text-[13px]" style={{ background: '#ebf7ef', borderColor: '#9ec9a8', color: '#0e6027' }}>
+            <div className="rounded-lg border px-3 py-2 text-[13px]" style={{ background: 'oklch(0.96 0.05 150)', borderColor: 'oklch(0.75 0.10 150)', color: 'oklch(0.30 0.12 150)' }}>
               If that email exists, a reset link has been dispatched.
             </div>
-            <div className="rounded-lg border px-3 py-3 text-[12px]" style={{ background: '#fff7e0', borderColor: '#e8c66c', color: '#6a4e00' }}>
+            <div className="rounded-lg border px-3 py-3 text-[12px]" style={{ background: 'oklch(0.97 0.04 80)', borderColor: 'oklch(0.82 0.10 70)', color: 'oklch(0.35 0.10 60)' }}>
               Until a mail provider is wired, an administrator can issue you a one-time reset link via
               <span className="font-mono"> POST /api/auth/admin/reset-link</span> (admin-authenticated).
             </div>
@@ -48,7 +58,7 @@ export default function ForgotPassword() {
         ) : (
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             {error && (
-              <div className="rounded-lg border px-3 py-2 text-[13px]" style={{ background: '#fde0db', borderColor: '#e8a59b', color: '#c0392b' }}>
+              <div className="rounded-lg border px-3 py-2 text-[13px]" style={{ background: BAD_BG, borderColor: BAD_BDR, color: BAD }}>
                 {error}
               </div>
             )}
@@ -66,11 +76,16 @@ export default function ForgotPassword() {
                 autoFocus
               />
             </div>
-            <button type="submit" className="btn btn-primary w-full" disabled={loading}>
+            <button
+              type="submit"
+              className="w-full h-10 rounded-lg text-[13px] font-semibold text-white disabled:opacity-50"
+              style={{ background: ACC }}
+              disabled={loading}
+            >
               {loading ? 'Sending…' : 'Send reset link'}
             </button>
             <div className="text-center">
-              <Link to="/login" className="text-[13px] font-semibold inline-block px-2 py-1" style={{ color: '#1a3a5c' }}>Back to sign in</Link>
+              <Link to="/login" className="text-[13px] font-semibold inline-block px-2 py-1" style={{ color: ACC }}>Back to sign in</Link>
             </div>
           </form>
         )}

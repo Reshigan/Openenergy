@@ -47,7 +47,7 @@ export function PlatformAdminConsolePage() {
       title="Platform admin console"
       subtitle="Feature flags, RUM telemetry, document signatures and AI assistant sessions in one place."
     >
-      <div className="border-b border-[#dde4ec] flex flex-wrap gap-1 mb-3">
+      <div className="flex flex-wrap gap-1 mb-3" style={{ borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
         {([
           ['flags', 'Feature flags', ToggleLeft],
           ['rum', 'RUM dashboard', Activity],
@@ -57,9 +57,11 @@ export function PlatformAdminConsolePage() {
           <button type="button"
             key={k}
             onClick={() => setTab(k)}
-            className={`h-9 px-3 text-[12px] font-semibold inline-flex items-center gap-1.5 border-b-2 -mb-px ${
-              tab === k ? 'border-[#1a3a5c] text-[#1a3a5c]' : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'
-            }`}
+            className="h-9 px-3 text-[12px] font-semibold inline-flex items-center gap-1.5 border-b-2 -mb-px"
+            style={tab === k
+              ? { borderColor: 'oklch(0.46 0.16 55)', color: 'oklch(0.46 0.16 55)' }
+              : { borderColor: 'transparent', color: 'oklch(0.40 0.009 250)' }
+            }
           >
             <Icon size={13}/> {label}
           </button>
@@ -123,18 +125,19 @@ function FlagsTab() {
   return (
     <section className="space-y-3">
       <div className="flex items-center gap-2">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Feature flags</div>
-        <span className="text-[11px] text-[#6b7685]">— {raw.length} configured</span>
-        <button type="button" onClick={load} className="ml-auto h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
+        <div className="text-[13px] font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>Feature flags</div>
+        <span className="text-[11px]" style={{ color: 'oklch(0.40 0.009 250)' }}>— {raw.length} configured</span>
+        <button type="button" onClick={load} className="ml-auto h-8 px-2 rounded text-[11px] inline-flex items-center gap-1"
+                style={{ border: '1px solid oklch(0.87 0.006 250)' }}>
           <RefreshCw size={11}/> Refresh
         </button>
       </div>
-      {err && <div className="text-[12px] text-[#c0392b] inline-flex items-center gap-1"><AlertCircle size={13}/> {err}</div>}
-      {ack && <div className="text-[12px] text-[#1a8a5b] inline-flex items-center gap-1"><CheckCircle2 size={13}/> {ack}</div>}
+      {err && <div className="text-[12px] inline-flex items-center gap-1" style={{ color: 'oklch(0.48 0.20 20)' }}><AlertCircle size={13}/> {err}</div>}
+      {ack && <div className="text-[12px] inline-flex items-center gap-1" style={{ color: 'oklch(0.45 0.15 150)' }}><CheckCircle2 size={13}/> {ack}</div>}
       <div className="overflow-x-auto">
         <table className="w-full text-[12px]">
           <thead>
-            <tr className="text-left text-[#6b7685] border-b border-[#dde4ec]">
+            <tr className="text-left" style={{ color: 'oklch(0.40 0.009 250)', borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
               <th className="py-1.5">Key</th>
               <th className="py-1.5">Description</th>
               <th className="py-1.5 text-center">Default</th>
@@ -149,10 +152,11 @@ function FlagsTab() {
               const merged = { ...f, ...e };
               const dirty = Object.keys(e).length > 0;
               return (
-                <tr key={f.key} className="border-b border-[#eef2f7]">
+                <tr key={f.key} style={{ borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
                   <td className="py-2 font-mono">{f.key}</td>
                   <td className="py-2 max-w-md">
-                    <input className="w-full h-7 px-1 rounded border border-[#dde4ec] text-[11px]"
+                    <input className="w-full h-7 px-1 rounded text-[11px]"
+                           style={{ border: '1px solid oklch(0.87 0.006 250)' }}
                            value={merged.description || ''}
                            onChange={(ev) => setEdit({ ...edit, [f.key]: { ...e, description: ev.target.value } })}/>
                   </td>
@@ -162,7 +166,8 @@ function FlagsTab() {
                   </td>
                   <td className="py-2 text-right">
                     <input type="number" min={0} max={100}
-                           className="w-16 h-7 px-1 rounded border border-[#dde4ec] text-[11px] text-right font-mono"
+                           className="w-16 h-7 px-1 rounded text-[11px] text-right font-mono"
+                           style={{ border: '1px solid oklch(0.87 0.006 250)' }}
                            value={Number(merged.rollout_pct || 0)}
                            onChange={(ev) => setEdit({ ...edit, [f.key]: { ...e, rollout_pct: Number(ev.target.value) } })}/>
                   </td>
@@ -172,14 +177,15 @@ function FlagsTab() {
                   </td>
                   <td className="py-2 text-right">
                     <button type="button" disabled={!dirty || busy} onClick={() => save(f.key)}
-                            className="h-7 px-2 rounded bg-[#c2873a] text-white text-[11px] font-semibold disabled:opacity-40 inline-flex items-center gap-1">
+                            className="h-7 px-2 rounded text-white text-[11px] font-semibold disabled:opacity-40 inline-flex items-center gap-1"
+                            style={{ background: 'oklch(0.46 0.16 55)' }}>
                       <Save size={11}/> Save
                     </button>
                   </td>
                 </tr>
               );
             })}
-            {raw.length === 0 && <tr><td colSpan={6} className="py-2 italic text-[#6b7685]">No feature flags configured.</td></tr>}
+            {raw.length === 0 && <tr><td colSpan={6} className="py-2 italic" style={{ color: 'oklch(0.40 0.009 250)' }}>No feature flags configured.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -205,18 +211,20 @@ function RumTab() {
   return (
     <section className="space-y-3">
       <div className="flex items-center gap-2">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">RUM — last 7 days</div>
-        <input placeholder="filter by metric or path" className="ml-auto h-8 px-2 rounded border border-[#dde4ec] text-[11px] w-64"
+        <div className="text-[13px] font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>RUM — last 7 days</div>
+        <input placeholder="filter by metric or path" className="ml-auto h-8 px-2 rounded text-[11px] w-64"
+               style={{ border: '1px solid oklch(0.87 0.006 250)' }}
                value={filter} onChange={(e) => setFilter(e.target.value)}/>
-        <button type="button" onClick={load} className="h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
+        <button type="button" onClick={load} className="h-8 px-2 rounded text-[11px] inline-flex items-center gap-1"
+                style={{ border: '1px solid oklch(0.87 0.006 250)' }}>
           <RefreshCw size={11}/> Refresh
         </button>
       </div>
-      {err && <div className="text-[12px] text-[#c0392b]">{err}</div>}
+      {err && <div className="text-[12px]" style={{ color: 'oklch(0.48 0.20 20)' }}>{err}</div>}
       <div className="overflow-x-auto">
         <table className="w-full text-[11px]">
           <thead>
-            <tr className="text-left text-[#6b7685] border-b border-[#dde4ec]">
+            <tr className="text-left" style={{ color: 'oklch(0.40 0.009 250)', borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
               <th className="py-1.5">Metric</th>
               <th className="py-1.5">Page</th>
               <th className="py-1.5 text-right">n</th>
@@ -227,7 +235,7 @@ function RumTab() {
           </thead>
           <tbody>
             {filtered.map((r, i) => (
-              <tr key={i} className="border-b border-[#eef2f7]">
+              <tr key={i} style={{ borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
                 <td className="py-1.5 font-mono">{r.metric}</td>
                 <td className="py-1.5 font-mono">{r.page_path}</td>
                 <td className="py-1.5 text-right font-mono">{r.n}</td>
@@ -236,7 +244,7 @@ function RumTab() {
                 <td className="py-1.5 text-right font-mono">{r.max_v != null ? Number(r.max_v).toFixed(1) : '—'}</td>
               </tr>
             ))}
-            {filtered.length === 0 && <tr><td colSpan={6} className="py-2 italic text-[#6b7685]">No RUM data yet.</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={6} className="py-2 italic" style={{ color: 'oklch(0.40 0.009 250)' }}>No RUM data yet.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -263,32 +271,35 @@ function SignaturesTab() {
   };
   return (
     <section className="space-y-3">
-      <div className="text-[13px] font-semibold text-[#0f1c2e]">Document signatures</div>
-      <p className="text-[12px] text-[#6b7685]">
+      <div className="text-[13px] font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>Document signatures</div>
+      <p className="text-[12px]" style={{ color: 'oklch(0.40 0.009 250)' }}>
         Look up Ed25519 signatures attached to any signed document.
       </p>
       <div className="flex items-end gap-2 flex-wrap">
-        <label className="text-[11px] font-semibold text-[#3a4658]">
+        <label className="text-[11px] font-semibold" style={{ color: 'oklch(0.40 0.009 250)' }}>
           Document kind
-          <input className="block mt-1 h-8 px-2 rounded border border-[#dde4ec] text-[11px] w-48 font-mono"
+          <input className="block mt-1 h-8 px-2 rounded text-[11px] w-48 font-mono"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }}
                  placeholder="e.g. ppa, decision, invoice"
                  value={docKind} onChange={(e) => setDocKind(e.target.value)}/>
         </label>
-        <label className="text-[11px] font-semibold text-[#3a4658]">
+        <label className="text-[11px] font-semibold" style={{ color: 'oklch(0.40 0.009 250)' }}>
           Document ref
-          <input className="block mt-1 h-8 px-2 rounded border border-[#dde4ec] text-[11px] w-64 font-mono"
+          <input className="block mt-1 h-8 px-2 rounded text-[11px] w-64 font-mono"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }}
                  value={docRef} onChange={(e) => setDocRef(e.target.value)}/>
         </label>
         <button type="button" disabled={busy} onClick={load}
-                className="h-8 px-3 rounded bg-[#c2873a] text-white text-[11px] font-semibold disabled:opacity-50">
+                className="h-8 px-3 rounded text-white text-[11px] font-semibold disabled:opacity-50"
+                style={{ background: 'oklch(0.46 0.16 55)' }}>
           {busy ? 'Loading…' : 'Look up'}
         </button>
       </div>
-      {err && <div className="text-[12px] text-[#c0392b]">{err}</div>}
+      {err && <div className="text-[12px]" style={{ color: 'oklch(0.48 0.20 20)' }}>{err}</div>}
       <div className="overflow-x-auto">
         <table className="w-full text-[11px]">
           <thead>
-            <tr className="text-left text-[#6b7685] border-b border-[#dde4ec]">
+            <tr className="text-left" style={{ color: 'oklch(0.40 0.009 250)', borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
               <th className="py-1.5">Signed</th>
               <th className="py-1.5">Signer</th>
               <th className="py-1.5">Role</th>
@@ -298,7 +309,7 @@ function SignaturesTab() {
           </thead>
           <tbody>
             {rows.map((s) => (
-              <tr key={s.id} className="border-b border-[#eef2f7]">
+              <tr key={s.id} style={{ borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
                 <td className="py-1.5 font-mono">{new Date(s.signed_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</td>
                 <td className="py-1.5 font-mono">{s.signer_id}</td>
                 <td className="py-1.5">{s.signer_role || '—'}</td>
@@ -306,7 +317,7 @@ function SignaturesTab() {
                 <td className="py-1.5 font-mono text-[10px] break-all max-w-md">{s.document_hash}</td>
               </tr>
             ))}
-            {rows.length === 0 && <tr><td colSpan={5} className="py-2 italic text-[#6b7685]">No signatures shown — query above to load.</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={5} className="py-2 italic" style={{ color: 'oklch(0.40 0.009 250)' }}>No signatures shown — query above to load.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -330,23 +341,26 @@ function AiSessionsTab() {
   return (
     <section className="space-y-3">
       <div className="flex items-center gap-2">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Recent AI sessions</div>
-        <button type="button" onClick={load} className="ml-auto h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1">
+        <div className="text-[13px] font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>Recent AI sessions</div>
+        <button type="button" onClick={load} className="ml-auto h-8 px-2 rounded text-[11px] inline-flex items-center gap-1"
+                style={{ border: '1px solid oklch(0.87 0.006 250)' }}>
           <RefreshCw size={11}/> Refresh
         </button>
       </div>
-      {err && <div className="text-[12px] text-[#c0392b]">{err}</div>}
-      <ul className="divide-y divide-[#eef2f7] text-[12px]">
+      {err && <div className="text-[12px]" style={{ color: 'oklch(0.48 0.20 20)' }}>{err}</div>}
+      <ul className="text-[12px]" style={{ borderTop: '1px solid oklch(0.87 0.006 250)' }}>
         {sessions.map((s) => (
-          <li key={s.id} className="py-2 flex items-center gap-3">
+          <li key={s.id} className="py-2 flex items-center gap-3" style={{ borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
             <div className="font-mono text-[11px]">{s.id}</div>
-            <div className="text-[#6b7685]">surface={s.surface || '—'}</div>
-            <div className="text-[#6b7685]">started {new Date(s.started_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</div>
-            {s.pinned ? <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#fff5d0] text-[#7a5800]">pinned</span> : null}
-            {s.closed_at ? <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#eef2f7] text-[#6b7685]">closed</span> : null}
+            <div style={{ color: 'oklch(0.40 0.009 250)' }}>surface={s.surface || '—'}</div>
+            <div style={{ color: 'oklch(0.40 0.009 250)' }}>started {new Date(s.started_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</div>
+            {s.pinned ? <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded"
+                              style={{ background: 'oklch(0.96 0.003 250)', color: 'oklch(0.46 0.16 55)' }}>pinned</span> : null}
+            {s.closed_at ? <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded"
+                                  style={{ background: 'oklch(0.96 0.003 250)', color: 'oklch(0.40 0.009 250)' }}>closed</span> : null}
           </li>
         ))}
-        {sessions.length === 0 && <li className="py-2 italic text-[#6b7685]">No sessions yet.</li>}
+        {sessions.length === 0 && <li className="py-2 italic" style={{ color: 'oklch(0.40 0.009 250)' }}>No sessions yet.</li>}
       </ul>
     </section>
   );

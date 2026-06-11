@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface AcsRecord {
   id: string;
@@ -30,19 +30,20 @@ interface AcsKpis {
   deficient: number;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  assessment_triggered:      'bg-[#eef2f7] text-[#6b7685]',
-  protection_systems_audit:  'bg-blue-100 text-blue-700',
-  metering_scada_audit:      'bg-cyan-100 text-cyan-700',
-  reactive_power_audit:      'bg-indigo-100 text-indigo-700',
-  frequency_response_audit:  'bg-violet-100 text-violet-700',
-  frt_pq_audit:              'bg-purple-100 text-purple-700',
-  internal_technical_review: 'bg-yellow-100 text-yellow-800',
-  so_submission:             'bg-orange-100 text-orange-700',
-  so_review_in_progress:     'bg-blue-100 text-blue-800',
-  assessment_accepted:       'bg-green-100 text-green-700',
-  assessment_deficient:      'bg-red-100 text-red-700',
-  assessment_lapsed:         'bg-[#eef2f7] text-[#9aa5b4]',
+type StatusStyle = { cls: string; style: React.CSSProperties };
+const STATUS_COLORS: Record<string, StatusStyle> = {
+  assessment_triggered:      { cls: 'bg-[#eef2f7]', style: { color: '#6b7685' } },
+  protection_systems_audit:  { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  metering_scada_audit:      { cls: 'bg-cyan-100 text-cyan-700', style: {} },
+  reactive_power_audit:      { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  frequency_response_audit:  { cls: 'bg-violet-100 text-violet-700', style: {} },
+  frt_pq_audit:              { cls: 'bg-purple-100 text-purple-700', style: {} },
+  internal_technical_review: { cls: 'bg-yellow-100 text-yellow-800', style: {} },
+  so_submission:             { cls: 'bg-orange-100 text-orange-700', style: {} },
+  so_review_in_progress:     { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.17 0.010 250)' } },
+  assessment_accepted:       { cls: 'bg-green-100 text-green-700', style: {} },
+  assessment_deficient:      { cls: 'bg-red-100 text-red-700', style: {} },
+  assessment_lapsed:         { cls: 'bg-[#eef2f7]', style: { color: '#9aa5b4' } },
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -74,12 +75,13 @@ const ACTION_LABELS: Record<string, string> = {
   declare_lapsed:                      'Declare Lapsed',
 };
 
-const TIER_COLORS: Record<string, string> = {
-  small:    'bg-blue-100 text-blue-800',
-  medium:   'bg-yellow-100 text-yellow-800',
-  large:    'bg-orange-100 text-orange-800',
-  major:    'bg-red-100 text-red-800',
-  flagship: 'bg-purple-100 text-purple-800',
+type TierStyle = { cls: string; style: React.CSSProperties };
+const TIER_COLORS: Record<string, TierStyle> = {
+  small:    { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.17 0.010 250)' } },
+  medium:   { cls: 'bg-yellow-100 text-yellow-800', style: {} },
+  large:    { cls: 'bg-orange-100 text-orange-800', style: {} },
+  major:    { cls: 'bg-red-100 text-red-800', style: {} },
+  flagship: { cls: 'bg-purple-100 text-purple-800', style: {} },
 };
 
 const HARD_TERMINALS = new Set([
@@ -387,9 +389,10 @@ export function IppAnnualComplianceAssessmentTab() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3"
+          className="rounded-lg p-4 space-y-3"
+          style={{ border: '1px solid oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
         >
-          <div className="text-sm font-semibold text-blue-800">New Annual Grid Code Compliance Assessment</div>
+          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New Annual Grid Code Compliance Assessment</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[#3d4756] mb-1">Plant Name *</label>
@@ -517,13 +520,13 @@ export function IppAnnualComplianceAssessmentTab() {
                       {item.plant_name}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status]?.cls ?? 'bg-[#eef2f7]'}`} style={STATUS_COLORS[item.chain_status]?.style ?? { color: '#6b7685' }}>
                         {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                       </span>
                     </td>
                     <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748]">{fmtMw(item.plant_mw)}</td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.capacity_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.capacity_tier]?.cls ?? 'bg-[#eef2f7]'}`} style={TIER_COLORS[item.capacity_tier]?.style ?? { color: '#6b7685' }}>
                         {item.capacity_tier.charAt(0).toUpperCase() + item.capacity_tier.slice(1)}
                       </span>
                     </td>
@@ -547,7 +550,8 @@ export function IppAnnualComplianceAssessmentTab() {
                       {actions.length > 0 && (
                         <button type="button"
                           onClick={() => openActionPicker(item)}
-                          className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                          className="px-2 py-0.5 text-xs rounded border"
+                          style={{ background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.87 0.010 250)' }}
                         >
                           Actions
                         </button>
@@ -613,10 +617,10 @@ export function IppAnnualComplianceAssessmentTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badge */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status]?.cls ?? 'bg-[#eef2f7]'}`} style={STATUS_COLORS[detailItem.chain_status]?.style ?? { color: '#6b7685' }}>
                   {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.capacity_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.capacity_tier]?.cls ?? 'bg-[#eef2f7]'}`} style={TIER_COLORS[detailItem.capacity_tier]?.style ?? { color: '#6b7685' }}>
                   {detailItem.capacity_tier.charAt(0).toUpperCase() + detailItem.capacity_tier.slice(1)}
                 </span>
                 {detailItem.sla_breached === 1 && (

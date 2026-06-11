@@ -26,6 +26,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'drafted' | 'entries_open' | 'entries_closed'
@@ -41,6 +56,7 @@ type WorkflowClass =
   | 'equipment_breakdown' | 'low_productivity' | 'executive_visit' | 'near_miss';
 
 interface DfrRow {
+  [key: string]: unknown;
   id: string;
   dfr_number: string;
   project_id: string;
@@ -174,54 +190,26 @@ interface KpiSummary {
   total_weather_delay_minutes: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  drafted:                  { bg: '#e3e7ec', fg: '#557',    label: 'Drafted' },
-  entries_open:             { bg: '#dbecfb', fg: '#1a3a5c', label: 'Entries open' },
-  entries_closed:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'Entries closed' },
-  submitted:                { bg: '#dbecfb', fg: '#1a3a5c', label: 'Submitted' },
-  under_review:             { bg: '#fff4d6', fg: '#a06200', label: 'Under review' },
-  returned_for_correction:  { bg: '#ffe4b5', fg: '#8a4a00', label: 'Returned for correction' },
-  corrected:                { bg: '#dbecfb', fg: '#1a3a5c', label: 'Corrected' },
-  approved:                 { bg: '#daf5e2', fg: '#1f6b3a', label: 'Approved' },
-  distributed:              { bg: '#d4edda', fg: '#155724', label: 'Distributed' },
-  archived:                 { bg: '#cfe9d7', fg: '#0f5132', label: 'Archived' },
-  voided:                   { bg: '#fde0e0', fg: '#9b1f1f', label: 'Voided' },
-  withdrawn:                { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'drafted',
+  'entries_open',
+  'entries_closed',
+  'submitted',
+  'under_review',
+  'corrected',
+  'approved',
+  'distributed',
+  'archived',
+];
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical' },
-  high:     { bg: '#ffe4b5', fg: '#8a4a00', label: 'High' },
-  standard: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard' },
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-};
+const BRANCH_STATES: readonly string[] = [
+  'returned_for_correction',
+  'voided',
+  'withdrawn',
+];
 
-const URGENCY_TONE: Record<string, { bg: string; fg: string; label: string }> = {
-  red:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Red' },
-  amber:    { bg: '#ffe4b5', fg: '#8a4a00', label: 'Amber' },
-  yellow:   { bg: '#fff4d6', fg: '#a06200', label: 'Yellow' },
-  green:    { bg: '#daf5e2', fg: '#1f6b3a', label: 'Green' },
-  terminal: { bg: '#e3e7ec', fg: '#557',    label: 'Terminal' },
-};
-
-const AUTHORITY_LABEL: Record<string, string> = {
-  site_supervisor:  'Site supervisor',
-  project_engineer: 'Project engineer',
-  project_manager:  'Project manager',
-  project_director: 'Project director',
-};
-
-const WORKFLOW_LABEL: Record<WorkflowClass, string> = {
-  routine_daily:        'Routine daily',
-  weather_delay:        'Weather delay',
-  safety_incident:      'Safety incident',
-  milestone_handover:   'Milestone handover',
-  equipment_breakdown:  'Equipment breakdown',
-  low_productivity:     'Low productivity',
-  executive_visit:      'Executive visit',
-  near_miss:            'Near miss',
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'open',                    label: 'Open' },
   { key: 'all',                     label: 'All' },
@@ -241,56 +229,26 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'hse_only',                label: 'HSE' },
 ];
 
-type ActionKind =
-  | 'open' | 'close-entries' | 'submit' | 'start-review'
-  | 'return-for-correction' | 'correct' | 'approve' | 'distribute' | 'archive'
-  | 'void' | 'withdraw';
+// ── action helpers ────────────────────────────────────────────────────────
+const TERMINAL_STATES: ChainStatus[] = ['archived', 'voided', 'withdrawn'];
 
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  drafted:                  'open',
-  entries_open:             'close-entries',
-  entries_closed:           'submit',
-  submitted:                'start-review',
-  under_review:             'approve',
-  returned_for_correction:  'correct',
-  corrected:                'submit',
-  approved:                 'distribute',
-  distributed:              'archive',
-  archived:                 null,
-  voided:                   null,
-  withdrawn:                null,
+const WORKFLOW_LABEL: Record<WorkflowClass, string> = {
+  routine_daily:        'Routine daily',
+  weather_delay:        'Weather delay',
+  safety_incident:      'Safety incident',
+  milestone_handover:   'Milestone handover',
+  equipment_breakdown:  'Equipment breakdown',
+  low_productivity:     'Low productivity',
+  executive_visit:      'Executive visit',
+  near_miss:            'Near miss',
 };
 
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'open':                  'Open entries (supervisor)',
-  'close-entries':         'Close entries (supervisor)',
-  'submit':                'Submit (coordinator)',
-  'start-review':          'Start review (reviewer)',
-  'return-for-correction': 'Return for correction (reviewer)',
-  'correct':               'Correct (supervisor)',
-  'approve':               'Approve (reviewer)',
-  'distribute':            'Distribute (coordinator)',
-  'archive':               'Archive (coordinator)',
-  'void':                  'Void (owner)',
-  'withdraw':              'Withdraw (supervisor)',
+const AUTHORITY_LABEL: Record<string, string> = {
+  site_supervisor:  'Site supervisor',
+  project_engineer: 'Project engineer',
+  project_manager:  'Project manager',
+  project_director: 'Project director',
 };
-
-const SECONDARY_ACTIONS: Record<ChainStatus, ActionKind[]> = {
-  drafted:                  ['withdraw'],
-  entries_open:             ['withdraw', 'void'],
-  entries_closed:           ['withdraw', 'void'],
-  submitted:                ['void'],
-  under_review:             ['return-for-correction', 'void'],
-  returned_for_correction:  ['withdraw', 'void'],
-  corrected:                ['void'],
-  approved:                 ['void'],
-  distributed:              ['void'],
-  archived:                 [],
-  voided:                   [],
-  withdrawn:                [],
-};
-
-const DESTRUCTIVE: ActionKind[] = ['return-for-correction', 'void', 'withdraw'];
 
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
@@ -320,16 +278,271 @@ function fmtDate(s: string | null): string {
   return new Date(s).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['archived', 'voided', 'withdrawn'];
+function getActions(row: DfrRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
 
+  // Primary forward action
+  if (s === 'drafted') {
+    actions.push({
+      key: 'open',
+      label: 'Open entries (supervisor)',
+      fields: [
+        { key: 'title', label: 'DFR title', type: 'text', required: false, placeholder: row.title ?? '' },
+      ],
+      cascadeTo: [],
+    });
+  } else if (s === 'entries_open') {
+    actions.push({
+      key: 'close-entries',
+      label: 'Close entries (supervisor)',
+      fields: [
+        { key: 'notes', label: 'Closing note — what was done today (manpower / equipment / progress)', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  } else if (s === 'entries_closed' || s === 'corrected') {
+    actions.push({
+      key: 'submit',
+      label: 'Submit (coordinator)',
+      fields: [
+        { key: 'narrative', label: 'Narrative — describe the construction day (HSE + work fronts + delays)', type: 'textarea', required: true, placeholder: '' },
+      ],
+      // crosses regulator EVERY tier with HSE
+      cascadeTo: row.triggers_hse_incident ? ['regulator'] : [],
+    });
+  } else if (s === 'submitted') {
+    actions.push({
+      key: 'start-review',
+      label: 'Start review (reviewer)',
+      fields: [
+        { key: 'last_responder_party', label: 'Reviewer party', type: 'text', required: false, placeholder: 'reviewer' },
+      ],
+      cascadeTo: [],
+    });
+  } else if (s === 'under_review') {
+    actions.push({
+      key: 'approve',
+      label: 'Approve (reviewer)',
+      fields: [
+        { key: 'regulator_ref', label: 'Regulator reference (OHSA/REIPPPP) — leave blank if not reportable', type: 'text', required: false, placeholder: '' },
+      ],
+      // crosses EVERY tier with HSE or high+critical change_order
+      cascadeTo: (row.triggers_hse_incident || row.triggers_change_order) ? ['regulator'] : [],
+    });
+  } else if (s === 'returned_for_correction') {
+    actions.push({
+      key: 'correct',
+      label: 'Correct (supervisor)',
+      fields: [
+        { key: 'narrative', label: 'What was corrected', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  } else if (s === 'approved') {
+    actions.push({
+      key: 'distribute',
+      label: 'Distribute (coordinator)',
+      fields: [
+        { key: 'regulator_ref', label: 'Distribution reference (high+critical with change_order crosses regulator)', type: 'text', required: false, placeholder: '' },
+      ],
+      // distribute high+critical with change_order
+      cascadeTo: (row.triggers_change_order && (row.current_tier === 'high' || row.current_tier === 'critical')) ? ['regulator'] : [],
+    });
+  } else if (s === 'distributed') {
+    actions.push({
+      key: 'archive',
+      label: 'Archive (coordinator)',
+      fields: [
+        { key: 'notes', label: 'Archive note (optional)', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // Secondary actions per state
+  const secondaryMap: Partial<Record<ChainStatus, ChainStatus[]>> = {
+    drafted:                 ['withdrawn'],
+    entries_open:            ['withdrawn', 'voided'],
+    entries_closed:          ['withdrawn', 'voided'],
+    submitted:               ['voided'],
+    under_review:            ['returned_for_correction', 'voided'],
+    returned_for_correction: ['withdrawn', 'voided'],
+    corrected:               ['voided'],
+    approved:                ['voided'],
+    distributed:             ['voided'],
+  };
+
+  // return-for-correction secondary
+  if (s === 'under_review') {
+    actions.push({
+      key: 'return-for-correction',
+      label: 'Return for correction (reviewer)',
+      fields: [
+        { key: 'narrative', label: 'Reason for correction', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // void secondary — crosses regulator EVERY tier with HSE OR change_order
+  const voidStates: ChainStatus[] = ['entries_open', 'entries_closed', 'submitted', 'under_review', 'returned_for_correction', 'corrected', 'approved', 'distributed'];
+  if (voidStates.includes(s)) {
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with HSE OR change_order crosses regulator EVERY tier', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: (row.triggers_hse_incident || row.triggers_change_order) ? ['regulator'] : [],
+    });
+  }
+
+  // withdraw secondary
+  const withdrawStates: ChainStatus[] = ['drafted', 'entries_open', 'entries_closed', 'returned_for_correction'];
+  if (withdrawStates.includes(s)) {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw (supervisor)',
+      fields: [
+        { key: 'withdrawn_reason', label: 'Withdrawal reason', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // Suppress duplicates from secondaryMap approach (we built them explicitly above)
+  void secondaryMap;
+
+  return actions;
+}
+
+function renderDetail(row: DfrRow): React.ReactNode {
+  const authority = AUTHORITY_LABEL[row.authority_required_live ?? row.authority_required ?? ''] ?? (row.authority_required ?? '—');
+
+  return (
+    <div style={{ fontSize: 11, color: TX2 }}>
+      {/* Live IPP-PM battery */}
+      <div className="mb-3 rounded border px-3 py-2" style={{ background: BG2, borderColor: BORDER }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: TX3 }}>Live IPP-PM battery</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <DetailMetric label="Quality index" value={fmtNum(row.ipp_pm_quality_index_live, 0)} bad={(row.ipp_pm_quality_index_live ?? 0) < 100} hint="0-130 (photo/weather/safety bonuses applied)" />
+          <DetailMetric label="Days open" value={String(row.days_open_live ?? 0)} />
+          <DetailMetric label="Days in court" value={String(row.days_in_court_live ?? 0)} bad={(row.days_in_court_live ?? 0) > 2} hint="Aging in current state" />
+          <DetailMetric label="Ball in court" value={row.ball_in_court_party_live ?? '—'} hint="Auto-derived from current state" />
+          <DetailMetric label="Tier (live)" value={row.tier_live} bad={row.tier_live === 'critical' || row.tier_live === 'high'} hint="Re-derived every transition" />
+          <DetailMetric label="Urgency band" value={row.urgency_band} bad={row.urgency_band === 'red' || row.urgency_band === 'amber'} />
+          <DetailMetric label="Predicted close" value={fmtDate(row.predicted_close_date_live)} hint="Tier-derived ETA" />
+          <DetailMetric label="Authority" value={authority} hint="Site supervisor → project engineer → project manager → project director" />
+        </div>
+      </div>
+
+      {/* Coverage flags */}
+      <div className="mb-3 rounded border px-3 py-2" style={{ background: BG2, borderColor: BORDER }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: TX3 }}>Coverage flags (FLOOR-AT-HIGH)</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <DetailMetric label="HSE incident" value={row.triggers_hse_incident ? 'Yes' : 'No'} bad={!!row.triggers_hse_incident} hint="OHSA s24 reportable" />
+          <DetailMetric label="Change order" value={row.triggers_change_order ? 'Yes' : 'No'} bad={!!row.triggers_change_order} hint="REIPPPP baseline" />
+          <DetailMetric label="Warranty claim" value={row.triggers_warranty_claim ? 'Yes' : 'No'} bad={!!row.triggers_warranty_claim} />
+          <DetailMetric label="Contributes EVM" value={row.contributes_to_evm ? 'Yes' : 'No'} bad={!!row.contributes_to_evm} />
+          <DetailMetric label="Manpower" value={String(row.manpower_count ?? 0)} />
+          <DetailMetric label="Equipment" value={String(row.equipment_count ?? 0)} />
+          <DetailMetric label="Photos" value={String(row.photo_count ?? 0)} hint="5+ photos = +10 quality" />
+          <DetailMetric label="Entries" value={String(row.entries_count ?? 0)} />
+          <DetailMetric label="Weather log" value={row.weather_log_present ? 'Yes' : 'No'} hint="+5 quality" />
+          <DetailMetric label="Safety log" value={row.safety_log_present ? 'Yes' : 'No'} hint="+5 quality" />
+          <DetailMetric label="Lost time" value={row.lost_time_hours != null ? `${fmtNum(row.lost_time_hours)}h` : '—'} bad={(row.lost_time_hours ?? 0) > 0} />
+          <DetailMetric label="Weather delay" value={row.weather_delay_minutes != null ? `${row.weather_delay_minutes}m` : '—'} bad={(row.weather_delay_minutes ?? 0) > 0} />
+        </div>
+      </div>
+
+      {/* EVM */}
+      <div className="mb-3 rounded border px-3 py-2" style={{ background: BG2, borderColor: BORDER }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: TX3 }}>EVM (PMI convention)</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <DetailMetric label="PV (planned)" value={fmtZar(row.evm_pv_zar)} />
+          <DetailMetric label="EV (earned)"  value={fmtZar(row.evm_ev_zar)} />
+          <DetailMetric label="AC (actual)"  value={fmtZar(row.evm_ac_zar)} />
+          <DetailMetric label="CV (EV-AC)"   value={fmtZar(row.evm_cv_zar_live)} bad={(row.evm_cv_zar_live ?? 0) < 0} hint="Cost variance" />
+          <DetailMetric label="SV (EV-PV)"   value={fmtZar(row.evm_sv_zar_live)} bad={(row.evm_sv_zar_live ?? 0) < 0} hint="Schedule variance" />
+          <DetailMetric label="CPI"          value={fmtNum(row.evm_cpi_live, 2)} bad={(row.evm_cpi_live ?? 1) < 1} hint="Cost performance index (>1 good)" />
+          <DetailMetric label="SPI"          value={fmtNum(row.evm_spi_live, 2)} bad={(row.evm_spi_live ?? 1) < 1} hint="Schedule performance index (>1 good)" />
+        </div>
+      </div>
+
+      {/* Key pairs */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+        <DetailPair label="Workflow class"   value={WORKFLOW_LABEL[row.workflow_class]} />
+        <DetailPair label="Priority"         value={row.priority_class} />
+        <DetailPair label="Report date"      value={row.report_date} />
+        <DetailPair label="Shift"            value={row.shift ?? '—'} />
+        <DetailPair label="Site location"    value={row.site_location ?? '—'} />
+        <DetailPair label="Weather"          value={row.weather_summary ?? '—'} />
+        <DetailPair label="Temp range (°C)"  value={(row.temperature_low_c != null || row.temperature_high_c != null) ? `${row.temperature_low_c ?? '—'} / ${row.temperature_high_c ?? '—'}` : '—'} />
+        <DetailPair label="Precip (mm)"      value={row.precipitation_mm != null ? fmtNum(row.precipitation_mm) : '—'} />
+        <DetailPair label="Wind (m/s)"       value={row.wind_speed_mps != null ? fmtNum(row.wind_speed_mps) : '—'} />
+        <DetailPair label="Contractor"       value={row.contractor_name ?? '—'} />
+        <DetailPair label="Facility"         value={row.facility_name ?? '—'} />
+        <DetailPair label="Owner"            value={row.owner_party_name ?? '—'} />
+        <DetailPair label="Last responder"   value={row.last_responder_party ?? '—'} />
+        <DetailPair label="Requester"        value={row.requester_party ?? '—'} />
+        <DetailPair label="Approver"         value={row.approver_party ?? '—'} />
+        <DetailPair label="HSE incident ref" value={row.hse_incident_ref ?? '—'} />
+        <DetailPair label="Change-order ref" value={row.change_order_ref ?? '—'} />
+        <DetailPair label="Warranty ref"     value={row.warranty_claim_ref ?? '—'} />
+        <DetailPair label="Regulator ref"    value={row.regulator_ref ?? '—'} />
+        <DetailPair label="Corrections"      value={String(row.correction_count ?? 0)} />
+        <DetailPair label="Rejections"       value={String(row.rejection_count ?? 0)} />
+        <DetailPair label="Drafted"          value={fmtDate(row.drafted_at)} />
+        <DetailPair label="Entries open"     value={fmtDate(row.entries_open_at)} />
+        <DetailPair label="Entries closed"   value={fmtDate(row.entries_closed_at)} />
+        <DetailPair label="Submitted"        value={fmtDate(row.submitted_at)} />
+        <DetailPair label="Under review"     value={fmtDate(row.under_review_at)} />
+        <DetailPair label="Approved"         value={fmtDate(row.approved_at)} />
+        <DetailPair label="Distributed"      value={fmtDate(row.distributed_at)} />
+        <DetailPair label="Archived"         value={fmtDate(row.archived_at)} />
+        <DetailPair label="SLA deadline"     value={fmtDate(row.sla_deadline_at)} />
+        <DetailPair label="SLA"              value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+        <DetailPair label="Escalation lvl"   value={String(row.escalation_level)} />
+        <DetailPair label="Reportable"       value={row.is_reportable_flag ? 'Yes' : 'No'} />
+      </div>
+
+      {row.narrative && (
+        <div className="col-span-2 mt-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Narrative</div>
+          <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{row.narrative}</div>
+        </div>
+      )}
+      {row.response_text && (
+        <div className="col-span-2 mt-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Response</div>
+          <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{row.response_text}</div>
+        </div>
+      )}
+      {row.voided_reason && (
+        <div className="col-span-2 mt-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: BAD }}>Voided reason</div>
+          <div className="whitespace-pre-wrap" style={{ color: BAD }}>{row.voided_reason}</div>
+        </div>
+      )}
+      {row.withdrawn_reason && (
+        <div className="col-span-2 mt-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: WARN }}>Withdrawn reason</div>
+          <div className="whitespace-pre-wrap" style={{ color: WARN }}>{row.withdrawn_reason}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function DfrChainTab() {
   const [rows, setRows] = useState<DfrRow[]>([]);
   const [kpis, setKpis] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('open');
-  const [selected, setSelected] = useState<DfrRow | null>(null);
-  const [events, setEvents] = useState<DfrEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -363,15 +576,28 @@ export function DfrChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { dfr: DfrRow; events: DfrEvent[] } }>(`/ipp/dfr/chain/${id}`);
-      if (res.data?.data?.dfr) setSelected(res.data.data.dfr);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/ipp/dfr/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/ipp/dfr/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load DFR history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { dfr: DfrRow; events: ChainEvent[] } }>(`/ipp/dfr/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -388,411 +614,115 @@ export function DfrChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: DfrRow) => {
-    try {
-      let body: Record<string, unknown> = {};
-      if (action === 'open') {
-        const title = window.prompt('DFR title:', row.title ?? '') || '';
-        body = title ? { title } : {};
-      } else if (action === 'close-entries') {
-        const note = window.prompt('Closing note — what was done today (manpower / equipment / progress):') || '';
-        body = note ? { notes: note } : {};
-      } else if (action === 'submit') {
-        const narrative = window.prompt('Narrative — describe the construction day (HSE + work fronts + delays):');
-        if (!narrative) return;
-        body = { narrative };
-      } else if (action === 'start-review') {
-        const reviewer = window.prompt('Reviewer party — defaults to reviewer:', 'reviewer') || 'reviewer';
-        body = { last_responder_party: reviewer };
-      } else if (action === 'return-for-correction') {
-        const reason = window.prompt('Reason for correction:');
-        if (!reason) return;
-        body = { reason_code: 'returned', narrative: reason };
-      } else if (action === 'correct') {
-        const note = window.prompt('What was corrected:');
-        if (!note) return;
-        body = { narrative: note };
-      } else if (action === 'approve') {
-        const reg = window.prompt('Regulator reference (OHSA/REIPPPP) — leave blank if not reportable:') || '';
-        body = reg ? { approver_party: 'reviewer', regulator_ref: reg } : { approver_party: 'reviewer' };
-      } else if (action === 'distribute') {
-        const ref = window.prompt('Distribution reference (high+critical with change_order crosses regulator):') || '';
-        body = ref ? { regulator_ref: ref } : {};
-      } else if (action === 'archive') {
-        const note = window.prompt('Archive note (optional):') || '';
-        body = note ? { notes: note } : {};
-      } else if (action === 'void') {
-        const reason = window.prompt('Void reason — voiding with HSE OR change_order crosses regulator EVERY tier:');
-        if (!reason) return;
-        body = { voided_reason: reason };
-      } else if (action === 'withdraw') {
-        const reason = window.prompt('Withdrawal reason:');
-        if (!reason) return;
-        body = { withdrawn_reason: reason };
-      }
-      await api.post(`/ipp/dfr/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
+  const k = kpis ?? {
+    total: 0, open_count: 0, archived_count: 0, voided_count: 0,
+    withdrawn_count: 0, breached: 0, reportable_total: 0, signature_count: 0,
+    hse_count: 0, change_order_count: 0, warranty_count: 0,
+    avg_quality_index: 0, avg_days_in_court: 0, total_manpower: 0,
+    total_lost_time_hours: 0, total_weather_delay_minutes: 0,
+  };
 
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Daily field report &middot; construction-day record</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-state P6 lifecycle for the construction-day side of an IPP project — drafted → entries open →
-            entries closed → submitted → under review → approved → distributed → archived, with the
-            return-for-correction loop and void / withdraw exception terminals. Beats Procore Daily Log,
-            Aconex Daily Site Diary, Buildertrend, Fieldwire, Raken, PlanGrid Daily Field Report and e-Builder
-            via: tier RE-DERIVED on every transition from priority × workflow class with FLOOR-AT-HIGH for
-            triggers_hse_incident / triggers_change_order / triggers_warranty_claim / contributes_to_evm;
-            URGENT SLA polarity (safety = tightest; construction is hours-money); ball-in-court tracking;
-            authority tiered site_supervisor → project_engineer → project_manager → project_director; LIVE
-            battery decoration (minutes_until_sla, ipp_pm_quality_index 0-130 with photo / weather / safety
-            bonuses, days_in_court, predicted_close_date_live, urgency_band, EVM CV/SV/CPI/SPI). SIGNATURE
-            regulator crossings (OHSA s24 + REIPPPP): submit crosses EVERY tier with HSE; approve EVERY tier
-            with HSE or high+critical change_order; void EVERY tier with HSE OR change_order; distribute
-            high+critical with change_order; sla_breached high+critical with HSE OR change_order.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Daily field report · construction-day record</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          12-state P6 lifecycle for the construction-day side of an IPP project — drafted → entries open →
+          entries closed → submitted → under review → approved → distributed → archived, with the
+          return-for-correction loop and void / withdraw exception terminals. Beats Procore Daily Log,
+          Aconex Daily Site Diary, Buildertrend, Fieldwire, Raken, PlanGrid Daily Field Report and e-Builder
+          via: tier RE-DERIVED on every transition; URGENT SLA polarity; ball-in-court tracking; authority
+          tiered site_supervisor → project_director; LIVE battery decoration; EVM CV/SV/CPI/SPI.
+          SIGNATURE regulator crossings (OHSA s24 + REIPPPP).
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} tone={(kpis?.open_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Archived" value={kpis?.archived_count ?? 0} tone="ok" />
-        <Kpi label="Voided" value={kpis?.voided_count ?? 0} tone={(kpis?.voided_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Signature" value={kpis?.signature_count ?? 0} tone={(kpis?.signature_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="HSE-bearing" value={kpis?.hse_count ?? 0} tone={(kpis?.hse_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Change-order" value={kpis?.change_order_count ?? 0} tone={(kpis?.change_order_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="IPP-PM quality" value={fmtNum(kpis?.avg_quality_index)} />
-        <Kpi label="Manpower (day)" value={kpis?.total_manpower ?? 0} />
-        <Kpi label="Lost-time hrs" value={fmtNum(kpis?.total_lost_time_hours)} tone={(kpis?.total_lost_time_hours ?? 0) > 0 ? 'bad' : 'ok'} />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total" value={k.total} />
+        <KpiTile label="Open" value={k.open_count} tone={k.open_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="Archived" value={k.archived_count} />
+        <KpiTile label="Voided" value={k.voided_count} tone={k.voided_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="SLA breached" value={k.breached} tone={k.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Signature" value={k.signature_count} tone={k.signature_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="HSE-bearing" value={k.hse_count} tone={k.hse_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="Change-order" value={k.change_order_count} tone={k.change_order_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="Reportable" value={k.reportable_total} tone={k.reportable_total > 0 ? 'warn' : undefined} />
+        <KpiTile label="IPP-PM quality" value={fmtNum(k.avg_quality_index)} />
+        <KpiTile label="Manpower (day)" value={k.total_manpower} />
+        <KpiTile label="Lost-time hrs" value={fmtNum(k.total_lost_time_hours)} tone={k.total_lost_time_hours > 0 ? 'bad' : undefined} />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{ background: filter === f.key ? ACC : BG2, color: filter === f.key ? '#fff' : TX2, border: `1px solid ${filter === f.key ? ACC : BORDER}` }}>
             {f.label}
           </button>
         ))}
       </div>
 
-      {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
+      {err && <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>{err}</div>}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">No.</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Project / report date</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Class</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Ball in court</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Urg</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Quality</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.current_tier];
-                const ut = URGENCY_TONE[r.urgency_band] ?? URGENCY_TONE.green;
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.dfr_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
-                      {r.signature_class_flag && <span className="ml-1 text-[#a06200]" title="Signature class (HSE or change-order)">▲</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[260px] truncate" title={`${r.project_name ?? ''} · ${r.report_date}`}>
-                      {r.project_name ?? '—'}
-                      <span className="text-[#4a5568]"> · {r.report_date}</span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{WORKFLOW_LABEL[r.workflow_class]}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.ball_in_court_party_live ?? '—'}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[10px] font-medium" style={{ background: ut.bg, color: ut.fg }}>
-                        {ut.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      <span className={(r.ipp_pm_quality_index_live ?? 0) >= 100 ? 'text-[#1f6b3a]' : 'text-[#9b1f1f]'}>
-                        {fmtNum(r.ipp_pm_quality_index_live, 0)}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-3 py-6 text-center text-[#4a5568]">No daily field reports match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.dfr_number}${row.title ? ` · ${row.title}` : ''}`}
+              meta={`${WORKFLOW_LABEL[row.workflow_class]} · ${row.project_name ?? '—'} · ${row.report_date}${row.current_tier !== 'standard' ? ` · ${row.current_tier}` : ''}`}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>No daily field reports match.</div>
+          )}
         </div>
       )}
-
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
-      )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: DfrRow;
-  events: DfrEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: DfrRow) => void;
-}) {
-  const primary = ACTION_FOR_STATE[row.chain_status];
-  const secondary = SECONDARY_ACTIONS[row.chain_status];
-  const authority = AUTHORITY_LABEL[row.authority_required_live ?? row.authority_required ?? ''] ?? (row.authority_required ?? '—');
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[820px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.dfr_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.project_name ?? '—'} · {row.report_date}{row.shift ? ` · ${row.shift}` : ''}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {WORKFLOW_LABEL[row.workflow_class]}
-                {row.contractor_name ? ` · ${row.contractor_name}` : ''}
-                {row.site_location ? ` · ${row.site_location}` : ''}
-              </div>
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Live IPP-PM battery</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
-              <Metric label="Quality index" value={fmtNum(row.ipp_pm_quality_index_live, 0)} bad={(row.ipp_pm_quality_index_live ?? 0) < 100} hint="0-130 (photo/weather/safety bonuses applied)" />
-              <Metric label="Days open" value={String(row.days_open_live ?? 0)} />
-              <Metric label="Days in court" value={String(row.days_in_court_live ?? 0)} bad={(row.days_in_court_live ?? 0) > 2} hint="Aging in current state" />
-              <Metric label="Ball in court" value={row.ball_in_court_party_live ?? '—'} hint="Auto-derived from current state" />
-              <Metric label="Tier (live)" value={TIER_TONE[row.tier_live].label} bad={row.tier_live === 'critical' || row.tier_live === 'high'} hint="Re-derived every transition" />
-              <Metric label="Urgency band" value={URGENCY_TONE[row.urgency_band]?.label ?? row.urgency_band} bad={row.urgency_band === 'red' || row.urgency_band === 'amber'} />
-              <Metric label="Predicted close" value={fmtDate(row.predicted_close_date_live)} hint="Tier-derived ETA" />
-              <Metric label="Authority" value={authority} hint="Site supervisor → project engineer → project manager → project director" />
-            </div>
-          </div>
-
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Coverage flags (FLOOR-AT-HIGH)</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
-              <Metric label="HSE incident" value={row.triggers_hse_incident ? 'Yes' : 'No'} bad={!!row.triggers_hse_incident} hint="OHSA s24 reportable" />
-              <Metric label="Change order" value={row.triggers_change_order ? 'Yes' : 'No'} bad={!!row.triggers_change_order} hint="REIPPPP baseline" />
-              <Metric label="Warranty claim" value={row.triggers_warranty_claim ? 'Yes' : 'No'} bad={!!row.triggers_warranty_claim} />
-              <Metric label="Contributes EVM" value={row.contributes_to_evm ? 'Yes' : 'No'} bad={!!row.contributes_to_evm} />
-              <Metric label="Manpower" value={String(row.manpower_count ?? 0)} />
-              <Metric label="Equipment" value={String(row.equipment_count ?? 0)} />
-              <Metric label="Photos" value={String(row.photo_count ?? 0)} hint="5+ photos = +10 quality" />
-              <Metric label="Entries" value={String(row.entries_count ?? 0)} />
-              <Metric label="Weather log" value={row.weather_log_present ? 'Yes' : 'No'} hint="+5 quality" />
-              <Metric label="Safety log" value={row.safety_log_present ? 'Yes' : 'No'} hint="+5 quality" />
-              <Metric label="Lost time" value={row.lost_time_hours != null ? `${fmtNum(row.lost_time_hours)}h` : '—'} bad={(row.lost_time_hours ?? 0) > 0} />
-              <Metric label="Weather delay" value={row.weather_delay_minutes != null ? `${row.weather_delay_minutes}m` : '—'} bad={(row.weather_delay_minutes ?? 0) > 0} />
-            </div>
-          </div>
-
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">EVM (PMI convention)</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
-              <Metric label="PV (planned)" value={fmtZar(row.evm_pv_zar)} />
-              <Metric label="EV (earned)"  value={fmtZar(row.evm_ev_zar)} />
-              <Metric label="AC (actual)"  value={fmtZar(row.evm_ac_zar)} />
-              <Metric label="CV (EV-AC)"   value={fmtZar(row.evm_cv_zar_live)} bad={(row.evm_cv_zar_live ?? 0) < 0} hint="Cost variance" />
-              <Metric label="SV (EV-PV)"   value={fmtZar(row.evm_sv_zar_live)} bad={(row.evm_sv_zar_live ?? 0) < 0} hint="Schedule variance" />
-              <Metric label="CPI"          value={fmtNum(row.evm_cpi_live, 2)} bad={(row.evm_cpi_live ?? 1) < 1} hint="Cost performance index (>1 good)" />
-              <Metric label="SPI"          value={fmtNum(row.evm_spi_live, 2)} bad={(row.evm_spi_live ?? 1) < 1} hint="Schedule performance index (>1 good)" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"            value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Workflow class"   value={WORKFLOW_LABEL[row.workflow_class]} />
-            <Pair label="Priority"         value={row.priority_class} />
-            <Pair label="Report date"      value={row.report_date} />
-            <Pair label="Shift"            value={row.shift ?? '—'} />
-            <Pair label="Site location"    value={row.site_location ?? '—'} />
-            <Pair label="Weather"          value={row.weather_summary ?? '—'} />
-            <Pair label="Temp range (°C)"  value={(row.temperature_low_c != null || row.temperature_high_c != null) ? `${row.temperature_low_c ?? '—'} / ${row.temperature_high_c ?? '—'}` : '—'} />
-            <Pair label="Precip (mm)"      value={row.precipitation_mm != null ? fmtNum(row.precipitation_mm) : '—'} />
-            <Pair label="Wind (m/s)"       value={row.wind_speed_mps != null ? fmtNum(row.wind_speed_mps) : '—'} />
-            <Pair label="Contractor"       value={row.contractor_name ?? '—'} />
-            <Pair label="Facility"         value={row.facility_name ?? '—'} />
-            <Pair label="Owner"            value={row.owner_party_name ?? '—'} />
-            <Pair label="Last responder"   value={row.last_responder_party ?? '—'} />
-            <Pair label="Requester"        value={row.requester_party ?? '—'} />
-            <Pair label="Approver"         value={row.approver_party ?? '—'} />
-            <Pair label="HSE incident ref" value={row.hse_incident_ref ?? '—'} />
-            <Pair label="Change-order ref" value={row.change_order_ref ?? '—'} />
-            <Pair label="Warranty ref"     value={row.warranty_claim_ref ?? '—'} />
-            <Pair label="Regulator ref"    value={row.regulator_ref ?? '—'} />
-            <Pair label="Corrections"      value={String(row.correction_count ?? 0)} />
-            <Pair label="Rejections"       value={String(row.rejection_count ?? 0)} />
-            <Pair label="Drafted"          value={fmtDate(row.drafted_at)} />
-            <Pair label="Entries open"     value={fmtDate(row.entries_open_at)} />
-            <Pair label="Entries closed"   value={fmtDate(row.entries_closed_at)} />
-            <Pair label="Submitted"        value={fmtDate(row.submitted_at)} />
-            <Pair label="Under review"     value={fmtDate(row.under_review_at)} />
-            <Pair label="Approved"         value={fmtDate(row.approved_at)} />
-            <Pair label="Distributed"      value={fmtDate(row.distributed_at)} />
-            <Pair label="Archived"         value={fmtDate(row.archived_at)} />
-            <Pair label="SLA deadline"     value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA"              value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"   value={String(row.escalation_level)} />
-            <Pair label="Reportable"       value={row.is_reportable_flag ? 'Yes' : 'No'} />
-          </div>
-          {row.narrative && <BasisBlock label="Narrative" tone="#1a3a5c" text={row.narrative} />}
-          {row.response_text && <BasisBlock label="Response" tone="#1f6b3a" text={row.response_text} />}
-          {row.voided_reason && <BasisBlock label="Voided reason" tone="#9b1f1f" text={row.voided_reason} />}
-          {row.withdrawn_reason && <BasisBlock label="Withdrawn reason" tone="#8a4a00" text={row.withdrawn_reason} />}
-        </section>
-
-        {(primary || secondary.length > 0) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {primary && (
-                <button type="button"
-                  onClick={() => onAct(primary, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[primary]}
-                </button>
-              )}
-              {secondary.map((a) => {
-                const danger = DESTRUCTIVE.includes(a);
-                return (
-                  <button type="button"
-                    key={a}
-                    onClick={() => onAct(a, row)}
-                    className={
-                      danger
-                        ? 'rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50'
-                        : 'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#557] hover:bg-[#f3f5f9]'
-                    }
-                  >
-                    {ACTION_LABEL[a]}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function Metric({ label, value, bad, hint }: { label: string; value: string; bad?: boolean; hint?: string }) {
-  return (
-    <div title={hint}>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className={`text-[13px] font-semibold tabular-nums ${bad ? 'text-[#9b1f1f]' : 'text-[#0c2a4d]'}`}>{value}</div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1 }}>{value}</div>
     </div>
   );
 }
+
+function DetailMetric({ label, value, bad, hint }: { label: string; value: string; bad?: boolean; hint?: string }) {
+  return (
+    <div title={hint}>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[12px] font-semibold tabular-nums" style={{ color: bad ? BAD : TX1 }}>{value}</div>
+    </div>
+  );
+}
+
+// Suppress unused import warning — GOOD token is part of the design system
+void GOOD;
+
+export default DfrChainTab;

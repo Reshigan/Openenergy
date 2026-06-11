@@ -33,6 +33,7 @@ type ReserveTier =
   | 'supplemental_reserve' | 'emergency_reserve';
 
 interface ActivationRow {
+  [key: string]: unknown;
   id: string;
   activation_number: string;
   source_event: string | null;
@@ -136,8 +137,8 @@ interface KpiSummary {
 }
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  activation_issued:  { bg: '#dbecfb', fg: '#1a3a5c', label: 'Activation issued' },
-  acknowledged:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Acknowledged' },
+  activation_issued:  { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Activation issued' },
+  acknowledged:       { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Acknowledged' },
   ramping:            { bg: '#fff4d6', fg: '#a06200', label: 'Ramping' },
   sustaining:         { bg: '#fff4d6', fg: '#a06200', label: 'Sustaining' },
   released:           { bg: '#e3e7ec', fg: '#557',    label: 'Released' },
@@ -466,12 +467,12 @@ export function ReserveActivationChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Activation #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Provider / service</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Instr / deliv</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Activation #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Provider / service</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Instr / deliv</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -484,7 +485,7 @@ export function ReserveActivationChainTab() {
                     onClick={() => loadEvents(r.id)}
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 font-mono text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.activation_number}
                       {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
                     </td>
@@ -499,7 +500,7 @@ export function ReserveActivationChainTab() {
                         {ct.label}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.instructed_mw?.toLocaleString('en-ZA') ?? '—'}
                       <span className="text-[10px] text-[#4a5568]"> / {r.delivered_mw != null ? r.delivered_mw.toLocaleString('en-ZA') : '—'}</span>
                     </td>
@@ -629,10 +630,10 @@ function Drawer({
             <Pair label="Reportable"           value={row.is_reportable ? 'Yes' : 'No'} />
           </div>
           {row.instruction_basis && (
-            <BasisBlock label="Instruction basis" tone="#1a3a5c" text={row.instruction_basis} />
+            <BasisBlock label="Instruction basis" tone="oklch(0.46 0.16 55)" text={row.instruction_basis} />
           )}
           {row.response_basis && (
-            <BasisBlock label="Response basis" tone="#1a3a5c" text={row.response_basis} />
+            <BasisBlock label="Response basis" tone="oklch(0.46 0.16 55)" text={row.response_basis} />
           )}
           {row.performance_basis && (
             <BasisBlock label="Performance basis" tone="#a06200" text={row.performance_basis} />
@@ -708,7 +709,7 @@ function Drawer({
                       <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
                     )}
                   </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

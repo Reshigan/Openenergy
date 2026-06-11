@@ -30,7 +30,23 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
 
+// ─── Design tokens ────────────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
+
+// ─── Types ────────────────────────────────────────────────────────────
 type ChainStatus =
   | 'monitoring' | 'non_conformance_raised' | 'under_assessment'
   | 'corrective_action_required' | 'cap_submitted' | 'cap_approved'
@@ -47,6 +63,7 @@ type BreachClass =
 type NetworkArea = 'transmission' | 'distribution';
 
 interface ComplianceRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   source_event: string | null;
@@ -115,19 +132,6 @@ interface ComplianceRow {
   breach_crosses_regulator?: boolean;
 }
 
-interface ComplianceEvent {
-  id: string;
-  compliance_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiSummary {
   total: number;
   monitoring_count: number;
@@ -142,40 +146,26 @@ interface KpiSummary {
   total_capacity_mw: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  monitoring:                 { bg: '#e3e7ec', fg: '#557',    label: 'Monitoring' },
-  non_conformance_raised:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Non-conformance raised' },
-  under_assessment:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'Under assessment' },
-  corrective_action_required: { bg: '#fff4d6', fg: '#a06200', label: 'Corrective action required' },
-  cap_submitted:              { bg: '#fff4d6', fg: '#a06200', label: 'CAP submitted' },
-  cap_approved:               { bg: '#ffe4b5', fg: '#8a4a00', label: 'CAP approved' },
-  remediation_in_progress:    { bg: '#fff4d6', fg: '#a06200', label: 'Remediation in progress' },
-  compliance_retest:          { bg: '#ffe4b5', fg: '#8a4a00', label: 'Compliance retest' },
-  operating_restriction:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Operating restriction' },
-  compliant_closed:           { bg: '#d4edda', fg: '#155724', label: 'Compliant — closed' },
-  disconnection_issued:       { bg: '#f8d0d0', fg: '#6b1f1f', label: 'Disconnection issued' },
-  withdrawn:                  { bg: '#f3e0e0', fg: '#6b1f1f', label: 'Withdrawn' },
-};
+// ─── State arrays ─────────────────────────────────────────────────────
+const ALL_STATES = [
+  'monitoring',
+  'non_conformance_raised',
+  'under_assessment',
+  'corrective_action_required',
+  'cap_submitted',
+  'cap_approved',
+  'remediation_in_progress',
+  'compliance_retest',
+  'compliant_closed',
+] as const;
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor (<1MW)' },
-  moderate: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Moderate (<10MW)' },
-  material: { bg: '#fff4d6', fg: '#a06200', label: 'Material (<50MW)' },
-  serious:  { bg: '#ffe4b5', fg: '#8a4a00', label: 'Serious (<200MW)' },
-  critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical (≥200MW)' },
-};
+const BRANCH_STATES = [
+  'operating_restriction',
+  'disconnection_issued',
+  'withdrawn',
+] as const;
 
-const BREACH_LABEL: Record<BreachClass, string> = {
-  power_quality:           'Power quality',
-  telemetry:               'Telemetry',
-  metering:                'Metering',
-  reactive_power:          'Reactive power',
-  voltage_regulation:      'Voltage regulation',
-  frequency_response:      'Frequency response',
-  fault_ride_through:      'Fault ride-through',
-  protection_coordination: 'Protection coordination',
-};
-
+// ─── Filters ──────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',                     label: 'Active' },
   { key: 'all',                        label: 'All' },
@@ -199,56 +189,26 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'withdrawn',                  label: 'Withdrawn' },
 ];
 
-type ActionKind =
-  | 'raise-non-conformance' | 'begin-assessment' | 'require-corrective-action'
-  | 'submit-cap' | 'approve-cap' | 'reject-cap' | 'begin-remediation'
-  | 'initiate-retest' | 'confirm-compliance' | 'impose-restriction'
-  | 'escalate-disconnection' | 'withdraw';
-
-// Primary forward action per state.
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  monitoring:                 'raise-non-conformance',
-  non_conformance_raised:     'begin-assessment',
-  under_assessment:           'require-corrective-action',
-  corrective_action_required: 'submit-cap',
-  cap_submitted:              'approve-cap',
-  cap_approved:               'begin-remediation',
-  remediation_in_progress:    'initiate-retest',
-  compliance_retest:          'confirm-compliance',
-  operating_restriction:      'begin-remediation',
-  compliant_closed:           null,
-  disconnection_issued:       null,
-  withdrawn:                  null,
+// ─── Helpers ──────────────────────────────────────────────────────────
+const BREACH_LABEL: Record<BreachClass, string> = {
+  power_quality:           'Power quality',
+  telemetry:               'Telemetry',
+  metering:                'Metering',
+  reactive_power:          'Reactive power',
+  voltage_regulation:      'Voltage regulation',
+  frequency_response:      'Frequency response',
+  fault_ride_through:      'Fault ride-through',
+  protection_coordination: 'Protection coordination',
 };
 
-// Party annotation per action. The SO/TSO (operator) drives the machinery; the
-// connected FACILITY submits the CAP and performs the remediation.
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'raise-non-conformance':    'Raise non-conformance (operator)',
-  'begin-assessment':         'Begin assessment (operator)',
-  'require-corrective-action':'Require corrective action (operator)',
-  'submit-cap':               'Submit CAP (facility)',
-  'approve-cap':              'Approve CAP (operator)',
-  'reject-cap':               'Reject CAP (operator)',
-  'begin-remediation':        'Begin remediation (facility)',
-  'initiate-retest':          'Initiate retest (operator)',
-  'confirm-compliance':       'Confirm compliance (operator)',
-  'impose-restriction':       'Impose operating restriction (operator)',
-  'escalate-disconnection':   'Escalate to disconnection (operator)',
-  'withdraw':                 'Withdraw (operator)',
-};
-
-function fmtMinutes(m: number | null | undefined): string {
-  if (m === null || m === undefined) return '—';
-  if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
-  if (Math.abs(m) >= 60) return `${Math.round(m / 60)}h`;
-  return `${m}m`;
-}
+const TERMINAL_STATES: ChainStatus[] = ['compliant_closed', 'disconnection_issued', 'withdrawn'];
+const RESTRICTABLE_STATES: ChainStatus[] = ['under_assessment', 'remediation_in_progress', 'compliance_retest'];
+const DISCONNECTABLE_STATES: ChainStatus[] = ['corrective_action_required', 'operating_restriction'];
+const WITHDRAWABLE_STATES: ChainStatus[] = ['non_conformance_raised', 'under_assessment'];
 
 function fmtDate(s: string | null): string {
   if (!s) return '—';
-  const d = new Date(s);
-  return d.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+  return new Date(s).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function fmtMw(n: number | null | undefined): string {
@@ -256,19 +216,267 @@ function fmtMw(n: number | null | undefined): string {
   return `${n.toLocaleString('en-ZA')} MW`;
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['compliant_closed', 'disconnection_issued', 'withdrawn'];
-const RESTRICTABLE_STATES: ChainStatus[] = ['under_assessment', 'remediation_in_progress', 'compliance_retest'];
-const DISCONNECTABLE_STATES: ChainStatus[] = ['corrective_action_required', 'operating_restriction'];
-const WITHDRAWABLE_STATES: ChainStatus[] = ['non_conformance_raised', 'under_assessment'];
+// ─── Actions builder ──────────────────────────────────────────────────
+function getActions(row: ComplianceRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
 
+  if (s === 'monitoring') {
+    actions.push({
+      key: 'raise-non-conformance',
+      label: 'Raise non-conformance (operator)',
+      tone: 'primary',
+      fields: [
+        { key: 'raise_basis',     label: 'Raise basis — the monitored parameter that drifted out of code limit', type: 'textarea', required: true },
+        { key: 'nc_ref',          label: 'Non-conformance reference (e.g. NC-2026-0011)',                        type: 'text',     required: false },
+        { key: 'parameter',       label: 'Monitored parameter',                                                  type: 'text',     required: false },
+        { key: 'measured_value',  label: 'Measured value',                                                       type: 'text',     required: false },
+        { key: 'limit_value',     label: 'Code limit value',                                                     type: 'text',     required: false },
+      ],
+    });
+  }
+
+  if (s === 'non_conformance_raised') {
+    actions.push({
+      key: 'begin-assessment',
+      label: 'Begin assessment (operator)',
+      tone: 'primary',
+      fields: [
+        { key: 'assessment_basis', label: 'Assessment basis — the SO technical assessment of the deviation', type: 'textarea', required: true },
+        { key: 'assessment_ref',   label: 'Assessment reference (e.g. ASMT-2026-0011)',                     type: 'text',     required: false },
+      ],
+    });
+  }
+
+  if (s === 'under_assessment') {
+    actions.push({
+      key: 'require-corrective-action',
+      label: 'Require corrective action (operator)',
+      tone: 'primary',
+      fields: [
+        { key: 'corrective_action_basis', label: 'Corrective-action basis — what the facility must remediate', type: 'textarea', required: true },
+        { key: 'reason_code',             label: 'Reason code (e.g. setting_misconfig / equipment_fault)',     type: 'text',     required: false },
+      ],
+    });
+  }
+
+  if (s === 'corrective_action_required') {
+    actions.push({
+      key: 'submit-cap',
+      label: 'Submit CAP (facility)',
+      tone: 'primary',
+      fields: [
+        { key: 'cap_basis', label: 'CAP basis — the corrective-action plan the facility proposes', type: 'textarea', required: true },
+        { key: 'cap_ref',   label: 'CAP reference (e.g. CAP-2026-0011)',                          type: 'text',     required: false },
+      ],
+    });
+  }
+
+  if (s === 'cap_submitted') {
+    actions.push({
+      key: 'approve-cap',
+      label: 'Approve CAP (operator)',
+      tone: 'primary',
+      fields: [
+        { key: 'approval_basis', label: 'Approval basis — SO acceptance of the corrective-action plan', type: 'textarea', required: true },
+      ],
+    });
+    actions.push({
+      key: 'reject-cap',
+      label: 'Reject CAP (operator)',
+      tone: 'warn',
+      fields: [
+        { key: 'corrective_action_basis', label: 'Rejection basis — why the CAP is inadequate (facility must resubmit)', type: 'textarea', required: true },
+        { key: 'reason_code',             label: 'Reason code (e.g. insufficient_scope / unrealistic_timeline)',         type: 'text',     required: false },
+      ],
+    });
+  }
+
+  if (s === 'cap_approved' || s === 'operating_restriction') {
+    actions.push({
+      key: 'begin-remediation',
+      label: 'Begin remediation (facility)',
+      tone: 'primary',
+      fields: [
+        { key: 'remediation_basis', label: 'Remediation basis — the facility starts executing the approved plan', type: 'textarea', required: true },
+      ],
+    });
+  }
+
+  if (s === 'remediation_in_progress') {
+    actions.push({
+      key: 'initiate-retest',
+      label: 'Initiate retest (operator)',
+      tone: 'primary',
+      fields: [
+        { key: 'retest_basis', label: 'Retest basis — the conformance re-test against the code parameter', type: 'textarea', required: true },
+        { key: 'retest_ref',   label: 'Retest reference (e.g. RTST-2026-0011)',                           type: 'text',     required: false },
+      ],
+    });
+  }
+
+  if (s === 'compliance_retest') {
+    actions.push({
+      key: 'confirm-compliance',
+      label: 'Confirm compliance (operator)',
+      tone: 'primary',
+      fields: [
+        { key: 'retest_basis',       label: 'Confirmation basis — retest passed; conformance restored (close-out)', type: 'textarea', required: false },
+        { key: 'compliance_summary', label: 'Compliance summary (one line for the audit record)',                   type: 'text',     required: false },
+      ],
+    });
+  }
+
+  // Branch actions — available from specific states
+  if (RESTRICTABLE_STATES.includes(s)) {
+    actions.push({
+      key: 'impose-restriction',
+      label: 'Impose operating restriction (operator)',
+      tone: 'warn',
+      fields: [
+        { key: 'restriction_basis', label: 'Restriction basis — why the plant output is restricted pending remediation', type: 'textarea', required: true },
+        { key: 'restriction_ref',   label: 'Restriction reference (e.g. RES-2026-0011)',                                type: 'text',     required: false },
+        { key: 'reason_code',       label: 'Reason code (e.g. protection_risk / stability_risk)',                       type: 'text',     required: false },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (DISCONNECTABLE_STATES.includes(s)) {
+    actions.push({
+      key: 'escalate-disconnection',
+      label: 'Escalate to disconnection (operator)',
+      tone: 'danger',
+      fields: [
+        { key: 'disconnection_basis', label: 'Disconnection basis — why the connection is being disconnected',        type: 'textarea', required: true },
+        { key: 'disconnection_ref',   label: 'Disconnection reference (e.g. DISC-2026-0011)',                        type: 'text',     required: false },
+        { key: 'reason_code',         label: 'Reason code (e.g. stability_risk / observability_loss / no_cap)',      type: 'text',     required: false },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (WITHDRAWABLE_STATES.includes(s)) {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw (operator)',
+      tone: 'ghost',
+      fields: [
+        { key: 'reason_code',        label: 'Withdrawal reason — false positive / resolved on assessment', type: 'textarea', required: true },
+        { key: 'compliance_summary', label: 'Compliance summary (one line for the audit record)',          type: 'text',     required: false },
+      ],
+    });
+  }
+
+  return actions;
+}
+
+// ─── Detail renderer ──────────────────────────────────────────────────
+function renderDetail(row: ComplianceRow): React.ReactNode {
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
+        <DetailPair label="Breach class"      value={BREACH_LABEL[row.breach_class]} />
+        <DetailPair label="Severity tier"     value={row.severity_tier} />
+        <DetailPair label="Capacity"          value={fmtMw(row.capacity_mw)} />
+        <DetailPair label="Connection point"  value={row.connection_point ?? '—'} />
+        <DetailPair label="Network area"      value={row.network_area ?? '—'} />
+        <DetailPair label="Technology"        value={row.technology ?? '—'} />
+        <DetailPair label="Licence ref"       value={row.licence_ref ?? '—'} />
+        <DetailPair label="Code reference"    value={row.code_reference ?? '—'} />
+        <DetailPair label="Parameter"         value={row.parameter ?? '—'} />
+        <DetailPair label="Measured"          value={row.measured_value != null ? String(row.measured_value) : '—'} />
+        <DetailPair label="Limit"             value={row.limit_value != null ? String(row.limit_value) : '—'} />
+        <DetailPair label="NC ref"            value={row.nc_ref ?? '—'} />
+        <DetailPair label="Assessment ref"    value={row.assessment_ref ?? '—'} />
+        <DetailPair label="CAP ref"           value={row.cap_ref ?? '—'} />
+        <DetailPair label="Retest ref"        value={row.retest_ref ?? '—'} />
+        <DetailPair label="Restriction ref"   value={row.restriction_ref ?? '—'} />
+        <DetailPair label="Disconnection ref" value={row.disconnection_ref ?? '—'} />
+        <DetailPair label="Reason code"       value={row.reason_code ?? '—'} />
+        <DetailPair label="Operator"          value={row.operator_party_name ?? 'System Operator'} />
+        <DetailPair label="Facility party"    value={row.facility_party_name ?? row.facility_name} />
+        <DetailPair label="CAP round"         value={String(row.remediation_round)} />
+        <DetailPair label="Escalation lvl"    value={String(row.escalation_level)} />
+        <DetailPair label="Reportable"        value={row.is_reportable ? 'Yes' : 'No'} />
+        <DetailPair label="Monitoring since"  value={fmtDate(row.monitoring_started_at)} />
+        <DetailPair label="NC raised"         value={fmtDate(row.non_conformance_raised_at)} />
+        <DetailPair label="Assessment"        value={fmtDate(row.under_assessment_at)} />
+        <DetailPair label="CAP required"      value={fmtDate(row.corrective_action_required_at)} />
+        <DetailPair label="CAP submitted"     value={fmtDate(row.cap_submitted_at)} />
+        <DetailPair label="CAP approved"      value={fmtDate(row.cap_approved_at)} />
+        <DetailPair label="Remediation"       value={fmtDate(row.remediation_started_at)} />
+        <DetailPair label="Retest"            value={fmtDate(row.compliance_retest_at)} />
+        <DetailPair label="Restriction"       value={fmtDate(row.operating_restriction_at)} />
+        <DetailPair label="Closed"            value={fmtDate(row.compliant_closed_at)} />
+        <DetailPair label="Disconnected"      value={fmtDate(row.disconnection_issued_at)} />
+        <DetailPair label="SLA deadline"      value={fmtDate(row.sla_deadline_at)} />
+        {row.source_wave && (
+          <DetailPair label="Source wave" value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}`} />
+        )}
+      </div>
+      {row.compliance_summary && (
+        <div style={{ marginTop: 10 }}>
+          <DetailPair label="Compliance summary" value={row.compliance_summary} />
+        </div>
+      )}
+      {row.raise_basis && (
+        <div style={{ marginTop: 10 }}>
+          <DetailPair label="Raise basis" value={row.raise_basis} />
+        </div>
+      )}
+      {row.assessment_basis && (
+        <div style={{ marginTop: 10 }}>
+          <DetailPair label="Assessment basis" value={row.assessment_basis} />
+        </div>
+      )}
+      {row.corrective_action_basis && (
+        <div style={{ marginTop: 10 }}>
+          <DetailPair label="Corrective-action basis" value={row.corrective_action_basis} />
+        </div>
+      )}
+      {row.cap_basis && (
+        <div style={{ marginTop: 10 }}>
+          <DetailPair label="CAP basis (facility)" value={row.cap_basis} />
+        </div>
+      )}
+      {row.approval_basis && (
+        <div style={{ marginTop: 10 }}>
+          <DetailPair label="Approval basis" value={row.approval_basis} />
+        </div>
+      )}
+      {row.remediation_basis && (
+        <div style={{ marginTop: 10 }}>
+          <DetailPair label="Remediation basis (facility)" value={row.remediation_basis} />
+        </div>
+      )}
+      {row.retest_basis && (
+        <div style={{ marginTop: 10 }}>
+          <DetailPair label="Retest basis" value={row.retest_basis} />
+        </div>
+      )}
+      {row.restriction_basis && (
+        <div style={{ marginTop: 10 }}>
+          <DetailPair label="Restriction basis" value={row.restriction_basis} />
+        </div>
+      )}
+      {row.disconnection_basis && (
+        <div style={{ marginTop: 10 }}>
+          <DetailPair label="Disconnection basis" value={row.disconnection_basis} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Component ────────────────────────────────────────────────────────
 export function GridCodeComplianceChainTab() {
-  const [rows, setRows] = useState<ComplianceRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [rows, setRows]     = useState<ComplianceRow[]>([]);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr]       = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<ComplianceRow | null>(null);
-  const [events, setEvents] = useState<ComplianceEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -278,7 +486,7 @@ export function GridCodeComplianceChainTab() {
       setRows(res.data?.data?.items || []);
       const d = res.data?.data;
       if (d) {
-        setKpis({
+        setSummary({
           total: d.total, monitoring_count: d.monitoring_count, open_count: d.open_count,
           restricted_count: d.restricted_count, disconnected_count: d.disconnected_count,
           closed_count: d.closed_count, withdrawn_count: d.withdrawn_count,
@@ -295,17 +503,22 @@ export function GridCodeComplianceChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
+    await api.post(`/grid-code-compliance/chain/${rowId}/${key}`, values);
+    await load();
+  }, [load]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
     try {
-      const res = await api.get<{ data: { case: ComplianceRow; events: ComplianceEvent[] } }>(
+      const res = await api.get<{ data: { case: ComplianceRow; events: ChainEvent[] } }>(
         `/grid-code-compliance/chain/${id}`
       );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load compliance history');
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events || [] }));
+    } catch {
+      // non-fatal — card still expands, timeline stays empty
     }
-  }, []);
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -313,442 +526,140 @@ export function GridCodeComplianceChainTab() {
       if (filter === 'active')     return !TERMINAL_STATES.includes(r.chain_status);
       if (filter === 'breached')   return r.sla_breached;
       if (filter === 'reportable') return r.is_reportable;
-      if (filter === 'minor' || filter === 'moderate' || filter === 'material' || filter === 'serious' || filter === 'critical') {
+      if (['minor', 'moderate', 'material', 'serious', 'critical'].includes(filter)) {
         return r.severity_tier === filter;
       }
       return r.chain_status === filter;
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: ComplianceRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'raise-non-conformance') {
-        const basis = window.prompt('Raise basis — the monitored parameter that drifted out of code limit:');
-        if (!basis) return;
-        const ref = window.prompt('Non-conformance reference (e.g. NC-2026-0011):') || '';
-        const param = window.prompt('Monitored parameter:', row.parameter || '') || '';
-        const measured = window.prompt('Measured value:', String(row.measured_value ?? ''));
-        const limit = window.prompt('Code limit value:', String(row.limit_value ?? ''));
-        body = { raise_basis: basis };
-        if (ref) body.nc_ref = ref;
-        if (param) body.parameter = param;
-        if (measured && !Number.isNaN(Number(measured))) body.measured_value = Number(measured);
-        if (limit && !Number.isNaN(Number(limit))) body.limit_value = Number(limit);
-      } else if (action === 'begin-assessment') {
-        const basis = window.prompt('Assessment basis — the SO technical assessment of the deviation:');
-        if (!basis) return;
-        const ref = window.prompt('Assessment reference (e.g. ASMT-2026-0011):') || '';
-        body = { assessment_basis: basis };
-        if (ref) body.assessment_ref = ref;
-      } else if (action === 'require-corrective-action') {
-        const basis = window.prompt('Corrective-action basis — what the facility must remediate:');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. setting_misconfig / equipment_fault):') || '';
-        body = { corrective_action_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'submit-cap') {
-        const basis = window.prompt('CAP basis — the corrective-action plan the facility proposes:');
-        if (!basis) return;
-        const ref = window.prompt('CAP reference (e.g. CAP-2026-0011):') || '';
-        body = { cap_basis: basis };
-        if (ref) body.cap_ref = ref;
-      } else if (action === 'approve-cap') {
-        const basis = window.prompt('Approval basis — SO acceptance of the corrective-action plan:');
-        if (!basis) return;
-        body = { approval_basis: basis };
-      } else if (action === 'reject-cap') {
-        const basis = window.prompt('Rejection basis — why the CAP is inadequate (facility must resubmit):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. insufficient_scope / unrealistic_timeline):') || '';
-        body = { corrective_action_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'begin-remediation') {
-        const basis = window.prompt('Remediation basis — the facility starts executing the approved plan:');
-        if (!basis) return;
-        body = { remediation_basis: basis };
-      } else if (action === 'initiate-retest') {
-        const basis = window.prompt('Retest basis — the conformance re-test against the code parameter:');
-        if (!basis) return;
-        const ref = window.prompt('Retest reference (e.g. RTST-2026-0011):') || '';
-        body = { retest_basis: basis };
-        if (ref) body.retest_ref = ref;
-      } else if (action === 'confirm-compliance') {
-        const basis = window.prompt('Confirmation basis — retest passed; conformance restored (close-out):') || '';
-        const summary = window.prompt('Compliance summary (one line for the audit record):') || '';
-        body = {};
-        if (basis) body.retest_basis = basis;
-        if (summary) body.compliance_summary = summary;
-      } else if (action === 'impose-restriction') {
-        const basis = window.prompt('Restriction basis — why the plant output is restricted pending remediation:');
-        if (!basis) return;
-        const ref = window.prompt('Restriction reference (e.g. RES-2026-0011):') || '';
-        const reason = window.prompt('Reason code (e.g. protection_risk / stability_risk):') || '';
-        body = { restriction_basis: basis };
-        if (ref) body.restriction_ref = ref;
-        if (reason) body.reason_code = reason;
-      } else if (action === 'escalate-disconnection') {
-        const basis = window.prompt('Disconnection basis — why the connection is being disconnected:');
-        if (!basis) return;
-        const ref = window.prompt('Disconnection reference (e.g. DISC-2026-0011):') || '';
-        const reason = window.prompt('Reason code (e.g. stability_risk / observability_loss / no_cap):') || '';
-        body = { disconnection_basis: basis };
-        if (ref) body.disconnection_ref = ref;
-        if (reason) body.reason_code = reason;
-      } else if (action === 'withdraw') {
-        const reason = window.prompt('Withdrawal reason — false positive / resolved on assessment:');
-        if (!reason) return;
-        const summary = window.prompt('Compliance summary (one line for the audit record):') || '';
-        body = { reason_code: reason };
-        if (summary) body.compliance_summary = summary;
-      }
-      await api.post(`/grid-code-compliance/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Grid Code compliance monitoring</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-state technical-conformance chain (SA Grid Code · Grid Connection Code for RPPs · NRS 048-2/4) ·
-            monitoring → non-conformance raised → under assessment → corrective action required → CAP submitted →
-            CAP approved → remediation in progress → compliance retest → compliant closed. A rejected plan loops back
-            for resubmission (CAP revise); a severe deviation or failed retest can impose an interim operating
-            restriction; an unremediated breach escalates to disconnection. The SO/TSO technical counterpart to the
-            regulator's proactive inspection (W40) and reactive complaints (W66). URGENT SLA: the more severe the
-            tier, the tighter every window. Tier by non-compliant capacity with a breach-class floor (fault
-            ride-through / frequency response / protection coordination → serious; reactive power / voltage
-            regulation → material). Split write — the operator drives the machinery; the facility submits the CAP and
-            remediates. The W67 signature — a disconnection crosses to the regulator for every tier (disconnecting a
-            connected, licensed facility is always notifiable); a restriction and an SLA breach cross for the large
-            tiers (serious + critical).
-          </p>
-        </div>
+    <div style={{ padding: '20px', background: BG, minHeight: '100%' }}>
+      {/* Header */}
+      <header style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: TX1, margin: 0 }}>
+          Grid Code compliance monitoring
+        </h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 4, maxWidth: 900, lineHeight: 1.5 }}>
+          12-state technical-conformance chain (SA Grid Code · Grid Connection Code for RPPs · NRS 048-2/4) ·
+          monitoring → non-conformance raised → under assessment → corrective action required → CAP submitted →
+          CAP approved → remediation in progress → compliance retest → compliant closed. A rejected plan loops back
+          for resubmission (CAP revise); a severe deviation or failed retest can impose an interim operating
+          restriction; an unremediated breach escalates to disconnection. URGENT SLA: the more severe the tier,
+          the tighter every window. Split write — the operator drives the machinery; the facility submits the CAP
+          and remediates. W67 signature — a disconnection crosses to the regulator for every tier; restriction and
+          SLA breach cross for large tiers (serious + critical).
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Monitoring" value={kpis?.monitoring_count ?? 0} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} tone={(kpis?.open_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Large open" value={kpis?.large_open ?? 0} tone={(kpis?.large_open ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Restricted" value={kpis?.restricted_count ?? 0} tone={(kpis?.restricted_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Disconnected" value={kpis?.disconnected_count ?? 0} tone={(kpis?.disconnected_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Closed" value={kpis?.closed_count ?? 0} tone="ok" />
-        <Kpi label="Withdrawn" value={kpis?.withdrawn_count ?? 0} tone={(kpis?.withdrawn_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Non-compliant MW" value={fmtMw(kpis?.total_capacity_mw ?? 0)} />
+      {/* KPI strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8, marginBottom: 16 }}>
+        <KpiTile label="Total"         value={summary?.total ?? rows.length} />
+        <KpiTile label="Monitoring"    value={summary?.monitoring_count ?? 0} />
+        <KpiTile label="Open"          value={summary?.open_count ?? 0}        tone={(summary?.open_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Large open"    value={summary?.large_open ?? 0}        tone={(summary?.large_open ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Restricted"    value={summary?.restricted_count ?? 0}  tone={(summary?.restricted_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Disconnected"  value={summary?.disconnected_count ?? 0} tone={(summary?.disconnected_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="SLA breached"  value={summary?.breached ?? 0}          tone={(summary?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Reportable"    value={summary?.reportable_total ?? 0}  tone={(summary?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Closed"        value={summary?.closed_count ?? 0}      tone="ok" />
+        <KpiTile label="Withdrawn"     value={summary?.withdrawn_count ?? 0}   tone={(summary?.withdrawn_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Non-compliant MW" value={fmtMw(summary?.total_capacity_mw ?? 0)} />
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      {/* Filter pills */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
         {FILTERS.map((f) => (
-          <button type="button"
+          <button
             key={f.key}
+            type="button"
             onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
+            style={{
+              padding: '3px 10px',
+              fontSize: 11,
+              fontWeight: 500,
+              borderRadius: 4,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+              background: filter === f.key ? ACC : BG1,
+              color: filter === f.key ? '#fff' : TX2,
+              cursor: 'pointer',
+            }}
           >
             {f.label}
           </button>
         ))}
       </div>
 
+      {/* Error */}
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Facility</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Breach</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Capacity</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.severity_tier];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.case_number}
-                      {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to the regulator">●</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[180px] truncate" title={r.facility_name}>
-                      {r.facility_name}
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{BREACH_LABEL[r.breach_class]}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">
-                      {fmtMw(r.capacity_mw)}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No compliance cases match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 6, border: `1px solid ${BAD}40`, background: `${BAD}10`, color: BAD, fontSize: 12 }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {/* Card list */}
+      {loading ? (
+        <div style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: TX3, background: BG1, borderRadius: 8, border: `1px solid ${BORDER}` }}>
+          Loading…
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: TX3, background: BG1, borderRadius: 8, border: `1px solid ${BORDER}` }}>
+          No compliance cases match.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {filtered.map((row) => (
+            <ChainCard
+              key={row.id}
+              item={row}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={row.facility_name}
+              meta={
+                <span>
+                  <span style={{ fontFamily: MONO, fontSize: 10, color: TX3 }}>{row.case_number}</span>
+                  {' · '}
+                  {BREACH_LABEL[row.breach_class]}
+                  {' · '}
+                  <span style={{ textTransform: 'capitalize' }}>{row.severity_tier}</span>
+                  {row.capacity_mw != null ? ` · ${fmtMw(row.capacity_mw)}` : ''}
+                  {row.is_reportable ? (
+                    <span style={{ marginLeft: 6, color: BAD, fontWeight: 700 }} title="Reportable to the regulator">● Reportable</span>
+                  ) : null}
+                </span>
+              }
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={['regulator']}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+// ─── Helper components ────────────────────────────────────────────────
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div style={{ borderRadius: 6, border: `1px solid ${BORDER}`, background: BG1, padding: '8px 12px' }}>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: ComplianceRow;
-  events: ComplianceEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: ComplianceRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canRejectCap = row.chain_status === 'cap_submitted';
-  const canRestrict = RESTRICTABLE_STATES.includes(row.chain_status);
-  const canDisconnect = DISCONNECTABLE_STATES.includes(row.chain_status);
-  const canWithdraw = WITHDRAWABLE_STATES.includes(row.chain_status);
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.case_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.facility_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.severity_tier].label} · {BREACH_LABEL[row.breach_class]}
-                {row.network_area ? ` · ${row.network_area}` : ''}
-              </div>
-              <div className="mt-1 text-[11px] text-[#4a5568]">
-                {row.operator_party_name || 'System Operator'} → {row.facility_party_name || row.facility_name}
-                {row.remediation_round > 0 ? ` · CAP round ${row.remediation_round}` : ''}
-                {row.escalation_level > 0 ? ` · escalation lvl ${row.escalation_level}` : ''}
-              </div>
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"             value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier"              value={TIER_TONE[row.severity_tier].label} />
-            <Pair label="Breach class"      value={BREACH_LABEL[row.breach_class]} />
-            <Pair label="Capacity"          value={fmtMw(row.capacity_mw)} />
-            <Pair label="Connection point"  value={row.connection_point ?? '—'} />
-            <Pair label="Network area"      value={row.network_area ?? '—'} />
-            <Pair label="Technology"        value={row.technology ?? '—'} />
-            <Pair label="Licence ref"       value={row.licence_ref ?? '—'} />
-            <Pair label="Code reference"    value={row.code_reference ?? '—'} />
-            <Pair label="Parameter"         value={row.parameter ?? '—'} />
-            <Pair label="Measured"          value={row.measured_value != null ? String(row.measured_value) : '—'} />
-            <Pair label="Limit"             value={row.limit_value != null ? String(row.limit_value) : '—'} />
-            <Pair label="NC ref"            value={row.nc_ref ?? '—'} />
-            <Pair label="Assessment ref"    value={row.assessment_ref ?? '—'} />
-            <Pair label="CAP ref"           value={row.cap_ref ?? '—'} />
-            <Pair label="Retest ref"        value={row.retest_ref ?? '—'} />
-            <Pair label="Restriction ref"   value={row.restriction_ref ?? '—'} />
-            <Pair label="Disconnection ref" value={row.disconnection_ref ?? '—'} />
-            <Pair label="Reason code"       value={row.reason_code ?? '—'} />
-            <Pair label="Monitoring since"  value={fmtDate(row.monitoring_started_at)} />
-            <Pair label="NC raised"         value={fmtDate(row.non_conformance_raised_at)} />
-            <Pair label="Assessment"        value={fmtDate(row.under_assessment_at)} />
-            <Pair label="CAP required"      value={fmtDate(row.corrective_action_required_at)} />
-            <Pair label="CAP submitted"     value={fmtDate(row.cap_submitted_at)} />
-            <Pair label="CAP approved"      value={fmtDate(row.cap_approved_at)} />
-            <Pair label="Remediation"       value={fmtDate(row.remediation_started_at)} />
-            <Pair label="Retest"            value={fmtDate(row.compliance_retest_at)} />
-            <Pair label="Restriction"       value={fmtDate(row.operating_restriction_at)} />
-            <Pair label="Closed"            value={fmtDate(row.compliant_closed_at)} />
-            <Pair label="Disconnected"      value={fmtDate(row.disconnection_issued_at)} />
-            <Pair label="SLA deadline"      value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"        value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"    value={String(row.escalation_level)} />
-            <Pair label="Reportable"        value={row.is_reportable ? 'Yes' : 'No'} />
-          </div>
-          {row.compliance_summary && (
-            <BasisBlock label="Compliance summary" tone="#1a3a5c" text={row.compliance_summary} />
-          )}
-          {row.raise_basis && (
-            <BasisBlock label="Raise basis" tone="#1a3a5c" text={row.raise_basis} />
-          )}
-          {row.assessment_basis && (
-            <BasisBlock label="Assessment basis" tone="#1a3a5c" text={row.assessment_basis} />
-          )}
-          {row.corrective_action_basis && (
-            <BasisBlock label="Corrective-action basis" tone="#a06200" text={row.corrective_action_basis} />
-          )}
-          {row.cap_basis && (
-            <BasisBlock label="CAP basis (facility)" tone="#a06200" text={row.cap_basis} />
-          )}
-          {row.approval_basis && (
-            <BasisBlock label="Approval basis" tone="#8a4a00" text={row.approval_basis} />
-          )}
-          {row.remediation_basis && (
-            <BasisBlock label="Remediation basis (facility)" tone="#a06200" text={row.remediation_basis} />
-          )}
-          {row.retest_basis && (
-            <BasisBlock label="Retest basis" tone="#8a4a00" text={row.retest_basis} />
-          )}
-          {row.restriction_basis && (
-            <BasisBlock label="Restriction basis" tone="#9b1f1f" text={row.restriction_basis} />
-          )}
-          {row.disconnection_basis && (
-            <BasisBlock label="Disconnection basis" tone="#6b1f1f" text={row.disconnection_basis} />
-          )}
-        </section>
-
-        {(nextAction || canRejectCap || canRestrict || canDisconnect || canWithdraw) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canRejectCap && (
-                <button type="button"
-                  onClick={() => onAct('reject-cap', row)}
-                  className="rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-orange-700 hover:bg-orange-50"
-                >
-                  {ACTION_LABEL['reject-cap']}
-                </button>
-              )}
-              {canRestrict && (
-                <button type="button"
-                  onClick={() => onAct('impose-restriction', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['impose-restriction']}
-                </button>
-              )}
-              {canDisconnect && (
-                <button type="button"
-                  onClick={() => onAct('escalate-disconnection', row)}
-                  className="rounded border border-red-400 bg-white px-3 py-1.5 text-[12px] font-medium text-red-800 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['escalate-disconnection']}
-                </button>
-              )}
-              {canWithdraw && (
-                <button type="button"
-                  onClick={() => onAct('withdraw', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b1f1f] hover:bg-[#f3e0e0]"
-                >
-                  {ACTION_LABEL.withdraw}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 12, color: TX1, marginTop: 1 }}>{value}</div>
     </div>
   );
 }
+
+export default GridCodeComplianceChainTab;

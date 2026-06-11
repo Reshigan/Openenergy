@@ -7,11 +7,26 @@
 //
 //   • KPI strip: total / large open / in_construction / certified / breached / cancelled
 //   • Filter pills by chain state + tier + breached/escalated
-//   • Listing with tier pill + state pill + SLA countdown + MW
-//   • Drill-down: timeline + per-state action buttons + cancel + IE certify modal
+//   • ChainCard list with tier pill + state pill + SLA countdown + MW
+//   • Inline expandable: timeline + per-state action buttons + cancel + IE certify modal
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'draft' | 'epc_signed' | 'ntp_issued' | 'mobilization'
@@ -21,6 +36,7 @@ type ChainStatus =
 type Tier = 'large' | 'medium' | 'small';
 
 interface CodRow {
+  [key: string]: unknown;
   id: string;
   cod_number: string;
   project_id: string | null;
@@ -55,37 +71,35 @@ interface CodRow {
   created_at: string;
 }
 
-interface CodEvent {
-  id: string;
-  cod_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
+interface KpiState {
+  total: number;
+  large_open: number;
+  breached: number;
+  escalated: number;
+  in_construction: number;
+  in_commissioning: number;
+  cod_certified_count: number;
+  cancelled_count: number;
+  total_capacity_certified: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  draft:                { bg: '#e3e7ec', fg: '#557',    label: 'Draft' },
-  epc_signed:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'EPC signed' },
-  ntp_issued:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'NTP issued' },
-  mobilization:         { bg: '#fff4d6', fg: '#a06200', label: 'Mobilisation' },
-  mechanical_complete:  { bg: '#fff4d6', fg: '#a06200', label: 'Mechanical complete' },
-  cold_commissioning:   { bg: '#fff4d6', fg: '#a06200', label: 'Cold commissioning' },
-  grid_synchronized:    { bg: '#daf5e2', fg: '#1f6b3a', label: 'Grid synchronised' },
-  reliability_run:      { bg: '#daf5e2', fg: '#1f6b3a', label: 'Reliability run' },
-  cod_certified:        { bg: '#d4edda', fg: '#155724', label: 'COD certified' },
-  cancelled:            { bg: '#fde0e0', fg: '#9b1f1f', label: 'Cancelled' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'draft',
+  'epc_signed',
+  'ntp_issued',
+  'mobilization',
+  'mechanical_complete',
+  'cold_commissioning',
+  'grid_synchronized',
+  'reliability_run',
+  'cod_certified',
+];
+const BRANCH_STATES: readonly string[] = [
+  'cancelled',
+];
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  large:  { bg: '#fde0e0', fg: '#9b1f1f', label: 'Large (≥100MW)' },
-  medium: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Medium (10-100MW)' },
-  small:  { bg: '#e3e7ec', fg: '#557',    label: 'Small (<10MW)' },
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',               label: 'Active' },
   { key: 'all',                  label: 'All' },
@@ -106,35 +120,7 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'cancelled',            label: 'Cancelled' },
 ];
 
-type PrimaryAction =
-  | 'sign-epc' | 'issue-ntp' | 'mobilize' | 'mechanical-complete'
-  | 'cold-commission' | 'grid-synchronize' | 'begin-reliability-run' | 'certify-cod';
-
-const ACTION_FOR_STATE: Record<ChainStatus, PrimaryAction | null> = {
-  draft:                'sign-epc',
-  epc_signed:           'issue-ntp',
-  ntp_issued:           'mobilize',
-  mobilization:         'mechanical-complete',
-  mechanical_complete:  'cold-commission',
-  cold_commissioning:   'grid-synchronize',
-  grid_synchronized:    'begin-reliability-run',
-  reliability_run:      'certify-cod',
-  cod_certified:        null,
-  cancelled:            null,
-};
-
-const ACTION_LABEL: Record<PrimaryAction | 'cancel', string> = {
-  'sign-epc':              'Sign EPC contract',
-  'issue-ntp':             'Issue Notice to Proceed',
-  'mobilize':              'Mobilise site',
-  'mechanical-complete':   'Mechanical complete',
-  'cold-commission':       'Cold commissioning',
-  'grid-synchronize':      'Synchronise to grid',
-  'begin-reliability-run': 'Begin reliability run',
-  'certify-cod':           'Certify COD (IE sign-off)',
-  'cancel':                'Cancel project',
-};
-
+// ── helpers ───────────────────────────────────────────────────────────────
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
   if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
@@ -154,63 +140,245 @@ function fmtMw(n: number | null | undefined): string {
   return `${n}MW`;
 }
 
+const TIER_LABEL: Record<Tier, string> = {
+  large:  'Large (≥100MW)',
+  medium: 'Medium (10-100MW)',
+  small:  'Small (<10MW)',
+};
+
+// ── actions ───────────────────────────────────────────────────────────────
+function getActions(row: CodRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const canCancel = !['cod_certified', 'cancelled'].includes(row.chain_status);
+
+  switch (row.chain_status) {
+    case 'draft':
+      actions.push({
+        key: 'sign-epc',
+        label: 'Sign EPC contract',
+        fields: [],
+        // no crossing mentioned for sign-epc
+        cascadeTo: [],
+      });
+      break;
+    case 'epc_signed':
+      actions.push({
+        key: 'issue-ntp',
+        label: 'Issue Notice to Proceed',
+        fields: [],
+        cascadeTo: [],
+      });
+      break;
+    case 'ntp_issued':
+      actions.push({
+        key: 'mobilize',
+        label: 'Mobilise site',
+        fields: [],
+        cascadeTo: [],
+      });
+      break;
+    case 'mobilization':
+      actions.push({
+        key: 'mechanical-complete',
+        label: 'Mechanical complete',
+        fields: [],
+        cascadeTo: [],
+      });
+      break;
+    case 'mechanical_complete':
+      actions.push({
+        key: 'cold-commission',
+        label: 'Cold commissioning',
+        fields: [],
+        cascadeTo: [],
+      });
+      break;
+    case 'cold_commissioning':
+      actions.push({
+        key: 'grid-synchronize',
+        label: 'Synchronise to grid',
+        fields: [],
+        cascadeTo: [],
+      });
+      break;
+    case 'grid_synchronized':
+      actions.push({
+        key: 'begin-reliability-run',
+        label: 'Begin reliability run',
+        fields: [],
+        cascadeTo: [],
+      });
+      break;
+    case 'reliability_run':
+      // certify-cod crosses regulator for large tier
+      actions.push({
+        key: 'certify-cod',
+        label: 'Certify COD (IE sign-off)',
+        fields: [
+          {
+            key: 'ie_certifier',
+            label: 'Independent Engineer firm (e.g. Mott MacDonald)',
+            type: 'text',
+            required: true,
+            placeholder: row.ie_certifier ?? '',
+          },
+          {
+            key: 'ie_cert_doc_ref',
+            label: 'IE certificate document reference (e.g. IE-CERT-2026-NAME-0001)',
+            type: 'text',
+            required: true,
+            placeholder: row.ie_cert_doc_ref ?? '',
+          },
+          {
+            key: 'actual_cod_date',
+            label: 'Actual COD date',
+            type: 'date',
+            required: true,
+            placeholder: new Date().toISOString().slice(0, 10),
+          },
+          ...(row.capacity_tier === 'large' ? [{
+            key: 'nersa_scada_ref',
+            label: 'NERSA SCADA registration reference (large-tier only)',
+            type: 'text' as const,
+            required: false,
+            placeholder: row.nersa_scada_ref ?? '',
+          }] : []),
+        ],
+        // Large-tier certify_cod crosses regulator per NERSA §C-5 + DMRE registry
+        cascadeTo: row.capacity_tier === 'large' ? ['regulator'] : [],
+      });
+      break;
+  }
+
+  // cancel action — available for all non-terminal states
+  // Large-tier cancel crosses regulator
+  if (canCancel) {
+    actions.push({
+      key: 'cancel',
+      label: 'Cancel project',
+      fields: [
+        {
+          key: 'reason',
+          label: 'Reason for cancelling the project',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: row.capacity_tier === 'large' ? ['regulator'] : [],
+    });
+  }
+
+  return actions;
+}
+
+// ── detail panel ──────────────────────────────────────────────────────────
+function renderDetail(row: CodRow): React.ReactNode {
+  return (
+    <div style={{ fontFamily: 'inherit' }}>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+        <DetailPair label="State"            value={row.chain_status.replace(/_/g, ' ')} />
+        <DetailPair label="Capacity tier"    value={TIER_LABEL[row.capacity_tier]} />
+        <DetailPair label="Capacity"         value={fmtMw(row.capacity_mw)} />
+        <DetailPair label="EPC contractor"   value={row.epc_contractor_name ?? '—'} />
+        <DetailPair label="Target COD"       value={fmtDate(row.target_cod_date)} />
+        <DetailPair label="Actual COD"       value={fmtDate(row.actual_cod_date)} />
+        <DetailPair label="EPC signed"       value={fmtDate(row.epc_signed_at)} />
+        <DetailPair label="NTP issued"       value={fmtDate(row.ntp_issued_at)} />
+        <DetailPair label="Mobilisation"     value={fmtDate(row.mobilization_at)} />
+        <DetailPair label="Mechanical comp." value={fmtDate(row.mechanical_complete_at)} />
+        <DetailPair label="Cold comm."       value={fmtDate(row.cold_comm_at)} />
+        <DetailPair label="Grid sync"        value={fmtDate(row.grid_sync_at)} />
+        <DetailPair label="Reliability run"  value={fmtDate(row.reliability_run_at)} />
+        <DetailPair label="COD certified"    value={fmtDate(row.cod_certified_at)} />
+        <DetailPair label="IE certifier"     value={row.ie_certifier ?? '—'} />
+        <DetailPair label="IE cert ref"      value={row.ie_cert_doc_ref ?? '—'} />
+        <DetailPair label="NERSA SCADA"      value={row.nersa_scada_ref ?? '—'} />
+        <DetailPair label="SLA deadline"     value={fmtDate(row.sla_deadline_at)} />
+        <DetailPair label="SLA status"       value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+        <DetailPair label="Escalation"       value={String(row.escalation_level)} />
+      </div>
+      {row.cancellation_reason && (
+        <div className="col-span-2 mt-2 rounded border px-2 py-1.5" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: BAD }}>Cancellation reason</div>
+          <div className="text-[11px]" style={{ color: BAD }}>{row.cancellation_reason}</div>
+        </div>
+      )}
+      {row.construction_notes && (
+        <div className="mt-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Construction notes</div>
+          <div className="text-[11px] whitespace-pre-wrap" style={{ color: TX2 }}>{row.construction_notes}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function CodChainTab() {
   const [rows, setRows] = useState<CodRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<CodRow | null>(null);
-  const [events, setEvents] = useState<CodEvent[]>([]);
+  const [filter, setFilter] = useState('active');
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setErr(null);
+    setLoading(true); setErr(null);
     try {
       const res = await api.get<{ data: { items: CodRow[] } }>('/ipp/cod-chain');
       setRows(res.data?.data?.items || []);
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load COD chains');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { cod: CodRow; events: CodEvent[] } }>(
-        `/ipp/cod-chain/${id}`
-      );
-      if (res.data?.data?.cod) setSelected(res.data.data.cod);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/ipp/cod-chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/ipp/cod-chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load COD history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { events: ChainEvent[] } }>(`/ipp/cod-chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
-    return rows.filter((r) => {
+    return rows.filter(r => {
       if (filter === 'all')       return true;
-      if (filter === 'active')    return !['cod_certified','cancelled'].includes(r.chain_status);
+      if (filter === 'active')    return !['cod_certified', 'cancelled'].includes(r.chain_status);
       if (filter === 'large')     return r.capacity_tier === 'large';
       if (filter === 'medium')    return r.capacity_tier === 'medium';
       if (filter === 'small')     return r.capacity_tier === 'small';
-      if (filter === 'breached')  return r.sla_breached;
+      if (filter === 'breached')  return !!r.sla_breached;
       if (filter === 'escalated') return r.escalation_level > 0;
       return r.chain_status === filter;
     });
   }, [rows, filter]);
 
-  const kpis = useMemo(() => {
+  const kpis = useMemo<KpiState>(() => {
     let large_open = 0, breached = 0, escalated = 0, in_construction = 0, in_commissioning = 0;
     let cod_certified_count = 0, cancelled_count = 0, total_capacity_certified = 0;
     for (const r of rows) {
-      if (r.capacity_tier === 'large' && !['cod_certified','cancelled'].includes(r.chain_status)) large_open++;
+      if (r.capacity_tier === 'large' && !['cod_certified', 'cancelled'].includes(r.chain_status)) large_open++;
       if (r.sla_breached) breached++;
       if (r.escalation_level > 0) escalated++;
-      if (['ntp_issued','mobilization','mechanical_complete'].includes(r.chain_status)) in_construction++;
-      if (['cold_commissioning','grid_synchronized','reliability_run'].includes(r.chain_status)) in_commissioning++;
+      if (['ntp_issued', 'mobilization', 'mechanical_complete'].includes(r.chain_status)) in_construction++;
+      if (['cold_commissioning', 'grid_synchronized', 'reliability_run'].includes(r.chain_status)) in_commissioning++;
       if (r.chain_status === 'cod_certified') {
         cod_certified_count++;
         total_capacity_certified += r.capacity_mw || 0;
@@ -220,271 +388,87 @@ export function CodChainTab() {
     return { total: rows.length, large_open, breached, escalated, in_construction, in_commissioning, cod_certified_count, cancelled_count, total_capacity_certified };
   }, [rows]);
 
-  const act = useCallback(async (action: PrimaryAction | 'cancel', row: CodRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'certify-cod') {
-        const ie = window.prompt('Independent Engineer firm (e.g. Mott MacDonald):');
-        if (!ie) return;
-        const cert = window.prompt('IE certificate document reference (e.g. IE-CERT-2026-NAME-0001):');
-        if (!cert) return;
-        const actualCod = window.prompt('Actual COD date (YYYY-MM-DD):', new Date().toISOString().slice(0, 10));
-        if (!actualCod) return;
-        const scada = row.capacity_tier === 'large'
-          ? window.prompt('NERSA SCADA registration reference (large-tier only):') || ''
-          : '';
-        body = { ie_certifier: ie, ie_cert_doc_ref: cert, actual_cod_date: actualCod };
-        if (scada) body.nersa_scada_ref = scada;
-      } else if (action === 'cancel') {
-        const reason = window.prompt('Reason for cancelling the project:');
-        if (!reason) return;
-        body = { reason };
-      }
-      await api.post(`/ipp/cod-chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">IPP construction → COD certification chain</h2>
-          <p className="text-xs text-[#4a5568]">
-            10-stage P6 chain · draft → EPC signed → NTP issued → mobilisation → mechanical complete →
-            cold commissioning → grid synchronised → reliability run → COD certified. Per-capacity-tier SLA tiering
-            (large ≥100MW / medium 10-100MW / small &lt;10MW — bigger projects get more time per real construction durations).
-            Large-tier COD certification, cancellation, and SLA breaches escalate to the regulator inbox per NERSA Grid Code §C-5 + DMRE registry.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>IPP construction → COD certification chain</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          10-stage P6 chain · draft → EPC signed → NTP issued → mobilisation → mechanical complete →
+          cold commissioning → grid synchronised → reliability run → COD certified. Per-capacity-tier SLA tiering
+          (large ≥100MW / medium 10-100MW / small &lt;10MW). Large-tier COD certification, cancellation, and SLA breaches escalate to the regulator inbox per NERSA Grid Code §C-5 + DMRE registry.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total projects" value={kpis.total} />
-        <Kpi label="Large-tier open" value={kpis.large_open} tone={kpis.large_open > 0 ? 'warn' : 'ok'} />
-        <Kpi label="In construction" value={kpis.in_construction} />
-        <Kpi label="COD certified" value={`${kpis.cod_certified_count} · ${fmtMw(kpis.total_capacity_certified)}`} />
-        <Kpi label="SLA breached" value={kpis.breached} tone={kpis.breached > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Cancelled" value={kpis.cancelled_count} tone={kpis.cancelled_count > 0 ? 'bad' : 'ok'} />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total projects"      value={kpis.total} />
+        <KpiTile label="Large-tier open"     value={kpis.large_open}          tone={kpis.large_open > 0 ? 'warn' : undefined} />
+        <KpiTile label="In construction"     value={kpis.in_construction} />
+        <KpiTile label="COD certified"       value={`${kpis.cod_certified_count} · ${fmtMw(kpis.total_capacity_certified)}`} tone={kpis.cod_certified_count > 0 ? 'ok' : undefined} />
+        <KpiTile label="SLA breached"        value={kpis.breached}            tone={kpis.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Cancelled"           value={kpis.cancelled_count}     tone={kpis.cancelled_count > 0 ? 'bad' : undefined} />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{ background: filter === f.key ? ACC : BG2, color: filter === f.key ? '#fff' : TX2, border: `1px solid ${filter === f.key ? ACC : BORDER}` }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>{err}</div>
       )}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">COD #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Project</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Capacity</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">EPC</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.capacity_tier];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">{r.cod_number}</td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[280px] truncate" title={r.project_name}>{r.project_name}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {r.capacity_tier}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtMw(r.capacity_mw)}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568] max-w-[180px] truncate" title={r.epc_contractor_name ?? ''}>
-                      {r.epc_contractor_name ?? '—'}
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No projects match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={row.project_name}
+              meta={`${TIER_LABEL[row.capacity_tier]} · ${fmtMw(row.capacity_mw)} · ${row.cod_number}`}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>No projects match.</div>
+          )}
         </div>
       )}
-
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
-      )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: CodRow;
-  events: CodEvent[];
-  onClose: () => void;
-  onAct: (action: PrimaryAction | 'cancel', row: CodRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canCancel  = !['cod_certified','cancelled'].includes(row.chain_status);
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[680px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.cod_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.project_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.capacity_tier].label} · {fmtMw(row.capacity_mw)} · EPC: {row.epc_contractor_name ?? '—'}
-              </div>
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"            value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Capacity tier"    value={TIER_TONE[row.capacity_tier].label} />
-            <Pair label="Capacity"         value={fmtMw(row.capacity_mw)} />
-            <Pair label="EPC contractor"   value={row.epc_contractor_name ?? '—'} />
-            <Pair label="Target COD"       value={fmtDate(row.target_cod_date)} />
-            <Pair label="Actual COD"       value={fmtDate(row.actual_cod_date)} />
-            <Pair label="EPC signed"       value={fmtDate(row.epc_signed_at)} />
-            <Pair label="NTP issued"       value={fmtDate(row.ntp_issued_at)} />
-            <Pair label="Mobilisation"     value={fmtDate(row.mobilization_at)} />
-            <Pair label="Mechanical comp." value={fmtDate(row.mechanical_complete_at)} />
-            <Pair label="Cold comm."       value={fmtDate(row.cold_comm_at)} />
-            <Pair label="Grid sync"        value={fmtDate(row.grid_sync_at)} />
-            <Pair label="Reliability run"  value={fmtDate(row.reliability_run_at)} />
-            <Pair label="COD certified"    value={fmtDate(row.cod_certified_at)} />
-            <Pair label="IE certifier"     value={row.ie_certifier ?? '—'} />
-            <Pair label="IE cert ref"      value={row.ie_cert_doc_ref ?? '—'} />
-            <Pair label="NERSA SCADA"      value={row.nersa_scada_ref ?? '—'} />
-            <Pair label="SLA deadline"     value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"       value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation"       value={String(row.escalation_level)} />
-          </div>
-          {row.cancellation_reason && (
-            <div className="mt-3 text-[12px]">
-              <div className="text-[10px] uppercase tracking-wider text-[#9b1f1f]">Cancellation reason</div>
-              <div className="text-[#9b1f1f]">{row.cancellation_reason}</div>
-            </div>
-          )}
-          {row.construction_notes && (
-            <div className="mt-3 text-[12px]">
-              <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">Construction notes</div>
-              <div className="text-[#1a3a5c] whitespace-pre-wrap">{row.construction_notes}</div>
-            </div>
-          )}
-        </section>
-
-        {(nextAction || canCancel) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canCancel && (
-                <button type="button"
-                  onClick={() => onAct('cancel', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL.cancel}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  {(e.from_status || e.to_status) && (
-                    <div className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</div>
-                  )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[11px]" style={{ color: TX1 }}>{value}</div>
     </div>
   );
 }
+
+export default CodChainTab;

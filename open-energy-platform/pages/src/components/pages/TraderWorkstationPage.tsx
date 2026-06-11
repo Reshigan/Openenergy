@@ -744,7 +744,7 @@ export function TraderWorkstationPage() {
   const kpis = useWorkstationKpis('trader');
   const openOrders = useWorkstationPanel('Open orders', '/trading/orders', (r) => ({
     id: r.id,
-    lead: <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${r.side === 'buy' ? 'bg-[#dbecfb] text-[#1a3a5c]' : 'bg-[#fbe9e6] text-[#c0392b]'}`}>{r.side}</span>,
+    lead: <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${r.side === 'buy' ? 'bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)]' : 'bg-[#fbe9e6] text-[#c0392b]'}`}>{r.side}</span>,
     text: <span>{r.energy_type} · {Number(r.volume_mwh || 0).toFixed(1)} MWh · R{Number(r.price || 0).toFixed(2)}</span>,
     meta: <span className="font-mono text-[10px] text-[#6b7685]">{r.delivery_date}</span>,
   }), 'No open orders.');
@@ -760,7 +760,7 @@ export function TraderWorkstationPage() {
       role="trader"
       eyebrow="Trader · Workstation"
       title="Trader workstation"
-      subtitle="Open orders · Rejections · Exceptions · Margin calls · Audit. Every workflow a trader needs after the order is placed."
+      subtitle="Pre-trade checks → Active trading → Risk & margin → Post-trade settlement → Compliance reporting"
       backHref="/trader-risk"
       backLabel="Trader risk"
       kpis={kpis}
@@ -768,31 +768,31 @@ export function TraderWorkstationPage() {
       wizards={TRADER_WIZARDS}
       tour={TRADER_TOUR}
       tabs={[
-        { key: 'orders', label: 'Open orders', group: 'Trading', body: ({ onRefresh }) => <OrdersTab onRefresh={onRefresh} /> },
-        { key: 'rejections', label: 'Rejections', group: 'Trading', body: () => <RejectionsTab /> },
-        { key: 'pretrade-credit', label: 'Pre-trade credit & settlement risk', group: 'Trading', chainKey: 'pretrade_credit_check', body: () => <PreTradeCreditChainTab /> },
-        { key: 'pnl-attribution', label: 'Daily P&L attribution', group: 'Trading', chainKey: 'pnl_attribution', body: () => <PnlAttributionChainTab /> },
-        { key: 'risk', label: 'Risk dashboard', group: 'Risk', body: () => <RiskTab /> },
-        { key: 'margin', label: 'Margin calls', group: 'Risk', body: ({ onRefresh }) => <MarginTab onRefresh={onRefresh} /> },
-        { key: 'market-abuse', label: 'Market surveillance', group: 'Risk', chainKey: 'market_abuse_case', body: () => <MarketAbuseChainTab /> },
-        { key: 'counterparty-margin', label: 'Counterparty default', group: 'Risk', chainKey: 'counterparty_margin', body: () => <CounterpartyMarginChainTab /> },
-        { key: 'algo-cert', label: 'Algo certification', group: 'Risk', chainKey: 'algo_certification', body: () => <AlgoCertChainTab /> },
-        { key: 'exceptions', label: 'Post-trade exceptions', group: 'Post-trade', body: ({ onRefresh }) => <ExceptionsTab onRefresh={onRefresh} /> },
-        { key: 'trade-allocation', label: 'Trade allocation', group: 'Post-trade', chainKey: 'trade_allocation', body: () => <TradeAllocationChainTab /> },
-        { key: 'settlement-fail', label: 'Settlement fails', group: 'Post-trade', chainKey: 'settlement_fail', body: () => <SettlementFailChainTab /> },
-        { key: 'benchmark-transition', label: 'Benchmark transition', group: 'Post-trade', chainKey: 'benchmark_transition', body: () => <BenchmarkTransitionChainTab /> },
-        { key: 'best-ex', label: 'Best execution', group: 'Post-trade', chainKey: 'best_execution', body: () => <BestExecutionTab /> },
-        { key: 'trade-reporting', label: 'Trade reporting', group: 'Post-trade', chainKey: 'trade_report', body: () => <TradeReportingChainTab /> },
-        { key: 'fsca-compliance', label: 'FSCA compliance report (W201)', group: 'Compliance', chainKey: 'fsca_compliance_report', body: ({ onRefresh }) => <FscaComplianceTab onRefresh={onRefresh} /> },
-        { key: 'fsca_conduct_reports', label: 'FSCA conduct reports (W216)', group: 'Compliance', chainKey: 'fsca_conduct_report', body: ({ onRefresh }) => <FscaConductReportTab onRefresh={onRefresh} /> },
-        { key: 'cross_border_trades', label: 'Cross-border pre-approvals (W222)', group: 'Compliance', chainKey: 'cross_border_trade', body: ({ onRefresh }) => <CrossBorderTradeTab onRefresh={onRefresh} /> },
-        { key: 'isda_agreements', label: 'ISDA agreements (W232)', group: 'Compliance', chainKey: 'isda_agreement', body: ({ onRefresh }) => <IsdaAgreementTab onRefresh={onRefresh} /> },
-        { key: 'mm-compliance', label: 'MM compliance', group: 'Compliance', chainKey: 'oe_mm_obligations', body: () => <MmComplianceTab /> },
-        { key: 'poslimit', label: 'Position limits', group: 'Compliance', chainKey: 'poslimit_case', body: () => <PoslimitChainTab /> },
-        { key: 'strate-swift-connectors', label: 'Settlement rails', group: 'Compliance', body: () => <StrateSwiftConnectorTab /> },
-        { key: 'sap-oracle-erp-connectors', label: 'ERP connectors', group: 'Compliance', body: () => <SapOracleErpConnectorTab /> },
-        { key: 'government-filing-connectors', label: 'Filing connectors', group: 'Compliance', body: () => <GovernmentFilingConnectorTab /> },
-        { key: 'reports', label: 'Reports & Exports', group: 'Compliance',
+        { key: 'orders', label: 'Open orders', group: 'Active trading', body: ({ onRefresh }) => <OrdersTab onRefresh={onRefresh} /> },
+        { key: 'rejections', label: 'Rejections', group: 'Active trading', body: () => <RejectionsTab /> },
+        { key: 'pretrade-credit', label: 'Pre-trade credit & settlement risk', group: 'Active trading', chainKey: 'pretrade_credit_check', body: () => <PreTradeCreditChainTab /> },
+        { key: 'pnl-attribution', label: 'Daily P&L attribution', group: 'Active trading', chainKey: 'pnl_attribution', body: () => <PnlAttributionChainTab /> },
+        { key: 'risk', label: 'Risk dashboard', group: 'Risk & margin', body: () => <RiskTab /> },
+        { key: 'margin', label: 'Margin calls', group: 'Risk & margin', body: ({ onRefresh }) => <MarginTab onRefresh={onRefresh} /> },
+        { key: 'market-abuse', label: 'Market surveillance', group: 'Risk & margin', chainKey: 'market_abuse_case', body: () => <MarketAbuseChainTab /> },
+        { key: 'counterparty-margin', label: 'Counterparty default', group: 'Risk & margin', chainKey: 'counterparty_margin', body: () => <CounterpartyMarginChainTab /> },
+        { key: 'algo-cert', label: 'Algo certification', group: 'Risk & margin', chainKey: 'algo_certification', body: () => <AlgoCertChainTab /> },
+        { key: 'exceptions', label: 'Post-trade exceptions', group: 'Post-trade & settlement', body: ({ onRefresh }) => <ExceptionsTab onRefresh={onRefresh} /> },
+        { key: 'trade-allocation', label: 'Trade allocation', group: 'Post-trade & settlement', chainKey: 'trade_allocation', body: () => <TradeAllocationChainTab /> },
+        { key: 'settlement-fail', label: 'Settlement fails', group: 'Post-trade & settlement', chainKey: 'settlement_fail', body: () => <SettlementFailChainTab /> },
+        { key: 'benchmark-transition', label: 'Benchmark transition', group: 'Post-trade & settlement', chainKey: 'benchmark_transition', body: () => <BenchmarkTransitionChainTab /> },
+        { key: 'best-ex', label: 'Best execution', group: 'Post-trade & settlement', chainKey: 'best_execution', body: () => <BestExecutionTab /> },
+        { key: 'trade-reporting', label: 'Trade reporting', group: 'Post-trade & settlement', chainKey: 'trade_report', body: () => <TradeReportingChainTab /> },
+        { key: 'fsca-compliance', label: 'FSCA compliance report (W201)', group: 'Compliance & reporting', chainKey: 'fsca_compliance_report', body: ({ onRefresh }) => <FscaComplianceTab onRefresh={onRefresh} /> },
+        { key: 'fsca_conduct_reports', label: 'FSCA conduct reports (W216)', group: 'Compliance & reporting', chainKey: 'fsca_conduct_report', body: ({ onRefresh }) => <FscaConductReportTab onRefresh={onRefresh} /> },
+        { key: 'cross_border_trades', label: 'Cross-border pre-approvals (W222)', group: 'Compliance & reporting', chainKey: 'cross_border_trade', body: ({ onRefresh }) => <CrossBorderTradeTab onRefresh={onRefresh} /> },
+        { key: 'isda_agreements', label: 'ISDA agreements (W232)', group: 'Compliance & reporting', chainKey: 'isda_agreement', body: ({ onRefresh }) => <IsdaAgreementTab onRefresh={onRefresh} /> },
+        { key: 'mm-compliance', label: 'MM compliance', group: 'Compliance & reporting', chainKey: 'oe_mm_obligations', body: () => <MmComplianceTab /> },
+        { key: 'poslimit', label: 'Position limits', group: 'Compliance & reporting', chainKey: 'poslimit_case', body: () => <PoslimitChainTab /> },
+        { key: 'strate-swift-connectors', label: 'Settlement rails', group: 'Compliance & reporting', body: () => <StrateSwiftConnectorTab /> },
+        { key: 'sap-oracle-erp-connectors', label: 'ERP connectors', group: 'Compliance & reporting', body: () => <SapOracleErpConnectorTab /> },
+        { key: 'government-filing-connectors', label: 'Filing connectors', group: 'Compliance & reporting', body: () => <GovernmentFilingConnectorTab /> },
+        { key: 'reports', label: 'Reports & Exports', group: 'Compliance & reporting',
           body: () => (
             <div className="space-y-8">
               <div className="flex flex-wrap gap-2 items-center justify-between">
@@ -858,7 +858,7 @@ export function TraderWorkstationPage() {
             </div>
           ),
         },
-        { key: 'audit', label: 'Audit & compliance', group: 'Compliance',
+        { key: 'audit', label: 'Audit & compliance', group: 'Compliance & reporting',
           body: ({ onRefresh }) => (
             <AuditPanel
               prefix="/trading"
@@ -1181,7 +1181,7 @@ function FscaComplianceTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'sla_breached',     label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">BREACHED</Pill> : <Pill tone="good">OK</Pill> },
           { key: 'actions',          label: '', render: (r) => (
             <button type="button" onClick={() => setActing({ id: r.id, status: r.chain_status })}
-              className="text-[#1a3a5c] text-xs underline">Action</button>
+              className="text-[oklch(0.46_0.16_55)] text-xs underline">Action</button>
           )},
         ]}
       />
@@ -1386,7 +1386,7 @@ function FscaConductReportTab({ onRefresh }: { onRefresh: () => void }) {
 
 // ── W222: Trader Cross-Border Transaction & Regulatory Pre-Approval ──────────
 const CBT_TIER_TONE: Record<string, string> = {
-  small:    'bg-blue-50 text-blue-700',
+  small:    'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
   standard: 'bg-purple-50 text-purple-700',
   large:    'bg-amber-50 text-amber-700',
   systemic: 'bg-rose-50 text-rose-700',
@@ -1397,7 +1397,7 @@ function cbtStatusTone(s: string): string {
   if (['fsca_rejected', 'sarb_rejected'].includes(s)) return 'bg-red-100 text-red-800';
   if (['withdrawn', 'expired'].includes(s)) return 'bg-[#eef2f7] text-[#3d4756]';
   if (['fully_approved'].includes(s)) return 'bg-emerald-100 text-emerald-800';
-  if (['fsca_approved'].includes(s)) return 'bg-blue-100 text-blue-800';
+  if (['fsca_approved'].includes(s)) return 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]';
   return 'bg-[#eef2f7] text-[#2d3748]';
 }
 
@@ -1469,7 +1469,7 @@ function CrossBorderTradeTab({ onRefresh }: { onRefresh?: () => void }) {
                 <td className="px-3 py-2 text-[#6b7685] text-xs">{row.sla_deadline ? new Date(row.sla_deadline).toLocaleDateString() : '—'}</td>
                 <td className="px-3 py-2">
                   <button type="button" onClick={() => setModal({ id: row.id, cbt_tier: row.cbt_tier, counterparty_jurisdiction: row.counterparty_jurisdiction, notional_zar: row.notional_zar })}
-                    className="text-xs text-blue-600 hover:underline">Action</button>
+                    className="text-xs text-[oklch(0.46_0.16_55)] hover:underline">Action</button>
                 </td>
               </tr>
             ))}

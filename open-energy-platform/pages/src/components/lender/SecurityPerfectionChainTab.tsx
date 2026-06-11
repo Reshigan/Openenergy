@@ -29,6 +29,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'identified' | 'documentation_pending' | 'executed' | 'lodged_for_registration'
@@ -38,6 +53,7 @@ type ChainStatus =
 type Tier = 'minor' | 'moderate' | 'material' | 'major' | 'critical';
 
 interface PerfectionRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   source_event: string | null;
@@ -139,52 +155,25 @@ interface KpiSummary {
   lapsed_secured_zar: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  identified:              { bg: '#e3e7ec', fg: '#557',    label: 'Identified' },
-  documentation_pending:   { bg: '#fff4d6', fg: '#a06200', label: 'Documentation pending' },
-  executed:                { bg: '#dbecfb', fg: '#1a3a5c', label: 'Executed' },
-  lodged_for_registration: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Lodged for registration' },
-  registered:              { bg: '#dbecfb', fg: '#1a3a5c', label: 'Registered' },
-  perfection_review:       { bg: '#fff4d6', fg: '#a06200', label: 'Perfection review' },
-  perfected:               { bg: '#d4edda', fg: '#155724', label: 'Perfected' },
-  defective:               { bg: '#f8d0d0', fg: '#6b1f1f', label: 'Defective' },
-  perfection_overdue:      { bg: '#f3c0c0', fg: '#5a1818', label: 'Perfection overdue' },
-  released:                { bg: '#d4edda', fg: '#155724', label: 'Released' },
-  lapsed:                  { bg: '#f3c0c0', fg: '#5a1818', label: 'Lapsed' },
-  withdrawn:               { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'identified',
+  'documentation_pending',
+  'executed',
+  'lodged_for_registration',
+  'registered',
+  'perfection_review',
+  'perfected',
+  'released',
+];
+const BRANCH_STATES: readonly string[] = [
+  'defective',
+  'perfection_overdue',
+  'lapsed',
+  'withdrawn',
+];
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor (<R10m)' },
-  moderate: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Moderate (<R100m)' },
-  material: { bg: '#fff4d6', fg: '#a06200', label: 'Material (<R500m)' },
-  major:    { bg: '#ffe4b5', fg: '#8a4a00', label: 'Major (<R2bn)' },
-  critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical (≥R2bn)' },
-};
-
-const SECURITY_TYPE_LABEL: Record<string, string> = {
-  mortgage_bond:         'Mortgage bond',
-  special_notarial_bond: 'Special notarial bond',
-  general_notarial_bond: 'General notarial bond',
-  share_pledge:          'Share pledge',
-  cession_rights:        'Cession of rights',
-  cession_insurance:     'Cession of insurance',
-  cession_accounts:      'Cession of accounts',
-  strate_pledge:         'STRATE pledge',
-  guarantee:             'Guarantee',
-  other:                 'Other',
-};
-
-const REGISTRY_LABEL: Record<string, string> = {
-  deeds_office:       'Deeds Office',
-  cipc:               'CIPC',
-  strate:             'STRATE',
-  companies_register: 'Companies register',
-  contractual:        'Contractual (notice)',
-  sarb:               'SARB ExCon',
-  other:              'Other',
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'open',                    label: 'Open' },
   { key: 'all',                     label: 'All' },
@@ -209,60 +198,41 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'withdrawn',               label: 'Withdrawn' },
 ];
 
-type ActionKind =
-  | 'begin-documentation' | 'execute-security' | 'lodge-registration' | 'confirm-registration'
-  | 'reject-registration' | 'begin-perfection-review' | 'confirm-perfection' | 'flag-overdue'
-  | 'cure-overdue' | 'release-security' | 'mark-lapsed' | 'withdraw';
-
-// Allowed actions per state, primary forward action first. Mirrors the spec
-// TRANSITIONS map so the UI never offers an invalid step.
-const ALLOWED_ACTIONS: Record<ChainStatus, ActionKind[]> = {
-  identified:              ['begin-documentation', 'withdraw'],
-  documentation_pending:   ['execute-security', 'flag-overdue', 'withdraw'],
-  executed:                ['lodge-registration', 'flag-overdue', 'withdraw'],
-  lodged_for_registration: ['confirm-registration', 'reject-registration', 'flag-overdue'],
-  registered:              ['begin-perfection-review'],
-  perfection_review:       ['confirm-perfection', 'reject-registration'],
-  perfected:               ['release-security'],
-  defective:               ['lodge-registration', 'flag-overdue', 'mark-lapsed'],
-  perfection_overdue:      ['cure-overdue', 'mark-lapsed'],
-  released:                [],
-  lapsed:                  [],
-  withdrawn:               [],
+// ── lookup tables ─────────────────────────────────────────────────────────
+const SECURITY_TYPE_LABEL: Record<string, string> = {
+  mortgage_bond:         'Mortgage bond',
+  special_notarial_bond: 'Special notarial bond',
+  general_notarial_bond: 'General notarial bond',
+  share_pledge:          'Share pledge',
+  cession_rights:        'Cession of rights',
+  cession_insurance:     'Cession of insurance',
+  cession_accounts:      'Cession of accounts',
+  strate_pledge:         'STRATE pledge',
+  guarantee:             'Guarantee',
+  other:                 'Other',
 };
 
-// Party annotation per action. The security agent (lender) drives every step;
-// the grantor (borrower) executes the security document.
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'begin-documentation':     'Begin documentation (security agent)',
-  'execute-security':        'Execute security document (grantor)',
-  'lodge-registration':      'Lodge for registration (security agent)',
-  'confirm-registration':    'Confirm registration (security agent)',
-  'reject-registration':     'Reject — registry/opinion defect (security agent)',
-  'begin-perfection-review': 'Begin perfection review (security agent)',
-  'confirm-perfection':      'Confirm perfection (security agent)',
-  'flag-overdue':            'Flag overdue (security agent)',
-  'cure-overdue':            'Cure overdue — re-lodge (security agent)',
-  'release-security':        'Release security (security agent)',
-  'mark-lapsed':             'Mark lapsed (security agent)',
-  'withdraw':                'Withdraw item (security agent)',
+const REGISTRY_LABEL: Record<string, string> = {
+  deeds_office:       'Deeds Office',
+  cipc:               'CIPC',
+  strate:             'STRATE',
+  companies_register: 'Companies register',
+  contractual:        'Contractual (notice)',
+  sarb:               'SARB ExCon',
+  other:              'Other',
 };
 
-const ACTION_TONE: Record<ActionKind, 'primary' | 'danger' | 'warn' | 'good' | 'muted'> = {
-  'begin-documentation':     'primary',
-  'execute-security':        'good',
-  'lodge-registration':      'primary',
-  'confirm-registration':    'good',
-  'reject-registration':     'danger',
-  'begin-perfection-review': 'primary',
-  'confirm-perfection':      'good',
-  'flag-overdue':            'warn',
-  'cure-overdue':            'warn',
-  'release-security':        'good',
-  'mark-lapsed':             'danger',
-  'withdraw':                'muted',
+const TIER_LABEL: Record<Tier, string> = {
+  minor:    'Minor (<R10m)',
+  moderate: 'Moderate (<R100m)',
+  material: 'Material (<R500m)',
+  major:    'Major (<R2bn)',
+  critical: 'Critical (≥R2bn)',
 };
 
+const TERMINAL_STATES: ChainStatus[] = ['released', 'lapsed', 'withdrawn'];
+
+// ── helpers ───────────────────────────────────────────────────────────────
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
   if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
@@ -284,32 +254,587 @@ function fmtZar(n: number | null | undefined): string {
   return `R${n.toLocaleString('en-ZA')}`;
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['released', 'lapsed', 'withdrawn'];
+// ── actions ───────────────────────────────────────────────────────────────
+function getActions(row: PerfectionRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
 
+  if (s === 'identified') {
+    actions.push({
+      key: 'begin-documentation',
+      label: 'Begin documentation (security agent)',
+      fields: [
+        {
+          key: 'documentation_basis',
+          label: 'Documentation basis — the security document being drawn (e.g. mortgage bond over Erf 123)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'document_ref',
+          label: 'Document reference (e.g. DOC-2026-0011)',
+          type: 'text',
+          required: false,
+        },
+        {
+          key: 'secured_value_zar',
+          label: 'Secured value (ZAR)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.secured_value_zar ?? ''),
+        },
+        {
+          key: 'perfection_critical',
+          label: 'Condition precedent to first drawdown? (1 = yes, 0 = no)',
+          type: 'text',
+          required: false,
+          placeholder: String(row.perfection_critical ?? '0'),
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw item (security agent)',
+      fields: [
+        {
+          key: 'reason_code',
+          label: 'Withdrawal reason — item dropped from the security package / superseded',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'documentation_pending') {
+    actions.push({
+      key: 'execute-security',
+      label: 'Execute security document (grantor)',
+      fields: [
+        {
+          key: 'execution_basis',
+          label: 'Execution basis — the grantor signing / notarial execution of the document',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'document_ref',
+          label: 'Document reference (signed)',
+          type: 'text',
+          required: false,
+          placeholder: row.document_ref ?? '',
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'flag-overdue',
+      label: 'Flag overdue (security agent)',
+      fields: [
+        {
+          key: 'overdue_basis',
+          label: 'Overdue basis — the CP/CS perfection deadline that has been missed',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. deadline_missed / registry_backlog / grantor_delay)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      // flag-overdue for major/critical crosses regulator
+      cascadeTo: (row.severity_tier === 'major' || row.severity_tier === 'critical') ? ['regulator'] : [],
+    });
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw item (security agent)',
+      fields: [
+        {
+          key: 'reason_code',
+          label: 'Withdrawal reason — item dropped from the security package / superseded',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'executed') {
+    actions.push({
+      key: 'lodge-registration',
+      label: 'Lodge for registration (security agent)',
+      fields: [
+        {
+          key: 'lodgement_basis',
+          label: 'Lodgement basis — lodging the deed at the registry (Deeds Office / STRATE / CIPC)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'lodgement_ref',
+          label: 'Lodgement reference (e.g. LODGE-2026-0011)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'flag-overdue',
+      label: 'Flag overdue (security agent)',
+      fields: [
+        {
+          key: 'overdue_basis',
+          label: 'Overdue basis — the CP/CS perfection deadline that has been missed',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. deadline_missed / registry_backlog / grantor_delay)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: (row.severity_tier === 'major' || row.severity_tier === 'critical') ? ['regulator'] : [],
+    });
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw item (security agent)',
+      fields: [
+        {
+          key: 'reason_code',
+          label: 'Withdrawal reason — item dropped from the security package / superseded',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'lodged_for_registration') {
+    actions.push({
+      key: 'confirm-registration',
+      label: 'Confirm registration (security agent)',
+      fields: [
+        {
+          key: 'registration_basis',
+          label: 'Registration basis — the registrar registered / recorded the security',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'registration_ref',
+          label: 'Registration reference (e.g. BOND-2026-0011 / STRATE ref)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'reject-registration',
+      label: 'Reject — registry/opinion defect (security agent)',
+      fields: [
+        {
+          key: 'defect_basis',
+          label: 'Defect basis — why the registry rejected the deed or the opinion found a defect',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. wrong_property / ranking_clash / signature_defect)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      // reject-registration for critical CP crosses regulator
+      cascadeTo: (row.severity_tier === 'critical' && row.perfection_critical) ? ['regulator'] : [],
+    });
+    actions.push({
+      key: 'flag-overdue',
+      label: 'Flag overdue (security agent)',
+      fields: [
+        {
+          key: 'overdue_basis',
+          label: 'Overdue basis — the CP/CS perfection deadline that has been missed',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. deadline_missed / registry_backlog / grantor_delay)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: (row.severity_tier === 'major' || row.severity_tier === 'critical') ? ['regulator'] : [],
+    });
+  }
+
+  if (s === 'registered') {
+    actions.push({
+      key: 'begin-perfection-review',
+      label: 'Begin perfection review (security agent)',
+      fields: [
+        {
+          key: 'perfection_basis',
+          label: 'Perfection-review basis — instructing the legal opinion on perfection / ranking',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'legal_opinion_ref',
+          label: 'Legal opinion reference (e.g. OPIN-2026-0011)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'perfection_review') {
+    actions.push({
+      key: 'confirm-perfection',
+      label: 'Confirm perfection (security agent)',
+      fields: [
+        {
+          key: 'perfection_basis',
+          label: 'Perfection basis — the clean legal opinion confirming the security is perfected and correctly ranked',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'perfection_ref',
+          label: 'Perfection reference (e.g. PERF-2026-0011)',
+          type: 'text',
+          required: false,
+        },
+        {
+          key: 'legal_opinion_ref',
+          label: 'Legal opinion reference',
+          type: 'text',
+          required: false,
+          placeholder: row.legal_opinion_ref ?? '',
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'reject-registration',
+      label: 'Reject — registry/opinion defect (security agent)',
+      fields: [
+        {
+          key: 'defect_basis',
+          label: 'Defect basis — why the registry rejected the deed or the opinion found a defect',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. wrong_property / ranking_clash / signature_defect)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: (row.severity_tier === 'critical' && row.perfection_critical) ? ['regulator'] : [],
+    });
+  }
+
+  if (s === 'perfected') {
+    actions.push({
+      key: 'release-security',
+      label: 'Release security (security agent)',
+      fields: [
+        {
+          key: 'release_basis',
+          label: 'Release basis — discharge on repayment / substitution / refinancing',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'release_ref',
+          label: 'Release reference (e.g. REL-2026-0011 / cancellation)',
+          type: 'text',
+          required: false,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'defective') {
+    actions.push({
+      key: 'lodge-registration',
+      label: 'Lodge for registration (security agent)',
+      fields: [
+        {
+          key: 'lodgement_basis',
+          label: 'Lodgement basis — re-lodging the deed at the registry (Deeds Office / STRATE / CIPC)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'lodgement_ref',
+          label: 'Lodgement reference (re-lodge)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'flag-overdue',
+      label: 'Flag overdue (security agent)',
+      fields: [
+        {
+          key: 'overdue_basis',
+          label: 'Overdue basis — the CP/CS perfection deadline that has been missed',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. deadline_missed / registry_backlog / grantor_delay)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: (row.severity_tier === 'major' || row.severity_tier === 'critical') ? ['regulator'] : [],
+    });
+    actions.push({
+      key: 'mark-lapsed',
+      label: 'Mark lapsed (security agent)',
+      fields: [
+        {
+          key: 'lapse_basis',
+          label: 'Lapse basis — why the security was never perfected (deadline blown / unrecoverable defect)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. deadline_lapsed / registry_refused / abandoned)',
+          type: 'text',
+          required: false,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      // mark-lapsed crosses regulator EVERY tier (W69 signature)
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'perfection_overdue') {
+    actions.push({
+      key: 'cure-overdue',
+      label: 'Cure overdue — re-lodge (security agent)',
+      fields: [
+        {
+          key: 'lodgement_basis',
+          label: 'Cure basis — re-lodging to cure the overdue / defective item',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'lodgement_ref',
+          label: 'Lodgement reference (re-lodge)',
+          type: 'text',
+          required: false,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'mark-lapsed',
+      label: 'Mark lapsed (security agent)',
+      fields: [
+        {
+          key: 'lapse_basis',
+          label: 'Lapse basis — why the security was never perfected (deadline blown / unrecoverable defect)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. deadline_lapsed / registry_refused / abandoned)',
+          type: 'text',
+          required: false,
+        },
+        {
+          key: 'resolution_summary',
+          label: 'Resolution summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+        },
+      ],
+      // mark-lapsed crosses regulator EVERY tier (W69 signature)
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  return actions;
+}
+
+// ── renderDetail ──────────────────────────────────────────────────────────
+function renderDetail(row: PerfectionRow): React.ReactNode {
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+        <DetailPair label="State"               value={row.chain_status.replace(/_/g, ' ')} />
+        <DetailPair label="Tier"                value={TIER_LABEL[row.severity_tier]} />
+        <DetailPair label="Security type"       value={SECURITY_TYPE_LABEL[row.security_type] ?? row.security_type} />
+        <DetailPair label="Registry"            value={row.registry ? (REGISTRY_LABEL[row.registry] ?? row.registry) : '—'} />
+        <DetailPair label="Ranking"             value={row.ranking ?? '—'} />
+        <DetailPair label="Secured value"       value={fmtZar(row.secured_value_zar)} />
+        <DetailPair label="Condition precedent" value={row.perfection_critical ? 'Yes' : 'No'} />
+        <DetailPair label="Cross-border"        value={row.cross_border ? 'Yes (SARB ExCon)' : 'No'} />
+        <DetailPair label="Description"         value={row.security_description ?? '—'} />
+        <DetailPair label="Document ref"        value={row.document_ref ?? '—'} />
+        <DetailPair label="Lodgement ref"       value={row.lodgement_ref ?? '—'} />
+        <DetailPair label="Registration ref"    value={row.registration_ref ?? '—'} />
+        <DetailPair label="Perfection ref"      value={row.perfection_ref ?? '—'} />
+        <DetailPair label="Legal opinion ref"   value={row.legal_opinion_ref ?? '—'} />
+        <DetailPair label="Release ref"         value={row.release_ref ?? '—'} />
+        <DetailPair label="Reason code"         value={row.reason_code ?? '—'} />
+        <DetailPair label="Re-lodge round"      value={String(row.relodge_round)} />
+        <DetailPair label="Security agent"      value={row.security_agent_name ?? '—'} />
+        <DetailPair label="Grantor"             value={row.grantor_name ?? row.borrower_name} />
+        <DetailPair label="Facility"            value={row.facility_name ?? '—'} />
+        <DetailPair label="Project"             value={row.project_name ?? '—'} />
+        <DetailPair label="Source wave"         value={row.source_wave ?? '—'} />
+        <DetailPair label="Identified"          value={fmtDate(row.identified_at)} />
+        <DetailPair label="Documentation"       value={fmtDate(row.documentation_pending_at)} />
+        <DetailPair label="Executed"            value={fmtDate(row.executed_at)} />
+        <DetailPair label="Lodged"              value={fmtDate(row.lodged_for_registration_at)} />
+        <DetailPair label="Registered"          value={fmtDate(row.registered_at)} />
+        <DetailPair label="Perfection review"   value={fmtDate(row.perfection_review_at)} />
+        <DetailPair label="Perfected"           value={fmtDate(row.perfected_at)} />
+        <DetailPair label="Defective"           value={fmtDate(row.defective_at)} />
+        <DetailPair label="Overdue"             value={fmtDate(row.perfection_overdue_at)} />
+        <DetailPair label="Released"            value={fmtDate(row.released_at)} />
+        <DetailPair label="Lapsed"              value={fmtDate(row.lapsed_at)} />
+        <DetailPair label="Perfection deadline" value={fmtDate(row.perfection_deadline_at)} />
+        <DetailPair label="SLA deadline"        value={fmtDate(row.sla_deadline_at)} />
+        <DetailPair label="SLA status"          value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+        <DetailPair label="Escalation lvl"      value={String(row.escalation_level)} />
+        <DetailPair label="Reportable"          value={row.is_reportable ? 'Yes' : 'No'} />
+      </div>
+      {row.resolution_summary && (
+        <BasisBlock label="Resolution summary" text={row.resolution_summary} />
+      )}
+      {row.documentation_basis && (
+        <BasisBlock label="Documentation basis" text={row.documentation_basis} />
+      )}
+      {row.execution_basis && (
+        <BasisBlock label="Execution basis (grantor)" text={row.execution_basis} />
+      )}
+      {row.lodgement_basis && (
+        <BasisBlock label="Lodgement basis" text={row.lodgement_basis} />
+      )}
+      {row.registration_basis && (
+        <BasisBlock label="Registration basis" text={row.registration_basis} />
+      )}
+      {row.defect_basis && (
+        <BasisBlock label="Defect basis" text={row.defect_basis} />
+      )}
+      {row.perfection_basis && (
+        <BasisBlock label="Perfection basis" text={row.perfection_basis} />
+      )}
+      {row.overdue_basis && (
+        <BasisBlock label="Overdue basis" text={row.overdue_basis} />
+      )}
+      {row.release_basis && (
+        <BasisBlock label="Release basis" text={row.release_basis} />
+      )}
+      {row.lapse_basis && (
+        <BasisBlock label="Lapse basis" text={row.lapse_basis} />
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function SecurityPerfectionChainTab() {
   const [rows, setRows] = useState<PerfectionRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('open');
-  const [selected, setSelected] = useState<PerfectionRow | null>(null);
-  const [events, setEvents] = useState<PerfectionEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
       const res = await api.get<{ data: { items: PerfectionRow[] } & KpiSummary }>('/security-perfection/chain');
-      setRows(res.data?.data?.items || []);
       const d = res.data?.data;
+      setRows(d?.items || []);
       if (d) {
-        setKpis({
-          total: d.total, open_count: d.open_count, perfected_count: d.perfected_count,
-          defective_count: d.defective_count, overdue_count: d.overdue_count,
-          released_count: d.released_count, lapsed_count: d.lapsed_count,
-          withdrawn_count: d.withdrawn_count, breached: d.breached,
-          reportable_total: d.reportable_total, cp_open: d.cp_open, high_open: d.high_open,
-          total_secured_zar: d.total_secured_zar, perfected_secured_zar: d.perfected_secured_zar,
+        setSummary({
+          total: d.total,
+          open_count: d.open_count,
+          perfected_count: d.perfected_count,
+          defective_count: d.defective_count,
+          overdue_count: d.overdue_count,
+          released_count: d.released_count,
+          lapsed_count: d.lapsed_count,
+          withdrawn_count: d.withdrawn_count,
+          breached: d.breached,
+          reportable_total: d.reportable_total,
+          cp_open: d.cp_open,
+          high_open: d.high_open,
+          total_secured_zar: d.total_secured_zar,
+          perfected_secured_zar: d.perfected_secured_zar,
           lapsed_secured_zar: d.lapsed_secured_zar,
         });
       }
@@ -322,23 +847,34 @@ export function SecurityPerfectionChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: PerfectionRow; events: PerfectionEvent[] } }>(
-        `/security-perfection/chain/${id}`
-      );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/security-perfection/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/security-perfection/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load perfection history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: PerfectionRow; events: ChainEvent[] } }>(`/security-perfection/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (filter === 'all')        return true;
       if (filter === 'open')       return !TERMINAL_STATES.includes(r.chain_status);
-      if (filter === 'breached')   return r.sla_breached;
+      if (filter === 'breached')   return !!r.sla_breached;
       if (filter === 'reportable') return r.is_reportable;
       if (filter === 'minor' || filter === 'moderate' || filter === 'material' || filter === 'major' || filter === 'critical') {
         return r.severity_tier === filter;
@@ -347,427 +883,128 @@ export function SecurityPerfectionChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: PerfectionRow) => {
-    try {
-      let body: Record<string, string | number | boolean> = {};
-      if (action === 'begin-documentation') {
-        const basis = window.prompt('Documentation basis — the security document being drawn (e.g. mortgage bond over Erf 123):');
-        if (!basis) return;
-        const ref = window.prompt('Document reference (e.g. DOC-2026-0011):') || '';
-        const val = window.prompt('Secured value (ZAR):', String(row.secured_value_zar ?? ''));
-        const cp = window.confirm('Condition precedent to first drawdown? OK = yes, Cancel = no');
-        body = { documentation_basis: basis, perfection_critical: cp };
-        if (ref) body.document_ref = ref;
-        if (val && !Number.isNaN(Number(val))) body.secured_value_zar = Number(val);
-      } else if (action === 'execute-security') {
-        const basis = window.prompt('Execution basis — the grantor signing / notarial execution of the document:');
-        if (!basis) return;
-        const ref = window.prompt('Document reference (signed):', row.document_ref ?? '') || '';
-        body = { execution_basis: basis };
-        if (ref) body.document_ref = ref;
-      } else if (action === 'lodge-registration') {
-        const basis = window.prompt('Lodgement basis — lodging the deed at the registry (Deeds Office / STRATE / CIPC):');
-        if (!basis) return;
-        const ref = window.prompt('Lodgement reference (e.g. LODGE-2026-0011):') || '';
-        body = { lodgement_basis: basis };
-        if (ref) body.lodgement_ref = ref;
-      } else if (action === 'confirm-registration') {
-        const basis = window.prompt('Registration basis — the registrar registered / recorded the security:');
-        if (!basis) return;
-        const ref = window.prompt('Registration reference (e.g. BOND-2026-0011 / STRATE ref):') || '';
-        body = { registration_basis: basis };
-        if (ref) body.registration_ref = ref;
-      } else if (action === 'reject-registration') {
-        const basis = window.prompt('Defect basis — why the registry rejected the deed or the opinion found a defect:');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. wrong_property / ranking_clash / signature_defect):') || '';
-        body = { defect_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'begin-perfection-review') {
-        const basis = window.prompt('Perfection-review basis — instructing the legal opinion on perfection / ranking:');
-        if (!basis) return;
-        const ref = window.prompt('Legal opinion reference (e.g. OPIN-2026-0011):') || '';
-        body = { perfection_basis: basis };
-        if (ref) body.legal_opinion_ref = ref;
-      } else if (action === 'confirm-perfection') {
-        const basis = window.prompt('Perfection basis — the clean legal opinion confirming the security is perfected and correctly ranked:');
-        if (!basis) return;
-        const pref = window.prompt('Perfection reference (e.g. PERF-2026-0011):') || '';
-        const oref = window.prompt('Legal opinion reference:', row.legal_opinion_ref ?? '') || '';
-        const summary = window.prompt('Resolution summary (one line for the audit record):') || '';
-        body = { perfection_basis: basis };
-        if (pref) body.perfection_ref = pref;
-        if (oref) body.legal_opinion_ref = oref;
-        if (summary) body.resolution_summary = summary;
-      } else if (action === 'flag-overdue') {
-        const basis = window.prompt('Overdue basis — the CP/CS perfection deadline that has been missed:');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. deadline_missed / registry_backlog / grantor_delay):') || '';
-        body = { overdue_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'cure-overdue') {
-        const basis = window.prompt('Cure basis — re-lodging to cure the overdue / defective item:');
-        if (!basis) return;
-        const ref = window.prompt('Lodgement reference (re-lodge):') || '';
-        const summary = window.prompt('Resolution summary (one line for the audit record):') || '';
-        body = { lodgement_basis: basis };
-        if (ref) body.lodgement_ref = ref;
-        if (summary) body.resolution_summary = summary;
-      } else if (action === 'release-security') {
-        const basis = window.prompt('Release basis — discharge on repayment / substitution / refinancing:');
-        if (!basis) return;
-        const ref = window.prompt('Release reference (e.g. REL-2026-0011 / cancellation):') || '';
-        const summary = window.prompt('Resolution summary (one line for the audit record):') || '';
-        body = { release_basis: basis };
-        if (ref) body.release_ref = ref;
-        if (summary) body.resolution_summary = summary;
-      } else if (action === 'mark-lapsed') {
-        const basis = window.prompt('Lapse basis — why the security was never perfected (deadline blown / unrecoverable defect):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. deadline_lapsed / registry_refused / abandoned):') || '';
-        const summary = window.prompt('Resolution summary (one line for the audit record):') || '';
-        body = { lapse_basis: basis };
-        if (reason) body.reason_code = reason;
-        if (summary) body.resolution_summary = summary;
-      } else if (action === 'withdraw') {
-        const reason = window.prompt('Withdrawal reason — item dropped from the security package / superseded:');
-        if (!reason) return;
-        const summary = window.prompt('Resolution summary (one line for the audit record):') || '';
-        body = { reason_code: reason };
-        if (summary) body.resolution_summary = summary;
-      }
-      await api.post(`/security-perfection/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
+  const kpis = summary ?? {
+    total: 0, open_count: 0, perfected_count: 0, defective_count: 0,
+    overdue_count: 0, released_count: 0, lapsed_count: 0, withdrawn_count: 0,
+    breached: 0, reportable_total: 0, cp_open: 0, high_open: 0,
+    total_secured_zar: 0, perfected_secured_zar: 0, lapsed_secured_zar: 0,
+  };
 
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Security perfection & registration</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-state collateral-perfection chain (Deeds Registries Act 47/1937 · Security by Means of Movable
-            Property Act 57/1993 · Companies Act 71/2008 s126 · Financial Markets Act 19/2012 / STRATE · SARB
-            Exchange Control) · identified → documented → executed → lodged → registered → reviewed → perfected
-            → released. A registry rejection or a perfection-opinion defect sends the item defective and back for
-            re-lodgement; a missed CP/CS deadline flags it overdue, then cured or lapsed. URGENT SLA: the larger
-            / more critical the security, the tighter every window. Tier by secured value in ZAR with a
-            condition-precedent floor at major. Two-party write — the security agent (lender) drives every step;
-            the grantor (borrower) executes the security document. The W69 signature — a security item that
-            LAPSES crosses to the regulator for every tier; a high-tier item going overdue and a high-tier SLA
-            breach cross for major + critical; the registry rejecting a critical CP deed crosses for the critical
-            tier only.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Security perfection & registration</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          12-state collateral-perfection chain (Deeds Registries Act 47/1937 · Security by Means of Movable
+          Property Act 57/1993 · Companies Act 71/2008 s126 · Financial Markets Act 19/2012 / STRATE · SARB
+          Exchange Control) · identified → documented → executed → lodged → registered → reviewed → perfected
+          → released. A registry rejection or a perfection-opinion defect sends the item defective and back for
+          re-lodgement; a missed CP/CS deadline flags it overdue, then cured or lapsed. URGENT SLA: the larger
+          / more critical the security, the tighter every window. Two-party write — security agent (lender)
+          drives every step; grantor (borrower) executes the security document.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} tone={(kpis?.open_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="CP open" value={kpis?.cp_open ?? 0} tone={(kpis?.cp_open ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="High open" value={kpis?.high_open ?? 0} tone={(kpis?.high_open ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Perfected" value={kpis?.perfected_count ?? 0} tone="ok" />
-        <Kpi label="Defective" value={kpis?.defective_count ?? 0} tone={(kpis?.defective_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Overdue" value={kpis?.overdue_count ?? 0} tone={(kpis?.overdue_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Lapsed" value={kpis?.lapsed_count ?? 0} tone={(kpis?.lapsed_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Secured value" value={fmtZar(kpis?.total_secured_zar ?? 0)} />
-        <Kpi label="Perfected value" value={fmtZar(kpis?.perfected_secured_zar ?? 0)} tone="ok" />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total"           value={kpis.total} />
+        <KpiTile label="Open"            value={kpis.open_count}       tone={kpis.open_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="CP open"         value={kpis.cp_open}          tone={kpis.cp_open > 0 ? 'warn' : undefined} />
+        <KpiTile label="High open"       value={kpis.high_open}        tone={kpis.high_open > 0 ? 'warn' : undefined} />
+        <KpiTile label="Perfected"       value={kpis.perfected_count}  tone="ok" />
+        <KpiTile label="Defective"       value={kpis.defective_count}  tone={kpis.defective_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="Overdue"         value={kpis.overdue_count}    tone={kpis.overdue_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="SLA breached"    value={kpis.breached}         tone={kpis.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Reportable"      value={kpis.reportable_total} tone={kpis.reportable_total > 0 ? 'warn' : undefined} />
+        <KpiTile label="Lapsed"          value={kpis.lapsed_count}     tone={kpis.lapsed_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="Secured value"   value={fmtZar(kpis.total_secured_zar)} />
+        <KpiTile label="Perfected value" value={fmtZar(kpis.perfected_secured_zar)} tone="ok" />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Borrower</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Security type</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Secured</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.severity_tier];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.case_number}
-                      {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to the regulator">●</span>}
-                      {r.perfection_critical ? <span className="ml-1 text-[#8a4a00]" title="Condition precedent to drawdown">★</span> : null}
-                      {r.cross_border ? <span className="ml-1 text-[#1a3a5c]" title="Non-resident beneficiary (SARB ExCon)">⊗</span> : null}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[180px] truncate" title={r.borrower_name}>
-                      {r.borrower_name}
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{SECURITY_TYPE_LABEL[r.security_type] ?? r.security_type}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">
-                      {fmtZar(r.secured_value_zar)}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No security items match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading...
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.case_number} — ${row.borrower_name}`}
+              meta={[
+                TIER_LABEL[row.severity_tier],
+                SECURITY_TYPE_LABEL[row.security_type] ?? row.security_type,
+                row.registry ? (REGISTRY_LABEL[row.registry] ?? row.registry) : null,
+              ].filter(Boolean).join(' · ')}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No security items match.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-const BTN_CLASS: Record<'primary' | 'danger' | 'warn' | 'good' | 'muted', string> = {
-  primary: 'rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]',
-  danger:  'rounded border border-red-400 bg-white px-3 py-1.5 text-[12px] font-medium text-red-800 hover:bg-red-50',
-  warn:    'rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-orange-700 hover:bg-orange-50',
-  good:    'rounded border border-green-300 bg-white px-3 py-1.5 text-[12px] font-medium text-green-800 hover:bg-green-50',
-  muted:   'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b1f1f] hover:bg-[#f3e0e0]',
-};
-
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: PerfectionRow;
-  events: PerfectionEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: PerfectionRow) => void;
-}) {
-  const actions = ALLOWED_ACTIONS[row.chain_status] || [];
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.case_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">
-                {row.borrower_name}
-                {row.perfection_critical ? <span className="ml-2 text-[#8a4a00]" title="Condition precedent to drawdown">★ CP</span> : null}
-                {row.cross_border ? <span className="ml-2 text-[#1a3a5c]" title="Non-resident beneficiary (SARB ExCon)">⊗ Cross-border</span> : null}
-              </div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.severity_tier].label}
-                {` · ${SECURITY_TYPE_LABEL[row.security_type] ?? row.security_type}`}
-                {row.registry ? ` · ${REGISTRY_LABEL[row.registry] ?? row.registry}` : ''}
-                {row.ranking ? ` · ${row.ranking}` : ''}
-              </div>
-              <div className="mt-1 text-[11px] text-[#4a5568]">
-                {row.security_agent_name || 'Security agent'} → {row.grantor_name || row.borrower_name}
-                {row.relodge_round > 0 ? ` · re-lodge round ${row.relodge_round}` : ''}
-                {row.escalation_level > 0 ? ` · escalation lvl ${row.escalation_level}` : ''}
-              </div>
-              {row.facility_name && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Facility {row.facility_name}{row.project_name ? ` · ${row.project_name}` : ''}
-                </div>
-              )}
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"                value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier"                 value={TIER_TONE[row.severity_tier].label} />
-            <Pair label="Security type"         value={SECURITY_TYPE_LABEL[row.security_type] ?? row.security_type} />
-            <Pair label="Registry"              value={row.registry ? (REGISTRY_LABEL[row.registry] ?? row.registry) : '—'} />
-            <Pair label="Ranking"               value={row.ranking ?? '—'} />
-            <Pair label="Secured value"         value={fmtZar(row.secured_value_zar)} />
-            <Pair label="Condition precedent"   value={row.perfection_critical ? 'Yes' : 'No'} />
-            <Pair label="Cross-border"          value={row.cross_border ? 'Yes (SARB ExCon)' : 'No'} />
-            <Pair label="Description"           value={row.security_description ?? '—'} />
-            <Pair label="Document ref"          value={row.document_ref ?? '—'} />
-            <Pair label="Lodgement ref"         value={row.lodgement_ref ?? '—'} />
-            <Pair label="Registration ref"      value={row.registration_ref ?? '—'} />
-            <Pair label="Perfection ref"        value={row.perfection_ref ?? '—'} />
-            <Pair label="Legal opinion ref"     value={row.legal_opinion_ref ?? '—'} />
-            <Pair label="Release ref"           value={row.release_ref ?? '—'} />
-            <Pair label="Reason code"           value={row.reason_code ?? '—'} />
-            <Pair label="Re-lodge round"        value={String(row.relodge_round)} />
-            <Pair label="Identified"            value={fmtDate(row.identified_at)} />
-            <Pair label="Documentation"         value={fmtDate(row.documentation_pending_at)} />
-            <Pair label="Executed"              value={fmtDate(row.executed_at)} />
-            <Pair label="Lodged"                value={fmtDate(row.lodged_for_registration_at)} />
-            <Pair label="Registered"            value={fmtDate(row.registered_at)} />
-            <Pair label="Perfection review"     value={fmtDate(row.perfection_review_at)} />
-            <Pair label="Perfected"             value={fmtDate(row.perfected_at)} />
-            <Pair label="Defective"             value={fmtDate(row.defective_at)} />
-            <Pair label="Overdue"               value={fmtDate(row.perfection_overdue_at)} />
-            <Pair label="Released"              value={fmtDate(row.released_at)} />
-            <Pair label="Lapsed"                value={fmtDate(row.lapsed_at)} />
-            <Pair label="Perfection deadline"   value={fmtDate(row.perfection_deadline_at)} />
-            <Pair label="SLA deadline"          value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"            value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"        value={String(row.escalation_level)} />
-            <Pair label="Reportable"            value={row.is_reportable ? 'Yes' : 'No'} />
-          </div>
-          {row.resolution_summary && (
-            <BasisBlock label="Resolution summary" tone="#1a3a5c" text={row.resolution_summary} />
-          )}
-          {row.documentation_basis && (
-            <BasisBlock label="Documentation basis" tone="#a06200" text={row.documentation_basis} />
-          )}
-          {row.execution_basis && (
-            <BasisBlock label="Execution basis (grantor)" tone="#1a3a5c" text={row.execution_basis} />
-          )}
-          {row.lodgement_basis && (
-            <BasisBlock label="Lodgement basis" tone="#8a4a00" text={row.lodgement_basis} />
-          )}
-          {row.registration_basis && (
-            <BasisBlock label="Registration basis" tone="#155724" text={row.registration_basis} />
-          )}
-          {row.defect_basis && (
-            <BasisBlock label="Defect basis" tone="#9b1f1f" text={row.defect_basis} />
-          )}
-          {row.perfection_basis && (
-            <BasisBlock label="Perfection basis" tone="#155724" text={row.perfection_basis} />
-          )}
-          {row.overdue_basis && (
-            <BasisBlock label="Overdue basis" tone="#5a1818" text={row.overdue_basis} />
-          )}
-          {row.release_basis && (
-            <BasisBlock label="Release basis" tone="#155724" text={row.release_basis} />
-          )}
-          {row.lapse_basis && (
-            <BasisBlock label="Lapse basis" tone="#5a1818" text={row.lapse_basis} />
-          )}
-        </section>
-
-        {actions.length > 0 && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {actions.map((a, idx) => (
-                <button type="button"
-                  key={a}
-                  onClick={() => onAct(a, row)}
-                  className={idx === 0 ? BTN_CLASS.primary : BTN_CLASS[ACTION_TONE[a]]}
-                >
-                  {ACTION_LABEL[a]}
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1, fontSize: 11 }}>{value}</div>
     </div>
   );
 }
+
+function BasisBlock({ label, text }: { label: string; text: string }) {
+  return (
+    <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="whitespace-pre-wrap" style={{ color: TX2, fontSize: 11 }}>{text}</div>
+    </div>
+  );
+}
+
+export default SecurityPerfectionChainTab;

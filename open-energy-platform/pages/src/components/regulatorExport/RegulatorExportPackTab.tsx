@@ -57,6 +57,7 @@ type RegulatorTarget =
   | 'DFFE' | 'DTI' | 'JSE' | 'SARS' | 'CIPC';
 
 interface RepRow {
+  [key: string]: unknown;
   id: string;
   pack_number: string;
   pack_cadence: Cadence;
@@ -183,8 +184,8 @@ interface RepEvent {
 
 const STATE_TONE: Record<RepStatus, { bg: string; fg: string; label: string }> = {
   pack_proposed:            { bg: '#e3e7ec', fg: '#445',    label: 'Pack proposed' },
-  blocks_selected:          { bg: '#dbecfb', fg: '#1a3a5c', label: 'Blocks selected' },
-  leaves_filtered:          { bg: '#dbecfb', fg: '#1a3a5c', label: 'Leaves filtered' },
+  blocks_selected:          { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Blocks selected' },
+  leaves_filtered:          { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Leaves filtered' },
   xbrl_assembled:           { bg: '#fff4d6', fg: '#a06200', label: 'XBRL assembled' },
   narratives_attached:      { bg: '#fff4d6', fg: '#a06200', label: 'Narratives attached' },
   internal_qa:              { bg: '#fff4d6', fg: '#a06200', label: 'Internal QA' },
@@ -202,7 +203,7 @@ const STATE_TONE: Record<RepStatus, { bg: string; fg: string; label: string }> =
 
 const TIER_TONE: Record<RepTier, { bg: string; fg: string; label: string }> = {
   ad_hoc:                 { bg: '#e3e7ec', fg: '#557',    label: 'Ad hoc' },
-  monthly_return:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Monthly' },
+  monthly_return:         { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Monthly' },
   quarterly_attestation:  { bg: '#fff4d6', fg: '#a06200', label: 'Quarterly' },
   half_year:              { bg: '#daf5e2', fg: '#1f6b3a', label: 'Half-year' },
   annual_audit:           { bg: '#7a0e0e', fg: '#fff',    label: 'Annual audit' },
@@ -224,7 +225,7 @@ const HEALTH_TONE: Record<HealthBand, { bg: string; fg: string; label: string }>
 
 const TARGET_TONE: Record<RegulatorTarget, { bg: string; fg: string }> = {
   NERSA: { bg: '#0c2a4d', fg: '#fff'    },
-  IPPO:  { bg: '#1a3a5c', fg: '#fff'    },
+  IPPO:  { bg: 'oklch(0.46 0.16 55)', fg: '#fff'    },
   SARB:  { bg: '#1f5b3a', fg: '#fff'    },
   DMRE:  { bg: '#a06200', fg: '#fff'    },
   FSCA:  { bg: '#7a0e0e', fg: '#fff'    },
@@ -590,7 +591,7 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
   }, [load]);
 
   return (
-    <div className="text-[12px] text-[#1a3a5c]">
+    <div className="text-[12px] text-[oklch(0.46_0.16_55)]">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-base font-semibold text-[#0c2a4d]">Certified regulator export packs (W119)</h2>
@@ -623,9 +624,9 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
 
       {/* Drill rail */}
       <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[#d8dde6] bg-white px-3 py-2 text-[11px] text-[#4a5568]">
-        <span>Proposed: <span className="font-semibold text-[#1a3a5c]">{kpis.proposed_count}</span></span>
-        <span>Blocks selected: <span className="font-semibold text-[#1a3a5c]">{kpis.selected_count}</span></span>
-        <span>Filtered: <span className="font-semibold text-[#1a3a5c]">{kpis.filtered_count}</span></span>
+        <span>Proposed: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.proposed_count}</span></span>
+        <span>Blocks selected: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.selected_count}</span></span>
+        <span>Filtered: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.filtered_count}</span></span>
         <span>XBRL assembled: <span className="font-semibold text-[#a06200]">{kpis.xbrl_count}</span></span>
         <span>Narratives: <span className="font-semibold text-[#a06200]">{kpis.narratives_count}</span></span>
         <span>Internal QA: <span className="font-semibold text-[#a06200]">{kpis.internal_qa_count}</span></span>
@@ -636,17 +637,17 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
         <span>Withdrawn: <span className="font-semibold text-[#9b1f1f]">{kpis.withdrawn_count}</span></span>
         <span>Restated: <span className="font-semibold text-[#a06200]">{kpis.restated_count}</span></span>
         <span>Suspended: <span className="font-semibold text-[#6b7685]">{kpis.suspended_count}</span></span>
-        <span>Completeness avg: <span className="font-semibold text-[#1a3a5c]">{kpis.completeness_avg}/140</span></span>
-        <span>XBRL avg: <span className="font-semibold text-[#1a3a5c]">{kpis.xbrl_avg}/140</span></span>
-        <span>ESG avg: <span className="font-semibold text-[#1a3a5c]">{kpis.esg_avg}/100</span></span>
-        <span>Controls avg: <span className="font-semibold text-[#1a3a5c]">{kpis.controls_avg}/140</span></span>
-        <span>Integrity avg: <span className="font-semibold text-[#1a3a5c]">{kpis.integrity_avg}/140</span></span>
-        <span>W118: <span className="font-semibold text-[#1a3a5c]">{kpis.w118_bridged_count}</span></span>
-        <span>W113: <span className="font-semibold text-[#1a3a5c]">{kpis.w113_bridged_count}</span></span>
-        <span>W114: <span className="font-semibold text-[#1a3a5c]">{kpis.w114_bridged_count}</span></span>
-        <span>W115: <span className="font-semibold text-[#1a3a5c]">{kpis.w115_bridged_count}</span></span>
-        <span>W116: <span className="font-semibold text-[#1a3a5c]">{kpis.w116_bridged_count}</span></span>
-        <span>W117: <span className="font-semibold text-[#1a3a5c]">{kpis.w117_bridged_count}</span></span>
+        <span>Completeness avg: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.completeness_avg}/140</span></span>
+        <span>XBRL avg: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.xbrl_avg}/140</span></span>
+        <span>ESG avg: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.esg_avg}/100</span></span>
+        <span>Controls avg: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.controls_avg}/140</span></span>
+        <span>Integrity avg: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.integrity_avg}/140</span></span>
+        <span>W118: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w118_bridged_count}</span></span>
+        <span>W113: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w113_bridged_count}</span></span>
+        <span>W114: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w114_bridged_count}</span></span>
+        <span>W115: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w115_bridged_count}</span></span>
+        <span>W116: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w116_bridged_count}</span></span>
+        <span>W117: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w117_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / priority pills */}
@@ -710,17 +711,17 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Pack #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Target</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Cadence</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Health</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">XBRL</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Integrity</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Flags</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Age</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Pack #</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Target</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Cadence</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Tier</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Health</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">State</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-center">XBRL</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-center">Integrity</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-center">Flags</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-right">Age</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-right">SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -750,7 +751,7 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
                         {r.regulator_target}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-[11px] text-[#1a3a5c]">{r.pack_cadence}</td>
+                    <td className="px-3 py-2 text-[11px] text-[oklch(0.46_0.16_55)]">{r.pack_cadence}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tier.bg, color: tier.fg }}>
                         {tier.label}
@@ -861,7 +862,7 @@ function Drawer({
         ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
         : tone === 'amber'
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
-          : 'bg-white border border-[#d8dde6] text-[#1a3a5c] hover:bg-[#f3f5f9]';
+          : 'bg-white border border-[#d8dde6] text-[oklch(0.46_0.16_55)] hover:bg-[#f3f5f9]';
     return (
       <button type="button"
         key={action}
@@ -885,7 +886,7 @@ function Drawer({
               {row.title || 'Regulator export pack'} {'•'} {row.reporting_period_start} {'→'} {row.reporting_period_end}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[oklch(0.46_0.16_55)] hover:bg-[#f3f5f9]">Close</button>
         </div>
 
         {/* Scoring */}
@@ -963,7 +964,7 @@ function Drawer({
             {events.map((e) => (
               <li key={e.id} className="px-3 py-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[#1a3a5c]">{e.event_type}</span>
+                  <span className="font-mono text-[oklch(0.46_0.16_55)]">{e.event_type}</span>
                   <span className="text-[#6b7685]">{fmtDate(e.created_at)}</span>
                 </div>
                 <div className="text-[#4a5568]">
@@ -1071,7 +1072,7 @@ function ProposeModal({
           </div>
         </div>
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
+          <button type="button" onClick={onClose} className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] text-[oklch(0.46_0.16_55)] hover:bg-[#f3f5f9]">Cancel</button>
           <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose</button>
         </div>
       </div>

@@ -75,6 +75,7 @@ type AssetClass =
 type ModelCardStatus = 'draft' | 'approved' | 'published' | 'expired';
 
 interface NcbRow {
+  [key: string]: unknown;
   id: string;
   cycle_number: string;
   cycle_kind: CycleKind | string;
@@ -229,10 +230,10 @@ interface NcbEvent {
 
 const STATE_TONE: Record<NcbStatus, { bg: string; fg: string; label: string }> = {
   cycle_proposed:                 { bg: '#e3e7ec', fg: '#445',    label: 'Proposed' },
-  baselines_synced:               { bg: '#dbecfb', fg: '#1a3a5c', label: 'Baselines' },
-  telemetry_window_bound:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Tel. window' },
-  ntt_emulation_run:              { bg: '#dbecfb', fg: '#1a3a5c', label: 'NTT emu.' },
-  champion_predictions_collected: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Champ. pred.' },
+  baselines_synced:               { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Baselines' },
+  telemetry_window_bound:         { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Tel. window' },
+  ntt_emulation_run:              { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'NTT emu.' },
+  champion_predictions_collected: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Champ. pred.' },
   counterfactuals_computed:       { bg: '#fff4d6', fg: '#a06200', label: 'Counterfact.' },
   revenue_weighted_scored:        { bg: '#fff4d6', fg: '#a06200', label: 'Rev. weighted' },
   significance_tested:            { bg: '#fff4d6', fg: '#a06200', label: 'Sig. tested' },
@@ -248,7 +249,7 @@ const STATE_TONE: Record<NcbStatus, { bg: string; fg: string; label: string }> =
 
 const TIER_TONE: Record<NcbTier, { bg: string; fg: string; label: string }> = {
   single_asset:             { bg: '#e3e7ec', fg: '#557',    label: 'Single asset' },
-  small_fleet:              { bg: '#dbecfb', fg: '#1a3a5c', label: 'Small fleet' },
+  small_fleet:              { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Small fleet' },
   large_fleet:              { bg: '#daf5e2', fg: '#1f6b3a', label: 'Large fleet' },
   multi_jurisdiction_fleet: { bg: '#fff4d6', fg: '#a06200', label: 'Multi-juris.' },
   fleet_systemic:           { bg: '#7a0e0e', fg: '#fff',    label: 'Systemic' },
@@ -687,7 +688,7 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
   }, [load]);
 
   return (
-    <div className="text-[12px] text-[#1a3a5c]">
+    <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-base font-semibold text-[#0c2a4d]">NTT comparison battery (W130) - CLOSES PHASE D</h2>
@@ -726,11 +727,11 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
 
       {/* Drill rail */}
       <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[#d8dde6] bg-white px-3 py-2 text-[11px] text-[#4a5568]">
-        <span>Proposed: <span className="font-semibold text-[#1a3a5c]">{kpis.proposed_count}</span></span>
-        <span>Baselines: <span className="font-semibold text-[#1a3a5c]">{kpis.synced_count}</span></span>
-        <span>Tel. win.: <span className="font-semibold text-[#1a3a5c]">{kpis.bound_count}</span></span>
-        <span>NTT emu.: <span className="font-semibold text-[#1a3a5c]">{kpis.emulated_count}</span></span>
-        <span>Champ. pred.: <span className="font-semibold text-[#1a3a5c]">{kpis.collected_count}</span></span>
+        <span>Proposed: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.proposed_count}</span></span>
+        <span>Baselines: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.synced_count}</span></span>
+        <span>Tel. win.: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.bound_count}</span></span>
+        <span>NTT emu.: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.emulated_count}</span></span>
+        <span>Champ. pred.: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.collected_count}</span></span>
         <span>Counterfact.: <span className="font-semibold text-[#a06200]">{kpis.counterfactuals_count}</span></span>
         <span>Scored: <span className="font-semibold text-[#a06200]">{kpis.scored_count}</span></span>
         <span>Sig. tested: <span className="font-semibold text-[#a06200]">{kpis.tested_count}</span></span>
@@ -743,11 +744,11 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
         <span>Floor flags: <span className="font-semibold text-[#a06200]">{kpis.floor_flag_total}</span></span>
         <span>Card exp. {'<'}30d: <span className="font-semibold text-[#9b1f1f]">{kpis.model_card_expiring_30d}</span></span>
         <span>Total ZAR: <span className="font-semibold text-[#1f5b3a]">{fmtZar(kpis.total_savings_sum_zar)}</span></span>
-        <span>W118: <span className="font-semibold text-[#1a3a5c]">{kpis.w118_bridged_count}</span></span>
-        <span>W127: <span className="font-semibold text-[#1a3a5c]">{kpis.w127_bridged_count}</span></span>
-        <span>W128: <span className="font-semibold text-[#1a3a5c]">{kpis.w128_bridged_count}</span></span>
-        <span>W129: <span className="font-semibold text-[#1a3a5c]">{kpis.w129_bridged_count}</span></span>
-        <span>W71: <span className="font-semibold text-[#1a3a5c]">{kpis.w71_bridged_count}</span></span>
+        <span>W118: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
+        <span>W127: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w127_bridged_count}</span></span>
+        <span>W128: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w128_bridged_count}</span></span>
+        <span>W129: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w129_bridged_count}</span></span>
+        <span>W71: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w71_bridged_count}</span></span>
         <span>Reneg. floor: <span className="font-semibold text-[#a06200]">{kpis.ntt_contract_reneg_consecutive_cycles_required} cyc.</span></span>
         <span>Material floor: <span className="font-semibold text-[#a06200]">{fmtZar(kpis.material_savings_floor_zar)}</span></span>
       </div>
@@ -847,17 +848,17 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Cycle #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Kind / asset</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Health</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">vs NTT</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Total</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Cumul.</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Ctrl</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Flags</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Cycle #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Kind / asset</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Health</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>vs NTT</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Total</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Cumul.</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.46 0.16 55)' }}>Ctrl</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.46 0.16 55)' }}>Flags</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -883,7 +884,7 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
                       {r.floor_at_fleet_systemic_live ? <span className="ml-1 text-[9px] font-semibold text-[#7a0e0e]">SYS</span> : null}
                       {r.ntt_contract_renegotiation_trigger ? <span className="ml-1 text-[9px] font-semibold text-[#a06200]">RENEG</span> : null}
                     </td>
-                    <td className="px-3 py-2 text-[11px] font-mono text-[#1a3a5c]">
+                    <td className="px-3 py-2 text-[11px] font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {fmtKind(r.cycle_kind)}
                       <div className="text-[10px] text-[#6b7685]">{fmtAssetClass(r.asset_class)}</div>
                     </td>
@@ -1003,7 +1004,7 @@ function Drawer({
         ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
         : tone === 'amber'
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
-          : 'bg-white border border-[#d8dde6] text-[#1a3a5c] hover:bg-[#f3f5f9]';
+          : 'bg-white border border-[#d8dde6] hover:bg-[#f3f5f9]';
     return (
       <button type="button"
         key={action}
@@ -1032,7 +1033,7 @@ function Drawer({
               {row.cycle_window_start ? <> {'•'} {fmtDate(row.cycle_window_start)} → {fmtDate(row.cycle_window_end)}</> : null}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         {/* Hero quad */}
@@ -1163,13 +1164,13 @@ function Drawer({
             )}
             {events.map((e) => (
               <li key={e.id} className="px-3 py-2 text-[11px]">
-                <div className="font-semibold text-[#1a3a5c]">{e.event_type}</div>
+                <div className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.event_type}</div>
                 <div className="text-[10px] text-[#4a5568]">
                   {e.from_status || '-'} {'→'} {e.to_status || '-'}
                   {e.actor_party ? <> {'•'} {e.actor_party}</> : null}
                   {' '}{'•'} {fmtDate(e.created_at)}
                 </div>
-                {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
               </li>
             ))}
           </ol>
@@ -1309,7 +1310,7 @@ function ProposeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px] text-[#1a3a5c]">
+      <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
         <div className="mb-3 flex items-start justify-between">
           <div>
             <h3 className="text-base font-semibold text-[#0c2a4d]">Propose NTT comparison cycle (W130)</h3>
@@ -1319,7 +1320,7 @@ function ProposeModal({
               recall_certification crosses regulator EVERY tier (W130 SIGNATURE).
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -1405,7 +1406,7 @@ function ProposeModal({
         </div>
 
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Cancel</button>
           <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose cycle</button>
         </div>
       </div>
@@ -1428,7 +1429,7 @@ function Checkbox({
   checked: boolean; onChange: (v: boolean) => void; label: string;
 }) {
   return (
-    <label className="flex items-center gap-2 text-[11px] text-[#1a3a5c]">
+    <label className="flex items-center gap-2 text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       {label}
     </label>

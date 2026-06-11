@@ -54,7 +54,7 @@ const app = new Hono<HonoEnv>();
 // Global middleware
 app.use('*', securityHeaders);
 app.use('*', corsMiddleware);
-app.use('*', rateLimitMiddleware);
+app.use('/api/*', rateLimitMiddleware);
 app.use('*', requestLogger);
 // optionalAuth runs BEFORE idempotency so the idempotency middleware can
 // scope stored keys by authenticated participant (c.get('auth')?.user),
@@ -224,6 +224,12 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
         nttComparisonBatteryNightlyCycleRunner(env as never));
       await safe('telemetry_rollup_and_purge', () => runTelemetryRollupAndPurge(env));
       await safe('audit_merkle_publish', () => buildDailyMerkleRoots(env as never, yesterday));
+      // Purge resolved/abandoned DLQ rows older than 90 days to prevent unbounded growth.
+      await safe('cascade_dlq_purge', async () => {
+        await env.DB.prepare(
+          `DELETE FROM cascade_dlq WHERE status IN ('resolved','abandoned') AND first_seen_at < datetime('now','-90 days')`,
+        ).run();
+      });
       break;
 
     case '10 0 * * *':

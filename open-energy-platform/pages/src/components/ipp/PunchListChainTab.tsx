@@ -25,6 +25,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'identified' | 'assessed' | 'assigned' | 'in_remediation'
@@ -39,6 +54,7 @@ type WorkflowClass =
   | 'punch_warranty_carryover' | 'snag_post_handover';
 
 interface PunchRow {
+  [key: string]: unknown;
   id: string;
   punch_number: string;
   project_id: string;
@@ -125,19 +141,6 @@ interface PunchRow {
   reportable_per_spec: boolean;
 }
 
-interface PunchEvent {
-  id: string;
-  punch_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiSummary {
   total: number;
   open_count: number;
@@ -158,53 +161,25 @@ interface KpiSummary {
   total_recovered_zar: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  identified:          { bg: '#e3e7ec', fg: '#557',    label: 'Identified' },
-  assessed:            { bg: '#dbecfb', fg: '#1a3a5c', label: 'Assessed' },
-  assigned:            { bg: '#dbecfb', fg: '#1a3a5c', label: 'Assigned' },
-  in_remediation:      { bg: '#fff4d6', fg: '#a06200', label: 'In remediation' },
-  reinspect_requested: { bg: '#fff4d6', fg: '#a06200', label: 'Reinspect requested' },
-  reinspected:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Reinspected' },
-  accepted:            { bg: '#daf5e2', fg: '#1f6b3a', label: 'Accepted' },
-  closed:              { bg: '#cfe9d7', fg: '#0f5132', label: 'Closed' },
-  on_hold:             { bg: '#ffe4b5', fg: '#8a4a00', label: 'On hold' },
-  voided:              { bg: '#fde0e0', fg: '#9b1f1f', label: 'Voided' },
-  withdrawn:           { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'identified',
+  'assessed',
+  'assigned',
+  'in_remediation',
+  'reinspect_requested',
+  'reinspected',
+  'accepted',
+  'closed',
+];
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical' },
-  high:     { bg: '#ffe4b5', fg: '#8a4a00', label: 'High' },
-  standard: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard' },
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-};
+const BRANCH_STATES: readonly string[] = [
+  'on_hold',
+  'voided',
+  'withdrawn',
+];
 
-const URGENCY_TONE: Record<string, { bg: string; fg: string; label: string }> = {
-  red:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Red' },
-  amber:    { bg: '#ffe4b5', fg: '#8a4a00', label: 'Amber' },
-  yellow:   { bg: '#fff4d6', fg: '#a06200', label: 'Yellow' },
-  green:    { bg: '#daf5e2', fg: '#1f6b3a', label: 'Green' },
-  terminal: { bg: '#e3e7ec', fg: '#557',    label: 'Terminal' },
-};
-
-const AUTHORITY_LABEL: Record<string, string> = {
-  site_supervisor:  'Site supervisor',
-  quality_engineer: 'Quality engineer',
-  project_manager:  'Project manager',
-  project_director: 'Project director',
-};
-
-const WORKFLOW_LABEL: Record<WorkflowClass, string> = {
-  punch_safety_critical:       'Safety-critical',
-  punch_functional_performance:'Functional / performance',
-  punch_cosmetic:              'Cosmetic',
-  punch_documentation:         'Documentation',
-  punch_commissioning:         'Commissioning',
-  punch_handover_blocker:      'Handover blocker',
-  punch_warranty_carryover:    'Warranty carryover',
-  snag_post_handover:          'Post-handover snag',
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'open',                label: 'Open' },
   { key: 'all',                 label: 'All' },
@@ -225,56 +200,28 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'safety_only',         label: 'Life-safety' },
 ];
 
-type ActionKind =
-  | 'assess' | 'assign' | 'begin-remediation' | 'request-reinspection'
-  | 'reinspect' | 'accept' | 'reject-reinspection' | 'close'
-  | 'park' | 'resume' | 'void' | 'withdraw';
+// ── constants ─────────────────────────────────────────────────────────────
+const TERMINAL_STATES: ChainStatus[] = ['closed', 'voided', 'withdrawn'];
 
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  identified:          'assess',
-  assessed:            'assign',
-  assigned:            'begin-remediation',
-  in_remediation:      'request-reinspection',
-  reinspect_requested: 'reinspect',
-  reinspected:         'accept',
-  accepted:            'close',
-  closed:              null,
-  on_hold:             'resume',
-  voided:              null,
-  withdrawn:           null,
+const WORKFLOW_LABEL: Record<WorkflowClass, string> = {
+  punch_safety_critical:        'Safety-critical',
+  punch_functional_performance: 'Functional / performance',
+  punch_cosmetic:               'Cosmetic',
+  punch_documentation:          'Documentation',
+  punch_commissioning:          'Commissioning',
+  punch_handover_blocker:       'Handover blocker',
+  punch_warranty_carryover:     'Warranty carryover',
+  snag_post_handover:           'Post-handover snag',
 };
 
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'assess':               'Assess (quality engineer)',
-  'assign':               'Assign (project manager)',
-  'begin-remediation':    'Begin remediation (contractor)',
-  'request-reinspection': 'Request reinspection (contractor)',
-  'reinspect':            'Reinspect (independent engineer)',
-  'accept':               'Accept (independent engineer)',
-  'reject-reinspection':  'Reject reinspection (independent engineer)',
-  'close':                'Close (project manager)',
-  'park':                 'Park (project manager)',
-  'resume':               'Resume (contractor)',
-  'void':                 'Void (owner)',
-  'withdraw':             'Withdraw (quality engineer)',
+const AUTHORITY_LABEL: Record<string, string> = {
+  site_supervisor:  'Site supervisor',
+  quality_engineer: 'Quality engineer',
+  project_manager:  'Project manager',
+  project_director: 'Project director',
 };
 
-const SECONDARY_ACTIONS: Record<ChainStatus, ActionKind[]> = {
-  identified:          ['withdraw'],
-  assessed:            ['withdraw', 'void'],
-  assigned:            ['withdraw', 'void'],
-  in_remediation:      ['park', 'void'],
-  reinspect_requested: ['park', 'void'],
-  reinspected:         ['reject-reinspection', 'void'],
-  accepted:            ['void'],
-  closed:              [],
-  on_hold:             ['void'],
-  voided:              [],
-  withdrawn:           [],
-};
-
-const DESTRUCTIVE: ActionKind[] = ['reject-reinspection', 'void', 'withdraw', 'park'];
-
+// ── format helpers ────────────────────────────────────────────────────────
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
   const abs = Math.abs(m);
@@ -303,16 +250,359 @@ function fmtDate(s: string | null): string {
   return new Date(s).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['closed', 'voided', 'withdrawn'];
+// ── actions ───────────────────────────────────────────────────────────────
+function getActions(row: PunchRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
 
+  // Primary forward action per state
+  if (s === 'identified') {
+    actions.push({
+      key: 'assess',
+      label: 'Assess (quality engineer)',
+      fields: [
+        { key: 'narrative', label: 'Assessment finding — tier and authority are re-derived after this step', type: 'textarea', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'assessed') {
+    actions.push({
+      key: 'assign',
+      label: 'Assign (project manager)',
+      fields: [
+        { key: 'contractor_name', label: 'Assign to which contractor / subcontractor party', type: 'text', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'assigned') {
+    actions.push({
+      key: 'begin-remediation',
+      label: 'Begin remediation (contractor)',
+      fields: [
+        { key: 'narrative', label: 'Remediation plan / start note', type: 'textarea', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'in_remediation') {
+    actions.push({
+      key: 'request-reinspection',
+      label: 'Request reinspection (contractor)',
+      fields: [
+        { key: 'response_text', label: 'Evidence summary (photos / root-cause / commissioning) for reinspection', type: 'textarea', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'reinspect_requested') {
+    actions.push({
+      key: 'reinspect',
+      label: 'Reinspect (independent engineer)',
+      fields: [
+        { key: 'narrative', label: 'Reinspection finding (independent engineer)', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'reinspected') {
+    // accept — crosses regulator for high+critical with life-safety
+    actions.push({
+      key: 'accept',
+      label: 'Accept (independent engineer)',
+      fields: [
+        { key: 'regulator_ref', label: 'Regulator reference (life-safety high+critical crosses NERSA inbox) — leave blank if not applicable', type: 'text', required: false, placeholder: row.regulator_ref ?? '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+
+    // reject-reinspection — secondary; crosses regulator high+critical with COD-blocking
+    actions.push({
+      key: 'reject-reinspection',
+      label: 'Reject reinspection (independent engineer)',
+      fields: [
+        { key: 'narrative', label: 'Reason for reinspection rejection (COD-blocking high+critical crosses regulator)', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['regulator'],
+    });
+
+    // void secondary
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with handover OR life-safety crosses regulator EVERY tier', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'accepted') {
+    // close — crosses EVERY tier with COD-blocking OR life-safety
+    actions.push({
+      key: 'close',
+      label: 'Close (project manager)',
+      fields: [
+        { key: 'regulator_ref', label: 'Regulator reference (COD-blocking or life-safety crosses EVERY tier) — leave blank if not applicable', type: 'text', required: false, placeholder: row.regulator_ref ?? '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+
+    // void secondary
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with handover OR life-safety crosses regulator EVERY tier', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'on_hold') {
+    actions.push({
+      key: 'resume',
+      label: 'Resume (contractor)',
+      fields: [
+        { key: 'narrative', label: 'Resume note', type: 'textarea', required: false },
+      ],
+      cascadeTo: [],
+    });
+
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with handover OR life-safety crosses regulator EVERY tier', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  // Secondary actions for identified/assessed/assigned states
+  if (s === 'identified') {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw (quality engineer)',
+      fields: [
+        { key: 'withdrawn_reason', label: 'Withdrawal reason', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'assessed') {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw (quality engineer)',
+      fields: [
+        { key: 'withdrawn_reason', label: 'Withdrawal reason', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with handover OR life-safety crosses regulator EVERY tier', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'assigned') {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw (quality engineer)',
+      fields: [
+        { key: 'withdrawn_reason', label: 'Withdrawal reason', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with handover OR life-safety crosses regulator EVERY tier', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'in_remediation') {
+    actions.push({
+      key: 'park',
+      label: 'Park (project manager)',
+      fields: [
+        { key: 'narrative', label: 'Park reason (e.g. spare unavailable, weather, dependency)', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with handover OR life-safety crosses regulator EVERY tier', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'reinspect_requested') {
+    actions.push({
+      key: 'park',
+      label: 'Park (project manager)',
+      fields: [
+        { key: 'narrative', label: 'Park reason (e.g. spare unavailable, weather, dependency)', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with handover OR life-safety crosses regulator EVERY tier', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  return actions;
+}
+
+// ── detail renderer ───────────────────────────────────────────────────────
+function renderDetail(row: PunchRow): React.ReactNode {
+  const authority = AUTHORITY_LABEL[row.authority_required_live ?? row.authority_required ?? ''] ?? (row.authority_required ?? '—');
+  const netToOwner = (row.remediation_cost_zar ?? 0) - (row.recovered_from_contractor_zar ?? 0);
+
+  return (
+    <div style={{ fontSize: 11, color: TX2 }}>
+      {/* Live IPP-PM battery */}
+      <div className="mb-3 rounded border px-3 py-2" style={{ background: BG, borderColor: BORDER }}>
+        <div className="mb-1 text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>Live IPP-PM battery</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <DetailPair label="Quality index" value={fmtNum(row.ipp_pm_quality_index_live, 0)} hint="0-130 (Procore baseline=100; photo/root-cause/commissioning bonuses applied)" />
+          <DetailPair label="Days open" value={String(row.days_open_live ?? 0)} />
+          <DetailPair label="Days in court" value={String(row.days_in_court_live ?? 0)} hint="Aging in current state" />
+          <DetailPair label="Ball in court" value={row.ball_in_court_party_live ?? '—'} hint="Auto-derived from current state" />
+          <DetailPair label="Tier (live)" value={row.tier_live} hint="Re-derived every transition" />
+          <DetailPair label="Urgency band" value={row.urgency_band} />
+          <DetailPair label="Predicted close" value={fmtDate(row.predicted_close_date_live)} hint="Tier-derived ETA" />
+          <DetailPair label="Authority" value={authority} hint="Site supervisor → quality engineer → project manager → project director" />
+        </div>
+      </div>
+
+      {/* Coverage flags */}
+      <div className="mb-3 rounded border px-3 py-2" style={{ background: BG, borderColor: BORDER }}>
+        <div className="mb-1 text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>Coverage flags (FLOOR-AT-HIGH)</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <DetailPair label="Blocks COD" value={row.blocks_commercial_operation ? 'Yes' : 'No'} hint="NERSA §C-5 — blocks commercial operation" />
+          <DetailPair label="Blocks handover" value={row.blocks_handover ? 'Yes' : 'No'} hint="REIPPPP COD prerequisite" />
+          <DetailPair label="Life-safety" value={row.life_safety_critical ? 'Yes' : 'No'} hint="OHSA s24 life-safety critical" />
+          <DetailPair label="Warranty critical" value={row.warranty_critical ? 'Yes' : 'No'} hint="Triggers warranty cost-recovery on close" />
+          <DetailPair label="Rejections" value={String(row.rejection_count ?? 0)} />
+          <DetailPair label="Reinspections" value={String(row.reinspection_count ?? 0)} />
+          <DetailPair label="Photos" value={String(row.photo_evidence_count ?? 0)} hint="3+ photos = +10 quality" />
+          <DetailPair label="Root cause" value={row.root_cause_documented ? 'Yes' : 'No'} hint="+5 quality" />
+          <DetailPair label="Commissioning" value={row.commissioning_evidence ? 'Yes' : 'No'} hint="+5 quality" />
+          <DetailPair label="Drawing ref" value={row.identified_drawing_ref ?? '—'} />
+          <DetailPair label="Spec ref" value={row.identified_specification_ref ?? '—'} />
+          <DetailPair label="Zone" value={row.identified_zone ?? '—'} />
+        </div>
+      </div>
+
+      {/* Remediation economics */}
+      <div className="mb-3 rounded border px-3 py-2" style={{ background: BG, borderColor: BORDER }}>
+        <div className="mb-1 text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>Remediation economics</div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <DetailPair label="Remediation cost" value={fmtZar(row.remediation_cost_zar)} hint="Total cost expended on this punch" />
+          <DetailPair label="Recovered" value={fmtZar(row.recovered_from_contractor_zar)} hint="Recovered from contractor (back-charge)" />
+          <DetailPair label="Net to owner" value={fmtZar(netToOwner)} />
+        </div>
+      </div>
+
+      {/* Core details grid */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-2">
+        <DetailPair label="State"             value={row.chain_status} />
+        <DetailPair label="Workflow class"    value={WORKFLOW_LABEL[row.workflow_class]} />
+        <DetailPair label="Priority"          value={row.priority_class} />
+        <DetailPair label="Identified at"     value={fmtDate(row.identified_at)} />
+        <DetailPair label="Identified location" value={row.identified_location ?? '—'} />
+        <DetailPair label="Zone"              value={row.identified_zone ?? '—'} />
+        <DetailPair label="Drawing ref"       value={row.identified_drawing_ref ?? '—'} />
+        <DetailPair label="Spec ref"          value={row.identified_specification_ref ?? '—'} />
+        <DetailPair label="Contractor"        value={row.contractor_name ?? '—'} />
+        <DetailPair label="Facility"          value={row.facility_name ?? '—'} />
+        <DetailPair label="Owner"             value={row.owner_party_name ?? '—'} />
+        <DetailPair label="Last responder"    value={row.last_responder_party ?? '—'} />
+        <DetailPair label="Requester"         value={row.requester_party ?? '—'} />
+        <DetailPair label="Approver"          value={row.approver_party ?? '—'} />
+        <DetailPair label="COD blocker ref"   value={row.cod_blocker_ref ?? '—'} />
+        <DetailPair label="Handover blocker"  value={row.handover_blocker_ref ?? '—'} />
+        <DetailPair label="Warranty ref"      value={row.warranty_ref ?? '—'} />
+        <DetailPair label="Regulator ref"     value={row.regulator_ref ?? '—'} />
+        <DetailPair label="Assessed"          value={fmtDate(row.assessed_at)} />
+        <DetailPair label="Assigned"          value={fmtDate(row.assigned_at)} />
+        <DetailPair label="In remediation"    value={fmtDate(row.in_remediation_at)} />
+        <DetailPair label="Reinspect req"     value={fmtDate(row.reinspect_requested_at)} />
+        <DetailPair label="Reinspected"       value={fmtDate(row.reinspected_at)} />
+        <DetailPair label="Accepted"          value={fmtDate(row.accepted_at)} />
+        <DetailPair label="Closed"            value={fmtDate(row.closed_at)} />
+        <DetailPair label="On hold"           value={fmtDate(row.on_hold_at)} />
+        <DetailPair label="SLA deadline"      value={fmtDate(row.sla_deadline_at)} />
+        <DetailPair label="SLA"               value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+        <DetailPair label="Escalation lvl"    value={String(row.escalation_level)} />
+        <DetailPair label="Reportable"        value={row.is_reportable_flag ? 'Yes' : 'No'} />
+      </div>
+
+      {row.title && (
+        <div className="mb-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Title</div>
+          <div style={{ color: TX1, whiteSpace: 'pre-wrap' }}>{row.title}</div>
+        </div>
+      )}
+      {row.narrative && (
+        <div className="mb-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Narrative</div>
+          <div style={{ color: TX1, whiteSpace: 'pre-wrap' }}>{row.narrative}</div>
+        </div>
+      )}
+      {row.response_text && (
+        <div className="mb-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Response</div>
+          <div style={{ color: GOOD, whiteSpace: 'pre-wrap' }}>{row.response_text}</div>
+        </div>
+      )}
+      {row.voided_reason && (
+        <div className="mb-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: BAD }}>Voided reason</div>
+          <div style={{ color: BAD, whiteSpace: 'pre-wrap' }}>{row.voided_reason}</div>
+        </div>
+      )}
+      {row.withdrawn_reason && (
+        <div className="mb-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: WARN }}>Withdrawn reason</div>
+          <div style={{ color: WARN, whiteSpace: 'pre-wrap' }}>{row.withdrawn_reason}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function PunchListChainTab() {
   const [rows, setRows] = useState<PunchRow[]>([]);
   const [kpis, setKpis] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('open');
-  const [selected, setSelected] = useState<PunchRow | null>(null);
-  const [events, setEvents] = useState<PunchEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -323,13 +613,18 @@ export function PunchListChainTab() {
       const d = res.data?.data;
       if (d) {
         setKpis({
-          total: d.total, open_count: d.open_count,
-          closed_count: d.closed_count, voided_count: d.voided_count,
+          total: d.total,
+          open_count: d.open_count,
+          closed_count: d.closed_count,
+          voided_count: d.voided_count,
           withdrawn_count: d.withdrawn_count,
-          breached: d.breached, reportable_total: d.reportable_total,
+          breached: d.breached,
+          reportable_total: d.reportable_total,
           signature_count: d.signature_count,
-          cod_count: d.cod_count, handover_count: d.handover_count,
-          safety_count: d.safety_count, warranty_count: d.warranty_count,
+          cod_count: d.cod_count,
+          handover_count: d.handover_count,
+          safety_count: d.safety_count,
+          warranty_count: d.warranty_count,
           avg_quality_index: d.avg_quality_index,
           avg_days_in_court: d.avg_days_in_court,
           avg_rejection_count: d.avg_rejection_count,
@@ -346,15 +641,28 @@ export function PunchListChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { punch_list: PunchRow; events: PunchEvent[] } }>(`/ipp/punch-list/chain/${id}`);
-      if (res.data?.data?.punch_list) setSelected(res.data.data.punch_list);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/ipp/punch-list/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/ipp/punch-list/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load punch history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { punch_list: PunchRow; events: ChainEvent[] } }>(`/ipp/punch-list/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -372,410 +680,123 @@ export function PunchListChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: PunchRow) => {
-    try {
-      let body: Record<string, unknown> = {};
-      if (action === 'assess') {
-        const note = window.prompt('Assessment finding — tier and authority are re-derived after this step:') || '';
-        body = note ? { narrative: note } : {};
-      } else if (action === 'assign') {
-        const contractor = window.prompt('Assign to which contractor / subcontractor party:') || '';
-        body = contractor ? { contractor_name: contractor } : {};
-      } else if (action === 'begin-remediation') {
-        const note = window.prompt('Remediation plan / start note:') || '';
-        body = note ? { narrative: note } : {};
-      } else if (action === 'request-reinspection') {
-        const note = window.prompt('Evidence summary (photos / root-cause / commissioning) for reinspection:') || '';
-        body = note ? { response_text: note } : {};
-      } else if (action === 'reinspect') {
-        const note = window.prompt('Reinspection finding (independent engineer):');
-        if (!note) return;
-        body = { last_responder_party: 'independent_engineer', narrative: note };
-      } else if (action === 'accept') {
-        const reg = window.prompt('Regulator reference (life-safety high+critical crosses NERSA inbox) — leave blank if not applicable:') || '';
-        body = reg ? { approver_party: 'independent_engineer', regulator_ref: reg } : { approver_party: 'independent_engineer' };
-      } else if (action === 'reject-reinspection') {
-        const reason = window.prompt('Reason for reinspection rejection (COD-blocking high+critical crosses regulator):');
-        if (!reason) return;
-        body = { reason_code: 'REINSPECTION_REJECTED', narrative: reason };
-      } else if (action === 'close') {
-        const reg = window.prompt('Regulator reference (COD-blocking or life-safety crosses EVERY tier) — leave blank if not applicable:') || '';
-        body = reg ? { regulator_ref: reg } : {};
-      } else if (action === 'park') {
-        const reason = window.prompt('Park reason (e.g. spare unavailable, weather, dependency):');
-        if (!reason) return;
-        body = { reason_code: 'PARKED', narrative: reason };
-      } else if (action === 'resume') {
-        const note = window.prompt('Resume note:') || '';
-        body = note ? { narrative: note } : {};
-      } else if (action === 'void') {
-        const reason = window.prompt('Void reason — voiding with handover OR life-safety crosses regulator EVERY tier:');
-        if (!reason) return;
-        body = { voided_reason: reason };
-      } else if (action === 'withdraw') {
-        const reason = window.prompt('Withdrawal reason:');
-        if (!reason) return;
-        body = { withdrawn_reason: reason };
-      }
-      await api.post(`/ipp/punch-list/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
+  const k = kpis ?? {
+    total: 0, open_count: 0, closed_count: 0, voided_count: 0,
+    withdrawn_count: 0, breached: 0, reportable_total: 0,
+    signature_count: 0, cod_count: 0, handover_count: 0,
+    safety_count: 0, warranty_count: 0, avg_quality_index: 0,
+    avg_days_in_court: 0, avg_rejection_count: 0,
+    total_remediation_cost_zar: 0, total_recovered_zar: 0,
+  };
 
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Punch list &middot; COD snag handover</h2>
-          <p className="text-xs text-[#4a5568]">
-            11-state P6 lifecycle for the construction-completion defect side of an IPP project — identified →
-            assessed → assigned → in_remediation → reinspect_requested → reinspected → accepted → closed, with
-            the reject_reinspection → assigned rejoin, on_hold park and void / withdraw exception terminals.
-            Beats Procore Punch List, BIM 360 Field, PlanGrid Punch List, Fieldwire snag, Autodesk Construction
-            Cloud Punch List, Bluebeam Revu Snag and Aconex Defects via: tier RE-DERIVED on every transition
-            from priority × workflow class with FLOOR-AT-HIGH for blocks_commercial_operation / blocks_handover
-            / life_safety_critical / warranty_critical; URGENT SLA polarity (COD-blocking = tightest; critical
-            60min); ball-in-court tracking; authority tiered site_supervisor → quality_engineer →
-            project_manager → project_director; LIVE battery decoration (minutes_until_sla, ipp_pm_quality_index
-            0-130 vs Procore baseline=100, days_in_court, predicted_close_date_live, urgency_band). SIGNATURE
-            regulator crossings (NERSA §C-5 + REIPPPP COD): close crosses EVERY tier with COD-blocking OR
-            life-safety; accept high+critical with life-safety; reject_reinspection high+critical with
-            COD-blocking; void EVERY tier with handover OR life-safety; sla_breached high+critical with COD
-            OR life-safety.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Punch list &middot; COD snag handover</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          11-state P6 lifecycle for the construction-completion defect side of an IPP project — identified →
+          assessed → assigned → in_remediation → reinspect_requested → reinspected → accepted → closed, with
+          reject_reinspection → assigned rejoin, on_hold park and void / withdraw exception terminals.
+          Beats Procore Punch List, BIM 360 Field, PlanGrid, Fieldwire, Autodesk Construction Cloud, Bluebeam Revu
+          and Aconex Defects via tier RE-DERIVED on every transition (FLOOR-AT-HIGH for COD / handover / life-safety /
+          warranty), URGENT SLA polarity, ball-in-court tracking, LIVE battery decoration and SIGNATURE NERSA §C-5 +
+          REIPPPP COD regulator crossings.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total"        value={kpis?.total ?? rows.length} />
-        <Kpi label="Open"         value={kpis?.open_count ?? 0} tone={(kpis?.open_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Closed"       value={kpis?.closed_count ?? 0} tone="ok" />
-        <Kpi label="Voided"       value={kpis?.voided_count ?? 0} tone={(kpis?.voided_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Signature"    value={kpis?.signature_count ?? 0} tone={(kpis?.signature_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="COD-blocking" value={kpis?.cod_count ?? 0} tone={(kpis?.cod_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Handover blk" value={kpis?.handover_count ?? 0} tone={(kpis?.handover_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Life-safety"  value={kpis?.safety_count ?? 0} tone={(kpis?.safety_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Reportable"   value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="IPP-PM qual"  value={fmtNum(kpis?.avg_quality_index)} />
-        <Kpi label="Avg rejects"  value={fmtNum(kpis?.avg_rejection_count, 2)} tone={(kpis?.avg_rejection_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Remediation"  value={fmtZar(kpis?.total_remediation_cost_zar)} />
-        <Kpi label="Recovered"    value={fmtZar(kpis?.total_recovered_zar)} />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total"        value={k.total} />
+        <KpiTile label="Open"         value={k.open_count}          tone={k.open_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="Closed"       value={k.closed_count}        tone="ok" />
+        <KpiTile label="Voided"       value={k.voided_count}        tone={k.voided_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="SLA breached" value={k.breached}            tone={k.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Signature"    value={k.signature_count}     tone={k.signature_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="COD-blocking" value={k.cod_count}           tone={k.cod_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="Handover blk" value={k.handover_count}      tone={k.handover_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="Life-safety"  value={k.safety_count}        tone={k.safety_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="Reportable"   value={k.reportable_total}    tone={k.reportable_total > 0 ? 'warn' : undefined} />
+        <KpiTile label="IPP-PM qual"  value={fmtNum(k.avg_quality_index, 0)} />
+        <KpiTile label="Avg rejects"  value={fmtNum(k.avg_rejection_count, 2)} tone={k.avg_rejection_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="Remediation"  value={fmtZar(k.total_remediation_cost_zar)} />
+        <KpiTile label="Recovered"    value={fmtZar(k.total_recovered_zar)} />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">No.</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Project / location</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Class</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Ball in court</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Urg</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Quality</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.current_tier];
-                const ut = URGENCY_TONE[r.urgency_band] ?? URGENCY_TONE.green;
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.punch_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
-                      {r.signature_class_flag && <span className="ml-1 text-[#a06200]" title="Signature class (COD / handover / life-safety)">▲</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[260px] truncate" title={`${r.project_name ?? ''} · ${r.identified_location ?? ''}`}>
-                      {r.project_name ?? '—'}
-                      {r.identified_location && <span className="text-[#4a5568]"> · {r.identified_location}</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{WORKFLOW_LABEL[r.workflow_class]}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.ball_in_court_party_live ?? '—'}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[10px] font-medium" style={{ background: ut.bg, color: ut.fg }}>
-                        {ut.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      <span className={(r.ipp_pm_quality_index_live ?? 0) >= 100 ? 'text-[#1f6b3a]' : 'text-[#9b1f1f]'}>
-                        {fmtNum(r.ipp_pm_quality_index_live, 0)}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-3 py-6 text-center text-[#4a5568]">No punch list items match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading...
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.punch_number}${row.title ? ` — ${row.title}` : ''}`}
+              meta={[
+                WORKFLOW_LABEL[row.workflow_class],
+                row.project_name ?? '',
+                row.identified_location ?? '',
+              ].filter(Boolean).join(' · ')}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No punch list items match.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: PunchRow;
-  events: PunchEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: PunchRow) => void;
-}) {
-  const primary = ACTION_FOR_STATE[row.chain_status];
-  const secondary = SECONDARY_ACTIONS[row.chain_status];
-  const authority = AUTHORITY_LABEL[row.authority_required_live ?? row.authority_required ?? ''] ?? (row.authority_required ?? '—');
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[820px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.punch_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.project_name ?? '—'}{row.identified_at ? ` · ${row.identified_at.slice(0, 10)}` : ''}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {WORKFLOW_LABEL[row.workflow_class]}
-                {row.contractor_name ? ` · ${row.contractor_name}` : ''}
-                {row.identified_location ? ` · ${row.identified_location}` : ''}
-              </div>
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Live IPP-PM battery</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
-              <Metric label="Quality index" value={fmtNum(row.ipp_pm_quality_index_live, 0)} bad={(row.ipp_pm_quality_index_live ?? 0) < 100} hint="0-130 (Procore baseline=100; photo/root-cause/commissioning bonuses applied)" />
-              <Metric label="Days open" value={String(row.days_open_live ?? 0)} />
-              <Metric label="Days in court" value={String(row.days_in_court_live ?? 0)} bad={(row.days_in_court_live ?? 0) > 2} hint="Aging in current state" />
-              <Metric label="Ball in court" value={row.ball_in_court_party_live ?? '—'} hint="Auto-derived from current state" />
-              <Metric label="Tier (live)" value={TIER_TONE[row.tier_live].label} bad={row.tier_live === 'critical' || row.tier_live === 'high'} hint="Re-derived every transition" />
-              <Metric label="Urgency band" value={URGENCY_TONE[row.urgency_band]?.label ?? row.urgency_band} bad={row.urgency_band === 'red' || row.urgency_band === 'amber'} />
-              <Metric label="Predicted close" value={fmtDate(row.predicted_close_date_live)} hint="Tier-derived ETA" />
-              <Metric label="Authority" value={authority} hint="Site supervisor → quality engineer → project manager → project director" />
-            </div>
-          </div>
-
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Coverage flags (FLOOR-AT-HIGH)</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
-              <Metric label="Blocks COD" value={row.blocks_commercial_operation ? 'Yes' : 'No'} bad={!!row.blocks_commercial_operation} hint="NERSA §C-5 — blocks commercial operation" />
-              <Metric label="Blocks handover" value={row.blocks_handover ? 'Yes' : 'No'} bad={!!row.blocks_handover} hint="REIPPPP COD prerequisite" />
-              <Metric label="Life-safety" value={row.life_safety_critical ? 'Yes' : 'No'} bad={!!row.life_safety_critical} hint="OHSA s24 life-safety critical" />
-              <Metric label="Warranty critical" value={row.warranty_critical ? 'Yes' : 'No'} bad={!!row.warranty_critical} hint="Triggers warranty cost-recovery on close" />
-              <Metric label="Rejections" value={String(row.rejection_count ?? 0)} bad={(row.rejection_count ?? 0) > 0} />
-              <Metric label="Reinspections" value={String(row.reinspection_count ?? 0)} bad={(row.reinspection_count ?? 0) > 1} />
-              <Metric label="Photos" value={String(row.photo_evidence_count ?? 0)} hint="3+ photos = +10 quality" />
-              <Metric label="Root cause" value={row.root_cause_documented ? 'Yes' : 'No'} hint="+5 quality" />
-              <Metric label="Commissioning" value={row.commissioning_evidence ? 'Yes' : 'No'} hint="+5 quality" />
-              <Metric label="Drawing ref" value={row.identified_drawing_ref ?? '—'} />
-              <Metric label="Spec ref" value={row.identified_specification_ref ?? '—'} />
-              <Metric label="Zone" value={row.identified_zone ?? '—'} />
-            </div>
-          </div>
-
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Remediation economics</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
-              <Metric label="Remediation cost" value={fmtZar(row.remediation_cost_zar)} bad={(row.remediation_cost_zar ?? 0) > 0} hint="Total cost expended on this punch" />
-              <Metric label="Recovered" value={fmtZar(row.recovered_from_contractor_zar)} hint="Recovered from contractor (back-charge)" />
-              <Metric label="Net to owner" value={fmtZar(((row.remediation_cost_zar ?? 0) - (row.recovered_from_contractor_zar ?? 0)))} bad={((row.remediation_cost_zar ?? 0) - (row.recovered_from_contractor_zar ?? 0)) > 0} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"              value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Workflow class"     value={WORKFLOW_LABEL[row.workflow_class]} />
-            <Pair label="Priority"           value={row.priority_class} />
-            <Pair label="Identified at"      value={fmtDate(row.identified_at)} />
-            <Pair label="Identified location" value={row.identified_location ?? '—'} />
-            <Pair label="Zone"               value={row.identified_zone ?? '—'} />
-            <Pair label="Drawing ref"        value={row.identified_drawing_ref ?? '—'} />
-            <Pair label="Spec ref"           value={row.identified_specification_ref ?? '—'} />
-            <Pair label="Contractor"         value={row.contractor_name ?? '—'} />
-            <Pair label="Facility"           value={row.facility_name ?? '—'} />
-            <Pair label="Owner"              value={row.owner_party_name ?? '—'} />
-            <Pair label="Last responder"     value={row.last_responder_party ?? '—'} />
-            <Pair label="Requester"          value={row.requester_party ?? '—'} />
-            <Pair label="Approver"           value={row.approver_party ?? '—'} />
-            <Pair label="COD blocker ref"    value={row.cod_blocker_ref ?? '—'} />
-            <Pair label="Handover blocker"   value={row.handover_blocker_ref ?? '—'} />
-            <Pair label="Warranty ref"       value={row.warranty_ref ?? '—'} />
-            <Pair label="Regulator ref"      value={row.regulator_ref ?? '—'} />
-            <Pair label="Assessed"           value={fmtDate(row.assessed_at)} />
-            <Pair label="Assigned"           value={fmtDate(row.assigned_at)} />
-            <Pair label="In remediation"     value={fmtDate(row.in_remediation_at)} />
-            <Pair label="Reinspect req"      value={fmtDate(row.reinspect_requested_at)} />
-            <Pair label="Reinspected"        value={fmtDate(row.reinspected_at)} />
-            <Pair label="Accepted"           value={fmtDate(row.accepted_at)} />
-            <Pair label="Closed"             value={fmtDate(row.closed_at)} />
-            <Pair label="On hold"            value={fmtDate(row.on_hold_at)} />
-            <Pair label="SLA deadline"       value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA"                value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"     value={String(row.escalation_level)} />
-            <Pair label="Reportable"         value={row.is_reportable_flag ? 'Yes' : 'No'} />
-          </div>
-          {row.title && <BasisBlock label="Title" tone="#1a3a5c" text={row.title} />}
-          {row.narrative && <BasisBlock label="Narrative" tone="#1a3a5c" text={row.narrative} />}
-          {row.response_text && <BasisBlock label="Response" tone="#1f6b3a" text={row.response_text} />}
-          {row.voided_reason && <BasisBlock label="Voided reason" tone="#9b1f1f" text={row.voided_reason} />}
-          {row.withdrawn_reason && <BasisBlock label="Withdrawn reason" tone="#8a4a00" text={row.withdrawn_reason} />}
-        </section>
-
-        {(primary || secondary.length > 0) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {primary && (
-                <button type="button"
-                  onClick={() => onAct(primary, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[primary]}
-                </button>
-              )}
-              {secondary.map((a) => {
-                const danger = DESTRUCTIVE.includes(a);
-                return (
-                  <button type="button"
-                    key={a}
-                    onClick={() => onAct(a, row)}
-                    className={
-                      danger
-                        ? 'rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50'
-                        : 'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#557] hover:bg-[#f3f5f9]'
-                    }
-                  >
-                    {ACTION_LABEL[a]}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function Metric({ label, value, bad, hint }: { label: string; value: string; bad?: boolean; hint?: string }) {
+function DetailPair({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div title={hint}>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className={`text-[13px] font-semibold tabular-nums ${bad ? 'text-[#9b1f1f]' : 'text-[#0c2a4d]'}`}>{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1, fontSize: 11 }}>{value}</div>
     </div>
   );
 }
 
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
-    </div>
-  );
-}
+export default PunchListChainTab;

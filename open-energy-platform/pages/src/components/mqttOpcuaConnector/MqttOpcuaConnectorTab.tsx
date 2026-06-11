@@ -66,6 +66,7 @@ type MqttOpcuaProtocol =
 type CompanionSpec = 'pv_industry' | 'energy' | 'battery' | 'inverter' | 'wind';
 
 interface MocRow {
+  [key: string]: unknown;
   id: string;
   connector_number: string;
   peer_id: string;
@@ -178,10 +179,10 @@ interface MocEvent {
 
 const STATE_TONE: Record<MocStatus, { bg: string; fg: string; label: string }> = {
   connector_proposed:    { bg: '#e3e7ec', fg: '#445',    label: 'Proposed' },
-  broker_provisioned:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Broker' },
-  topics_mapped:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Topics' },
-  tls_mutual_configured: { bg: '#dbecfb', fg: '#1a3a5c', label: 'mTLS' },
-  client_registered:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Client' },
+  broker_provisioned:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Broker' },
+  topics_mapped:         { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Topics' },
+  tls_mutual_configured: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'mTLS' },
+  client_registered:     { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Client' },
   publishing_active:     { bg: '#fff4d6', fg: '#a06200', label: 'Publishing' },
   subscription_validated:{ bg: '#fff4d6', fg: '#a06200', label: 'Subscribed' },
   companion_spec_bound:  { bg: '#fff4d6', fg: '#a06200', label: 'Companion' },
@@ -196,7 +197,7 @@ const STATE_TONE: Record<MocStatus, { bg: string; fg: string; label: string }> =
 
 const TIER_TONE: Record<MocTier, { bg: string; fg: string; label: string }> = {
   edge_device:           { bg: '#e3e7ec', fg: '#557',    label: 'Edge device' },
-  small_fleet:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'Small fleet' },
+  small_fleet:           { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Small fleet' },
   medium_fleet:          { bg: '#daf5e2', fg: '#1f6b3a', label: 'Medium fleet' },
   large_fleet:           { bg: '#fff4d6', fg: '#a06200', label: 'Large fleet' },
   national_iot_backbone: { bg: '#7a0e0e', fg: '#fff',    label: 'National IoT backbone' },
@@ -566,7 +567,7 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
   }, [load]);
 
   return (
-    <div className="text-[12px] text-[#1a3a5c]">
+    <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-base font-semibold text-[#0c2a4d]">MQTT / OPC UA connector (W123)</h2>
@@ -604,11 +605,11 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
 
       {/* Drill rail */}
       <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[#d8dde6] bg-white px-3 py-2 text-[11px] text-[#4a5568]">
-        <span>Proposed: <span className="font-semibold text-[#1a3a5c]">{kpis.proposed_count}</span></span>
-        <span>Provisioned: <span className="font-semibold text-[#1a3a5c]">{kpis.provisioned_count}</span></span>
-        <span>Topics: <span className="font-semibold text-[#1a3a5c]">{kpis.topics_count}</span></span>
-        <span>mTLS: <span className="font-semibold text-[#1a3a5c]">{kpis.tls_count}</span></span>
-        <span>Client: <span className="font-semibold text-[#1a3a5c]">{kpis.client_count}</span></span>
+        <span>Proposed: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.proposed_count}</span></span>
+        <span>Provisioned: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.provisioned_count}</span></span>
+        <span>Topics: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.topics_count}</span></span>
+        <span>mTLS: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.tls_count}</span></span>
+        <span>Client: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.client_count}</span></span>
         <span>Publishing: <span className="font-semibold text-[#a06200]">{kpis.publishing_count}</span></span>
         <span>Validated: <span className="font-semibold text-[#a06200]">{kpis.validated_count}</span></span>
         <span>Companion: <span className="font-semibold text-[#a06200]">{kpis.companion_count}</span></span>
@@ -619,11 +620,11 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
         <span>Floor flags: <span className="font-semibold text-[#a06200]">{kpis.floor_flag_total}</span></span>
         <span>Cert {'<'}60d: <span className="font-semibold text-[#a06200]">{kpis.certs_expiring_within_60d}</span></span>
         <span>Cert {'<'}14d: <span className="font-semibold text-[#9b1f1f]">{kpis.certs_expiring_within_14d}</span></span>
-        <span>W118: <span className="font-semibold text-[#1a3a5c]">{kpis.w118_bridged_count}</span></span>
-        <span>W122: <span className="font-semibold text-[#1a3a5c]">{kpis.w122_bridged_count}</span></span>
-        <span>W71: <span className="font-semibold text-[#1a3a5c]">{kpis.w71_bridged_count}</span></span>
-        <span>W50: <span className="font-semibold text-[#1a3a5c]">{kpis.w50_bridged_count}</span></span>
-        <span>W26: <span className="font-semibold text-[#1a3a5c]">{kpis.w26_bridged_count}</span></span>
+        <span>W118: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
+        <span>W122: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w122_bridged_count}</span></span>
+        <span>W71: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w71_bridged_count}</span></span>
+        <span>W50: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w50_bridged_count}</span></span>
+        <span>W26: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w26_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / priority pills */}
@@ -721,17 +722,17 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Connector #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Broker</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Protocol</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Companion</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Health</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Telemetry</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Cert</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Flags</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Connector #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Broker</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Protocol</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Companion</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Health</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.46 0.16 55)' }}>Telemetry</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.46 0.16 55)' }}>Cert</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.46 0.16 55)' }}>Flags</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -755,14 +756,14 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
                       {r.regulator_ref ? <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">FILED</span> : null}
                       {r.floor_at_national_iot_backbone_live ? <span className="ml-1 text-[9px] font-semibold text-[#7a0e0e]">NAT</span> : null}
                     </td>
-                    <td className="px-3 py-2 text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.broker_name ?? '-'}
                       {r.endpoint_count != null ? <div className="text-[10px] text-[#6b7685] font-mono">{r.endpoint_count} endpoints</div> : null}
                     </td>
-                    <td className="px-3 py-2 text-[11px] font-mono text-[#1a3a5c]">
+                    <td className="px-3 py-2 text-[11px] font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {fmtProto(r.protocol)}
                     </td>
-                    <td className="px-3 py-2 text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.companion_spec ? <span className="font-mono">{r.companion_spec}</span> : '-'}
                       {r.companion_spec_version ? <div className="text-[10px] text-[#6b7685] font-mono">{r.companion_spec_version}</div> : null}
                     </td>
@@ -868,12 +869,13 @@ function Drawer({
         ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
         : tone === 'amber'
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
-          : 'bg-white border border-[#d8dde6] text-[#1a3a5c] hover:bg-[#f3f5f9]';
+          : 'bg-white border border-[#d8dde6] hover:bg-[#f3f5f9]';
     return (
       <button type="button"
         key={action}
         onClick={() => onAct(action, row)}
         className={`rounded px-3 py-1.5 text-[11px] font-semibold ${cls}`}
+        style={tone === 'plain' ? { color: 'oklch(0.46 0.16 55)' } : undefined}
         title={ACTION_LABEL[action]}
       >
         {label}
@@ -898,7 +900,7 @@ function Drawer({
               {row.endpoint_url ? <> {'•'} <span className="font-mono text-[10px]">{row.endpoint_url}</span></> : null}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         {/* 4 scoring indexes */}
@@ -1020,13 +1022,13 @@ function Drawer({
             )}
             {events.map((e) => (
               <li key={e.id} className="px-3 py-2 text-[11px]">
-                <div className="font-semibold text-[#1a3a5c]">{e.event_type}</div>
+                <div className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.event_type}</div>
                 <div className="text-[10px] text-[#4a5568]">
                   {e.from_status || '-'} {'→'} {e.to_status || '-'}
                   {e.actor_party ? <> {'•'} {e.actor_party}</> : null}
                   {' '}{'•'} {fmtDate(e.created_at)}
                 </div>
-                {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
               </li>
             ))}
           </ol>
@@ -1130,7 +1132,7 @@ function ProposeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px] text-[#1a3a5c]">
+      <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
         <div className="mb-3 flex items-start justify-between">
           <div>
             <h3 className="text-base font-semibold text-[#0c2a4d]">Propose MQTT / OPC UA connector (W123)</h3>
@@ -1138,7 +1140,7 @@ function ProposeModal({
               W118 audit-chain bridge mandatory. Tier auto-derived from endpoint_count with FLOOR-AT-LARGE-FLEET {'≥'}1 flag and FLOOR-AT-NATIONAL-IOT-BACKBONE {'≥'}3 flags.
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -1201,7 +1203,7 @@ function ProposeModal({
         </div>
 
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Cancel</button>
           <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose connector</button>
         </div>
       </div>
@@ -1224,7 +1226,7 @@ function Checkbox({
   checked: boolean; onChange: (v: boolean) => void; label: string;
 }) {
   return (
-    <label className="flex items-center gap-2 text-[11px] text-[#1a3a5c]">
+    <label className="flex items-center gap-2 text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       {label}
     </label>

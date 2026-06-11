@@ -24,7 +24,7 @@ export function PlatformSettingsPage() {
       title="Settings"
       subtitle="API access, outbound webhooks, digests, saved filters and usage metering."
     >
-      <div className="border-b border-[#dde4ec] flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1" style={{ borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
         {([
           { k: 'usage',         label: 'Usage',          icon: <Activity size={13} /> },
           { k: 'api-keys',      label: 'API keys',       icon: <Key      size={13} /> },
@@ -33,7 +33,11 @@ export function PlatformSettingsPage() {
           { k: 'saved-filters', label: 'Saved filters',  icon: <ListChecks size={13} /> },
         ] as Array<{ k: Tab; label: string; icon: React.ReactNode }>).map((t) => (
           <button type="button" key={t.k} onClick={() => setTab(t.k)}
-            className={`h-10 px-4 text-[12px] font-semibold inline-flex items-center gap-1 border-b-2 transition-colors ${tab === t.k ? 'border-[#3b82c4] text-[#3b82c4]' : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'}`}>
+            className="h-10 px-4 text-[12px] font-semibold inline-flex items-center gap-1 border-b-2 transition-colors"
+            style={tab === t.k
+              ? { borderColor: 'oklch(0.46 0.16 55)', color: 'oklch(0.46 0.16 55)' }
+              : { borderColor: 'transparent', color: 'oklch(0.40 0.009 250)' }
+            }>
             {t.icon} {t.label}
           </button>
         ))}
@@ -66,10 +70,14 @@ function UsageTab() {
   return (
     <div className="mt-3 space-y-3">
       <div className="flex items-center gap-2 text-[12px]">
-        <span className="text-[#6b7685]">Window:</span>
+        <span style={{ color: 'oklch(0.40 0.009 250)' }}>Window:</span>
         {[7, 30, 90].map((n) => (
           <button type="button" key={n} onClick={() => setDays(n)}
-            className={`h-7 px-2.5 rounded-full text-[11px] font-semibold border ${days === n ? 'bg-[#c2873a] text-white border-[#1a3a5c]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>
+            className="h-7 px-2.5 rounded-full text-[11px] font-semibold"
+            style={days === n
+              ? { background: 'oklch(0.46 0.16 55)', color: '#fff', border: '1px solid oklch(0.40 0.15 55)' }
+              : { background: 'oklch(0.99 0.002 80)', color: 'oklch(0.17 0.010 250)', border: '1px solid oklch(0.87 0.006 250)' }
+            }>
             {n}d
           </button>
         ))}
@@ -102,7 +110,7 @@ function UsageTab() {
                   <td className="text-right font-mono">${Number(r.est_cost_usd || 0).toFixed(3)}</td>
                 </tr>
               ))}
-              {!(data.series || []).length && <tr><td colSpan={7} className="text-[#6b7685] italic py-2">No usage rows yet — the daily rollup cron fills these at 00:05 SAST.</td></tr>}
+              {!(data.series || []).length && <tr><td colSpan={7} className="italic py-2" style={{ color: 'oklch(0.40 0.009 250)' }}>No usage rows yet — the daily rollup cron fills these at 00:05 SAST.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -134,17 +142,21 @@ function ApiKeysTab() {
   return (
     <div className="mt-3 space-y-3">
       {newKey && (
-        <div className="widget-card p-4 widget-tone-good border border-[#1a8a5b]">
+        <div className="widget-card p-4 widget-tone-good" style={{ border: '1px solid oklch(0.45 0.15 150)' }}>
           <div className="flex items-center justify-between gap-2">
             <div>
               <div className="text-[12px] font-bold widget-tone-good-text">API key created — copy it now</div>
-              <div className="text-[11px] text-[#3d4756] mt-1">This is the only time the raw key will be shown. Store it in your secret manager before closing this banner.</div>
-              <code className="block mt-2 font-mono text-[12px] bg-white border border-[#dde4ec] px-3 py-2 rounded">{newKey}</code>
+              <div className="text-[11px] mt-1" style={{ color: 'oklch(0.40 0.009 250)' }}>This is the only time the raw key will be shown. Store it in your secret manager before closing this banner.</div>
+              <code className="block mt-2 font-mono text-[12px] px-3 py-2 rounded"
+                    style={{ background: 'oklch(0.99 0.002 80)', border: '1px solid oklch(0.87 0.006 250)' }}>{newKey}</code>
             </div>
-            <button type="button" onClick={() => { void navigator.clipboard.writeText(newKey); }} className="h-8 px-2.5 rounded bg-white border border-[#dde4ec] text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+            <button type="button" onClick={() => { void navigator.clipboard.writeText(newKey); }}
+                    className="h-8 px-2.5 rounded text-[12px] font-semibold inline-flex items-center gap-1"
+                    style={{ background: 'oklch(0.99 0.002 80)', border: '1px solid oklch(0.87 0.006 250)', color: 'oklch(0.17 0.010 250)' }}>
               <Copy size={13} /> Copy
             </button>
-            <button type="button" onClick={() => setNewKey(null)} className="h-8 px-2.5 rounded bg-[#c2873a] text-white text-[12px] font-semibold">Done</button>
+            <button type="button" onClick={() => setNewKey(null)} className="h-8 px-2.5 rounded text-white text-[12px] font-semibold"
+                    style={{ background: 'oklch(0.46 0.16 55)' }}>Done</button>
           </div>
         </div>
       )}
@@ -157,11 +169,14 @@ function ApiKeysTab() {
         </header>
         <div className="p-3 grid grid-cols-1 md:grid-cols-3 gap-2">
           <input placeholder="Name (e.g. 'Asset-ops poller')" value={name} onChange={(e) => setName(e.target.value)}
-                 className="h-9 px-3 rounded border border-[#dde4ec] text-[12px]" />
+                 className="h-9 px-3 rounded text-[12px]"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }} />
           <input placeholder="Scopes (comma-sep, optional)" value={scopes} onChange={(e) => setScopes(e.target.value)}
-                 className="h-9 px-3 rounded border border-[#dde4ec] text-[12px] font-mono" />
+                 className="h-9 px-3 rounded text-[12px] font-mono"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }} />
           <button type="button" onClick={create} disabled={!name.trim()}
-                  className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
+                  className="h-9 px-3 rounded text-white text-[12px] font-semibold disabled:opacity-50"
+                  style={{ background: 'oklch(0.46 0.16 55)' }}>
             Create key
           </button>
         </div>
@@ -169,7 +184,8 @@ function ApiKeysTab() {
       <section className="widget-card">
         <header className="widget-card-header">
           <div className="widget-card-title">Active keys ({rows.filter((r) => !r.revoked).length})</div>
-          <button type="button" onClick={load} className="text-[11px] inline-flex items-center gap-1 text-[#3b82c4]"><RefreshCw size={11} /> Refresh</button>
+          <button type="button" onClick={load} className="text-[11px] inline-flex items-center gap-1"
+                  style={{ color: 'oklch(0.46 0.16 55)' }}><RefreshCw size={11} /> Refresh</button>
         </header>
         <div className="p-3 overflow-x-auto">
           <table className="w-full text-[12px]">
@@ -188,12 +204,13 @@ function ApiKeysTab() {
                   </td>
                   <td className="text-right">
                     {!r.revoked && (
-                      <button type="button" onClick={() => revoke(r.id)} className="text-[11px] text-[#c0392b] hover:underline">Revoke</button>
+                      <button type="button" onClick={() => revoke(r.id)} className="text-[11px] hover:underline"
+                              style={{ color: 'oklch(0.48 0.20 20)' }}>Revoke</button>
                     )}
                   </td>
                 </tr>
               ))}
-              {!rows.length && <tr><td colSpan={6} className="text-[#6b7685] italic py-3">No keys yet.</td></tr>}
+              {!rows.length && <tr><td colSpan={6} className="italic py-3" style={{ color: 'oklch(0.40 0.009 250)' }}>No keys yet.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -235,11 +252,13 @@ function WebhooksTab() {
   return (
     <div className="mt-3 space-y-3">
       {secret && (
-        <div className="widget-card p-4 widget-tone-good border border-[#1a8a5b]">
+        <div className="widget-card p-4 widget-tone-good" style={{ border: '1px solid oklch(0.45 0.15 150)' }}>
           <div className="text-[12px] font-bold widget-tone-good-text">Subscription created — copy the HMAC secret now</div>
-          <div className="text-[11px] text-[#3d4756] mt-1">Verify <code>x-oe-signature: sha256=...</code> against this secret in your handler. Shown once.</div>
-          <code className="block mt-2 font-mono text-[12px] bg-white border border-[#dde4ec] px-3 py-2 rounded">{secret}</code>
-          <button type="button" onClick={() => setSecret(null)} className="mt-2 h-8 px-2.5 rounded bg-[#c2873a] text-white text-[12px] font-semibold">Got it</button>
+          <div className="text-[11px] mt-1" style={{ color: 'oklch(0.40 0.009 250)' }}>Verify <code>x-oe-signature: sha256=...</code> against this secret in your handler. Shown once.</div>
+          <code className="block mt-2 font-mono text-[12px] px-3 py-2 rounded"
+                style={{ background: 'oklch(0.99 0.002 80)', border: '1px solid oklch(0.87 0.006 250)' }}>{secret}</code>
+          <button type="button" onClick={() => setSecret(null)} className="mt-2 h-8 px-2.5 rounded text-white text-[12px] font-semibold"
+                  style={{ background: 'oklch(0.46 0.16 55)' }}>Got it</button>
         </div>
       )}
       <section className="widget-card">
@@ -248,18 +267,24 @@ function WebhooksTab() {
         </header>
         <div className="p-3 space-y-2">
           <input placeholder="https://yourdomain.com/oe-webhook" value={url} onChange={(e) => setUrl(e.target.value)}
-                 className="w-full h-9 px-3 rounded border border-[#dde4ec] text-[12px] font-mono" />
+                 className="w-full h-9 px-3 rounded text-[12px] font-mono"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }} />
           <div className="flex flex-wrap gap-1">
             {WEBHOOK_EVENTS.map((ev) => (
               <button type="button" key={ev}
                 onClick={() => setEvents((s) => s.includes(ev) ? s.filter((x) => x !== ev) : [...s, ev])}
-                className={`h-6 px-2 rounded-full text-[10px] font-mono ${events.includes(ev) ? 'bg-[#c2873a] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
+                className="h-6 px-2 rounded-full text-[10px] font-mono"
+                style={events.includes(ev)
+                  ? { background: 'oklch(0.46 0.16 55)', color: '#fff' }
+                  : { background: 'oklch(0.99 0.002 80)', border: '1px solid oklch(0.87 0.006 250)', color: 'oklch(0.17 0.010 250)' }
+                }>
                 {ev}
               </button>
             ))}
           </div>
           <button type="button" onClick={create} disabled={!url || events.length === 0}
-                  className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
+                  className="h-9 px-3 rounded text-white text-[12px] font-semibold disabled:opacity-50"
+                  style={{ background: 'oklch(0.46 0.16 55)' }}>
             Subscribe
           </button>
         </div>
@@ -279,15 +304,18 @@ function WebhooksTab() {
                   <td className="font-mono text-[11px]">{r.last_status_code ? `HTTP ${r.last_status_code}` : '—'}</td>
                   <td className="text-right font-mono">{r.consecutive_failures || 0}</td>
                   <td className="text-right space-x-2">
-                    <button type="button" onClick={async () => { await api.post(`/webhooks/subscriptions/${r.id}/test`, {}); void loadDeliveries(r.id); }} className="text-[11px] text-[#3b82c4]">Test</button>
-                    <button type="button" onClick={() => loadDeliveries(r.id)} className="text-[11px] text-[#3d4756]">Deliveries</button>
+                    <button type="button" onClick={async () => { await api.post(`/webhooks/subscriptions/${r.id}/test`, {}); void loadDeliveries(r.id); }}
+                            className="text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>Test</button>
+                    <button type="button" onClick={() => loadDeliveries(r.id)}
+                            className="text-[11px]" style={{ color: 'oklch(0.17 0.010 250)' }}>Deliveries</button>
                     {r.enabled === 1 && (
-                      <button type="button" onClick={async () => { await api.post(`/webhooks/subscriptions/${r.id}/disable`, {}); void load(); }} className="text-[11px] text-[#c0392b]">Disable</button>
+                      <button type="button" onClick={async () => { await api.post(`/webhooks/subscriptions/${r.id}/disable`, {}); void load(); }}
+                              className="text-[11px]" style={{ color: 'oklch(0.48 0.20 20)' }}>Disable</button>
                     )}
                   </td>
                 </tr>
               ))}
-              {!rows.length && <tr><td colSpan={5} className="text-[#6b7685] italic py-3">No subscriptions yet.</td></tr>}
+              {!rows.length && <tr><td colSpan={5} className="italic py-3" style={{ color: 'oklch(0.40 0.009 250)' }}>No subscriptions yet.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -297,13 +325,13 @@ function WebhooksTab() {
           <header className="widget-card-header">
             <div className="widget-card-title">Recent deliveries</div>
           </header>
-          <ul className="divide-y divide-[#eef2f7]">
+          <ul style={{ borderTop: '1px solid oklch(0.87 0.006 250)' }}>
             {deliveries.map((d) => (
-              <li key={d.id} className="px-3 py-2 text-[11px]">
+              <li key={d.id} className="px-3 py-2 text-[11px]" style={{ borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
                 <div className="flex items-center gap-2">
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${d.status === 'delivered' ? 'widget-tone-good' : 'widget-tone-bad'}`}>{d.status}</span>
                   <span className="font-mono">{d.event}</span>
-                  <span className="text-[#6b7685] ml-auto">{new Date(d.created_at).toLocaleString()}</span>
+                  <span className="ml-auto" style={{ color: 'oklch(0.40 0.009 250)' }}>{new Date(d.created_at).toLocaleString()}</span>
                   {d.status_code != null && <span className="font-mono">HTTP {d.status_code}</span>}
                 </div>
               </li>
@@ -342,23 +370,32 @@ function DigestsTab() {
           <div className="widget-card-subtitle">Provider delivery requires EMAIL_API_KEY / TWILIO_AUTH env vars; before that, deliveries are logged as "would_send".</div>
         </header>
         <div className="p-3 grid grid-cols-2 md:grid-cols-5 gap-2">
-          <select value={channel} onChange={(e) => setChannel(e.target.value as any)} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]">
+          <select value={channel} onChange={(e) => setChannel(e.target.value as any)}
+                  className="h-9 px-2 rounded text-[12px]"
+                  style={{ border: '1px solid oklch(0.87 0.006 250)' }}>
             <option value="email">Email</option>
             <option value="whatsapp">WhatsApp</option>
             <option value="sms">SMS</option>
           </select>
           <input placeholder={channel === 'email' ? 'you@example.com' : '+27821234567'} value={destination} onChange={(e) => setDestination(e.target.value)}
-                 className="h-9 px-3 rounded border border-[#dde4ec] text-[12px] font-mono col-span-2" />
-          <select value={type} onChange={(e) => setType(e.target.value)} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]">
+                 className="h-9 px-3 rounded text-[12px] font-mono col-span-2"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }} />
+          <select value={type} onChange={(e) => setType(e.target.value)}
+                  className="h-9 px-2 rounded text-[12px]"
+                  style={{ border: '1px solid oklch(0.87 0.006 250)' }}>
             <option value="morning_briefing">Morning briefing</option>
             <option value="weekly_summary">Weekly summary</option>
             <option value="lender_monthly">Lender monthly</option>
             <option value="offtaker_weekly">Offtaker weekly</option>
           </select>
           <input type="number" min={0} max={23} value={hour} onChange={(e) => setHour(Number(e.target.value))}
-                 placeholder="Hour SAST" className="h-9 px-2 rounded border border-[#dde4ec] text-[12px] font-mono" />
+                 placeholder="Hour SAST" className="h-9 px-2 rounded text-[12px] font-mono"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }} />
         </div>
-        <div className="px-3 pb-3"><button type="button" onClick={create} className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold">Subscribe</button></div>
+        <div className="px-3 pb-3">
+          <button type="button" onClick={create} className="h-9 px-3 rounded text-white text-[12px] font-semibold"
+                  style={{ background: 'oklch(0.46 0.16 55)' }}>Subscribe</button>
+        </div>
       </section>
       <section className="widget-card">
         <header className="widget-card-header"><div className="widget-card-title">Subscriptions</div></header>
@@ -377,14 +414,16 @@ function DigestsTab() {
                     ? <span className="px-1.5 py-0.5 rounded text-[10px] widget-tone-good font-semibold">ACTIVE</span>
                     : <span className="px-1.5 py-0.5 rounded text-[10px] widget-tone-bad font-semibold">DISABLED</span>}</td>
                   <td className="text-right space-x-2">
-                    <button type="button" onClick={() => sendNow(r.id)} className="text-[11px] text-[#3b82c4]">Send now</button>
+                    <button type="button" onClick={() => sendNow(r.id)} className="text-[11px]"
+                            style={{ color: 'oklch(0.46 0.16 55)' }}>Send now</button>
                     {r.enabled === 1 && (
-                      <button type="button" onClick={() => disable(r.id)} className="text-[11px] text-[#c0392b]">Disable</button>
+                      <button type="button" onClick={() => disable(r.id)} className="text-[11px]"
+                              style={{ color: 'oklch(0.48 0.20 20)' }}>Disable</button>
                     )}
                   </td>
                 </tr>
               ))}
-              {!rows.length && <tr><td colSpan={7} className="text-[#6b7685] italic py-3">No subscriptions yet.</td></tr>}
+              {!rows.length && <tr><td colSpan={7} className="italic py-3" style={{ color: 'oklch(0.40 0.009 250)' }}>No subscriptions yet.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -422,15 +461,17 @@ function SavedFiltersTab() {
           <div className="widget-empty">No saved filters yet — apply filters on any list page and tap "Save view".</div>
         ) : grouped.map(([surface, list]) => (
           <div key={surface}>
-            <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-[#6b7685] font-bold bg-[#f8fafc] border-t border-b border-[#eef2f7]">{surface}</div>
-            <ul className="divide-y divide-[#eef2f7]">
+            <div className="px-3 py-2 text-[11px] uppercase tracking-wider font-bold"
+                 style={{ color: 'oklch(0.40 0.009 250)', background: 'oklch(0.96 0.003 250)', borderTop: '1px solid oklch(0.87 0.006 250)', borderBottom: '1px solid oklch(0.87 0.006 250)' }}>{surface}</div>
+            <ul style={{ borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
               {list.map((r: any) => (
-                <li key={r.id} className="px-3 py-2 flex items-center gap-2 text-[12px]">
-                  <span className="font-semibold text-[#0f1c2e] flex-1">{r.name}</span>
+                <li key={r.id} className="px-3 py-2 flex items-center gap-2 text-[12px]" style={{ borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
+                  <span className="font-semibold flex-1" style={{ color: 'oklch(0.17 0.010 250)' }}>{r.name}</span>
                   {r.is_default === 1 && <span className="px-1.5 py-0.5 rounded text-[10px] widget-tone-info font-semibold">default</span>}
                   {r.shared === 1 && <span className="px-1.5 py-0.5 rounded text-[10px] widget-tone-good font-semibold">shared</span>}
-                  <span className="font-mono text-[10px] text-[#6b7685]">used {r.use_count || 0}×</span>
-                  <button type="button" onClick={() => del(r.id)} className="text-[11px] text-[#c0392b]">Delete</button>
+                  <span className="font-mono text-[10px]" style={{ color: 'oklch(0.40 0.009 250)' }}>used {r.use_count || 0}×</span>
+                  <button type="button" onClick={() => del(r.id)} className="text-[11px]"
+                          style={{ color: 'oklch(0.48 0.20 20)' }}>Delete</button>
                 </li>
               ))}
             </ul>

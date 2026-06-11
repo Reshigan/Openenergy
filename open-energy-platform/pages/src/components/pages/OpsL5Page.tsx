@@ -29,7 +29,7 @@ export function OpsL5Page() {
       title="L5 operations console"
       subtitle="Grid dispatch + ancillary · regulator workflow · clearing + surveillance · marketplace + auctions · audit Merkle proofs."
     >
-      <div className="border-b border-[#dde4ec] flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1 border-b" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
         {([
           { k: 'grid',             label: 'Grid',             icon: <Zap size={13} /> },
           { k: 'regulator',        label: 'Regulator',        icon: <Gavel size={13} /> },
@@ -38,7 +38,10 @@ export function OpsL5Page() {
           { k: 'audit',            label: 'Audit',            icon: <ShieldCheck size={13} /> },
         ] as Array<{ k: Area; label: string; icon: React.ReactNode }>).map((t) => (
           <button type="button" key={t.k} onClick={() => setArea(t.k)}
-            className={`h-10 px-3 text-[12px] font-semibold inline-flex items-center gap-1 border-b-2 transition-colors ${area === t.k ? 'border-[#3b82c4] text-[#3b82c4]' : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'}`}>
+            className="h-10 px-3 text-[12px] font-semibold inline-flex items-center gap-1 border-b-2 transition-colors"
+            style={area === t.k
+              ? { borderColor: 'oklch(0.46 0.16 55)', color: 'oklch(0.46 0.16 55)' }
+              : { borderColor: 'transparent', color: 'oklch(0.60 0.007 250)' }}>
             {t.icon} {t.label}
           </button>
         ))}
@@ -97,7 +100,7 @@ function GridConstraintsTab() {
             <td className="font-mono text-[10px]">{r.source || '—'}</td>
             <td className="text-right">
               <button type="button" onClick={async () => { await api.post(`/grid-l5/constraints/${r.id}/deactivate`, {}).catch(() => null); void load(); }}
-                      className="text-[11px] text-[#c0392b]">Deactivate</button>
+                      className="text-[11px]" style={{ color: 'oklch(0.48 0.20 20)' }}>Deactivate</button>
             </td>
           </tr>
         ))}
@@ -133,16 +136,19 @@ function GridDispatchTab() {
   return (
     <>
       <div className="flex justify-end items-end gap-2 mb-2 text-[11px]">
-        <label className="font-semibold text-[#3a4658]">Interval
-          <input type="datetime-local" className="ml-1 h-7 px-2 rounded border border-[#dde4ec]"
+        <label className="font-semibold" style={{ color: 'oklch(0.40 0.009 250)' }}>Interval
+          <input type="datetime-local" className="ml-1 h-7 px-2 rounded border"
+                 style={{ borderColor: 'oklch(0.87 0.006 250)' }}
                  value={newRun.interval_start} onChange={(e) => setNewRun({ ...newRun, interval_start: e.target.value })}/>
         </label>
-        <label className="font-semibold text-[#3a4658]">Demand (MW)
-          <input type="number" className="ml-1 h-7 px-2 rounded border border-[#dde4ec] w-24 font-mono"
+        <label className="font-semibold" style={{ color: 'oklch(0.40 0.009 250)' }}>Demand (MW)
+          <input type="number" className="ml-1 h-7 px-2 rounded border w-24 font-mono"
+                 style={{ borderColor: 'oklch(0.87 0.006 250)' }}
                  value={newRun.demand_mw} onChange={(e) => setNewRun({ ...newRun, demand_mw: e.target.value })}/>
         </label>
         <button type="button" disabled={creating || !newRun.demand_mw} onClick={createRun}
-                className="h-7 px-3 rounded bg-[#c2873a] text-white font-semibold disabled:opacity-50">
+                className="h-7 px-3 rounded text-white font-semibold disabled:opacity-50"
+                style={{ background: 'oklch(0.46 0.16 55)' }}>
           {creating ? 'Creating…' : 'New run'}
         </button>
       </div>
@@ -156,7 +162,7 @@ function GridDispatchTab() {
             <td className="text-right font-mono">{r.marginal_price_zar ? `R${Number(r.marginal_price_zar).toFixed(0)}` : '—'}</td>
             <td><Pill status={r.status} /></td>
             <td className="text-right space-x-2">
-              {r.status === 'queued' && <button type="button" onClick={() => optimize(r.id)} className="text-[11px] text-[#3b82c4]">Optimize</button>}
+              {r.status === 'queued' && <button type="button" onClick={() => optimize(r.id)} className="text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>Optimize</button>}
               {r.status === 'optimized' && <button type="button" onClick={async () => { await api.post(`/grid-l5/dispatch/runs/${r.id}/publish`, {}).catch(() => null); void load(); }} className="text-[11px] widget-tone-good-text font-semibold">Publish</button>}
             </td>
           </tr>
@@ -410,7 +416,7 @@ function SurveillanceTab() {
   return (
     <>
       <div className="flex justify-end">
-        <button type="button" onClick={scan} className="h-8 px-3 rounded bg-[#c2873a] text-white text-[11px] font-semibold">Run scan now</button>
+        <button type="button" onClick={scan} className="h-8 px-3 rounded text-white text-[11px] font-semibold" style={{ background: 'oklch(0.46 0.16 55)' }}>Run scan now</button>
       </div>
       <Section title="Open surveillance alerts">
         <Table headers={['Type', 'Participant', 'Severity', 'Score', 'Detected', 'Status', '']}>
@@ -616,18 +622,20 @@ function AuditArea() {
     <div className="mt-3 space-y-3">
       <Section title="Build daily Merkle root">
         <div className="p-3 flex flex-wrap items-end gap-2 text-[11px]">
-          <label className="font-semibold text-[#3a4658]">Entity type
-            <input className="block mt-1 h-7 px-2 rounded border border-[#dde4ec] font-mono w-48"
+          <label className="font-semibold" style={{ color: 'oklch(0.40 0.009 250)' }}>Entity type
+            <input className="block mt-1 h-7 px-2 rounded border font-mono w-48"
+                   style={{ borderColor: 'oklch(0.87 0.006 250)' }}
                    value={buildEntity} onChange={(e) => setBuildEntity(e.target.value)}/>
           </label>
-          <label className="font-semibold text-[#3a4658]">Day
-            <input type="date" className="block mt-1 h-7 px-2 rounded border border-[#dde4ec]"
+          <label className="font-semibold" style={{ color: 'oklch(0.40 0.009 250)' }}>Day
+            <input type="date" className="block mt-1 h-7 px-2 rounded border"
+                   style={{ borderColor: 'oklch(0.87 0.006 250)' }}
                    value={buildDay} onChange={(e) => setBuildDay(e.target.value)}/>
           </label>
-          <button type="button" onClick={build} disabled={busy} className="h-7 px-3 rounded bg-[#c2873a] text-white font-semibold disabled:opacity-50">
+          <button type="button" onClick={build} disabled={busy} className="h-7 px-3 rounded text-white font-semibold disabled:opacity-50" style={{ background: 'oklch(0.46 0.16 55)' }}>
             {busy ? 'Building…' : 'Build root'}
           </button>
-          {msg && <span className="text-[#3a4658]">{msg}</span>}
+          {msg && <span style={{ color: 'oklch(0.40 0.009 250)' }}>{msg}</span>}
         </div>
       </Section>
       <Section title="Daily Merkle roots (open data, verify externally)">
@@ -638,8 +646,8 @@ function AuditArea() {
               <td>{r.entity_type}</td>
               <td className="text-right font-mono">{r.event_count}</td>
               <td className="font-mono text-[10px]">{String(r.merkle_root).slice(0, 16)}…</td>
-              <td>{r.platform_signature ? <span className="widget-tone-good-text">✓</span> : <span className="text-[#6b7685]">—</span>}</td>
-              <td>{r.attestor_signature ? <span className="widget-tone-good-text">✓ {r.attestor_id}</span> : <span className="text-[#6b7685]">none</span>}</td>
+              <td>{r.platform_signature ? <span className="widget-tone-good-text">✓</span> : <span style={{ color: 'oklch(0.60 0.007 250)' }}>—</span>}</td>
+              <td>{r.attestor_signature ? <span className="widget-tone-good-text">✓ {r.attestor_id}</span> : <span style={{ color: 'oklch(0.60 0.007 250)' }}>none</span>}</td>
             </tr>
           ))}
           {!roots.length && <Empty cols={6} />}
@@ -670,7 +678,10 @@ function SubTabs<T extends string>({ value, onChange, items }: { value: T; onCha
     <div className="flex flex-wrap gap-1 text-[11px]">
       {items.map((t) => (
         <button type="button" key={t.k} onClick={() => onChange(t.k)}
-                className={`h-7 px-2.5 rounded-full font-semibold border ${value === t.k ? 'bg-[#c2873a] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>
+                className="h-7 px-2.5 rounded-full font-semibold border"
+                style={value === t.k
+                  ? { background: 'oklch(0.46 0.16 55)', color: 'white', borderColor: 'oklch(0.46 0.16 55)' }
+                  : { background: 'oklch(0.99 0.002 80)', color: 'oklch(0.17 0.010 250)', borderColor: 'oklch(0.87 0.006 250)' }}>
           {t.label}
         </button>
       ))}
@@ -699,7 +710,7 @@ function Table({ headers, children }: { headers: string[]; children: React.React
 }
 
 function Empty({ cols }: { cols: number }) {
-  return <tr><td colSpan={cols} className="text-[#6b7685] italic py-3">No records.</td></tr>;
+  return <tr><td colSpan={cols} className="italic py-3" style={{ color: 'oklch(0.60 0.007 250)' }}>No records.</td></tr>;
 }
 
 function Pill({ status }: { status: string }) {

@@ -31,6 +31,7 @@ type LicenceClass =
 type LicenceType = 'generation' | 'distribution' | 'trading';
 
 interface RenewalRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   licence_id: string;
@@ -111,10 +112,10 @@ interface RenewalEvent {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   renewal_initiated:   { bg: '#e3e7ec', fg: '#557',    label: 'Initiated' },
-  application_filed:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Filed' },
+  application_filed:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Filed' },
   completeness_check:  { bg: '#fff4d6', fg: '#a06200', label: 'Completeness' },
   public_consultation: { bg: '#fbe7d0', fg: '#7a4500', label: 'Consultation' },
-  evaluation:          { bg: '#dbecfb', fg: '#1a3a5c', label: 'Evaluation' },
+  evaluation:          { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Evaluation' },
   decision_drafted:    { bg: '#fff4d6', fg: '#a06200', label: 'Decision drafted' },
   council_voted:       { bg: '#daf5e2', fg: '#1f6b3a', label: 'Council voted' },
   granted:             { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Granted' },
@@ -127,7 +128,7 @@ const CLASS_TONE: Record<LicenceClass, { bg: string; fg: string; label: string }
   generation_utility:  { bg: '#fde0e0', fg: '#9b1f1f', label: 'Gen · utility' },
   generation_embedded: { bg: '#fff4d6', fg: '#a06200', label: 'Gen · embedded' },
   generation_sseg:     { bg: '#daf5e2', fg: '#1f6b3a', label: 'Gen · SSEG' },
-  distribution:        { bg: '#dbecfb', fg: '#1a3a5c', label: 'Distribution' },
+  distribution:        { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Distribution' },
   trading:             { bg: '#dbcffb', fg: '#3a1a5c', label: 'Trading' },
 };
 
@@ -159,6 +160,9 @@ type ActionKind =
   | 'file-application' | 'check-completeness' | 'open-consultation'
   | 'start-evaluation' | 'draft-decision' | 'council-vote'
   | 'grant' | 'amend' | 'refuse' | 'withdraw';
+
+interface ModalField { key: string; label: string; required?: boolean; placeholder?: string; multiline?: boolean; }
+interface PendingAction { action: ActionKind; row: RenewalRow; fields: ModalField[]; }
 
 // Each state has ONE primary next-step action.
 const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
@@ -245,6 +249,8 @@ export function LicenceRenewalChainTab() {
   const [filter, setFilter] = useState<string>('active');
   const [selected, setSelected] = useState<RenewalRow | null>(null);
   const [events, setEvents] = useState<RenewalEvent[]>([]);
+  const [pending, setPending] = useState<PendingAction | null>(null);
+  const [modalVals, setModalVals] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -310,87 +316,80 @@ export function LicenceRenewalChainTab() {
     utility_open: 0, distribution_open: 0,
   };
 
-  const act = useCallback(async (action: ActionKind, row: RenewalRow) => {
+  const ACTION_FIELDS: Record<ActionKind, ModalField[]> = useMemo(() => ({
+    'file-application': [
+      { key: 'application_pack_ref', label: 'Application pack reference', required: true, placeholder: 'APP-PACK-KSL-U6-2026' },
+      { key: 'requested_expiry_date', label: 'Requested new expiry date (YYYY-MM-DD)', placeholder: 'YYYY-MM-DD' },
+    ],
+    'check-completeness': [
+      { key: 'completeness_findings', label: 'Completeness findings (gap list / OK)', required: true, multiline: true },
+      { key: 'completeness_ref', label: 'Completeness review reference', placeholder: 'COMP-REV-KSL-U6-2026' },
+    ],
+    'open-consultation': [
+      { key: 'consultation_notice_ref', label: 'Public consultation notice reference', required: true, placeholder: 'GG-NOTICE-2026-1840' },
+    ],
+    'start-evaluation': [
+      { key: 'technical_findings', label: 'Technical evaluation findings', required: true, multiline: true },
+      { key: 'technical_evaluation_ref', label: 'Technical evaluation reference', placeholder: 'TECH-EVAL-KSL-U6-2026' },
+      { key: 'financial_findings', label: 'Financial evaluation findings', multiline: true },
+      { key: 'financial_evaluation_ref', label: 'Financial evaluation reference (optional)' },
+    ],
+    'draft-decision': [
+      { key: 'decision_rod_ref', label: 'Record of Decision reference', required: true, placeholder: 'ROD-KSL-U6-2026-DRAFT-V1' },
+    ],
+    'council-vote': [
+      { key: 'council_meeting_ref', label: 'Council meeting reference', required: true, placeholder: 'NERSA-COUNCIL-2026-08-MIN' },
+      { key: 'council_vote_outcome', label: 'Council vote outcome', placeholder: '8/9 in favour, 1 abstention' },
+    ],
+    'grant': [
+      { key: 'granted_expiry_date', label: 'Granted expiry date (YYYY-MM-DD)', required: true, placeholder: 'YYYY-MM-DD' },
+    ],
+    'amend': [
+      { key: 'granted_expiry_date', label: 'Granted expiry date (YYYY-MM-DD)', required: true, placeholder: 'YYYY-MM-DD' },
+      { key: 'conditions_attached', label: 'Conditions attached (newline-separated)', required: true, multiline: true },
+      { key: 'amendment_summary', label: 'Amendment summary', multiline: true },
+    ],
+    'refuse': [
+      { key: 'refusal_grounds', label: 'Refusal grounds (Council motivation)', required: true, multiline: true },
+      { key: 'rod_notes', label: 'ROD notes (full refusal rationale)', required: true, multiline: true },
+      { key: 'reason_code', label: 'Reason code', placeholder: 'FIN_INSOLVENCY / TECH_DEFICIENT' },
+      { key: 'appeal_filing_ref', label: 'Tribunal appeal filing reference (optional)' },
+      { key: 'tribunal_case_ref', label: 'Tribunal case reference (optional)' },
+    ],
+    'withdraw': [
+      { key: 'withdrawal_basis', label: 'Withdrawal basis (applicant rationale)', required: true, multiline: true },
+      { key: 'withdrawal_minute_ref', label: 'Withdrawal minute reference (optional)' },
+      { key: 'reason_code', label: 'Reason code', placeholder: 'PROJECT_CANCELLED / REFILED' },
+    ],
+  }), []);
+
+  const openAct = useCallback((action: ActionKind, row: RenewalRow) => {
+    const fields = ACTION_FIELDS[action];
+    const defaults: Record<string, string> = {};
+    if (action === 'grant' || action === 'amend') {
+      defaults.granted_expiry_date = row.requested_expiry_date ?? '';
+    }
+    setModalVals(defaults);
+    setPending({ action, row, fields });
+  }, [ACTION_FIELDS]);
+
+  const submitAct = useCallback(async () => {
+    if (!pending) return;
+    const { action, row } = pending;
+    const body: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(modalVals)) {
+      if (v) body[k] = v;
+    }
+    setPending(null);
+    setModalVals({});
     try {
-      const body: Record<string, unknown> = {};
-      if (action === 'file-application') {
-        const ref = window.prompt('Application pack reference (eg "APP-PACK-KSL-U6-2026"):');
-        if (!ref) return;
-        body.application_pack_ref = ref;
-        const req = window.prompt('Requested new expiry date (YYYY-MM-DD):', row.requested_expiry_date ?? '');
-        if (req) body.requested_expiry_date = req;
-      } else if (action === 'check-completeness') {
-        const findings = window.prompt('Completeness findings (gap list / OK):');
-        if (!findings) return;
-        body.completeness_findings = findings;
-        const ref = window.prompt('Completeness review reference (eg "COMP-REV-KSL-U6-2026"):');
-        if (ref) body.completeness_ref = ref;
-      } else if (action === 'open-consultation') {
-        const ref = window.prompt('Public consultation notice reference (eg "GG-NOTICE-2026-1840"):');
-        if (!ref) return;
-        body.consultation_notice_ref = ref;
-      } else if (action === 'start-evaluation') {
-        const tech = window.prompt('Technical evaluation findings:');
-        if (!tech) return;
-        body.technical_findings = tech;
-        const tref = window.prompt('Technical evaluation reference (eg "TECH-EVAL-KSL-U6-2026"):');
-        if (tref) body.technical_evaluation_ref = tref;
-        const fin = window.prompt('Financial evaluation findings:');
-        if (fin) body.financial_findings = fin;
-        const fref = window.prompt('Financial evaluation reference (optional):');
-        if (fref) body.financial_evaluation_ref = fref;
-      } else if (action === 'draft-decision') {
-        const ref = window.prompt('Record of Decision reference (eg "ROD-KSL-U6-2026-DRAFT-V1"):');
-        if (!ref) return;
-        body.decision_rod_ref = ref;
-      } else if (action === 'council-vote') {
-        const mref = window.prompt('Council meeting reference (eg "NERSA-COUNCIL-2026-08-MIN"):');
-        if (!mref) return;
-        body.council_meeting_ref = mref;
-        const outcome = window.prompt('Council vote outcome (eg "8/9 in favour, 1 abstention"):');
-        if (outcome) body.council_vote_outcome = outcome;
-      } else if (action === 'grant') {
-        const exp = window.prompt('Granted expiry date (YYYY-MM-DD):', row.requested_expiry_date ?? '');
-        if (!exp) return;
-        body.granted_expiry_date = exp;
-      } else if (action === 'amend') {
-        const exp = window.prompt('Granted expiry date (YYYY-MM-DD):', row.requested_expiry_date ?? '');
-        if (!exp) return;
-        body.granted_expiry_date = exp;
-        const cond = window.prompt('Conditions attached (newline-separated):');
-        if (!cond) return;
-        body.conditions_attached = cond;
-        const amend = window.prompt('Amendment summary:');
-        if (amend) body.amendment_summary = amend;
-      } else if (action === 'refuse') {
-        const grounds = window.prompt('Refusal grounds (Council motivation):');
-        if (!grounds) return;
-        body.refusal_grounds = grounds;
-        const appeal = window.prompt('Tribunal appeal filing reference (if anticipated, optional):');
-        if (appeal) body.appeal_filing_ref = appeal;
-        const tribunal = window.prompt('Tribunal case reference (if known, optional):');
-        if (tribunal) body.tribunal_case_ref = tribunal;
-        const reason = window.prompt('Reason code (eg "FIN_INSOLVENCY", "TECH_DEFICIENT"):');
-        if (reason) body.reason_code = reason;
-        const rod = window.prompt('ROD notes (full refusal rationale):');
-        if (!rod) return;
-        body.rod_notes = rod;
-      } else if (action === 'withdraw') {
-        const basis = window.prompt('Withdrawal basis (applicant rationale):');
-        if (!basis) return;
-        body.withdrawal_basis = basis;
-        const min = window.prompt('Withdrawal minute reference (optional):');
-        if (min) body.withdrawal_minute_ref = min;
-        const reason = window.prompt('Reason code (eg "PROJECT_CANCELLED", "REFILED"):');
-        if (reason) body.reason_code = reason;
-      }
       await api.post(`/licence/renewal/chain/${row.id}/${action}`, body);
       await load();
       if (selected?.id === row.id) await loadEvents(row.id);
     } catch (e) {
       setErr(e instanceof Error ? e.message : `Failed to ${action}`);
     }
-  }, [load, loadEvents, selected]);
+  }, [pending, modalVals, load, loadEvents, selected]);
 
   return (
     <div className="p-5">
@@ -426,7 +425,7 @@ export function LicenceRenewalChainTab() {
       <div className="mb-3 flex flex-wrap items-center gap-4 text-[11px] text-[#4a5568]">
         <span>Reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
         <span>Utility open: <span className="font-semibold text-[#a06200]">{kpis.utility_open}</span></span>
-        <span>Distribution open: <span className="font-semibold text-[#1a3a5c]">{kpis.distribution_open}</span></span>
+        <span>Distribution open: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.distribution_open}</span></span>
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -455,14 +454,14 @@ export function LicenceRenewalChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Licence</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Applicant / Facility</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Class</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Capacity</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Expiry</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Case #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Licence</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Applicant / Facility</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Class</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Capacity</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Expiry</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -476,8 +475,8 @@ export function LicenceRenewalChainTab() {
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
                     <td className="px-3 py-2 font-mono text-[#0c2a4d]">{r.case_number}</td>
-                    <td className="px-3 py-2 font-mono text-[#1a3a5c]">{r.licence_number ?? '—'}</td>
-                    <td className="px-3 py-2 text-[#1a3a5c] max-w-[260px]">
+                    <td className="px-3 py-2 font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>{r.licence_number ?? '—'}</td>
+                    <td className="px-3 py-2 max-w-[260px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       <div className="font-medium truncate" title={r.applicant_party_name}>{r.applicant_party_name}</div>
                       <div className="text-[10px] text-[#6b7685] truncate" title={r.facility_name ?? ''}>{r.facility_name ?? '—'}</div>
                     </td>
@@ -515,7 +514,55 @@ export function LicenceRenewalChainTab() {
       )}
 
       {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={openAct} />
+      )}
+
+      {pending && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setPending(null)}>
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="border-b border-[#d8dde6] px-5 py-3">
+              <div className="font-semibold text-[#0c2a4d] text-sm">{ACTION_LABEL[pending.action]}</div>
+              <div className="text-[11px] text-[#4a5568]">{pending.row.case_number} — {pending.row.applicant_party_name}</div>
+            </div>
+            <div className="px-5 py-4 space-y-3 max-h-[60vh] overflow-y-auto">
+              {pending.fields.map((f) => (
+                <div key={f.key}>
+                  <label className="block text-[11px] font-medium text-[#4a5568] mb-1">
+                    {f.label}{f.required && <span className="text-red-600 ml-0.5">*</span>}
+                  </label>
+                  {f.multiline ? (
+                    <textarea
+                      rows={3}
+                      className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[12px] text-[#0c2a4d] focus:outline-none focus:border-[#c2873a]"
+                      placeholder={f.placeholder}
+                      value={modalVals[f.key] ?? ''}
+                      onChange={(e) => setModalVals((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[12px] text-[#0c2a4d] focus:outline-none focus:border-[#c2873a]"
+                      placeholder={f.placeholder}
+                      value={modalVals[f.key] ?? ''}
+                      onChange={(e) => setModalVals((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-[#d8dde6] px-5 py-3 flex justify-end gap-2">
+              <button type="button" onClick={() => setPending(null)} className="rounded border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[#4a5568] hover:bg-[#f3f5f9]">Cancel</button>
+              <button
+                type="button"
+                onClick={() => { void submitAct(); }}
+                disabled={pending.fields.filter((f) => f.required).some((f) => !(modalVals[f.key] ?? '').trim())}
+                className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#b07535] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -602,31 +649,31 @@ function Drawer({
             <Pair label="Refused at"            value={fmtDate(row.refused_at)} />
           </div>
           {row.completeness_findings && (
-            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Completeness findings</div>
               {row.completeness_findings}
             </div>
           )}
           {row.technical_findings && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Technical findings</div>
               {row.technical_findings}
             </div>
           )}
           {row.financial_findings && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Financial findings</div>
               {row.financial_findings}
             </div>
           )}
           {row.conditions_attached && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Conditions attached</div>
               <pre className="whitespace-pre-wrap font-sans">{row.conditions_attached}</pre>
             </div>
           )}
           {row.amendment_summary && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Amendment summary</div>
               {row.amendment_summary}
             </div>
@@ -638,13 +685,13 @@ function Drawer({
             </div>
           )}
           {row.withdrawal_basis && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Withdrawal basis</div>
               {row.withdrawal_basis}
             </div>
           )}
           {row.rod_notes && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">ROD notes</div>
               {row.rod_notes}
             </div>
@@ -708,7 +755,7 @@ function Drawer({
                       {e.from_status ?? '—'} → {e.to_status ?? '—'}{e.actor_party ? ` · by ${e.actor_party}` : ''}
                     </div>
                   )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

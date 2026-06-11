@@ -27,10 +27,10 @@ interface LenderReportingKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   reporting_triggered:    'bg-[#eef2f7] text-[#6b7685]',
-  data_collection:        'bg-blue-100 text-blue-700',
+  data_collection:        'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   financial_model_update: 'bg-sky-100 text-sky-700',
   technical_review:       'bg-cyan-100 text-cyan-700',
-  document_compilation:   'bg-indigo-100 text-indigo-700',
+  document_compilation:   'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   ipp_sign_off:           'bg-violet-100 text-violet-700',
   agent_bank_submission:  'bg-purple-100 text-purple-700',
   lender_distribution:    'bg-yellow-100 text-yellow-800',
@@ -58,7 +58,7 @@ const STATUS_LABELS: Record<string, string> = {
 // URGENT SLA — more lenders = tighter deadline
 const TIER_BADGE_COLORS: Record<string, string> = {
   sole:        'bg-green-100 text-green-800',
-  bilateral:   'bg-blue-100 text-blue-800',
+  bilateral:   'bg-[oklch(0.94_0.006_250)] text-[oklch(0.17_0.010_250)]',
   club:        'bg-yellow-100 text-yellow-800',
   syndicated:  'bg-orange-100 text-orange-800',
   consortium:  'bg-red-100 text-red-800',
@@ -362,9 +362,10 @@ export function IppLenderReportingTab() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3"
+          className="rounded-lg border p-4 space-y-3"
+          style={{ borderColor: 'oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
         >
-          <div className="text-sm font-semibold text-blue-800">New Lender Report</div>
+          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New Lender Report</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
@@ -560,7 +561,7 @@ export function IppLenderReportingTab() {
                                 ? 'px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border border-yellow-200'
                                 : a.variant === 'success'
                                 ? 'px-2 py-0.5 text-xs rounded bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
-                                : 'px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                                : 'px-2 py-0.5 text-xs rounded border hover:opacity-80'
                             }
                           >
                             {a.label}

@@ -25,6 +25,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'renewal_due' | 'application_submitted' | 'completeness_check' | 'revision_requested'
@@ -36,6 +51,7 @@ type Tier = 'minor' | 'moderate' | 'material' | 'major' | 'mega';
 type Standard = 'verra_vcs' | 'gold_standard' | 'article_6_4' | 'cdm';
 
 interface RenewalRow {
+  [key: string]: unknown;
   id: string;
   renewal_number: string;
   source_event: string | null;
@@ -134,36 +150,25 @@ interface KpiSummary {
   total_revised_baseline: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  renewal_due:           { bg: '#e3e7ec', fg: '#557',    label: 'Renewal due' },
-  application_submitted: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Application submitted' },
-  completeness_check:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Completeness check' },
-  revision_requested:    { bg: '#ffe9d6', fg: '#8a4a00', label: 'Revision requested' },
-  baseline_reassessment: { bg: '#fff4d6', fg: '#a06200', label: 'Baseline reassessment' },
-  additionality_retest:  { bg: '#fff4d6', fg: '#a06200', label: 'Additionality retest' },
-  vvb_validation:        { bg: '#fff4d6', fg: '#a06200', label: 'VVB validation' },
-  standard_review:       { bg: '#fff4d6', fg: '#a06200', label: 'Standard review' },
-  renewed:               { bg: '#d4edda', fg: '#155724', label: 'Renewed' },
-  refused:               { bg: '#fde0e0', fg: '#9b1f1f', label: 'Refused' },
-  withdrawn:             { bg: '#f3e0e0', fg: '#6b1f1f', label: 'Withdrawn' },
-  lapsed:                { bg: '#f3e0e0', fg: '#6b1f1f', label: 'Lapsed' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'renewal_due',
+  'application_submitted',
+  'completeness_check',
+  'baseline_reassessment',
+  'additionality_retest',
+  'vvb_validation',
+  'standard_review',
+  'renewed',
+];
+const BRANCH_STATES: readonly string[] = [
+  'revision_requested',
+  'refused',
+  'withdrawn',
+  'lapsed',
+];
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor (<10k/yr)' },
-  moderate: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Moderate (<100k/yr)' },
-  material: { bg: '#fff4d6', fg: '#a06200', label: 'Material (<500k/yr)' },
-  major:    { bg: '#ffe4b5', fg: '#8a4a00', label: 'Major (<2m/yr)' },
-  mega:     { bg: '#fde0e0', fg: '#9b1f1f', label: 'Mega (≥2m/yr)' },
-};
-
-const STANDARD_LABEL: Record<Standard, string> = {
-  verra_vcs:    'Verra VCS',
-  gold_standard:'Gold Standard',
-  article_6_4:  'Article 6.4',
-  cdm:          'CDM',
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',                label: 'Active' },
   { key: 'all',                   label: 'All' },
@@ -191,42 +196,17 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'lapsed',                label: 'Lapsed' },
 ];
 
-type ActionKind =
-  | 'submit-application' | 'check-completeness' | 'request-revision' | 'resubmit'
-  | 'begin-baseline' | 'complete-baseline' | 'complete-additionality' | 'validate'
-  | 'renew' | 'refuse' | 'withdraw';
+// ── action helpers ────────────────────────────────────────────────────────
+const TERMINAL_STATES: ChainStatus[] = ['renewed', 'refused', 'withdrawn', 'lapsed'];
+const IN_REVIEW_STATES: ChainStatus[] = ['vvb_validation', 'standard_review'];
+const REASSESSMENT_STATES: ChainStatus[] = ['baseline_reassessment', 'additionality_retest'];
+const WITHDRAWABLE_STATES: ChainStatus[] = ['renewal_due', 'application_submitted', 'completeness_check', 'revision_requested'];
 
-// Primary forward action per state.
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  renewal_due:           'submit-application',
-  application_submitted: 'check-completeness',
-  completeness_check:    'begin-baseline',
-  revision_requested:    'resubmit',
-  baseline_reassessment: 'complete-baseline',
-  additionality_retest:  'complete-additionality',
-  vvb_validation:        'validate',
-  standard_review:       'renew',
-  renewed:               null,
-  refused:               null,
-  withdrawn:             null,
-  lapsed:                null,
-};
-
-// Party annotation per action — the functional party. The proponent submits /
-// resubmits / withdraws; the independent VVB validates; the registry (standard
-// review body) drives every completeness / baseline / additionality / decision step.
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'submit-application':     'Submit application (proponent)',
-  'check-completeness':     'Check completeness (registry)',
-  'request-revision':       'Request revision (registry)',
-  'resubmit':               'Resubmit (proponent)',
-  'begin-baseline':         'Begin baseline reassessment (registry)',
-  'complete-baseline':      'Complete baseline (registry)',
-  'complete-additionality': 'Complete additionality retest (registry)',
-  'validate':               'VVB validate (vvb)',
-  'renew':                  'Renew crediting period (registry)',
-  'refuse':                 'Refuse (registry)',
-  'withdraw':               'Withdraw (proponent)',
+const STANDARD_LABEL: Record<Standard, string> = {
+  verra_vcs:    'Verra VCS',
+  gold_standard:'Gold Standard',
+  article_6_4:  'Article 6.4',
+  cdm:          'CDM',
 };
 
 function fmtMinutes(m: number | null | undefined): string {
@@ -252,19 +232,439 @@ function fmtPct(n: number | null | undefined): string {
   return `${n.toFixed(1)}%`;
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['renewed', 'refused', 'withdrawn', 'lapsed'];
-const IN_REVIEW_STATES: ChainStatus[] = ['vvb_validation', 'standard_review'];
-const REASSESSMENT_STATES: ChainStatus[] = ['baseline_reassessment', 'additionality_retest'];
-const WITHDRAWABLE_STATES: ChainStatus[] = ['renewal_due', 'application_submitted', 'completeness_check', 'revision_requested'];
+function getActions(row: RenewalRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
 
+  // Primary forward actions per state
+  if (s === 'renewal_due') {
+    actions.push({
+      key: 'submit-application',
+      label: 'Submit application (proponent)',
+      fields: [
+        {
+          key: 'submission_basis',
+          label: 'Submission basis — the renewal application lodged with the registry as the crediting period nears expiry',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+        {
+          key: 'application_ref',
+          label: 'Application reference (e.g. VCS-RENEW-2026-0007)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'annual_issuance_tco2e',
+          label: 'Declared annual issuance (tCO₂e/yr — re-derives the tier)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.annual_issuance_tco2e ?? ''),
+        },
+        {
+          key: 'crediting_period_number',
+          label: 'Crediting period number being renewed',
+          type: 'number',
+          required: false,
+          placeholder: String(row.crediting_period_number ?? ''),
+        },
+        {
+          key: 'vvb_name',
+          label: 'Appointed VVB (validation/verification body)',
+          type: 'text',
+          required: false,
+          placeholder: row.vvb_name ?? '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'application_submitted') {
+    actions.push({
+      key: 'check-completeness',
+      label: 'Check completeness (registry)',
+      fields: [
+        {
+          key: 'completeness_basis',
+          label: 'Completeness basis — registry confirmation the application package is complete and admissible',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+        {
+          key: 'completeness_ref',
+          label: 'Completeness reference (e.g. VCS-COMPLETE-2026-0007)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'completeness_check') {
+    actions.push({
+      key: 'begin-baseline',
+      label: 'Begin baseline reassessment (registry)',
+      fields: [
+        {
+          key: 'baseline_basis',
+          label: 'Baseline basis — scope of the baseline reassessment against current data and regulatory surplus',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+    // Secondary: request revision
+    actions.push({
+      key: 'request-revision',
+      label: 'Request revision (registry)',
+      fields: [
+        {
+          key: 'revision_basis',
+          label: 'Revision basis — what the proponent must fix before the package can proceed',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code',
+          type: 'text',
+          required: false,
+          placeholder: 'incomplete_package',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'revision_requested') {
+    actions.push({
+      key: 'resubmit',
+      label: 'Resubmit (proponent)',
+      fields: [
+        {
+          key: 'submission_basis',
+          label: 'Resubmission basis — the corrected package the proponent re-lodges',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'baseline_reassessment') {
+    actions.push({
+      key: 'complete-baseline',
+      label: 'Complete baseline (registry)',
+      fields: [
+        {
+          key: 'baseline_basis',
+          label: 'Baseline basis — the reassessed baseline result and methodology applied',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+        {
+          key: 'original_baseline_tco2e',
+          label: 'Original baseline (tCO₂e/yr)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.original_baseline_tco2e ?? ''),
+        },
+        {
+          key: 'revised_baseline_tco2e',
+          label: 'Revised baseline (tCO₂e/yr — typically lower)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.revised_baseline_tco2e ?? ''),
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'additionality_retest') {
+    actions.push({
+      key: 'complete-additionality',
+      label: 'Complete additionality retest (registry)',
+      fields: [
+        {
+          key: 'additionality_basis',
+          label: 'Additionality basis — the re-test of whether the activity remains additional under current conditions',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+        {
+          key: 'additionality_outcome',
+          label: 'Additionality outcome (e.g. additional / not_additional / conditional)',
+          type: 'text',
+          required: false,
+          placeholder: 'additional',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'vvb_validation') {
+    actions.push({
+      key: 'validate',
+      label: 'VVB validate (vvb)',
+      fields: [
+        {
+          key: 'validation_basis',
+          label: 'Validation basis — independent VVB opinion on the renewed baseline and additionality',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+        {
+          key: 'vvb_report_ref',
+          label: 'VVB report reference (e.g. VVB-VAL-2026-0007)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'vvb_name',
+          label: 'VVB name',
+          type: 'text',
+          required: false,
+          placeholder: row.vvb_name ?? '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'standard_review') {
+    // renew — crosses regulator EVERY tier when baseline cut ≥30%
+    actions.push({
+      key: 'renew',
+      label: 'Renew crediting period (registry)',
+      fields: [
+        {
+          key: 'decision_basis',
+          label: 'Decision basis — the standard review body decision to renew the crediting period',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+        {
+          key: 'decision_ref',
+          label: 'Decision reference (e.g. VCS-DECISION-2026-0007)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'renewed_period_start',
+          label: 'Renewed period start (YYYY-MM-DD)',
+          type: 'date',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'renewed_period_end',
+          label: 'Renewed period end (YYYY-MM-DD)',
+          type: 'date',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'revised_baseline_tco2e',
+          label: 'Confirmed revised baseline (tCO₂e/yr — sets baseline reduction; ≥30% cut is reportable)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.revised_baseline_tco2e ?? ''),
+        },
+        {
+          key: 'renewal_summary',
+          label: 'Renewal summary (one line for the audit record)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      // renew crosses regulator EVERY tier when baseline cut ≥30%
+      cascadeTo: ['regulator'],
+    });
+    // refuse — crosses for large tiers (major + mega)
+    actions.push({
+      key: 'refuse',
+      label: 'Refuse (registry)',
+      fields: [
+        {
+          key: 'refusal_basis',
+          label: 'Refusal basis — why the renewal fails (no longer additional / baseline untenable / methodology lapsed)',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+        {
+          key: 'refusal_ref',
+          label: 'Refusal reference (e.g. VCS-REFUSE-2026-0007)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code',
+          type: 'text',
+          required: false,
+          placeholder: 'renewal_refused',
+        },
+      ],
+      // crosses regulator for large tiers (major + mega)
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  // withdraw available from any pre-decision state
+  if (WITHDRAWABLE_STATES.includes(s)) {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw (proponent)',
+      fields: [
+        {
+          key: 'reason_code',
+          label: 'Withdrawal reason — why the proponent is pulling the renewal before decision',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: RenewalRow): React.ReactNode {
+  const downgrade = (row.baseline_reduction_pct || 0) >= 30;
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+      <DetailPair label="Tier" value={row.issuance_tier} />
+      <DetailPair label="Standard" value={STANDARD_LABEL[row.registry_standard]} />
+      <DetailPair label="Methodology" value={row.methodology_id ?? '—'} />
+      <DetailPair label="Proponent" value={row.proponent_party_name} />
+      <DetailPair label="VVB" value={row.vvb_name ?? '—'} />
+      <DetailPair label="Annual issuance" value={fmtTco2e(row.annual_issuance_tco2e)} />
+      <DetailPair label="Crediting period" value={row.crediting_period_number ? `CP${row.crediting_period_number}` : '—'} />
+      <DetailPair label="Current period" value={`${fmtDate(row.current_period_start)} → ${fmtDate(row.current_period_end)}`} />
+      <DetailPair label="Renewed period" value={`${fmtDate(row.renewed_period_start)} → ${fmtDate(row.renewed_period_end)}`} />
+      <DetailPair label="Original baseline" value={fmtTco2e(row.original_baseline_tco2e)} />
+      <DetailPair label="Revised baseline" value={fmtTco2e(row.revised_baseline_tco2e)} />
+      <DetailPair
+        label="Baseline cut"
+        value={fmtPct(row.baseline_reduction_pct)}
+        highlight={downgrade ? BAD : undefined}
+      />
+      <DetailPair label="Additionality" value={row.additionality_outcome ?? '—'} />
+      <DetailPair label="Revision round" value={String(row.revision_round)} />
+      <DetailPair label="Application ref" value={row.application_ref ?? '—'} />
+      <DetailPair label="Completeness ref" value={row.completeness_ref ?? '—'} />
+      <DetailPair label="VVB report ref" value={row.vvb_report_ref ?? '—'} />
+      <DetailPair label="Decision ref" value={row.decision_ref ?? '—'} />
+      <DetailPair label="Refusal ref" value={row.refusal_ref ?? '—'} />
+      <DetailPair label="Reason code" value={row.reason_code ?? '—'} />
+      <DetailPair label="Renewal due" value={fmtDate(row.renewal_due_at)} />
+      <DetailPair label="Submitted" value={fmtDate(row.application_submitted_at)} />
+      <DetailPair label="Completeness" value={fmtDate(row.completeness_check_at)} />
+      <DetailPair label="Revision req" value={fmtDate(row.revision_requested_at)} />
+      <DetailPair label="Baseline reassess" value={fmtDate(row.baseline_reassessment_at)} />
+      <DetailPair label="Additionality" value={fmtDate(row.additionality_retest_at)} />
+      <DetailPair label="VVB validation" value={fmtDate(row.vvb_validation_at)} />
+      <DetailPair label="Standard review" value={fmtDate(row.standard_review_at)} />
+      <DetailPair label="Renewed" value={fmtDate(row.renewed_at)} />
+      <DetailPair label="SLA deadline" value={fmtDate(row.sla_deadline_at)} />
+      <DetailPair label="SLA status" value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+      <DetailPair label="Escalation lvl" value={String(row.escalation_level)} />
+      <DetailPair label="Reportable" value={row.is_reportable ? 'Yes' : 'No'} />
+      {row.source_wave && (
+        <div className="col-span-2 text-[10px]" style={{ color: TX3 }}>
+          Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
+        </div>
+      )}
+      {row.renewal_summary && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-1" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Renewal summary</div>
+          <div style={{ color: TX2 }}>{row.renewal_summary}</div>
+        </div>
+      )}
+      {row.submission_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-1" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Submission basis</div>
+          <div style={{ color: TX2 }}>{row.submission_basis}</div>
+        </div>
+      )}
+      {row.completeness_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-1" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Completeness basis</div>
+          <div style={{ color: TX2 }}>{row.completeness_basis}</div>
+        </div>
+      )}
+      {row.revision_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-1" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: WARN }}>Revision basis</div>
+          <div style={{ color: TX2 }}>{row.revision_basis}</div>
+        </div>
+      )}
+      {row.baseline_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-1" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Baseline basis</div>
+          <div style={{ color: TX2 }}>{row.baseline_basis}</div>
+        </div>
+      )}
+      {row.additionality_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-1" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Additionality basis</div>
+          <div style={{ color: TX2 }}>{row.additionality_basis}</div>
+        </div>
+      )}
+      {row.validation_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-1" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Validation basis (VVB)</div>
+          <div style={{ color: TX2 }}>{row.validation_basis}</div>
+        </div>
+      )}
+      {row.decision_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-1" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: GOOD }}>Decision basis</div>
+          <div style={{ color: TX2 }}>{row.decision_basis}</div>
+        </div>
+      )}
+      {row.refusal_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-1" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: BAD }}>Refusal basis</div>
+          <div style={{ color: TX2 }}>{row.refusal_basis}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function CreditingRenewalChainTab() {
   const [rows, setRows] = useState<RenewalRow[]>([]);
   const [kpis, setKpis] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<RenewalRow | null>(null);
-  const [events, setEvents] = useState<RenewalEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -295,17 +695,28 @@ export function CreditingRenewalChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: RenewalRow; events: RenewalEvent[] } }>(
-        `/crediting-renewal/chain/${id}`
-      );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/crediting-renewal/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/crediting-renewal/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load renewal history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { events: ChainEvent[] } }>(`/crediting-renewal/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -323,415 +734,114 @@ export function CreditingRenewalChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: RenewalRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'submit-application') {
-        const basis = window.prompt('Submission basis — the renewal application lodged with the registry as the crediting period nears expiry:');
-        if (!basis) return;
-        const ref = window.prompt('Application reference (e.g. VCS-RENEW-2026-0007):') || '';
-        const issuance = window.prompt('Declared annual issuance (tCO₂e/yr — re-derives the tier):', String(row.annual_issuance_tco2e || ''));
-        const period = window.prompt('Crediting period number being renewed:', String(row.crediting_period_number || ''));
-        const vvb = window.prompt('Appointed VVB (validation/verification body):', row.vvb_name || '') || '';
-        body = { submission_basis: basis };
-        if (ref) body.application_ref = ref;
-        if (issuance && !Number.isNaN(Number(issuance))) body.annual_issuance_tco2e = Number(issuance);
-        if (period && !Number.isNaN(Number(period))) body.crediting_period_number = Number(period);
-        if (vvb) body.vvb_name = vvb;
-      } else if (action === 'check-completeness') {
-        const basis = window.prompt('Completeness basis — registry confirmation the application package is complete and admissible:');
-        if (!basis) return;
-        const ref = window.prompt('Completeness reference (e.g. VCS-COMPLETE-2026-0007):') || '';
-        body = { completeness_basis: basis };
-        if (ref) body.completeness_ref = ref;
-      } else if (action === 'request-revision') {
-        const basis = window.prompt('Revision basis — what the proponent must fix before the package can proceed:');
-        if (!basis) return;
-        body = { revision_basis: basis, reason_code: 'incomplete_package' };
-      } else if (action === 'resubmit') {
-        const basis = window.prompt('Resubmission basis — the corrected package the proponent re-lodges:');
-        if (!basis) return;
-        body = { submission_basis: basis };
-      } else if (action === 'begin-baseline') {
-        const basis = window.prompt('Baseline basis — scope of the baseline reassessment against current data and regulatory surplus:');
-        if (!basis) return;
-        body = { baseline_basis: basis };
-      } else if (action === 'complete-baseline') {
-        const basis = window.prompt('Baseline basis — the reassessed baseline result and methodology applied:');
-        if (!basis) return;
-        const orig = window.prompt('Original baseline (tCO₂e/yr):', String(row.original_baseline_tco2e || ''));
-        const revised = window.prompt('Revised baseline (tCO₂e/yr — typically lower):', String(row.revised_baseline_tco2e || ''));
-        body = { baseline_basis: basis };
-        if (orig && !Number.isNaN(Number(orig))) body.original_baseline_tco2e = Number(orig);
-        if (revised && !Number.isNaN(Number(revised))) body.revised_baseline_tco2e = Number(revised);
-      } else if (action === 'complete-additionality') {
-        const basis = window.prompt('Additionality basis — the re-test of whether the activity remains additional under current conditions:');
-        if (!basis) return;
-        const outcome = window.prompt('Additionality outcome (e.g. additional / not_additional / conditional):', 'additional') || '';
-        body = { additionality_basis: basis };
-        if (outcome) body.additionality_outcome = outcome;
-      } else if (action === 'validate') {
-        const basis = window.prompt('Validation basis — independent VVB opinion on the renewed baseline and additionality:');
-        if (!basis) return;
-        const ref = window.prompt('VVB report reference (e.g. VVB-VAL-2026-0007):') || '';
-        const vvb = window.prompt('VVB name:', row.vvb_name || '') || '';
-        body = { validation_basis: basis };
-        if (ref) body.vvb_report_ref = ref;
-        if (vvb) body.vvb_name = vvb;
-      } else if (action === 'renew') {
-        const basis = window.prompt('Decision basis — the standard review body decision to renew the crediting period:');
-        if (!basis) return;
-        const ref = window.prompt('Decision reference (e.g. VCS-DECISION-2026-0007):') || '';
-        const start = window.prompt('Renewed period start (YYYY-MM-DD):') || '';
-        const end = window.prompt('Renewed period end (YYYY-MM-DD):') || '';
-        const revised = window.prompt('Confirmed revised baseline (tCO₂e/yr — sets baseline reduction; ≥30% cut is reportable):', String(row.revised_baseline_tco2e || ''));
-        const summary = window.prompt('Renewal summary (one line for the audit record):') || '';
-        body = { decision_basis: basis };
-        if (ref) body.decision_ref = ref;
-        if (start) body.renewed_period_start = start;
-        if (end) body.renewed_period_end = end;
-        if (revised && !Number.isNaN(Number(revised))) body.revised_baseline_tco2e = Number(revised);
-        if (summary) body.renewal_summary = summary;
-      } else if (action === 'refuse') {
-        const basis = window.prompt('Refusal basis — why the renewal fails (no longer additional / baseline untenable / methodology lapsed):');
-        if (!basis) return;
-        const ref = window.prompt('Refusal reference (e.g. VCS-REFUSE-2026-0007):') || '';
-        body = { refusal_basis: basis, reason_code: 'renewal_refused' };
-        if (ref) body.refusal_ref = ref;
-      } else if (action === 'withdraw') {
-        const reason = window.prompt('Withdrawal reason — why the proponent is pulling the renewal before decision:');
-        if (!reason) return;
-        body = { reason_code: reason };
-      }
-      await api.post(`/crediting-renewal/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
+  const k = kpis ?? {
+    total: 0, open_count: 0, renewed_count: 0, refused_count: 0, withdrawn_count: 0,
+    lapsed_count: 0, in_review_count: 0, reassessment_count: 0, breached: 0,
+    reportable_total: 0, large_open: 0, material_downgrade_count: 0,
+    total_annual_issuance: 0, total_original_baseline: 0, total_revised_baseline: 0,
+  };
 
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Crediting-period renewal &amp; baseline reassessment</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-stage renewal chain · due → application submitted → completeness check → baseline reassessment →
-            additionality retest → VVB validation → standard review → renewed. The registry can return a package for
-            revision (resubmit to re-enter completeness); renewals are refused from review; pre-decision renewals can be
-            withdrawn; a renewal_due window that expires without submission auto-lapses. The periodic re-validation that
-            keeps a registered project issuing — the renewed baseline is typically LOWER, cutting future issuance and
-            feeding every later MRV / retirement / tax-offset. INVERTED SLA: the larger the project, the longer every
-            window (deeper baseline scrutiny). The W56 signature — an APPROVAL is itself reportable: a renewal whose
-            reassessed baseline is cut by ≥30% crosses to the regulator inbox for every tier; refusal and SLA breach
-            cross for the large tiers (Verra VCS / Gold Standard / Article 6.4 / CDM standard review).
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Crediting-period renewal &amp; baseline reassessment</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          12-stage renewal chain · due → application submitted → completeness check → baseline reassessment →
+          additionality retest → VVB validation → standard review → renewed. The registry can return a package for
+          revision (resubmit to re-enter completeness); renewals are refused from review; pre-decision renewals can be
+          withdrawn; a renewal_due window that expires without submission auto-lapses. INVERTED SLA: the larger the
+          project, the longer every window. The W56 signature — a renewal whose reassessed baseline is cut by ≥30%
+          crosses to the regulator inbox for every tier; refusal and SLA breach cross for the large tiers.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="Large open" value={kpis?.large_open ?? 0} tone={(kpis?.large_open ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Reassessment" value={kpis?.reassessment_count ?? 0} tone={(kpis?.reassessment_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="In review" value={kpis?.in_review_count ?? 0} tone={(kpis?.in_review_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Renewed" value={kpis?.renewed_count ?? 0} tone="ok" />
-        <Kpi label="Refused" value={kpis?.refused_count ?? 0} tone={(kpis?.refused_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Lapsed" value={kpis?.lapsed_count ?? 0} tone={(kpis?.lapsed_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Baseline cut ≥30%" value={kpis?.material_downgrade_count ?? 0} tone={(kpis?.material_downgrade_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Annual issuance" value={fmtTco2e(kpis?.total_annual_issuance ?? 0)} />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total" value={k.total} />
+        <KpiTile label="Open" value={k.open_count} />
+        <KpiTile label="Large open" value={k.large_open} tone={k.large_open > 0 ? 'warn' : undefined} />
+        <KpiTile label="Reassessment" value={k.reassessment_count} tone={k.reassessment_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="In review" value={k.in_review_count} tone={k.in_review_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="SLA breached" value={k.breached} tone={k.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Renewed" value={k.renewed_count} tone={k.renewed_count > 0 ? 'ok' : undefined} />
+        <KpiTile label="Refused" value={k.refused_count} tone={k.refused_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="Lapsed" value={k.lapsed_count} tone={k.lapsed_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="Baseline cut ≥30%" value={k.material_downgrade_count} tone={k.material_downgrade_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="Reportable" value={k.reportable_total} tone={k.reportable_total > 0 ? 'warn' : undefined} />
+        <KpiTile label="Annual issuance" value={fmtTco2e(k.total_annual_issuance)} />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Renewal #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Project</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Standard</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Baseline cut</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.issuance_tier];
-                const downgrade = (r.baseline_reduction_pct || 0) >= 30;
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.renewal_number}
-                      {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[220px] truncate" title={r.project_name}>
-                      {r.project_name}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{STANDARD_LABEL[r.registry_standard]}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${downgrade ? 'text-[#9b1f1f] font-semibold' : 'text-[#1a3a5c]'}`}>
-                      {fmtPct(r.baseline_reduction_pct)}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No renewals match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading...
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.renewal_number}${row.is_reportable ? ' ●' : ''} — ${row.project_name}`}
+              meta={`${row.issuance_tier} · ${STANDARD_LABEL[row.registry_standard]}${row.crediting_period_number ? ` · CP${row.crediting_period_number}` : ''} · ${row.proponent_party_name}`}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No renewals match.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: RenewalRow;
-  events: RenewalEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: RenewalRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canRequestRevision = row.chain_status === 'completeness_check';
-  const canRefuse = row.chain_status === 'standard_review';
-  const canWithdraw = WITHDRAWABLE_STATES.includes(row.chain_status);
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.renewal_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.project_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.issuance_tier].label} · {STANDARD_LABEL[row.registry_standard]}
-                {row.crediting_period_number ? ` · CP${row.crediting_period_number}` : ''} · {row.proponent_party_name}
-              </div>
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"               value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier"                value={TIER_TONE[row.issuance_tier].label} />
-            <Pair label="Standard"            value={STANDARD_LABEL[row.registry_standard]} />
-            <Pair label="Methodology"         value={row.methodology_id ?? '—'} />
-            <Pair label="Proponent"           value={row.proponent_party_name} />
-            <Pair label="VVB"                 value={row.vvb_name ?? '—'} />
-            <Pair label="Annual issuance"     value={fmtTco2e(row.annual_issuance_tco2e)} />
-            <Pair label="Crediting period"    value={row.crediting_period_number ? `CP${row.crediting_period_number}` : '—'} />
-            <Pair label="Current period"      value={`${fmtDate(row.current_period_start)} → ${fmtDate(row.current_period_end)}`} />
-            <Pair label="Renewed period"      value={`${fmtDate(row.renewed_period_start)} → ${fmtDate(row.renewed_period_end)}`} />
-            <Pair label="Original baseline"   value={fmtTco2e(row.original_baseline_tco2e)} />
-            <Pair label="Revised baseline"    value={fmtTco2e(row.revised_baseline_tco2e)} />
-            <Pair label="Baseline cut"        value={fmtPct(row.baseline_reduction_pct)} />
-            <Pair label="Additionality"       value={row.additionality_outcome ?? '—'} />
-            <Pair label="Revision round"      value={String(row.revision_round)} />
-            <Pair label="Application ref"     value={row.application_ref ?? '—'} />
-            <Pair label="Completeness ref"    value={row.completeness_ref ?? '—'} />
-            <Pair label="VVB report ref"      value={row.vvb_report_ref ?? '—'} />
-            <Pair label="Decision ref"        value={row.decision_ref ?? '—'} />
-            <Pair label="Refusal ref"         value={row.refusal_ref ?? '—'} />
-            <Pair label="Reason code"         value={row.reason_code ?? '—'} />
-            <Pair label="Renewal due"         value={fmtDate(row.renewal_due_at)} />
-            <Pair label="Submitted"           value={fmtDate(row.application_submitted_at)} />
-            <Pair label="Completeness"        value={fmtDate(row.completeness_check_at)} />
-            <Pair label="Revision req"        value={fmtDate(row.revision_requested_at)} />
-            <Pair label="Baseline reassess"   value={fmtDate(row.baseline_reassessment_at)} />
-            <Pair label="Additionality"       value={fmtDate(row.additionality_retest_at)} />
-            <Pair label="VVB validation"      value={fmtDate(row.vvb_validation_at)} />
-            <Pair label="Standard review"     value={fmtDate(row.standard_review_at)} />
-            <Pair label="Renewed"             value={fmtDate(row.renewed_at)} />
-            <Pair label="SLA deadline"        value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"          value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"      value={String(row.escalation_level)} />
-            <Pair label="Reportable"          value={row.is_reportable ? 'Yes' : 'No'} />
-          </div>
-          {row.renewal_summary && (
-            <BasisBlock label="Renewal summary" tone="#1a3a5c" text={row.renewal_summary} />
-          )}
-          {row.submission_basis && (
-            <BasisBlock label="Submission basis" tone="#1a3a5c" text={row.submission_basis} />
-          )}
-          {row.completeness_basis && (
-            <BasisBlock label="Completeness basis" tone="#1a3a5c" text={row.completeness_basis} />
-          )}
-          {row.revision_basis && (
-            <BasisBlock label="Revision basis" tone="#8a4a00" text={row.revision_basis} />
-          )}
-          {row.baseline_basis && (
-            <BasisBlock label="Baseline basis" tone="#a06200" text={row.baseline_basis} />
-          )}
-          {row.additionality_basis && (
-            <BasisBlock label="Additionality basis" tone="#a06200" text={row.additionality_basis} />
-          )}
-          {row.validation_basis && (
-            <BasisBlock label="Validation basis (VVB)" tone="#a06200" text={row.validation_basis} />
-          )}
-          {row.decision_basis && (
-            <BasisBlock label="Decision basis" tone="#155724" text={row.decision_basis} />
-          )}
-          {row.refusal_basis && (
-            <BasisBlock label="Refusal basis" tone="#9b1f1f" text={row.refusal_basis} />
-          )}
-        </section>
-
-        {(nextAction || canRequestRevision || canRefuse || canWithdraw) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canRequestRevision && (
-                <button type="button"
-                  onClick={() => onAct('request-revision', row)}
-                  className="rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-orange-700 hover:bg-orange-50"
-                >
-                  {ACTION_LABEL['request-revision']}
-                </button>
-              )}
-              {canRefuse && (
-                <button type="button"
-                  onClick={() => onAct('refuse', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL.refuse}
-                </button>
-              )}
-              {canWithdraw && (
-                <button type="button"
-                  onClick={() => onAct('withdraw', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b1f1f] hover:bg-[#f3e0e0]"
-                >
-                  {ACTION_LABEL.withdraw}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value, highlight }: { label: string; value: string; highlight?: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: highlight ?? TX1 }}>{value}</div>
     </div>
   );
 }
+
+export default CreditingRenewalChainTab;

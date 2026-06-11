@@ -28,10 +28,10 @@ interface SedComplianceKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   sed_triggered:             'bg-[#eef2f7] text-[#6b7685]',
-  beneficiary_identification:'bg-blue-100 text-blue-700',
+  beneficiary_identification:'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   programme_planning:        'bg-cyan-100 text-cyan-700',
   board_approval:            'bg-sky-100 text-sky-700',
-  spend_execution:           'bg-indigo-100 text-indigo-700',
+  spend_execution:           'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   expenditure_verification:  'bg-violet-100 text-violet-700',
   independent_audit:         'bg-purple-100 text-purple-700',
   audit_complete:            'bg-yellow-100 text-yellow-800',
@@ -59,8 +59,8 @@ const STATUS_LABELS: Record<string, string> = {
 // INVERTED SLA — higher revenue = more SED obligation = more dangerous colour
 const TIER_BADGE_COLORS: Record<string, string> = {
   micro:  'bg-green-100 text-green-800',
-  small:  'bg-blue-100 text-blue-800',
-  medium: 'bg-indigo-100 text-indigo-800',
+  small:  'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
+  medium: 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
   large:  'bg-orange-100 text-orange-800',
   major:  'bg-red-100 text-red-800',
 };
@@ -364,9 +364,9 @@ export function IppSedComplianceTab() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3"
+          className="rounded-lg border border-[oklch(0.87_0.012_250)] bg-[oklch(0.97_0.003_250)] p-4 space-y-3"
         >
-          <div className="text-sm font-semibold text-blue-800">New SED Compliance Record</div>
+          <div className="text-sm font-semibold text-[oklch(0.40_0.009_250)]">New SED Compliance Record</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
@@ -582,7 +582,7 @@ export function IppSedComplianceTab() {
                                 ? 'px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border border-yellow-200'
                                 : a.variant === 'success'
                                 ? 'px-2 py-0.5 text-xs rounded bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
-                                : 'px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                                : 'px-2 py-0.5 text-xs rounded bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)] hover:bg-[oklch(0.94_0.008_250)] border border-[oklch(0.87_0.012_250)]'
                             }
                           >
                             {a.label}

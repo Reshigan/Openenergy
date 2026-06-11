@@ -26,8 +26,8 @@ interface Kpis {
 
 const STATUS_COLORS: Record<string, string> = {
   variation_requested:   'bg-[#eef2f7] text-[#6b7685]',
-  regulatory_screen:     'bg-blue-100 text-blue-700',
-  technical_review:      'bg-indigo-100 text-indigo-700',
+  regulatory_screen:     'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
+  technical_review:      'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   commercial_review:     'bg-purple-100 text-purple-700',
   public_participation:  'bg-orange-100 text-orange-800',
   nersa_assessment:      'bg-yellow-100 text-yellow-800',
@@ -41,8 +41,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   minor:        'bg-[#eef2f7] text-[#3d4756]',
-  moderate:     'bg-blue-100 text-blue-700',
-  significant:  'bg-indigo-100 text-indigo-700',
+  moderate:     'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
+  significant:  'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   major:        'bg-orange-100 text-orange-800',
   material:     'bg-red-100 text-red-700',
 };
@@ -195,7 +195,7 @@ export function IppPpaVariationTab() {
           <button type="button"
             key={t}
             onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }}
-            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white border-indigo-700' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
+            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-[oklch(0.40_0.15_55)] text-white border-[oklch(0.46_0.16_55)]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
           >
             {t}
           </button>
@@ -267,7 +267,7 @@ export function IppPpaVariationTab() {
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}
                     </td>
                     <td className="py-2 pr-4 text-xs text-[#9aa5b4]">{fmtDate(item.created_at)}</td>
-                    <td className="py-2 text-xs text-indigo-600 whitespace-nowrap">View →</td>
+                    <td className="py-2 text-xs text-[oklch(0.46_0.16_55)] whitespace-nowrap">View →</td>
                   </tr>
                 );
               })}

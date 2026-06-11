@@ -86,10 +86,10 @@ interface DispositionEvent {
 }
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  received:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'Received' },
+  received:           { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Received' },
   triaged:            { bg: '#fff4d6', fg: '#a06200', label: 'Triaged' },
   assigned:           { bg: '#fbe7d0', fg: '#7a4500', label: 'Assigned' },
-  investigating:      { bg: '#dbecfb', fg: '#1a3a5c', label: 'Investigating' },
+  investigating:      { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Investigating' },
   action_required:    { bg: '#fff4d6', fg: '#a06200', label: 'Action req' },
   action_in_progress: { bg: '#fbe7d0', fg: '#7a4500', label: 'Action exec' },
   action_completed:   { bg: '#daf5e2', fg: '#1f6b3a', label: 'Action done' },
@@ -102,7 +102,7 @@ const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }>
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
   critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical' },
   high:     { bg: '#fff4d6', fg: '#a06200', label: 'High' },
-  medium:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Medium' },
+  medium:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Medium' },
   low:      { bg: '#daf5e2', fg: '#1f6b3a', label: 'Low' },
 };
 
@@ -376,7 +376,7 @@ export function DispositionChainTab() {
         <span>High open: <span className="font-semibold text-[#a06200]">{kpis.high_open}</span></span>
         <span>Referred: <span className="font-semibold text-[#3a1a5c]">{kpis.referred_count}</span></span>
         <span>Dismissed: <span className="font-semibold text-[#557]">{kpis.dismissed_count}</span></span>
-        <span>Open cases: <span className="font-semibold text-[#1a3a5c]">{kpis.open_count}</span></span>
+        <span>Open cases: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.open_count}</span></span>
         <span>§10 closed/escalated: <span className="font-semibold text-[#1f5b3a]">{kpis.reportable_terminal_total}</span></span>
       </div>
 
@@ -406,14 +406,14 @@ export function DispositionChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Source / Party</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Subject</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Officer / Directorate</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Council / §10</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Case #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Source / Party</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Subject</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Officer / Directorate</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Council / §10</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -428,7 +428,7 @@ export function DispositionChainTab() {
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
                     <td className="px-3 py-2 font-mono text-[#0c2a4d]">{r.case_number}</td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">
+                    <td className="px-3 py-2" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       <div className="font-medium">{r.source_wave ?? '—'}</div>
                       <div className="text-[10px] text-[#6b7685]">{r.source_party ?? '—'}</div>
                     </td>
@@ -541,25 +541,25 @@ function Drawer({
             <Pair label="Closed"                 value={fmtDate(row.closed_at)} />
           </div>
           {row.investigation_findings && (
-            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Investigation findings</div>
               {row.investigation_findings}
             </div>
           )}
           {row.required_action && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Required action</div>
               {row.required_action}
             </div>
           )}
           {row.disposition_outcome && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Disposition outcome</div>
               {row.disposition_outcome}
             </div>
           )}
           {row.rod_notes && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">ROD notes</div>
               {row.rod_notes}
             </div>
@@ -621,7 +621,7 @@ function Drawer({
                   {(e.from_status || e.to_status) && (
                     <div className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</div>
                   )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

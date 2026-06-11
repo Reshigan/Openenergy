@@ -6,7 +6,22 @@ import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { useAuth } from '../../lib/useAuth';
-import { StitchPage } from '../StitchPage';
+
+const BG      = 'oklch(0.96 0.003 250)';
+const BG1     = 'oklch(0.99 0.002 80)';
+const BG2     = 'oklch(0.93 0.004 250)';
+const BORDER  = 'oklch(0.87 0.006 250)';
+const TX1     = 'oklch(0.17 0.010 250)';
+const TX2     = 'oklch(0.40 0.009 250)';
+const TX3     = 'oklch(0.60 0.007 250)';
+const ACC     = 'oklch(0.46 0.16 55)';
+const BAD     = 'oklch(0.48 0.20 20)';
+const BAD_BG  = 'oklch(0.97 0.04 20)';
+const WARN    = 'oklch(0.50 0.18 55)';
+const WARN_BG = 'oklch(0.96 0.05 55)';
+const GOOD    = 'oklch(0.40 0.16 155)';
+const GOOD_BG = 'oklch(0.95 0.04 155)';
+const MONO    = '"IBM Plex Mono","Fira Code",monospace';
 
 type Tab = 'consent' | 'dsar' | 'erasure' | 'objection' | 'correction' | 'breach';
 
@@ -74,25 +89,34 @@ interface ErasureRequest {
   requested_at: string;
 }
 
-const STATUS_PILL: Record<string, string> = {
-  pending: 'bg-amber-100 text-amber-800',
-  completed: 'bg-green-100 text-green-700',
-  approved: 'bg-green-100 text-green-700',
-  applied: 'bg-green-100 text-green-700',
-  upheld: 'bg-green-100 text-green-700',
-  rejected: 'bg-[#e8ecf0] text-[#2d3748]',
-  withdrawn: 'bg-[#e8ecf0] text-[#2d3748]',
-  open: 'bg-red-100 text-red-800',
-  contained: 'bg-amber-100 text-amber-800',
-  closed: 'bg-[#e8ecf0] text-[#2d3748]',
-};
+function statusStyle(status: string): React.CSSProperties {
+  if (status === 'completed' || status === 'approved' || status === 'applied' || status === 'upheld') {
+    return { background: GOOD_BG, color: GOOD };
+  }
+  if (status === 'pending' || status === 'contained') {
+    return { background: WARN_BG, color: WARN };
+  }
+  if (status === 'open') {
+    return { background: BAD_BG, color: BAD };
+  }
+  return { background: BG2, color: TX2 };
+}
 
-const SEVERITY_PILL: Record<string, string> = {
-  low: 'bg-[#eef2f7] text-[#2d3748]',
-  medium: 'bg-amber-100 text-amber-800',
-  high: 'bg-orange-100 text-orange-800',
-  critical: 'bg-red-100 text-red-800',
-};
+function severityStyle(severity: string): React.CSSProperties {
+  if (severity === 'critical') return { background: BAD_BG, color: BAD };
+  if (severity === 'high') return { background: 'oklch(0.97 0.05 35)', color: 'oklch(0.42 0.18 35)' };
+  if (severity === 'medium') return { background: WARN_BG, color: WARN };
+  return { background: BG2, color: TX2 };
+}
+
+const TABS: { k: Tab; label: string; privileged?: boolean }[] = [
+  { k: 'consent', label: 'Consent' },
+  { k: 'dsar', label: 'DSAR (§23)' },
+  { k: 'correction', label: 'Correction (§24)' },
+  { k: 'erasure', label: 'Erasure (§24)' },
+  { k: 'objection', label: 'Objection (§11(3))' },
+  { k: 'breach', label: 'Breach Register (§22)', privileged: true },
+];
 
 export function Popia() {
   const { user } = useAuth();
@@ -155,7 +179,6 @@ export function Popia() {
         third_party: merged.third_party,
         analytics: merged.analytics,
       });
-      // Prefer server-authoritative updated_at; fall back to local now() if absent.
       const updatedAt = res?.data?.data?.updated_at || new Date().toISOString();
       setConsent({ ...merged, updated_at: updatedAt });
     } catch (err: any) {
@@ -190,237 +213,469 @@ export function Popia() {
     }
   }, [fetchData]);
 
+  const visibleTabs = TABS.filter(t => !t.privileged || isPrivileged);
+
+  // KPI counts derived from current tab data
+  const kpiCount = tab === 'dsar' ? dsars.length
+    : tab === 'erasure' ? erasures.length
+    : tab === 'objection' ? objections.length
+    : tab === 'correction' ? corrections.length
+    : tab === 'breach' ? breaches.length
+    : 0;
+
+  const pendingCount = tab === 'dsar' ? dsars.filter(d => d.status === 'pending').length
+    : tab === 'erasure' ? erasures.filter(d => d.status === 'pending').length
+    : tab === 'objection' ? objections.filter(d => d.status === 'pending').length
+    : tab === 'correction' ? corrections.filter(d => d.status === 'pending').length
+    : tab === 'breach' ? breaches.filter(d => d.status === 'open').length
+    : 0;
+
   return (
-    <StitchPage
-      eyebrowIcon={ShieldCheck}
-      eyebrowLabel="POPIA (Act 4 of 2013)"
-      title="POPIA"
-      subtitle="Consent, data-subject access and right-to-erasure — Sections 23 and 24."
-      actions={
-        <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]" aria-label="Refresh">
-          <RefreshCw className="w-4 h-4" />
-        </button>
-      }
-    >
-      <div className="border-b border-ionex-border-100 flex gap-6 flex-wrap">
-        {([
-          { k: 'consent' as Tab, label: 'Consent' },
-          { k: 'dsar' as Tab, label: 'DSAR (Section 23)' },
-          { k: 'correction' as Tab, label: 'Correction (Section 24)' },
-          { k: 'erasure' as Tab, label: 'Erasure (Section 24)' },
-          { k: 'objection' as Tab, label: 'Objection (Section 11(3))' },
-          ...(isPrivileged ? [{ k: 'breach' as Tab, label: 'Breach register (Section 22)' }] : []),
-        ]).map(t => (
-          <button type="button"
-            key={t.k}
-            onClick={() => setTab(t.k)}
-            className={`pb-3 border-b-2 transition-colors ${tab === t.k ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-[#0f1c2e]'}`}
-          >
-            {t.label}
-          </button>
-        ))}
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr 380px',
+      height: 'calc(100vh - 50px)',
+      background: BG,
+      overflow: 'hidden',
+    }}>
+      {/* LEFT COLUMN */}
+      <div style={{ overflowY: 'auto', padding: '24px 28px' }}>
+        {/* Header */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <ShieldCheck size={16} style={{ color: TX2 }} />
+            <span style={{ fontSize: 11, fontWeight: 600, color: TX3, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
+              POPIA (Act 4 of 2013)
+            </span>
+          </div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: TX1, margin: 0 }}>Data Privacy</h1>
+          <p style={{ fontSize: 13, color: TX2, margin: '4px 0 0' }}>
+            Consent, data-subject access and right-to-erasure — Sections 23 and 24.
+          </p>
+        </div>
+
+        {/* KPI strip — shown for list tabs */}
+        {tab !== 'consent' && !loading && !error && (
+          <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+            <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '12px 16px', flex: 1 }}>
+              <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Total</div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: TX1, fontFamily: MONO, marginTop: 4 }}>{kpiCount}</div>
+            </div>
+            <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '12px 16px', flex: 1 }}>
+              <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                {tab === 'breach' ? 'Open' : 'Pending'}
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: pendingCount > 0 ? WARN : TX1, fontFamily: MONO, marginTop: 4 }}>
+                {pendingCount}
+              </div>
+            </div>
+            {tab === 'dsar' && (
+              <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '12px 16px', flex: 1 }}>
+                <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Completed</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: TX1, fontFamily: MONO, marginTop: 4 }}>
+                  {dsars.filter(d => d.status === 'completed').length}
+                </div>
+              </div>
+            )}
+            {tab === 'breach' && (
+              <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '12px 16px', flex: 1 }}>
+                <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Critical</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: breaches.filter(b => b.severity === 'critical').length > 0 ? BAD : TX1, fontFamily: MONO, marginTop: 4 }}>
+                  {breaches.filter(b => b.severity === 'critical').length}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab bar */}
+        <div style={{ display: 'flex', gap: 0, borderBottom: `2px solid ${BORDER}`, marginBottom: 20 }}>
+          {visibleTabs.map(t => (
+            <button
+              key={t.k}
+              type="button"
+              onClick={() => setTab(t.k)}
+              style={{
+                padding: '8px 14px',
+                fontSize: 12,
+                fontWeight: tab === t.k ? 700 : 500,
+                color: tab === t.k ? ACC : TX2,
+                background: 'transparent',
+                border: 'none',
+                borderBottom: tab === t.k ? `2px solid ${ACC}` : '2px solid transparent',
+                marginBottom: -2,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {loading && <Skeleton variant="card" rows={3} />}
+        {error && <ErrorBanner message={error} onRetry={fetchData} />}
+
+        {/* CONSENT TAB */}
+        {!loading && !error && tab === 'consent' && consent && (
+          <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px', maxWidth: 640 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+              Processing Consents
+            </div>
+            <p style={{ fontSize: 13, color: TX2, marginBottom: 16, lineHeight: 1.5 }}>
+              Under POPIA, you may withdraw consent to any processing activity. Analytics is required for core platform
+              functionality and logging. Last updated:{' '}
+              <span style={{ fontFamily: MONO, fontSize: 12 }}>
+                {consent.updated_at ? new Date(consent.updated_at).toLocaleString() : 'never'}
+              </span>
+            </p>
+            {([
+              { key: 'marketing' as const, label: 'Marketing communications', hint: 'Product updates, event invitations, newsletters.' },
+              { key: 'data_sharing' as const, label: 'Data sharing with counterparties', hint: 'Share contract + trading metadata with verified counterparties.' },
+              { key: 'third_party' as const, label: 'Third-party integrations', hint: 'Allow data flow to connected KYC, payment, or registry providers.' },
+              { key: 'analytics' as const, label: 'Platform analytics (required)', hint: 'Required for login audit, fraud detection, and service improvement.' },
+            ]).map((row, i) => (
+              <div
+                key={row.key}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: 16,
+                  paddingTop: i === 0 ? 0 : 14,
+                  marginTop: i === 0 ? 0 : 14,
+                  borderTop: i === 0 ? 'none' : `1px solid ${BORDER}`,
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: TX1 }}>{row.label}</div>
+                  <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>{row.hint}</div>
+                </div>
+                <Toggle
+                  enabled={consent[row.key]}
+                  disabled={savingConsent || row.key === 'analytics'}
+                  onChange={val => saveConsent({ [row.key]: val } as Partial<Consent>)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* DSAR TAB */}
+        {!loading && !error && tab === 'dsar' && (
+          dsars.length === 0 ? (
+            <EmptyState icon={<ShieldCheck className="w-8 h-8" />} title="No DSAR requests" description="Use 'Request my data' in the panel to submit a Section 23 DSAR." />
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${BORDER}` }}>
+                  {['ID', 'Scope', 'Status', 'Requested', 'Processed', 'Action'].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '8px 12px', color: TX2, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {dsars.map((r, i) => (
+                  <tr key={r.id} style={{ borderBottom: `1px solid ${BORDER}`, background: i % 2 === 1 ? BG2 : 'transparent' }}>
+                    <td style={{ padding: '10px 12px', fontFamily: MONO, fontSize: 11, color: TX2 }}>{r.id}</td>
+                    <td style={{ padding: '10px 12px', color: TX1 }}>{r.scope}</td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <span style={{ ...statusStyle(r.status), padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600 }}>{r.status}</span>
+                    </td>
+                    <td style={{ padding: '10px 12px', color: TX2, fontFamily: MONO, fontSize: 12 }}>{new Date(r.requested_at).toLocaleDateString()}</td>
+                    <td style={{ padding: '10px 12px', color: TX2, fontFamily: MONO, fontSize: 12 }}>{r.processed_at ? new Date(r.processed_at).toLocaleDateString() : '—'}</td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <button
+                        type="button"
+                        onClick={() => exportDsar(r.id)}
+                        style={{ background: ACC, color: '#fff', border: 'none', padding: '5px 10px', borderRadius: 5, fontWeight: 600, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <Download size={12} /> Export
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
+        )}
+
+        {/* ERASURE TAB */}
+        {!loading && !error && tab === 'erasure' && (
+          erasures.length === 0 ? (
+            <EmptyState icon={<Trash2 className="w-8 h-8" />} title="No erasure requests" description="Submit a Section 24 request if you want to delete your data." />
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${BORDER}` }}>
+                  {['ID', 'Reason', 'Status', 'Requested'].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '8px 12px', color: TX2, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {erasures.map((r, i) => (
+                  <tr key={r.id} style={{ borderBottom: `1px solid ${BORDER}`, background: i % 2 === 1 ? BG2 : 'transparent' }}>
+                    <td style={{ padding: '10px 12px', fontFamily: MONO, fontSize: 11, color: TX2 }}>{r.id}</td>
+                    <td style={{ padding: '10px 12px', color: TX1, maxWidth: 320 }}><div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.reason}>{r.reason}</div></td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <span style={{ ...statusStyle(r.status), padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600 }}>{r.status}</span>
+                    </td>
+                    <td style={{ padding: '10px 12px', color: TX2, fontFamily: MONO, fontSize: 12 }}>{new Date(r.requested_at).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
+        )}
+
+        {/* OBJECTION TAB */}
+        {!loading && !error && tab === 'objection' && (
+          objections.length === 0 ? (
+            <EmptyState icon={<Ban className="w-8 h-8" />} title="No objections on file" description="Raise one if you want to opt out of a specific processing purpose." />
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${BORDER}` }}>
+                  {['ID', 'Purpose', 'Status', 'Requested'].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '8px 12px', color: TX2, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {objections.map((r, i) => (
+                  <tr key={r.id} style={{ borderBottom: `1px solid ${BORDER}`, background: i % 2 === 1 ? BG2 : 'transparent' }}>
+                    <td style={{ padding: '10px 12px', fontFamily: MONO, fontSize: 11, color: TX2 }}>{r.id}</td>
+                    <td style={{ padding: '10px 12px', color: TX1, maxWidth: 320 }}><div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.processing_purpose}>{r.processing_purpose}</div></td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <span style={{ ...statusStyle(r.status), padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600 }}>{r.status}</span>
+                    </td>
+                    <td style={{ padding: '10px 12px', color: TX2, fontFamily: MONO, fontSize: 12 }}>{new Date(r.requested_at).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
+        )}
+
+        {/* CORRECTION TAB */}
+        {!loading && !error && tab === 'correction' && (
+          corrections.length === 0 ? (
+            <EmptyState icon={<FileEdit className="w-8 h-8" />} title="No correction requests" description="Submit one to update an inaccurate field on your profile." />
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${BORDER}` }}>
+                  {['ID', 'Field', 'Current', 'Requested', 'Status'].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '8px 12px', color: TX2, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {corrections.map((r, i) => (
+                  <tr key={r.id} style={{ borderBottom: `1px solid ${BORDER}`, background: i % 2 === 1 ? BG2 : 'transparent' }}>
+                    <td style={{ padding: '10px 12px', fontFamily: MONO, fontSize: 11, color: TX2 }}>{r.id}</td>
+                    <td style={{ padding: '10px 12px', fontFamily: MONO, fontSize: 12, color: TX1 }}>{r.field_name}</td>
+                    <td style={{ padding: '10px 12px', color: TX2, maxWidth: 160 }}><div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.current_value || ''}>{r.current_value || '—'}</div></td>
+                    <td style={{ padding: '10px 12px', color: TX1, maxWidth: 160 }}><div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.requested_value}>{r.requested_value}</div></td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <span style={{ ...statusStyle(r.status), padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600 }}>{r.status}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
+        )}
+
+        {/* BREACH TAB */}
+        {!loading && !error && tab === 'breach' && isPrivileged && (
+          breaches.length === 0 ? (
+            <EmptyState icon={<AlertTriangle className="w-8 h-8" />} title="No breaches recorded" description="Clean register — nothing to notify." />
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${BORDER}` }}>
+                  {['ID', 'Severity', 'Category', 'Affected', 'Status', 'Discovered', 'Regulator notified'].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '8px 12px', color: TX2, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {breaches.map((r, i) => (
+                  <tr key={r.id} style={{ borderBottom: `1px solid ${BORDER}`, background: i % 2 === 1 ? BG2 : 'transparent' }}>
+                    <td style={{ padding: '10px 12px', fontFamily: MONO, fontSize: 11, color: TX2 }}>{r.id}</td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <span style={{ ...severityStyle(r.severity), padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600 }}>{r.severity}</span>
+                    </td>
+                    <td style={{ padding: '10px 12px', color: TX1, fontSize: 12 }}>{r.category}</td>
+                    <td style={{ padding: '10px 12px', color: TX1, fontFamily: MONO, fontSize: 12 }}>{r.affected_subjects_count ?? 0}</td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <span style={{ ...statusStyle(r.status), padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600 }}>{r.status}</span>
+                    </td>
+                    <td style={{ padding: '10px 12px', color: TX2, fontFamily: MONO, fontSize: 12 }}>{new Date(r.discovered_at).toLocaleDateString()}</td>
+                    <td style={{ padding: '10px 12px', color: TX2, fontFamily: MONO, fontSize: 12 }}>{r.regulator_notified_at ? new Date(r.regulator_notified_at).toLocaleDateString() : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
+        )}
       </div>
 
-      {loading && <Skeleton variant="card" rows={3} />}
-      {error && <ErrorBanner message={error} onRetry={fetchData} />}
+      {/* RIGHT COLUMN */}
+      <div style={{
+        borderLeft: `1px solid ${BORDER}`,
+        background: BG1,
+        overflowY: 'auto',
+        padding: '24px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}>
+        {/* Header + refresh */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</span>
+          <button
+            type="button"
+            onClick={fetchData}
+            aria-label="Refresh"
+            style={{ background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '6px 8px', cursor: 'pointer', color: TX2, display: 'flex', alignItems: 'center' }}
+          >
+            <RefreshCw size={14} />
+          </button>
+        </div>
 
-      {!loading && !error && tab === 'consent' && consent && (
-        <div className="bg-white border border-ionex-border-100 rounded-xl p-5 space-y-4 max-w-2xl">
-          <p className="text-sm text-ionex-text-mute">
-            Under POPIA, you may withdraw consent to any processing activity. Analytics is required for core platform
-            functionality and logging. Last updated: {consent.updated_at ? new Date(consent.updated_at).toLocaleString() : 'never'}.
-          </p>
-          {([
-            { key: 'marketing' as const, label: 'Marketing communications', hint: 'Product updates, event invitations, newsletters.' },
-            { key: 'data_sharing' as const, label: 'Data sharing with counterparties', hint: 'Share contract + trading metadata with verified counterparties.' },
-            { key: 'third_party' as const, label: 'Third-party integrations', hint: 'Allow data flow to connected KYC, payment, or registry providers.' },
-            { key: 'analytics' as const, label: 'Platform analytics (required)', hint: 'Required for login audit, fraud detection, and service improvement.' },
-          ]).map(row => (
-            <div key={row.key} className="flex items-start justify-between gap-4 border-t border-ionex-border-100 pt-3 first:border-t-0 first:pt-0">
+        {/* Tab-specific quick actions */}
+        {tab === 'dsar' && (
+          <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 16px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Request Access</div>
+            <p style={{ fontSize: 12, color: TX3, marginBottom: 12, lineHeight: 1.5 }}>
+              A copy of your profile, consents, contracts, invoices, notifications and audit trail.
+            </p>
+            <button
+              type="button"
+              onClick={requestDsar}
+              style={{ background: ACC, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13, width: '100%' }}
+            >
+              Request my data (Section 23)
+            </button>
+          </div>
+        )}
+
+        {tab === 'erasure' && (
+          <div style={{ background: BAD_BG, border: `1px solid ${BAD}`, borderRadius: 8, padding: '16px 16px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: BAD, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Erasure Request</div>
+            <p style={{ fontSize: 12, color: TX2, marginBottom: 12, lineHeight: 1.5 }}>
+              Submit for DPO review. Regulatory retention periods may prevent immediate deletion.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowErasure(true)}
+              style={{ background: BAD, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+            >
+              <Trash2 size={14} /> Request erasure (Section 24)
+            </button>
+          </div>
+        )}
+
+        {tab === 'objection' && (
+          <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 16px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Raise Objection</div>
+            <p style={{ fontSize: 12, color: TX3, marginBottom: 12, lineHeight: 1.5 }}>
+              Object to a specific processing purpose. Reviewed by the DPO within 30 days.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowObjection(true)}
+              style={{ background: ACC, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+            >
+              <Ban size={14} /> Raise objection (Section 11(3))
+            </button>
+          </div>
+        )}
+
+        {tab === 'correction' && (
+          <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 16px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Request Correction</div>
+            <p style={{ fontSize: 12, color: TX3, marginBottom: 12, lineHeight: 1.5 }}>
+              Name, company or email corrections with DPO audit trail.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowCorrection(true)}
+              style={{ background: ACC, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+            >
+              <FileEdit size={14} /> Request correction (Section 24)
+            </button>
+          </div>
+        )}
+
+        {tab === 'breach' && isPrivileged && (
+          <div style={{ background: BAD_BG, border: `1px solid ${BAD}`, borderRadius: 8, padding: '16px 16px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: BAD, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Record Breach</div>
+            <p style={{ fontSize: 12, color: TX2, marginBottom: 12, lineHeight: 1.5 }}>
+              Notifications to the Information Regulator are required without undue delay.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowBreach(true)}
+              style={{ background: BAD, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+            >
+              <AlertTriangle size={14} /> Record breach (Section 22)
+            </button>
+          </div>
+        )}
+
+        {/* Regulatory reference card */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 16px' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            Regulatory Reference
+          </div>
+          {[
+            { section: '§11(3)', title: 'Right to object', desc: 'Object to specific processing purposes' },
+            { section: '§22', title: 'Breach notification', desc: 'Notify Information Regulator without undue delay' },
+            { section: '§23', title: 'Data subject access', desc: 'Request a copy of your personal information' },
+            { section: '§24', title: 'Correction & erasure', desc: 'Correct inaccurate or request deletion of data' },
+          ].map((ref, i) => (
+            <div key={ref.section} style={{ display: 'flex', gap: 10, paddingTop: i === 0 ? 0 : 10, marginTop: i === 0 ? 0 : 10, borderTop: i === 0 ? 'none' : `1px solid ${BORDER}` }}>
+              <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: ACC, minWidth: 40, paddingTop: 1 }}>{ref.section}</span>
               <div>
-                <p className="font-medium text-[#0f1c2e]">{row.label}</p>
-                <p className="text-xs text-ionex-text-mute mt-0.5">{row.hint}</p>
+                <div style={{ fontSize: 12, fontWeight: 600, color: TX1 }}>{ref.title}</div>
+                <div style={{ fontSize: 11, color: TX3 }}>{ref.desc}</div>
               </div>
-              <Toggle
-                enabled={consent[row.key]}
-                disabled={savingConsent || row.key === 'analytics'}
-                onChange={val => saveConsent({ [row.key]: val } as Partial<Consent>)}
-              />
             </div>
           ))}
         </div>
-      )}
 
-      {!loading && !error && tab === 'dsar' && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={requestDsar} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">
-              Request my data (Section 23)
-            </button>
-            <p className="text-sm text-ionex-text-mute">A copy of your profile, consents, contracts, invoices, notifications and audit trail.</p>
-          </div>
-          {dsars.length === 0 ? (
-            <EmptyState icon={<ShieldCheck className="w-8 h-8" />} title="No DSAR requests" description="Click 'Request my data' to submit a Section 23 DSAR." />
-          ) : (
-            <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
-                  <tr><Th>ID</Th><Th>Scope</Th><Th>Status</Th><Th>Requested</Th><Th>Processed</Th><Th>Action</Th></tr>
-                </thead>
-                <tbody>
-                  {dsars.map(r => (
-                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
-                      <Td className="font-mono text-xs">{r.id}</Td>
-                      <Td>{r.scope}</Td>
-                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-[#eef2f7]'}`}>{r.status}</span></Td>
-                      <Td>{new Date(r.requested_at).toLocaleDateString()}</Td>
-                      <Td>{r.processed_at ? new Date(r.processed_at).toLocaleDateString() : '—'}</Td>
-                      <Td>
-                        <button type="button" onClick={() => exportDsar(r.id)} className="px-2 py-1 text-xs bg-ionex-brand text-white rounded flex items-center gap-1">
-                          <Download className="w-3 h-3" /> Export
-                        </button>
-                      </Td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* Consent summary — only on consent tab */}
+        {tab === 'consent' && consent && (
+          <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 16px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+              Consent Summary
             </div>
-          )}
-        </div>
-      )}
-
-      {!loading && !error && tab === 'erasure' && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setShowErasure(true)} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2">
-              <Trash2 className="w-4 h-4" /> Request erasure (Section 24)
-            </button>
-            <p className="text-sm text-ionex-text-mute">Submit for DPO review. Regulatory retention periods may prevent immediate deletion.</p>
+            {([
+              { key: 'marketing' as const, label: 'Marketing' },
+              { key: 'data_sharing' as const, label: 'Data sharing' },
+              { key: 'third_party' as const, label: 'Third-party' },
+              { key: 'analytics' as const, label: 'Analytics' },
+            ]).map((row, i) => (
+              <div key={row.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: i === 0 ? 0 : 8, marginTop: i === 0 ? 0 : 8, borderTop: i === 0 ? 'none' : `1px solid ${BORDER}` }}>
+                <span style={{ fontSize: 12, color: TX2 }}>{row.label}</span>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10,
+                  background: consent[row.key] ? GOOD_BG : BG2,
+                  color: consent[row.key] ? GOOD : TX3,
+                }}>
+                  {consent[row.key] ? 'Granted' : 'Withheld'}
+                </span>
+              </div>
+            ))}
           </div>
-          {erasures.length === 0 ? (
-            <EmptyState icon={<Trash2 className="w-8 h-8" />} title="No erasure requests" description="Submit a Section 24 request if you want to delete your data." />
-          ) : (
-            <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
-                  <tr><Th>ID</Th><Th>Reason</Th><Th>Status</Th><Th>Requested</Th></tr>
-                </thead>
-                <tbody>
-                  {erasures.map(r => (
-                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
-                      <Td className="font-mono text-xs">{r.id}</Td>
-                      <Td className="max-w-md"><div className="truncate" title={r.reason}>{r.reason}</div></Td>
-                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-[#eef2f7]'}`}>{r.status}</span></Td>
-                      <Td>{new Date(r.requested_at).toLocaleDateString()}</Td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
-      {!loading && !error && tab === 'objection' && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <button type="button" onClick={() => setShowObjection(true)} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light flex items-center gap-2">
-              <Ban className="w-4 h-4" /> Raise objection (Section 11(3))
-            </button>
-            <p className="text-sm text-ionex-text-mute">Object to a specific processing purpose. Reviewed by the DPO.</p>
-          </div>
-          {objections.length === 0 ? (
-            <EmptyState icon={<Ban className="w-8 h-8" />} title="No objections on file" description="Raise one if you want to opt out of a specific processing purpose." />
-          ) : (
-            <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
-                  <tr><Th>ID</Th><Th>Purpose</Th><Th>Status</Th><Th>Requested</Th></tr>
-                </thead>
-                <tbody>
-                  {objections.map(r => (
-                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
-                      <Td className="font-mono text-xs">{r.id}</Td>
-                      <Td className="max-w-md"><div className="truncate" title={r.processing_purpose}>{r.processing_purpose}</div></Td>
-                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-[#eef2f7]'}`}>{r.status}</span></Td>
-                      <Td>{new Date(r.requested_at).toLocaleDateString()}</Td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {!loading && !error && tab === 'correction' && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <button type="button" onClick={() => setShowCorrection(true)} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light flex items-center gap-2">
-              <FileEdit className="w-4 h-4" /> Request correction (Section 24)
-            </button>
-            <p className="text-sm text-ionex-text-mute">Name, company or email corrections with DPO audit trail.</p>
-          </div>
-          {corrections.length === 0 ? (
-            <EmptyState icon={<FileEdit className="w-8 h-8" />} title="No correction requests" description="Submit one to update an inaccurate field on your profile." />
-          ) : (
-            <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
-                  <tr><Th>ID</Th><Th>Field</Th><Th>Current</Th><Th>Requested</Th><Th>Status</Th></tr>
-                </thead>
-                <tbody>
-                  {corrections.map(r => (
-                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
-                      <Td className="font-mono text-xs">{r.id}</Td>
-                      <Td className="font-mono text-xs">{r.field_name}</Td>
-                      <Td className="max-w-[180px]"><div className="truncate" title={r.current_value || ''}>{r.current_value || '—'}</div></Td>
-                      <Td className="max-w-[180px]"><div className="truncate" title={r.requested_value}>{r.requested_value}</div></Td>
-                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-[#eef2f7]'}`}>{r.status}</span></Td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {!loading && !error && tab === 'breach' && isPrivileged && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <button type="button" onClick={() => setShowBreach(true)} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" /> Record breach (Section 22)
-            </button>
-            <p className="text-sm text-ionex-text-mute">Security compromise register. Notifications to the Information Regulator are required without undue delay.</p>
-          </div>
-          {breaches.length === 0 ? (
-            <EmptyState icon={<AlertTriangle className="w-8 h-8" />} title="No breaches recorded" description="Clean register — nothing to notify." />
-          ) : (
-            <div className="bg-white border border-ionex-border-100 rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
-                  <tr><Th>ID</Th><Th>Severity</Th><Th>Category</Th><Th>Affected</Th><Th>Status</Th><Th>Discovered</Th><Th>Regulator notified</Th></tr>
-                </thead>
-                <tbody>
-                  {breaches.map(r => (
-                    <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
-                      <Td className="font-mono text-xs">{r.id}</Td>
-                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${SEVERITY_PILL[r.severity] || 'bg-[#eef2f7]'}`}>{r.severity}</span></Td>
-                      <Td className="text-xs">{r.category}</Td>
-                      <Td className="text-xs">{r.affected_subjects_count ?? 0}</Td>
-                      <Td><span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[r.status] || 'bg-[#eef2f7]'}`}>{r.status}</span></Td>
-                      <Td>{new Date(r.discovered_at).toLocaleDateString()}</Td>
-                      <Td>{r.regulator_notified_at ? new Date(r.regulator_notified_at).toLocaleDateString() : '—'}</Td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
+      {/* Modals */}
       {showErasure && (
         <ErasureModal onClose={() => setShowErasure(false)} onSubmitted={() => { setShowErasure(false); void fetchData(); }} />
       )}
@@ -433,24 +688,103 @@ export function Popia() {
       {showBreach && (
         <BreachModal onClose={() => setShowBreach(false)} onSubmitted={() => { setShowBreach(false); void fetchData(); }} />
       )}
-    </StitchPage>
+    </div>
+  );
+}
+
+export default Popia;
+
+// ── Shared modal styles ──────────────────────────────────────────────────────
+
+const INPUT_STYLE: React.CSSProperties = {
+  marginTop: 4,
+  width: '100%',
+  padding: '8px 10px',
+  border: `1px solid ${BORDER}`,
+  borderRadius: 6,
+  fontSize: 13,
+  color: TX1,
+  background: BG,
+  boxSizing: 'border-box',
+  outline: 'none',
+};
+
+const LABEL_STYLE: React.CSSProperties = {
+  display: 'block',
+  fontSize: 12,
+  fontWeight: 600,
+  color: TX2,
+  marginBottom: 0,
+};
+
+function ModalShell({ title, onClose, children, footer }: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  footer: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        style={{ background: BG1, borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', maxWidth: 540, width: '100%', overflow: 'hidden' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: TX1, margin: 0 }}>{title}</h3>
+          <button type="button" onClick={onClose} aria-label="Close" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: TX2, padding: 4, display: 'flex' }}>
+            <X size={18} />
+          </button>
+        </div>
+        <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {children}
+        </div>
+        <div style={{ padding: '14px 20px', borderTop: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          {footer}
+        </div>
+      </div>
+    </div>
   );
 }
 
 function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
   return (
-    <button type="button"
+    <button
+      type="button"
       onClick={() => !disabled && onChange(!enabled)}
       disabled={disabled}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${enabled ? 'bg-ionex-brand' : 'bg-gray-300'} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+      style={{
+        position: 'relative',
+        display: 'inline-flex',
+        height: 24,
+        width: 44,
+        alignItems: 'center',
+        borderRadius: 12,
+        border: 'none',
+        background: enabled ? ACC : 'oklch(0.78 0.004 250)',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.6 : 1,
+        flexShrink: 0,
+        transition: 'background 0.15s',
+      }}
     >
-      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+      <span style={{
+        display: 'inline-block',
+        height: 18,
+        width: 18,
+        borderRadius: '50%',
+        background: '#fff',
+        transform: enabled ? 'translateX(22px)' : 'translateX(3px)',
+        transition: 'transform 0.15s',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+      }} />
     </button>
   );
 }
-
-function Th({ children }: { children: React.ReactNode }) { return <th className="px-4 py-2">{children}</th>; }
-function Td({ children, className = '' }: { children: React.ReactNode; className?: string }) { return <td className={`px-4 py-2 ${className}`}>{children}</td>; }
 
 function ErasureModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitted: () => void }) {
   useEscapeKey(onClose);
@@ -474,36 +808,38 @@ function ErasureModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitt
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-[#0f1c2e]">Request erasure (Section 24)</h3>
-          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
-        </div>
-        <div className="p-5 space-y-3">
-          {err && <ErrorBanner message={err} />}
-          <p className="text-sm text-[#2d3748]">
-            Submitting this request will be reviewed by the Data Protection Officer. Retention obligations under FIC,
-            Companies Act, Tax Administration Act and NERSA licensing may prevent immediate deletion; in that case
-            data will be anonymised and retained only as legally required.
-          </p>
-          <label className="block text-sm">
-            <span className="text-ionex-text-mute">Reason (optional)</span>
-            <textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg resize-none" />
-          </label>
-          <label className="flex items-start gap-2 text-sm">
-            <input type="checkbox" checked={confirmation} onChange={e => setConfirmation(e.target.checked)} className="mt-0.5" />
-            <span>I understand that retention obligations may delay or prevent erasure, and I confirm I want to submit this request.</span>
-          </label>
-        </div>
-        <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
-          <button type="button" onClick={submit} disabled={saving || !confirmation} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+    <ModalShell
+      title="Request erasure (Section 24)"
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" onClick={onClose} style={{ background: 'transparent', color: TX2, border: `1px solid ${BORDER}`, padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+          <button type="button" onClick={submit} disabled={saving || !confirmation} style={{ background: BAD, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13, opacity: saving || !confirmation ? 0.5 : 1 }}>
             {saving ? 'Submitting…' : 'Submit request'}
           </button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      {err && <ErrorBanner message={err} />}
+      <p style={{ fontSize: 13, color: TX2, lineHeight: 1.5, margin: 0 }}>
+        Submitting this request will be reviewed by the Data Protection Officer. Retention obligations under FIC,
+        Companies Act, Tax Administration Act and NERSA licensing may prevent immediate deletion; in that case
+        data will be anonymised and retained only as legally required.
+      </p>
+      <label style={LABEL_STYLE}>
+        Reason (optional)
+        <textarea
+          value={reason}
+          onChange={e => setReason(e.target.value)}
+          rows={3}
+          style={{ ...INPUT_STYLE, resize: 'none' }}
+        />
+      </label>
+      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: TX1, cursor: 'pointer' }}>
+        <input type="checkbox" checked={confirmation} onChange={e => setConfirmation(e.target.checked)} style={{ marginTop: 2 }} />
+        <span>I understand that retention obligations may delay or prevent erasure, and I confirm I want to submit this request.</span>
+      </label>
+    </ModalShell>
   );
 }
 
@@ -532,45 +868,42 @@ function ObjectionModal({ onClose, onSubmitted }: { onClose: () => void; onSubmi
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="obj-title">
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
-          <h3 id="obj-title" className="text-lg font-semibold text-[#0f1c2e]">Raise objection (Section 11(3))</h3>
-          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
-        </div>
-        <div className="p-5 space-y-3">
-          {err && <ErrorBanner message={err} />}
-          <p className="text-sm text-[#2d3748]">
-            You may object to a specific processing purpose. The Data Protection Officer will review and respond
-            within 30 days as required by POPIA 4 of 2013 Section 11(3).
-          </p>
-          <label className="block text-sm">
-            <span className="text-ionex-text-mute">Processing purpose</span>
-            <input
-              value={processingPurpose}
-              onChange={e => setProcessingPurpose(e.target.value)}
-              placeholder="e.g. Direct marketing, Cross-participant data sharing"
-              className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="text-ionex-text-mute">Grounds (optional)</span>
-            <textarea
-              value={grounds}
-              onChange={e => setGrounds(e.target.value)}
-              rows={3}
-              className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg resize-none"
-            />
-          </label>
-        </div>
-        <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
-          <button type="button" onClick={submit} disabled={saving || !processingPurpose.trim()} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
+    <ModalShell
+      title="Raise objection (Section 11(3))"
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" onClick={onClose} style={{ background: 'transparent', color: TX2, border: `1px solid ${BORDER}`, padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+          <button type="button" onClick={submit} disabled={saving || !processingPurpose.trim()} style={{ background: ACC, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13, opacity: saving || !processingPurpose.trim() ? 0.5 : 1 }}>
             {saving ? 'Submitting…' : 'Submit objection'}
           </button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      {err && <ErrorBanner message={err} />}
+      <p style={{ fontSize: 13, color: TX2, lineHeight: 1.5, margin: 0 }}>
+        You may object to a specific processing purpose. The Data Protection Officer will review and respond
+        within 30 days as required by POPIA 4 of 2013 Section 11(3).
+      </p>
+      <label style={LABEL_STYLE}>
+        Processing purpose
+        <input
+          value={processingPurpose}
+          onChange={e => setProcessingPurpose(e.target.value)}
+          placeholder="e.g. Direct marketing, Cross-participant data sharing"
+          style={INPUT_STYLE}
+        />
+      </label>
+      <label style={LABEL_STYLE}>
+        Grounds (optional)
+        <textarea
+          value={grounds}
+          onChange={e => setGrounds(e.target.value)}
+          rows={3}
+          style={{ ...INPUT_STYLE, resize: 'none' }}
+        />
+      </label>
+    </ModalShell>
   );
 }
 
@@ -601,61 +934,56 @@ function CorrectionModal({ onClose, onSubmitted }: { onClose: () => void; onSubm
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="cor-title">
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
-          <h3 id="cor-title" className="text-lg font-semibold text-[#0f1c2e]">Request correction (Section 24)</h3>
-          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
-        </div>
-        <div className="p-5 space-y-3">
-          {err && <ErrorBanner message={err} />}
-          <p className="text-sm text-[#2d3748]">
-            Request correction of inaccurate personal information on your profile. The DPO will review and apply the
-            change once confirmed.
-          </p>
-          <label className="block text-sm">
-            <span className="text-ionex-text-mute">Field</span>
-            <select
-              value={fieldName}
-              onChange={e => setFieldName(e.target.value as 'name' | 'company_name' | 'email')}
-              className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg"
-            >
-              <option value="name">Name</option>
-              <option value="company_name">Company name</option>
-              <option value="email">Email</option>
-            </select>
-          </label>
-          <label className="block text-sm">
-            <span className="text-ionex-text-mute">Requested value</span>
-            <input
-              value={requestedValue}
-              onChange={e => setRequestedValue(e.target.value)}
-              className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="text-ionex-text-mute">Reason (optional)</span>
-            <textarea
-              value={reason}
-              onChange={e => setReason(e.target.value)}
-              rows={2}
-              className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg resize-none"
-            />
-          </label>
-        </div>
-        <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
-          <button type="button" onClick={submit} disabled={saving || !requestedValue.trim()} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50">
+    <ModalShell
+      title="Request correction (Section 24)"
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" onClick={onClose} style={{ background: 'transparent', color: TX2, border: `1px solid ${BORDER}`, padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+          <button type="button" onClick={submit} disabled={saving || !requestedValue.trim()} style={{ background: ACC, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13, opacity: saving || !requestedValue.trim() ? 0.5 : 1 }}>
             {saving ? 'Submitting…' : 'Submit correction'}
           </button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      {err && <ErrorBanner message={err} />}
+      <p style={{ fontSize: 13, color: TX2, lineHeight: 1.5, margin: 0 }}>
+        Request correction of inaccurate personal information on your profile. The DPO will review and apply the
+        change once confirmed.
+      </p>
+      <label style={LABEL_STYLE}>
+        Field
+        <select
+          value={fieldName}
+          onChange={e => setFieldName(e.target.value as 'name' | 'company_name' | 'email')}
+          style={INPUT_STYLE}
+        >
+          <option value="name">Name</option>
+          <option value="company_name">Company name</option>
+          <option value="email">Email</option>
+        </select>
+      </label>
+      <label style={LABEL_STYLE}>
+        Requested value
+        <input
+          value={requestedValue}
+          onChange={e => setRequestedValue(e.target.value)}
+          style={INPUT_STYLE}
+        />
+      </label>
+      <label style={LABEL_STYLE}>
+        Reason (optional)
+        <textarea
+          value={reason}
+          onChange={e => setReason(e.target.value)}
+          rows={2}
+          style={{ ...INPUT_STYLE, resize: 'none' }}
+        />
+      </label>
+    </ModalShell>
   );
 }
 
-// Build a `YYYY-MM-DDTHH:MM` string from local-time parts so it round-trips
-// through a `datetime-local` input without a UTC↔local shift.
 function toLocalDateTimeValue(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -695,96 +1023,85 @@ function BreachModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitte
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="brch-title">
-      <div className="bg-white rounded-xl shadow-xl max-w-xl w-full" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
-          <h3 id="brch-title" className="text-lg font-semibold text-[#0f1c2e]">Record breach (Section 22)</h3>
-          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
-        </div>
-        <div className="p-5 space-y-3">
-          {err && <ErrorBanner message={err} />}
-          <p className="text-sm text-[#2d3748]">
-            Security compromises must be reported to the Information Regulator and affected data subjects without
-            undue delay (POPIA 4 of 2013 Section 22). Complete initial details now; notification timestamps can be
-            updated later as the incident progresses.
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block text-sm">
-              <span className="text-ionex-text-mute">Discovered at</span>
-              <input
-                type="datetime-local"
-                value={discoveredAt}
-                onChange={e => setDiscoveredAt(e.target.value)}
-                className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg"
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="text-ionex-text-mute">Severity</span>
-              <select
-                value={severity}
-                onChange={e => setSeverity(e.target.value as 'low' | 'medium' | 'high' | 'critical')}
-                className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </select>
-            </label>
-          </div>
-          <label className="block text-sm">
-            <span className="text-ionex-text-mute">Category</span>
-            <select
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg"
-            >
-              <option value="unauthorised_access">Unauthorised access</option>
-              <option value="data_loss">Data loss</option>
-              <option value="malware">Malware</option>
-              <option value="misdelivery">Misdelivery / wrong recipient</option>
-              <option value="insider">Insider misuse</option>
-              <option value="other">Other</option>
-            </select>
-          </label>
-          <label className="block text-sm">
-            <span className="text-ionex-text-mute">Description</span>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              rows={3}
-              className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg resize-none"
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block text-sm">
-              <span className="text-ionex-text-mute">Affected subjects</span>
-              <input
-                type="number"
-                min="0"
-                value={affectedCount}
-                onChange={e => setAffectedCount(e.target.value)}
-                className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg"
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="text-ionex-text-mute">Containment actions</span>
-              <input
-                value={containmentActions}
-                onChange={e => setContainmentActions(e.target.value)}
-                placeholder="e.g. Rotated tokens, isolated host"
-                className="mt-1 w-full px-3 py-2 border border-ionex-border-200 rounded-lg"
-              />
-            </label>
-          </div>
-        </div>
-        <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
-          <button type="button" onClick={submit} disabled={saving || !description.trim()} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+    <ModalShell
+      title="Record breach (Section 22)"
+      onClose={onClose}
+      footer={
+        <>
+          <button type="button" onClick={onClose} style={{ background: 'transparent', color: TX2, border: `1px solid ${BORDER}`, padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+          <button type="button" onClick={submit} disabled={saving || !description.trim()} style={{ background: BAD, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 13, opacity: saving || !description.trim() ? 0.5 : 1 }}>
             {saving ? 'Recording…' : 'Record breach'}
           </button>
-        </div>
+        </>
+      }
+    >
+      {err && <ErrorBanner message={err} />}
+      <p style={{ fontSize: 13, color: TX2, lineHeight: 1.5, margin: 0 }}>
+        Security compromises must be reported to the Information Regulator and affected data subjects without
+        undue delay (POPIA 4 of 2013 Section 22). Complete initial details now; notification timestamps can be
+        updated later as the incident progresses.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <label style={LABEL_STYLE}>
+          Discovered at
+          <input
+            type="datetime-local"
+            value={discoveredAt}
+            onChange={e => setDiscoveredAt(e.target.value)}
+            style={INPUT_STYLE}
+          />
+        </label>
+        <label style={LABEL_STYLE}>
+          Severity
+          <select value={severity} onChange={e => setSeverity(e.target.value as 'low' | 'medium' | 'high' | 'critical')} style={INPUT_STYLE}>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </label>
       </div>
-    </div>
+      <label style={LABEL_STYLE}>
+        Category
+        <select value={category} onChange={e => setCategory(e.target.value)} style={INPUT_STYLE}>
+          <option value="unauthorised_access">Unauthorised access</option>
+          <option value="data_loss">Data loss</option>
+          <option value="malware">Malware</option>
+          <option value="misdelivery">Misdelivery / wrong recipient</option>
+          <option value="insider">Insider misuse</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+      <label style={LABEL_STYLE}>
+        Description
+        <textarea
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          rows={3}
+          style={{ ...INPUT_STYLE, resize: 'none' }}
+        />
+      </label>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <label style={LABEL_STYLE}>
+          Affected subjects
+          <input
+            type="number"
+            min="0"
+            value={affectedCount}
+            onChange={e => setAffectedCount(e.target.value)}
+            style={INPUT_STYLE}
+          />
+        </label>
+        <label style={LABEL_STYLE}>
+          Containment actions
+          <input
+            value={containmentActions}
+            onChange={e => setContainmentActions(e.target.value)}
+            placeholder="e.g. Rotated tokens, isolated host"
+            style={INPUT_STYLE}
+          />
+        </label>
+      </div>
+    </ModalShell>
   );
 }

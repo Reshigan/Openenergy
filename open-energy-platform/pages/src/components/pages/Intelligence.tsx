@@ -6,7 +6,19 @@ import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
-import { StitchPage } from '../StitchPage';
+
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type Severity = 'info' | 'warning' | 'critical';
 
@@ -32,17 +44,33 @@ interface Summary {
   by_type: Array<{ type: string; c: number }>;
 }
 
-const SEVERITY_STYLE: Record<Severity, string> = {
-  critical: 'bg-red-100 text-red-800 border-red-200',
-  warning: 'bg-amber-100 text-amber-800 border-amber-200',
-  info: 'bg-blue-100 text-blue-800 border-blue-200',
-};
+function sevColor(sev: Severity): string {
+  if (sev === 'critical') return BAD;
+  if (sev === 'warning') return WARN;
+  return 'oklch(0.46 0.15 250)';
+}
 
-const SEVERITY_ICON: Record<Severity, React.ReactNode> = {
-  critical: <AlertTriangle className="w-4 h-4" />,
-  warning: <AlertTriangle className="w-4 h-4" />,
-  info: <Activity className="w-4 h-4" />,
-};
+function sevBg(sev: Severity): string {
+  if (sev === 'critical') return 'oklch(0.96 0.04 20)';
+  if (sev === 'warning') return 'oklch(0.97 0.04 55)';
+  return 'oklch(0.96 0.03 250)';
+}
+
+function sevBorder(sev: Severity): string {
+  if (sev === 'critical') return 'oklch(0.85 0.10 20)';
+  if (sev === 'warning') return 'oklch(0.85 0.10 55)';
+  return 'oklch(0.85 0.06 250)';
+}
+
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' | 'info' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : tone === 'info' ? 'oklch(0.46 0.15 250)' : TX1;
+  return (
+    <div style={{ borderRadius: 6, border: `1px solid ${BORDER}`, background: BG1, padding: '8px 12px', minWidth: 80 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, fontFamily: MONO, color }}>{value}</div>
+    </div>
+  );
+}
 
 export function Intelligence() {
   const { user } = useAuth();
@@ -116,92 +144,211 @@ export function Intelligence() {
     return map;
   }, [summary]);
 
+  const recentResolved = useMemo(() => items.filter(i => i.resolved === 1).slice(0, 8), [items]);
+
+  const aiInsight = useMemo(() => {
+    if (!summary) return 'Loading intelligence summary…';
+    const total = summary.unresolved_count;
+    if (counts.critical > 0) return `${counts.critical} critical signal${counts.critical > 1 ? 's' : ''} require immediate attention. Review and resolve before market open.`;
+    if (total > 10) return `${total} unresolved items detected. Prioritise warnings to reduce operational exposure.`;
+    if (total === 0) return 'No active signals. Platform health is nominal across all monitored dimensions.';
+    return `${total} unresolved item${total > 1 ? 's' : ''} pending review. ${counts.warning} warning${counts.warning !== 1 ? 's' : ''} and ${counts.info} info signal${counts.info !== 1 ? 's' : ''}.`;
+  }, [summary, counts]);
+
   return (
-    <StitchPage
-      eyebrowIcon={Activity}
-      eyebrowLabel="Intelligence"
-      title="Intelligence feed"
-      subtitle="Operational, financial, regulatory and market signals."
-      actions={
-        <>
-          <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]" aria-label="Refresh">
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          {canScan && (
-            <button type="button"
-              onClick={runScan}
-              disabled={scanning}
-              className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50 flex items-center gap-2"
-            >
-              <Scan className={`w-4 h-4 ${scanning ? 'animate-pulse' : ''}`} />
-              {scanning ? 'Scanning…' : 'Run scan'}
+    <div style={{ background: BG, minHeight: 'calc(100vh - 50px)', display: 'grid', gridTemplateColumns: '1fr 380px', gap: 0 }}>
+      {/* LEFT */}
+      <div style={{ overflowY: 'auto', padding: '20px 20px 20px 24px' }}>
+        {/* Header */}
+        <header style={{ marginBottom: 16, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <h1 style={{ fontSize: 18, fontWeight: 700, color: TX1, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Activity size={16} style={{ color: ACC }} />
+              Intelligence Feed
+            </h1>
+            <p style={{ fontSize: 12, color: TX2, margin: '4px 0 0' }}>Operational, financial, regulatory and market signals</p>
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+            <button type="button" onClick={fetchData}
+              style={{ height: 32, width: 32, borderRadius: 6, border: `1px solid ${BORDER}`, background: BG1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: TX2 }}
+              aria-label="Refresh">
+              <RefreshCw size={14} />
             </button>
-          )}
-        </>
-      }
-    >
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Tile label="Unresolved" value={summary?.unresolved_count ?? 0} />
-        <Tile label="Critical" value={counts.critical} accent="text-red-600" />
-        <Tile label="Warnings" value={counts.warning} accent="text-amber-600" />
-        <Tile label="Info" value={counts.info} accent="text-blue-600" />
-      </div>
+            {canScan && (
+              <button type="button" onClick={runScan} disabled={scanning}
+                style={{ height: 32, padding: '0 12px', borderRadius: 6, border: 'none', background: ACC, color: '#fff', fontSize: 12, fontWeight: 600, cursor: scanning ? 'not-allowed' : 'pointer', opacity: scanning ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Scan size={13} style={{ animation: scanning ? 'pulse 1s infinite' : 'none' }} />
+                {scanning ? 'Scanning…' : 'Run scan'}
+              </button>
+            )}
+          </div>
+        </header>
 
-      <div className="flex flex-wrap gap-3 items-center">
-        <span className="text-sm text-ionex-text-mute">Severity:</span>
-        {(['all', 'critical', 'warning', 'info'] as const).map(s => (
-          <button type="button" key={s} onClick={() => setSeverityFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${severityFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s}</button>
-        ))}
-        <span className="text-sm text-ionex-text-mute ml-3">Status:</span>
-        {(['unresolved', 'resolved', 'all'] as const).map(s => (
-          <button type="button" key={s} onClick={() => setResolvedFilter(s)} className={`px-3 py-1 rounded-full text-xs capitalize ${resolvedFilter === s ? 'bg-ionex-brand text-white' : 'bg-white border border-ionex-border-200'}`}>{s}</button>
-        ))}
-        <span className="text-sm text-ionex-text-mute ml-3">Type:</span>
-        <select
-          value={typeFilter}
-          onChange={e => setTypeFilter(e.target.value)}
-          className="px-3 py-1 border border-ionex-border-200 rounded-full text-xs"
-        >
-          <option value="all">All types</option>
-          {types.map(t => <option key={t} value={t}>{t}</option>)}
-        </select>
-      </div>
+        {/* KPI strip */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+          <KpiTile label="Unresolved" value={summary?.unresolved_count ?? 0} />
+          <KpiTile label="Critical" value={counts.critical} tone="bad" />
+          <KpiTile label="Warnings" value={counts.warning} tone="warn" />
+          <KpiTile label="Info" value={counts.info} tone="info" />
+        </div>
 
-      {loading && <Skeleton variant="card" rows={4} />}
-      {error && <ErrorBanner message={error} onRetry={fetchData} />}
-
-      {!loading && !error && items.length === 0 && (
-        <EmptyState
-          icon={<Activity className="w-8 h-8" />}
-          title="No intelligence items"
-          description={canScan ? "Click 'Run scan' to sweep the platform for signals." : "No signals right now."}
-        />
-      )}
-
-      {!loading && !error && items.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map(it => (
-            <button type="button"
-              key={it.id}
-              onClick={() => setSelected(it)}
-              className={`text-left p-4 bg-white border rounded-xl hover:shadow-md transition-shadow ${it.resolved ? 'opacity-70 border-ionex-border-100' : SEVERITY_STYLE[it.severity]}`}
-            >
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  {it.resolved ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : SEVERITY_ICON[it.severity]}
-                  <span className="text-[10px] uppercase tracking-wide font-semibold">{it.type}</span>
-                </div>
-                <span className="text-[10px] text-ionex-text-mute">{new Date(it.created_at).toLocaleDateString()}</span>
-              </div>
-              <h3 className="font-semibold text-sm text-[#0f1c2e] mb-1">{it.title}</h3>
-              <p className="text-xs text-ionex-text-mute line-clamp-3">{it.description}</p>
-              {it.action_required && !it.resolved && (
-                <p className="mt-2 text-xs font-medium flex items-center gap-1"><Clock className="w-3 h-3" /> {it.action_required}</p>
-              )}
+        {/* Filter strip */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: TX3, fontWeight: 600 }}>Severity:</span>
+          {(['all', 'critical', 'warning', 'info'] as const).map(s => (
+            <button key={s} type="button" onClick={() => setSeverityFilter(s)}
+              style={{ height: 26, padding: '0 10px', borderRadius: 13, fontSize: 11, fontWeight: 500, cursor: 'pointer', textTransform: 'capitalize',
+                background: severityFilter === s ? ACC : BG2,
+                color: severityFilter === s ? '#fff' : TX2,
+                border: `1px solid ${severityFilter === s ? ACC : BORDER}` }}>
+              {s}
             </button>
           ))}
         </div>
-      )}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: TX3, fontWeight: 600 }}>Status:</span>
+          {(['unresolved', 'resolved', 'all'] as const).map(s => (
+            <button key={s} type="button" onClick={() => setResolvedFilter(s)}
+              style={{ height: 26, padding: '0 10px', borderRadius: 13, fontSize: 11, fontWeight: 500, cursor: 'pointer', textTransform: 'capitalize',
+                background: resolvedFilter === s ? ACC : BG2,
+                color: resolvedFilter === s ? '#fff' : TX2,
+                border: `1px solid ${resolvedFilter === s ? ACC : BORDER}` }}>
+              {s}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16, alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: TX3, fontWeight: 600 }}>Type:</span>
+          <button key="all-types" type="button" onClick={() => setTypeFilter('all')}
+            style={{ height: 26, padding: '0 10px', borderRadius: 13, fontSize: 11, fontWeight: 500, cursor: 'pointer',
+              background: typeFilter === 'all' ? ACC : BG2,
+              color: typeFilter === 'all' ? '#fff' : TX2,
+              border: `1px solid ${typeFilter === 'all' ? ACC : BORDER}` }}>
+            All types
+          </button>
+          {types.map(t => (
+            <button key={t} type="button" onClick={() => setTypeFilter(t)}
+              style={{ height: 26, padding: '0 10px', borderRadius: 13, fontSize: 11, fontWeight: 500, cursor: 'pointer',
+                background: typeFilter === t ? ACC : BG2,
+                color: typeFilter === t ? '#fff' : TX2,
+                border: `1px solid ${typeFilter === t ? ACC : BORDER}` }}>
+              {t}
+            </button>
+          ))}
+        </div>
+
+        {loading && <Skeleton variant="card" rows={4} />}
+        {error && <ErrorBanner message={error} onRetry={fetchData} />}
+
+        {!loading && !error && items.length === 0 && (
+          <EmptyState
+            icon={<Activity size={32} />}
+            title="No intelligence items"
+            description={canScan ? "Click 'Run scan' to sweep the platform for signals." : 'No signals right now.'}
+          />
+        )}
+
+        {!loading && !error && items.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {items.map(it => (
+              <button type="button" key={it.id} onClick={() => setSelected(it)}
+                style={{ textAlign: 'left', padding: '12px 14px', borderRadius: 8, cursor: 'pointer',
+                  background: it.resolved ? BG1 : sevBg(it.severity),
+                  border: `1px solid ${it.resolved ? BORDER : sevBorder(it.severity)}`,
+                  opacity: it.resolved ? 0.75 : 1, transition: 'box-shadow 0.15s' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {it.resolved
+                      ? <CheckCircle2 size={14} style={{ color: GOOD }} />
+                      : <AlertTriangle size={14} style={{ color: sevColor(it.severity) }} />}
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: it.resolved ? TX3 : sevColor(it.severity) }}>{it.severity}</span>
+                    <span style={{ fontSize: 10, color: TX3, marginLeft: 4 }}>·</span>
+                    <span style={{ fontSize: 10, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{it.type}</span>
+                  </div>
+                  <span style={{ fontSize: 10, color: TX3, fontFamily: MONO }}>{new Date(it.created_at).toLocaleDateString()}</span>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: TX1, marginBottom: 4 }}>{it.title}</div>
+                <div style={{ fontSize: 12, color: TX2, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{it.description}</div>
+                {it.action_required && !it.resolved && (
+                  <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: WARN }}>
+                    <Clock size={11} /> {it.action_required}
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT panel */}
+      <div style={{ width: 380, borderLeft: `1px solid ${BORDER}`, background: BG1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* AI Assist */}
+        <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, padding: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>AI Assist</div>
+          <p style={{ fontSize: 12, color: TX2, lineHeight: 1.6, margin: 0 }}>{aiInsight}</p>
+          {counts.critical > 0 && (
+            <div style={{ marginTop: 10, padding: '8px 10px', borderRadius: 6, background: 'oklch(0.96 0.04 20)', border: `1px solid oklch(0.85 0.10 20)`, fontSize: 11, color: BAD, fontWeight: 600 }}>
+              {counts.critical} critical signal{counts.critical > 1 ? 's' : ''} — immediate resolution recommended
+            </div>
+          )}
+        </div>
+
+        {/* Severity breakdown */}
+        <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, padding: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Severity Breakdown</div>
+          {(['critical', 'warning', 'info'] as Severity[]).map(sev => {
+            const c = counts[sev];
+            const total = (counts.critical + counts.warning + counts.info) || 1;
+            const pct = Math.round((c / total) * 100);
+            return (
+              <div key={sev} style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, textTransform: 'capitalize', color: sevColor(sev), fontWeight: 600 }}>{sev}</span>
+                  <span style={{ fontSize: 11, fontFamily: MONO, color: TX2 }}>{c}</span>
+                </div>
+                <div style={{ height: 4, borderRadius: 2, background: BG2, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: sevColor(sev), transition: 'width 0.4s' }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Type breakdown */}
+        {summary?.by_type && summary.by_type.length > 0 && (
+          <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, padding: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>By Type</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {summary.by_type.slice(0, 8).map(({ type, c }) => (
+                <div key={type} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{type}</span>
+                  <span style={{ fontSize: 12, fontFamily: MONO, fontWeight: 700, color: TX1 }}>{c}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Recently resolved */}
+        {recentResolved.length > 0 && (
+          <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, padding: 16, flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Recently Resolved</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {recentResolved.map(it => (
+                <button key={it.id} type="button" onClick={() => setSelected(it)}
+                  style={{ textAlign: 'left', padding: '8px 10px', borderRadius: 6, cursor: 'pointer', background: BG2, border: `1px solid ${BORDER}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+                    <CheckCircle2 size={11} style={{ color: GOOD }} />
+                    <span style={{ fontSize: 10, color: GOOD, fontWeight: 700 }}>resolved</span>
+                    <span style={{ fontSize: 10, color: TX3, marginLeft: 'auto', fontFamily: MONO }}>{new Date(it.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: TX2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.title}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {selected && (
         <DetailModal
@@ -211,15 +358,6 @@ export function Intelligence() {
           onResolve={() => resolveItem(selected)}
         />
       )}
-    </StitchPage>
-  );
-}
-
-function Tile({ label, value, accent }: { label: string; value: number; accent?: string }) {
-  return (
-    <div className="p-4 bg-white border border-ionex-border-100 rounded-xl">
-      <p className="text-xs uppercase tracking-wide text-ionex-text-mute">{label}</p>
-      <p className={`text-2xl font-semibold mt-1 ${accent || 'text-[#0f1c2e]'}`}>{value}</p>
     </div>
   );
 }
@@ -232,54 +370,75 @@ function DetailModal({ item, canResolve, onClose, onResolve }: {
 }) {
   useEscapeKey(onClose);
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className={`px-2 py-0.5 rounded-full text-[10px] border ${SEVERITY_STYLE[item.severity]}`}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+      onClick={onClose} role="dialog" aria-modal="true">
+      <div style={{ background: BG1, borderRadius: 12, boxShadow: '0 8px 40px rgba(0,0,0,0.18)', maxWidth: 520, width: '100%', maxHeight: '90vh', overflowY: 'auto', border: `1px solid ${BORDER}` }}
+        onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div style={{ padding: '14px 18px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ padding: '2px 8px', borderRadius: 10, fontSize: 10, fontWeight: 700, textTransform: 'capitalize',
+              background: item.resolved ? BG2 : sevBg(item.severity),
+              color: item.resolved ? TX3 : sevColor(item.severity),
+              border: `1px solid ${item.resolved ? BORDER : sevBorder(item.severity)}` }}>
               {item.severity}
             </span>
-            <span className="text-xs text-ionex-text-mute uppercase">{item.type}</span>
+            <span style={{ fontSize: 10, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{item.type}</span>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Close"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: TX3, padding: 4, borderRadius: 4 }}>
+            <X size={18} />
+          </button>
         </div>
-        <div className="p-5 space-y-3">
-          <h2 className="text-lg font-semibold text-[#0f1c2e]">{item.title}</h2>
-          <p className="text-sm text-[#2d3748] whitespace-pre-wrap">{item.description}</p>
+
+        {/* Body */}
+        <div style={{ padding: '16px 18px' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: TX1, margin: '0 0 10px' }}>{item.title}</h2>
+          <p style={{ fontSize: 13, color: TX2, lineHeight: 1.65, whiteSpace: 'pre-wrap', margin: '0 0 12px' }}>{item.description}</p>
+
           {item.action_required && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-xs uppercase text-amber-700 font-semibold mb-1">Action required</p>
-              <p className="text-sm text-amber-900">{item.action_required}</p>
+            <div style={{ padding: '10px 12px', background: 'oklch(0.97 0.04 55)', border: `1px solid oklch(0.85 0.10 55)`, borderRadius: 8, marginBottom: 14 }}>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', color: WARN, fontWeight: 700, marginBottom: 4, letterSpacing: '0.07em' }}>Action required</div>
+              <div style={{ fontSize: 13, color: TX1 }}>{item.action_required}</div>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3 text-xs pt-3 border-t border-ionex-border-100">
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, paddingTop: 12, borderTop: `1px solid ${BORDER}` }}>
             <div>
-              <p className="text-ionex-text-mute">Raised</p>
-              <p className="font-medium">{new Date(item.created_at).toLocaleString()}</p>
+              <div style={{ fontSize: 10, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Raised</div>
+              <div style={{ fontSize: 12, color: TX1, fontFamily: MONO }}>{new Date(item.created_at).toLocaleString()}</div>
             </div>
             {item.entity_type && (
               <div>
-                <p className="text-ionex-text-mute">Entity</p>
-                <p className="font-medium">{item.entity_type}{item.entity_id ? `#${item.entity_id.slice(0, 12)}` : ''}</p>
+                <div style={{ fontSize: 10, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Entity</div>
+                <div style={{ fontSize: 12, color: TX1, fontFamily: MONO }}>{item.entity_type}{item.entity_id ? `#${item.entity_id.slice(0, 12)}` : ''}</div>
               </div>
             )}
             {item.resolved === 1 && item.resolved_at && (
-              <div className="col-span-2">
-                <p className="text-ionex-text-mute">Resolved</p>
-                <p className="font-medium">{new Date(item.resolved_at).toLocaleString()} by {item.resolved_by || 'system'}</p>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <div style={{ fontSize: 10, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Resolved</div>
+                <div style={{ fontSize: 12, color: GOOD, fontFamily: MONO }}>{new Date(item.resolved_at).toLocaleString()} by {item.resolved_by || 'system'}</div>
               </div>
             )}
           </div>
         </div>
-        {canResolve && (
-          <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Close</button>
-            <button type="button" onClick={onResolve} className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" /> Mark resolved
+
+        {/* Footer */}
+        <div style={{ padding: '12px 18px', borderTop: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button type="button" onClick={onClose}
+            style={{ height: 34, padding: '0 14px', borderRadius: 7, border: `1px solid ${BORDER}`, background: BG2, color: TX2, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+            Close
+          </button>
+          {canResolve && (
+            <button type="button" onClick={onResolve}
+              style={{ height: 34, padding: '0 14px', borderRadius: 7, border: 'none', background: GOOD, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CheckCircle2 size={13} /> Mark resolved
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
 }
+
+export default Intelligence;

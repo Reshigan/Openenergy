@@ -26,8 +26,8 @@ interface Kpis {
 
 const STATUS_COLORS: Record<string, string> = {
   refinancing_mandated:      'bg-[#eef2f7] text-[#6b7685]',
-  term_sheet_signed:         'bg-blue-100 text-blue-700',
-  credit_approval:           'bg-indigo-100 text-indigo-700',
+  term_sheet_signed:         'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
+  credit_approval:           'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   conditions_precedent:      'bg-purple-100 text-purple-700',
   sarb_exchange_control:     'bg-orange-100 text-orange-800',
   nersa_clearance:           'bg-yellow-100 text-yellow-800',
@@ -41,8 +41,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   minor:       'bg-[#eef2f7] text-[#3d4756]',
-  moderate:    'bg-blue-100 text-blue-700',
-  significant: 'bg-indigo-100 text-indigo-700',
+  moderate:    'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
+  significant: 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   major:       'bg-orange-100 text-orange-800',
   material:    'bg-red-100 text-red-700',
 };
@@ -196,7 +196,7 @@ export function IppRefinancingTab() {
           <button type="button"
             key={t}
             onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }}
-            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white border-indigo-700' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
+            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-[oklch(0.40_0.15_55)] text-white border-[oklch(0.46_0.16_55)]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
           >
             {t}
           </button>

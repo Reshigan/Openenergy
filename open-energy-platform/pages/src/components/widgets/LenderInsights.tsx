@@ -142,7 +142,7 @@ function DebtServiceWaterfall({ waterfall }: { waterfall: Waterfall | null }) {
             <Tooltip formatter={(v: any, _n: any, p: any) => [formatZAR(Math.abs(Number(v))), p?.payload?.label]} labelFormatter={() => ''} />
             <Bar dataKey="base" stackId="a" fill="transparent" />
             <Bar dataKey="bar" stackId="a">
-              {data.map((s, i) => <Cell key={i} fill={s.kind === 'add' ? '#1a8a5b' : '#3b82c4'} />)}
+              {data.map((s, i) => <Cell key={i} fill={s.kind === 'add' ? '#1a8a5b' : 'oklch(0.46 0.16 55)'} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -191,7 +191,7 @@ function FacilityIrr() {
           <div className="text-[13px] font-semibold text-[#0f1c2e]">Facility IRR</div>
           <div className="text-[11px] text-[#6b7685]">Lender economics: principal → fees → annuity over tenor</div>
         </div>
-        <div className="text-[14px] font-mono font-semibold text-[#1a3a5c]">
+        <div className="text-[14px] font-mono font-semibold text-[oklch(0.46_0.16_55)]">
           {lifetimeIrr == null ? '—' : `${(lifetimeIrr * 100).toFixed(2)}%`}
         </div>
       </header>
@@ -254,7 +254,7 @@ function RecoveryNpv() {
           <div className="text-[13px] font-semibold text-[#0f1c2e]">Workout recovery NPV</div>
           <div className="text-[11px] text-[#6b7685]">Cure vs liquidate — what's the higher-NPV path?</div>
         </div>
-        <div className={`text-[13px] font-mono font-semibold ${optimal === 'Cure' ? 'text-[#3b82c4]' : 'text-[#c0392b]'}`}>
+        <div className={`text-[13px] font-mono font-semibold ${optimal === 'Cure' ? 'text-[oklch(0.46_0.16_55)]' : 'text-[#c0392b]'}`}>
           {optimal} · ΔNPV {formatZAR(valueDiff)}
         </div>
       </header>
@@ -323,7 +323,7 @@ function PortfolioWaterfall() {
   const rvpi = called > 0 ? nav / called : 0;
 
   const data = [
-    { name: 'Called',      value: called,      fill: '#3b82c4' },
+    { name: 'Called',      value: called,      fill: 'oklch(0.46 0.16 55)' },
     { name: 'Distributed', value: distributed, fill: '#1a8a5b' },
     { name: 'NAV',         value: nav,         fill: '#6b3a82' },
     { name: 'Uncalled',    value: committed - called, fill: '#dde4ec' },
@@ -370,7 +370,7 @@ function Slider({ label, value, min, max, step, onChange, fmt }: {
   return (
     <label className="block text-[11px]">
       <div className="flex justify-between"><span className="text-[#3d4756] font-medium">{label}</span><span className="font-mono">{fmt(value)}</span></div>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[#1a3a5c]" />
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[oklch(0.46_0.16_55)]" />
     </label>
   );
 }
@@ -380,7 +380,7 @@ function Tile({ label, value, tone }: { label: string; value: string; tone: stri
     good: 'bg-[#e7f4ea] text-[#1a8a5b]',
     warn: 'bg-[#fef3e6] text-[#b04e0f]',
     bad:  'bg-[#fde0db] text-[#c0392b]',
-    info: 'bg-[#eef2f7] text-[#3b82c4]',
+    info: 'bg-[#eef2f7] text-[oklch(0.46_0.16_55)]',
   };
   return (
     <div className={`rounded p-2 ${map[tone] || map.info}`}>

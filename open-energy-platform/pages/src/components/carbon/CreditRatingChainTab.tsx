@@ -27,6 +27,20 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'rating_requested' | 'desk_review' | 'methodology_score'
@@ -46,6 +60,7 @@ type Authority =
 type RatingBand = 'AAA' | 'AA' | 'A' | 'BBB' | 'BB' | 'B' | 'CCC' | 'D';
 
 interface CcrRow {
+  [key: string]: unknown;
   id: string;
   rating_number: string;
   project_id: string;
@@ -161,19 +176,6 @@ interface CcrRow {
   bridges_to_reversal_chain_live?: boolean;
 }
 
-interface CcrEvent {
-  id: string;
-  rating_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiData {
   total: number;
   by_status: Record<string, number>;
@@ -205,44 +207,64 @@ interface KpiData {
   avg_composite_score: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  rating_requested:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Rating requested' },
-  desk_review:            { bg: '#dbecfb', fg: '#1a3a5c', label: 'Desk review' },
-  methodology_score:      { bg: '#fff4d6', fg: '#a06200', label: 'Methodology scored' },
-  additionality_score:    { bg: '#fff4d6', fg: '#a06200', label: 'Additionality scored' },
-  permanence_score:       { bg: '#fff4d6', fg: '#a06200', label: 'Permanence scored' },
-  leakage_score:          { bg: '#fff4d6', fg: '#a06200', label: 'Leakage scored' },
-  cobenefit_score:        { bg: '#fff4d6', fg: '#a06200', label: 'Co-benefits scored' },
-  composite_score:        { bg: '#fff4d6', fg: '#a06200', label: 'Composite computed' },
-  published:              { bg: '#daf5e2', fg: '#1f6b3a', label: 'Rating published' },
-  monitoring:             { bg: '#daf5e2', fg: '#1f6b3a', label: 'Monitoring (live)' },
-  re_rating_triggered:    { bg: '#fde0e0', fg: '#9b1f1f', label: 'Re-rating triggered' },
-  re_rated:               { bg: '#e3e7ec', fg: '#557',    label: 'Re-rated' },
-  downgraded:             { bg: '#fbd0d0', fg: '#7a1414', label: 'Downgraded' },
-  withdrawn:              { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
-  escalated_to_integrity: { bg: '#fbd0d0', fg: '#7a1414', label: 'Escalated to integrity' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'rating_requested',
+  'desk_review',
+  'methodology_score',
+  'additionality_score',
+  'permanence_score',
+  'leakage_score',
+  'cobenefit_score',
+  'composite_score',
+  'published',
+  'monitoring',
+  're_rating_triggered',
+  're_rated',
+];
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  basic:         { bg: '#e3e7ec', fg: '#557',    label: 'Basic' },
-  standard:      { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard' },
-  premium:       { bg: '#fff4d6', fg: '#a06200', label: 'Premium' },
-  institutional: { bg: '#fbd0d0', fg: '#7a1414', label: 'Institutional' },
-};
+const BRANCH_STATES: readonly string[] = [
+  'downgraded',
+  'withdrawn',
+  'escalated_to_integrity',
+];
 
-const URGENCY_TONE: Record<UrgencyBand, { bg: string; fg: string; label: string }> = {
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-  medium:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Medium' },
-  high:     { bg: '#fff4d6', fg: '#a06200', label: 'High' },
-  critical: { bg: '#fbd0d0', fg: '#7a1414', label: 'Critical' },
-};
+// ── filters ───────────────────────────────────────────────────────────────
+// UX revisit 2026-05-30 — pills grouped into 2 visual rows: action-LEFT
+// (SLA breached / Downgrade imminent / Distressed / Article 6 / etc.) first;
+// lifecycle state pills second. Cuts per-row pill count from 24->12 so they
+// fit two rows on 1440px.
+const FILTER_ROW_ACTION: Array<{ key: string; label: string }> = [
+  { key: 'active',             label: 'Active (pre-terminal)' },
+  { key: 'all',                label: 'All' },
+  { key: 'breached',           label: 'SLA breached' },
+  { key: 'downgrade_imminent', label: 'Downgrade imminent' },
+  { key: 'distressed',         label: 'Distressed (CCC/D)' },
+  { key: 'reportable',         label: 'Reportable' },
+  { key: 'stale',              label: 'Monitoring stale' },
+  { key: 'article_6',          label: 'Article 6' },
+  { key: 'ccp_aligned',        label: 'CCP-aligned' },
+  { key: 'institutional',      label: 'Institutional' },
+  { key: 'premium',            label: 'Premium' },
+  { key: 'standard',           label: 'Standard' },
+];
 
-const AUTH_LABEL: Record<Authority, string> = {
-  junior_analyst:          'Junior analyst',
-  senior_analyst:          'Senior analyst',
-  ratings_committee_chair: 'Ratings committee chair',
-  board_rating_committee:  'Board rating committee',
-};
+const FILTER_ROW_STATE: Array<{ key: string; label: string }> = [
+  { key: 'rating_requested',    label: 'Rating requested' },
+  { key: 'desk_review',         label: 'Desk review' },
+  { key: 'methodology_score',   label: 'Methodology' },
+  { key: 'additionality_score', label: 'Additionality' },
+  { key: 'permanence_score',    label: 'Permanence' },
+  { key: 'leakage_score',       label: 'Leakage' },
+  { key: 'cobenefit_score',     label: 'Co-benefits' },
+  { key: 'composite_score',     label: 'Composite' },
+  { key: 'published',           label: 'Published' },
+  { key: 'monitoring',          label: 'Monitoring' },
+  { key: 're_rated',            label: 'Re-rated' },
+  { key: 'downgraded',          label: 'Downgraded' },
+];
+
+const TIERS = new Set<string>(['basic', 'standard', 'premium', 'institutional']);
 
 const BAND_TONE: Record<RatingBand, { bg: string; fg: string }> = {
   AAA: { bg: '#0b6e3a', fg: '#ffffff' },
@@ -255,49 +277,14 @@ const BAND_TONE: Record<RatingBand, { bg: string; fg: string }> = {
   D:   { bg: '#9b1f1f', fg: '#ffffff' },
 };
 
-const PARTY_TONE: Record<string, { bg: string; fg: string }> = {
-  rater:  { bg: '#dbecfb', fg: '#1a3a5c' },
-  issuer: { bg: '#fff4d6', fg: '#a06200' },
-  buyer:  { bg: '#daf5e2', fg: '#1f6b3a' },
-  system: { bg: '#e3e7ec', fg: '#557'    },
+const AUTH_LABEL: Record<Authority, string> = {
+  junior_analyst:          'Junior analyst',
+  senior_analyst:          'Senior analyst',
+  ratings_committee_chair: 'Ratings committee chair',
+  board_rating_committee:  'Board rating committee',
 };
 
-// UX revisit 2026-05-30 — pills grouped into 2 visual rows: action-LEFT
-// (SLA breached / Downgrade imminent / Distressed / Article 6 / etc.) first;
-// lifecycle state pills second. Cuts per-row pill count from 24->12 so they
-// fit two rows on 1440px.
-const FILTER_ROW_ACTION: Array<{ key: string; label: string }> = [
-  { key: 'active',              label: 'Active (pre-terminal)' },
-  { key: 'all',                 label: 'All' },
-  { key: 'breached',             label: 'SLA breached' },
-  { key: 'downgrade_imminent',  label: 'Downgrade imminent' },
-  { key: 'distressed',          label: 'Distressed (CCC/D)' },
-  { key: 'reportable',          label: 'Reportable' },
-  { key: 'stale',               label: 'Monitoring stale' },
-  { key: 'article_6',           label: 'Article 6' },
-  { key: 'ccp_aligned',         label: 'CCP-aligned' },
-  { key: 'institutional',       label: 'Institutional' },
-  { key: 'premium',             label: 'Premium' },
-  { key: 'standard',            label: 'Standard' },
-];
-
-const FILTER_ROW_STATE: Array<{ key: string; label: string }> = [
-  { key: 'rating_requested',       label: 'Rating requested' },
-  { key: 'desk_review',            label: 'Desk review' },
-  { key: 'methodology_score',      label: 'Methodology' },
-  { key: 'additionality_score',    label: 'Additionality' },
-  { key: 'permanence_score',       label: 'Permanence' },
-  { key: 'leakage_score',          label: 'Leakage' },
-  { key: 'cobenefit_score',        label: 'Co-benefits' },
-  { key: 'composite_score',        label: 'Composite' },
-  { key: 'published',              label: 'Published' },
-  { key: 'monitoring',             label: 'Monitoring' },
-  { key: 're_rated',               label: 'Re-rated' },
-  { key: 'downgraded',             label: 'Downgraded' },
-];
-
-const TIERS = new Set<string>(['basic', 'standard', 'premium', 'institutional']);
-
+// ── helpers ───────────────────────────────────────────────────────────────
 function fmtHrs(h: number | null | undefined): string {
   if (h === null || h === undefined) return '—';
   if (Math.abs(h) >= 24) return `${(h / 24).toFixed(1)}d`;
@@ -327,14 +314,360 @@ function fmtCount(v: number | null | undefined): string {
   return v.toLocaleString();
 }
 
+// ── actions ───────────────────────────────────────────────────────────────
+function getActions(row: CcrRow): ChainAction[] {
+  const cs = row.chain_status;
+  const actions: ChainAction[] = [];
+
+  const withdrawable = ['rating_requested', 'desk_review', 'methodology_score', 'additionality_score',
+    'permanence_score', 'leakage_score', 'cobenefit_score', 'composite_score'].includes(cs);
+  const escalatable = !row.is_terminal;
+  const downgradable = cs === 'monitoring' || cs === 're_rating_triggered';
+  const remediable = cs === 'downgraded';
+
+  if (cs === 'rating_requested') {
+    actions.push({
+      key: 'start-desk-review',
+      label: 'Start desk review (rater)',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'desk_review') {
+    actions.push({
+      key: 'score-methodology',
+      label: 'Score methodology (0-100)',
+      tone: 'primary',
+      fields: [
+        { key: 'score', label: 'Methodology score (0-100)', type: 'number', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'methodology_score') {
+    actions.push({
+      key: 'score-additionality',
+      label: 'Score additionality (0-100)',
+      tone: 'primary',
+      fields: [
+        { key: 'score', label: 'Additionality score (0-100)', type: 'number', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'additionality_score') {
+    actions.push({
+      key: 'score-permanence',
+      label: 'Score permanence (0-100)',
+      tone: 'primary',
+      fields: [
+        { key: 'score', label: 'Permanence score (0-100)', type: 'number', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'permanence_score') {
+    actions.push({
+      key: 'score-leakage',
+      label: 'Score leakage (0-100)',
+      tone: 'primary',
+      fields: [
+        { key: 'score', label: 'Leakage score (0-100)', type: 'number', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'leakage_score') {
+    actions.push({
+      key: 'score-cobenefits',
+      label: 'Score co-benefits (0-100)',
+      tone: 'primary',
+      fields: [
+        { key: 'score', label: 'Co-benefits score (0-100)', type: 'number', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'cobenefit_score') {
+    actions.push({
+      key: 'compute-composite',
+      label: 'Compute composite (rater)',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'composite_score') {
+    actions.push({
+      key: 'publish-rating',
+      label: 'Publish rating (ratings committee)',
+      tone: 'primary',
+      fields: [],
+      // publish_rating -> premium+institutional when Article 6
+      cascadeTo: (row.article_6_authorised && (row.current_tier === 'premium' || row.current_tier === 'institutional')) ? ['regulator'] : [],
+    });
+  }
+
+  if (cs === 'published') {
+    actions.push({
+      key: 'start-monitoring',
+      label: 'Start monitoring (live)',
+      tone: 'primary',
+      fields: [
+        { key: 'last_monitoring_data_at', label: 'Last monitoring data timestamp (ISO 8601, optional)', type: 'text', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'monitoring') {
+    actions.push({
+      key: 'trigger-rerating',
+      label: 'Trigger re-rating',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 're_rating_triggered') {
+    actions.push({
+      key: 'rerate',
+      label: 'Re-rate (refresh 5 sub-scores)',
+      tone: 'primary',
+      fields: [
+        { key: 'methodology_score',   label: 'New methodology score (optional)',   type: 'number', required: false, placeholder: '' },
+        { key: 'additionality_score', label: 'New additionality score (optional)', type: 'number', required: false, placeholder: '' },
+        { key: 'permanence_score',    label: 'New permanence score (optional)',    type: 'number', required: false, placeholder: '' },
+        { key: 'leakage_score',       label: 'New leakage score (optional)',       type: 'number', required: false, placeholder: '' },
+        { key: 'cobenefit_score',     label: 'New co-benefits score (optional)',   type: 'number', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (downgradable) {
+    actions.push({
+      key: 'downgrade',
+      label: 'Downgrade (regulator EVERY tier on drop ≥20% or CCC/D)',
+      tone: 'danger',
+      fields: [
+        { key: 'downgrade_reason', label: 'Downgrade reason', type: 'textarea', required: false, placeholder: '' },
+      ],
+      // downgrade -> regulator EVERY tier on drop>=20% OR CCC/D
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (withdrawable) {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw rating (issuer-dispute = regulator EVERY tier)',
+      tone: 'danger',
+      fields: [
+        { key: 'withdraw_reason',  label: 'Withdraw reason',                                    type: 'textarea', required: false, placeholder: '' },
+        { key: 'issuer_disputed',  label: 'Issuer disputing this withdrawal? (true/false)',      type: 'text',     required: false, placeholder: 'false' },
+      ],
+      // withdraw -> regulator EVERY tier when issuer_disputed
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (escalatable) {
+    actions.push({
+      key: 'escalate-to-integrity',
+      label: 'Escalate to integrity (fraud → W42 reversal)',
+      tone: 'danger',
+      fields: [
+        { key: 'integrity_reason', label: 'Integrity escalation reason', type: 'textarea', required: false, placeholder: '' },
+      ],
+      // escalate_to_integrity -> regulator EVERY tier
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (remediable) {
+    actions.push({
+      key: 'remediate',
+      label: 'Remediate (issuer) — re-enter monitoring',
+      tone: 'primary',
+      fields: [
+        { key: 'remediation_narrative', label: 'Remediation narrative', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  return actions;
+}
+
+// ── renderDetail ──────────────────────────────────────────────────────────
+function renderDetail(row: CcrRow): React.ReactNode {
+  const band = row.rating_band_live ?? row.rating_band;
+  const priorBand = row.prior_rating_band;
+  const bandTone = band ? BAND_TONE[band] : null;
+  const priorBandTone = priorBand ? BAND_TONE[priorBand] : null;
+  const authorityNow = row.authority_required_live ?? row.authority_required ?? null;
+
+  return (
+    <div className="space-y-3 text-[12px]">
+      {/* S&P 8-band ladder */}
+      {band && bandTone && (
+        <div className="rounded border p-3" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: TX3 }}>S&amp;P-style 8-band ladder</div>
+          <div className="flex gap-1">
+            {(['AAA', 'AA', 'A', 'BBB', 'BB', 'B', 'CCC', 'D'] as RatingBand[]).map((b) => {
+              const tone = BAND_TONE[b];
+              const active = b === band;
+              const wasPrior = b === priorBand;
+              return (
+                <div key={b} className="flex-1 text-center">
+                  <div
+                    className="py-1.5 px-1 rounded text-[12px] font-bold border-2"
+                    style={{
+                      background: tone.bg,
+                      color: tone.fg,
+                      borderColor: active ? TX1 : 'transparent',
+                      opacity: active ? 1 : 0.6,
+                    }}>
+                    {b}
+                  </div>
+                  {active && <div className="text-[9px] mt-0.5 font-semibold" style={{ color: TX1 }}>CURRENT</div>}
+                  {wasPrior && !active && <div className="text-[9px] mt-0.5" style={{ color: WARN }}>prior</div>}
+                </div>
+              );
+            })}
+          </div>
+          <div className="text-[10px] mt-2" style={{ color: TX3 }}>
+            AAA-BBB investment-grade · BB-B speculative · CCC/D distressed (W42 buffer pool eligible)
+          </div>
+        </div>
+      )}
+
+      {/* 5-pillar scoring battery */}
+      <div className="rounded border p-3" style={{ background: BG1, borderColor: BORDER }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: TX3 }}>Live 5-pillar scoring battery</div>
+        <div className="grid grid-cols-5 gap-3">
+          <DetailPair label="Methodology (25%)" value={fmtScore(row.methodology_score)} />
+          <DetailPair label="Additionality (25%)" value={fmtScore(row.additionality_score)} />
+          <DetailPair label="Permanence (20%)" value={fmtScore(row.permanence_score)} />
+          <DetailPair label="Leakage (15%)" value={fmtScore(row.leakage_score)} />
+          <DetailPair label="Co-benefits (15%)" value={fmtScore(row.cobenefit_score)} />
+        </div>
+        <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t" style={{ borderColor: BORDER }}>
+          <DetailPair label="Composite (0-100)" value={fmtScore(row.composite_score)} />
+          <DetailPair label="ICROA bonus" value={row.icroa_aligned ? '+5' : '—'} />
+          <DetailPair label="Completeness" value={`${row.rating_completeness_index_live ?? 0} / 100`} />
+        </div>
+        {row.prior_composite_score != null && (
+          <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t" style={{ borderColor: BORDER }}>
+            <DetailPair label="Prior composite" value={fmtScore(row.prior_composite_score)} />
+            <DetailPair label="Prior band" value={priorBand ?? '—'} />
+            <DetailPair label="Drop vs prior" value={fmtPct(row.composite_drop_pct_live, 2)} />
+          </div>
+        )}
+      </div>
+
+      {/* Floor-at-premium flags */}
+      <div className="rounded border p-3" style={{ background: BG1, borderColor: BORDER }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: TX3 }}>
+          Floor-at-premium flags ({row.floor_flag_count_live ?? 0} / 5)
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <FlagPill on={!!row.afolu_high_reversal_risk} label="AFOLU high reversal risk" />
+          <FlagPill on={!!row.methodology_under_review} label="Methodology under review" />
+          <FlagPill on={!!row.external_credit_red_flag} label="External red flag" />
+          <FlagPill on={!!row.ccp_aligned_project} label="CCP-aligned project" />
+          <FlagPill on={!!row.article_6_authorised} label="Article 6 authorised" />
+          <FlagPill on={!!row.institutional_buyer} label="Institutional buyer" />
+        </div>
+      </div>
+
+      {/* 3-bridge architecture */}
+      <div className="rounded border p-3" style={{ background: BG1, borderColor: BORDER }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: TX3 }}>Bridges to sibling carbon chains</div>
+        <div className="grid grid-cols-3 gap-3">
+          <BridgePill on={!!row.bridges_to_registration_chain_live} label="W37 Registration PDD" ref_={row.registration_chain_ref} />
+          <BridgePill on={!!row.bridges_to_mrv_chain_live} label="W11 MRV verification" ref_={row.mrv_chain_ref} />
+          <BridgePill on={!!row.bridges_to_reversal_chain_live} label="W42 Reversal/buffer pool" ref_={row.reversal_chain_ref} />
+        </div>
+      </div>
+
+      {/* Project, vintage & monitoring */}
+      <div className="rounded border p-3" style={{ background: BG1, borderColor: BORDER }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: TX3 }}>Project, vintage &amp; monitoring</div>
+        <div className="grid grid-cols-3 gap-3">
+          <DetailPair label="Vintage year" value={fmtCount(row.credit_vintage_year)} />
+          <DetailPair label="Vintage age" value={`${row.vintage_age_years_live ?? row.vintage_age_years} yrs`} />
+          <DetailPair label="Multi-vintage" value={row.multi_vintage ? 'Yes' : 'No'} />
+        </div>
+        <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t" style={{ borderColor: BORDER }}>
+          <DetailPair label="Scope (tCO2e)" value={fmtTco2e(row.scope_scale_tonnes)} />
+          <DetailPair label="Methodology" value={row.methodology_name ?? row.methodology_id ?? '—'} />
+          <DetailPair label="Registry" value={row.registry_name ?? '—'} />
+        </div>
+        <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t" style={{ borderColor: BORDER }}>
+          <DetailPair label="Last monitoring data" value={row.last_monitoring_data_at ? new Date(row.last_monitoring_data_at).toLocaleDateString() : '—'} />
+          <DetailPair label="Freshness" value={row.monitoring_freshness_days_live != null ? `${row.monitoring_freshness_days_live}d` : '—'} />
+          <DetailPair label="Re-rating triggers (30d)" value={fmtCount(row.rerating_count_30d_live)} />
+        </div>
+      </div>
+
+      {/* Parties + authority + refs */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+        {row.rater_name && <DetailPair label="Rater" value={row.rater_name} />}
+        {row.buyer_name && <DetailPair label="Buyer" value={row.buyer_name} />}
+        {authorityNow && <DetailPair label="Authority required" value={AUTH_LABEL[authorityNow]} />}
+        {row.regulator_inbox_ref && <DetailPair label="Regulator inbox" value={row.regulator_inbox_ref} />}
+        {row.regulator_ref && <DetailPair label="Regulator ref" value={row.regulator_ref} />}
+        {row.reason_code && <DetailPair label="Reason code" value={row.reason_code} />}
+        {row.escalation_level > 0 && <DetailPair label="Escalation level" value={String(row.escalation_level)} />}
+      </div>
+
+      {row.downgrade_reason && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Downgrade reason</div>
+          <div style={{ color: TX2 }}>{row.downgrade_reason}</div>
+        </div>
+      )}
+      {row.withdraw_reason && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Withdraw reason</div>
+          <div style={{ color: TX2 }}>{row.withdraw_reason}</div>
+        </div>
+      )}
+      {row.integrity_reason && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Integrity reason</div>
+          <div style={{ color: TX2 }}>{row.integrity_reason}</div>
+        </div>
+      )}
+      {row.remediation_narrative && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Remediation</div>
+          <div style={{ color: TX2 }}>{row.remediation_narrative}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function CreditRatingChainTab() {
   const [rows, setRows] = useState<CcrRow[]>([]);
   const [kpis, setKpis] = useState<KpiData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<CcrRow | null>(null);
-  const [events, setEvents] = useState<CcrEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -356,15 +689,28 @@ export function CreditRatingChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: CcrRow; events: CcrEvent[] } }>(`/carbon/credit-rating/chain/${id}`);
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/carbon/credit-rating/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/carbon/credit-rating/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load rating history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: CcrRow; events: ChainEvent[] } }>(`/carbon/credit-rating/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -382,515 +728,140 @@ export function CreditRatingChainTab() {
     });
   }, [rows, filter]);
 
-  const doAction = useCallback(async (path: string, body?: object) => {
-    if (!selected) return;
-    try {
-      await api.post(`/carbon/credit-rating/chain/${selected.id}/${path}`, body ?? {});
-      await load();
-      await loadEvents(selected.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Action failed');
-    }
-  }, [selected, load, loadEvents]);
+  const k = kpis;
 
   return (
-    <div className="space-y-3">
-      {/* UX revisit 2026-05-30 — KPI strip reordered so the FOUR numbers the
-          ratings desk opens the workstation FOR (SLA breached, Downgrade
-          imminent, Distressed CCC/D, Article 6 institutional) sit left of
-          total/active counts. Total scope tonnes stays right. */}
-      <div className="grid grid-cols-8 gap-3">
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Downgrade imminent" value={kpis?.downgrade_imminent_count ?? 0} tone={(kpis?.downgrade_imminent_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Distressed (CCC/D)" value={kpis?.distressed_count ?? 0} tone={(kpis?.distressed_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Article 6" value={kpis?.article_6_count ?? 0} />
-        <Kpi label="Institutional tier" value={kpis?.institutional_count ?? 0} />
-        <Kpi label="Active" value={kpis?.active_count ?? 0} />
-        <Kpi label="Total" value={kpis?.total ?? 0} />
-        <Kpi label="Avg composite" value={fmtScore(kpis?.avg_composite_score ?? 0)} />
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Carbon Credit Quality Rating</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          W109 · 12-state INVERTED SLA rating chain · S&P 8-band · 5-pillar scoring battery · 3-bridge (W37/W11/W42) · ICROA/CCP/Article 6
+        </p>
+      </header>
+
+      {/* KPI strip — UX revisit 2026-05-30: breached/imminent/distressed/article6 left */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="SLA breached"       value={k?.breached ?? 0}                tone={(k?.breached ?? 0) > 0 ? 'bad' : undefined} />
+        <KpiTile label="Downgrade imminent" value={k?.downgrade_imminent_count ?? 0} tone={(k?.downgrade_imminent_count ?? 0) > 0 ? 'warn' : undefined} />
+        <KpiTile label="Distressed (CCC/D)" value={k?.distressed_count ?? 0}         tone={(k?.distressed_count ?? 0) > 0 ? 'bad' : undefined} />
+        <KpiTile label="Article 6"          value={k?.article_6_count ?? 0} />
+        <KpiTile label="Institutional"      value={k?.institutional_count ?? 0} />
+        <KpiTile label="Active"             value={k?.active_count ?? 0} />
+        <KpiTile label="Total"              value={k?.total ?? 0} />
+        <KpiTile label="Avg composite"      value={fmtScore(k?.avg_composite_score ?? 0)} />
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {FILTER_ROW_ACTION.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
-                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
-            }`}>
+      {/* Filter pills — action row */}
+      <div className="mb-2 flex flex-wrap gap-1.5">
+        {FILTER_ROW_ACTION.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {FILTER_ROW_STATE.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
-                : 'bg-white text-[#6b7685] border-[#eef2f6] hover:bg-[#eef2f7]'
-            }`}>
+      {/* Filter pills — state row */}
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {FILTER_ROW_STATE.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX3,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
-      {err && <div className="px-3 py-2 bg-red-50 text-red-700 text-[12px] rounded-md">{err}</div>}
+      {err && (
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
+        </div>
+      )}
 
-      <div className="bg-white border border-[#e5ebf2] rounded-xl overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[#f7f9fb] text-[11px] uppercase tracking-wide text-[#6b7685]">
-            <tr>
-              <th className="px-3 py-2 text-left">Rating #</th>
-              <th className="px-3 py-2 text-left">Project / Issuer</th>
-              <th className="px-3 py-2 text-right">Scope (tCO2e)</th>
-              <th className="px-3 py-2 text-right">Composite</th>
-              <th className="px-3 py-2 text-center">Band</th>
-              <th className="px-3 py-2 text-left">Tier</th>
-              <th className="px-3 py-2 text-left">State</th>
-              <th className="px-3 py-2 text-right">Δ SLA</th>
-            </tr>
-          </thead>
-          <tbody className="text-[13px]">
-            {loading ? (
-              <tr><td colSpan={8} className="p-6 text-center text-[#6b7685]">Loading…</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={8} className="p-6 text-center text-[#6b7685]">No carbon credit ratings match the current filter.</td></tr>
-            ) : filtered.map((r) => {
-              const stateTone = STATE_TONE[r.chain_status];
-              const tierTone  = TIER_TONE[r.current_tier];
-              const band = r.rating_band_live ?? r.rating_band;
-              const bandTone = band ? BAND_TONE[band] : null;
-              return (
-                <tr
-                  key={r.id}
-                  onClick={() => loadEvents(r.id)}
-                  className={`cursor-pointer hover:bg-[#f7f9fb] border-t border-[#eef2f6] ${selected?.id === r.id ? 'bg-[#fffae6]' : ''}`}>
-                  <td className="px-3 py-2 font-mono text-[11px]">{r.rating_number}</td>
-                  <td className="px-3 py-2 max-w-xs truncate" title={`${r.project_name ?? r.project_id} · ${r.issuer_name ?? r.issuer_id}`}>
-                    {r.project_name ?? r.project_id}
-                    <span className="text-[#6b7685]"> · {r.issuer_name ?? r.issuer_id}</span>
-                    {!!r.article_6_authorised && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fde0e0] text-[#9b1f1f]">ART 6</span>}
-                    {!!r.ccp_aligned_project && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#daf5e2] text-[#1f6b3a]">CCP</span>}
-                    {(r.floor_flag_count_live ?? 0) >= 2 && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fff4d6] text-[#a06200]">FLOOR</span>}
-                  </td>
-                  <td className="px-3 py-2 text-right text-[12px] tabular-nums">{fmtTco2e(r.scope_scale_tonnes)}</td>
-                  <td className="px-3 py-2 text-right text-[12px] tabular-nums">{fmtScore(r.composite_score)}</td>
-                  <td className="px-3 py-2 text-center">
-                    {bandTone && band ? (
-                      <span className="inline-block px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: bandTone.bg, color: bandTone.fg }}>
-                        {band}
-                      </span>
-                    ) : (
-                      <span className="text-[#6b7685]">—</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: tierTone.bg, color: tierTone.fg }}>
-                      {tierTone.label}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: stateTone.bg, color: stateTone.fg }}>
-                      {stateTone.label}
-                    </span>
-                  </td>
-                  <td className={`px-3 py-2 text-right text-[12px] tabular-nums ${(r.sla_breached_live || r.sla_breached) ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                    {r.is_terminal ? '—' : fmtHrs(r.sla_hours_remaining_live)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {selected && (
-        <CcrDrawer
-          row={selected}
-          events={events}
-          onClose={() => { setSelected(null); setEvents([]); }}
-          doAction={doAction}
-        />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading…
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => {
+            const band = row.rating_band_live ?? row.rating_band;
+            const bandTone = band ? BAND_TONE[band] : null;
+            const authorityNow = row.authority_required_live ?? row.authority_required ?? null;
+            const metaParts: string[] = [
+              row.current_tier.charAt(0).toUpperCase() + row.current_tier.slice(1),
+              ...(band ? [`Band: ${band}`] : []),
+              ...(authorityNow ? [AUTH_LABEL[authorityNow]] : []),
+            ];
+            return (
+              <ChainCard
+                key={row.id}
+                item={{
+                  ...row,
+                  sla_deadline_at: row.sla_deadline_at ?? null,
+                  sla_breached: !!(row.sla_breached_live || row.sla_breached),
+                }}
+                allStates={ALL_STATES}
+                branchStates={BRANCH_STATES}
+                title={`${row.rating_number} · ${row.project_name ?? row.project_id}`}
+                meta={metaParts.join(' · ')}
+                actions={getActions(row)}
+                onAction={(key, values) => handleAction(row.id, key, values)}
+                cascadeTo={[]}
+                detail={renderDetail(row)}
+                events={expandedEvents[row.id]}
+                onExpand={handleExpand}
+              />
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No carbon credit ratings match the current filter.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone = 'ok' }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const fg = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0f1c2e';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="bg-white border border-[#e5ebf2] rounded-lg p-3">
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[20px] font-semibold tabular-nums mt-0.5" style={{ color: fg }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function CcrDrawer({
-  row, events, onClose, doAction,
-}: {
-  row: CcrRow;
-  events: CcrEvent[];
-  onClose: () => void;
-  doAction: (path: string, body?: object) => Promise<void>;
-}) {
-  const cs = row.chain_status;
-  const transitionable = !row.is_terminal;
-  const withdrawable = ['rating_requested', 'desk_review', 'methodology_score', 'additionality_score',
-    'permanence_score', 'leakage_score', 'cobenefit_score', 'composite_score'].includes(cs);
-  const escalatable = !row.is_terminal;
-  const downgradable = cs === 'monitoring' || cs === 're_rating_triggered';
-  const remediable = cs === 'downgraded';
-  const urgencyTone = row.urgency_band_live ? URGENCY_TONE[row.urgency_band_live] : null;
-  const authorityNow = row.authority_required_live ?? row.authority_required ?? null;
-  const band = row.rating_band_live ?? row.rating_band;
-  const priorBand = row.prior_rating_band;
-  const bandTone = band ? BAND_TONE[band] : null;
-  const priorBandTone = priorBand ? BAND_TONE[priorBand] : null;
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/30 flex items-stretch justify-end oe-overlay-in" onClick={onClose}>
-      <div className="bg-white w-full max-w-3xl shadow-xl overflow-y-auto oe-drawer-in" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-start justify-between sticky top-0 bg-white z-10">
-          <div className="flex gap-4 items-start">
-            {bandTone && band && (
-              <div className="flex flex-col items-center">
-                <div className="px-3 py-2 rounded-md text-[20px] font-bold tabular-nums" style={{ background: bandTone.bg, color: bandTone.fg }}>
-                  {band}
-                </div>
-                <div className="text-[10px] uppercase tracking-wide text-[#6b7685] mt-1">S&amp;P band</div>
-              </div>
-            )}
-            <div>
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">Carbon credit rating {row.rating_number}</div>
-              <h3 className="text-[16px] font-semibold text-[#0f1c2e] mt-0.5">
-                {row.project_name ?? row.project_id} · {row.issuer_name ?? row.issuer_id}
-              </h3>
-              <div className="flex flex-wrap gap-2 mt-2 text-[12px]">
-                <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: TIER_TONE[row.current_tier].bg, color: TIER_TONE[row.current_tier].fg }}>
-                  {TIER_TONE[row.current_tier].label}
-                </span>
-                <span className="px-2 py-0.5 rounded-full" style={{ background: STATE_TONE[cs].bg, color: STATE_TONE[cs].fg }}>
-                  {STATE_TONE[cs].label}
-                </span>
-                {urgencyTone && (
-                  <span className="px-2 py-0.5 rounded-full font-medium" style={{ background: urgencyTone.bg, color: urgencyTone.fg }}>
-                    {urgencyTone.label} urgency
-                  </span>
-                )}
-                {(row.floor_flag_count_live ?? 0) >= 1 && (
-                  <span className="px-2 py-0.5 rounded-full font-bold bg-[#fff4d6] text-[#a06200]">
-                    FLOOR ({row.floor_flag_count_live} flag{(row.floor_flag_count_live ?? 0) === 1 ? '' : 's'})
-                  </span>
-                )}
-                {row.is_reportable_flag && (
-                  <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">Regulator reportable</span>
-                )}
-                {authorityNow && (
-                  <span className="px-2 py-0.5 rounded-full bg-[#dbecfb] text-[#1a3a5c] font-medium">Auth: {AUTH_LABEL[authorityNow]}</span>
-                )}
-                {!!row.article_6_authorised && (
-                  <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">Article 6 authorised</span>
-                )}
-                {!!row.ccp_aligned_project && (
-                  <span className="px-2 py-0.5 rounded-full bg-[#daf5e2] text-[#1f6b3a] font-medium">CCP-aligned</span>
-                )}
-                {row.downgrade_imminent_live && (
-                  <span className="px-2 py-0.5 rounded-full bg-[#fbd0d0] text-[#7a1414] font-bold">Downgrade imminent</span>
-                )}
-                {row.investment_grade_live && (
-                  <span className="px-2 py-0.5 rounded-full bg-[#daf5e2] text-[#1f6b3a] font-medium">Investment grade</span>
-                )}
-                {row.distressed_live && (
-                  <span className="px-2 py-0.5 rounded-full bg-[#fbd0d0] text-[#7a1414] font-bold">Distressed</span>
-                )}
-                {row.monitoring_data_stale_live && (
-                  <span className="px-2 py-0.5 rounded-full bg-[#fff4d6] text-[#a06200] font-medium">Monitoring stale</span>
-                )}
-              </div>
-            </div>
-          </div>
-          <button type="button" onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">✕</button>
-        </div>
-
-        <div className="p-5 space-y-4 text-[13px]">
-          {/* 5 sub-score panel + composite */}
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Live 5-pillar scoring battery</div>
-            <div className="grid grid-cols-5 gap-3">
-              <Pair label="Methodology (25%)" value={fmtScore(row.methodology_score)} />
-              <Pair label="Additionality (25%)" value={fmtScore(row.additionality_score)} />
-              <Pair label="Permanence (20%)" value={fmtScore(row.permanence_score)} />
-              <Pair label="Leakage (15%)" value={fmtScore(row.leakage_score)} />
-              <Pair label="Co-benefits (15%)" value={fmtScore(row.cobenefit_score)} />
-            </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="Composite (0-100)" value={fmtScore(row.composite_score)} />
-              <Pair label="ICROA bonus" value={row.icroa_aligned ? '+5' : '—'} />
-              <Pair label="Completeness" value={`${row.rating_completeness_index_live ?? 0} / 100`} />
-            </div>
-            {row.prior_composite_score != null && (
-              <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-                <Pair label="Prior composite" value={fmtScore(row.prior_composite_score)} />
-                <Pair label="Prior band" value={priorBand ?? '—'} />
-                <Pair label="Drop vs prior" value={fmtPct(row.composite_drop_pct_live, 2)} />
-              </div>
-            )}
-          </div>
-
-          {/* S&P 8-band ladder visualisation */}
-          {band && bandTone && (
-            <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">S&amp;P-style 8-band ladder</div>
-              <div className="flex gap-1">
-                {(['AAA', 'AA', 'A', 'BBB', 'BB', 'B', 'CCC', 'D'] as RatingBand[]).map((b) => {
-                  const tone = BAND_TONE[b];
-                  const active = b === band;
-                  const wasPrior = b === priorBand;
-                  return (
-                    <div key={b} className="flex-1 text-center">
-                      <div
-                        className={`py-1.5 px-1 rounded text-[12px] font-bold border-2 ${active ? 'shadow-md' : 'opacity-60'}`}
-                        style={{
-                          background: tone.bg,
-                          color: tone.fg,
-                          borderColor: active ? '#0f1c2e' : 'transparent',
-                        }}>
-                        {b}
-                      </div>
-                      {active && <div className="text-[9px] mt-0.5 text-[#0f1c2e] font-semibold">CURRENT</div>}
-                      {wasPrior && !active && <div className="text-[9px] mt-0.5 text-[#a06200]">prior</div>}
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="text-[10px] text-[#6b7685] mt-2">
-                AAA-BBB investment-grade · BB-B speculative · CCC/D distressed (W42 buffer pool eligible)
-              </div>
-            </div>
-          )}
-
-          {/* 5 floor-flag pills */}
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Floor-at-premium flags ({row.floor_flag_count_live ?? 0} / 5)</div>
-            <div className="grid grid-cols-2 gap-2">
-              <FlagPill on={!!row.afolu_high_reversal_risk} label="AFOLU high reversal risk" />
-              <FlagPill on={!!row.methodology_under_review} label="Methodology under review" />
-              <FlagPill on={!!row.external_credit_red_flag} label="External red flag" />
-              <FlagPill on={!!row.ccp_aligned_project} label="CCP-aligned project" />
-              <FlagPill on={!!row.article_6_authorised} label="Article 6 authorised" />
-              <FlagPill on={!!row.institutional_buyer} label="Institutional buyer" />
-            </div>
-          </div>
-
-          {/* 3-bridge architecture */}
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Bridges to sibling carbon chains</div>
-            <div className="grid grid-cols-3 gap-3">
-              <BridgePill on={!!row.bridges_to_registration_chain_live} label="W37 Registration PDD" ref_={row.registration_chain_ref} />
-              <BridgePill on={!!row.bridges_to_mrv_chain_live} label="W11 MRV verification" ref_={row.mrv_chain_ref} />
-              <BridgePill on={!!row.bridges_to_reversal_chain_live} label="W42 Reversal/buffer pool" ref_={row.reversal_chain_ref} />
-            </div>
-          </div>
-
-          {/* Project + monitoring + vintage */}
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Project, vintage &amp; monitoring</div>
-            <div className="grid grid-cols-3 gap-3">
-              <Pair label="Vintage year" value={fmtCount(row.credit_vintage_year)} />
-              <Pair label="Vintage age" value={`${row.vintage_age_years_live ?? row.vintage_age_years} yrs`} />
-              <Pair label="Multi-vintage" value={row.multi_vintage ? 'Yes' : 'No'} />
-            </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="Scope (tCO2e)" value={fmtTco2e(row.scope_scale_tonnes)} />
-              <Pair label="Methodology" value={row.methodology_name ?? row.methodology_id ?? '—'} />
-              <Pair label="Registry" value={row.registry_name ?? '—'} />
-            </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="Last monitoring data" value={row.last_monitoring_data_at ? new Date(row.last_monitoring_data_at).toLocaleDateString() : '—'} />
-              <Pair label="Freshness" value={row.monitoring_freshness_days_live != null ? `${row.monitoring_freshness_days_live}d` : '—'} />
-              <Pair label="Re-rating triggers (30d)" value={fmtCount(row.rerating_count_30d_live)} />
-            </div>
-          </div>
-
-          {/* Parties + SLA */}
-          <div className="grid grid-cols-2 gap-4">
-            {row.rater_name && <Pair label="Rater" value={row.rater_name} />}
-            {row.buyer_name && <Pair label="Buyer" value={row.buyer_name} />}
-            {row.regulator_inbox_ref && <Pair label="Regulator inbox" value={row.regulator_inbox_ref} />}
-            {row.regulator_ref && <Pair label="Regulator ref" value={row.regulator_ref} />}
-            {row.downgrade_reason && <Pair label="Downgrade reason" value={row.downgrade_reason} />}
-            {row.withdraw_reason && <Pair label="Withdraw reason" value={row.withdraw_reason} />}
-            {row.integrity_reason && <Pair label="Integrity reason" value={row.integrity_reason} />}
-            {row.remediation_narrative && <Pair label="Remediation" value={row.remediation_narrative} />}
-            {row.reason_code && <Pair label="Reason code" value={row.reason_code} />}
-          </div>
-
-          {row.sla_deadline_at && !row.is_terminal && (
-            <Pair label="Next SLA" value={`${new Date(row.sla_deadline_at).toLocaleString()} (${fmtHrs(row.sla_hours_remaining_live)})${row.escalation_level > 0 ? ` · ${row.escalation_level} breach(es)` : ''}`} />
-          )}
-
-          {transitionable && (
-            <div className="border-t border-[#eef2f6] pt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Actions</div>
-              <div className="flex flex-wrap gap-2">
-                {cs === 'rating_requested' && (
-                  <ActionBtn label="Start desk review (rater)" onClick={() => { void doAction('start-desk-review', {}); }} />
-                )}
-                {cs === 'desk_review' && (
-                  <ActionBtn label="Score methodology (0-100)" onClick={() => {
-                    const s = window.prompt('Methodology score (0-100):') ?? undefined;
-                    void doAction('score-methodology', { score: s ? Number(s) : undefined });
-                  }} />
-                )}
-                {cs === 'methodology_score' && (
-                  <ActionBtn label="Score additionality (0-100)" onClick={() => {
-                    const s = window.prompt('Additionality score (0-100):') ?? undefined;
-                    void doAction('score-additionality', { score: s ? Number(s) : undefined });
-                  }} />
-                )}
-                {cs === 'additionality_score' && (
-                  <ActionBtn label="Score permanence (0-100)" onClick={() => {
-                    const s = window.prompt('Permanence score (0-100):') ?? undefined;
-                    void doAction('score-permanence', { score: s ? Number(s) : undefined });
-                  }} />
-                )}
-                {cs === 'permanence_score' && (
-                  <ActionBtn label="Score leakage (0-100)" onClick={() => {
-                    const s = window.prompt('Leakage score (0-100):') ?? undefined;
-                    void doAction('score-leakage', { score: s ? Number(s) : undefined });
-                  }} />
-                )}
-                {cs === 'leakage_score' && (
-                  <ActionBtn label="Score co-benefits (0-100)" onClick={() => {
-                    const s = window.prompt('Co-benefits score (0-100):') ?? undefined;
-                    void doAction('score-cobenefits', { score: s ? Number(s) : undefined });
-                  }} />
-                )}
-                {cs === 'cobenefit_score' && (
-                  <ActionBtn label="Compute composite (rater)" tone="good" onClick={() => { void doAction('compute-composite', {}); }} />
-                )}
-                {cs === 'composite_score' && (
-                  <ActionBtn label="Publish rating (ratings committee)" tone="good" onClick={() => { void doAction('publish-rating', {}); }} />
-                )}
-                {cs === 'published' && (
-                  <ActionBtn label="Start monitoring (live)" onClick={() => {
-                    const d = window.prompt('Last monitoring data timestamp (ISO 8601, optional):') ?? undefined;
-                    void doAction('start-monitoring', { last_monitoring_data_at: d });
-                  }} />
-                )}
-                {cs === 'monitoring' && (
-                  <ActionBtn label="Trigger re-rating" onClick={() => { void doAction('trigger-rerating', {}); }} />
-                )}
-                {cs === 're_rating_triggered' && (
-                  <ActionBtn label="Re-rate (refresh 5 sub-scores)" tone="good" onClick={() => {
-                    const m = window.prompt('New methodology score (optional):') ?? undefined;
-                    const a = window.prompt('New additionality score (optional):') ?? undefined;
-                    const p = window.prompt('New permanence score (optional):') ?? undefined;
-                    const l = window.prompt('New leakage score (optional):') ?? undefined;
-                    const c = window.prompt('New co-benefits score (optional):') ?? undefined;
-                    void doAction('rerate', {
-                      methodology_score: m ? Number(m) : undefined,
-                      additionality_score: a ? Number(a) : undefined,
-                      permanence_score: p ? Number(p) : undefined,
-                      leakage_score: l ? Number(l) : undefined,
-                      cobenefit_score: c ? Number(c) : undefined,
-                    });
-                  }} />
-                )}
-                {downgradable && (
-                  <ActionBtn label="Downgrade (regulator EVERY tier on drop ≥20% or CCC/D)" tone="bad" onClick={() => {
-                    const reason = window.prompt('Downgrade reason:') ?? undefined;
-                    void doAction('downgrade', { downgrade_reason: reason });
-                  }} />
-                )}
-                {withdrawable && (
-                  <ActionBtn label="Withdraw rating (issuer-dispute = regulator EVERY tier)" tone="bad" onClick={() => {
-                    const reason = window.prompt('Withdraw reason:') ?? undefined;
-                    const disputed = window.confirm('Is the issuer disputing this withdrawal?');
-                    void doAction('withdraw', { withdraw_reason: reason, issuer_disputed: disputed });
-                  }} />
-                )}
-                {escalatable && (
-                  <ActionBtn label="Escalate to integrity (fraud → W42 reversal)" tone="bad" onClick={() => {
-                    const reason = window.prompt('Integrity escalation reason:') ?? undefined;
-                    void doAction('escalate-to-integrity', { integrity_reason: reason });
-                  }} />
-                )}
-              </div>
-            </div>
-          )}
-
-          {remediable && (
-            <div className="border-t border-[#eef2f6] pt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Issuer remediation</div>
-              <ActionBtn label="Remediate (issuer) — re-enter monitoring" tone="good" onClick={() => {
-                const narrative = window.prompt('Remediation narrative:') ?? undefined;
-                void doAction('remediate', { remediation_narrative: narrative });
-              }} />
-            </div>
-          )}
-
-          <div className="border-t border-[#eef2f6] pt-4">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Timeline</div>
-            <div className="space-y-2">
-              {events.length === 0 ? (
-                <div className="text-[12px] text-[#6b7685]">No events yet.</div>
-              ) : events.map((e) => {
-                const partyTone = PARTY_TONE[e.actor_party ?? 'system'] ?? PARTY_TONE.system;
-                return (
-                  <div key={e.id} className="flex gap-3 text-[12px] border-l-2 border-[#e5ebf2] pl-3 py-1">
-                    <span className="font-mono text-[11px] text-[#6b7685] whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
-                    <div>
-                      <span className="font-semibold text-[#0f1c2e]">{e.event_type}</span>
-                      {e.actor_party && (
-                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-medium uppercase" style={{ background: partyTone.bg, color: partyTone.fg }}>
-                          {e.actor_party}
-                        </span>
-                      )}
-                      {e.from_status && e.to_status && e.from_status !== e.to_status && (
-                        <span className="text-[#6b7685]"> · {e.from_status} {'→'} {e.to_status}</span>
-                      )}
-                      {e.notes && <div className="text-[#4a5568] mt-0.5">{e.notes}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[#0f1c2e] mt-0.5">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1 }}>{value}</div>
     </div>
   );
 }
 
 function FlagPill({ on, label }: { on: boolean; label: string }) {
   return (
-    <div className={`flex items-center gap-2 px-2 py-1 rounded-md text-[12px] ${on ? 'bg-[#fff4d6] text-[#a06200] border border-[#f4d68f]' : 'bg-[#f7f9fb] text-[#6b7685] border border-[#e5ebf2]'}`}>
-      <span className={`inline-block w-2 h-2 rounded-full ${on ? 'bg-[#a06200]' : 'bg-[#cbd5e0]'}`} />
+    <div className="flex items-center gap-2 px-2 py-1 rounded-md text-[12px]"
+      style={{
+        background: on ? 'oklch(0.96 0.05 55)' : BG2,
+        color: on ? WARN : TX3,
+        border: `1px solid ${on ? 'oklch(0.80 0.12 55)' : BORDER}`,
+      }}>
+      <span className="inline-block w-2 h-2 rounded-full" style={{ background: on ? WARN : TX3 }} />
       <span>{label}</span>
     </div>
   );
@@ -898,22 +869,21 @@ function FlagPill({ on, label }: { on: boolean; label: string }) {
 
 function BridgePill({ on, label, ref_ }: { on: boolean; label: string; ref_: string | null }) {
   return (
-    <div className={`px-2 py-2 rounded-md text-[12px] ${on ? 'bg-[#daf5e2] text-[#1f6b3a] border border-[#9ed8b0]' : 'bg-[#f7f9fb] text-[#6b7685] border border-[#e5ebf2]'}`}>
+    <div className="px-2 py-2 rounded-md text-[12px]"
+      style={{
+        background: on ? 'oklch(0.95 0.04 155)' : BG2,
+        color: on ? 'oklch(0.30 0.14 155)' : TX3,
+        border: `1px solid ${on ? 'oklch(0.75 0.10 155)' : BORDER}`,
+      }}>
       <div className="flex items-center gap-2 font-semibold">
-        <span className={`inline-block w-2 h-2 rounded-full ${on ? 'bg-[#1f6b3a]' : 'bg-[#cbd5e0]'}`} />
+        <span className="inline-block w-2 h-2 rounded-full"
+          style={{ background: on ? 'oklch(0.30 0.14 155)' : TX3 }} />
         <span>{label}</span>
       </div>
-      {ref_ && <div className="font-mono text-[10px] mt-1 text-[#557]">{ref_}</div>}
-      {!ref_ && <div className="text-[10px] mt-1 text-[#6b7685]">No bridge wired</div>}
+      {ref_ && <div className="font-mono text-[10px] mt-1" style={{ color: TX3 }}>{ref_}</div>}
+      {!ref_ && <div className="text-[10px] mt-1" style={{ color: TX3 }}>No bridge wired</div>}
     </div>
   );
 }
 
-function ActionBtn({ label, onClick, tone = 'neutral' }: { label: string; onClick: () => void; tone?: 'neutral' | 'good' | 'bad' }) {
-  const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#c2873a]';
-  return (
-    <button type="button" onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
-      {label}
-    </button>
-  );
-}
+export default CreditRatingChainTab;

@@ -140,7 +140,7 @@ export function StepUpModal() {
       <div className="bg-white rounded-lg max-w-md w-full">
         <div className="p-4 border-b border-[#dde4ec] flex items-center justify-between">
           <div className="inline-flex items-center gap-2">
-            <Shield size={18} className="text-[#1a3a5c]"/>
+            <Shield size={18} style={{ color: 'oklch(0.46 0.16 55)' }}/>
             <div>
               <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">Step-up authentication</div>
               <div className="font-semibold text-[#0f1c2e]">Confirm a fresh second factor</div>

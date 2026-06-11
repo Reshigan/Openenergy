@@ -2,6 +2,16 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../context/AuthContext';
 
+const BG      = 'oklch(0.96 0.003 250)';
+const BG1     = 'oklch(0.99 0.002 80)';
+const BORDER  = 'oklch(0.87 0.006 250)';
+const TX1     = 'oklch(0.17 0.010 250)';
+const TX2     = 'oklch(0.40 0.009 250)';
+const ACC     = 'oklch(0.46 0.16 55)';
+const BAD     = 'oklch(0.48 0.20 20)';
+const BAD_BG  = 'oklch(0.97 0.04 20)';
+const BAD_BDR = 'oklch(0.85 0.08 20)';
+
 export default function ResetPassword() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -35,19 +45,19 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: '#f5f8fb' }}>
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border p-8" style={{ borderColor: '#dde4ec' }}>
-        <h2 className="text-[24px] font-bold" style={{ color: '#0f1c2e' }}>Reset password</h2>
-        <p className="mt-1 text-[13px]" style={{ color: '#6b7685' }}>Enter your new password below.</p>
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: BG }}>
+      <div className="w-full max-w-md rounded-2xl shadow-sm border p-8" style={{ background: BG1, borderColor: BORDER }}>
+        <h2 className="text-[24px] font-bold" style={{ color: TX1 }}>Reset password</h2>
+        <p className="mt-1 text-[13px]" style={{ color: TX2 }}>Enter your new password below.</p>
 
         {done ? (
-          <div className="mt-6 rounded-lg border px-3 py-3 text-[13px]" style={{ background: '#ebf7ef', borderColor: '#9ec9a8', color: '#0e6027' }}>
+          <div className="mt-6 rounded-lg border px-3 py-3 text-[13px]" style={{ background: 'oklch(0.96 0.05 150)', borderColor: 'oklch(0.75 0.10 150)', color: 'oklch(0.30 0.12 150)' }}>
             Password reset. Redirecting to sign in…
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             {error && (
-              <div className="rounded-lg border px-3 py-2 text-[13px]" style={{ background: '#fde0db', borderColor: '#e8a59b', color: '#c0392b' }}>
+              <div className="rounded-lg border px-3 py-2 text-[13px]" style={{ background: BAD_BG, borderColor: BAD_BDR, color: BAD }}>
                 {error}
               </div>
             )}
@@ -63,11 +73,16 @@ export default function ResetPassword() {
               <label className="label">Confirm password</label>
               <input type="password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} className="input" />
             </div>
-            <button type="submit" className="btn btn-primary w-full" disabled={loading}>
+            <button
+              type="submit"
+              className="w-full h-10 rounded-lg text-[13px] font-semibold text-white disabled:opacity-50"
+              style={{ background: ACC }}
+              disabled={loading}
+            >
               {loading ? 'Resetting…' : 'Reset password'}
             </button>
             <div className="text-center">
-              <Link to="/login" className="text-[13px] font-semibold" style={{ color: '#3b82c4' }}>Back to sign in</Link>
+              <Link to="/login" className="text-[13px] font-semibold" style={{ color: ACC }}>Back to sign in</Link>
             </div>
           </form>
         )}

@@ -132,8 +132,8 @@ const WORK_TYPE_LABEL: Record<WorkType, string> = {
 
 const STATUS_COLOR: Record<MsStatus, string> = {
   drafted: 'bg-[#eef2f7] text-[#2d3748]',
-  reviewed: 'bg-blue-50 text-blue-700',
-  risk_assessed: 'bg-indigo-100 text-indigo-700',
+  reviewed: 'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
+  risk_assessed: 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   approved: 'bg-violet-100 text-violet-700',
   toolbox_briefed: 'bg-cyan-100 text-cyan-700',
   active: 'bg-green-100 text-green-800',
@@ -193,7 +193,7 @@ function Flag({ label, title, cls }: { label: string; title: string; cls: string
 
 function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
   const colors: Record<string, string> = {
-    blue: 'bg-blue-50 text-blue-900 border-blue-200',
+    blue: 'bg-[oklch(0.97_0.003_250)] text-[oklch(0.17_0.010_250)] border-[oklch(0.87_0.012_250)]',
     red: 'bg-red-50 text-red-900 border-red-200',
     orange: 'bg-orange-50 text-orange-900 border-orange-200',
     green: 'bg-green-50 text-green-900 border-green-200',
@@ -512,7 +512,7 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
                   {!readOnly && (
                     <td className="px-3 py-2">
                       <button type="button"
-                        className="text-xs text-blue-600 hover:underline"
+                        className="text-xs text-[oklch(0.46_0.16_55)] hover:underline"
                         onClick={e => { e.stopPropagation(); setSelected(row); }}
                       >
                         Manage
@@ -679,9 +679,9 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
                 <p className="text-xs font-semibold text-violet-900 mb-1.5">Floor flags</p>
                 <div className="flex flex-wrap gap-1.5">
                   {!!selected.floor_ptw_required && <span className="px-2 py-0.5 rounded text-[10px] bg-violet-100 text-violet-800">PTW required (W64)</span>}
-                  {!!selected.floor_ie_review_required && <span className="px-2 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700">IE review required</span>}
+                  {!!selected.floor_ie_review_required && <span className="px-2 py-0.5 rounded text-[10px] bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]">IE review required</span>}
                   {!!selected.floor_regulatory_notification && <span className="px-2 py-0.5 rounded text-[10px] bg-red-100 text-red-700">Regulatory notification</span>}
-                  {!!selected.floor_lender_notification && <span className="px-2 py-0.5 rounded text-[10px] bg-indigo-100 text-indigo-700">Lender notification</span>}
+                  {!!selected.floor_lender_notification && <span className="px-2 py-0.5 rounded text-[10px] bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]">Lender notification</span>}
                   {!!selected.floor_third_party_inspection && <span className="px-2 py-0.5 rounded text-[10px] bg-teal-100 text-teal-700">Third-party inspection</span>}
                 </div>
               </div>
@@ -692,11 +692,11 @@ export default function IppMethodStatementTab({ readOnly = false }: Props) {
               <div className="mb-4">
                 <p className="text-xs text-[#6b7685] mb-1">Cross-references</p>
                 <div className="flex flex-wrap gap-2">
-                  {selected.ptw_ref && <span className="text-xs text-blue-600">PTW: {selected.ptw_ref}</span>}
-                  {selected.ncr_ref && <span className="text-xs text-blue-600">NCR: {selected.ncr_ref}</span>}
-                  {selected.hse_incident_ref && <span className="text-xs text-blue-600">HSE: {selected.hse_incident_ref}</span>}
-                  {selected.work_order_ref && <span className="text-xs text-blue-600">WO: {selected.work_order_ref}</span>}
-                  {selected.risk_ref && <span className="text-xs text-blue-600">Risk: {selected.risk_ref}</span>}
+                  {selected.ptw_ref && <span className="text-xs text-[oklch(0.46_0.16_55)]">PTW: {selected.ptw_ref}</span>}
+                  {selected.ncr_ref && <span className="text-xs text-[oklch(0.46_0.16_55)]">NCR: {selected.ncr_ref}</span>}
+                  {selected.hse_incident_ref && <span className="text-xs text-[oklch(0.46_0.16_55)]">HSE: {selected.hse_incident_ref}</span>}
+                  {selected.work_order_ref && <span className="text-xs text-[oklch(0.46_0.16_55)]">WO: {selected.work_order_ref}</span>}
+                  {selected.risk_ref && <span className="text-xs text-[oklch(0.46_0.16_55)]">Risk: {selected.risk_ref}</span>}
                 </div>
               </div>
             )}

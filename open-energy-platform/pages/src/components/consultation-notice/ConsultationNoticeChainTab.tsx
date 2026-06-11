@@ -32,6 +32,20 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'drafted' | 'published' | 'open_for_comment' | 'comment_period_closed'
@@ -39,12 +53,11 @@ type ChainStatus =
   | 'adopted' | 'on_hold' | 'withdrawn' | 'cancelled';
 
 type Tier = 'minor' | 'standard' | 'material' | 'landmark';
-
 type Kind = 'rulemaking' | 'methodology' | 'licence_condition' | 'code_amendment' | 'policy' | 'rates_decision';
-
 type Klass = 'binding' | 'guidance' | 'consultative';
 
 interface NoticeRow {
+  [key: string]: unknown;
   id: string;
   notice_number: string;
   notice_title: string;
@@ -132,19 +145,6 @@ interface NoticeRow {
   predicted_consultation_days_live?: number;
 }
 
-interface NoticeEvent {
-  id: string;
-  notice_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiSummary {
   total: number;
   open_count: number;
@@ -162,44 +162,16 @@ interface KpiSummary {
   total_affected_parties: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  drafted:               { bg: '#e3e7ec', fg: '#557',    label: 'Drafted' },
-  published:             { bg: '#dbecfb', fg: '#1a3a5c', label: 'Published' },
-  open_for_comment:      { bg: '#dbecfb', fg: '#1a3a5c', label: 'Open for comment' },
-  comment_period_closed: { bg: '#fff4d6', fg: '#a06200', label: 'Comments closed' },
-  hearing_scheduled:     { bg: '#fff4d6', fg: '#a06200', label: 'Hearing scheduled' },
-  hearing_held:          { bg: '#ffe9d6', fg: '#8a4a00', label: 'Hearing held' },
-  analysis:              { bg: '#fff4d6', fg: '#a06200', label: 'Analysis' },
-  response_drafted:      { bg: '#ffe4b5', fg: '#8a4a00', label: 'Response drafted' },
-  adopted:               { bg: '#d4edda', fg: '#155724', label: 'Adopted' },
-  on_hold:               { bg: '#ffe4b5', fg: '#8a4a00', label: 'On hold' },
-  withdrawn:             { bg: '#f3e0e0', fg: '#6b1f1f', label: 'Withdrawn' },
-  cancelled:             { bg: '#f3e0e0', fg: '#6b1f1f', label: 'Cancelled' },
-};
+const ALL_STATES = [
+  'drafted', 'published', 'open_for_comment', 'comment_period_closed',
+  'analysis', 'response_drafted', 'adopted',
+] as const;
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor (<50)' },
-  standard: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard (<500)' },
-  material: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Material (<5000)' },
-  landmark: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Landmark (≥5000)' },
-};
+const BRANCH_STATES = [
+  'hearing_scheduled', 'hearing_held', 'on_hold', 'withdrawn', 'cancelled',
+] as const;
 
-const KIND_LABEL: Record<Kind, string> = {
-  rulemaking:        'Rulemaking',
-  methodology:       'Methodology',
-  licence_condition: 'Licence condition',
-  code_amendment:    'Code amendment',
-  policy:            'Policy',
-  rates_decision:    'Rates decision',
-};
-
-const CLASS_LABEL: Record<Klass, string> = {
-  binding:      'Binding',
-  guidance:     'Guidance',
-  consultative: 'Consultative',
-};
-
-const FILTERS: Array<{ key: string; label: string }> = [
+const FILTERS = [
   { key: 'active',                label: 'Active' },
   { key: 'all',                   label: 'All' },
   { key: 'minor',                 label: 'Minor' },
@@ -219,57 +191,26 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'withdrawn',             label: 'Withdrawn' },
 ];
 
-type ActionKind =
-  | 'publish-notice' | 'open-comment-period' | 'extend-comment-period'
-  | 'close-comment-period' | 'reopen-for-comment' | 'schedule-hearing'
-  | 'hold-hearing' | 'begin-analysis' | 'draft-response' | 'adopt-decision'
-  | 'place-on-hold' | 'resume' | 'withdraw-notice' | 'cancel';
-
-const PRIMARY_ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  drafted:               'publish-notice',
-  published:             'open-comment-period',
-  open_for_comment:      'close-comment-period',
-  comment_period_closed: 'begin-analysis',
-  hearing_scheduled:     'hold-hearing',
-  hearing_held:          'begin-analysis',
-  analysis:              'draft-response',
-  response_drafted:      'adopt-decision',
-  on_hold:               'resume',
-  adopted:               null,
-  withdrawn:             null,
-  cancelled:             null,
-};
-
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'publish-notice':        'Publish notice (secretariat)',
-  'open-comment-period':   'Open comment period (secretariat)',
-  'extend-comment-period': 'Extend comment period (secretariat)',
-  'close-comment-period':  'Close comment period (secretariat)',
-  'reopen-for-comment':    'Reopen for comment (secretariat)',
-  'schedule-hearing':      'Schedule hearing (presiding member)',
-  'hold-hearing':          'Record hearing held (presiding member)',
-  'begin-analysis':        'Begin analysis (panel)',
-  'draft-response':        'Draft consolidated response (panel)',
-  'adopt-decision':        'Adopt decision (Council)',
-  'place-on-hold':         'Place on hold (legal review)',
-  'resume':                'Resume after hold',
-  'withdraw-notice':       'Withdraw notice (regulator)',
-  'cancel':                'Cancel (admin)',
-};
-
 const TERMINAL_STATES: ChainStatus[] = ['adopted', 'withdrawn', 'cancelled'];
 
-function fmtMinutes(m: number | null | undefined): string {
-  if (m === null || m === undefined) return '—';
-  if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
-  if (Math.abs(m) >= 60) return `${Math.round(m / 60)}h`;
-  return `${m}m`;
-}
+const KIND_LABEL: Record<Kind, string> = {
+  rulemaking:        'Rulemaking',
+  methodology:       'Methodology',
+  licence_condition: 'Licence condition',
+  code_amendment:    'Code amendment',
+  policy:            'Policy',
+  rates_decision:    'Rates decision',
+};
+
+const CLASS_LABEL: Record<Klass, string> = {
+  binding:      'Binding',
+  guidance:     'Guidance',
+  consultative: 'Consultative',
+};
 
 function fmtDate(s: string | null): string {
   if (!s) return '—';
-  const d = new Date(s);
-  return d.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+  return new Date(s).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function fmtCount(n: number | null | undefined): string {
@@ -278,14 +219,317 @@ function fmtCount(n: number | null | undefined): string {
   return String(n);
 }
 
+function getActions(row: NoticeRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
+  const terminal = TERMINAL_STATES.includes(s);
+
+  if (s === 'drafted') {
+    actions.push({
+      key: 'publish-notice',
+      label: 'Publish notice (secretariat)',
+      tone: 'primary',
+      fields: [
+        { key: 'publish_basis', label: 'Publish basis — notice gazetted ahead of comment period', type: 'textarea', required: true },
+        { key: 'gazette_number', label: 'Gazette number (e.g. GG-49801)', type: 'text', required: false },
+      ],
+      cascadeTo: ['regulator', 'admin'],
+    });
+    actions.push({
+      key: 'cancel',
+      label: 'Cancel (admin)',
+      tone: 'danger',
+      fields: [
+        { key: 'cancellation_basis', label: 'Cancellation basis — admin cancel (drafting error / duplicate)', type: 'textarea', required: true },
+        { key: 'reason_code', label: 'Reason code (e.g. drafting_error / duplicate)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (s === 'published') {
+    actions.push({
+      key: 'open-comment-period',
+      label: 'Open comment period (secretariat)',
+      tone: 'primary',
+      fields: [
+        { key: 'open_basis', label: 'Open basis — opening the public comment period', type: 'textarea', required: true },
+        { key: 'comment_period_start_at', label: 'Comment period start (ISO datetime, blank = now)', type: 'text', required: false },
+        { key: 'comment_period_end_at', label: 'Comment period end (ISO datetime, blank = +statutory)', type: 'text', required: false },
+      ],
+      cascadeTo: ['regulator', 'admin'],
+    });
+    actions.push({
+      key: 'cancel',
+      label: 'Cancel (admin)',
+      tone: 'danger',
+      fields: [
+        { key: 'cancellation_basis', label: 'Cancellation basis — admin cancel (drafting error / duplicate)', type: 'textarea', required: true },
+        { key: 'reason_code', label: 'Reason code (e.g. drafting_error / duplicate)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (s === 'open_for_comment') {
+    actions.push({
+      key: 'close-comment-period',
+      label: 'Close comment period (secretariat)',
+      tone: 'primary',
+      fields: [
+        { key: 'close_basis', label: 'Close basis — comment period closed', type: 'textarea', required: true },
+        { key: 'comments_received_count', label: 'Comments received count (total)', type: 'text', required: false },
+      ],
+      cascadeTo: ['regulator', 'admin'],
+    });
+    actions.push({
+      key: 'extend-comment-period',
+      label: 'Extend comment period (secretariat)',
+      tone: 'warn',
+      fields: [
+        { key: 'extension_basis', label: 'Extension basis — extending the open comment period', type: 'textarea', required: true },
+        { key: 'comment_period_end_at', label: 'New comment period end (ISO datetime)', type: 'text', required: false },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'comment_period_closed') {
+    actions.push({
+      key: 'begin-analysis',
+      label: 'Begin analysis (panel)',
+      tone: 'primary',
+      fields: [
+        { key: 'analysis_basis', label: 'Analysis basis — secretariat begins consolidated analysis of submissions', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['admin'],
+    });
+    actions.push({
+      key: 'reopen-for-comment',
+      label: 'Reopen for comment (secretariat)',
+      tone: 'warn',
+      fields: [
+        { key: 'open_basis', label: 'Reopen basis — comment period reopened (e.g. new material received)', type: 'textarea', required: true },
+        { key: 'comment_period_end_at', label: 'New comment period end (ISO datetime)', type: 'text', required: false },
+      ],
+    });
+    actions.push({
+      key: 'schedule-hearing',
+      label: 'Schedule hearing (presiding member)',
+      tone: 'ghost',
+      fields: [
+        { key: 'hearing_basis', label: 'Hearing-schedule basis', type: 'textarea', required: true },
+        { key: 'hearing_scheduled_at', label: 'Hearing date+time (ISO datetime)', type: 'text', required: false },
+        { key: 'hearing_venue', label: 'Hearing venue', type: 'text', required: false },
+        { key: 'presiding_member_name', label: 'Presiding member', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (s === 'hearing_scheduled') {
+    actions.push({
+      key: 'hold-hearing',
+      label: 'Record hearing held (presiding member)',
+      tone: 'primary',
+      fields: [
+        { key: 'hearing_basis', label: 'Hearing-held basis — record the public hearing held', type: 'textarea', required: true },
+        { key: 'hearing_held_at', label: 'Hearing held at (ISO datetime, blank = now)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (s === 'hearing_held') {
+    actions.push({
+      key: 'begin-analysis',
+      label: 'Begin analysis (panel)',
+      tone: 'primary',
+      fields: [
+        { key: 'analysis_basis', label: 'Analysis basis — secretariat begins consolidated analysis of submissions', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['admin'],
+    });
+  }
+
+  if (s === 'analysis') {
+    actions.push({
+      key: 'draft-response',
+      label: 'Draft consolidated response (panel)',
+      tone: 'primary',
+      fields: [
+        { key: 'response_basis', label: 'Response basis — consolidated response with reasons drafted', type: 'textarea', required: true },
+        { key: 'response_document_ref', label: 'Response document reference (e.g. NRD-2026-007-RD)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (s === 'response_drafted') {
+    actions.push({
+      key: 'adopt-decision',
+      label: 'Adopt decision (Council)',
+      tone: 'primary',
+      fields: [
+        { key: 'adoption_basis', label: 'Adoption basis — Council adopts the decision', type: 'textarea', required: true },
+        { key: 'adopted_decision_ref', label: 'Adopted decision reference (e.g. NRD-2026-007-DEC)', type: 'text', required: false },
+        { key: 'decision_reasons', label: 'Decision reasons (short summary)', type: 'textarea', required: false },
+      ],
+      cascadeTo: ['regulator', 'admin'],
+    });
+  }
+
+  if (s === 'on_hold') {
+    actions.push({
+      key: 'resume',
+      label: 'Resume after hold',
+      tone: 'primary',
+      fields: [
+        { key: 'analysis_basis', label: 'Resume basis — exit hold, return to analysis', type: 'textarea', required: true },
+      ],
+    });
+  }
+
+  // Cross-state secondary actions
+  if (!terminal && s !== 'on_hold' && s !== 'drafted') {
+    actions.push({
+      key: 'place-on-hold',
+      label: 'Place on hold (legal review)',
+      tone: 'warn',
+      fields: [
+        { key: 'hold_basis', label: 'Hold basis — pause the consultation (legal review or material change)', type: 'textarea', required: true },
+        { key: 'reason_code', label: 'Reason code (e.g. legal_review)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (!terminal && s !== 'drafted') {
+    actions.push({
+      key: 'withdraw-notice',
+      label: 'Withdraw notice (regulator)',
+      tone: 'danger',
+      fields: [
+        { key: 'withdrawal_basis', label: 'Withdrawal basis — NERSA pulls the consultation (TRANSPARENCY — always reportable)', type: 'textarea', required: true },
+        { key: 'reason_code', label: 'Reason code (e.g. duplicate / superseded / public_interest)', type: 'text', required: false },
+      ],
+      cascadeTo: ['regulator', 'admin'],
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: NoticeRow): React.ReactNode {
+  const balPct = Math.round((row.balance_index_live ?? 0) * 100);
+  const repPct = Math.round((row.representativeness_index_live ?? 0) * 100);
+  const risk = row.judicial_review_risk_score_live ?? row.judicial_review_risk_score ?? 0;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Live consultation-health battery */}
+      <div>
+        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 8 }}>
+          Live consultation-health battery
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+          <DetailPair label="Balance index" value={`${balPct}%`} />
+          <DetailPair label="Representativeness" value={`${repPct}%`} />
+          <DetailPair label="Coverage" value={`${row.coverage_completeness_pct_live ?? 0}%`} />
+          <DetailPair label="Judicial-review risk" value={`${risk} / 100`} />
+          <DetailPair label="Procedural validity" value={row.procedural_validity_flag_live ? 'OK' : 'AT-RISK'} />
+          <DetailPair label="Days in comment period" value={row.days_in_comment_period_live != null ? `${row.days_in_comment_period_live}d` : '—'} />
+          <DetailPair label="Days until close" value={row.days_until_deadline_live != null ? `${row.days_until_deadline_live}d` : '—'} />
+          <DetailPair label="Predicted total" value={`${row.predicted_consultation_days_live ?? 0}d`} />
+        </div>
+      </div>
+
+      {/* Stakeholder mix */}
+      <div>
+        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 8 }}>
+          Stakeholder mix
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+          <DetailPair label="Industry" value={fmtCount(row.industry_comments_count)} />
+          <DetailPair label="Consumer" value={fmtCount(row.consumer_comments_count)} />
+          <DetailPair label="Civil society" value={fmtCount(row.civil_society_comments_count)} />
+          <DetailPair label="IPP" value={fmtCount(row.ipp_comments_count)} />
+          <DetailPair label="Government" value={fmtCount(row.government_comments_count)} />
+          <DetailPair label="Provinces" value={`${row.provinces_represented} / 9`} />
+          <DetailPair label="Sectors" value={`${row.sectors_represented} / 8`} />
+          <DetailPair label="Questions" value={`${row.questions_answered} / ${row.questions_total}`} />
+        </div>
+      </div>
+
+      {/* Consultation info */}
+      <div>
+        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 8 }}>
+          Notice details
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+          <DetailPair label="Notice #" value={row.notice_number} />
+          <DetailPair label="Kind" value={KIND_LABEL[row.consultation_kind]} />
+          <DetailPair label="Class" value={CLASS_LABEL[row.consultation_class]} />
+          <DetailPair label="Tier" value={row.consultation_tier} />
+          <DetailPair label="Gazette" value={row.gazette_number ?? '—'} />
+          <DetailPair label="Gazette published" value={fmtDate(row.gazette_publication_at)} />
+          <DetailPair label="ERA section" value={row.era_section ?? '—'} />
+          <DetailPair label="Statutory min days" value={row.comment_period_minimum_days != null ? `${row.comment_period_minimum_days}d` : '—'} />
+          <DetailPair label="Comment period start" value={fmtDate(row.comment_period_start_at)} />
+          <DetailPair label="Comment period end" value={fmtDate(row.comment_period_end_at)} />
+          <DetailPair label="Comments received" value={fmtCount(row.comments_received_count_live ?? row.comments_received_count)} />
+          <DetailPair label="Extensions" value={String(row.extension_count_live ?? row.extension_count)} />
+          <DetailPair label="Affected parties est." value={row.affected_parties_estimate.toLocaleString('en-ZA')} />
+          <DetailPair label="Hearing scheduled for" value={fmtDate(row.hearing_scheduled_at)} />
+          <DetailPair label="Hearing venue" value={row.hearing_venue ?? '—'} />
+          <DetailPair label="Hearing held" value={fmtDate(row.hearing_held_at)} />
+          <DetailPair label="Presiding member" value={row.presiding_member_name ?? '—'} />
+          <DetailPair label="Response doc" value={row.response_document_ref ?? '—'} />
+          <DetailPair label="Adopted decision" value={row.adopted_decision_ref ?? '—'} />
+          <DetailPair label="Drafted at" value={fmtDate(row.drafted_at)} />
+          <DetailPair label="Published at" value={fmtDate(row.published_at)} />
+          <DetailPair label="Opened at" value={fmtDate(row.open_for_comment_at)} />
+          <DetailPair label="Closed at" value={fmtDate(row.comment_period_closed_at)} />
+          <DetailPair label="Analysis at" value={fmtDate(row.analysis_at)} />
+          <DetailPair label="Response drafted" value={fmtDate(row.response_drafted_at)} />
+          <DetailPair label="Adopted at" value={fmtDate(row.adopted_at)} />
+          <DetailPair label="On hold at" value={fmtDate(row.on_hold_at)} />
+          <DetailPair label="Withdrawn at" value={fmtDate(row.withdrawn_at)} />
+          <DetailPair label="Cancelled at" value={fmtDate(row.cancelled_at)} />
+          <DetailPair label="Reportable" value={row.is_reportable_flag ? 'Yes' : 'No'} />
+          <DetailPair label="Binding class" value={row.is_binding_class_flag ? 'Yes' : 'No'} />
+          <DetailPair label="Reason code" value={row.reason_code ?? '—'} />
+          <DetailPair label="Escalation level" value={row.escalation_level > 0 ? `Level ${row.escalation_level}` : '—'} />
+        </div>
+      </div>
+
+      {/* Basis blocks */}
+      {[
+        { label: 'Consultation summary', text: row.consultation_summary },
+        { label: 'Decision reasons', text: row.decision_reasons },
+        { label: 'Draft basis', text: row.draft_basis },
+        { label: 'Publish basis', text: row.publish_basis },
+        { label: 'Open basis', text: row.open_basis },
+        { label: 'Extension basis', text: row.extension_basis },
+        { label: 'Close basis', text: row.close_basis },
+        { label: 'Hearing basis', text: row.hearing_basis },
+        { label: 'Analysis basis', text: row.analysis_basis },
+        { label: 'Response basis', text: row.response_basis },
+        { label: 'Adoption basis', text: row.adoption_basis },
+        { label: 'Hold basis', text: row.hold_basis },
+        { label: 'Withdrawal basis', text: row.withdrawal_basis },
+        { label: 'Cancellation basis', text: row.cancellation_basis },
+      ].filter(b => b.text).map(b => (
+        <div key={b.label}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 4 }}>{b.label}</div>
+          <div style={{ fontSize: 12, color: TX1, whiteSpace: 'pre-wrap', background: BG2, borderRadius: 4, padding: '6px 8px' }}>{b.text}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ConsultationNoticeChainTab() {
   const [rows, setRows] = useState<NoticeRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<NoticeRow | null>(null);
-  const [events, setEvents] = useState<NoticeEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -295,7 +539,7 @@ export function ConsultationNoticeChainTab() {
       setRows(res.data?.data?.items || []);
       const d = res.data?.data;
       if (d) {
-        setKpis({
+        setSummary({
           total: d.total, open_count: d.open_count, adopted_count: d.adopted_count,
           on_hold_count: d.on_hold_count, withdrawn_count: d.withdrawn_count,
           cancelled_count: d.cancelled_count, breached: d.breached,
@@ -315,25 +559,30 @@ export function ConsultationNoticeChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
+    await api.post(`/consultation-notice/chain/${rowId}/${key}`, values);
+    await load();
+  }, [load]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
     try {
-      const res = await api.get<{ data: { case: NoticeRow; events: NoticeEvent[] } }>(
+      const res = await api.get<{ data: { case: NoticeRow; events: ChainEvent[] } }>(
         `/consultation-notice/chain/${id}`,
       );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load consultation history');
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events || [] }));
+    } catch {
+      // silent — ChainCard shows empty events
     }
-  }, []);
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (filter === 'all')        return true;
       if (filter === 'active')     return !TERMINAL_STATES.includes(r.chain_status);
-      if (filter === 'breached')   return r.sla_breached;
-      if (filter === 'reportable') return r.is_reportable_flag;
-      if (filter === 'binding')    return r.is_binding_class_flag;
+      if (filter === 'breached')   return !!r.sla_breached;
+      if (filter === 'reportable') return !!r.is_reportable_flag;
+      if (filter === 'binding')    return !!r.is_binding_class_flag;
       if (filter === 'minor' || filter === 'standard' || filter === 'material' || filter === 'landmark') {
         return r.consultation_tier === filter;
       }
@@ -341,153 +590,52 @@ export function ConsultationNoticeChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: NoticeRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'publish-notice') {
-        const basis = window.prompt('Publish basis — notice gazetted ahead of comment period:');
-        if (!basis) return;
-        const gz = window.prompt('Gazette number (e.g. GG-49801):', row.gazette_number || '') || '';
-        body = { publish_basis: basis };
-        if (gz) body.gazette_number = gz;
-      } else if (action === 'open-comment-period') {
-        const basis = window.prompt('Open basis — opening the public comment period:');
-        if (!basis) return;
-        const start = window.prompt('Comment period start (ISO datetime, blank = now):') || '';
-        const end = window.prompt('Comment period end (ISO datetime, blank = +statutory):') || '';
-        body = { open_basis: basis };
-        if (start) body.comment_period_start_at = start;
-        if (end) body.comment_period_end_at = end;
-      } else if (action === 'extend-comment-period') {
-        const basis = window.prompt('Extension basis — extending the open comment period:');
-        if (!basis) return;
-        const newEnd = window.prompt('New comment period end (ISO datetime):') || '';
-        body = { extension_basis: basis };
-        if (newEnd) body.comment_period_end_at = newEnd;
-      } else if (action === 'close-comment-period') {
-        const basis = window.prompt('Close basis — comment period closed:');
-        if (!basis) return;
-        const received = window.prompt('Comments received count (total):', String(row.comments_received_count || 0));
-        body = { close_basis: basis };
-        if (received && !Number.isNaN(Number(received))) body.comments_received_count = Number(received);
-      } else if (action === 'reopen-for-comment') {
-        const basis = window.prompt('Reopen basis — comment period reopened (e.g. new material received):');
-        if (!basis) return;
-        const newEnd = window.prompt('New comment period end (ISO datetime):') || '';
-        body = { open_basis: basis };
-        if (newEnd) body.comment_period_end_at = newEnd;
-      } else if (action === 'schedule-hearing') {
-        const basis = window.prompt('Hearing-schedule basis:');
-        if (!basis) return;
-        const at = window.prompt('Hearing date+time (ISO datetime):') || '';
-        const venue = window.prompt('Hearing venue:', row.hearing_venue || '') || '';
-        const presiding = window.prompt('Presiding member:', row.presiding_member_name || '') || '';
-        body = { hearing_basis: basis };
-        if (at) body.hearing_scheduled_at = at;
-        if (venue) body.hearing_venue = venue;
-        if (presiding) body.presiding_member_name = presiding;
-      } else if (action === 'hold-hearing') {
-        const basis = window.prompt('Hearing-held basis — record the public hearing held:');
-        if (!basis) return;
-        const at = window.prompt('Hearing held at (ISO datetime, blank = now):') || '';
-        body = { hearing_basis: basis };
-        if (at) body.hearing_held_at = at;
-      } else if (action === 'begin-analysis') {
-        const basis = window.prompt('Analysis basis — secretariat begins consolidated analysis of submissions:');
-        if (!basis) return;
-        body = { analysis_basis: basis };
-      } else if (action === 'draft-response') {
-        const basis = window.prompt('Response basis — consolidated response with reasons drafted:');
-        if (!basis) return;
-        const ref = window.prompt('Response document reference (e.g. NRD-2026-007-RD):', row.response_document_ref || '') || '';
-        body = { response_basis: basis };
-        if (ref) body.response_document_ref = ref;
-      } else if (action === 'adopt-decision') {
-        const basis = window.prompt('Adoption basis — Council adopts the decision:');
-        if (!basis) return;
-        const ref = window.prompt('Adopted decision reference (e.g. NRD-2026-007-DEC):', row.adopted_decision_ref || '') || '';
-        const reasons = window.prompt('Decision reasons (short summary):', row.decision_reasons || '') || '';
-        body = { adoption_basis: basis };
-        if (ref) body.adopted_decision_ref = ref;
-        if (reasons) body.decision_reasons = reasons;
-      } else if (action === 'place-on-hold') {
-        const basis = window.prompt('Hold basis — pause the consultation (legal review or material change):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. legal_review):', 'legal_review') || '';
-        body = { hold_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'resume') {
-        const basis = window.prompt('Resume basis — exit hold, return to analysis:');
-        if (!basis) return;
-        body = { analysis_basis: basis };
-      } else if (action === 'withdraw-notice') {
-        const basis = window.prompt('Withdrawal basis — NERSA pulls the consultation (TRANSPARENCY — always reportable):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. duplicate / superseded / public_interest):', 'superseded') || '';
-        body = { withdrawal_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'cancel') {
-        const basis = window.prompt('Cancellation basis — admin cancel (drafting error / duplicate):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. drafting_error / duplicate):', 'drafting_error') || '';
-        body = { cancellation_basis: basis };
-        if (reason) body.reason_code = reason;
-      }
-      await api.post(`/consultation-notice/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Consultation notice &amp; public-comment period</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-stage NERSA public-engagement chain (ERA 4/2006 s.10 · PAJA 3/2000 s.4 · NERSA Rules of Procedure) ·
-            drafted → published → open for comment → comments closed → analysis → response drafted → adopted. Optional
-            hearing branch (comments closed → hearing scheduled → hearing held → analysis), an on-hold pause for legal
-            review (resume → analysis), and withdraw / cancel terminals. This is the DUE-PROCESS engine that PRECEDES
-            every NERSA disposition (W31) and every tariff determination (W43). INVERTED SLA: the larger the
-            consultation, the longer every window (landmark policy reform gets 60+ days; minor reporting rule gets the
-            shortest). Live consultation-health battery on every record (balance index across stakeholder buckets,
-            representativeness across provinces/sectors, coverage of questions, statutory-period validity flag,
-            judicial-review risk score) — beats ACER/FERC/Ofgem/AER/BEREC linear consultation portals. The W83 SIGNATURE
-            is TRANSPARENCY: withdraw_notice crosses regulator EVERY tier (pulling a published consultation is always
-            notifiable to PAJA/Council), adopt_decision crosses EVERY tier when binding-class else material+landmark
-            only, extend_comment_period + sla_breached cross material+landmark only.
-          </p>
-        </div>
+    <div style={{ padding: '20px', background: BG, minHeight: '100vh' }}>
+      <header style={{ marginBottom: 20 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: TX1, margin: 0 }}>
+          Consultation notice &amp; public-comment period
+        </h2>
+        <p style={{ fontSize: 12, color: TX2, marginTop: 4, lineHeight: 1.5 }}>
+          12-stage NERSA public-engagement chain (ERA 4/2006 s.10 · PAJA 3/2000 s.4 · NERSA Rules of Procedure).
+          INVERTED SLA: landmark gets longer windows. Live consultation-health battery beats ACER/FERC/Ofgem/AER/BEREC.
+          SIGNATURE: withdraw_notice crosses regulator every tier; adopt_decision crosses every tier when binding.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="Adopted" value={kpis?.adopted_count ?? 0} tone="ok" />
-        <Kpi label="On hold" value={kpis?.on_hold_count ?? 0} tone={(kpis?.on_hold_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Withdrawn" value={kpis?.withdrawn_count ?? 0} tone={(kpis?.withdrawn_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Binding" value={kpis?.binding_count ?? 0} />
-        <Kpi label="Comments" value={fmtCount(kpis?.total_comments ?? 0)} />
-        <Kpi label="Extensions" value={kpis?.total_extensions ?? 0} />
-        <Kpi label="Judicial-risk≥50" value={kpis?.high_judicial_risk_count ?? 0} tone={(kpis?.high_judicial_risk_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Procedurally invalid" value={kpis?.procedurally_invalid_count ?? 0} tone={(kpis?.procedurally_invalid_count ?? 0) > 0 ? 'bad' : 'ok'} />
+      {/* KPI strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10, marginBottom: 16 }}>
+        <KpiTile label="Total" value={summary?.total ?? rows.length} />
+        <KpiTile label="Open" value={summary?.open_count ?? 0} />
+        <KpiTile label="Adopted" value={summary?.adopted_count ?? 0} tone="ok" />
+        <KpiTile label="On hold" value={summary?.on_hold_count ?? 0} tone={(summary?.on_hold_count ?? 0) > 0 ? 'warn' : undefined} />
+        <KpiTile label="Withdrawn" value={summary?.withdrawn_count ?? 0} tone={(summary?.withdrawn_count ?? 0) > 0 ? 'warn' : undefined} />
+        <KpiTile label="SLA breached" value={summary?.breached ?? 0} tone={(summary?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Reportable" value={summary?.reportable_total ?? 0} tone={(summary?.reportable_total ?? 0) > 0 ? 'warn' : undefined} />
+        <KpiTile label="Binding" value={summary?.binding_count ?? 0} />
+        <KpiTile label="Comments" value={fmtCount(summary?.total_comments ?? 0)} />
+        <KpiTile label="Extensions" value={summary?.total_extensions ?? 0} />
+        <KpiTile label="Judicial-risk≥50" value={summary?.high_judicial_risk_count ?? 0} tone={(summary?.high_judicial_risk_count ?? 0) > 0 ? 'warn' : undefined} />
+        <KpiTile label="Procedurally invalid" value={summary?.procedurally_invalid_count ?? 0} tone={(summary?.procedurally_invalid_count ?? 0) > 0 ? 'bad' : undefined} />
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      {/* Filter pills */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
         {FILTERS.map((f) => (
-          <button type="button"
+          <button
             key={f.key}
+            type="button"
             onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
+            style={{
+              padding: '3px 10px',
+              borderRadius: 4,
+              fontSize: 11,
+              fontWeight: 500,
+              cursor: 'pointer',
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+              background: filter === f.key ? ACC : BG1,
+              color: filter === f.key ? '#fff' : TX2,
+            }}
           >
             {f.label}
           </button>
@@ -495,328 +643,70 @@ export function ConsultationNoticeChainTab() {
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Notice #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Title</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Kind</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Class</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Comments</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Balance</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Risk</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.consultation_tier];
-                const balPct = Math.round((r.balance_index_live ?? 0) * 100);
-                const risk = r.judicial_review_risk_score_live ?? 0;
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.notice_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to NERSA Council">●</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[220px] truncate" title={r.notice_title}>
-                      {r.notice_title}
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{KIND_LABEL[r.consultation_kind]}</td>
-                    <td className="px-3 py-2 text-[#4a5568]">
-                      {CLASS_LABEL[r.consultation_class]}
-                      {r.is_binding_class_flag && <span className="ml-1 text-[#9b1f1f]" title="Binding determination">⚖</span>}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtCount(r.comments_received_count_live ?? r.comments_received_count)}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${balPct < 40 ? 'text-[#a06200]' : 'text-[#155724]'}`}>{balPct}%</td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${risk >= 50 ? 'text-[#9b1f1f] font-medium' : 'text-[#4a5568]'}`}>{risk}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={10} className="px-3 py-6 text-center text-[#4a5568]">No consultations match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 4, background: 'oklch(0.97 0.04 20)', border: `1px solid ${BAD}`, color: BAD, fontSize: 12 }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div style={{ padding: '24px', textAlign: 'center', color: TX3, fontSize: 13 }}>Loading...</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {filtered.length === 0 && (
+            <div style={{ padding: '24px', textAlign: 'center', color: TX3, fontSize: 13 }}>No consultations match.</div>
+          )}
+          {filtered.map((row) => (
+            <ChainCard
+              key={row.id}
+              item={{
+                ...row,
+                case_number: row.notice_number,
+              }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={row.notice_title}
+              meta={
+                <span style={{ fontSize: 11, color: TX2 }}>
+                  {KIND_LABEL[row.consultation_kind]} · {CLASS_LABEL[row.consultation_class]} · {row.consultation_tier}
+                  {row.is_binding_class_flag ? ' · binding' : ''}
+                  {row.era_section ? ` · ${row.era_section}` : ''}
+                  {' · '}comments {fmtCount(row.comments_received_count_live ?? row.comments_received_count)}
+                  {' · '}balance {Math.round((row.balance_index_live ?? 0) * 100)}%
+                  {' · '}judicial risk {row.judicial_review_risk_score_live ?? row.judicial_review_risk_score}
+                  {row.is_reportable_flag ? ' · reportable' : ''}
+                </span>
+              }
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              onExpand={handleExpand}
+              events={expandedEvents[row.id]}
+              detail={renderDetail(row)}
+              cascadeTo={['regulator', 'admin']}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div style={{ borderRadius: 6, border: `1px solid ${BORDER}`, background: BG1, padding: '8px 12px' }}>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color, fontFamily: MONO, marginTop: 2 }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: NoticeRow;
-  events: NoticeEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: NoticeRow) => void;
-}) {
-  const primary = PRIMARY_ACTION_FOR_STATE[row.chain_status];
-  const canExtend = row.chain_status === 'open_for_comment';
-  const canReopen = row.chain_status === 'comment_period_closed';
-  const canScheduleHearing = row.chain_status === 'comment_period_closed';
-  const canHold = !TERMINAL_STATES.includes(row.chain_status) && row.chain_status !== 'on_hold' && row.chain_status !== 'drafted';
-  const canWithdraw = !TERMINAL_STATES.includes(row.chain_status) && row.chain_status !== 'drafted';
-  const canCancel = row.chain_status === 'drafted' || row.chain_status === 'published';
-  const balPct = Math.round((row.balance_index_live ?? 0) * 100);
-  const repPct = Math.round((row.representativeness_index_live ?? 0) * 100);
-  const risk = row.judicial_review_risk_score_live ?? 0;
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[760px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.notice_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.notice_title}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.consultation_tier].label} · {KIND_LABEL[row.consultation_kind]} · {CLASS_LABEL[row.consultation_class]}
-                {row.is_binding_class_flag ? ' · binding' : ''}
-                {row.era_section ? ` · ${row.era_section}` : ''}
-              </div>
-              <div className="mt-1 text-[11px] text-[#4a5568]">
-                Affected parties est. {row.affected_parties_estimate.toLocaleString('en-ZA')} ·
-                comments received {row.comments_received_count_live ?? row.comments_received_count} ·
-                extensions {row.extension_count_live ?? row.extension_count}
-                {row.escalation_level > 0 ? ` · escalation lvl ${row.escalation_level}` : ''}
-              </div>
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Live consultation-health battery</div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px]">
-            <Pair label="Balance index" value={`${balPct}%`} />
-            <Pair label="Representativeness" value={`${repPct}%`} />
-            <Pair label="Coverage" value={`${row.coverage_completeness_pct_live ?? 0}%`} />
-            <Pair label="Judicial-review risk" value={`${risk} / 100`} />
-            <Pair label="Procedural validity" value={row.procedural_validity_flag_live ? 'OK' : 'AT-RISK'} />
-            <Pair label="Days in comment period" value={row.days_in_comment_period_live != null ? `${row.days_in_comment_period_live}d` : '—'} />
-            <Pair label="Days until close" value={row.days_until_deadline_live != null ? `${row.days_until_deadline_live}d` : '—'} />
-            <Pair label="Predicted total" value={`${row.predicted_consultation_days_live ?? 0}d`} />
-          </div>
-        </section>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Stakeholder mix</div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-[12px]">
-            <Pair label="Industry" value={fmtCount(row.industry_comments_count)} />
-            <Pair label="Consumer" value={fmtCount(row.consumer_comments_count)} />
-            <Pair label="Civil society" value={fmtCount(row.civil_society_comments_count)} />
-            <Pair label="IPP" value={fmtCount(row.ipp_comments_count)} />
-            <Pair label="Government" value={fmtCount(row.government_comments_count)} />
-            <Pair label="Provinces" value={`${row.provinces_represented} / 9`} />
-            <Pair label="Sectors" value={`${row.sectors_represented} / 8`} />
-            <Pair label="Questions" value={`${row.questions_answered} / ${row.questions_total}`} />
-          </div>
-        </section>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Lifecycle</div>
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State" value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Gazette" value={row.gazette_number ?? '—'} />
-            <Pair label="Gazette published" value={fmtDate(row.gazette_publication_at)} />
-            <Pair label="Statutory minimum days" value={row.comment_period_minimum_days != null ? `${row.comment_period_minimum_days}d` : '—'} />
-            <Pair label="Comment period start" value={fmtDate(row.comment_period_start_at)} />
-            <Pair label="Comment period end" value={fmtDate(row.comment_period_end_at)} />
-            <Pair label="Hearing scheduled for" value={fmtDate(row.hearing_scheduled_at)} />
-            <Pair label="Hearing venue" value={row.hearing_venue ?? '—'} />
-            <Pair label="Hearing held" value={fmtDate(row.hearing_held_at)} />
-            <Pair label="Presiding member" value={row.presiding_member_name ?? '—'} />
-            <Pair label="Response doc" value={row.response_document_ref ?? '—'} />
-            <Pair label="Adopted decision" value={row.adopted_decision_ref ?? '—'} />
-            <Pair label="Drafted" value={fmtDate(row.drafted_at)} />
-            <Pair label="Published" value={fmtDate(row.published_at)} />
-            <Pair label="Opened" value={fmtDate(row.open_for_comment_at)} />
-            <Pair label="Closed" value={fmtDate(row.comment_period_closed_at)} />
-            <Pair label="Analysis at" value={fmtDate(row.analysis_at)} />
-            <Pair label="Response drafted" value={fmtDate(row.response_drafted_at)} />
-            <Pair label="Adopted at" value={fmtDate(row.adopted_at)} />
-            <Pair label="On hold at" value={fmtDate(row.on_hold_at)} />
-            <Pair label="Withdrawn at" value={fmtDate(row.withdrawn_at)} />
-            <Pair label="Cancelled at" value={fmtDate(row.cancelled_at)} />
-            <Pair label="SLA deadline" value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status" value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Reportable" value={row.is_reportable_flag ? 'Yes' : 'No'} />
-            <Pair label="Reason code" value={row.reason_code ?? '—'} />
-          </div>
-          {row.consultation_summary && (
-            <BasisBlock label="Consultation summary" tone="#1a3a5c" text={row.consultation_summary} />
-          )}
-          {row.decision_reasons && (
-            <BasisBlock label="Decision reasons" tone="#155724" text={row.decision_reasons} />
-          )}
-          {row.draft_basis && <BasisBlock label="Draft basis" tone="#1a3a5c" text={row.draft_basis} />}
-          {row.publish_basis && <BasisBlock label="Publish basis" tone="#1a3a5c" text={row.publish_basis} />}
-          {row.open_basis && <BasisBlock label="Open basis" tone="#1a3a5c" text={row.open_basis} />}
-          {row.extension_basis && <BasisBlock label="Extension basis" tone="#a06200" text={row.extension_basis} />}
-          {row.close_basis && <BasisBlock label="Close basis" tone="#1a3a5c" text={row.close_basis} />}
-          {row.hearing_basis && <BasisBlock label="Hearing basis" tone="#1a3a5c" text={row.hearing_basis} />}
-          {row.analysis_basis && <BasisBlock label="Analysis basis" tone="#1a3a5c" text={row.analysis_basis} />}
-          {row.response_basis && <BasisBlock label="Response basis" tone="#1a3a5c" text={row.response_basis} />}
-          {row.adoption_basis && <BasisBlock label="Adoption basis" tone="#155724" text={row.adoption_basis} />}
-          {row.hold_basis && <BasisBlock label="Hold basis" tone="#a06200" text={row.hold_basis} />}
-          {row.withdrawal_basis && <BasisBlock label="Withdrawal basis" tone="#9b1f1f" text={row.withdrawal_basis} />}
-          {row.cancellation_basis && <BasisBlock label="Cancellation basis" tone="#6b1f1f" text={row.cancellation_basis} />}
-        </section>
-
-        {(primary || canExtend || canReopen || canScheduleHearing || canHold || canWithdraw || canCancel) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {primary && (
-                <button type="button"
-                  onClick={() => onAct(primary, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[primary]}
-                </button>
-              )}
-              {canExtend && (
-                <button type="button"
-                  onClick={() => onAct('extend-comment-period', row)}
-                  className="rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-orange-700 hover:bg-orange-50"
-                >
-                  {ACTION_LABEL['extend-comment-period']}
-                </button>
-              )}
-              {canReopen && (
-                <button type="button"
-                  onClick={() => onAct('reopen-for-comment', row)}
-                  className="rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-orange-700 hover:bg-orange-50"
-                >
-                  {ACTION_LABEL['reopen-for-comment']}
-                </button>
-              )}
-              {canScheduleHearing && (
-                <button type="button"
-                  onClick={() => onAct('schedule-hearing', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#1a3a5c] hover:bg-[#f3f5f9]"
-                >
-                  {ACTION_LABEL['schedule-hearing']}
-                </button>
-              )}
-              {canHold && (
-                <button type="button"
-                  onClick={() => onAct('place-on-hold', row)}
-                  className="rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-orange-700 hover:bg-orange-50"
-                >
-                  {ACTION_LABEL['place-on-hold']}
-                </button>
-              )}
-              {canWithdraw && (
-                <button type="button"
-                  onClick={() => onAct('withdraw-notice', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['withdraw-notice']}
-                </button>
-              )}
-              {canCancel && (
-                <button type="button"
-                  onClick={() => onAct('cancel', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b1f1f] hover:bg-[#f3e0e0]"
-                >
-                  {ACTION_LABEL['cancel']}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 12, color: TX1, marginTop: 2 }}>{value}</div>
     </div>
   );
 }
+
+export default ConsultationNoticeChainTab;

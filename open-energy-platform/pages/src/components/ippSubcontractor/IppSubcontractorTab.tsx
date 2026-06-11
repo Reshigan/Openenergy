@@ -137,8 +137,8 @@ const TERMINATION_CAUSE_LABEL: Record<string, string> = {
 
 const STATUS_COLOR: Record<SubcontractorStatus, string> = {
   registered:       'bg-[#eef2f7] text-[#2d3748]',
-  pre_qualification:'bg-blue-50 text-blue-700',
-  inducted:         'bg-indigo-100 text-indigo-700',
+  pre_qualification:'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
+  inducted:         'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   mobilized:        'bg-violet-100 text-violet-700',
   performing:       'bg-green-100 text-green-800',
   under_review:     'bg-amber-100 text-amber-700',
@@ -200,7 +200,7 @@ function Flag({ label, title, cls }: { label: string; title: string; cls: string
 
 function KpiCard({ label, value, color }: { label: string; value: string | number; color: string }) {
   const colors: Record<string, string> = {
-    blue: 'bg-blue-50 text-blue-900 border-blue-200',
+    blue: 'bg-[oklch(0.97_0.003_250)] text-[oklch(0.17_0.010_250)] border-[oklch(0.87_0.012_250)]',
     red: 'bg-red-50 text-red-900 border-red-200',
     orange: 'bg-orange-50 text-orange-900 border-orange-200',
     green: 'bg-green-50 text-green-900 border-green-200',
@@ -509,10 +509,10 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
                   <td className="px-3 py-2">
                     <div className="flex gap-1 flex-wrap">
                       {!!row.floor_ohsa_notification && <Flag label="OHSA" title="OHSA notification event — principal contractor liability" cls="bg-red-200 text-red-900" />}
-                      {!!row.floor_lender_escrow_release && <Flag label="ESC" title="Lender escrow release required for final payment" cls="bg-blue-100 text-blue-800" />}
+                      {!!row.floor_lender_escrow_release && <Flag label="ESC" title="Lender escrow release required for final payment" cls="bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]" />}
                       {!!row.floor_reipppp_ed_reporting && <Flag label="ED" title="REIPPPP ED commitment included in this subcontract" cls="bg-green-100 text-green-800" />}
                       {!!row.floor_bee_verification && <Flag label="BEE" title="BEE level requires third-party verification" cls="bg-amber-100 text-amber-800" />}
-                      {!!row.floor_ie_oversight && <Flag label="IE" title="IE oversight required — critical trade" cls="bg-indigo-200 text-indigo-900" />}
+                      {!!row.floor_ie_oversight && <Flag label="IE" title="IE oversight required — critical trade" cls="bg-[oklch(0.90_0.015_250)] text-[oklch(0.17_0.010_250)]" />}
                       {!!row.is_reportable && <Flag label="⚑" title="Regulator crossed (W140 SIGNATURE)" cls="bg-red-200 text-red-800" />}
                       {row.insurance_near_expiry_live && <Flag label="INS!" title="Insurance expiry within 60 days or already expired" cls="bg-orange-100 text-orange-800" />}
                     </div>
@@ -520,7 +520,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
                   {!readOnly && (
                     <td className="px-3 py-2">
                       <button type="button"
-                        className="text-xs text-blue-600 hover:underline"
+                        className="text-xs text-[oklch(0.46_0.16_55)] hover:underline"
                         onClick={e => { e.stopPropagation(); setSelected(row); }}
                       >
                         Manage
@@ -761,10 +761,10 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
                 <p className="text-xs font-semibold text-red-900 mb-1.5">Floor flags</p>
                 <div className="flex flex-wrap gap-1.5">
                   {!!selected.floor_ohsa_notification && <span className="px-2 py-0.5 rounded text-[10px] bg-red-200 text-red-900">OHSA notification</span>}
-                  {!!selected.floor_lender_escrow_release && <span className="px-2 py-0.5 rounded text-[10px] bg-blue-100 text-blue-800">Lender escrow release</span>}
+                  {!!selected.floor_lender_escrow_release && <span className="px-2 py-0.5 rounded text-[10px] bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]">Lender escrow release</span>}
                   {!!selected.floor_reipppp_ed_reporting && <span className="px-2 py-0.5 rounded text-[10px] bg-green-100 text-green-800">REIPPPP ED reporting</span>}
                   {!!selected.floor_bee_verification && <span className="px-2 py-0.5 rounded text-[10px] bg-amber-100 text-amber-800">BEE verification required</span>}
-                  {!!selected.floor_ie_oversight && <span className="px-2 py-0.5 rounded text-[10px] bg-indigo-200 text-indigo-900">IE oversight</span>}
+                  {!!selected.floor_ie_oversight && <span className="px-2 py-0.5 rounded text-[10px] bg-[oklch(0.90_0.015_250)] text-[oklch(0.17_0.010_250)]">IE oversight</span>}
                 </div>
               </div>
             ) : null}
@@ -774,10 +774,10 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
               <div className="mb-4">
                 <p className="text-xs text-[#6b7685] mb-1">Cross-references</p>
                 <div className="flex flex-wrap gap-2">
-                  {selected.ed_commitment_ref && <span className="text-xs text-blue-600">ED commitment: {selected.ed_commitment_ref}</span>}
+                  {selected.ed_commitment_ref && <span className="text-xs text-[oklch(0.46_0.16_55)]">ED commitment: {selected.ed_commitment_ref}</span>}
                   {selected.hse_incident_ref && <span className="text-xs text-red-600">HSE incident: {selected.hse_incident_ref}</span>}
                   {selected.ncr_ref && <span className="text-xs text-amber-600">NCR: {selected.ncr_ref}</span>}
-                  {selected.ms_ref && <span className="text-xs text-blue-600">Method statement: {selected.ms_ref}</span>}
+                  {selected.ms_ref && <span className="text-xs text-[oklch(0.46_0.16_55)]">Method statement: {selected.ms_ref}</span>}
                 </div>
               </div>
             )}

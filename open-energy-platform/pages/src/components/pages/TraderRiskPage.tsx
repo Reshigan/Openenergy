@@ -235,7 +235,7 @@ export function TraderRiskPage() {
       heroTitle="Trader risk console"
       heroSubtitle="Positions, marks, credit, collateral, margin and clearing."
       aiBriefRole="trader"
-      aiBriefAccent={{ from: '#3b82c4', to: '#1f9b95' }}
+      aiBriefAccent={{ from: 'oklch(0.46 0.16 55)', to: '#1f9b95' }}
     />
   );
 }

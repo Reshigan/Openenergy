@@ -26,6 +26,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'transfer_requested' | 'kyc_screening' | 'screening_remediation'
@@ -37,6 +52,7 @@ type Tier = 'minor' | 'moderate' | 'material' | 'major' | 'systemic';
 type Residency = 'resident' | 'non_resident';
 
 interface LoanTransferRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   source_event: string | null;
@@ -139,34 +155,40 @@ interface LoanTransferEvent {
   created_at: string;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  transfer_requested:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Transfer requested' },
-  kyc_screening:         { bg: '#e0eefb', fg: '#1a4a7a', label: 'KYC / sanctions screening' },
-  screening_remediation: { bg: '#fde9c8', fg: '#8a4b00', label: 'Screening remediation' },
-  consent_solicitation:  { bg: '#fff4d6', fg: '#a06200', label: 'Obligor consent' },
-  regulatory_review:     { bg: '#fbe7d0', fg: '#7a4500', label: 'SARB / regulatory review' },
-  transfer_approved:     { bg: '#e6dcf5', fg: '#4a2a7a', label: 'Transfer approved' },
-  certificate_executed:  { bg: '#daf5e2', fg: '#1f6b3a', label: 'Certificate executed' },
-  settled:               { bg: '#cfeede', fg: '#0e6b4a', label: 'Settled' },
-  completed:             { bg: '#1f6b3a', fg: '#ffffff', label: 'Completed' },
-  declined:              { bg: '#fde0e0', fg: '#9b1f1f', label: 'Consent declined' },
-  rejected:              { bg: '#fcc3c3', fg: '#7a0e0e', label: 'Rejected (FIC)' },
-  withdrawn:             { bg: '#cdd7e2', fg: '#33475e', label: 'Withdrawn' },
-};
+interface KpiSummary {
+  total: number;
+  open_count: number;
+  completed_count: number;
+  in_screening: number;
+  in_regulatory: number;
+  breached: number;
+  reportable_total: number;
+  non_resident_total: number;
+  large_tier_open: number;
+  total_transfer_zar_m: number;
+  completed_transfer_zar_m: number;
+}
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#eef2f7', fg: '#33475e', label: 'Minor (<R100m)' },
-  moderate: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Moderate (<R500m)' },
-  material: { bg: '#fff4d6', fg: '#a06200', label: 'Material (<R2bn)' },
-  major:    { bg: '#fde0e0', fg: '#9b1f1f', label: 'Major (<R10bn)' },
-  systemic: { bg: '#fbb', fg: '#7a0e0e', label: 'Systemic (R10bn+)' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'transfer_requested',
+  'kyc_screening',
+  'screening_remediation',
+  'consent_solicitation',
+  'regulatory_review',
+  'transfer_approved',
+  'certificate_executed',
+  'settled',
+  'completed',
+];
 
-const RESIDENCY_TONE: Record<Residency, { bg: string; fg: string; label: string }> = {
-  resident:     { bg: '#eef2f7', fg: '#33475e', label: 'Resident' },
-  non_resident: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Non-resident' },
-};
+const BRANCH_STATES: readonly string[] = [
+  'declined',
+  'rejected',
+  'withdrawn',
+];
 
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',                label: 'In pipeline' },
   { key: 'all',                   label: 'All' },
@@ -186,43 +208,7 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'withdrawn',             label: 'Withdrawn' },
 ];
 
-type ActionKind =
-  | 'begin-screening' | 'request-remediation' | 'resubmit-screening'
-  | 'fail-screening' | 'clear-screening' | 'refuse-consent' | 'grant-consent'
-  | 'approve-transfer' | 'execute-certificate' | 'settle' | 'complete' | 'withdraw';
-
-// Primary forward action per state.
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  transfer_requested:    'begin-screening',
-  kyc_screening:         'clear-screening',
-  screening_remediation: 'resubmit-screening',
-  consent_solicitation:  'grant-consent',
-  regulatory_review:     'approve-transfer',
-  transfer_approved:     'execute-certificate',
-  certificate_executed:  'settle',
-  settled:               'complete',
-  completed:             null,
-  declined:              null,
-  rejected:              null,
-  withdrawn:             null,
-};
-
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'begin-screening':     'Begin KYC / sanctions screening (Agent)',
-  'request-remediation': 'Request screening remediation (Agent)',
-  'resubmit-screening':  'Resubmit screening evidence (Transferor)',
-  'fail-screening':      'Fail screening — reject (Agent · FIC)',
-  'clear-screening':     'Clear screening (Agent)',
-  'refuse-consent':      'Refuse consent (Obligor)',
-  'grant-consent':       'Grant consent (Obligor)',
-  'approve-transfer':    'Approve transfer (Agent)',
-  'execute-certificate': 'Execute transfer certificate (Agent)',
-  'settle':              'Settle purchase price (Transferor)',
-  'complete':            'Complete — update register (Agent)',
-  'withdraw':            'Withdraw transfer (Transferor)',
-};
-
-// Branch availability per state (in addition to the primary forward action).
+// ── action helpers ────────────────────────────────────────────────────────
 const CAN_REQUEST_REMEDIATION: ChainStatus[] = ['kyc_screening'];
 const CAN_FAIL_SCREENING: ChainStatus[]      = ['kyc_screening', 'screening_remediation'];
 const CAN_REFUSE_CONSENT: ChainStatus[]      = ['consent_solicitation'];
@@ -257,28 +243,299 @@ function fmtPct(p: number | null | undefined): string {
   return `${p}%`;
 }
 
-interface KpiSummary {
-  total: number;
-  open_count: number;
-  completed_count: number;
-  in_screening: number;
-  in_regulatory: number;
-  breached: number;
-  reportable_total: number;
-  non_resident_total: number;
-  large_tier_open: number;
-  total_transfer_zar_m: number;
-  completed_transfer_zar_m: number;
+function getActions(row: LoanTransferRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
+
+  // Primary forward action per state
+  if (s === 'transfer_requested') {
+    actions.push({
+      key: 'begin-screening',
+      label: 'Begin KYC / sanctions screening (Agent)',
+      fields: [
+        { key: 'screening_ref', label: 'Screening reference (eg "SCR-2026-0007")', type: 'text', required: false, placeholder: '' },
+        { key: 'screening_basis', label: 'Screening basis (KYC / sanctions / FIC scope on the incoming lender)', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'kyc_screening') {
+    actions.push({
+      key: 'clear-screening',
+      label: 'Clear screening (Agent)',
+      fields: [
+        { key: 'screening_basis', label: 'Clearance basis (KYC + sanctions cleared)', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'screening_remediation') {
+    actions.push({
+      key: 'resubmit-screening',
+      label: 'Resubmit screening evidence (Transferor)',
+      fields: [
+        { key: 'screening_ref', label: 'Updated screening reference (eg "SCR-2026-0007-R2")', type: 'text', required: false, placeholder: '' },
+        { key: 'screening_basis', label: 'Resubmission basis (cured evidence)', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'consent_solicitation') {
+    actions.push({
+      key: 'grant-consent',
+      label: 'Grant consent (Obligor)',
+      fields: [
+        { key: 'consent_ref', label: 'Consent reference (eg "CONSENT-2026-0007")', type: 'text', required: false, placeholder: '' },
+        { key: 'consent_basis', label: 'Consent basis (obligor approval per facility agreement)', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'regulatory_review') {
+    actions.push({
+      key: 'approve-transfer',
+      label: 'Approve transfer (Agent)',
+      fields: [
+        { key: 'approval_ref', label: 'Approval reference (eg "APPROVAL-2026-0007")', type: 'text', required: true, placeholder: '' },
+        { key: 'approval_basis', label: 'Approval basis (transfer cleared all gates)', type: 'textarea', required: true, placeholder: '' },
+        // SARB exchange-control ref required when non-resident (always shown; backend enforces when non_resident)
+        { key: 'regulator_ref', label: 'SARB exchange-control reference (non-resident transferee)', type: 'text', required: row.transferee_residency === 'non_resident', placeholder: '' },
+      ],
+      // approving a non-resident transfer crosses SARB inbox at EVERY tier
+      cascadeTo: row.transferee_residency === 'non_resident' ? ['regulator'] : [],
+    });
+  }
+
+  if (s === 'transfer_approved') {
+    actions.push({
+      key: 'execute-certificate',
+      label: 'Execute transfer certificate (Agent)',
+      fields: [
+        { key: 'certificate_ref', label: 'Transfer certificate reference (eg "TC-2026-0007")', type: 'text', required: true, placeholder: '' },
+        { key: 'certificate_basis', label: 'Certificate basis (LMA transfer certificate executed)', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'certificate_executed') {
+    actions.push({
+      key: 'settle',
+      label: 'Settle purchase price (Transferor)',
+      fields: [
+        { key: 'settlement_ref', label: 'Settlement reference (eg "STL-2026-0007")', type: 'text', required: false, placeholder: '' },
+        { key: 'settlement_basis', label: 'Settlement basis (purchase price + accrued interest)', type: 'textarea', required: true, placeholder: '' },
+        { key: 'settlement_zar_m', label: 'Settlement amount (ZAR millions)', type: 'number', required: false, placeholder: String(row.transfer_zar_m ?? '') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'settled') {
+    actions.push({
+      key: 'complete',
+      label: 'Complete — update register (Agent)',
+      fields: [
+        { key: 'completion_ref', label: 'Completion reference (eg "CMP-2026-0007")', type: 'text', required: false, placeholder: '' },
+        // Banks Act large-exposure ref required for major/systemic
+        { key: 'regulator_ref', label: 'Banks Act large-exposure reference (large/systemic transfer)', type: 'text', required: row.transfer_tier === 'major' || row.transfer_tier === 'systemic', placeholder: '' },
+      ],
+      // completing a large/systemic transfer crosses Banks Act large-exposure inbox
+      cascadeTo: (row.transfer_tier === 'major' || row.transfer_tier === 'systemic') ? ['regulator'] : [],
+    });
+  }
+
+  // Branch: request remediation (from kyc_screening)
+  if (CAN_REQUEST_REMEDIATION.includes(s)) {
+    actions.push({
+      key: 'request-remediation',
+      label: 'Request screening remediation (Agent)',
+      fields: [
+        { key: 'remediation_ref', label: 'Remediation reference (eg "REM-2026-0007")', type: 'text', required: false, placeholder: '' },
+        { key: 'remediation_basis', label: 'Remediation basis (what KYC / sanctions gap must be cured)', type: 'textarea', required: true, placeholder: '' },
+        { key: 'reason_code', label: 'Reason code (eg "UBO_GAP", "SANCTIONS_HIT_REVIEW")', type: 'text', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // Branch: fail screening — reject (FIC crossing always)
+  if (CAN_FAIL_SCREENING.includes(s)) {
+    actions.push({
+      key: 'fail-screening',
+      label: 'Fail screening — reject (Agent · FIC)',
+      fields: [
+        { key: 'rejection_ref', label: 'Rejection reference (eg "REJ-2026-0007")', type: 'text', required: false, placeholder: '' },
+        { key: 'rejection_basis', label: 'Rejection basis (why the incoming lender fails KYC / sanctions)', type: 'textarea', required: true, placeholder: '' },
+        { key: 'reason_code', label: 'Reason code (eg "SANCTIONS_MATCH", "KYC_UNRESOLVED")', type: 'text', required: false, placeholder: '' },
+        { key: 'regulator_ref', label: 'FIC reference (a screening failure is always reportable)', type: 'text', required: true, placeholder: '' },
+      ],
+      // screening failure always crosses FIC (regulator) at every tier
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  // Branch: refuse consent (from consent_solicitation)
+  if (CAN_REFUSE_CONSENT.includes(s)) {
+    actions.push({
+      key: 'refuse-consent',
+      label: 'Refuse consent (Obligor)',
+      fields: [
+        { key: 'decline_ref', label: 'Refusal reference (eg "DEC-2026-0007")', type: 'text', required: false, placeholder: '' },
+        { key: 'decline_basis', label: 'Refusal basis (why the obligor withholds consent)', type: 'textarea', required: true, placeholder: '' },
+        { key: 'reason_code', label: 'Reason code (eg "DISQUALIFIED_LENDER", "MFN_BREACH")', type: 'text', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // Branch: withdraw (available across most pre-completion states)
+  if (CAN_WITHDRAW.includes(s)) {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw transfer (Transferor)',
+      fields: [
+        { key: 'withdrawal_ref', label: 'Withdrawal reference (eg "WD-2026-0007")', type: 'text', required: false, placeholder: '' },
+        { key: 'withdrawal_basis', label: 'Withdrawal basis (why the transfer is being pulled)', type: 'textarea', required: true, placeholder: '' },
+        { key: 'reason_code', label: 'Reason code (eg "PRICE_DISPUTE", "ALT_BUYER")', type: 'text', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  return actions;
 }
 
+function renderDetail(row: LoanTransferRow): React.ReactNode {
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+      <DetailPair label="Transferor"         value={row.transferor_party_name} />
+      <DetailPair label="Transferee"         value={row.transferee_party_name} />
+      <DetailPair label="Facility agent"     value={row.agent_party_name} />
+      <DetailPair label="Obligor"            value={row.obligor_party_name} />
+      <DetailPair label="Tier"               value={TIER_LABEL[row.transfer_tier]} />
+      <DetailPair label="Residency"          value={row.transferee_residency === 'non_resident' ? 'Non-resident' : 'Resident'} />
+      <DetailPair label="Facility"           value={row.facility_name} />
+      <DetailPair label="Transfer type"      value={row.transfer_type} />
+      <DetailPair label="Tranche"            value={row.tranche ?? '—'} />
+      <DetailPair label="Borrower / project" value={row.borrower_project ?? '—'} />
+      <DetailPair label="Facility total"     value={fmtZarM(row.facility_total_zar_m)} />
+      <DetailPair label="Transfer value"     value={fmtZarM(row.transfer_zar_m)} />
+      <DetailPair label="Transfer price"     value={fmtPct(row.transfer_price_pct)} />
+      <DetailPair label="Settlement value"   value={fmtZarM(row.settlement_zar_m)} />
+      <DetailPair label="Equator FI?"        value={row.transferee_epfi ? 'Yes' : 'No'} />
+      <DetailPair label="KYC cleared"        value={row.kyc_cleared ? 'Yes' : 'No'} />
+      <DetailPair label="Sanctions cleared"  value={row.sanctions_cleared ? 'Yes' : 'No'} />
+      <DetailPair label="Obligor consent"    value={row.obligor_consent_granted ? 'Granted' : 'Pending'} />
+      <DetailPair label="SARB approval req"  value={row.sarb_approval_required ? 'Yes' : 'No'} />
+      <DetailPair label="SARB approval"      value={row.sarb_approval_obtained ? 'Obtained' : 'Pending'} />
+      <DetailPair label="Certificate signed" value={row.certificate_signed ? 'Yes' : 'No'} />
+      <DetailPair label="Register updated"   value={row.register_updated ? 'Yes' : 'No'} />
+      <DetailPair label="Remediation round"  value={String(row.remediation_round)} />
+      <DetailPair label="Approval ref"       value={row.approval_ref ?? '—'} />
+      <DetailPair label="Certificate ref"    value={row.certificate_ref ?? '—'} />
+      <DetailPair label="Settlement ref"     value={row.settlement_ref ?? '—'} />
+      <DetailPair label="Reportable"         value={row.is_reportable_flag ? 'Yes — regulator' : 'No'} />
+      <DetailPair label="Escalation level"   value={String(row.escalation_level)} />
+      <DetailPair label="SLA deadline"       value={fmtDate(row.sla_deadline_at)} />
+      <DetailPair label="SLA status"         value={row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+      <DetailPair label="Reason code"        value={row.reason_code ?? '—'} />
+      <DetailPair label="Regulator ref"      value={row.regulator_ref ?? '—'} />
+      {row.source_wave && (
+        <DetailPair label="Source" value={`${row.source_wave} · ${row.source_entity_id ?? ''}`} />
+      )}
+
+      {row.screening_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Screening basis</div>
+          <div style={{ color: TX2 }}>{row.screening_basis}</div>
+        </div>
+      )}
+      {row.remediation_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Remediation basis</div>
+          <div style={{ color: TX2 }}>{row.remediation_basis}</div>
+        </div>
+      )}
+      {row.consent_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Consent basis</div>
+          <div style={{ color: TX2 }}>{row.consent_basis}</div>
+        </div>
+      )}
+      {row.regulatory_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Regulatory basis</div>
+          <div style={{ color: TX2 }}>{row.regulatory_basis}</div>
+        </div>
+      )}
+      {row.approval_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Approval basis</div>
+          <div style={{ color: TX2 }}>{row.approval_basis}</div>
+        </div>
+      )}
+      {row.certificate_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Certificate basis</div>
+          <div style={{ color: TX2 }}>{row.certificate_basis}</div>
+        </div>
+      )}
+      {row.settlement_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Settlement basis</div>
+          <div style={{ color: TX2 }}>{row.settlement_basis}</div>
+        </div>
+      )}
+      {row.rejection_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Rejection basis</div>
+          <div style={{ color: TX2 }}>{row.rejection_basis}</div>
+        </div>
+      )}
+      {row.decline_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Refusal basis</div>
+          <div style={{ color: TX2 }}>{row.decline_basis}</div>
+        </div>
+      )}
+      {row.withdrawal_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Withdrawal basis</div>
+          <div style={{ color: TX2 }}>{row.withdrawal_basis}</div>
+        </div>
+      )}
+      {row.notes && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Notes</div>
+          <div style={{ color: TX2 }}>{row.notes}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Tier label lookup (replaces TIER_TONE record used in old Drawer)
+const TIER_LABEL: Record<Tier, string> = {
+  minor:    'Minor (<R100m)',
+  moderate: 'Moderate (<R500m)',
+  material: 'Material (<R2bn)',
+  major:    'Major (<R10bn)',
+  systemic: 'Systemic (R10bn+)',
+};
+
+// ── component ─────────────────────────────────────────────────────────────
 export function LoanTransferChainTab() {
   const [rows, setRows] = useState<LoanTransferRow[]>([]);
   const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<LoanTransferRow | null>(null);
-  const [events, setEvents] = useState<LoanTransferEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -311,15 +568,28 @@ export function LoanTransferChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
+    try {
+      await api.post(`/loan-transfer/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/loan-transfer/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
+    }
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
     try {
       const res = await api.get<{ data: { case: LoanTransferRow; events: LoanTransferEvent[] } }>(`/loan-transfer/chain/${id}`);
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load transfer history');
-    }
-  }, []);
+      setExpandedEvents(prev => ({ ...prev, [id]: (res.data?.data?.events ?? []) as ChainEvent[] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -338,436 +608,98 @@ export function LoanTransferChainTab() {
     large_tier_open: 0, total_transfer_zar_m: 0, completed_transfer_zar_m: 0,
   };
 
-  const act = useCallback(async (action: ActionKind, row: LoanTransferRow) => {
-    try {
-      const body: Record<string, unknown> = {};
-      if (action === 'begin-screening') {
-        const ref = window.prompt('Screening reference (eg "SCR-2026-0007"):', '');
-        if (ref) body.screening_ref = ref;
-        const basis = window.prompt('Screening basis (KYC / sanctions / FIC scope on the incoming lender — required):');
-        if (!basis) return;
-        body.screening_basis = basis;
-      } else if (action === 'request-remediation') {
-        const ref = window.prompt('Remediation reference (eg "REM-2026-0007"):', '');
-        if (ref) body.remediation_ref = ref;
-        const basis = window.prompt('Remediation basis (what KYC / sanctions gap must be cured — required):');
-        if (!basis) return;
-        body.remediation_basis = basis;
-        const reason = window.prompt('Reason code (eg "UBO_GAP", "SANCTIONS_HIT_REVIEW"):', '');
-        if (reason) body.reason_code = reason;
-      } else if (action === 'resubmit-screening') {
-        const ref = window.prompt('Updated screening reference (eg "SCR-2026-0007-R2"):', '');
-        if (ref) body.screening_ref = ref;
-        const basis = window.prompt('Resubmission basis (cured evidence — required):');
-        if (!basis) return;
-        body.screening_basis = basis;
-      } else if (action === 'fail-screening') {
-        const ref = window.prompt('Rejection reference (eg "REJ-2026-0007"):', '');
-        if (ref) body.rejection_ref = ref;
-        const basis = window.prompt('Rejection basis (why the incoming lender fails KYC / sanctions — required):');
-        if (!basis) return;
-        body.rejection_basis = basis;
-        const reason = window.prompt('Reason code (eg "SANCTIONS_MATCH", "KYC_UNRESOLVED"):', '');
-        if (reason) body.reason_code = reason;
-        const reg = window.prompt('FIC reference (a screening failure is always reportable — required):');
-        if (!reg) return;
-        body.regulator_ref = reg;
-      } else if (action === 'clear-screening') {
-        const basis = window.prompt('Clearance basis (KYC + sanctions cleared — required):');
-        if (!basis) return;
-        body.screening_basis = basis;
-      } else if (action === 'refuse-consent') {
-        const ref = window.prompt('Refusal reference (eg "DEC-2026-0007"):', '');
-        if (ref) body.decline_ref = ref;
-        const basis = window.prompt('Refusal basis (why the obligor withholds consent — required):');
-        if (!basis) return;
-        body.decline_basis = basis;
-        const reason = window.prompt('Reason code (eg "DISQUALIFIED_LENDER", "MFN_BREACH"):', '');
-        if (reason) body.reason_code = reason;
-      } else if (action === 'grant-consent') {
-        const ref = window.prompt('Consent reference (eg "CONSENT-2026-0007"):', '');
-        if (ref) body.consent_ref = ref;
-        const basis = window.prompt('Consent basis (obligor approval per facility agreement — required):');
-        if (!basis) return;
-        body.consent_basis = basis;
-      } else if (action === 'approve-transfer') {
-        const ref = window.prompt('Approval reference (eg "APPROVAL-2026-0007"):');
-        if (!ref) return;
-        body.approval_ref = ref;
-        const basis = window.prompt('Approval basis (transfer cleared all gates — required):');
-        if (!basis) return;
-        body.approval_basis = basis;
-        if (row.transferee_residency === 'non_resident') {
-          const reg = window.prompt('SARB exchange-control reference (non-resident transferee — required):');
-          if (!reg) return;
-          body.regulator_ref = reg;
-        }
-      } else if (action === 'execute-certificate') {
-        const ref = window.prompt('Transfer certificate reference (eg "TC-2026-0007"):');
-        if (!ref) return;
-        body.certificate_ref = ref;
-        const basis = window.prompt('Certificate basis (LMA transfer certificate executed — required):');
-        if (!basis) return;
-        body.certificate_basis = basis;
-      } else if (action === 'settle') {
-        const ref = window.prompt('Settlement reference (eg "STL-2026-0007"):', '');
-        if (ref) body.settlement_ref = ref;
-        const basis = window.prompt('Settlement basis (purchase price + accrued interest — required):');
-        if (!basis) return;
-        body.settlement_basis = basis;
-        const amt = window.prompt('Settlement amount (ZAR millions, eg 450):', row.transfer_zar_m != null ? String(row.transfer_zar_m) : '');
-        if (amt) body.settlement_zar_m = Number(amt);
-      } else if (action === 'complete') {
-        const ref = window.prompt('Completion reference (eg "CMP-2026-0007"):', '');
-        if (ref) body.completion_ref = ref;
-        if (row.transfer_tier === 'major' || row.transfer_tier === 'systemic') {
-          const reg = window.prompt('Banks Act large-exposure reference (large/systemic transfer — required):');
-          if (!reg) return;
-          body.regulator_ref = reg;
-        }
-      } else if (action === 'withdraw') {
-        const ref = window.prompt('Withdrawal reference (eg "WD-2026-0007"):', '');
-        if (ref) body.withdrawal_ref = ref;
-        const basis = window.prompt('Withdrawal basis (why the transfer is being pulled — required):');
-        if (!basis) return;
-        body.withdrawal_basis = basis;
-        const reason = window.prompt('Reason code (eg "PRICE_DISPUTE", "ALT_BUYER"):', '');
-        if (reason) body.reason_code = reason;
-      }
-      await api.post(`/loan-transfer/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Loan Transfer & Secondary Participation — LMA + Banks Act + SARB ExCon + FIC</h2>
-          <p className="text-xs text-[#4a5568]">
-            A lender of record sells down / participates out part of a committed
-            facility to another financier. Before the register can change: KYC /
-            sanctions screening on the incoming lender (FIC) → obligor consent →
-            SARB exchange-control review (non-resident transferees) → approval →
-            transfer certificate executed → purchase-price settlement → completion
-            with the facility register updated. INVERTED tier SLA — the bigger the
-            transfer, the more diligence time every window allows. Approving a
-            non-resident transfer crosses the SARB inbox at every tier; a screening
-            failure always crosses (FIC); completing a large/systemic transfer
-            crosses the Banks Act large-exposure inbox. Two-party write — the obligor
-            grants/refuses consent; the lender side drives the rest.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Loan Transfer &amp; Secondary Participation — LMA + Banks Act + SARB ExCon + FIC</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          A lender of record sells down / participates out part of a committed
+          facility to another financier. KYC / sanctions screening (FIC) → obligor
+          consent → SARB exchange-control review (non-resident) → approval →
+          transfer certificate executed → settlement → completion. INVERTED tier SLA.
+          Non-resident approval crosses SARB inbox at every tier; screening failure
+          always crosses FIC; large/systemic completion crosses Banks Act large-exposure.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-8 gap-3">
-        <Kpi label="Total"             value={kpis.total} />
-        <Kpi label="In pipeline"       value={kpis.open_count}        tone={kpis.open_count > 0 ? 'warn' : 'ok'} />
-        <Kpi label="In screening"      value={kpis.in_screening} />
-        <Kpi label="Regulatory"        value={kpis.in_regulatory} />
-        <Kpi label="Completed"         value={kpis.completed_count}   tone="ok" />
-        <Kpi label="Non-resident"      value={kpis.non_resident_total} tone={kpis.non_resident_total > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached"      value={kpis.breached}          tone={kpis.breached > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Completed value"   value={fmtZarM(kpis.completed_transfer_zar_m)} />
+      {/* KPI strip */}
+      <div className="mb-2 flex flex-wrap gap-2">
+        <KpiTile label="Total"            value={kpis.total} />
+        <KpiTile label="In pipeline"      value={kpis.open_count}            tone={kpis.open_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="In screening"     value={kpis.in_screening} />
+        <KpiTile label="Regulatory"       value={kpis.in_regulatory} />
+        <KpiTile label="Completed"        value={kpis.completed_count} />
+        <KpiTile label="Non-resident"     value={kpis.non_resident_total}    tone={kpis.non_resident_total > 0 ? 'warn' : undefined} />
+        <KpiTile label="SLA breached"     value={kpis.breached}              tone={kpis.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Completed value"  value={fmtZarM(kpis.completed_transfer_zar_m)} />
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-4 text-[11px] text-[#4a5568]">
-        <span>Regulator reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
-        <span>Large tier open: <span className="font-semibold text-[#9b1f1f]">{kpis.large_tier_open}</span></span>
-        <span>Pipeline value: <span className="font-semibold text-[#1a3a5c]">{fmtZarM(kpis.total_transfer_zar_m)}</span></span>
+      {/* Secondary KPI line */}
+      <div className="mb-4 flex flex-wrap items-center gap-4" style={{ fontSize: 11, color: TX2 }}>
+        <span>Regulator reportable: <span style={{ fontWeight: 600, color: BAD }}>{kpis.reportable_total}</span></span>
+        <span>Large tier open: <span style={{ fontWeight: 600, color: BAD }}>{kpis.large_tier_open}</span></span>
+        <span>Pipeline value: <span style={{ fontWeight: 600, color: TX1, fontFamily: MONO }}>{fmtZarM(kpis.total_transfer_zar_m)}</span></span>
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{ background: filter === f.key ? ACC : BG2, color: filter === f.key ? '#fff' : TX2, border: `1px solid ${filter === f.key ? ACC : BORDER}` }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>{err}</div>
       )}
+
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Transfer #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Transferor → transferee</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Residency</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Transfer value</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tier = TIER_TONE[r.transfer_tier];
-                const res = RESIDENCY_TONE[r.transferee_residency];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[#0c2a4d]">
-                      {r.case_number}
-                      {r.is_reportable_flag && <span className="ml-1 rounded bg-[#fde0e0] px-1 text-[9px] font-semibold text-[#9b1f1f]">REG</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">
-                      <div className="font-medium">{r.transferor_party_name} → {r.transferee_party_name}</div>
-                      <div className="text-[10px] text-[#6b7685]">{r.facility_name}{r.transfer_type ? ` · ${r.transfer_type}` : ''}</div>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tier.bg, color: tier.fg }}>
-                        {tier.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: res.bg, color: res.fg }}>
-                        {res.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtZarM(r.transfer_zar_m)}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No transfers match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.transferor_party_name} → ${row.transferee_party_name}`}
+              meta={`${TIER_LABEL[row.transfer_tier]} · ${row.transferee_residency === 'non_resident' ? 'Non-resident' : 'Resident'} · ${row.case_number}`}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>No transfers match.</div>
+          )}
         </div>
       )}
-
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
-      )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: LoanTransferRow;
-  events: LoanTransferEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: LoanTransferRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canRequestRemediation = CAN_REQUEST_REMEDIATION.includes(row.chain_status);
-  const canFailScreening = CAN_FAIL_SCREENING.includes(row.chain_status);
-  const canRefuseConsent = CAN_REFUSE_CONSENT.includes(row.chain_status);
-  const canWithdraw = CAN_WITHDRAW.includes(row.chain_status);
-  const anyAction = nextAction || canRequestRemediation || canFailScreening || canRefuseConsent || canWithdraw;
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.case_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.transferor_party_name} → {row.transferee_party_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.transfer_tier].label} · {RESIDENCY_TONE[row.transferee_residency].label} · {row.facility_name}
-              </div>
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="Transferor"          value={row.transferor_party_name} />
-            <Pair label="Transferee"          value={row.transferee_party_name} />
-            <Pair label="Facility agent"      value={row.agent_party_name} />
-            <Pair label="Obligor"             value={row.obligor_party_name} />
-            <Pair label="Tier"                value={TIER_TONE[row.transfer_tier].label} />
-            <Pair label="Residency"           value={RESIDENCY_TONE[row.transferee_residency].label} />
-            <Pair label="Facility"            value={row.facility_name} />
-            <Pair label="Transfer type"       value={row.transfer_type} />
-            <Pair label="Tranche"             value={row.tranche ?? '—'} />
-            <Pair label="Borrower / project"  value={row.borrower_project ?? '—'} />
-            <Pair label="Facility total"      value={fmtZarM(row.facility_total_zar_m)} />
-            <Pair label="Transfer value"      value={fmtZarM(row.transfer_zar_m)} />
-            <Pair label="Transfer price"      value={fmtPct(row.transfer_price_pct)} />
-            <Pair label="Settlement value"    value={fmtZarM(row.settlement_zar_m)} />
-            <Pair label="Equator FI?"         value={row.transferee_epfi ? 'Yes' : 'No'} />
-            <Pair label="KYC cleared"         value={row.kyc_cleared ? 'Yes' : 'No'} />
-            <Pair label="Sanctions cleared"   value={row.sanctions_cleared ? 'Yes' : 'No'} />
-            <Pair label="Obligor consent"     value={row.obligor_consent_granted ? 'Granted' : 'Pending'} />
-            <Pair label="SARB approval req"   value={row.sarb_approval_required ? 'Yes' : 'No'} />
-            <Pair label="SARB approval"       value={row.sarb_approval_obtained ? 'Obtained' : 'Pending'} />
-            <Pair label="Certificate signed"  value={row.certificate_signed ? 'Yes' : 'No'} />
-            <Pair label="Register updated"    value={row.register_updated ? 'Yes' : 'No'} />
-            <Pair label="Remediation round"   value={String(row.remediation_round)} />
-            <Pair label="Approval ref"        value={row.approval_ref ?? '—'} />
-            <Pair label="Certificate ref"     value={row.certificate_ref ?? '—'} />
-            <Pair label="Settlement ref"      value={row.settlement_ref ?? '—'} />
-            <Pair label="State"               value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Reportable"          value={row.is_reportable_flag ? 'Yes — regulator' : 'No'} />
-            <Pair label="Escalation level"    value={String(row.escalation_level)} />
-            <Pair label="SLA deadline"        value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"          value={row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Reason code"         value={row.reason_code ?? '—'} />
-            <Pair label="Regulator ref"       value={row.regulator_ref ?? '—'} />
-            {row.source_wave && <Pair label="Source" value={`${row.source_wave} · ${row.source_entity_id ?? ''}`} />}
-          </div>
-
-          {(row.screening_basis || row.consent_basis || row.regulatory_basis || row.approval_basis
-            || row.certificate_basis || row.settlement_basis || row.rejection_basis
-            || row.decline_basis || row.withdrawal_basis || row.remediation_basis) && (
-            <div className="mt-3 space-y-2">
-              <BasisCard label="Screening basis"    value={row.screening_basis} />
-              <BasisCard label="Remediation basis"  value={row.remediation_basis} />
-              <BasisCard label="Consent basis"      value={row.consent_basis} />
-              <BasisCard label="Regulatory basis"   value={row.regulatory_basis} />
-              <BasisCard label="Approval basis"     value={row.approval_basis} />
-              <BasisCard label="Certificate basis"  value={row.certificate_basis} />
-              <BasisCard label="Settlement basis"   value={row.settlement_basis} />
-              <BasisCard label="Rejection basis"    value={row.rejection_basis} />
-              <BasisCard label="Refusal basis"      value={row.decline_basis} />
-              <BasisCard label="Withdrawal basis"   value={row.withdrawal_basis} />
-            </div>
-          )}
-
-          {row.notes && (
-            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
-              <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Notes</div>
-              {row.notes}
-            </div>
-          )}
-        </section>
-
-        {anyAction && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canRequestRemediation && (
-                <button type="button"
-                  onClick={() => onAct('request-remediation', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#8a4b00] hover:bg-[#fff8e8]"
-                >
-                  {ACTION_LABEL['request-remediation']}
-                </button>
-              )}
-              {canFailScreening && (
-                <button type="button"
-                  onClick={() => onAct('fail-screening', row)}
-                  className="rounded border border-red-400 bg-white px-3 py-1.5 text-[12px] font-medium text-red-800 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['fail-screening']}
-                </button>
-              )}
-              {canRefuseConsent && (
-                <button type="button"
-                  onClick={() => onAct('refuse-consent', row)}
-                  className="rounded border border-red-400 bg-white px-3 py-1.5 text-[12px] font-medium text-red-800 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['refuse-consent']}
-                </button>
-              )}
-              {canWithdraw && (
-                <button type="button"
-                  onClick={() => onAct('withdraw', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#33475e] hover:bg-[#f3f5f9]"
-                >
-                  {ACTION_LABEL['withdraw']}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  {(e.from_status || e.to_status) && (
-                    <div className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</div>
-                  )}
-                  {e.actor_party && <div className="text-[10px] text-[#6b7685]">party: {e.actor_party}</div>}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
-    </div>
-  );
-}
-
-function BasisCard({ label, value }: { label: string; value: string | null }) {
-  if (!value) return null;
-  return (
-    <div className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">{label}</div>
-      {value}
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1 }}>{value}</div>
     </div>
   );
 }

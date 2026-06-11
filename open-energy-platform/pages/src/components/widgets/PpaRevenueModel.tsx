@@ -146,7 +146,7 @@ export function PpaRevenueModel({
             <YAxis yAxisId="dscr" orientation="right" domain={[0, 'auto']} tick={{ fontSize: 10, fill: '#6b7685' }} />
             <Tooltip formatter={(v: any, name: string) => name === 'DSCR' ? Number(v).toFixed(2) : formatZAR(Number(v))} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar yAxisId="zar" dataKey="revenue"  name="Revenue"      stackId="x" fill="#3b82c4" />
+            <Bar yAxisId="zar" dataKey="revenue"  name="Revenue"      stackId="x" fill="oklch(0.46 0.16 55)" />
             <Bar yAxisId="zar" dataKey="opex"     name="Opex"         stackId="x" fill="#b04e0f" />
             <Bar yAxisId="zar" dataKey="debtSvc"  name="Debt service" stackId="x" fill="#6b3a82" />
             <Line yAxisId="dscr" type="monotone" dataKey="dscr" name="DSCR" stroke="#1a8a5b" strokeWidth={2} dot={false} />
@@ -168,7 +168,7 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone: 'good
     good: 'text-[#1a8a5b]',
     warn: 'text-[#b04e0f]',
     bad:  'text-[#c0392b]',
-    info: 'text-[#3b82c4]',
+    info: 'text-[oklch(0.46_0.16_55)]',
   } as const;
   return (
     <div>
@@ -195,7 +195,7 @@ function Slider({ label, value, min, max, step, onChange, format }: {
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full mt-1 accent-[#1a3a5c]"
+        className="w-full mt-1 accent-[oklch(0.46_0.16_55)]"
       />
     </label>
   );

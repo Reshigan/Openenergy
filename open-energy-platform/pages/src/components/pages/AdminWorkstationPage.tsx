@@ -338,7 +338,7 @@ export function AdminWorkstationPage() {
       tour={ADMIN_TOUR}
       eyebrow="Admin · Workstation"
       title="Platform admin workstation"
-      subtitle="Tenant lifecycle · Billing runs · Feature-flag overrides. Audit trail for every platform-level change."
+      subtitle="Tenant onboarding → Platform config → Revenue & billing → Audit & compliance → System health"
       backHref="/admin-platform"
       backLabel="Admin platform"
       tabs={[
@@ -681,7 +681,7 @@ function KycVerificationsTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'sla_deadline', label: 'SLA', render: (r) => r.sla_deadline ? String(r.sla_deadline) : '—' },
           { key: 'sla_breached', label: 'Breach', render: (r) => r.sla_breached ? <Pill tone="bad">BREACH</Pill> : <Pill tone="good">OK</Pill> },
           { key: 'actions', label: '', render: (r) => (
-            <button type="button" onClick={() => setActionRow(r)} className="text-[11px] text-[#1a3a5c] underline">Action</button>
+            <button type="button" onClick={() => setActionRow(r)} className="text-[11px] text-[oklch(0.46_0.16_55)] underline">Action</button>
           )},
         ]}
       />
@@ -852,7 +852,7 @@ function CascadeDlqTab() {
                           <button type="button"
                             onClick={() => void retry(r.id)}
                             disabled={rowBusy}
-                            className="text-[11px] font-semibold text-[#1a3a5c] hover:underline disabled:opacity-40"
+                            className="text-[11px] font-semibold text-[oklch(0.46_0.16_55)] hover:underline disabled:opacity-40"
                           >
                             {rowBusy && !isResolving ? 'Retrying…' : 'Retry'}
                           </button>
@@ -1106,7 +1106,7 @@ function SubscriptionBillingTab() {
                                 key={a}
                                 onClick={() => void act(r.id, a)}
                                 disabled={rowBusy}
-                                className={`text-[11px] font-medium hover:underline disabled:opacity-40 ${a === 'write_off' || a === 'suspend_account' || a === 'cancel' ? 'text-[#b4453a]' : 'text-[#1a3a5c]'}`}
+                                className={`text-[11px] font-medium hover:underline disabled:opacity-40 ${a === 'write_off' || a === 'suspend_account' || a === 'cancel' ? 'text-[#b4453a]' : 'text-[oklch(0.46_0.16_55)]'}`}
                               >
                                 {SUB_ACTION_LABELS[a] ?? a}
                               </button>

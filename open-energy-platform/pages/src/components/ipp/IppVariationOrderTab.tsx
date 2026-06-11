@@ -34,9 +34,9 @@ interface Kpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  instructed:                 'bg-blue-100 text-blue-800',
+  instructed:                 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
   acknowledged:               'bg-cyan-100 text-cyan-800',
-  quotation_submitted:        'bg-indigo-100 text-indigo-800',
+  quotation_submitted:        'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
   quotation_reviewed:         'bg-purple-100 text-purple-800',
   approved:                   'bg-green-100 text-green-800',
   rejected:                   'bg-red-100 text-red-800',
@@ -50,7 +50,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   minor:        'bg-[#eef2f7] text-[#3d4756]',
-  moderate:     'bg-blue-100 text-blue-700',
+  moderate:     'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   significant:  'bg-yellow-100 text-yellow-800',
   major:        'bg-orange-100 text-orange-800',
   material:     'bg-red-100 text-red-800',
@@ -195,7 +195,7 @@ export function IppVariationOrderTab() {
         ))}
         <span className="ml-2 text-[#9aa5b4]">|</span>
         {['minor','moderate','significant','major','material'].map(t => (
-          <button type="button" key={t} onClick={() => applyTier(filterTier === t ? '' : t)} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>{t}</button>
+          <button type="button" key={t} onClick={() => applyTier(filterTier === t ? '' : t)} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-[oklch(0.40_0.15_55)] text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>{t}</button>
         ))}
         <button type="button" onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]">+ New VO</button>
         <button type="button" onClick={() => load(filterStatus, filterTier)} className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border hover:bg-[#e8ecf0]">Refresh</button>
@@ -235,7 +235,7 @@ export function IppVariationOrderTab() {
                   <td className={`py-2 pr-4 text-xs ${vo.sla_breached ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                     {vo.sla_breached ? '⚠ BREACHED' : fmtDate(vo.sla_due_at)}
                   </td>
-                  <td className="py-2 text-xs text-indigo-600">View →</td>
+                  <td className="py-2 text-xs text-[oklch(0.46_0.16_55)]">View →</td>
                 </tr>
               ))}
               {items.length === 0 && (
@@ -281,7 +281,7 @@ export function IppVariationOrderTab() {
                 {ACTION_MAP[selected.chain_status].map(a => (
                   <button type="button" key={a.next} disabled={actionPending}
                     onClick={() => doAction(selected.id, a.next)}
-                    className={`w-full text-left px-3 py-2 rounded border text-sm hover:bg-indigo-50 hover:border-indigo-300 ${a.next === 'refer_adjudication' ? 'border-red-300 text-red-700 hover:bg-red-50' : a.next.includes('cancel') || a.next.includes('reject') ? 'border-red-200 text-red-600' : 'border-[#dde4ec] text-[#2d3748]'}`}>
+                    className={`w-full text-left px-3 py-2 rounded border text-sm hover:bg-[oklch(0.97_0.003_250)] hover:border-indigo-300 ${a.next === 'refer_adjudication' ? 'border-red-300 text-red-700 hover:bg-red-50' : a.next.includes('cancel') || a.next.includes('reject') ? 'border-red-200 text-red-600' : 'border-[#dde4ec] text-[#2d3748]'}`}>
                     {a.label}
                     {a.next === 'refer_adjudication' && <span className="ml-2 text-xs bg-red-100 text-red-700 px-1 rounded">REGULATOR</span>}
                     {(a.next === 'approve_variation' && (selected.value_tier === 'major' || selected.value_tier === 'material')) && <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-1 rounded">NOTIFIES FUNDERS</span>}

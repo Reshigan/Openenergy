@@ -134,7 +134,7 @@ export function VaultPanel({
                     {f.uploaded_by_name ? ` by ${f.uploaded_by_name}` : ''}
                   </div>
                 </div>
-                <button type="button" onClick={() => download(f)} title="Download" className="p-1.5 text-[#3b82c4] hover:bg-[#eef2f7] rounded"><Download size={14} /></button>
+                <button type="button" onClick={() => download(f)} title="Download" className="p-1.5 hover:bg-[oklch(0.96_0.003_250)] rounded" style={{ color: 'oklch(0.46 0.16 55)' }}><Download size={14} /></button>
                 <button type="button" onClick={() => del(f)} title="Delete" className="p-1.5 text-[#c0392b] hover:bg-[#fde7e9] rounded"><Trash2 size={14} /></button>
               </li>
             ))}

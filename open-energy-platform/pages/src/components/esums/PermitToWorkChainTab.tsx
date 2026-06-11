@@ -20,6 +20,20 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'permit_requested' | 'hazard_assessment' | 'isolation_pending'
@@ -34,6 +48,7 @@ type WorkClass =
   | 'confined_space' | 'hot_work' | 'lifting' | 'excavation' | 'general';
 
 interface PermitRow {
+  [key: string]: unknown;
   id: string;
   permit_number: string;
   source_event: string | null;
@@ -93,19 +108,6 @@ interface PermitRow {
   created_at: string;
 }
 
-interface PermitEvent {
-  id: string;
-  permit_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiData {
   total: number;
   open_count: number;
@@ -124,46 +126,25 @@ interface KpiData {
   total_isolation_points: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  permit_requested:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Requested' },
-  hazard_assessment:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Hazard assessment' },
-  isolation_pending:   { bg: '#fff4d6', fg: '#a06200', label: 'Isolation pending' },
-  isolation_confirmed: { bg: '#fff4d6', fg: '#a06200', label: 'Isolation confirmed' },
-  permit_issued:       { bg: '#daf5e2', fg: '#1f6b3a', label: 'Permit issued' },
-  work_in_progress:    { bg: '#fff4d6', fg: '#a06200', label: 'Work in progress' },
-  suspended:           { bg: '#fde0e0', fg: '#9b1f1f', label: 'Suspended' },
-  work_complete:       { bg: '#daf5e2', fg: '#1f6b3a', label: 'Work complete' },
-  permit_closed:       { bg: '#e3e7ec', fg: '#557',    label: 'Closed' },
-  permit_rejected:     { bg: '#fbd0d0', fg: '#7a1414', label: 'Rejected' },
-  permit_revoked:      { bg: '#fbd0d0', fg: '#7a1414', label: 'Revoked' },
-  withdrawn:           { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'permit_requested',
+  'hazard_assessment',
+  'isolation_pending',
+  'isolation_confirmed',
+  'permit_issued',
+  'work_in_progress',
+  'suspended',
+  'work_complete',
+  'permit_closed',
+];
+const BRANCH_STATES: readonly string[] = [
+  'permit_rejected',
+  'permit_revoked',
+  'withdrawn',
+];
 
-const TIER_TONE: Record<HazardTier, { bg: string; fg: string; label: string }> = {
-  low:          { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-  moderate:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Moderate' },
-  high:         { bg: '#fff4d6', fg: '#a06200', label: 'High' },
-  critical:     { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical' },
-  catastrophic: { bg: '#fbd0d0', fg: '#7a1414', label: 'Catastrophic' },
-};
-
-const CLASS_LABEL: Record<WorkClass, string> = {
-  electrical_live:     'Electrical (live)',
-  electrical_isolated: 'Electrical (isolated)',
-  working_at_height:   'Working at height',
-  confined_space:      'Confined space',
-  hot_work:            'Hot work',
-  lifting:             'Lifting',
-  excavation:          'Excavation',
-  general:             'General',
-};
-
-const PARTY_TONE: Record<string, { bg: string; fg: string }> = {
-  issuing_authority: { bg: '#dbecfb', fg: '#1a3a5c' },
-  permit_holder:     { bg: '#fff4d6', fg: '#a06200' },
-  system:            { bg: '#e3e7ec', fg: '#557' },
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',              label: 'Active (pre-terminal)' },
   { key: 'all',                 label: 'All' },
@@ -187,6 +168,17 @@ const FILTERS: Array<{ key: string; label: string }> = [
 
 const TIERS = new Set<string>(['low', 'moderate', 'high', 'critical', 'catastrophic']);
 
+const CLASS_LABEL: Record<WorkClass, string> = {
+  electrical_live:     'Electrical (live)',
+  electrical_isolated: 'Electrical (isolated)',
+  working_at_height:   'Working at height',
+  confined_space:      'Confined space',
+  hot_work:            'Hot work',
+  lifting:             'Lifting',
+  excavation:          'Excavation',
+  general:             'General',
+};
+
 function fmtMin(min: number | null | undefined): string {
   if (min === null || min === undefined) return '—';
   if (Math.abs(min) >= 1440) return `${(min / 1440).toFixed(1)}d`;
@@ -194,14 +186,295 @@ function fmtMin(min: number | null | undefined): string {
   return `${min}m`;
 }
 
+// ── action helpers ────────────────────────────────────────────────────────
+function getActions(row: PermitRow): ChainAction[] {
+  const cs = row.chain_status;
+  const actions: ChainAction[] = [];
+
+  if (cs === 'permit_requested') {
+    actions.push({
+      key: 'begin-assessment',
+      label: 'Begin assessment (authority)',
+      tone: 'primary',
+      fields: [
+        { key: 'assessment_ref',   label: 'Assessment reference', type: 'text',     required: false, placeholder: String(row.assessment_ref ?? '') },
+        { key: 'assessment_basis', label: 'Hazard assessment basis', type: 'textarea', required: false, placeholder: String(row.assessment_basis ?? '') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'hazard_assessment') {
+    actions.push({
+      key: 'approve-isolation-plan',
+      label: 'Approve isolation plan (authority)',
+      tone: 'primary',
+      fields: [
+        { key: 'isolation_plan_ref', label: 'Isolation plan reference', type: 'text',   required: false, placeholder: String(row.isolation_plan_ref ?? '') },
+        { key: 'energy_sources',     label: 'Energy sources (e.g. electrical / mechanical / stored)', type: 'text', required: false, placeholder: String(row.energy_sources ?? '') },
+        { key: 'isolation_points',   label: 'Number of isolation points', type: 'number', required: false, placeholder: String(row.isolation_points ?? '') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'isolation_pending') {
+    actions.push({
+      key: 'verify-isolation',
+      label: 'Verify isolation / test-for-dead (authority)',
+      tone: 'primary',
+      fields: [
+        { key: 'isolation_cert_ref',        label: 'Isolation certificate reference', type: 'text', required: false, placeholder: String(row.isolation_cert_ref ?? '') },
+        { key: 'isolating_authority_name',  label: 'Isolating authority (competent person)', type: 'text', required: false, placeholder: String(row.isolating_authority_name ?? '') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'isolation_confirmed') {
+    actions.push({
+      key: 'issue-permit',
+      label: 'Issue permit (authority)',
+      tone: 'primary',
+      fields: [
+        { key: 'permit_ref',            label: 'Permit reference',       type: 'text',   required: false, placeholder: String(row.permit_ref ?? '') },
+        { key: 'permit_validity_hours', label: 'Permit validity (hours)', type: 'number', required: false, placeholder: String(row.permit_validity_hours ?? '') },
+        { key: 'issue_basis',           label: 'Issue basis',            type: 'textarea', required: false, placeholder: String(row.issue_basis ?? '') },
+      ],
+      // issue_permit crosses regulator EVERY tier when live-electrical OR confined-space
+      cascadeTo: (row.live_work_flag || row.work_class === 'confined_space') ? ['regulator'] : [],
+    });
+  }
+
+  if (cs === 'permit_issued') {
+    actions.push({
+      key: 'start-work',
+      label: 'Start work (holder)',
+      tone: 'primary',
+      fields: [
+        { key: 'notes', label: 'Notes', type: 'textarea', required: false, placeholder: String(row.notes ?? '') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'work_in_progress') {
+    actions.push({
+      key: 'suspend-work',
+      label: 'Suspend (handover / weather)',
+      tone: 'warn',
+      fields: [
+        { key: 'suspension_basis', label: 'Suspension basis (e.g. shift handover)', type: 'textarea', required: false, placeholder: String(row.suspension_basis ?? '') },
+        { key: 'reason_code',      label: 'Reason code',                            type: 'text',     required: false, placeholder: String(row.reason_code ?? '') },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'complete-work',
+      label: 'Complete work (holder)',
+      tone: 'primary',
+      fields: [
+        { key: 'completion_ref',   label: 'Completion reference', type: 'text',     required: false, placeholder: String(row.completion_ref ?? '') },
+        { key: 'completion_basis', label: 'Completion basis',     type: 'textarea', required: false, placeholder: String(row.completion_basis ?? '') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'suspended') {
+    actions.push({
+      key: 'resume-work',
+      label: 'Resume work (holder)',
+      tone: 'primary',
+      fields: [
+        { key: 'notes', label: 'Notes', type: 'textarea', required: false, placeholder: String(row.notes ?? '') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'work_complete') {
+    actions.push({
+      key: 'close-permit',
+      label: 'Close permit (re-energise / hand back)',
+      tone: 'primary',
+      fields: [
+        { key: 'closure_ref',   label: 'Closure reference', type: 'text',     required: false, placeholder: String(row.closure_ref ?? '') },
+        { key: 'closure_basis', label: 'Closure basis',     type: 'textarea', required: false, placeholder: String(row.closure_basis ?? '') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (cs === 'hazard_assessment' || cs === 'isolation_pending') {
+    actions.push({
+      key: 'reject-permit',
+      label: 'Reject permit (authority)',
+      tone: 'danger',
+      fields: [
+        { key: 'rejection_basis', label: 'Rejection basis (hazard unacceptable)', type: 'textarea', required: false, placeholder: String(row.rejection_basis ?? '') },
+        { key: 'reason_code',     label: 'Reason code',                           type: 'text',     required: false, placeholder: String(row.reason_code ?? '') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (
+    cs === 'isolation_confirmed' ||
+    cs === 'permit_issued' ||
+    cs === 'work_in_progress' ||
+    cs === 'suspended'
+  ) {
+    actions.push({
+      key: 'revoke-permit',
+      label: 'REVOKE (emergency / isolation breach)',
+      tone: 'danger',
+      fields: [
+        { key: 'revocation_basis', label: 'Revocation basis (emergency / unsafe condition)', type: 'textarea', required: false, placeholder: String(row.revocation_basis ?? '') },
+        { key: 'regulator_ref',    label: 'Regulator reference',                             type: 'text',     required: false, placeholder: String(row.regulator_ref ?? '') },
+        { key: 'reason_code',      label: 'Reason code',                                     type: 'text',     required: false, placeholder: String(row.reason_code ?? '') },
+      ],
+      // revoke ALWAYS crosses regulator
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (
+    cs === 'permit_requested' ||
+    cs === 'hazard_assessment' ||
+    cs === 'isolation_pending'
+  ) {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw (holder)',
+      tone: 'ghost',
+      fields: [
+        { key: 'withdrawal_basis', label: 'Withdrawal basis (no longer required)', type: 'textarea', required: false, placeholder: String(row.withdrawal_basis ?? '') },
+        { key: 'reason_code',      label: 'Reason code',                           type: 'text',     required: false, placeholder: String(row.reason_code ?? '') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: PermitRow): React.ReactNode {
+  return (
+    <div className="space-y-3 text-[11px]">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+        <DetailPair label="Permit holder"     value={row.holder_party_name} />
+        <DetailPair label="Issuing authority" value={row.authority_party_name} />
+        {row.isolating_authority_name && (
+          <DetailPair label="Isolating authority" value={row.isolating_authority_name} />
+        )}
+        <DetailPair label="Work class" value={CLASS_LABEL[row.work_class]} />
+        {row.equipment_tag   && <DetailPair label="Equipment tag"   value={row.equipment_tag} />}
+        {row.work_location   && <DetailPair label="Work location"   value={row.work_location} />}
+        <DetailPair label="Hazard score" value={`${row.hazard_score} / 100`} />
+        {row.energy_sources  && <DetailPair label="Energy sources"  value={row.energy_sources} />}
+        {row.isolation_points != null && <DetailPair label="Isolation points"   value={String(row.isolation_points)} />}
+        {row.permit_validity_hours != null && <DetailPair label="Permit validity" value={`${row.permit_validity_hours} h`} />}
+        {row.method_statement_ref && <DetailPair label="Method statement" value={row.method_statement_ref} />}
+        {row.suspend_count > 0 && <DetailPair label="Suspensions" value={String(row.suspend_count)} />}
+        {row.permit_ref         && <DetailPair label="Permit ref"       value={row.permit_ref} />}
+        {row.isolation_cert_ref && <DetailPair label="Isolation cert"   value={row.isolation_cert_ref} />}
+        {row.completion_ref     && <DetailPair label="Completion ref"   value={row.completion_ref} />}
+        {row.regulator_ref      && <DetailPair label="Regulator ref"    value={row.regulator_ref} />}
+        {row.reason_code        && <DetailPair label="Reason code"      value={row.reason_code} />}
+        {row.escalation_level > 0 && <DetailPair label="Escalation level" value={String(row.escalation_level)} />}
+        {row.sla_deadline_at && !row.is_terminal && (
+          <DetailPair
+            label="Next SLA"
+            value={`${new Date(row.sla_deadline_at).toLocaleString()} (${fmtMin(row.minutes_until_sla)})${row.escalation_level > 0 ? ` · ${row.escalation_level} breach(es)` : ''}`}
+          />
+        )}
+        {row.source_wave && (
+          <DetailPair
+            label="Provenance"
+            value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}${row.source_event ? ` (${row.source_event})` : ''}`}
+          />
+        )}
+      </div>
+
+      {row.work_description && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Work description</div>
+          <div style={{ color: TX2 }}>{row.work_description}</div>
+        </div>
+      )}
+      {row.assessment_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Hazard assessment</div>
+          <div style={{ color: TX2 }}>{row.assessment_basis}</div>
+        </div>
+      )}
+      {row.isolation_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Isolation basis</div>
+          <div style={{ color: TX2 }}>{row.isolation_basis}</div>
+        </div>
+      )}
+      {row.issue_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Issue basis</div>
+          <div style={{ color: TX2 }}>{row.issue_basis}</div>
+        </div>
+      )}
+      {row.suspension_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Suspension basis</div>
+          <div style={{ color: TX2 }}>{row.suspension_basis}</div>
+        </div>
+      )}
+      {row.completion_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Completion basis</div>
+          <div style={{ color: TX2 }}>{row.completion_basis}</div>
+        </div>
+      )}
+      {row.closure_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Closure basis</div>
+          <div style={{ color: TX2 }}>{row.closure_basis}</div>
+        </div>
+      )}
+      {row.rejection_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Rejection basis</div>
+          <div style={{ color: TX2 }}>{row.rejection_basis}</div>
+        </div>
+      )}
+      {row.revocation_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: BAD }}>Revocation basis</div>
+          <div style={{ color: TX2 }}>{row.revocation_basis}</div>
+        </div>
+      )}
+      {row.withdrawal_basis && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Withdrawal basis</div>
+          <div style={{ color: TX2 }}>{row.withdrawal_basis}</div>
+        </div>
+      )}
+      {row.notes && (
+        <div className="rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Notes</div>
+          <div style={{ color: TX2 }}>{row.notes}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function PermitToWorkChainTab() {
   const [rows, setRows] = useState<PermitRow[]>([]);
   const [kpis, setKpis] = useState<KpiData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<PermitRow | null>(null);
-  const [events, setEvents] = useState<PermitEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -223,383 +496,160 @@ export function PermitToWorkChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: PermitRow; events: PermitEvent[] } }>(`/permit-to-work/chain/${id}`);
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/permit-to-work/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/permit-to-work/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load permit history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: PermitRow; events: ChainEvent[] } }>(`/permit-to-work/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (filter === 'all')        return true;
       if (filter === 'active')     return !r.is_terminal;
-      if (filter === 'breached')   return r.sla_breached;
-      if (filter === 'reportable') return r.is_reportable_flag;
-      if (filter === 'live')       return r.live_work_flag;
+      if (filter === 'breached')   return !!r.sla_breached;
+      if (filter === 'reportable') return !!r.is_reportable_flag;
+      if (filter === 'live')       return !!r.live_work_flag;
       if (TIERS.has(filter))       return r.hazard_tier === filter;
       return r.chain_status === filter;
     });
   }, [rows, filter]);
 
-  const doAction = useCallback(async (path: string, body?: object) => {
-    if (!selected) return;
-    try {
-      await api.post(`/permit-to-work/chain/${selected.id}/${path}`, body ?? {});
-      await load();
-      await loadEvents(selected.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Action failed');
-    }
-  }, [selected, load, loadEvents]);
+  const k = kpis ?? {
+    total: 0, open_count: 0, closed_count: 0, issued_count: 0,
+    in_progress_count: 0, suspended_count: 0, rejected_count: 0,
+    revoked_count: 0, withdrawn_count: 0, breached: 0,
+    reportable_total: 0, live_work_total: 0, confined_total: 0,
+    top_tier_open: 0, total_isolation_points: 0,
+  };
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-7 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? 0} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="In progress" value={kpis?.in_progress_count ?? 0} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Top-tier open" value={kpis?.top_tier_open ?? 0} tone={(kpis?.top_tier_open ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Live work" value={kpis?.live_work_total ?? 0} tone={(kpis?.live_work_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Revoked" value={kpis?.revoked_count ?? 0} tone={(kpis?.revoked_count ?? 0) > 0 ? 'bad' : 'ok'} />
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Permit-to-Work / LOTO</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          OHSA safe-system-of-work gate for hazardous field interventions on PV / wind assets
+        </p>
+      </header>
+
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total"         value={k.total} />
+        <KpiTile label="Open"          value={k.open_count} />
+        <KpiTile label="In progress"   value={k.in_progress_count} />
+        <KpiTile label="SLA breached"  value={k.breached}         tone={k.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Top-tier open" value={k.top_tier_open}    tone={k.top_tier_open > 0 ? 'bad' : undefined} />
+        <KpiTile label="Live work"     value={k.live_work_total}  tone={k.live_work_total > 0 ? 'warn' : undefined} />
+        <KpiTile label="Revoked"       value={k.revoked_count}    tone={k.revoked_count > 0 ? 'bad' : undefined} />
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
-                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
-            }`}>
+      {/* Filter pills */}
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
-      {err && <div className="px-3 py-2 bg-red-50 text-red-700 text-[12px] rounded-md">{err}</div>}
+      {err && (
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
+        </div>
+      )}
 
-      <div className="bg-white border border-[#e5ebf2] rounded-xl overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[#f7f9fb] text-[11px] uppercase tracking-wide text-[#6b7685]">
-            <tr>
-              <th className="px-3 py-2 text-left">Permit #</th>
-              <th className="px-3 py-2 text-left">Asset / work</th>
-              <th className="px-3 py-2 text-left">Holder</th>
-              <th className="px-3 py-2 text-left">Class</th>
-              <th className="px-3 py-2 text-left">Hazard</th>
-              <th className="px-3 py-2 text-left">State</th>
-              <th className="px-3 py-2 text-right">Δ SLA</th>
-            </tr>
-          </thead>
-          <tbody className="text-[13px]">
-            {loading ? (
-              <tr><td colSpan={7} className="p-6 text-center text-[#6b7685]">Loading…</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={7} className="p-6 text-center text-[#6b7685]">No permits match the current filter.</td></tr>
-            ) : filtered.map((r) => {
-              const stateTone = STATE_TONE[r.chain_status];
-              const tierTone  = TIER_TONE[r.hazard_tier];
-              return (
-                <tr
-                  key={r.id}
-                  onClick={() => loadEvents(r.id)}
-                  className={`cursor-pointer hover:bg-[#f7f9fb] border-t border-[#eef2f6] ${selected?.id === r.id ? 'bg-[#fffae6]' : ''}`}>
-                  <td className="px-3 py-2 font-mono text-[11px]">{r.permit_number}</td>
-                  <td className="px-3 py-2 max-w-xs truncate" title={`${r.asset_name ?? ''} · ${r.work_description ?? ''}`}>
-                    {r.asset_name ?? '—'}<span className="text-[#6b7685]"> · {r.work_description ?? r.work_location ?? ''}</span>
-                  </td>
-                  <td className="px-3 py-2 text-[#4a5568] max-w-[12rem] truncate" title={r.holder_party_name}>{r.holder_party_name}</td>
-                  <td className="px-3 py-2 text-[#4a5568] text-[12px] max-w-[10rem] truncate" title={CLASS_LABEL[r.work_class]}>
-                    {CLASS_LABEL[r.work_class]}
-                    {r.live_work_flag && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fbd0d0] text-[#7a1414]">LIVE</span>}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: tierTone.bg, color: tierTone.fg }}>
-                      {tierTone.label}
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading…
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.permit_number}${row.asset_name ? ` · ${row.asset_name}` : ''}`}
+              meta={
+                <span style={{ color: TX3, fontSize: 11 }}>
+                  {CLASS_LABEL[row.work_class]}
+                  {row.live_work_flag && (
+                    <span className="ml-1.5 px-1 py-0.5 rounded text-[9px] font-bold"
+                      style={{ background: 'oklch(0.97 0.04 20)', color: BAD }}>
+                      LIVE
                     </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: stateTone.bg, color: stateTone.fg }}>
-                      {stateTone.label}
+                  )}
+                  {row.is_reportable_flag && (
+                    <span className="ml-1.5 px-1 py-0.5 rounded text-[9px] font-medium"
+                      style={{ background: 'oklch(0.96 0.04 20)', color: WARN }}>
+                      Reportable
                     </span>
-                  </td>
-                  <td className={`px-3 py-2 text-right text-[12px] tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                    {r.is_terminal ? '—' : fmtMin(r.minutes_until_sla)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {selected && (
-        <PermitDrawer
-          row={selected}
-          events={events}
-          onClose={() => { setSelected(null); setEvents([]); }}
-          doAction={doAction}
-        />
+                  )}
+                  {' · '}
+                  {row.holder_party_name}
+                  {row.work_description ? ` · ${row.work_description}` : ''}
+                  {` · ${fmtMin(row.minutes_until_sla)} SLA`}
+                </span>
+              }
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No permits match the current filter.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone = 'ok' }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const fg = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0f1c2e';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="bg-white border border-[#e5ebf2] rounded-lg p-3">
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[20px] font-semibold tabular-nums mt-0.5" style={{ color: fg }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function PermitDrawer({
-  row, events, onClose, doAction,
-}: {
-  row: PermitRow;
-  events: PermitEvent[];
-  onClose: () => void;
-  doAction: (path: string, body?: object) => Promise<void>;
-}) {
-  const cs = row.chain_status;
-  const transitionable = !row.is_terminal;
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/30 flex items-stretch justify-end oe-overlay-in" onClick={onClose}>
-      <div className="bg-white w-full max-w-2xl shadow-xl overflow-y-auto oe-drawer-in" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-start justify-between sticky top-0 bg-white z-10">
-          <div>
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">Permit {row.permit_number}</div>
-            <h3 className="text-[16px] font-semibold text-[#0f1c2e] mt-0.5">
-              {row.asset_name ?? '—'} · {row.work_description ?? CLASS_LABEL[row.work_class]}
-            </h3>
-            <div className="flex flex-wrap gap-2 mt-2 text-[12px]">
-              <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: TIER_TONE[row.hazard_tier].bg, color: TIER_TONE[row.hazard_tier].fg }}>
-                {TIER_TONE[row.hazard_tier].label}
-              </span>
-              <span className="px-2 py-0.5 rounded-full" style={{ background: STATE_TONE[cs].bg, color: STATE_TONE[cs].fg }}>
-                {STATE_TONE[cs].label}
-              </span>
-              {row.live_work_flag && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fbd0d0] text-[#7a1414] font-bold">LIVE WORK</span>
-              )}
-              {row.is_reportable_flag && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">Regulator reportable</span>
-              )}
-            </div>
-          </div>
-          <button type="button" onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">✕</button>
-        </div>
-
-        <div className="p-5 space-y-4 text-[13px]">
-          <div className="grid grid-cols-2 gap-4">
-            <Pair label="Permit holder" value={row.holder_party_name} />
-            <Pair label="Issuing authority" value={row.authority_party_name} />
-            {row.isolating_authority_name && <Pair label="Isolating authority" value={row.isolating_authority_name} />}
-            <Pair label="Work class" value={CLASS_LABEL[row.work_class]} />
-            {row.equipment_tag && <Pair label="Equipment tag" value={row.equipment_tag} />}
-            {row.work_location && <Pair label="Work location" value={row.work_location} />}
-            <Pair label="Hazard score" value={`${row.hazard_score} / 100`} />
-            {row.energy_sources && <Pair label="Energy sources" value={row.energy_sources} />}
-            {row.isolation_points != null && <Pair label="Isolation points" value={String(row.isolation_points)} />}
-            {row.permit_validity_hours != null && <Pair label="Permit validity" value={`${row.permit_validity_hours} h`} />}
-            {row.method_statement_ref && <Pair label="Method statement" value={row.method_statement_ref} />}
-            {row.suspend_count > 0 && <Pair label="Suspensions" value={String(row.suspend_count)} />}
-          </div>
-
-          {row.work_description && <Pair label="Work description" value={row.work_description} />}
-          {row.assessment_basis && <Pair label="Hazard assessment" value={row.assessment_basis} />}
-          {row.isolation_basis && <Pair label="Isolation basis" value={row.isolation_basis} />}
-          {row.issue_basis && <Pair label="Issue basis" value={row.issue_basis} />}
-          {row.suspension_basis && <Pair label="Suspension basis" value={row.suspension_basis} />}
-          {row.completion_basis && <Pair label="Completion basis" value={row.completion_basis} />}
-          {row.closure_basis && <Pair label="Closure basis" value={row.closure_basis} />}
-          {row.rejection_basis && <Pair label="Rejection basis" value={row.rejection_basis} />}
-          {row.revocation_basis && <Pair label="Revocation basis" value={row.revocation_basis} />}
-          {row.withdrawal_basis && <Pair label="Withdrawal basis" value={row.withdrawal_basis} />}
-          {row.reason_code && <Pair label="Reason code" value={row.reason_code} />}
-          {row.notes && <Pair label="Notes" value={row.notes} />}
-
-          <div className="grid grid-cols-2 gap-4">
-            {row.permit_ref && <Pair label="Permit ref" value={row.permit_ref} />}
-            {row.isolation_cert_ref && <Pair label="Isolation cert" value={row.isolation_cert_ref} />}
-            {row.completion_ref && <Pair label="Completion ref" value={row.completion_ref} />}
-            {row.regulator_ref && <Pair label="Regulator ref" value={row.regulator_ref} />}
-          </div>
-
-          {row.source_wave && (
-            <Pair label="Provenance" value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}${row.source_event ? ` (${row.source_event})` : ''}`} />
-          )}
-
-          {row.sla_deadline_at && !row.is_terminal && (
-            <Pair label="Next SLA" value={`${new Date(row.sla_deadline_at).toLocaleString()} (${fmtMin(row.minutes_until_sla)})${row.escalation_level > 0 ? ` · ${row.escalation_level} breach(es)` : ''}`} />
-          )}
-
-          {transitionable && (
-            <div className="border-t border-[#eef2f6] pt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Actions</div>
-              <div className="flex flex-wrap gap-2">
-                {cs === 'permit_requested' && (
-                  <ActionBtn label="Begin assessment (authority)" onClick={() => {
-                    const ref = window.prompt('Assessment reference (optional):') ?? undefined;
-                    const basis = window.prompt('Hazard assessment basis (optional):') ?? undefined;
-                    void doAction('begin-assessment', { assessment_ref: ref, assessment_basis: basis });
-                  }} />
-                )}
-                {cs === 'hazard_assessment' && (
-                  <ActionBtn label="Approve isolation plan (authority)" onClick={() => {
-                    const ref = window.prompt('Isolation plan reference (optional):') ?? undefined;
-                    const energy = window.prompt('Energy sources (e.g. electrical / mechanical / stored):') ?? undefined;
-                    const points = window.prompt('Number of isolation points (optional):') ?? undefined;
-                    void doAction('approve-isolation-plan', {
-                      isolation_plan_ref: ref,
-                      energy_sources: energy,
-                      isolation_points: points ? Number(points) : undefined,
-                    });
-                  }} />
-                )}
-                {cs === 'isolation_pending' && (
-                  <ActionBtn label="Verify isolation / test-for-dead (authority)" tone="good" onClick={() => {
-                    const ref = window.prompt('Isolation certificate reference (optional):') ?? undefined;
-                    const who = window.prompt('Isolating authority (competent person):') ?? undefined;
-                    void doAction('verify-isolation', { isolation_cert_ref: ref, isolating_authority_name: who });
-                  }} />
-                )}
-                {cs === 'isolation_confirmed' && (
-                  <ActionBtn label="Issue permit (authority)" tone="good" onClick={() => {
-                    const ref = window.prompt('Permit reference (optional):') ?? undefined;
-                    const hours = window.prompt('Permit validity (hours, optional):') ?? undefined;
-                    const basis = window.prompt('Issue basis (optional):') ?? undefined;
-                    void doAction('issue-permit', {
-                      permit_ref: ref,
-                      permit_validity_hours: hours ? Number(hours) : undefined,
-                      issue_basis: basis,
-                    });
-                  }} />
-                )}
-                {cs === 'permit_issued' && (
-                  <ActionBtn label="Start work (holder)" onClick={() => {
-                    const n = window.prompt('Notes (optional):') ?? undefined;
-                    void doAction('start-work', n ? { notes: n } : {});
-                  }} />
-                )}
-                {cs === 'work_in_progress' && (
-                  <ActionBtn label="Suspend (handover / weather)" onClick={() => {
-                    const basis = window.prompt('Suspension basis (e.g. shift handover):') ?? undefined;
-                    const rc = window.prompt('Reason code (optional):') ?? undefined;
-                    void doAction('suspend-work', { suspension_basis: basis, reason_code: rc });
-                  }} />
-                )}
-                {cs === 'suspended' && (
-                  <ActionBtn label="Resume work (holder)" onClick={() => {
-                    const n = window.prompt('Notes (optional):') ?? undefined;
-                    void doAction('resume-work', n ? { notes: n } : {});
-                  }} />
-                )}
-                {cs === 'work_in_progress' && (
-                  <ActionBtn label="Complete work (holder)" tone="good" onClick={() => {
-                    const ref = window.prompt('Completion reference (optional):') ?? undefined;
-                    const basis = window.prompt('Completion basis (optional):') ?? undefined;
-                    void doAction('complete-work', { completion_ref: ref, completion_basis: basis });
-                  }} />
-                )}
-                {cs === 'work_complete' && (
-                  <ActionBtn label="Close permit (re-energise / hand back)" tone="good" onClick={() => {
-                    const ref = window.prompt('Closure reference (optional):') ?? undefined;
-                    const basis = window.prompt('Closure basis (optional):') ?? undefined;
-                    void doAction('close-permit', { closure_ref: ref, closure_basis: basis });
-                  }} />
-                )}
-                {(cs === 'hazard_assessment' || cs === 'isolation_pending') && (
-                  <ActionBtn label="Reject permit (authority)" tone="bad" onClick={() => {
-                    const basis = window.prompt('Rejection basis (hazard unacceptable):') ?? undefined;
-                    const rc = window.prompt('Reason code (optional):') ?? undefined;
-                    void doAction('reject-permit', { rejection_basis: basis, reason_code: rc });
-                  }} />
-                )}
-                {(cs === 'isolation_confirmed' || cs === 'permit_issued' || cs === 'work_in_progress' || cs === 'suspended') && (
-                  <ActionBtn label="REVOKE (emergency / isolation breach)" tone="bad" onClick={() => {
-                    const basis = window.prompt('Revocation basis (emergency / unsafe condition):') ?? undefined;
-                    const reg = window.prompt('Regulator reference (optional):') ?? undefined;
-                    const rc = window.prompt('Reason code (optional):') ?? undefined;
-                    void doAction('revoke-permit', { revocation_basis: basis, regulator_ref: reg, reason_code: rc });
-                  }} />
-                )}
-                {(cs === 'permit_requested' || cs === 'hazard_assessment' || cs === 'isolation_pending') && (
-                  <ActionBtn label="Withdraw (holder)" onClick={() => {
-                    const basis = window.prompt('Withdrawal basis (no longer required):') ?? undefined;
-                    const rc = window.prompt('Reason code (optional):') ?? undefined;
-                    void doAction('withdraw', { withdrawal_basis: basis, reason_code: rc });
-                  }} />
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="border-t border-[#eef2f6] pt-4">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Timeline</div>
-            <div className="space-y-2">
-              {events.length === 0 ? (
-                <div className="text-[12px] text-[#6b7685]">No events yet.</div>
-              ) : events.map((e) => {
-                const partyTone = PARTY_TONE[e.actor_party ?? 'system'] ?? PARTY_TONE.system;
-                return (
-                  <div key={e.id} className="flex gap-3 text-[12px] border-l-2 border-[#e5ebf2] pl-3 py-1">
-                    <span className="font-mono text-[11px] text-[#6b7685] whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
-                    <div>
-                      <span className="font-semibold text-[#0f1c2e]">{e.event_type}</span>
-                      {e.actor_party && (
-                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-medium uppercase" style={{ background: partyTone.bg, color: partyTone.fg }}>
-                          {e.actor_party}
-                        </span>
-                      )}
-                      {e.from_status && e.to_status && e.from_status !== e.to_status && (
-                        <span className="text-[#6b7685]"> · {e.from_status} → {e.to_status}</span>
-                      )}
-                      {e.notes && <div className="text-[#4a5568] mt-0.5">{e.notes}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[#0f1c2e] mt-0.5">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[11px] mt-0.5" style={{ color: TX1 }}>{value}</div>
     </div>
   );
 }
 
-function ActionBtn({ label, onClick, tone = 'neutral' }: { label: string; onClick: () => void; tone?: 'neutral' | 'good' | 'bad' }) {
-  const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#c2873a]';
-  return (
-    <button type="button" onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
-      {label}
-    </button>
-  );
-}
+export default PermitToWorkChainTab;

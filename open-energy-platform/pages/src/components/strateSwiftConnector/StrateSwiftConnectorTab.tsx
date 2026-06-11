@@ -73,6 +73,7 @@ type ExConStatus = 'none' | 'pending' | 'authorized' | 'expired';
 type FicKycStatus = 'clean' | 'refresh_due' | 'flagged';
 
 interface SscRow {
+  [key: string]: unknown;
   id: string;
   connector_number: string;
   peer_id: string;
@@ -188,10 +189,10 @@ interface SscEvent {
 
 const STATE_TONE: Record<SscStatus, { bg: string; fg: string; label: string }> = {
   connector_proposed:           { bg: '#e3e7ec', fg: '#445',    label: 'Proposed' },
-  bic_validated:                { bg: '#dbecfb', fg: '#1a3a5c', label: 'BIC validated' },
-  bank_handshake_completed:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Bank handshake' },
-  iso20022_schemas_loaded:      { bg: '#dbecfb', fg: '#1a3a5c', label: 'ISO 20022' },
-  messaging_session_established:{ bg: '#dbecfb', fg: '#1a3a5c', label: 'Session' },
+  bic_validated:                { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'BIC validated' },
+  bank_handshake_completed:     { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Bank handshake' },
+  iso20022_schemas_loaded:      { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'ISO 20022' },
+  messaging_session_established:{ bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Session' },
   test_messages_validated:      { bg: '#fff4d6', fg: '#a06200', label: 'Test msgs' },
   reconciliation_account_bound: { bg: '#fff4d6', fg: '#a06200', label: 'Recon bound' },
   live_settlement_active:       { bg: '#daf5e2', fg: '#1f6b3a', label: 'Live settlement' },
@@ -205,7 +206,7 @@ const STATE_TONE: Record<SscStatus, { bg: string; fg: string; label: string }> =
 
 const TIER_TONE: Record<SscTier, { bg: string; fg: string; label: string }> = {
   domestic_eft:    { bg: '#e3e7ec', fg: '#557',    label: 'Domestic EFT' },
-  multi_bank_eft:  { bg: '#dbecfb', fg: '#1a3a5c', label: 'Multi-bank EFT' },
+  multi_bank_eft:  { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Multi-bank EFT' },
   strate_csd:      { bg: '#daf5e2', fg: '#1f6b3a', label: 'STRATE CSD' },
   samos_rtgs:      { bg: '#fff4d6', fg: '#a06200', label: 'SAMOS RTGS' },
   swift_global:    { bg: '#7a0e0e', fg: '#fff',    label: 'SWIFT global' },
@@ -594,7 +595,7 @@ export function StrateSwiftConnectorTab({ regulatorView }: Props = {}) {
   }, [load]);
 
   return (
-    <div className="text-[12px] text-[#1a3a5c]">
+    <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-base font-semibold text-[#0c2a4d]">STRATE / SWIFT settlement connector (W124)</h2>
@@ -631,11 +632,11 @@ export function StrateSwiftConnectorTab({ regulatorView }: Props = {}) {
 
       {/* Drill rail */}
       <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[#d8dde6] bg-white px-3 py-2 text-[11px] text-[#4a5568]">
-        <span>Proposed: <span className="font-semibold text-[#1a3a5c]">{kpis.proposed_count}</span></span>
-        <span>BIC: <span className="font-semibold text-[#1a3a5c]">{kpis.bic_validated_count}</span></span>
-        <span>Handshake: <span className="font-semibold text-[#1a3a5c]">{kpis.handshake_count}</span></span>
-        <span>Schemas: <span className="font-semibold text-[#1a3a5c]">{kpis.schemas_count}</span></span>
-        <span>Session: <span className="font-semibold text-[#1a3a5c]">{kpis.session_count}</span></span>
+        <span>Proposed: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.proposed_count}</span></span>
+        <span>BIC: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.bic_validated_count}</span></span>
+        <span>Handshake: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.handshake_count}</span></span>
+        <span>Schemas: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.schemas_count}</span></span>
+        <span>Session: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.session_count}</span></span>
         <span>Test msgs: <span className="font-semibold text-[#a06200]">{kpis.test_msg_count}</span></span>
         <span>Recon bound: <span className="font-semibold text-[#a06200]">{kpis.recon_bound_count}</span></span>
         <span>Reconciled: <span className="font-semibold text-[#1f6b3a]">{kpis.reconciled_count}</span></span>
@@ -645,11 +646,11 @@ export function StrateSwiftConnectorTab({ regulatorView }: Props = {}) {
         <span>Floor flags: <span className="font-semibold text-[#a06200]">{kpis.floor_flag_total}</span></span>
         <span>Key {'<'}60d: <span className="font-semibold text-[#a06200]">{kpis.keys_expiring_within_60d}</span></span>
         <span>Key {'<'}14d: <span className="font-semibold text-[#9b1f1f]">{kpis.keys_expiring_within_14d}</span></span>
-        <span>W118: <span className="font-semibold text-[#1a3a5c]">{kpis.w118_bridged_count}</span></span>
-        <span>W120: <span className="font-semibold text-[#1a3a5c]">{kpis.w120_bridged_count}</span></span>
-        <span>W68: <span className="font-semibold text-[#1a3a5c]">{kpis.w68_bridged_count}</span></span>
-        <span>W3: <span className="font-semibold text-[#1a3a5c]">{kpis.w3_bridged_count}</span></span>
-        <span>W21: <span className="font-semibold text-[#1a3a5c]">{kpis.w21_bridged_count}</span></span>
+        <span>W118: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
+        <span>W120: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w120_bridged_count}</span></span>
+        <span>W68: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w68_bridged_count}</span></span>
+        <span>W3: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w3_bridged_count}</span></span>
+        <span>W21: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w21_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / priority pills */}
@@ -747,17 +748,17 @@ export function StrateSwiftConnectorTab({ regulatorView }: Props = {}) {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Connector #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Counterparty</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Protocol</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Health</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Value</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Quality</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Key</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Flags</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Connector #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Counterparty</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Protocol</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Health</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Value</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.46 0.16 55)' }}>Quality</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.46 0.16 55)' }}>Key</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-center">Flags</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-right">SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -781,11 +782,11 @@ export function StrateSwiftConnectorTab({ regulatorView }: Props = {}) {
                       {r.regulator_ref ? <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">FILED</span> : null}
                       {r.floor_at_swift_global_live ? <span className="ml-1 text-[9px] font-semibold text-[#7a0e0e]">SWIFT</span> : null}
                     </td>
-                    <td className="px-3 py-2 text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 text-[11px] text-[oklch(0.46_0.16_55)]">
                       {r.counterparty_name ?? '-'}
                       {r.bic ? <div className="text-[10px] text-[#6b7685] font-mono">{r.bic}</div> : null}
                     </td>
-                    <td className="px-3 py-2 text-[11px] font-mono text-[#1a3a5c]">
+                    <td className="px-3 py-2 text-[11px] font-mono text-[oklch(0.46_0.16_55)]">
                       {fmtProto(r.protocol)}
                       {r.iso20022_schema_version ? <div className="text-[10px] text-[#6b7685]">{r.iso20022_schema_version}</div> : null}
                     </td>
@@ -896,7 +897,7 @@ function Drawer({
         ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
         : tone === 'amber'
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
-          : 'bg-white border border-[#d8dde6] text-[#1a3a5c] hover:bg-[#f3f5f9]';
+          : 'bg-white border border-[#d8dde6] text-[oklch(0.46_0.16_55)] hover:bg-[#f3f5f9]';
     return (
       <button type="button"
         key={action}
@@ -926,7 +927,7 @@ function Drawer({
               {row.endpoint_url ? <> {'•'} <span className="font-mono text-[10px]">{row.endpoint_url}</span></> : null}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[oklch(0.46_0.16_55)] hover:bg-[#f3f5f9]">Close</button>
         </div>
 
         {/* 4 scoring indexes */}
@@ -1066,13 +1067,13 @@ function Drawer({
             )}
             {events.map((e) => (
               <li key={e.id} className="px-3 py-2 text-[11px]">
-                <div className="font-semibold text-[#1a3a5c]">{e.event_type}</div>
+                <div className="font-semibold text-[oklch(0.46_0.16_55)]">{e.event_type}</div>
                 <div className="text-[10px] text-[#4a5568]">
                   {e.from_status || '-'} {'→'} {e.to_status || '-'}
                   {e.actor_party ? <> {'•'} {e.actor_party}</> : null}
                   {' '}{'•'} {fmtDate(e.created_at)}
                 </div>
-                {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                {e.notes && <div className="mt-1 text-[oklch(0.46_0.16_55)]">{e.notes}</div>}
               </li>
             ))}
           </ol>
@@ -1166,7 +1167,7 @@ function ProposeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px] text-[#1a3a5c]">
+      <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px] text-[oklch(0.46_0.16_55)]">
         <div className="mb-3 flex items-start justify-between">
           <div>
             <h3 className="text-base font-semibold text-[#0c2a4d]">Propose STRATE / SWIFT connector (W124)</h3>
@@ -1174,7 +1175,7 @@ function ProposeModal({
               W118 + W120 audit/attestation bridges mandatory. Tier auto-derived from settlement_value_zar_per_cycle with FLOOR-AT-SAMOS-RTGS {'≥'}1 flag and FLOOR-AT-SWIFT-GLOBAL {'≥'}3 flags.
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[oklch(0.46_0.16_55)] hover:bg-[#f3f5f9]">Close</button>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -1231,7 +1232,7 @@ function ProposeModal({
         </div>
 
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[oklch(0.46_0.16_55)] hover:bg-[#f3f5f9]">Cancel</button>
           <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose connector</button>
         </div>
       </div>
@@ -1254,7 +1255,7 @@ function Checkbox({
   checked: boolean; onChange: (v: boolean) => void; label: string;
 }) {
   return (
-    <label className="flex items-center gap-2 text-[11px] text-[#1a3a5c]">
+    <label className="flex items-center gap-2 text-[11px] text-[oklch(0.46_0.16_55)]">
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       {label}
     </label>

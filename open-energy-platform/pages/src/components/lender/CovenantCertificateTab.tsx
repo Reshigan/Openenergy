@@ -28,6 +28,7 @@ type ChainStatus =
 type Tier = 'senior_secured' | 'mezzanine' | 'subordinated';
 
 interface CovCertRow {
+  [key: string]: unknown;
   id: string;
   certificate_number: string;
   source_event: string | null;
@@ -107,9 +108,9 @@ interface CovCertEvent {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   certificate_due:       { bg: '#fff4d6', fg: '#a06200', label: 'Certificate due' },
-  certificate_submitted: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Submitted' },
+  certificate_submitted: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Submitted' },
   under_review:          { bg: '#fbe7d0', fg: '#7a4500', label: 'Under review' },
-  ratios_verified:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Ratios verified' },
+  ratios_verified:       { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Ratios verified' },
   compliant:             { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Compliant' },
   breach_identified:     { bg: '#fcc3c3', fg: '#7a0e0e', label: 'Breach identified' },
   waiver_requested:      { bg: '#fbe7d0', fg: '#7a4500', label: 'Waiver requested' },
@@ -122,7 +123,7 @@ const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }>
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
   senior_secured: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Senior secured' },
   mezzanine:      { bg: '#fff4d6', fg: '#a06200', label: 'Mezzanine' },
-  subordinated:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Subordinated' },
+  subordinated:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Subordinated' },
 };
 
 const FILTERS: Array<{ key: string; label: string }> = [
@@ -425,7 +426,7 @@ export function CovenantCertificateTab() {
       <div className="mb-3 flex flex-wrap items-center gap-4 text-[11px] text-[#4a5568]">
         <span>Waiver granted: <span className="font-semibold text-[#1f6b3a]">{kpis.waiver_granted_count}</span></span>
         <span>SARB reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
-        <span>Senior open: <span className="font-semibold text-[#1a3a5c]">{kpis.senior_open}</span></span>
+        <span>Senior open: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.senior_open}</span></span>
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -454,15 +455,15 @@ export function CovenantCertificateTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Certificate #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Borrower / facility</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Period</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">DSCR</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Outstanding</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Breached</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Certificate #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Borrower / facility</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Period</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>DSCR</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Outstanding</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Breached</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -479,7 +480,7 @@ export function CovenantCertificateTab() {
                       {r.certificate_number}
                       {r.is_reportable && <span className="ml-1 rounded bg-[#fde0e0] px-1 text-[9px] font-semibold text-[#9b1f1f]">SARB</span>}
                     </td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">
+                    <td className="px-3 py-2" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       <div className="font-medium">{r.borrower_party_name}</div>
                       <div className="text-[10px] text-[#6b7685]">{r.facility_name}</div>
                     </td>
@@ -489,10 +490,10 @@ export function CovenantCertificateTab() {
                       </span>
                     </td>
                     <td className="px-3 py-2 text-[#4a5568]">{r.test_period ?? '—'}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.dscr_threshold != null && r.dscr_actual != null && r.dscr_actual < r.dscr_threshold ? 'text-red-700 font-semibold' : 'text-[#1a3a5c]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${r.dscr_threshold != null && r.dscr_actual != null && r.dscr_actual < r.dscr_threshold ? 'text-red-700 font-semibold' : ''}`} style={r.dscr_threshold != null && r.dscr_actual != null && r.dscr_actual < r.dscr_threshold ? undefined : { color: 'oklch(0.46 0.16 55)' }}>
                       {fmtRatio(r.dscr_actual, r.dscr_threshold)}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtZar(r.outstanding_principal)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtZar(r.outstanding_principal)}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
                         {cs.label}
@@ -592,7 +593,7 @@ function Drawer({
             {row.source_wave && <Pair label="Source" value={`${row.source_wave} · ${row.source_entity_id ?? ''}`} />}
           </div>
           {row.rod_notes && (
-            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">ROD notes</div>
               {row.rod_notes}
             </div>
@@ -663,7 +664,7 @@ function Drawer({
                     <div className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</div>
                   )}
                   {e.actor_party && <div className="text-[10px] text-[#6b7685]">party: {e.actor_party}</div>}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

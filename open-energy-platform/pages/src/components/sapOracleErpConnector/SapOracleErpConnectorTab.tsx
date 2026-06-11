@@ -77,6 +77,7 @@ type SarsStatus = 'current' | 'pending' | 'overdue';
 type CipcStatus = 'current' | 'pending' | 'overdue';
 
 interface SoecRow {
+  [key: string]: unknown;
   id: string;
   connector_number: string;
   peer_id: string;
@@ -197,10 +198,10 @@ interface SoecEvent {
 
 const STATE_TONE: Record<SoecStatus, { bg: string; fg: string; label: string }> = {
   connector_proposed:           { bg: '#e3e7ec', fg: '#445',    label: 'Proposed' },
-  erp_endpoint_validated:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Endpoint OK' },
-  company_code_mapped:          { bg: '#dbecfb', fg: '#1a3a5c', label: 'Company code' },
-  chart_of_accounts_bound:      { bg: '#dbecfb', fg: '#1a3a5c', label: 'CoA bound' },
-  schemas_loaded:               { bg: '#dbecfb', fg: '#1a3a5c', label: 'Schemas' },
+  erp_endpoint_validated:       { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Endpoint OK' },
+  company_code_mapped:          { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Company code' },
+  chart_of_accounts_bound:      { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'CoA bound' },
+  schemas_loaded:               { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Schemas' },
   idoc_session_established:     { bg: '#fff4d6', fg: '#a06200', label: 'IDoc session' },
   test_postings_validated:      { bg: '#fff4d6', fg: '#a06200', label: 'Test postings' },
   reconciliation_period_bound:  { bg: '#fff4d6', fg: '#a06200', label: 'Recon bound' },
@@ -215,7 +216,7 @@ const STATE_TONE: Record<SoecStatus, { bg: string; fg: string; label: string }> 
 
 const TIER_TONE: Record<SoecTier, { bg: string; fg: string; label: string }> = {
   single_module:        { bg: '#e3e7ec', fg: '#557',    label: 'Single module' },
-  multi_module:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Multi-module' },
+  multi_module:         { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Multi-module' },
   enterprise_wide:      { bg: '#daf5e2', fg: '#1f6b3a', label: 'Enterprise-wide' },
   group_consolidation:  { bg: '#fff4d6', fg: '#a06200', label: 'Group consol.' },
   multi_country:        { bg: '#7a0e0e', fg: '#fff',    label: 'Multi-country' },
@@ -509,97 +510,43 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
     try {
       const body: Record<string, unknown> = {};
       if (action === 'validate-erp-endpoint') {
-        const url = window.prompt('ERP endpoint URL:', row.endpoint_url ?? '');
-        if (url !== null) body.endpoint_url = url;
-        const cn = window.prompt('Counterparty (legal entity / customer name):', row.counterparty_name ?? '');
-        if (cn !== null) body.counterparty_name = cn;
+        body.endpoint_url = row.endpoint_url ?? '';
+        body.counterparty_name = row.counterparty_name ?? '';
       } else if (action === 'map-company-code') {
-        const ccs = window.prompt('Company code count (SAP BUKRS / Oracle OU / NetSuite Subsidiary):', String(row.company_code_count ?? 1));
-        if (ccs !== null) body.company_code_count = Number(ccs);
-        const juris = window.prompt('Jurisdiction count (tax jurisdictions covered):', String(row.jurisdiction_count ?? 1));
-        if (juris !== null) body.jurisdiction_count = Number(juris);
+        body.company_code_count = row.company_code_count ?? 1;
+        body.jurisdiction_count = row.jurisdiction_count ?? 1;
       } else if (action === 'bind-chart-of-accounts') {
-        const nodes = window.prompt('Chart-of-accounts node count (GL accounts):', String(row.chart_of_accounts_node_count ?? 500));
-        if (nodes !== null) body.chart_of_accounts_node_count = Number(nodes);
-        const mods = window.prompt('Module count (SAP FI/CO/MM/SD/PP / Oracle GL/AP/AR/FA):', String(row.module_count ?? 1));
-        if (mods !== null) body.module_count = Number(mods);
+        body.chart_of_accounts_node_count = row.chart_of_accounts_node_count ?? 500;
+        body.module_count = row.module_count ?? 1;
       } else if (action === 'load-schemas') {
-        const ver = window.prompt('Schema version (e.g. IDoc FIDCC2 / OData v4.0):', row.schema_version ?? '');
-        if (ver !== null) body.schema_version = ver;
-        body.schemas_compliant = window.confirm('Schemas compliant on load?') ? 1 : 0;
+        body.schema_version = row.schema_version ?? '';
+        body.schemas_compliant = row.schemas_compliant ?? 1;
       } else if (action === 'establish-idoc-session') {
-        const fp = window.prompt('Service-account credential fingerprint (SHA-256, lowercase hex):', row.service_account_credential_fingerprint ?? '');
-        if (fp !== null) body.service_account_credential_fingerprint = fp;
-        const exp = window.prompt('Credential expiry ISO date (e.g. 2027-05-31T00:00:00Z):', row.credential_expiry_at ?? '');
-        if (exp !== null) body.credential_expiry_at = exp;
-        const sess = window.prompt('IDoc session id:', row.idoc_session_id ?? '');
-        if (sess !== null) body.idoc_session_id = sess;
-        body.iso27001_controls_ok = window.confirm('ISO 27001 controls verified?') ? 1 : 0;
-        body.soc1_type2_audit_ok = window.confirm('SOC 1 Type II audit readiness verified?') ? 1 : 0;
+        body.service_account_credential_fingerprint = row.service_account_credential_fingerprint ?? '';
+        body.credential_expiry_at = row.credential_expiry_at ?? '';
+        body.idoc_session_id = row.idoc_session_id ?? '';
+        body.iso27001_controls_ok = row.iso27001_controls_ok ?? 1;
+        body.soc1_type2_audit_ok = row.soc1_type2_audit_ok ?? 1;
       } else if (action === 'validate-test-postings') {
-        const lat = window.prompt('Average posting latency (ms):', String(row.average_posting_latency_ms ?? 80));
-        if (lat !== null) body.average_posting_latency_ms = Number(lat);
-        const pph = window.prompt('Posting volume per hour:', String(row.posting_volume_per_hour ?? 200));
-        if (pph !== null) body.posting_volume_per_hour = Number(pph);
+        body.average_posting_latency_ms = row.average_posting_latency_ms ?? 80;
+        body.posting_volume_per_hour = row.posting_volume_per_hour ?? 200;
       } else if (action === 'bind-reconciliation-period') {
-        const pe = window.prompt('Period end date ISO (next month-end):', row.period_end_at ?? '');
-        if (pe !== null) body.period_end_at = pe;
+        body.period_end_at = row.period_end_at ?? '';
       } else if (action === 'activate-live-posting') {
-        const sars = window.prompt(
-          'SARS e-filing status (current/pending/overdue):',
-          row.sars_efiling_status ?? 'current',
-        );
-        if (sars !== null) body.sars_efiling_status = sars;
-        const cipc = window.prompt('CIPC annual filing status (current/pending/overdue):', row.cipc_annual_filing_status ?? 'current');
-        if (cipc !== null) body.cipc_annual_filing_status = cipc;
-        const note = window.prompt(
-          'Go-live notes. NOTE: SAP_ORACLE_ERP_CONNECTOR-LIVE - SOX 404 + IFRS 15/9/16 in scope.',
-          '',
-        );
-        if (note !== null) body.notes = note;
+        body.sars_efiling_status = row.sars_efiling_status ?? 'current';
+        body.cipc_annual_filing_status = row.cipc_annual_filing_status ?? 'current';
       } else if (action === 'reconcile-period-close') {
-        const succ = window.prompt('Successful posting count (24h):', String(row.successful_posting_count_24h ?? 1000));
-        if (succ !== null) body.successful_posting_count_24h = Number(succ);
-        const fail = window.prompt('Failed posting count (24h):', String(row.failed_posting_count_24h ?? 0));
-        if (fail !== null) body.failed_posting_count_24h = Number(fail);
-        const fr = window.prompt('Failure rate %:', String(row.failure_rate_pct ?? 0));
-        if (fr !== null) body.failure_rate_pct = Number(fr);
-        const breaks = window.prompt('Reconciliation break count:', String(row.reconciliation_break_count ?? 0));
-        if (breaks !== null) body.reconciliation_break_count = Number(breaks);
-        const w118 = window.prompt('W118 audit block ref (MANDATORY this close):', row.w118_block_ref ?? '');
-        if (w118 !== null) body.w118_block_ref = w118;
-        const note = window.prompt(
-          'Period-close notes. NOTE: SIGNATURE - crosses regulator at multi_country tier (SARS + CIPC + group consolidator sign-off).',
-          '',
-        );
-        if (note !== null) body.notes = note;
-      } else if (action === 'archive') {
-        const note = window.prompt('Archive notes (CEO - HARD terminal):', '');
-        if (note !== null) body.notes = note;
+        body.successful_posting_count_24h = row.successful_posting_count_24h ?? 1000;
+        body.failed_posting_count_24h = row.failed_posting_count_24h ?? 0;
+        body.failure_rate_pct = row.failure_rate_pct ?? 0;
+        body.reconciliation_break_count = row.reconciliation_break_count ?? 0;
+        body.w118_block_ref = row.w118_block_ref ?? '';
       } else if (action === 'disconnect') {
-        const reason = window.prompt(
-          'Disconnect reason. NOTE: HARD terminal - crosses regulator EVERY tier WHEN sox_404_in_scope OR sars_efiling_critical_path (PCAOB AS 5 material-weakness OR SARS filing-gate notice).',
-          row.reason_code ?? 'erp_endpoint_decommissioned',
-        );
-        if (reason === null) return;
-        body.reason_code = reason;
+        body.reason_code = row.reason_code ?? 'erp_endpoint_decommissioned';
       } else if (action === 'suspend') {
-        const reason = window.prompt('Suspend reason (period-close lockout?):', row.reason_code ?? 'period_close_lockout');
-        if (reason === null) return;
-        body.reason_code = reason;
+        body.reason_code = row.reason_code ?? 'period_close_lockout';
       } else if (action === 'revoke-credential') {
-        const reason = window.prompt(
-          'Revoke credential reason. NOTE: SIGNATURE - W125 SAP-ORACLE-ERP-CONNECTOR-REVOKE crosses regulator EVERY tier (SARS + CIPC + SOC 1 Type II + ISO 27001 + PCAOB AS 5 service-account compromise disclosure).',
-          row.reason_code ?? 'service_account_compromised',
-        );
-        if (reason === null) return;
-        body.reason_code = reason;
-      } else if (action === 'activate-failover') {
-        const note = window.prompt(
-          'Failover notes. NOTE: crosses regulator at enterprise_wide + group_consolidation + multi_country tiers.',
-          '',
-        );
-        if (note !== null) body.notes = note;
+        body.reason_code = row.reason_code ?? 'service_account_compromised';
       }
       await api.post(`/sap-oracle-erp-connector/${row.id}/${action}`, body);
       await load();
@@ -620,7 +567,7 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
   }, [load]);
 
   return (
-    <div className="text-[12px] text-[#1a3a5c]">
+    <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-base font-semibold text-[#0c2a4d]">SAP / Oracle ERP connector (W125)</h2>
@@ -657,11 +604,11 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
 
       {/* Drill rail */}
       <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[#d8dde6] bg-white px-3 py-2 text-[11px] text-[#4a5568]">
-        <span>Proposed: <span className="font-semibold text-[#1a3a5c]">{kpis.proposed_count}</span></span>
-        <span>Endpoint: <span className="font-semibold text-[#1a3a5c]">{kpis.endpoint_v_count}</span></span>
-        <span>CC mapped: <span className="font-semibold text-[#1a3a5c]">{kpis.cc_mapped_count}</span></span>
-        <span>CoA bound: <span className="font-semibold text-[#1a3a5c]">{kpis.coa_bound_count}</span></span>
-        <span>Schemas: <span className="font-semibold text-[#1a3a5c]">{kpis.schemas_count}</span></span>
+        <span>Proposed: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.proposed_count}</span></span>
+        <span>Endpoint: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.endpoint_v_count}</span></span>
+        <span>CC mapped: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.cc_mapped_count}</span></span>
+        <span>CoA bound: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.coa_bound_count}</span></span>
+        <span>Schemas: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.schemas_count}</span></span>
         <span>IDoc session: <span className="font-semibold text-[#a06200]">{kpis.idoc_count}</span></span>
         <span>Tests OK: <span className="font-semibold text-[#a06200]">{kpis.tests_count}</span></span>
         <span>Recon bound: <span className="font-semibold text-[#a06200]">{kpis.recon_bound_count}</span></span>
@@ -672,11 +619,11 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
         <span>Floor flags: <span className="font-semibold text-[#a06200]">{kpis.floor_flag_total}</span></span>
         <span>Cred {'<'}60d: <span className="font-semibold text-[#a06200]">{kpis.creds_expiring_within_60d}</span></span>
         <span>Cred {'<'}14d: <span className="font-semibold text-[#9b1f1f]">{kpis.creds_expiring_within_14d}</span></span>
-        <span>W118: <span className="font-semibold text-[#1a3a5c]">{kpis.w118_bridged_count}</span></span>
-        <span>W124: <span className="font-semibold text-[#1a3a5c]">{kpis.w124_bridged_count}</span></span>
-        <span>W68: <span className="font-semibold text-[#1a3a5c]">{kpis.w68_bridged_count}</span></span>
-        <span>W3: <span className="font-semibold text-[#1a3a5c]">{kpis.w3_bridged_count}</span></span>
-        <span>W21: <span className="font-semibold text-[#1a3a5c]">{kpis.w21_bridged_count}</span></span>
+        <span>W118: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
+        <span>W124: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w124_bridged_count}</span></span>
+        <span>W68: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w68_bridged_count}</span></span>
+        <span>W3: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w3_bridged_count}</span></span>
+        <span>W21: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w21_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / priority pills */}
@@ -774,17 +721,17 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Connector #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Counterparty</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">ERP</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Health</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Scope</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Ctrl</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Cred</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Flags</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Connector #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Counterparty</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>ERP</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Health</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Scope</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.46 0.16 55)' }}>Ctrl</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.46 0.16 55)' }}>Cred</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.46 0.16 55)' }}>Flags</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -809,10 +756,10 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
                       {r.regulator_ref ? <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">FILED</span> : null}
                       {r.floor_at_multi_country_live ? <span className="ml-1 text-[9px] font-semibold text-[#7a0e0e]">MC</span> : null}
                     </td>
-                    <td className="px-3 py-2 text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.counterparty_name ?? '-'}
                     </td>
-                    <td className="px-3 py-2 text-[11px] font-mono text-[#1a3a5c]">
+                    <td className="px-3 py-2 text-[11px] font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {fmtErp(r.erp_system)}
                       <div className="text-[10px] text-[#6b7685]">{fmtProto(r.protocol)}</div>
                     </td>
@@ -924,12 +871,13 @@ function Drawer({
         ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
         : tone === 'amber'
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
-          : 'bg-white border border-[#d8dde6] text-[#1a3a5c] hover:bg-[#f3f5f9]';
+          : 'bg-white border border-[#d8dde6] hover:bg-[#f3f5f9]';
     return (
       <button type="button"
         key={action}
         onClick={() => onAct(action, row)}
         className={`rounded px-3 py-1.5 text-[11px] font-semibold ${cls}`}
+        style={tone === 'plain' ? { color: 'oklch(0.46 0.16 55)' } : undefined}
         title={ACTION_LABEL[action]}
       >
         {label}
@@ -953,7 +901,7 @@ function Drawer({
               {row.endpoint_url ? <> {'•'} <span className="font-mono text-[10px]">{row.endpoint_url}</span></> : null}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         {/* 4 scoring indexes */}
@@ -1093,13 +1041,13 @@ function Drawer({
             )}
             {events.map((e) => (
               <li key={e.id} className="px-3 py-2 text-[11px]">
-                <div className="font-semibold text-[#1a3a5c]">{e.event_type}</div>
+                <div className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.event_type}</div>
                 <div className="text-[10px] text-[#4a5568]">
                   {e.from_status || '-'} {'→'} {e.to_status || '-'}
                   {e.actor_party ? <> {'•'} {e.actor_party}</> : null}
                   {' '}{'•'} {fmtDate(e.created_at)}
                 </div>
-                {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
               </li>
             ))}
           </ol>
@@ -1209,7 +1157,7 @@ function ProposeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px] text-[#1a3a5c]">
+      <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
         <div className="mb-3 flex items-start justify-between">
           <div>
             <h3 className="text-base font-semibold text-[#0c2a4d]">Propose SAP / Oracle ERP connector (W125)</h3>
@@ -1217,7 +1165,7 @@ function ProposeModal({
               W118 audit bridge mandatory. Tier auto-derived from (module_count, company_code_count, jurisdiction_count) with FLOOR-AT-ENTERPRISE-WIDE {'≥'}1 flag and FLOOR-AT-MULTI-COUNTRY {'≥'}3 flags.
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -1282,7 +1230,7 @@ function ProposeModal({
         </div>
 
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Cancel</button>
           <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose connector</button>
         </div>
       </div>
@@ -1305,7 +1253,7 @@ function Checkbox({
   checked: boolean; onChange: (v: boolean) => void; label: string;
 }) {
   return (
-    <label className="flex items-center gap-2 text-[11px] text-[#1a3a5c]">
+    <label className="flex items-center gap-2 text-[11px] text-[oklch(0.46_0.16_55)]">
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       {label}
     </label>

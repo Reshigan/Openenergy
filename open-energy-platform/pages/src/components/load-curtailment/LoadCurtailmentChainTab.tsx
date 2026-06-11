@@ -32,6 +32,7 @@ type CustomerCategory =
   | 'mining' | 'metro';
 
 interface CurtailmentRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   source_event: string | null;
@@ -108,10 +109,10 @@ interface CurtailmentEvent {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   instruction_issued:  { bg: '#fbe7d0', fg: '#7a4500', label: 'Instruction issued' },
-  acknowledged:        { bg: '#dbecfb', fg: '#1a3a5c', label: 'Acknowledged' },
+  acknowledged:        { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Acknowledged' },
   curtailment_started: { bg: '#fff4d6', fg: '#a06200', label: 'Curtailing' },
   target_achieved:     { bg: '#daf5e2', fg: '#1f6b3a', label: 'Target achieved' },
-  instruction_lifted:  { bg: '#dbecfb', fg: '#1a3a5c', label: 'Lifted' },
+  instruction_lifted:  { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Lifted' },
   reconciled:          { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Reconciled' },
   post_mortem:         { bg: '#fff4d6', fg: '#a06200', label: 'Post-mortem' },
   closed:              { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Closed' },
@@ -128,7 +129,7 @@ const STAGE_TONE: Record<LoadShedStage, { bg: string; fg: string; label: string 
 };
 
 const CATEGORY_TONE: Record<CustomerCategory, { bg: string; fg: string; label: string }> = {
-  distribution:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Distribution' },
+  distribution:       { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Distribution' },
   large_industrial:   { bg: '#fff4d6', fg: '#a06200', label: 'Large industrial' },
   embedded_generator: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Embedded gen' },
   mining:             { bg: '#f0e0d0', fg: '#6b4500', label: 'Mining' },
@@ -460,14 +461,14 @@ export function LoadCurtailmentChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Customer / Facility</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Category</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Stage</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Target / Actual</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Var</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Case #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Customer / Facility</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Category</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Stage</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Target / Actual</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Var</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -482,7 +483,7 @@ export function LoadCurtailmentChainTab() {
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
                     <td className="px-3 py-2 font-mono text-[#0c2a4d]">{r.case_number}</td>
-                    <td className="px-3 py-2 text-[#1a3a5c] max-w-[260px]">
+                    <td className="px-3 py-2 max-w-[260px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       <div className="font-medium truncate" title={r.customer_party_name}>{r.customer_party_name}</div>
                       <div className="text-[10px] text-[#6b7685] truncate" title={r.facility_name ?? ''}>{r.facility_name ?? '—'}{r.facility_province ? ` · ${r.facility_province}` : ''}</div>
                     </td>
@@ -622,19 +623,19 @@ function Drawer({
             </div>
           )}
           {row.withdrawal_basis && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Withdrawal basis</div>
               {row.withdrawal_basis}
             </div>
           )}
           {row.post_mortem_findings && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Post-mortem findings</div>
               {row.post_mortem_findings}
             </div>
           )}
           {row.rod_notes && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Record-of-decision notes</div>
               {row.rod_notes}
             </div>
@@ -706,7 +707,7 @@ function Drawer({
                       {e.from_status ?? '—'} → {e.to_status ?? '—'}{e.actor_party ? ` · by ${e.actor_party}` : ''}
                     </div>
                   )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

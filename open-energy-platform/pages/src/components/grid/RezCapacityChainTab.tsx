@@ -11,6 +11,20 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'announcement_published' | 'application_submitted' | 'compliance_check'
@@ -21,6 +35,7 @@ type ChainStatus =
 type Tier = 'minor' | 'standard' | 'material' | 'mega';
 
 interface AllocationRow {
+  [key: string]: unknown;
   id: string;
   allocation_number: string;
   source_event: string | null;
@@ -114,19 +129,6 @@ interface AllocationRow {
   reportable_per_spec: boolean;
 }
 
-interface EventRow {
-  id: string;
-  allocation_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiSummary {
   total: number;
   open_count: number;
@@ -146,115 +148,48 @@ interface KpiSummary {
   total_headroom_mw: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  announcement_published:   { bg: '#e3e7ec', fg: '#557',    label: 'Announcement published' },
-  application_submitted:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Application submitted' },
-  compliance_check:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Compliance check' },
-  shortlisted:              { bg: '#fff4d6', fg: '#a06200', label: 'Shortlisted' },
-  evaluation_complete:      { bg: '#fff4d6', fg: '#a06200', label: 'Evaluation complete' },
-  award_proposed:           { bg: '#ffe4b5', fg: '#8a4a00', label: 'Award proposed' },
-  capacity_awarded:         { bg: '#d4edda', fg: '#155724', label: 'Capacity awarded' },
-  financial_close_met:      { bg: '#d4edda', fg: '#155724', label: 'Financial close met' },
-  construction_in_progress: { bg: '#d4edda', fg: '#155724', label: 'Construction in progress' },
-  in_operation:             { bg: '#d4edda', fg: '#155724', label: 'In commercial operation' },
-  rejected:                 { bg: '#fde0e0', fg: '#9b1f1f', label: 'Rejected' },
-  forfeit:                  { bg: '#fde0e0', fg: '#9b1f1f', label: 'Forfeit (capacity recycled)' },
-  withdrawn:                { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
-};
+const ALL_STATES = [
+  'announcement_published',
+  'application_submitted',
+  'compliance_check',
+  'shortlisted',
+  'evaluation_complete',
+  'award_proposed',
+  'capacity_awarded',
+  'financial_close_met',
+  'construction_in_progress',
+  'in_operation',
+] as const;
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  mega:     { bg: '#fde0e0', fg: '#9b1f1f', label: 'Mega (≥500MW)' },
-  material: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Material (250-500MW)' },
-  standard: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard (50-250MW)' },
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor (<50MW)' },
-};
-
-const AUTHORITY_LABEL: Record<string, string> = {
-  compliance_officer:    'Compliance officer',
-  evaluation_panel:      'Evaluation panel',
-  council_subcommittee:  'Council sub-committee',
-  full_council:          'Full Council',
-};
+const BRANCH_STATES = ['rejected', 'forfeit', 'withdrawn'] as const;
 
 const FILTERS: Array<{ key: string; label: string }> = [
-  { key: 'open',                    label: 'Open' },
-  { key: 'all',                     label: 'All' },
-  { key: 'mega',                    label: 'Mega' },
-  { key: 'material',                label: 'Material' },
-  { key: 'standard',                label: 'Standard' },
-  { key: 'minor',                   label: 'Minor' },
-  { key: 'application_submitted',   label: 'Applications' },
-  { key: 'evaluation_complete',     label: 'Evaluation' },
-  { key: 'capacity_awarded',        label: 'Awarded' },
+  { key: 'open',                     label: 'Open' },
+  { key: 'all',                      label: 'All' },
+  { key: 'mega',                     label: 'Mega' },
+  { key: 'material',                 label: 'Material' },
+  { key: 'standard',                 label: 'Standard' },
+  { key: 'minor',                    label: 'Minor' },
+  { key: 'application_submitted',    label: 'Applications' },
+  { key: 'evaluation_complete',      label: 'Evaluation' },
+  { key: 'capacity_awarded',         label: 'Awarded' },
   { key: 'construction_in_progress', label: 'Construction' },
-  { key: 'in_operation',            label: 'In operation' },
-  { key: 'rejected',                label: 'Rejected' },
-  { key: 'forfeit',                 label: 'Forfeit' },
-  { key: 'signature',               label: 'Floor-at-mega class' },
-  { key: 'breached',                label: 'SLA breached' },
-  { key: 'reportable',              label: 'Reportable' },
+  { key: 'in_operation',             label: 'In operation' },
+  { key: 'rejected',                 label: 'Rejected' },
+  { key: 'forfeit',                  label: 'Forfeit' },
+  { key: 'signature',                label: 'Floor-at-mega class' },
+  { key: 'breached',                 label: 'SLA breached' },
+  { key: 'reportable',               label: 'Reportable' },
 ];
 
-type ActionKind =
-  | 'submit-application' | 'check-compliance' | 'shortlist' | 'complete-evaluation'
-  | 'propose-award' | 'award-capacity' | 'meet-financial-close' | 'start-construction'
-  | 'confirm-operation' | 'reject-application' | 'forfeit-allocation' | 'withdraw';
-
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  announcement_published:   'submit-application',
-  application_submitted:    'check-compliance',
-  compliance_check:         'shortlist',
-  shortlisted:              'complete-evaluation',
-  evaluation_complete:      'propose-award',
-  award_proposed:           'award-capacity',
-  capacity_awarded:         'meet-financial-close',
-  financial_close_met:      'start-construction',
-  construction_in_progress: 'confirm-operation',
-  in_operation:             null,
-  rejected:                 null,
-  forfeit:                  null,
-  withdrawn:                null,
+const AUTHORITY_LABEL: Record<string, string> = {
+  compliance_officer:   'Compliance officer',
+  evaluation_panel:     'Evaluation panel',
+  council_subcommittee: 'Council sub-committee',
+  full_council:         'Full Council',
 };
 
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'submit-application':    'Submit application (applicant)',
-  'check-compliance':      'Check compliance (compliance officer)',
-  'shortlist':             'Shortlist (compliance officer)',
-  'complete-evaluation':   'Complete evaluation (panel)',
-  'propose-award':         'Propose award (Council)',
-  'award-capacity':        'Award capacity (Council) — W94 SIGNATURE',
-  'meet-financial-close':  'Mark financial close met',
-  'start-construction':    'Start construction',
-  'confirm-operation':     'Confirm commercial operation (SO)',
-  'reject-application':    'Reject application',
-  'forfeit-allocation':    'Forfeit allocation — capacity recycled',
-  'withdraw':              'Withdraw',
-};
-
-const SECONDARY_ACTIONS: Record<ChainStatus, ActionKind[]> = {
-  announcement_published:   ['withdraw'],
-  application_submitted:    ['reject-application', 'withdraw'],
-  compliance_check:         ['reject-application', 'withdraw'],
-  shortlisted:              ['reject-application', 'withdraw'],
-  evaluation_complete:      ['reject-application', 'withdraw'],
-  award_proposed:           ['reject-application', 'withdraw'],
-  capacity_awarded:         ['forfeit-allocation', 'withdraw'],
-  financial_close_met:      ['forfeit-allocation', 'withdraw'],
-  construction_in_progress: ['forfeit-allocation', 'withdraw'],
-  in_operation:             [],
-  rejected:                 [],
-  forfeit:                  [],
-  withdrawn:                [],
-};
-
-const DESTRUCTIVE: ActionKind[] = ['award-capacity', 'reject-application', 'forfeit-allocation', 'withdraw'];
-
-function fmtMinutes(m: number | null | undefined): string {
-  if (m === null || m === undefined) return '—';
-  if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
-  if (Math.abs(m) >= 60) return `${Math.round(m / 60)}h`;
-  return `${m}m`;
-}
+const TERMINAL_STATES: ChainStatus[] = ['in_operation', 'rejected', 'forfeit', 'withdrawn'];
 
 function fmtMw(v: number | null | undefined): string {
   if (v === null || v === undefined || Number.isNaN(v)) return '—';
@@ -281,16 +216,291 @@ function fmtDate(s: string | null): string {
   return new Date(s).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['in_operation', 'rejected', 'forfeit', 'withdrawn'];
+function getActions(row: AllocationRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
+
+  if (s === 'announcement_published') {
+    actions.push({
+      key: 'submit-application',
+      label: 'Submit application (applicant)',
+      tone: 'primary',
+      fields: [
+        { key: 'applicant_party_name', label: 'Applicant party name', type: 'text', required: false },
+        { key: 'requested_capacity_mw', label: 'Requested capacity (MW) — tier MW-magnitude-derived', type: 'text', required: false },
+        { key: 'bid_price_zar_per_mwh', label: 'Bid price (ZAR/MWh) — weight 0.50 in REIPPPP score', type: 'text', required: false },
+        { key: 'bbbee_score', label: 'B-BBEE score (0-100) — weight 0.20', type: 'text', required: false },
+        { key: 'ed_score', label: 'ED score (0-100) — weight 0.15', type: 'text', required: false },
+        { key: 'local_content_pct', label: 'Local-content % — weight 0.15; DMRE 40% threshold for full credit', type: 'text', required: false },
+        { key: 'application_basis', label: 'Application basis', type: 'textarea', required: false },
+      ],
+    });
+    actions.push({ key: 'withdraw', label: 'Withdraw', tone: 'danger', fields: [{ key: 'withdrawal_basis', label: 'Withdrawal basis', type: 'textarea', required: true }] });
+  }
+
+  if (s === 'application_submitted') {
+    actions.push({
+      key: 'check-compliance',
+      label: 'Check compliance (compliance officer)',
+      tone: 'primary',
+      fields: [
+        { key: 'evaluation_ref', label: 'Evaluation reference', type: 'text', required: false },
+        { key: 'evaluation_basis', label: 'Compliance check basis — what was checked (DMRE rules, NTCSA Rules 2024 sub-100MW=30d)', type: 'textarea', required: false },
+      ],
+    });
+    actions.push({ key: 'reject-application', label: 'Reject application', tone: 'danger', fields: [{ key: 'rejection_basis', label: 'Rejection basis — SO denial at compliance/evaluation/award', type: 'textarea', required: true }, { key: 'rejection_ref', label: 'Rejection reference', type: 'text', required: false }] });
+    actions.push({ key: 'withdraw', label: 'Withdraw', tone: 'ghost', fields: [{ key: 'withdrawal_basis', label: 'Withdrawal basis', type: 'textarea', required: true }] });
+  }
+
+  if (s === 'compliance_check') {
+    actions.push({
+      key: 'shortlist',
+      label: 'Shortlist (compliance officer)',
+      tone: 'primary',
+      fields: [
+        { key: 'evaluation_ref', label: 'Shortlist reference', type: 'text', required: false },
+        { key: 'notes', label: 'Shortlist notes — competition ratio band', type: 'textarea', required: false },
+      ],
+    });
+    actions.push({ key: 'reject-application', label: 'Reject application', tone: 'danger', fields: [{ key: 'rejection_basis', label: 'Rejection basis', type: 'textarea', required: true }, { key: 'rejection_ref', label: 'Rejection reference', type: 'text', required: false }] });
+    actions.push({ key: 'withdraw', label: 'Withdraw', tone: 'ghost', fields: [{ key: 'withdrawal_basis', label: 'Withdrawal basis', type: 'textarea', required: true }] });
+  }
+
+  if (s === 'shortlisted') {
+    actions.push({
+      key: 'complete-evaluation',
+      label: 'Complete evaluation (panel)',
+      tone: 'primary',
+      fields: [
+        { key: 'weighted_score', label: 'Weighted score (0-1) — REIPPPP price 0.50 + B-BBEE 0.20 + ED 0.15 + local 0.15', type: 'text', required: false },
+        { key: 'evaluation_ref', label: 'Evaluation reference', type: 'text', required: false },
+        { key: 'evaluation_basis', label: 'Evaluation basis — multi-criteria scoring summary (mega crosses public scrutiny)', type: 'textarea', required: true },
+      ],
+    });
+    actions.push({ key: 'reject-application', label: 'Reject application', tone: 'danger', fields: [{ key: 'rejection_basis', label: 'Rejection basis', type: 'textarea', required: true }, { key: 'rejection_ref', label: 'Rejection reference', type: 'text', required: false }] });
+    actions.push({ key: 'withdraw', label: 'Withdraw', tone: 'ghost', fields: [{ key: 'withdrawal_basis', label: 'Withdrawal basis', type: 'textarea', required: true }] });
+  }
+
+  if (s === 'evaluation_complete') {
+    actions.push({
+      key: 'propose-award',
+      label: 'Propose award (Council)',
+      tone: 'primary',
+      fields: [
+        { key: 'awarded_capacity_mw', label: 'Awarded capacity (MW) — may be less than requested', type: 'text', required: false },
+        { key: 'award_clearance_price_zar_per_mw', label: 'Award clearance price (ZAR/MW)', type: 'text', required: false },
+        { key: 'award_ref', label: 'Award reference', type: 'text', required: false },
+        { key: 'award_basis', label: 'Award basis — reasons for proposed quantum', type: 'textarea', required: true },
+      ],
+    });
+    actions.push({ key: 'reject-application', label: 'Reject application', tone: 'danger', fields: [{ key: 'rejection_basis', label: 'Rejection basis', type: 'textarea', required: true }, { key: 'rejection_ref', label: 'Rejection reference', type: 'text', required: false }] });
+    actions.push({ key: 'withdraw', label: 'Withdraw', tone: 'ghost', fields: [{ key: 'withdrawal_basis', label: 'Withdrawal basis', type: 'textarea', required: true }] });
+  }
+
+  if (s === 'award_proposed') {
+    actions.push({
+      key: 'award-capacity',
+      label: 'Award capacity (Council) — W94 SIGNATURE',
+      tone: 'primary',
+      cascadeTo: ['regulator', 'admin'],
+      fields: [
+        { key: 'awarded_capacity_mw', label: 'Confirmed awarded capacity (MW) — W94 SIGNATURE (every tier crosses regulator)', type: 'text', required: true },
+        { key: 'financial_close_target_at', label: 'Financial close target (YYYY-MM-DD)', type: 'text', required: false },
+        { key: 'construction_start_target_at', label: 'Construction start target (YYYY-MM-DD)', type: 'text', required: false },
+        { key: 'operation_target_at', label: 'Commercial operation target (YYYY-MM-DD)', type: 'text', required: false },
+        { key: 'milestones_total', label: 'Total milestones to track', type: 'text', required: false },
+        { key: 'award_ref', label: 'Award reference', type: 'text', required: false },
+        { key: 'regulator_ref', label: 'Regulator reference (every award is publicly registered)', type: 'text', required: false },
+      ],
+    });
+    actions.push({ key: 'reject-application', label: 'Reject application', tone: 'danger', fields: [{ key: 'rejection_basis', label: 'Rejection basis', type: 'textarea', required: true }, { key: 'rejection_ref', label: 'Rejection reference', type: 'text', required: false }] });
+    actions.push({ key: 'withdraw', label: 'Withdraw', tone: 'ghost', fields: [{ key: 'withdrawal_basis', label: 'Withdrawal basis', type: 'textarea', required: true }] });
+  }
+
+  if (s === 'capacity_awarded') {
+    actions.push({
+      key: 'meet-financial-close',
+      label: 'Mark financial close met',
+      tone: 'primary',
+      fields: [
+        { key: 'fc_ref', label: 'Financial close reference', type: 'text', required: false },
+        { key: 'financial_close_actual_at', label: 'Financial close actual date (YYYY-MM-DD)', type: 'text', required: false },
+      ],
+    });
+    actions.push({ key: 'forfeit-allocation', label: 'Forfeit allocation — capacity recycled', tone: 'danger', cascadeTo: ['regulator', 'admin'], fields: [{ key: 'forfeit_basis', label: 'Forfeit basis — milestone failure; capacity recycled into the zone pool (W94 SIGNATURE crosses regulator every tier)', type: 'textarea', required: true }, { key: 'forfeit_ref', label: 'Forfeit reference', type: 'text', required: false }] });
+    actions.push({ key: 'withdraw', label: 'Withdraw', tone: 'ghost', fields: [{ key: 'withdrawal_basis', label: 'Withdrawal basis', type: 'textarea', required: true }] });
+  }
+
+  if (s === 'financial_close_met') {
+    actions.push({
+      key: 'start-construction',
+      label: 'Start construction',
+      tone: 'primary',
+      fields: [
+        { key: 'construction_ref', label: 'Construction reference', type: 'text', required: false },
+        { key: 'construction_start_actual_at', label: 'Construction start actual date (YYYY-MM-DD)', type: 'text', required: false },
+      ],
+    });
+    actions.push({ key: 'forfeit-allocation', label: 'Forfeit allocation — capacity recycled', tone: 'danger', cascadeTo: ['regulator', 'admin'], fields: [{ key: 'forfeit_basis', label: 'Forfeit basis — capacity recycled into the zone pool', type: 'textarea', required: true }, { key: 'forfeit_ref', label: 'Forfeit reference', type: 'text', required: false }] });
+    actions.push({ key: 'withdraw', label: 'Withdraw', tone: 'ghost', fields: [{ key: 'withdrawal_basis', label: 'Withdrawal basis', type: 'textarea', required: true }] });
+  }
+
+  if (s === 'construction_in_progress') {
+    actions.push({
+      key: 'confirm-operation',
+      label: 'Confirm commercial operation (SO)',
+      tone: 'primary',
+      fields: [
+        { key: 'operation_ref', label: 'Operation reference', type: 'text', required: false },
+        { key: 'operation_actual_at', label: 'Commercial operation actual date (YYYY-MM-DD)', type: 'text', required: false },
+        { key: 'energization_ref', label: 'Energization reference (W75 link)', type: 'text', required: false },
+        { key: 'gca_ref', label: 'GCA reference (W28 link)', type: 'text', required: false },
+      ],
+    });
+    actions.push({ key: 'forfeit-allocation', label: 'Forfeit allocation — capacity recycled', tone: 'danger', cascadeTo: ['regulator', 'admin'], fields: [{ key: 'forfeit_basis', label: 'Forfeit basis — capacity recycled into the zone pool', type: 'textarea', required: true }, { key: 'forfeit_ref', label: 'Forfeit reference', type: 'text', required: false }] });
+    actions.push({ key: 'withdraw', label: 'Withdraw', tone: 'ghost', fields: [{ key: 'withdrawal_basis', label: 'Withdrawal basis', type: 'textarea', required: true }] });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: AllocationRow): React.ReactNode {
+  const authority = AUTHORITY_LABEL[row.authority_required_live ?? row.authority_required ?? ''] ?? (row.authority_required ?? '—');
+
+  return (
+    <div className="space-y-4 text-[12px]">
+      <section>
+        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 6 }}>
+          Live zone-headroom &amp; competition battery
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3">
+          <DetailPair label="Zone total" value={fmtMw(row.zone_total_capacity_mw)} />
+          <DetailPair label="Zone allocated to date" value={fmtMw(row.zone_allocated_to_date_mw)} />
+          <DetailPair label="Remaining headroom (live)" value={fmtMw(row.remaining_headroom_mw_live)} />
+          <DetailPair label="Zone forfeit to date" value={fmtMw(row.zone_forfeit_to_date_mw)} />
+          <DetailPair label="Lots available" value={fmtNum(row.zone_lots_available, 0)} />
+          <DetailPair label="Applications in round" value={fmtNum(row.zone_applications_in_round, 0)} />
+          <DetailPair label="Competition ratio (live)" value={fmtNum(row.competition_ratio_live, 2)} />
+          <DetailPair label="Competition intensity" value={row.competition_intensity_band_live} />
+          <DetailPair label="Tier (live)" value={(row.tier_live ?? row.capacity_tier).toString()} />
+          <DetailPair label="Floor at mega" value={row.floor_at_mega_class_flag ? 'Yes' : 'No'} />
+          <DetailPair label="Forfeit rate %" value={fmtPct(row.forfeit_rate_pct_live, 1)} />
+          <DetailPair label="Authority required" value={authority} />
+        </div>
+      </section>
+
+      <section>
+        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 6 }}>
+          REIPPPP multi-criteria score (price 0.50 + B-BBEE 0.20 + ED 0.15 + local-content 0.15)
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3">
+          <DetailPair label="Bid price (ZAR/MWh)" value={fmtNum(row.bid_price_zar_per_mwh, 0)} />
+          <DetailPair label="Price floor / ceiling" value={`${fmtNum(row.price_floor_zar_per_mwh, 0)} / ${fmtNum(row.price_ceiling_zar_per_mwh, 0)}`} />
+          <DetailPair label="Price score (live)" value={fmtScore(row.price_score_live)} />
+          <DetailPair label="B-BBEE score (raw)" value={fmtScore((row.bbbee_score ?? 0) / 100)} />
+          <DetailPair label="ED score (raw)" value={fmtScore((row.ed_score ?? 0) / 100)} />
+          <DetailPair label="Local content %" value={fmtPct(row.local_content_pct, 1)} />
+          <DetailPair label="Local content score (live)" value={fmtScore(row.local_content_score_live)} />
+          <DetailPair label="Local content threshold" value={row.local_content_meets_threshold_flag ? 'MET' : 'Below'} />
+          <DetailPair label="Weighted score (live)" value={fmtScore(row.weighted_score_live)} />
+          <DetailPair label="Weighted score (saved)" value={fmtScore(row.weighted_score)} />
+          <DetailPair label="Clearance ZAR/MW" value={fmtNum(row.award_clearance_price_zar_per_mw, 0)} />
+          <DetailPair label="Predicted operation" value={fmtDate(row.predicted_operation_date_live)} />
+        </div>
+      </section>
+
+      <section>
+        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 6 }}>
+          Milestone tracking
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3">
+          <DetailPair label="Effective capacity (live)" value={fmtMw(row.effective_capacity_mw_live)} />
+          <DetailPair label="Requested" value={fmtMw(row.requested_capacity_mw)} />
+          <DetailPair label="Awarded" value={fmtMw(row.awarded_capacity_mw)} />
+          <DetailPair label="FC target / actual" value={`${fmtDate(row.financial_close_target_at)} / ${fmtDate(row.financial_close_actual_at)}`} />
+          <DetailPair label="Construction target / actual" value={`${fmtDate(row.construction_start_target_at)} / ${fmtDate(row.construction_start_actual_at)}`} />
+          <DetailPair label="Operation target / actual" value={`${fmtDate(row.operation_target_at)} / ${fmtDate(row.operation_actual_at)}`} />
+          <DetailPair label="Milestones met / total" value={`${row.milestones_met_on_time} / ${row.milestones_total}`} />
+          <DetailPair label="Milestone compliance % (live)" value={fmtPct(row.milestone_compliance_pct_live, 1)} />
+        </div>
+      </section>
+
+      <section>
+        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 6 }}>
+          Chain metadata
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3">
+          <DetailPair label="Allocation class" value={row.allocation_class} />
+          <DetailPair label="Zone" value={`${row.zone_name ?? row.zone_code} (${row.zone_code})`} />
+          <DetailPair label="Technology" value={row.technology ?? '—'} />
+          <DetailPair label="Applicant" value={row.applicant_party_name ?? '—'} />
+          <DetailPair label="B-BBEE level" value={row.bbbee_level != null ? `Level ${row.bbbee_level}` : '—'} />
+          <DetailPair label="Inbox severity (live)" value={row.inbox_severity_live} />
+          <DetailPair label="Announcement published" value={fmtDate(row.announcement_published_at)} />
+          <DetailPair label="Application submitted" value={fmtDate(row.application_submitted_at)} />
+          <DetailPair label="Compliance check" value={fmtDate(row.compliance_check_at)} />
+          <DetailPair label="Shortlisted" value={fmtDate(row.shortlisted_at)} />
+          <DetailPair label="Evaluation complete" value={fmtDate(row.evaluation_complete_at)} />
+          <DetailPair label="Award proposed" value={fmtDate(row.award_proposed_at)} />
+          <DetailPair label="Capacity awarded" value={fmtDate(row.capacity_awarded_at)} />
+          <DetailPair label="Financial close met" value={fmtDate(row.financial_close_met_at)} />
+          <DetailPair label="Construction in progress" value={fmtDate(row.construction_in_progress_at)} />
+          <DetailPair label="In operation" value={fmtDate(row.in_operation_at)} />
+          <DetailPair label="Escalation level" value={String(row.escalation_level)} />
+          <DetailPair label="Reportable" value={row.is_reportable_flag ? 'Yes (public register)' : 'No'} />
+          {row.source_wave && (
+            <DetailPair label="Source wave" value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}`} />
+          )}
+        </div>
+      </section>
+
+      {row.application_basis && (
+        <div>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX2, marginBottom: 2 }}>Application basis</div>
+          <div style={{ fontSize: 12, color: TX2, whiteSpace: 'pre-wrap' }}>{row.application_basis}</div>
+        </div>
+      )}
+      {row.evaluation_basis && (
+        <div>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: WARN, marginBottom: 2 }}>Evaluation basis</div>
+          <div style={{ fontSize: 12, color: TX2, whiteSpace: 'pre-wrap' }}>{row.evaluation_basis}</div>
+        </div>
+      )}
+      {row.award_basis && (
+        <div>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: GOOD, marginBottom: 2 }}>Award basis</div>
+          <div style={{ fontSize: 12, color: TX2, whiteSpace: 'pre-wrap' }}>{row.award_basis}</div>
+        </div>
+      )}
+      {row.rejection_basis && (
+        <div>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: BAD, marginBottom: 2 }}>Rejection basis</div>
+          <div style={{ fontSize: 12, color: BAD, whiteSpace: 'pre-wrap' }}>{row.rejection_basis}</div>
+        </div>
+      )}
+      {row.forfeit_basis && (
+        <div>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: BAD, marginBottom: 2 }}>Forfeit basis (capacity recycled)</div>
+          <div style={{ fontSize: 12, color: BAD, whiteSpace: 'pre-wrap' }}>{row.forfeit_basis}</div>
+        </div>
+      )}
+      {row.withdrawal_basis && (
+        <div>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 2 }}>Withdrawal basis</div>
+          <div style={{ fontSize: 12, color: TX2, whiteSpace: 'pre-wrap' }}>{row.withdrawal_basis}</div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function RezCapacityChainTab() {
   const [rows, setRows] = useState<AllocationRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('open');
-  const [selected, setSelected] = useState<AllocationRow | null>(null);
-  const [events, setEvents] = useState<EventRow[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -300,13 +510,18 @@ export function RezCapacityChainTab() {
       setRows(res.data?.data?.items || []);
       const d = res.data?.data;
       if (d) {
-        setKpis({
+        setSummary({
           total: d.total,
-          open_count: d.open_count, in_operation_count: d.in_operation_count,
-          awarded_count: d.awarded_count, rejected_count: d.rejected_count,
-          forfeit_count: d.forfeit_count, withdrawn_count: d.withdrawn_count,
-          breached: d.breached, reportable_total: d.reportable_total,
-          signature_count: d.signature_count, floor_applied_count: d.floor_applied_count,
+          open_count: d.open_count,
+          in_operation_count: d.in_operation_count,
+          awarded_count: d.awarded_count,
+          rejected_count: d.rejected_count,
+          forfeit_count: d.forfeit_count,
+          withdrawn_count: d.withdrawn_count,
+          breached: d.breached,
+          reportable_total: d.reportable_total,
+          signature_count: d.signature_count,
+          floor_applied_count: d.floor_applied_count,
           local_content_meets_count: d.local_content_meets_count,
           total_requested_mw: d.total_requested_mw,
           total_awarded_mw: d.total_awarded_mw,
@@ -323,11 +538,38 @@ export function RezCapacityChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
+    const row = rows.find(r => r.id === rowId);
+    if (!row) return;
+
+    // Build body based on action key, parsing numeric fields
+    const body: Record<string, string | number> = {};
+    for (const [k, v] of Object.entries(values)) {
+      if (v === '') continue;
+      const numericFields = ['requested_capacity_mw', 'bid_price_zar_per_mwh', 'bbbee_score', 'ed_score', 'local_content_pct', 'awarded_capacity_mw', 'award_clearance_price_zar_per_mw', 'weighted_score', 'milestones_total'];
+      if (numericFields.includes(k) && !Number.isNaN(Number(v))) {
+        body[k] = Number(v);
+      } else {
+        body[k] = v;
+      }
+    }
+
+    if (key === 'reject-application') { body.reason_code = 'rejected'; }
+    if (key === 'forfeit-allocation') { body.reason_code = 'forfeit'; }
+    if (key === 'withdraw')           { body.reason_code = 'withdrawn'; }
+
+    await api.post(`/grid/rez-capacity/chain/${rowId}/${key}`, body);
+    await load();
+  }, [rows, load]);
+
+  const handleExpand = useCallback(async (id: string) => {
     try {
-      const res = await api.get<{ data: { allocation: AllocationRow; events: EventRow[] } }>(`/grid/rez-capacity/chain/${id}`);
-      if (res.data?.data?.allocation) setSelected(res.data.data.allocation);
-      setEvents(res.data?.data?.events || []);
+      const res = await api.get<{ data: { allocation: AllocationRow; events: ChainEvent[] } }>(`/grid/rez-capacity/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events || [] }));
+      // Update the row with fresh data if available
+      if (res.data?.data?.allocation) {
+        setRows(prev => prev.map(r => r.id === id ? res.data.data.allocation : r));
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load allocation history');
     }
@@ -347,172 +589,53 @@ export function RezCapacityChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: AllocationRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'submit-application') {
-        const name = window.prompt('Applicant party name:', row.applicant_party_name ?? '') || '';
-        const mw = window.prompt('Requested capacity (MW) — tier MW-magnitude-derived:', String(row.requested_capacity_mw || 0)) || '';
-        const price = window.prompt('Bid price (ZAR/MWh) — weight 0.50 in REIPPPP score:', String(row.bid_price_zar_per_mwh || 0)) || '';
-        const bbbee = window.prompt('B-BBEE score (0-100) — weight 0.20:', String(row.bbbee_score ?? 0)) || '';
-        const ed = window.prompt('ED score (0-100) — weight 0.15:', String(row.ed_score ?? 0)) || '';
-        const local = window.prompt('Local-content % — weight 0.15; DMRE 40% threshold for full credit:', String(row.local_content_pct ?? 0)) || '';
-        const basis = window.prompt('Application basis:') || '';
-        body = { application_basis: basis };
-        if (name) body.applicant_party_name = name;
-        if (mw && !Number.isNaN(Number(mw))) body.requested_capacity_mw = Number(mw);
-        if (price && !Number.isNaN(Number(price))) body.bid_price_zar_per_mwh = Number(price);
-        if (bbbee && !Number.isNaN(Number(bbbee))) body.bbbee_score = Number(bbbee);
-        if (ed && !Number.isNaN(Number(ed))) body.ed_score = Number(ed);
-        if (local && !Number.isNaN(Number(local))) body.local_content_pct = Number(local);
-      } else if (action === 'check-compliance') {
-        const ref = window.prompt('Evaluation reference:') || '';
-        const basis = window.prompt('Compliance check basis — what was checked (DMRE rules, NTCSA Rules 2024 sub-100MW=30d):') || '';
-        body = {};
-        if (ref) body.evaluation_ref = ref;
-        if (basis) body.evaluation_basis = basis;
-      } else if (action === 'shortlist') {
-        const ref = window.prompt('Shortlist reference:') || '';
-        const notes = window.prompt('Shortlist notes — competition ratio band:') || '';
-        body = {};
-        if (ref) body.evaluation_ref = ref;
-        if (notes) body.notes = notes;
-      } else if (action === 'complete-evaluation') {
-        const score = window.prompt('Weighted score (0-1) — REIPPPP price 0.50 + B-BBEE 0.20 + ED 0.15 + local 0.15:', String(row.weighted_score_live ?? row.weighted_score ?? 0)) || '';
-        const ref = window.prompt('Evaluation reference:') || '';
-        const basis = window.prompt('Evaluation basis — multi-criteria scoring summary (mega crosses public scrutiny):');
-        if (!basis) return;
-        body = { evaluation_basis: basis };
-        if (score && !Number.isNaN(Number(score))) body.weighted_score = Number(score);
-        if (ref) body.evaluation_ref = ref;
-      } else if (action === 'propose-award') {
-        const mw = window.prompt('Awarded capacity (MW) — may be less than requested:', String(row.requested_capacity_mw || 0)) || '';
-        const clearance = window.prompt('Award clearance price (ZAR/MW):', String(row.award_clearance_price_zar_per_mw ?? 0)) || '';
-        const ref = window.prompt('Award reference:') || '';
-        const basis = window.prompt('Award basis — reasons for proposed quantum:');
-        if (!basis) return;
-        body = { award_basis: basis };
-        if (mw && !Number.isNaN(Number(mw))) body.awarded_capacity_mw = Number(mw);
-        if (clearance && !Number.isNaN(Number(clearance))) body.award_clearance_price_zar_per_mw = Number(clearance);
-        if (ref) body.award_ref = ref;
-      } else if (action === 'award-capacity') {
-        const mw = window.prompt('Confirmed awarded capacity (MW) — W94 SIGNATURE (every tier crosses regulator):', String(row.awarded_capacity_mw ?? row.requested_capacity_mw ?? 0));
-        if (!mw) return;
-        const fc = window.prompt('Financial close target (YYYY-MM-DD):') || '';
-        const cs = window.prompt('Construction start target (YYYY-MM-DD):') || '';
-        const op = window.prompt('Commercial operation target (YYYY-MM-DD):') || '';
-        const milestones = window.prompt('Total milestones to track:', String(row.milestones_total || 6)) || '6';
-        const ref = window.prompt('Award reference:') || '';
-        const reg = window.prompt('Regulator reference (every award is publicly registered):') || '';
-        body = { awarded_capacity_mw: Number(mw) || 0 };
-        if (fc) body.financial_close_target_at = fc;
-        if (cs) body.construction_start_target_at = cs;
-        if (op) body.operation_target_at = op;
-        if (milestones && !Number.isNaN(Number(milestones))) body.milestones_total = Number(milestones);
-        if (ref) body.award_ref = ref;
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'meet-financial-close') {
-        const ref = window.prompt('Financial close reference:') || '';
-        const actual = window.prompt('Financial close actual date (YYYY-MM-DD):') || '';
-        body = {};
-        if (ref) body.fc_ref = ref;
-        if (actual) body.financial_close_actual_at = actual;
-      } else if (action === 'start-construction') {
-        const ref = window.prompt('Construction reference:') || '';
-        const actual = window.prompt('Construction start actual date (YYYY-MM-DD):') || '';
-        body = {};
-        if (ref) body.construction_ref = ref;
-        if (actual) body.construction_start_actual_at = actual;
-      } else if (action === 'confirm-operation') {
-        const ref = window.prompt('Operation reference:') || '';
-        const actual = window.prompt('Commercial operation actual date (YYYY-MM-DD):') || '';
-        const energ = window.prompt('Energization reference (W75 link):') || '';
-        const gca = window.prompt('GCA reference (W28 link):') || '';
-        body = {};
-        if (ref) body.operation_ref = ref;
-        if (actual) body.operation_actual_at = actual;
-        if (energ) body.energization_ref = energ;
-        if (gca) body.gca_ref = gca;
-      } else if (action === 'reject-application') {
-        const basis = window.prompt('Rejection basis — SO denial at compliance/evaluation/award:');
-        if (!basis) return;
-        const ref = window.prompt('Rejection reference:') || '';
-        body = { rejection_basis: basis, reason_code: 'rejected' };
-        if (ref) body.rejection_ref = ref;
-      } else if (action === 'forfeit-allocation') {
-        const basis = window.prompt('Forfeit basis — milestone failure; capacity recycled into the zone pool (W94 SIGNATURE crosses regulator every tier):');
-        if (!basis) return;
-        const ref = window.prompt('Forfeit reference:') || '';
-        body = { forfeit_basis: basis, reason_code: 'forfeit' };
-        if (ref) body.forfeit_ref = ref;
-      } else if (action === 'withdraw') {
-        const basis = window.prompt('Withdrawal basis:');
-        if (!basis) return;
-        body = { withdrawal_basis: basis, reason_code: 'withdrawn' };
-      }
-      await api.post(`/grid/rez-capacity/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">REZ capacity allocation &amp; competitive auction (NTCSA 2024)</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-state competitive-auction chain · announcement_published → application_submitted →
-            compliance_check → shortlisted → evaluation_complete → award_proposed → capacity_awarded
-            → financial_close_met → construction_in_progress → in_operation (terminal). Branches:
-            rejected (SO denial at compliance/evaluation/award), forfeit (milestone failure — capacity
-            recycled back into the zone pool), withdrawn. The COMPETITIVE-ZONAL-ALLOCATION layer of a
-            best-in-class system-operator stack downstream of NTCSA / CSIR REZ identification and
-            upstream of W58 generic-queue / W28 GCA / W75 energization. The DIFFERENTIATOR over AEMO
-            REZ / NYISO TPP / CAISO TPP / ERCOT CREZ / EU TYNDP / ENTSO-E TYNDP / NGESO Holistic Network
-            Design / Hydro Quebec MRC — most run REZ auctions on spreadsheets and never recycle forfeit
-            MW: every allocation is LIVE-scored every fetch against ZONE-HEADROOM (configured ceiling
-            vs allocated-to-date MW), a REIPPPP-style multi-criteria WEIGHTED SCORE (price 0.50 + B-BBEE
-            0.20 + ED 0.15 + local-content 0.15 per the DMRE 40% local-content rule), a COMPETITION-RATIO
-            from applications-per-lot, a MILESTONE-COMPLIANCE %, a FORFEIT-RATE per zone, and a
-            PREDICTED-OPERATION-DATE rolling forward from current state. Tier is MW-MAGNITUDE-DERIVED
-            on every transition (minor &lt;50MW / standard 50-250MW / material 250-500MW / mega ≥500MW)
-            with FLOOR-AT-MEGA for allocation_class IN (priority_zone, constraint_relief_zone,
-            jet_program_zone). INVERTED SLA — a larger allocation gets MORE procedural time per NTCSA
-            Rules 2024 (30d compliance for sub-100MW; mega 120d; construction milestone caps 3yr). The
-            W94 SIGNATURE — award_capacity and forfeit_allocation cross regulator EVERY tier (public
-            capacity-allocation register; sister of W93 impose_penalty).
-          </p>
-        </div>
+    <div style={{ padding: '20px', background: BG, minHeight: '100%' }}>
+      <header style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: TX1, margin: 0 }}>
+          REZ capacity allocation &amp; competitive auction (NTCSA 2024)
+        </h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 4, lineHeight: 1.5 }}>
+          12-state competitive-auction chain · announcement_published → in_operation (terminal).
+          Branches: rejected, forfeit (capacity recycled), withdrawn. COMPETITIVE-ZONAL-ALLOCATION
+          layer upstream of W58 queue / W28 GCA / W75 energization. LIVE-scored ZONE-HEADROOM +
+          REIPPPP WEIGHTED SCORE (price 0.50 + B-BBEE 0.20 + ED 0.15 + local-content 0.15).
+          INVERTED SLA. W94 SIGNATURE — award_capacity and forfeit_allocation cross regulator every tier.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total allocations" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} tone={(kpis?.open_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="In operation" value={kpis?.in_operation_count ?? 0} tone="ok" />
-        <Kpi label="Awarded" value={kpis?.awarded_count ?? 0} tone="ok" />
-        <Kpi label="Rejected" value={kpis?.rejected_count ?? 0} tone={(kpis?.rejected_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Forfeit (recycled)" value={kpis?.forfeit_count ?? 0} tone={(kpis?.forfeit_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Floor-at-mega" value={kpis?.floor_applied_count ?? 0} tone={(kpis?.floor_applied_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="DMRE local-content met" value={kpis?.local_content_meets_count ?? 0} tone="ok" />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Total awarded" value={fmtMw(kpis?.total_awarded_mw)} />
-        <Kpi label="Forfeit MW" value={fmtMw(kpis?.total_forfeit_mw)} tone={(kpis?.total_forfeit_mw ?? 0) > 0 ? 'warn' : 'ok'} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10, marginBottom: 16 }}>
+        <KpiTile label="Total allocations" value={summary?.total ?? rows.length} />
+        <KpiTile label="Open" value={summary?.open_count ?? 0} tone={(summary?.open_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="In operation" value={summary?.in_operation_count ?? 0} tone="ok" />
+        <KpiTile label="Awarded" value={summary?.awarded_count ?? 0} tone="ok" />
+        <KpiTile label="Rejected" value={summary?.rejected_count ?? 0} tone={(summary?.rejected_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Forfeit (recycled)" value={summary?.forfeit_count ?? 0} tone={(summary?.forfeit_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Floor-at-mega" value={summary?.floor_applied_count ?? 0} tone={(summary?.floor_applied_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="DMRE local-content met" value={summary?.local_content_meets_count ?? 0} tone="ok" />
+        <KpiTile label="SLA breached" value={summary?.breached ?? 0} tone={(summary?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Reportable" value={summary?.reportable_total ?? 0} tone={(summary?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Total awarded" value={fmtMw(summary?.total_awarded_mw)} />
+        <KpiTile label="Forfeit MW" value={fmtMw(summary?.total_forfeit_mw)} tone={(summary?.total_forfeit_mw ?? 0) > 0 ? 'warn' : 'ok'} />
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
         {FILTERS.map((f) => (
-          <button type="button"
+          <button
+            type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
+            style={{
+              padding: '3px 10px',
+              borderRadius: 4,
+              fontSize: 11,
+              fontWeight: 500,
+              cursor: 'pointer',
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+              background: filter === f.key ? ACC : BG1,
+              color: filter === f.key ? '#fff' : TX2,
+              transition: 'background 120ms, color 120ms',
+            }}
           >
             {f.label}
           </button>
@@ -520,298 +643,81 @@ export function RezCapacityChainTab() {
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Allocation #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Applicant / zone / tech</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Class</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Requested</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Awarded</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Score</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.capacity_tier];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.allocation_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable (public capacity register)">●</span>}
-                      {r.signature_class_flag && <span className="ml-1 text-[#9b1f1f]" title="Floor-at-mega class (priority_zone / constraint_relief_zone / jet_program_zone)">★</span>}
-                      {r.local_content_meets_threshold_flag && <span className="ml-1 text-[#155724]" title="DMRE 40% local-content threshold met">▲</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[280px] truncate" title={`${r.applicant_party_name ?? ''} · ${r.zone_name ?? r.zone_code} · ${r.technology ?? ''}`}>
-                      {r.applicant_party_name ?? '—'}
-                      <span className="text-[#4a5568]"> · {r.zone_name ?? r.zone_code} · {r.technology ?? '—'}</span>
-                    </td>
-                    <td className="px-3 py-2 text-[11px] text-[#4a5568]">{r.allocation_class}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {r.capacity_tier}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#0c2a4d]">{fmtMw(r.requested_capacity_mw)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#0c2a4d]">{fmtMw(r.awarded_capacity_mw)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#0c2a4d]">{fmtScore(r.weighted_score_live ?? r.weighted_score)}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-3 py-6 text-center text-[#4a5568]">No allocations match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div style={{ marginBottom: 10, padding: '8px 12px', borderRadius: 4, border: `1px solid ${BAD}40`, background: `${BAD}10`, fontSize: 12, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: TX3, background: BG1, borderRadius: 6, border: `1px solid ${BORDER}` }}>
+          Loading...
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: TX3, background: BG1, borderRadius: 6, border: `1px solid ${BORDER}` }}>
+          No allocations match.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {filtered.map((row) => {
+            const actions = getActions(row);
+            const meta = (
+              <span>
+                {row.zone_name ?? row.zone_code}
+                {row.technology ? ` · ${row.technology}` : ''}
+                {` · ${row.allocation_class}`}
+                {` · ${row.capacity_tier}`}
+                {` · Req: ${fmtMw(row.requested_capacity_mw)}`}
+                {row.awarded_capacity_mw != null ? ` · Awd: ${fmtMw(row.awarded_capacity_mw)}` : ''}
+                {row.weighted_score_live != null ? ` · Score: ${fmtScore(row.weighted_score_live)}` : ''}
+                {row.is_reportable_flag ? ' · ● Reportable' : ''}
+                {row.signature_class_flag ? ' · ★ Floor-at-mega' : ''}
+                {row.local_content_meets_threshold_flag ? ' · ▲ DMRE met' : ''}
+              </span>
+            );
+
+            return (
+              <ChainCard
+                key={row.id}
+                item={{
+                  ...row,
+                  case_number: row.allocation_number,
+                }}
+                allStates={ALL_STATES}
+                branchStates={BRANCH_STATES}
+                title={row.applicant_party_name ?? row.allocation_number}
+                meta={meta}
+                actions={actions}
+                onAction={(key, values) => handleAction(row.id, key, values)}
+                cascadeTo={['regulator', 'admin']}
+                events={expandedEvents[row.id]}
+                onExpand={handleExpand}
+                detail={renderDetail(row)}
+              />
+            );
+          })}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div style={{ borderRadius: 6, border: `1px solid ${BORDER}`, background: BG1, padding: '8px 12px' }}>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 600, fontFamily: MONO, color, marginTop: 2 }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: AllocationRow;
-  events: EventRow[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: AllocationRow) => void;
-}) {
-  const primary = ACTION_FOR_STATE[row.chain_status];
-  const secondary = SECONDARY_ACTIONS[row.chain_status];
-  const authority = AUTHORITY_LABEL[row.authority_required_live ?? row.authority_required ?? ''] ?? (row.authority_required ?? '—');
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[760px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.allocation_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">
-                {row.applicant_party_name ?? '—'} · {row.zone_name ?? row.zone_code} · {row.technology ?? '—'}
-              </div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.capacity_tier].label}
-                {row.allocation_class ? ` · ${row.allocation_class}` : ''}
-                {row.applicant_persona ? ` · ${row.applicant_persona}` : ''}
-                {row.bbbee_level != null ? ` · B-BBEE L${row.bbbee_level}` : ''}
-              </div>
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Live zone-headroom &amp; competition battery</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
-              <Metric label="Zone total" value={fmtMw(row.zone_total_capacity_mw)} hint="Configured ceiling" />
-              <Metric label="Zone allocated to date" value={fmtMw(row.zone_allocated_to_date_mw)} />
-              <Metric label="Remaining headroom (live)" value={fmtMw(row.remaining_headroom_mw_live)} bad={row.remaining_headroom_mw_live <= 0} hint="Ceiling − allocated" />
-              <Metric label="Zone forfeit to date" value={fmtMw(row.zone_forfeit_to_date_mw)} bad={row.zone_forfeit_to_date_mw > 0} hint="Recycled back into pool" />
-              <Metric label="Lots available" value={fmtNum(row.zone_lots_available, 0)} />
-              <Metric label="Applications in round" value={fmtNum(row.zone_applications_in_round, 0)} />
-              <Metric label="Competition ratio (live)" value={fmtNum(row.competition_ratio_live, 2)} hint="Applications ÷ lots" />
-              <Metric label="Competition intensity" value={row.competition_intensity_band_live} />
-              <Metric label="Tier (live)" value={(row.tier_live ?? row.capacity_tier).toString()} hint="MW-magnitude-derived, re-derived every fetch" />
-              <Metric label="Floor at mega" value={row.floor_at_mega_class_flag ? 'Yes' : 'No'} bad={!!row.floor_at_mega_class_flag} hint="priority_zone / constraint_relief_zone / jet_program_zone" />
-              <Metric label="Forfeit rate %" value={fmtPct(row.forfeit_rate_pct_live, 1)} bad={(row.forfeit_rate_pct_live ?? 0) > 0} />
-              <Metric label="Authority required" value={authority} />
-            </div>
-          </div>
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">REIPPPP multi-criteria score (price 0.50 + B-BBEE 0.20 + ED 0.15 + local-content 0.15)</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
-              <Metric label="Bid price (ZAR/MWh)" value={fmtNum(row.bid_price_zar_per_mwh, 0)} hint="Lower=better" />
-              <Metric label="Price floor / ceiling" value={`${fmtNum(row.price_floor_zar_per_mwh, 0)} / ${fmtNum(row.price_ceiling_zar_per_mwh, 0)}`} />
-              <Metric label="Price score (live)" value={fmtScore(row.price_score_live)} hint="Inverted/clamped to [0,1]" />
-              <Metric label="B-BBEE score (raw)" value={fmtScore((row.bbbee_score ?? 0) / 100)} />
-              <Metric label="ED score (raw)" value={fmtScore((row.ed_score ?? 0) / 100)} />
-              <Metric label="Local content %" value={fmtPct(row.local_content_pct, 1)} hint="DMRE 40% threshold" />
-              <Metric label="Local content score (live)" value={fmtScore(row.local_content_score_live)} hint="Full credit at ≥40%" />
-              <Metric label="Local content threshold" value={row.local_content_meets_threshold_flag ? 'MET' : 'Below'} bad={!row.local_content_meets_threshold_flag} />
-              <Metric label="Weighted score (live)" value={fmtScore(row.weighted_score_live)} hint="Σ weight × score; weights sum to 1.00" />
-              <Metric label="Weighted score (saved)" value={fmtScore(row.weighted_score)} />
-              <Metric label="Clearance ZAR/MW" value={fmtNum(row.award_clearance_price_zar_per_mw, 0)} />
-              <Metric label="Predicted operation" value={fmtDate(row.predicted_operation_date_live)} hint="Rolling forward from current state" />
-            </div>
-          </div>
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Milestone tracking</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
-              <Metric label="Effective capacity (live)" value={fmtMw(row.effective_capacity_mw_live)} hint="Awarded preferred over requested" />
-              <Metric label="Requested" value={fmtMw(row.requested_capacity_mw)} />
-              <Metric label="Awarded" value={fmtMw(row.awarded_capacity_mw)} />
-              <Metric label="FC target / actual" value={`${fmtDate(row.financial_close_target_at)} / ${fmtDate(row.financial_close_actual_at)}`} />
-              <Metric label="Construction target / actual" value={`${fmtDate(row.construction_start_target_at)} / ${fmtDate(row.construction_start_actual_at)}`} />
-              <Metric label="Operation target / actual" value={`${fmtDate(row.operation_target_at)} / ${fmtDate(row.operation_actual_at)}`} />
-              <Metric label="Milestones met / total" value={`${row.milestones_met_on_time} / ${row.milestones_total}`} />
-              <Metric label="Milestone compliance % (live)" value={fmtPct(row.milestone_compliance_pct_live, 1)} bad={row.milestone_compliance_pct_live < 100 && row.milestones_total > 0} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"                value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Capacity tier"        value={TIER_TONE[row.capacity_tier].label} />
-            <Pair label="Allocation class"     value={row.allocation_class} />
-            <Pair label="Zone"                 value={`${row.zone_name ?? row.zone_code} (${row.zone_code})`} />
-            <Pair label="Technology"           value={row.technology ?? '—'} />
-            <Pair label="Applicant"            value={row.applicant_party_name ?? '—'} />
-            <Pair label="B-BBEE level"         value={row.bbbee_level != null ? `Level ${row.bbbee_level}` : '—'} />
-            <Pair label="Inbox severity (live)" value={row.inbox_severity_live} />
-            <Pair label="Announcement published" value={fmtDate(row.announcement_published_at)} />
-            <Pair label="Application submitted" value={fmtDate(row.application_submitted_at)} />
-            <Pair label="Compliance check"     value={fmtDate(row.compliance_check_at)} />
-            <Pair label="Shortlisted"          value={fmtDate(row.shortlisted_at)} />
-            <Pair label="Evaluation complete"  value={fmtDate(row.evaluation_complete_at)} />
-            <Pair label="Award proposed"       value={fmtDate(row.award_proposed_at)} />
-            <Pair label="Capacity awarded"     value={fmtDate(row.capacity_awarded_at)} />
-            <Pair label="Financial close met"  value={fmtDate(row.financial_close_met_at)} />
-            <Pair label="Construction in progress" value={fmtDate(row.construction_in_progress_at)} />
-            <Pair label="In operation"         value={fmtDate(row.in_operation_at)} />
-            <Pair label="SLA deadline"         value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"           value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"       value={String(row.escalation_level)} />
-            <Pair label="Reportable"           value={row.is_reportable_flag ? 'Yes (public register)' : 'No'} />
-          </div>
-          {row.application_basis && <BasisBlock label="Application basis" tone="#1a3a5c" text={row.application_basis} />}
-          {row.evaluation_basis && <BasisBlock label="Evaluation basis" tone="#8a4a00" text={row.evaluation_basis} />}
-          {row.award_basis && <BasisBlock label="Award basis" tone="#155724" text={row.award_basis} />}
-          {row.rejection_basis && <BasisBlock label="Rejection basis" tone="#9b1f1f" text={row.rejection_basis} />}
-          {row.forfeit_basis && <BasisBlock label="Forfeit basis (capacity recycled)" tone="#9b1f1f" text={row.forfeit_basis} />}
-          {row.withdrawal_basis && <BasisBlock label="Withdrawal basis" tone="#557" text={row.withdrawal_basis} />}
-        </section>
-
-        {(primary || secondary.length > 0) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {primary && (
-                <button type="button"
-                  onClick={() => onAct(primary, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[primary]}
-                </button>
-              )}
-              {secondary.map((a) => {
-                const danger = DESTRUCTIVE.includes(a);
-                return (
-                  <button type="button"
-                    key={a}
-                    onClick={() => onAct(a, row)}
-                    className={
-                      danger
-                        ? 'rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50'
-                        : 'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#557] hover:bg-[#f3f5f9]'
-                    }
-                  >
-                    {ACTION_LABEL[a]}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function Metric({ label, value, bad, hint }: { label: string; value: string; bad?: boolean; hint?: string }) {
-  return (
-    <div title={hint}>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className={`text-[13px] font-semibold tabular-nums ${bad ? 'text-[#9b1f1f]' : 'text-[#0c2a4d]'}`}>{value}</div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 12, color: TX1, marginTop: 1 }}>{value}</div>
     </div>
   );
 }
+
+export default RezCapacityChainTab;

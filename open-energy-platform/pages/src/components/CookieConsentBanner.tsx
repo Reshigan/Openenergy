@@ -63,17 +63,17 @@ export function CookieConsentBanner() {
             <p className="text-[12px] text-[#3d4756] mt-1 leading-snug">
               We use necessary cookies for auth and session state, and optional
               cookies for analytics. POPIA gives you the right to refuse non-essential
-              cookies. See <a href="/legal/privacy" className="text-[#1a3a5c] underline font-semibold">privacy policy</a>.
+              cookies. See <a href="/legal/privacy" className="underline font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>privacy policy</a>.
             </p>
             <div className="mt-2 space-y-2 text-[12px]">
               <label className="flex items-center gap-2 text-[#3d4756] min-h-[24px]">
-                <input type="checkbox" checked disabled className="accent-[#1a3a5c] w-6 h-6" /> Necessary
+                <input type="checkbox" checked disabled className="accent-[oklch(0.46_0.16_55)] w-6 h-6" /> Necessary
               </label>
               <label className="flex items-center gap-2 text-[#3d4756] min-h-[24px]">
-                <input type="checkbox" checked={analytics} onChange={(e) => setAnalytics(e.target.checked)} className="accent-[#1a3a5c] w-6 h-6" /> Analytics
+                <input type="checkbox" checked={analytics} onChange={(e) => setAnalytics(e.target.checked)} className="accent-[oklch(0.46_0.16_55)] w-6 h-6" /> Analytics
               </label>
               <label className="flex items-center gap-2 text-[#3d4756] min-h-[24px]">
-                <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} className="accent-[#1a3a5c] w-6 h-6" /> Marketing
+                <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} className="accent-[oklch(0.46_0.16_55)] w-6 h-6" /> Marketing
               </label>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">

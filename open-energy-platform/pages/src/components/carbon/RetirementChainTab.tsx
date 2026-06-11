@@ -6,11 +6,25 @@
 //
 //   • KPI strip: total / article6 open / breached / escalated / retired count
 //   • Filter pills by chain state + scope + breached/escalated
-//   • Listing with scope pill + state pill + SLA countdown
-//   • Drill-down: timeline + per-state action buttons (5 transitions + cancel)
+//   • ChainCard list with scope pill + state pill + SLA countdown
+//   • Inline expandable detail + audit timeline + ActionModal actions
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'requested' | 'validating' | 'adjustment_pending' | 'adjusted'
@@ -19,6 +33,7 @@ type ChainStatus =
 type Scope = 'article6' | 'compliance' | 'voluntary';
 
 interface RetirementRow {
+  [key: string]: unknown;
   id: string;
   participant_id: string;
   project_id: string;
@@ -42,34 +57,21 @@ interface RetirementRow {
   created_at: string;
 }
 
-interface RetirementEvent {
-  id: string;
-  retirement_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'requested',
+  'validating',
+  'adjustment_pending',
+  'adjusted',
+  'retired',
+];
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  requested:          { bg: '#fff4d6', fg: '#a06200', label: 'Requested' },
-  validating:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Validating' },
-  adjustment_pending: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Adjustment pending' },
-  adjusted:           { bg: '#daf5e2', fg: '#1f6b3a', label: 'Adjusted' },
-  retired:            { bg: '#daf5e2', fg: '#1f6b3a', label: 'Retired' },
-  rejected:           { bg: '#fde0e0', fg: '#9b1f1f', label: 'Rejected' },
-  cancelled:          { bg: '#e3e7ec', fg: '#557',    label: 'Cancelled' },
-};
+const BRANCH_STATES: readonly string[] = [
+  'rejected',
+  'cancelled',
+];
 
-const SCOPE_TONE: Record<Scope, { bg: string; fg: string; label: string }> = {
-  article6:   { bg: '#fde0e0', fg: '#9b1f1f', label: 'Article 6' },
-  compliance: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Compliance' },
-  voluntary:  { bg: '#e3e7ec', fg: '#557',    label: 'Voluntary' },
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',             label: 'Active' },
   { key: 'all',                label: 'All' },
@@ -87,29 +89,13 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'cancelled',          label: 'Cancelled' },
 ];
 
-type ActionKind =
-  | 'begin-validation' | 'mark-adjustment-pending' | 'mark-adjusted'
-  | 'finalize' | 'reject' | 'cancel';
-
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  requested:          'begin-validation',
-  validating:         'mark-adjustment-pending',
-  adjustment_pending: 'mark-adjusted',
-  adjusted:           'finalize',
-  retired:            null,
-  rejected:           null,
-  cancelled:          null,
+const SCOPE_LABEL: Record<Scope, string> = {
+  article6:   'Article 6',
+  compliance: 'Compliance',
+  voluntary:  'Voluntary',
 };
 
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'begin-validation':       'Begin CRA validation',
-  'mark-adjustment-pending': 'Submit for corresponding adjustment',
-  'mark-adjusted':          'Mark adjustment posted',
-  'finalize':               'Finalize retirement (mint cert)',
-  'reject':                 'Reject retirement',
-  'cancel':                 'Cancel retirement',
-};
-
+// ── format helpers ────────────────────────────────────────────────────────
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
   if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
@@ -128,13 +114,133 @@ function fmtTons(n: number | null | undefined): string {
   return `${n.toLocaleString('en-ZA', { maximumFractionDigits: 0 })} tCO2e`;
 }
 
+// ── action builder ────────────────────────────────────────────────────────
+function getActions(row: RetirementRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+
+  // Primary forward action per state
+  if (row.chain_status === 'requested') {
+    actions.push({
+      key: 'begin-validation',
+      label: 'Begin CRA validation',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (row.chain_status === 'validating') {
+    actions.push({
+      key: 'mark-adjustment-pending',
+      label: 'Submit for corresponding adjustment',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (row.chain_status === 'adjustment_pending') {
+    actions.push({
+      key: 'mark-adjusted',
+      label: 'Mark adjustment posted',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  if (row.chain_status === 'adjusted') {
+    // Article 6 finalize crosses regulator
+    actions.push({
+      key: 'finalize',
+      label: 'Finalize retirement (mint cert)',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: row.scope === 'article6' ? ['regulator'] : [],
+    });
+  }
+
+  // Reject — available in validating or adjustment_pending
+  // Article 6 reject crosses regulator
+  if (row.chain_status === 'validating' || row.chain_status === 'adjustment_pending') {
+    actions.push({
+      key: 'reject',
+      label: 'Reject retirement',
+      tone: 'danger',
+      fields: [
+        {
+          key: 'reason',
+          label: 'Rejection reason',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: row.scope === 'article6' ? ['regulator'] : [],
+    });
+  }
+
+  // Cancel — available in any non-terminal state
+  if (
+    row.chain_status !== 'retired' &&
+    row.chain_status !== 'rejected' &&
+    row.chain_status !== 'cancelled'
+  ) {
+    actions.push({
+      key: 'cancel',
+      label: 'Cancel retirement',
+      tone: 'ghost',
+      fields: [
+        {
+          key: 'notes',
+          label: 'Reason for cancel',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  return actions;
+}
+
+// ── detail renderer ───────────────────────────────────────────────────────
+function renderDetail(row: RetirementRow): React.ReactNode {
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+      <DetailPair label="Scope"        value={SCOPE_LABEL[row.scope]} />
+      <DetailPair label="State"        value={row.chain_status.replace(/_/g, ' ')} />
+      <DetailPair label="Quantity"     value={fmtTons(row.quantity)} />
+      <DetailPair label="Country"      value={row.beneficiary_country ?? '—'} />
+      <DetailPair label="SLA deadline" value={fmtDate(row.sla_deadline_at)} />
+      <DetailPair label="SLA status"   value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+      <DetailPair label="Escalation"   value={String(row.escalation_level)} />
+      <DetailPair label="Certificate"  value={row.certificate_hash ?? row.certificate_number ?? '—'} />
+      {row.retirement_reason && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Reason</div>
+          <div style={{ color: TX2 }}>{row.retirement_reason}</div>
+        </div>
+      )}
+      {row.rejection_reason && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: BAD }}>Rejection reason</div>
+          <div style={{ color: BAD }}>{row.rejection_reason}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function RetirementChainTab() {
   const [rows, setRows] = useState<RetirementRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<RetirementRow | null>(null);
-  const [events, setEvents] = useState<RetirementEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -151,17 +257,32 @@ export function RetirementChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { retirement: RetirementRow; events: RetirementEvent[] } }>(
+      await api.post(`/carbon/retirement-chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { retirement: RetirementRow; events: ChainEvent[] } }>(
+            `/carbon/retirement-chain/${rowId}`
+          );
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
+    }
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { retirement: RetirementRow; events: ChainEvent[] } }>(
         `/carbon/retirement-chain/${id}`
       );
-      if (res.data?.data?.retirement) setSelected(res.data.data.retirement);
-      setEvents(res.data?.data?.events || []);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load retirement history');
-    }
-  }, []);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -170,7 +291,7 @@ export function RetirementChainTab() {
       if (filter === 'article6')   return r.scope === 'article6';
       if (filter === 'compliance') return r.scope === 'compliance';
       if (filter === 'voluntary')  return r.scope === 'voluntary';
-      if (filter === 'breached')   return r.sla_breached;
+      if (filter === 'breached')   return !!r.sla_breached;
       if (filter === 'escalated')  return r.escalation_level > 0;
       return r.chain_status === filter;
     });
@@ -190,258 +311,103 @@ export function RetirementChainTab() {
     return { total: rows.length, article6_open, breached, escalated, retired_count, total_tco2 };
   }, [rows]);
 
-  const act = useCallback(async (action: ActionKind, row: RetirementRow) => {
-    try {
-      let body: Record<string, string> = {};
-      if (action === 'reject') {
-        const reason = window.prompt('Rejection reason:');
-        if (!reason) return;
-        body = { reason };
-      } else if (action === 'cancel') {
-        const reason = window.prompt('Reason for cancel:');
-        if (!reason) return;
-        body = { notes: reason };
-      }
-      await api.post(`/carbon/retirement-chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Carbon credit retirement chain</h2>
-          <p className="text-xs text-[#4a5568]">
-            7-stage P6 chain · requested → validating → adjustment pending → adjusted → retired (+ rejected / cancelled).
-            Per-scope SLA tiering (Article 6 24h / compliance 72h / voluntary 168h per stage).
-            Article 6 finalize/reject and Article 6 / compliance SLA breaches escalate to the regulator inbox.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Carbon credit retirement chain</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          7-stage P6 chain · requested → validating → adjustment pending → adjusted → retired (+ rejected / cancelled).
+          Per-scope SLA tiering (Article 6 24h / compliance 72h / voluntary 168h per stage).
+          Article 6 finalize/reject and Article 6 / compliance SLA breaches escalate to the regulator inbox.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Kpi label="Total retirements" value={kpis.total} />
-        <Kpi label="Article 6 open" value={kpis.article6_open} tone={kpis.article6_open > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis.breached} tone={kpis.breached > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Escalated" value={kpis.escalated} tone={kpis.escalated > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Retired" value={`${kpis.retired_count} (${fmtTons(kpis.total_tco2)})`} />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total retirements" value={kpis.total} />
+        <KpiTile label="Article 6 open"    value={kpis.article6_open} tone={kpis.article6_open > 0 ? 'warn' : undefined} />
+        <KpiTile label="SLA breached"       value={kpis.breached}      tone={kpis.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Escalated"          value={kpis.escalated}     tone={kpis.escalated > 0 ? 'warn' : undefined} />
+        <KpiTile label="Retired"            value={`${kpis.retired_count} (${fmtTons(kpis.total_tco2)})`} />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Beneficiary</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Country</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Quantity</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Scope</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Reason</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const sc = SCOPE_TONE[r.scope];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 text-[#0c2a4d]">{r.beneficiary_name ?? '—'}</td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.beneficiary_country ?? '—'}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtTons(r.quantity)}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: sc.bg, color: sc.fg }}>
-                        {sc.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568] max-w-[260px] truncate" title={r.retirement_reason ?? ''}>
-                      {r.retirement_reason ?? '—'}
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No retirements match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading...
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={row.beneficiary_name ?? `Retirement ${row.id.slice(0, 8)}`}
+              meta={
+                <span style={{ color: TX3, fontSize: 11 }}>
+                  {SCOPE_LABEL[row.scope]}
+                  {row.beneficiary_country ? ` · ${row.beneficiary_country}` : ''}
+                  {' · '}{fmtTons(row.quantity)}
+                </span>
+              }
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No retirements match.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: RetirementRow;
-  events: RetirementEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: RetirementRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canReject  = row.chain_status === 'validating' || row.chain_status === 'adjustment_pending';
-  const canCancel  = row.chain_status !== 'retired' && row.chain_status !== 'rejected' && row.chain_status !== 'cancelled';
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[640px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.id}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.beneficiary_name ?? '—'}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {row.beneficiary_country ?? '—'} · {fmtTons(row.quantity)} · {SCOPE_TONE[row.scope].label}
-              </div>
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="Scope"        value={SCOPE_TONE[row.scope].label} />
-            <Pair label="State"        value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Quantity"     value={fmtTons(row.quantity)} />
-            <Pair label="Country"      value={row.beneficiary_country ?? '—'} />
-            <Pair label="SLA deadline" value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"   value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation"   value={String(row.escalation_level)} />
-            <Pair label="Certificate"  value={row.certificate_hash ?? row.certificate_number ?? '—'} />
-          </div>
-          {row.retirement_reason && (
-            <div className="mt-3 text-[12px]">
-              <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">Reason</div>
-              <div className="text-[#1a3a5c]">{row.retirement_reason}</div>
-            </div>
-          )}
-          {row.rejection_reason && (
-            <div className="mt-3 text-[12px]">
-              <div className="text-[10px] uppercase tracking-wider text-[#9b1f1f]">Rejection reason</div>
-              <div className="text-[#9b1f1f]">{row.rejection_reason}</div>
-            </div>
-          )}
-        </section>
-
-        {(nextAction || canReject || canCancel) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canReject && (
-                <button type="button"
-                  onClick={() => onAct('reject', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL.reject}
-                </button>
-              )}
-              {canCancel && (
-                <button type="button"
-                  onClick={() => onAct('cancel', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#4a5568] hover:bg-[#f3f5f9]"
-                >
-                  {ACTION_LABEL.cancel}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  {(e.from_status || e.to_status) && (
-                    <div className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</div>
-                  )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1, fontSize: 11 }}>{value}</div>
     </div>
   );
 }
+
+export default RetirementChainTab;

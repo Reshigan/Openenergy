@@ -3,7 +3,22 @@ import { Link } from 'react-router-dom';
 import { Mail, Send, Inbox, Loader2, AlertTriangle, ArrowRight } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
-import { StitchPage } from '../StitchPage';
+
+const BG      = 'oklch(0.96 0.003 250)';
+const BG1     = 'oklch(0.99 0.002 80)';
+const BG2     = 'oklch(0.93 0.004 250)';
+const BORDER  = 'oklch(0.87 0.006 250)';
+const TX1     = 'oklch(0.17 0.010 250)';
+const TX2     = 'oklch(0.40 0.009 250)';
+const TX3     = 'oklch(0.60 0.007 250)';
+const ACC     = 'oklch(0.46 0.16 55)';
+const BAD     = 'oklch(0.48 0.20 20)';
+const BAD_BG  = 'oklch(0.97 0.04 20)';
+const WARN    = 'oklch(0.50 0.18 55)';
+const WARN_BG = 'oklch(0.96 0.05 55)';
+const GOOD    = 'oklch(0.40 0.16 155)';
+const GOOD_BG = 'oklch(0.95 0.04 155)';
+const MONO    = '"IBM Plex Mono","Fira Code",monospace';
 
 type LoiRow = {
   id: string;
@@ -21,12 +36,12 @@ type LoiRow = {
   project_name?: string;
 };
 
-const statusPill: Record<string, { bg: string; text: string; label: string }> = {
-  drafted:  { bg: '#eef1f4', text: '#6b7685', label: 'Drafted' },
-  sent:     { bg: '#d4e7f6', text: '#3b82c4', label: 'Awaiting response' },
-  signed:   { bg: '#e7f4ea', text: '#1a8a5b', label: 'Accepted' },
-  withdrawn:{ bg: '#fde7e9', text: '#c0392b', label: 'Declined' },
-  expired:  { bg: '#fef3e6', text: '#b04e0f', label: 'Expired' },
+const statusMeta: Record<string, { bg: string; color: string; label: string }> = {
+  drafted:   { bg: BG2,     color: TX2,  label: 'Drafted' },
+  sent:      { bg: 'oklch(0.93 0.04 240)', color: 'oklch(0.35 0.14 240)', label: 'Awaiting response' },
+  signed:    { bg: GOOD_BG, color: GOOD, label: 'Accepted' },
+  withdrawn: { bg: BAD_BG,  color: BAD,  label: 'Declined' },
+  expired:   { bg: WARN_BG, color: WARN, label: 'Expired' },
 };
 
 export function Lois() {
@@ -63,125 +78,285 @@ export function Lois() {
   }, [rows, user?.id]);
 
   return (
-    <StitchPage
-      eyebrowIcon={Mail}
-      eyebrowLabel="Letters of Intent"
-      title="Letters of Intent"
-      subtitle="Non-binding indications of offtake / supply. Accept to spawn a draft Term Sheet on your contracts list."
-      actions={
-        <div className="flex items-center gap-2">
-          {(['all', 'received', 'sent'] as const).map((d) => (
-            <button type="button"
-              key={d}
-              onClick={() => setDirection(d)}
-              className={`h-8 px-3 rounded-md text-[12px] font-semibold border transition-colors ${
-                direction === d
-                  ? 'bg-[#3b82c4] text-white border-[#3b82c4]'
-                  : 'bg-white text-[#6b7685] border-[#d0d5dd] hover:bg-[#f5f6fa]'
-              }`}
-            >
-              {d === 'all' ? 'All' : d === 'received' ? 'Received' : 'Sent'}
-            </button>
-          ))}
-        </div>
-      }
-    >
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi icon={<Inbox size={16} />} label="Total" value={counts.all} />
-        <Kpi icon={<Send size={16} />} label="Sent by me" value={counts.sent} />
-        <Kpi icon={<Mail size={16} />} label="Received" value={counts.received} />
-        <Kpi icon={<ArrowRight size={16} />} label="Accepted" value={counts.accepted} tone="good" />
-      </div>
-
-      {error && (
-        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] px-4 py-2 text-[13px] text-[#c0392b] inline-flex items-center gap-2">
-          <AlertTriangle size={14} /> {error}
-        </div>
-      )}
-
-      <div className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
-        {loading ? (
-          <div className="p-6 text-[13px] text-[#6b7685] flex items-center gap-2">
-            <Loader2 size={14} className="animate-spin" /> Loading LOIs…
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr 380px',
+      height: 'calc(100vh - 50px)',
+      background: BG,
+      overflow: 'hidden',
+    }}>
+      {/* LEFT COLUMN */}
+      <div style={{ overflowY: 'auto', padding: '24px 28px' }}>
+        {/* Page header */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <Mail size={18} color={TX2} />
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: TX1, margin: 0 }}>Letters of Intent</h1>
           </div>
-        ) : rows.length === 0 ? (
-          <div className="p-10 text-center text-[#6b7685]">
-            <p className="text-[14px] font-semibold text-[#0f1c2e]">No Letters of Intent yet</p>
-            <p className="text-[12px] mt-1">
-              {user?.role === 'offtaker'
-                ? 'Use the Offtaker AI copilot on your cockpit to upload a bill and generate LOIs from the optimal mix.'
-                : user?.role === 'ipp_developer'
-                  ? 'Simulate a project in the Esums hub and run batch LOI outreach to offtakers.'
-                  : 'Once LOIs are drafted by offtakers or IPPs, they will appear here.'}
-            </p>
+          <p style={{ fontSize: 13, color: TX2, margin: 0 }}>
+            Non-binding indications of offtake / supply. Accept to spawn a draft Term Sheet on your contracts list.
+          </p>
+        </div>
+
+        {/* KPI strip */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+          <KpiCard label="TOTAL" value={counts.all} icon={<Inbox size={13} color={TX3} />} />
+          <KpiCard label="SENT BY ME" value={counts.sent} icon={<Send size={13} color={TX3} />} />
+          <KpiCard label="RECEIVED" value={counts.received} icon={<Mail size={13} color={TX3} />} />
+          <KpiCard label="ACCEPTED" value={counts.accepted} icon={<ArrowRight size={13} color={GOOD} />} good />
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            background: BAD_BG, border: `1px solid ${BAD}`, borderRadius: 6,
+            padding: '8px 14px', fontSize: 13, color: BAD, marginBottom: 16,
+          }}>
+            <AlertTriangle size={14} /> {error}
           </div>
-        ) : (
-          <table className="w-full text-[13px]">
-            <thead className="bg-[#eef2f7] text-[#6b7685]">
-              <tr className="border-b border-[#f0f0f0]">
-                <th className="text-left px-4 py-2.5 font-semibold">From → To</th>
-                <th className="text-left px-4 py-2.5 font-semibold">Project</th>
-                <th className="text-right px-4 py-2.5 font-semibold">MWh/yr</th>
-                <th className="text-right px-4 py-2.5 font-semibold">R/MWh</th>
-                <th className="text-right px-4 py-2.5 font-semibold">Horizon</th>
-                <th className="text-left px-4 py-2.5 font-semibold">Status</th>
-                <th className="text-left px-4 py-2.5 font-semibold">Created</th>
-                <th className="px-4 py-2.5"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => {
-                const pill = statusPill[r.status] || statusPill.drafted;
-                return (
-                  <tr key={r.id} className="border-b border-[#f0f0f0] hover:bg-[#fafbfd]">
-                    <td className="px-4 py-2.5 text-[#0f1c2e]">
-                      <span className="font-medium">{r.from_name || '—'}</span>
-                      <span className="text-[#6b7685]"> → </span>
-                      <span className="font-medium">{r.to_name || '—'}</span>
-                    </td>
-                    <td className="px-4 py-2.5 text-[#0f1c2e]">{r.project_name || '—'}</td>
-                    <td className="px-4 py-2.5 text-right">{r.annual_mwh ? Math.round(r.annual_mwh).toLocaleString() : '—'}</td>
-                    <td className="px-4 py-2.5 text-right">{r.blended_price ? `R${Number(r.blended_price).toFixed(0)}` : '—'}</td>
-                    <td className="px-4 py-2.5 text-right">{r.horizon_years ? `${r.horizon_years}y` : '—'}</td>
-                    <td className="px-4 py-2.5">
-                      <span
-                        className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                        style={{ background: pill.bg, color: pill.text }}
-                      >
-                        {pill.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-[#6b7685]">
-                      {new Date(r.created_at).toLocaleDateString('en-ZA')}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      <Link
-                        to={`/lois/${r.id}`}
-                        className="text-[12px] font-semibold text-[#3b82c4] hover:underline inline-flex items-center gap-1"
-                      >
-                        Open <ArrowRight size={12} />
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
         )}
+
+        {/* Table card */}
+        <div style={{
+          background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, overflow: 'hidden',
+        }}>
+          {loading ? (
+            <div style={{ padding: '24px 20px', fontSize: 13, color: TX2, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading LOIs…
+            </div>
+          ) : rows.length === 0 ? (
+            <div style={{ padding: '48px 20px', textAlign: 'center' }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: TX1, margin: '0 0 6px' }}>No Letters of Intent yet</p>
+              <p style={{ fontSize: 12, color: TX2, margin: 0 }}>
+                {user?.role === 'offtaker'
+                  ? 'Use the Offtaker AI copilot on your cockpit to upload a bill and generate LOIs from the optimal mix.'
+                  : user?.role === 'ipp_developer'
+                    ? 'Simulate a project in the Esums hub and run batch LOI outreach to offtakers.'
+                    : 'Once LOIs are drafted by offtakers or IPPs, they will appear here.'}
+              </p>
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${BORDER}` }}>
+                  {['FROM → TO', 'PROJECT', 'MWh/yr', 'R/MWh', 'HORIZON', 'STATUS', 'CREATED', ''].map((col, i) => (
+                    <th key={i} style={{
+                      textAlign: i >= 2 && i <= 4 ? 'right' : 'left',
+                      padding: '8px 12px',
+                      color: TX2,
+                      fontWeight: 600,
+                      fontSize: 11,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}>
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => {
+                  const meta = statusMeta[r.status] || statusMeta.drafted;
+                  return (
+                    <tr key={r.id} style={{
+                      borderBottom: `1px solid ${BORDER}`,
+                      background: i % 2 === 1 ? BG2 : 'transparent',
+                    }}>
+                      <td style={{ padding: '10px 12px', color: TX1 }}>
+                        <span style={{ fontWeight: 600 }}>{r.from_name || '—'}</span>
+                        <span style={{ color: TX3 }}> → </span>
+                        <span style={{ fontWeight: 600 }}>{r.to_name || '—'}</span>
+                      </td>
+                      <td style={{ padding: '10px 12px', color: TX1 }}>{r.project_name || '—'}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', color: TX1, fontFamily: MONO }}>
+                        {r.annual_mwh ? Math.round(r.annual_mwh).toLocaleString() : '—'}
+                      </td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', color: TX1, fontFamily: MONO }}>
+                        {r.blended_price ? `R${Number(r.blended_price).toFixed(0)}` : '—'}
+                      </td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', color: TX1, fontFamily: MONO }}>
+                        {r.horizon_years ? `${r.horizon_years}y` : '—'}
+                      </td>
+                      <td style={{ padding: '10px 12px' }}>
+                        <span style={{
+                          background: meta.bg,
+                          color: meta.color,
+                          padding: '2px 8px',
+                          borderRadius: 12,
+                          fontSize: 11,
+                          fontWeight: 600,
+                        }}>
+                          {meta.label}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 12px', color: TX3, fontFamily: MONO, fontSize: 12 }}>
+                        {new Date(r.created_at).toLocaleDateString('en-ZA')}
+                      </td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                        <Link
+                          to={`/lois/${r.id}`}
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: ACC,
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                        >
+                          Open <ArrowRight size={12} />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
-    </StitchPage>
+
+      {/* RIGHT COLUMN */}
+      <div style={{
+        borderLeft: `1px solid ${BORDER}`,
+        background: BG1,
+        overflowY: 'auto',
+        padding: '24px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}>
+        {/* Direction filter */}
+        <div style={{
+          background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px',
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            DIRECTION
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {(['all', 'received', 'sent'] as const).map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setDirection(d)}
+                style={{
+                  background: direction === d ? ACC : 'transparent',
+                  color: direction === d ? '#fff' : TX2,
+                  border: `1px solid ${direction === d ? ACC : BORDER}`,
+                  padding: '8px 16px',
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+              >
+                {d === 'all' ? <Inbox size={14} /> : d === 'sent' ? <Send size={14} /> : <Mail size={14} />}
+                {d === 'all' ? 'All LOIs' : d === 'received' ? 'Received' : 'Sent by me'}
+                <span style={{
+                  marginLeft: 'auto',
+                  background: direction === d ? 'rgba(255,255,255,0.25)' : BG2,
+                  color: direction === d ? '#fff' : TX3,
+                  borderRadius: 10,
+                  padding: '1px 7px',
+                  fontSize: 11,
+                  fontFamily: MONO,
+                }}>
+                  {d === 'all' ? counts.all : d === 'sent' ? counts.sent : counts.received}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Summary stats */}
+        <div style={{
+          background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px',
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            SUMMARY
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <StatRow label="Pending response" value={counts.pending} />
+            <StatRow label="Accepted" value={counts.accepted} accent={GOOD} />
+            <StatRow
+              label="Declined / Expired"
+              value={rows.filter(r => r.status === 'withdrawn' || r.status === 'expired').length}
+              accent={BAD}
+            />
+          </div>
+        </div>
+
+        {/* Status legend */}
+        <div style={{
+          background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px',
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            STATUS GUIDE
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {Object.entries(statusMeta).map(([key, meta]) => (
+              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{
+                  background: meta.bg, color: meta.color,
+                  padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600,
+                }}>
+                  {meta.label}
+                </span>
+                <span style={{ fontSize: 12, color: TX3 }}>
+                  {key === 'drafted' && 'Not yet sent'}
+                  {key === 'sent' && 'Waiting on counterparty'}
+                  {key === 'signed' && 'Term sheet spawned'}
+                  {key === 'withdrawn' && 'Counterparty declined'}
+                  {key === 'expired' && 'Past validity window'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Context hint */}
+        <div style={{
+          background: 'oklch(0.93 0.04 240)', border: '1px solid oklch(0.85 0.06 240)', borderRadius: 8, padding: '14px 16px',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'oklch(0.35 0.14 240)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+            HOW IT WORKS
+          </div>
+          <p style={{ fontSize: 12, color: 'oklch(0.30 0.10 240)', margin: 0, lineHeight: 1.6 }}>
+            An accepted LOI automatically spawns a draft Term Sheet in your contracts list. Accepting is non-binding until the Term Sheet is countersigned.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 
-function Kpi({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: number; tone?: 'good' }) {
+function KpiCard({ label, value, icon, good }: { label: string; value: number; icon: React.ReactNode; good?: boolean }) {
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white px-4 py-3">
-      <div className="text-[11px] uppercase tracking-wider text-[#6b7685] inline-flex items-center gap-1.5">
+    <div style={{
+      background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+      padding: '12px 16px', flex: 1, minWidth: 100,
+    }}>
+      <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 5 }}>
         {icon} {label}
       </div>
-      <div className={`text-[22px] font-semibold mt-1 ${tone === 'good' ? 'text-[#1a8a5b]' : 'text-[#0f1c2e]'}`}>
+      <div style={{ fontSize: 24, fontWeight: 700, color: good ? GOOD : TX1, fontFamily: MONO, marginTop: 4 }}>
         {value}
       </div>
+    </div>
+  );
+}
+
+function StatRow({ label, value, accent }: { label: string; value: number; accent?: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span style={{ fontSize: 13, color: TX2 }}>{label}</span>
+      <span style={{ fontSize: 14, fontWeight: 700, color: accent || TX1, fontFamily: MONO }}>{value}</span>
     </div>
   );
 }

@@ -12,6 +12,20 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainCardProps, type ChainEvent } from '../ChainCard';
+
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'baseline_locked' | 'monitoring' | 'variance_flagged'
@@ -25,6 +39,7 @@ type Tier =
   | 'enterprise_dev' | 'socio_economic' | 'community_trust';
 
 interface EdRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   project_id: string;
@@ -74,29 +89,33 @@ interface EdEvent {
   created_at: string;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  baseline_locked:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Baseline locked' },
-  monitoring:          { bg: '#daf5e2', fg: '#1f6b3a', label: 'Monitoring' },
-  variance_flagged:    { bg: '#fff4d6', fg: '#a06200', label: 'Variance flagged' },
-  cure_plan_required:  { bg: '#ffe4b5', fg: '#8a4a00', label: 'Cure plan required' },
-  cure_plan_submitted: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Cure plan submitted' },
-  cure_executing:      { bg: '#ffe4b5', fg: '#8a4a00', label: 'Cure executing' },
-  verified_compliant:  { bg: '#daf5e2', fg: '#1f6b3a', label: 'Verified compliant' },
-  penalty_issued:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Penalty issued' },
-  escalated:           { bg: '#fde0e0', fg: '#9b1f1f', label: 'Escalated to DTI' },
-  closed:              { bg: '#e3e7ec', fg: '#557',    label: 'Closed' },
-  false_alarm:         { bg: '#e3e7ec', fg: '#557',    label: 'False alarm' },
-};
+interface KpiData {
+  total: number;
+  variance_open: number;
+  cure_required: number;
+  cure_executing: number;
+  penalty_open: number;
+  escalated: number;
+  breached: number;
+  penalty_total_zar: number;
+}
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  ownership:       { bg: '#fde0e0', fg: '#9b1f1f', label: 'Ownership' },
-  local_content:   { bg: '#fde0e0', fg: '#9b1f1f', label: 'Local content' },
-  jobs:            { bg: '#ffe4b5', fg: '#8a4a00', label: 'Jobs' },
-  skills:          { bg: '#ffe4b5', fg: '#8a4a00', label: 'Skills' },
-  enterprise_dev:  { bg: '#fff4d6', fg: '#a06200', label: 'Enterprise dev' },
-  socio_economic:  { bg: '#fff4d6', fg: '#a06200', label: 'Socio-economic' },
-  community_trust: { bg: '#fff4d6', fg: '#a06200', label: 'Community trust' },
-};
+const ALL_STATES = [
+  'baseline_locked',
+  'monitoring',
+  'variance_flagged',
+  'cure_plan_required',
+  'cure_plan_submitted',
+  'cure_executing',
+  'verified_compliant',
+  'closed',
+] as const;
+
+const BRANCH_STATES = [
+  'penalty_issued',
+  'escalated',
+  'false_alarm',
+] as const;
 
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',              label: 'Active' },
@@ -122,59 +141,9 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'closed',              label: 'Closed' },
 ];
 
-type ActionKind =
-  | 'activate-monitoring' | 'detect-variance' | 'require-cure-plan'
-  | 'submit-cure-plan' | 'approve-cure-plan' | 'verify-compliance' | 'close-compliant'
-  | 'issue-penalty' | 'close-with-penalty'
-  | 'escalate' | 'close-escalated'
-  | 'mark-false-alarm' | 'close-false-alarm';
-
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  baseline_locked:     'activate-monitoring',
-  monitoring:          'detect-variance',
-  variance_flagged:    'require-cure-plan',
-  cure_plan_required:  'submit-cure-plan',
-  cure_plan_submitted: 'approve-cure-plan',
-  cure_executing:      'verify-compliance',
-  verified_compliant:  'close-compliant',
-  penalty_issued:      'close-with-penalty',
-  escalated:           'close-escalated',
-  false_alarm:         'close-false-alarm',
-  closed:              null,
-};
-
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'activate-monitoring': 'Activate monitoring',
-  'detect-variance':     'Flag variance',
-  'require-cure-plan':   'Require cure plan (IPPO)',
-  'submit-cure-plan':    'Submit cure plan',
-  'approve-cure-plan':   'Approve + begin cure',
-  'verify-compliance':   'Verify compliance',
-  'close-compliant':     'Close compliant',
-  'issue-penalty':       'Issue DMRE penalty',
-  'close-with-penalty':  'Close with penalty',
-  'escalate':            'Escalate to DTI',
-  'close-escalated':     'Close escalated',
-  'mark-false-alarm':    'Mark false alarm',
-  'close-false-alarm':   'Close false alarm',
-};
-
-function fmtMinutes(m: number | null | undefined): string {
-  if (m === null || m === undefined) return '—';
-  if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
-  if (Math.abs(m) >= 60) return `${Math.round(m / 60)}h`;
-  return `${m}m`;
-}
-
 function fmtDate(s: string | null): string {
   if (!s) return '—';
-  const d = new Date(s);
-  return d.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
-}
-
-function fmtNumber(n: number | null | undefined): string {
-  if (n === null || n === undefined) return '—';
-  return n.toLocaleString('en-ZA');
+  return new Date(s).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function fmtVariance(v: number | null): string {
@@ -196,13 +165,194 @@ function fmtZar(n: number | null | undefined): string {
   return `R${n.toLocaleString('en-ZA')}`;
 }
 
+function getActions(row: EdRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
+
+  if (s === 'baseline_locked') {
+    actions.push({ key: 'activate-monitoring', label: 'Activate monitoring', tone: 'primary' });
+  }
+  if (s === 'monitoring') {
+    actions.push({
+      key: 'detect-variance',
+      label: 'Flag variance',
+      tone: 'primary',
+      fields: [
+        { key: 'current_value', label: `Current ${row.commitment_label} value (baseline ${fmtBaseline(row.baseline_value, row.baseline_unit)})`, type: 'text', required: true },
+        { key: 'variance_pct',  label: 'Variance % vs baseline (negative = under)', type: 'text', required: false },
+      ],
+    });
+  }
+  if (s === 'variance_flagged') {
+    const defaultAuth = row.commitment_type === 'ownership' || row.commitment_type === 'local_content'
+      ? 'IPPO;DMRE' : 'IPPO';
+    actions.push({
+      key: 'require-cure-plan',
+      label: 'Require cure plan (IPPO)',
+      tone: 'primary',
+      cascadeTo: ['regulator'],
+      fields: [
+        { key: 'regulator_authority', label: `Regulator authority (IPPO / IPPO;DMRE / IPPO;DTI) — default: ${defaultAuth}`, type: 'text', required: false },
+        { key: 'regulator_ref',       label: 'IPPO cure-plan notice reference (e.g. IPPO-ED-2026-0142)', type: 'text', required: false },
+      ],
+    });
+    actions.push({
+      key: 'mark-false-alarm',
+      label: 'Mark false alarm',
+      tone: 'ghost',
+      fields: [
+        { key: 'closure_notes', label: 'False-alarm reason (e.g. stale-data reconciliation)', type: 'textarea', required: true },
+      ],
+    });
+  }
+  if (s === 'cure_plan_required') {
+    actions.push({
+      key: 'submit-cure-plan',
+      label: 'Submit cure plan',
+      tone: 'primary',
+      fields: [
+        { key: 'cure_plan_summary', label: 'Cure plan summary (key actions, milestones, ZAR commitment)', type: 'textarea', required: true },
+      ],
+    });
+  }
+  if (s === 'cure_plan_submitted') {
+    actions.push({
+      key: 'approve-cure-plan',
+      label: 'Approve + begin cure',
+      tone: 'primary',
+      fields: [
+        { key: 'linked_wo_id', label: 'Linked work order ID (optional)', type: 'text', required: false },
+      ],
+    });
+  }
+  if (s === 'cure_executing') {
+    actions.push({
+      key: 'verify-compliance',
+      label: 'Verify compliance',
+      tone: 'primary',
+      fields: [
+        { key: 'remediation_summary', label: 'Remediation summary (what was achieved)', type: 'textarea', required: false },
+        { key: 'current_value',       label: 'Verified current value', type: 'text', required: false },
+        { key: 'variance_pct',        label: 'Verified variance %', type: 'text', required: false },
+      ],
+    });
+    actions.push({
+      key: 'issue-penalty',
+      label: 'Issue DMRE penalty',
+      tone: 'danger',
+      cascadeTo: ['regulator'],
+      fields: [
+        { key: 'penalty_amount_zar',  label: 'Penalty amount (ZAR)', type: 'text', required: true },
+        { key: 'penalty_ref',         label: 'DMRE penalty reference (e.g. DMRE-PEN-2026-0014)', type: 'text', required: false },
+        { key: 'regulator_authority', label: 'Regulator authority (DMRE / IPPO;DMRE) — default: DMRE', type: 'text', required: false },
+      ],
+    });
+    actions.push({
+      key: 'escalate',
+      label: 'Escalate to DTI',
+      tone: 'warn',
+      cascadeTo: ['regulator'],
+    });
+  }
+  if (s === 'penalty_issued') {
+    actions.push({
+      key: 'close-with-penalty',
+      label: 'Close with penalty',
+      tone: 'primary',
+      fields: [
+        { key: 'closure_notes', label: 'Closure notes', type: 'textarea', required: false },
+      ],
+    });
+    actions.push({
+      key: 'escalate',
+      label: 'Escalate to DTI',
+      tone: 'warn',
+      cascadeTo: ['regulator'],
+    });
+  }
+  if (s === 'verified_compliant') {
+    actions.push({
+      key: 'close-compliant',
+      label: 'Close compliant',
+      tone: 'primary',
+      fields: [
+        { key: 'closure_notes', label: 'Closure notes', type: 'textarea', required: false },
+      ],
+    });
+  }
+  if (s === 'escalated') {
+    actions.push({
+      key: 'close-escalated',
+      label: 'Close escalated',
+      tone: 'primary',
+      fields: [
+        { key: 'closure_notes', label: 'Closure notes', type: 'textarea', required: false },
+      ],
+    });
+  }
+  if (s === 'false_alarm') {
+    actions.push({
+      key: 'close-false-alarm',
+      label: 'Close false alarm',
+      tone: 'ghost',
+      fields: [
+        { key: 'closure_notes', label: 'Closure notes', type: 'textarea', required: false },
+      ],
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: EdRow): React.ReactNode {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
+      <DetailPair label="Project"          value={row.project_id} />
+      <DetailPair label="Bid window"       value={row.bid_window} />
+      <DetailPair label="Reporting period" value={row.reporting_period} />
+      <DetailPair label="Baseline"         value={fmtBaseline(row.baseline_value, row.baseline_unit)} />
+      <DetailPair label="Current"          value={row.current_value !== null ? fmtBaseline(row.current_value, row.baseline_unit) : '—'} />
+      <DetailPair label="Variance"         value={fmtVariance(row.variance_pct)} />
+      <DetailPair label="Threshold"        value={`${row.variance_threshold_pct.toFixed(1)}%`} />
+      <DetailPair label="State"            value={row.chain_status.replace(/_/g, ' ')} />
+      <DetailPair label="Regulator"        value={row.regulator_authority ?? '—'} />
+      <DetailPair label="Regulator ref"    value={row.regulator_ref ?? '—'} />
+      <DetailPair label="Penalty"          value={fmtZar(row.penalty_amount_zar)} />
+      <DetailPair label="Penalty ref"      value={row.penalty_ref ?? '—'} />
+      <DetailPair label="Linked WO"        value={row.linked_wo_id ?? '—'} />
+      <DetailPair label="Cure filed"       value={fmtDate(row.cure_plan_filed_at)} />
+      <DetailPair label="Cure approved"    value={fmtDate(row.cure_plan_approved_at)} />
+      <DetailPair label="Escalation"       value={String(row.escalation_level)} />
+      <DetailPair label="SLA deadline"     value={fmtDate(row.sla_deadline_at)} />
+      <DetailPair label="Created"          value={fmtDate(row.created_at)} />
+      {row.cure_plan_summary && (
+        <div style={{ gridColumn: '1 / -1', marginTop: 4, padding: '8px 10px', borderRadius: 4, border: `1px solid ${BORDER}`, background: BG2 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: TX3, marginBottom: 2 }}>Cure plan</div>
+          <div style={{ fontSize: 12, color: TX1 }}>{row.cure_plan_summary}</div>
+        </div>
+      )}
+      {row.remediation_summary && (
+        <div style={{ gridColumn: '1 / -1', marginTop: 4, padding: '8px 10px', borderRadius: 4, border: `1px solid ${BORDER}`, background: BG2 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: TX3, marginBottom: 2 }}>Remediation summary</div>
+          <div style={{ fontSize: 12, color: TX1 }}>{row.remediation_summary}</div>
+        </div>
+      )}
+      {row.closure_notes && (
+        <div style={{ gridColumn: '1 / -1', marginTop: 4, padding: '8px 10px', borderRadius: 4, border: `1px solid ${BORDER}`, background: BG2 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: TX3, marginBottom: 2 }}>Closure notes</div>
+          <div style={{ fontSize: 12, color: TX1 }}>{row.closure_notes}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function EdCommitmentChainTab() {
   const [rows, setRows] = useState<EdRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<EdRow | null>(null);
-  const [events, setEvents] = useState<EdEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -219,22 +369,41 @@ export function EdCommitmentChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
+    try {
+      await api.post(`/ed/commitment-chain/${rowId}/${key}`, values);
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
+    }
+  }, [load]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
     try {
       const res = await api.get<{ data: { case: EdRow; events: EdEvent[] } }>(`/ed/commitment-chain/${id}`);
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load ED commitment history');
+      const evts = res.data?.data?.events || [];
+      setExpandedEvents(prev => ({ ...prev, [id]: evts.map(e => ({
+        id: e.id,
+        event_type: e.event_type,
+        from_status: e.from_status,
+        to_status: e.to_status,
+        actor_id: e.actor_id,
+        notes: e.notes,
+        payload: e.payload,
+        created_at: e.created_at,
+      })) }));
+    } catch {
+      // silently fail event load
     }
-  }, []);
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (filter === 'all')        return true;
       if (filter === 'active')     return !r.is_terminal;
-      if (filter === 'reportable') return r.is_high_scoring;
-      if (filter === 'breached')   return r.sla_breached;
+      if (filter === 'reportable') return !!r.is_high_scoring;
+      if (filter === 'breached')   return !!r.sla_breached;
       if (filter === 'escalated')  return r.chain_status === 'escalated' || r.escalation_level > 0;
       if (['ownership','local_content','jobs','skills','enterprise_dev','socio_economic','community_trust'].includes(filter)) {
         return r.commitment_type === filter;
@@ -243,7 +412,7 @@ export function EdCommitmentChainTab() {
     });
   }, [rows, filter]);
 
-  const kpis = useMemo(() => {
+  const summary = useMemo((): KpiData => {
     let variance_open = 0, cure_required = 0, cure_executing = 0;
     let penalty_open = 0, escalated = 0, breached = 0;
     let penalty_total_zar = 0;
@@ -259,95 +428,48 @@ export function EdCommitmentChainTab() {
     return { total: rows.length, variance_open, cure_required, cure_executing, penalty_open, escalated, breached, penalty_total_zar };
   }, [rows]);
 
-  const act = useCallback(async (action: ActionKind, row: EdRow) => {
-    try {
-      const body: Record<string, unknown> = {};
-      if (action === 'detect-variance') {
-        const cv = window.prompt(`Current ${row.commitment_label} value (baseline ${fmtBaseline(row.baseline_value, row.baseline_unit)}):`);
-        if (!cv) return;
-        body.current_value = Number(cv);
-        const vp = window.prompt('Variance % vs baseline (negative = under):');
-        if (vp) body.variance_pct = Number(vp);
-      } else if (action === 'require-cure-plan') {
-        const defaultAuth = row.commitment_type === 'ownership' || row.commitment_type === 'local_content'
-          ? 'IPPO;DMRE' : 'IPPO';
-        const auth = window.prompt('Regulator authority (IPPO / IPPO;DMRE / IPPO;DTI):', defaultAuth);
-        if (auth) body.regulator_authority = auth;
-        const ref = window.prompt('IPPO cure-plan notice reference (e.g. IPPO-ED-2026-0142):');
-        if (ref) body.regulator_ref = ref;
-      } else if (action === 'submit-cure-plan') {
-        const summary = window.prompt('Cure plan summary (key actions, milestones, ZAR commitment):');
-        if (!summary) return;
-        body.cure_plan_summary = summary;
-      } else if (action === 'approve-cure-plan') {
-        const wo = window.prompt('Linked work order ID (optional):');
-        if (wo) body.linked_wo_id = wo;
-      } else if (action === 'verify-compliance') {
-        const summary = window.prompt('Remediation summary (what was achieved):');
-        if (summary) body.remediation_summary = summary;
-        const cv = window.prompt('Verified current value:');
-        if (cv) body.current_value = Number(cv);
-        const vp = window.prompt('Verified variance %:');
-        if (vp) body.variance_pct = Number(vp);
-      } else if (action === 'issue-penalty') {
-        const amt = window.prompt('Penalty amount (ZAR):');
-        if (!amt) return;
-        body.penalty_amount_zar = Number(amt);
-        const ref = window.prompt('DMRE penalty reference (e.g. DMRE-PEN-2026-0014):');
-        if (ref) body.penalty_ref = ref;
-        const auth = window.prompt('Regulator authority (DMRE / IPPO;DMRE):', 'DMRE');
-        if (auth) body.regulator_authority = auth;
-      } else if (action === 'mark-false-alarm') {
-        const reason = window.prompt('False-alarm reason (e.g. stale-data reconciliation):');
-        if (!reason) return;
-        body.closure_notes = reason;
-      } else if (action === 'close-compliant' || action === 'close-with-penalty' || action === 'close-escalated' || action === 'close-false-alarm') {
-        const notes = window.prompt('Closure notes:');
-        if (notes) body.closure_notes = notes;
-      }
-      await api.post(`/ed/commitment-chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">REIPPPP Economic Development commitment chain</h2>
-          <p className="text-xs text-[#4a5568]">
-            7 contractual ED commitments (ownership · local content · jobs · skills · enterprise dev · SED · community trust)
-            tracked baseline → quarterly monitoring → variance → IPPO cure plan → cure execution → verification → close.
-            Ownership/local-content 14d variance window, IPPO 30d cure plan, DMRE penalty + DTI Codes Council escalation
-            on persistent under-performance. High-scoring + jobs/skills breaches cross to regulator inbox.
-          </p>
-        </div>
+    <div style={{ padding: '20px', background: BG, minHeight: '100%' }}>
+      <header style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: TX1, margin: 0 }}>
+          REIPPPP Economic Development commitment chain
+        </h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 4, lineHeight: 1.5 }}>
+          7 contractual ED commitments (ownership · local content · jobs · skills · enterprise dev · SED · community trust)
+          tracked baseline → quarterly monitoring → variance → IPPO cure plan → cure execution → verification → close.
+          Ownership/local-content 14d variance window, IPPO 30d cure plan, DMRE penalty + DTI Codes Council escalation
+          on persistent under-performance. High-scoring + jobs/skills breaches cross to regulator inbox.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-8 gap-3">
-        <Kpi label="Total"            value={kpis.total} />
-        <Kpi label="Variance open"    value={kpis.variance_open}   tone={kpis.variance_open > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Cure required"    value={kpis.cure_required}   tone={kpis.cure_required > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Cure executing"   value={kpis.cure_executing}  tone={kpis.cure_executing > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Penalty open"     value={kpis.penalty_open}    tone={kpis.penalty_open > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Escalated"        value={kpis.escalated}       tone={kpis.escalated > 0 ? 'bad' : 'ok'} />
-        <Kpi label="SLA breached"     value={kpis.breached}        tone={kpis.breached > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Penalty total"    value={fmtZar(kpis.penalty_total_zar)} tone={kpis.penalty_total_zar > 0 ? 'bad' : 'ok'} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 8, marginBottom: 16 }}>
+        <KpiTile label="Total"          value={summary.total} />
+        <KpiTile label="Variance open"  value={summary.variance_open}   tone={summary.variance_open > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Cure required"  value={summary.cure_required}   tone={summary.cure_required > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Cure executing" value={summary.cure_executing}  tone={summary.cure_executing > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Penalty open"   value={summary.penalty_open}    tone={summary.penalty_open > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Escalated"      value={summary.escalated}       tone={summary.escalated > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="SLA breached"   value={summary.breached}        tone={summary.breached > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Penalty total"  value={fmtZar(summary.penalty_total_zar)} tone={summary.penalty_total_zar > 0 ? 'bad' : 'ok'} />
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
         {FILTERS.map((f) => (
-          <button type="button"
+          <button
+            type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
+            style={{
+              padding: '3px 10px',
+              borderRadius: 4,
+              fontSize: 11,
+              fontWeight: 500,
+              cursor: 'pointer',
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+              background: filter === f.key ? ACC : BG1,
+              color: filter === f.key ? '#fff' : TX2,
+              transition: 'all 120ms',
+            }}
           >
             {f.label}
           </button>
@@ -355,232 +477,58 @@ export function EdCommitmentChainTab() {
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Project</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">BW</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Commitment</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Baseline</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Variance</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Period</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Reg ref</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tier = TIER_TONE[r.commitment_type];
-                const vNeg = r.variance_pct !== null && r.variance_pct < 0;
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[#0c2a4d]">{r.case_number}</td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">{r.project_name}</td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.bid_window}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tier.bg, color: tier.fg }}>
-                        {tier.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtBaseline(r.baseline_value, r.baseline_unit)}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${vNeg ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {fmtVariance(r.variance_pct)}
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.reporting_period}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#4a5568]">{r.regulator_ref ?? '—'}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={10} className="px-3 py-6 text-center text-[#4a5568]">No ED commitments match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 4, border: `1px solid ${BAD}40`, background: `${BAD}10`, fontSize: 12, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: TX3, background: BG1, borderRadius: 6, border: `1px solid ${BORDER}` }}>
+          Loading...
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: TX3, background: BG1, borderRadius: 6, border: `1px solid ${BORDER}` }}>
+          No ED commitments match.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {filtered.map((row) => (
+            <ChainCard
+              key={row.id}
+              item={row as unknown as ChainCardProps['item']}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.project_name} — ${row.commitment_label}`}
+              meta={`${row.bid_window} · ${row.commitment_type.replace(/_/g, ' ')} · Period: ${row.reporting_period}`}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              onExpand={handleExpand}
+              events={expandedEvents[row.id]}
+              detail={renderDetail(row)}
+              cascadeTo={row.is_high_scoring ? ['regulator'] : []}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div style={{ padding: '8px 12px', borderRadius: 6, border: `1px solid ${BORDER}`, background: BG1 }}>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, fontFamily: MONO, color, marginTop: 2 }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: EdRow;
-  events: EdEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: EdRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canIssuePenalty = row.chain_status === 'cure_executing';
-  const canEscalate = row.chain_status === 'cure_executing' || row.chain_status === 'penalty_issued';
-  const canFalseAlarm = row.chain_status === 'variance_flagged';
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.case_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.project_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {row.bid_window} · {TIER_TONE[row.commitment_type].label} · {row.commitment_label}
-              </div>
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="Project"            value={row.project_id} />
-            <Pair label="Bid window"         value={row.bid_window} />
-            <Pair label="Reporting period"   value={row.reporting_period} />
-            <Pair label="Baseline"           value={fmtBaseline(row.baseline_value, row.baseline_unit)} />
-            <Pair label="Current"            value={row.current_value !== null ? fmtBaseline(row.current_value, row.baseline_unit) : '—'} />
-            <Pair label="Variance"           value={fmtVariance(row.variance_pct)} />
-            <Pair label="Threshold"          value={`${row.variance_threshold_pct.toFixed(1)}%`} />
-            <Pair label="State"              value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Regulator"          value={row.regulator_authority ?? '—'} />
-            <Pair label="Regulator ref"      value={row.regulator_ref ?? '—'} />
-            <Pair label="Penalty"            value={fmtZar(row.penalty_amount_zar)} />
-            <Pair label="Penalty ref"        value={row.penalty_ref ?? '—'} />
-            <Pair label="Linked WO"          value={row.linked_wo_id ?? '—'} />
-            <Pair label="Cure filed"         value={fmtDate(row.cure_plan_filed_at)} />
-            <Pair label="Cure approved"      value={fmtDate(row.cure_plan_approved_at)} />
-            <Pair label="Escalation"         value={String(row.escalation_level)} />
-            <Pair label="SLA deadline"       value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"         value={row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-          </div>
-          {row.cure_plan_summary && (
-            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
-              <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Cure plan</div>
-              {row.cure_plan_summary}
-            </div>
-          )}
-          {row.remediation_summary && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
-              <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Remediation summary</div>
-              {row.remediation_summary}
-            </div>
-          )}
-          {row.closure_notes && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
-              <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Closure notes</div>
-              {row.closure_notes}
-            </div>
-          )}
-        </section>
-
-        {(nextAction || canIssuePenalty || canEscalate || canFalseAlarm) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canIssuePenalty && (
-                <button type="button"
-                  onClick={() => onAct('issue-penalty', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['issue-penalty']}
-                </button>
-              )}
-              {canEscalate && (
-                <button type="button"
-                  onClick={() => onAct('escalate', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL.escalate}
-                </button>
-              )}
-              {canFalseAlarm && (
-                <button type="button"
-                  onClick={() => onAct('mark-false-alarm', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#4a5568] hover:bg-[#f3f5f9]"
-                >
-                  {ACTION_LABEL['mark-false-alarm']}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  {(e.from_status || e.to_status) && (
-                    <div className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</div>
-                  )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 12, color: TX1, marginTop: 1 }}>{value}</div>
     </div>
   );
 }

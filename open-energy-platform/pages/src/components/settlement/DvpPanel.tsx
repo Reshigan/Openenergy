@@ -36,10 +36,13 @@ type DvpLock = {
 
 const LOCK_PILL: Record<string, string> = {
   open: 'bg-[#e8ecf0] text-[#2d3748]',
-  cash_in: 'bg-blue-100 text-blue-700',
+  cash_in: '',
   energy_in: 'bg-amber-100 text-amber-800',
   locked: 'bg-green-100 text-green-700',
   released: 'bg-purple-100 text-purple-700',
+};
+const LOCK_PILL_STYLE: Record<string, React.CSSProperties> = {
+  cash_in: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' },
 };
 
 const ZAR = (n: number) => `R${Math.round(Math.abs(n || 0)).toLocaleString('en-ZA')}`;
@@ -144,7 +147,7 @@ export function DvpPanel() {
         <div className="min-w-[140px]">
           <div className="text-[10px] uppercase tracking-wider text-[#7a90a8]">Lock status</div>
           <div className="mt-1">
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold capitalize ${LOCK_PILL[lockStatus] || 'bg-[#e8ecf0]'}`} data-testid="dvp-status">
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold capitalize ${LOCK_PILL[lockStatus] || 'bg-[#e8ecf0]'}`} style={LOCK_PILL_STYLE[lockStatus] || {}} data-testid="dvp-status">
               {lockStatus.replace(/_/g, ' ')}
             </span>
           </div>

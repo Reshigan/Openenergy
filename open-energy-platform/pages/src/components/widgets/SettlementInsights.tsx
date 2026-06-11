@@ -266,7 +266,7 @@ function FeeAccrualTrend({ fees }: { fees: Fee[] }) {
   }
 
   const TYPE_COLOUR: Record<string, string> = {
-    dunning: '#c0392b', late_payment: '#b04e0f', rebooking: '#3b82c4',
+    dunning: '#c0392b', late_payment: '#b04e0f', rebooking: 'oklch(0.46 0.16 55)',
     admin: '#6b7685', wheeling_uplift: '#6b3a82', imbalance_uplift: '#e63946',
   };
 

@@ -32,6 +32,7 @@ type ChainStatus =
 type Tier = 'major_problem' | 'significant' | 'minor';
 
 interface ProblemRow {
+  [key: string]: unknown;
   id: string;
   problem_number: string;
   source_event: string | null;
@@ -115,8 +116,8 @@ interface KpiSummary {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   problem_logged:      { bg: '#e3e7ec', fg: '#557',    label: 'Logged' },
-  categorized:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Categorized' },
-  investigating:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Investigating' },
+  categorized:         { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Categorized' },
+  investigating:       { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Investigating' },
   rca_identified:      { bg: '#fff4d6', fg: '#a06200', label: 'RCA identified' },
   known_error:         { bg: '#fff4d6', fg: '#a06200', label: 'Known error' },
   fix_proposed:        { bg: '#ffe9d6', fg: '#8a4a00', label: 'Fix proposed' },
@@ -212,6 +213,12 @@ function fmtDate(s: string | null): string {
 const TERMINAL_STATES: ChainStatus[] = ['closed', 'escalated', 'cancelled'];
 const IN_CHANGE_STATES: ChainStatus[] = ['change_raised', 'fix_deployed'];
 
+interface ActionModalConfig {
+  action: ActionKind;
+  row: ProblemRow;
+  fields: Array<{ key: string; label: string; required?: boolean; defaultValue?: string; multiline?: boolean }>;
+}
+
 export function ProblemManagementChainTab() {
   const [rows, setRows] = useState<ProblemRow[]>([]);
   const [kpis, setKpis] = useState<KpiSummary | null>(null);
@@ -220,6 +227,7 @@ export function ProblemManagementChainTab() {
   const [filter, setFilter] = useState<string>('active');
   const [selected, setSelected] = useState<ProblemRow | null>(null);
   const [events, setEvents] = useState<ProblemEvent[]>([]);
+  const [pendingAction, setPendingAction] = useState<ActionModalConfig | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -272,72 +280,73 @@ export function ProblemManagementChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: ProblemRow) => {
+  const ACTION_FIELDS: Record<ActionKind, ActionModalConfig['fields']> = {
+    'categorize': [
+      { key: 'problem_category', label: 'Problem category (e.g. capacity, change-induced, config drift)' },
+      { key: 'problem_summary', label: 'Problem summary — the recurring pattern in one line', required: true, multiline: true },
+    ],
+    'begin-investigation': [
+      { key: 'investigation_basis', label: 'Investigation basis — hypothesis + diagnostic approach', multiline: true },
+    ],
+    'identify-rca': [
+      { key: 'rca_basis', label: 'Root-cause basis — the confirmed underlying cause', required: true, multiline: true },
+    ],
+    'log-known-error': [
+      { key: 'known_error_ref', label: 'Known-error reference (e.g. KE-2026-0042)', required: true },
+      { key: 'workaround', label: 'Workaround — interim mitigation while a permanent fix is built', multiline: true },
+      { key: 'known_error_basis', label: 'Known-error basis — symptom ↔ cause linkage', multiline: true },
+    ],
+    'propose-fix': [
+      { key: 'fix_basis', label: 'Proposed permanent fix — what change eliminates the root cause', required: true, multiline: true },
+    ],
+    'accept-workaround': [
+      { key: 'workaround', label: 'Accepted workaround — why no permanent fix is warranted', required: true, multiline: true },
+      { key: 'closure_notes', label: 'Closure notes — risk acceptance / review date', multiline: true },
+    ],
+    'raise-change': [
+      { key: 'change_request_ref', label: 'Change request reference (e.g. CR-2026-0117)', required: true },
+      { key: 'change_basis', label: 'Change basis — scope, rollback plan, change window', multiline: true },
+    ],
+    'deploy-fix': [
+      { key: 'change_basis', label: 'Deployment basis — release / migration that shipped the fix', multiline: true },
+    ],
+    'verify-resolution': [
+      { key: 'verification_basis', label: 'Verification basis — evidence the incidents stopped recurring', required: true, multiline: true },
+    ],
+    'close': [
+      { key: 'closure_notes', label: 'Closure notes — outcome + permanent-fix confirmation', required: true, multiline: true },
+    ],
+    'escalate': [
+      { key: 'major_problem_ref', label: 'Major-problem / major-incident reference (e.g. MI-2026-0007)' },
+      { key: 'regulator_ref', label: 'Regulator reference, if a reportable major problem (e.g. NERSA-NOTIFY-2026-0033)' },
+      { key: 'closure_notes', label: 'Escalation basis — why this needs major-problem governance', required: true, multiline: true },
+    ],
+    'cancel': [
+      { key: 'closure_notes', label: 'Cancellation reason (e.g. duplicate, not-a-problem, working-as-designed)', required: true, multiline: true },
+    ],
+  };
+
+  const act = useCallback((action: ActionKind, row: ProblemRow) => {
+    setPendingAction({ action, row, fields: ACTION_FIELDS[action] });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const submitAction = useCallback(async (values: Record<string, string>) => {
+    if (!pendingAction) return;
+    const { action, row } = pendingAction;
+    setPendingAction(null);
     try {
-      let body: Record<string, string | number> = {};
-      if (action === 'categorize') {
-        const cat = window.prompt('Problem category (e.g. capacity, change-induced, config drift):', row.problem_category || '');
-        const summary = window.prompt('Problem summary — the recurring pattern in one line:', row.problem_summary || '') || '';
-        body = { problem_summary: summary };
-        if (cat) body.problem_category = cat;
-      } else if (action === 'begin-investigation') {
-        const basis = window.prompt('Investigation basis — hypothesis + diagnostic approach:') || '';
-        body = { investigation_basis: basis };
-      } else if (action === 'identify-rca') {
-        const basis = window.prompt('Root-cause basis — the confirmed underlying cause:');
-        if (!basis) return;
-        body = { rca_basis: basis };
-      } else if (action === 'log-known-error') {
-        const ref = window.prompt('Known-error reference (e.g. KE-2026-0042):');
-        if (!ref) return;
-        const workaround = window.prompt('Workaround — interim mitigation while a permanent fix is built:') || '';
-        const basis = window.prompt('Known-error basis — symptom ↔ cause linkage:') || '';
-        body = { known_error_ref: ref, workaround, known_error_basis: basis };
-      } else if (action === 'propose-fix') {
-        const basis = window.prompt('Proposed permanent fix — what change eliminates the root cause:');
-        if (!basis) return;
-        body = { fix_basis: basis };
-      } else if (action === 'accept-workaround') {
-        const workaround = window.prompt('Accepted workaround — why no permanent fix is warranted:', row.workaround || '');
-        if (!workaround) return;
-        const notes = window.prompt('Closure notes — risk acceptance / review date:') || '';
-        body = { reason_code: 'workaround_accepted', workaround, closure_notes: notes };
-      } else if (action === 'raise-change') {
-        const ref = window.prompt('Change request reference (e.g. CR-2026-0117):');
-        if (!ref) return;
-        const basis = window.prompt('Change basis — scope, rollback plan, change window:') || '';
-        body = { change_request_ref: ref, change_basis: basis };
-      } else if (action === 'deploy-fix') {
-        const basis = window.prompt('Deployment basis — release / migration that shipped the fix:') || '';
-        body = { change_basis: basis };
-      } else if (action === 'verify-resolution') {
-        const basis = window.prompt('Verification basis — evidence the incidents stopped recurring:');
-        if (!basis) return;
-        body = { verification_basis: basis };
-      } else if (action === 'close') {
-        const notes = window.prompt('Closure notes — outcome + permanent-fix confirmation:');
-        if (!notes) return;
-        body = { reason_code: 'resolved_permanently', closure_notes: notes };
-      } else if (action === 'escalate') {
-        const ref = window.prompt('Major-problem / major-incident reference (e.g. MI-2026-0007):') || '';
-        const reg = window.prompt('Regulator reference, if a reportable major problem (e.g. NERSA-NOTIFY-2026-0033):') || '';
-        const notes = window.prompt('Escalation basis — why this needs major-problem governance:');
-        if (!notes) return;
-        body = { reason_code: 'escalated_major', closure_notes: notes };
-        if (ref) body.major_problem_ref = ref;
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'cancel') {
-        const reason = window.prompt('Cancellation reason (e.g. duplicate, not-a-problem, working-as-designed):');
-        if (!reason) return;
-        body = { reason_code: 'cancelled', closure_notes: reason };
-      }
+      const body: Record<string, string | number> = { ...values };
+      if (action === 'accept-workaround') body.reason_code = 'workaround_accepted';
+      if (action === 'close') body.reason_code = 'resolved_permanently';
+      if (action === 'escalate') body.reason_code = 'escalated_major';
+      if (action === 'cancel') body.reason_code = 'cancelled';
       await api.post(`/problem-management/chain/${row.id}/${action}`, body);
       await load();
       if (selected?.id === row.id) await loadEvents(row.id);
     } catch (e) {
       setErr(e instanceof Error ? e.message : `Failed to ${action}`);
     }
-  }, [load, loadEvents, selected]);
+  }, [pendingAction, load, loadEvents, selected]);
 
   return (
     <div className="p-5">
@@ -395,13 +404,13 @@ export function ProblemManagementChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Problem #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Service / owner</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Priority</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Category</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Recurring</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Problem #</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Service / owner</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Priority</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Category</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-right">Recurring</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">State</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-right">SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -414,7 +423,7 @@ export function ProblemManagementChainTab() {
                     onClick={() => loadEvents(r.id)}
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 font-mono text-[11px] text-[oklch(0.46_0.16_55)]">
                       {r.problem_number}
                       {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
                     </td>
@@ -428,7 +437,7 @@ export function ProblemManagementChainTab() {
                       </span>
                     </td>
                     <td className="px-3 py-2 text-[#4a5568]">{r.problem_category ?? '—'}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{r.recurring_incident_count || '—'}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[oklch(0.46_0.16_55)]">{r.recurring_incident_count || '—'}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
                         {cs.label}
@@ -451,6 +460,103 @@ export function ProblemManagementChainTab() {
       {selected && (
         <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
       )}
+      {pendingAction && (
+        <ActionModal
+          title={ACTION_LABEL[pendingAction.action]}
+          fields={pendingAction.fields}
+          row={pendingAction.row}
+          onSubmit={submitAction}
+          onCancel={() => setPendingAction(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ActionModal({
+  title, fields, row, onSubmit, onCancel,
+}: {
+  title: string;
+  fields: Array<{ key: string; label: string; required?: boolean; defaultValue?: string; multiline?: boolean }>;
+  row: ProblemRow;
+  onSubmit: (values: Record<string, string>) => void;
+  onCancel: () => void;
+}) {
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    for (const f of fields) {
+      init[f.key] = f.defaultValue ?? (typeof row[f.key] === 'string' ? (row[f.key] as string) : '') ?? '';
+    }
+    return init;
+  });
+  const [submitErr, setSubmitErr] = useState<string | null>(null);
+
+  const handleSubmit = () => {
+    for (const f of fields) {
+      if (f.required && !values[f.key]?.trim()) {
+        setSubmitErr(`"${f.label}" is required.`);
+        return;
+      }
+    }
+    onSubmit(values);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onCancel}>
+      <div
+        className="w-full max-w-lg rounded-lg bg-white shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-[#0c2a4d]">{title}</span>
+            <button type="button" onClick={onCancel} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
+          </div>
+        </header>
+        <div className="px-5 py-4 space-y-3">
+          {fields.map((f) => (
+            <div key={f.key}>
+              <label className="block text-[11px] uppercase tracking-wider text-[#4a5568] mb-1">
+                {f.label}{f.required && <span className="text-red-600 ml-0.5">*</span>}
+              </label>
+              {f.multiline ? (
+                <textarea
+                  rows={3}
+                  value={values[f.key] ?? ''}
+                  onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                  className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[12px] text-[#0c2a4d] focus:outline-none focus:border-[#c2873a]"
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={values[f.key] ?? ''}
+                  onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                  className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[12px] text-[#0c2a4d] focus:outline-none focus:border-[#c2873a]"
+                />
+              )}
+            </div>
+          ))}
+          {submitErr && (
+            <div className="rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{submitErr}</div>
+          )}
+        </div>
+        <footer className="border-t border-[#d8dde6] bg-[#f3f5f9] px-5 py-3 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#4a5568] hover:bg-[#f3f5f9]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:opacity-90"
+          >
+            Confirm
+          </button>
+        </footer>
+      </div>
     </div>
   );
 }
@@ -530,10 +636,10 @@ function Drawer({
             <Pair label="Reportable"          value={row.is_reportable ? 'Yes' : 'No'} />
           </div>
           {row.problem_summary && (
-            <BasisBlock label="Problem summary" tone="#1a3a5c" text={row.problem_summary} />
+            <BasisBlock label="Problem summary" tone="oklch(0.46 0.16 55)" text={row.problem_summary} />
           )}
           {row.investigation_basis && (
-            <BasisBlock label="Investigation basis" tone="#1a3a5c" text={row.investigation_basis} />
+            <BasisBlock label="Investigation basis" tone="oklch(0.46 0.16 55)" text={row.investigation_basis} />
           )}
           {row.rca_basis && (
             <BasisBlock label="Root-cause basis" tone="#a06200" text={row.rca_basis} />
@@ -618,7 +724,7 @@ function Drawer({
                       <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
                     )}
                   </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1 text-[oklch(0.46_0.16_55)]">{e.notes}</div>}
                 </li>
               ))}
             </ol>

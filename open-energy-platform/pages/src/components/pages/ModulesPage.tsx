@@ -67,63 +67,71 @@ export function ModulesPage() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <header className="flex items-center gap-3 mb-6">
-        <div className="rounded-xl bg-[#c2873a] text-white p-2.5">
-          <LayoutGrid className="h-5 w-5" aria-hidden />
-        </div>
-        <div>
-          <h1 className="text-xl font-display font-semibold text-[#0f1c2e]">Platform modules</h1>
-          <p className="text-[13px] text-[#6b7685]">
-            Every capability on the exchange. Enabled modules open directly; the rest are available on request.
-          </p>
-        </div>
-      </header>
+    <div style={{ minHeight: 'calc(100vh - 50px)', background: 'oklch(0.96 0.003 250)', padding: '24px' }}>
+      <div className="max-w-6xl mx-auto">
+        <header className="flex items-center gap-3 mb-6">
+          <div style={{ borderRadius: '12px', background: 'oklch(0.46 0.16 55)', color: '#fff', padding: '10px' }}>
+            <LayoutGrid className="h-5 w-5" aria-hidden />
+          </div>
+          <div>
+            <h1 className="text-xl font-display font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>Platform modules</h1>
+            <p className="text-[13px]" style={{ color: 'oklch(0.60 0.007 250)' }}>
+              Every capability on the exchange. Enabled modules open directly; the rest are available on request.
+            </p>
+          </div>
+        </header>
 
-      {loading && <p className="text-[13px] text-[#6b7685]">Loading modules…</p>}
-      {error && <p className="text-[13px] text-red-700">{error}</p>}
+        {loading && <p className="text-[13px]" style={{ color: 'oklch(0.60 0.007 250)' }}>Loading modules…</p>}
+        {error && <p className="text-[13px]" style={{ color: 'oklch(0.48 0.20 20)' }}>{error}</p>}
 
-      {!loading && !error && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {sorted.map((m) => {
-            const isOn = enabled.has(m.module_key);
-            const route = MODULE_ROUTE[m.module_key];
-            return (
-              <div
-                key={m.module_key}
-                className="flex flex-col justify-between rounded-xl border border-[#dde4ec] bg-white p-4 transition-colors hover:border-[#1a3a5c]/40"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <h2 className="text-[14px] font-display font-semibold text-[#0f1c2e]">{m.display_name}</h2>
-                    {!isOn && <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#6b7685]" aria-hidden />}
+        {!loading && !error && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {sorted.map((m) => {
+              const isOn = enabled.has(m.module_key);
+              const route = MODULE_ROUTE[m.module_key];
+              return (
+                <div
+                  key={m.module_key}
+                  className="flex flex-col justify-between p-4 transition-colors"
+                  style={{
+                    borderRadius: '12px',
+                    border: '1px solid oklch(0.87 0.006 250)',
+                    background: 'oklch(0.99 0.002 80)',
+                  }}
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <h2 className="text-[14px] font-display font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{m.display_name}</h2>
+                      {!isOn && <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: 'oklch(0.60 0.007 250)' }} aria-hidden />}
+                    </div>
+                    <p className="mt-1 text-[12px] leading-relaxed" style={{ color: 'oklch(0.60 0.007 250)' }}>{m.description}</p>
                   </div>
-                  <p className="mt-1 text-[12px] leading-relaxed text-[#6b7685]">{m.description}</p>
+                  <div className="mt-4">
+                    {isOn && route ? (
+                      <button
+                        type="button"
+                        onClick={() => navigate(route)}
+                        className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+                        style={{ background: 'oklch(0.46 0.16 55)' }}
+                      >
+                        Open <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                      </button>
+                    ) : isOn ? (
+                      <span className="inline-flex items-center rounded-md px-2 py-1 text-[11px] font-medium" style={{ background: 'oklch(0.93 0.008 250)', color: 'oklch(0.40 0.009 250)' }}>
+                        Enabled
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-md px-2 py-1 text-[11px] font-medium" style={{ background: 'oklch(0.94 0.004 250)', color: 'oklch(0.60 0.007 250)' }}>
+                        Not enabled
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="mt-4">
-                  {isOn && route ? (
-                    <button
-                      type="button"
-                      onClick={() => navigate(route)}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#a3702f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2873a] focus-visible:ring-offset-1"
-                    >
-                      Open <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-                    </button>
-                  ) : isOn ? (
-                    <span className="inline-flex items-center rounded-md bg-[#eef3f8] px-2 py-1 text-[11px] font-medium text-[#1a3a5c]">
-                      Enabled
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center rounded-md bg-[#f4f6f9] px-2 py-1 text-[11px] font-medium text-[#6b7685]">
-                      Not enabled
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

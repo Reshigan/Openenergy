@@ -10,6 +10,9 @@ import { SparePartsProvisioningChainTab } from '../spare-parts-provisioning/Spar
 import { ServiceContractChainTab } from '../service-contract/ServiceContractChainTab';
 import { ServiceRequestChainTab } from '../support/ServiceRequestChainTab';
 import { OemFcoChainTab } from '../oem-fco/OemFcoChainTab';
+import { WoChainTab } from '../esums/WoChainTab';
+import { WarrantyClaimChainTab } from '../esums/WarrantyClaimChainTab';
+import { PmComplianceChainTab } from '../esums/PmComplianceChainTab';
 import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
 import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
 import RulPredictionMlTab from '../rulPredictionMl/RulPredictionMlTab';
@@ -385,7 +388,7 @@ export function SupportWorkstationPage() {
             body: ({ onRefresh }) => (
               <div className="space-y-3">
                 <div className="flex justify-end">
-                  <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
+                  <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
                     + File ticket
                   </button>
                 </div>
@@ -404,7 +407,7 @@ export function SupportWorkstationPage() {
                     { key: '_actions', label: '', render: (r) => (
                       (r.status !== 'resolved' && r.status !== 'closed') ? (
                         <div className="flex gap-1">
-                          <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">Transition</button>
+                          <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[oklch(0.46_0.16_55)] text-white rounded">Transition</button>
                           <button type="button" onClick={() => setEscalating(r)} className="px-2 py-1 text-[11px] bg-amber-600 text-white rounded">Escalate</button>
                         </div>
                       ) : null
@@ -506,6 +509,27 @@ export function SupportWorkstationPage() {
             body: () => <OemFcoChainTab />,
           },
           {
+            key: 'work_orders',
+            label: 'Work orders (W16)',
+            group: 'Field operations',
+            chainKey: 'work_order',
+            body: () => <WoChainTab />,
+          },
+          {
+            key: 'warranty_claims',
+            label: 'Warranty claims (W15)',
+            group: 'Field operations',
+            chainKey: 'warranty_claim',
+            body: () => <WarrantyClaimChainTab />,
+          },
+          {
+            key: 'pm_compliance',
+            label: 'PM schedule compliance (W59)',
+            group: 'Field operations',
+            chainKey: 'pm_compliance',
+            body: () => <PmComplianceChainTab />,
+          },
+          {
             key: 'csat',
             label: 'CSAT lifecycle (W208)',
             chainKey: 'csat_record',
@@ -561,7 +585,7 @@ export function SupportWorkstationPage() {
             body: ({ onRefresh }) => (
               <div className="space-y-3">
                 <div className="flex justify-end">
-                  <button type="button" onClick={() => setLoggingAccess(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
+                  <button type="button" onClick={() => setLoggingAccess(true)} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
                     + Log access
                   </button>
                 </div>
@@ -605,7 +629,7 @@ export function SupportWorkstationPage() {
               <div className="space-y-8">
                 {SUPPORT_REPORTS.map(cfg => (
                   <div key={cfg.endpoint} className="space-y-2">
-                    <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">{cfg.title}</p>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{cfg.title}</p>
                     <ReportPanel config={cfg} />
                   </div>
                 ))}
@@ -641,7 +665,7 @@ function CsatLifecycleTab({ onRefresh }: { onRefresh: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
           + New CSAT record
         </button>
       </div>
@@ -785,8 +809,8 @@ function FileTicketModal({ onClose, onDone }: { onClose: () => void; onDone: () 
             </label>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-[#eef2f7]">Cancel</button>
-            <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-[#c2873a] text-white rounded-lg disabled:opacity-50">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-[oklch(0.46_0.16_55)] text-white rounded-lg disabled:opacity-50">
               {saving ? 'Filing…' : 'File ticket'}
             </button>
           </div>
@@ -822,7 +846,7 @@ function SlaPerformanceReportTab({ onRefresh }: { onRefresh: () => void }) {
     <div>
       <button type="button"
         onClick={() => setModal('create')}
-        className="mb-4 px-4 py-2 bg-[#c2873a] text-white text-sm rounded hover:bg-[#a3702f]"
+        className="mb-4 px-4 py-2 bg-[oklch(0.46_0.16_55)] text-white text-sm rounded hover:bg-[oklch(0.40_0.15_55)]"
       >
         Open reporting period
       </button>

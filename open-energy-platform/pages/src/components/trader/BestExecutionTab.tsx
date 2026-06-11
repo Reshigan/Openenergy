@@ -27,6 +27,7 @@ type ChainStatus =
 type Tier = 'retail' | 'professional' | 'eligible_counterparty';
 
 interface BestExRow {
+  [key: string]: unknown;
   id: string;
   rfq_number: string;
   source_event: string | null;
@@ -92,11 +93,11 @@ interface BestExEvent {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   rfq_received:        { bg: '#e3e7ec', fg: '#445',    label: 'RFQ received' },
-  quotes_solicited:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Quotes solicited' },
-  quotes_received:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Quotes received' },
+  quotes_solicited:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Quotes solicited' },
+  quotes_received:     { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Quotes received' },
   best_ex_evaluated:   { bg: '#fff4d6', fg: '#a06200', label: 'Best-ex evaluated' },
   execution_approved:  { bg: '#fbe7d0', fg: '#7a4500', label: 'Approved' },
-  executed:            { bg: '#dbecfb', fg: '#1a3a5c', label: 'Executed' },
+  executed:            { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Executed' },
   override_executed:   { bg: '#ffe4b5', fg: '#8a4a00', label: 'Override' },
   tca_reviewed:        { bg: '#daf5e2', fg: '#1f6b3a', label: 'TCA reviewed' },
   closed:              { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Closed' },
@@ -394,7 +395,7 @@ export function BestExecutionTab() {
 
       <div className="mb-3 flex flex-wrap items-center gap-4 text-[11px] text-[#4a5568]">
         <span>Expired: <span className="font-semibold text-[#557]">{kpis.expired_count}</span></span>
-        <span>Executed value: <span className="font-semibold text-[#1a3a5c]">{fmtZar(kpis.total_executed_zar)}</span></span>
+        <span>Executed value: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtZar(kpis.total_executed_zar)}</span></span>
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -423,15 +424,15 @@ export function BestExecutionTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">RFQ #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Client</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Instrument</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Qty</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Best / exec</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Slippage</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>RFQ #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Client</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Instrument</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Qty</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Best / exec</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Slippage</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -448,7 +449,7 @@ export function BestExecutionTab() {
                       {r.rfq_number}
                       {r.source_wave && <span className="ml-1 text-[9px] text-[#8a93a0]">{r.source_wave}</span>}
                     </td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">{r.client_party_name}</td>
+                    <td className="px-3 py-2" style={{ color: 'oklch(0.46 0.16 55)' }}>{r.client_party_name}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tier.bg, color: tier.fg }}>
                         {tier.label}
@@ -565,7 +566,7 @@ function Drawer({
             {row.source_wave && <Pair label="Provenance" value={`${row.source_wave} · ${row.source_entity_id ?? ''}`} />}
           </div>
           {row.best_ex_basis && (
-            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Best-ex basis</div>
               {row.best_ex_basis}
             </div>
@@ -577,7 +578,7 @@ function Drawer({
             </div>
           )}
           {row.tca_findings && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">TCA findings</div>
               {row.tca_findings}
             </div>
@@ -589,7 +590,7 @@ function Drawer({
             </div>
           )}
           {row.rod_notes && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">ROD notes</div>
               {row.rod_notes}
             </div>
@@ -656,7 +657,7 @@ function Drawer({
                       <span className="inline-block rounded bg-[#eef1f5] px-1.5 py-0.5 text-[10px] font-medium text-[#445]">{e.actor_party}</span>
                     )}
                   </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

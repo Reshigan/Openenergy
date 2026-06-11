@@ -29,9 +29,9 @@ interface Kpis {
 
 const STATUS_COLORS: Record<string, string> = {
   report_due:          'bg-[#eef2f7] text-[#6b7685]',
-  report_drafting:     'bg-blue-100 text-blue-700',
-  data_collection:     'bg-blue-100 text-blue-700',
-  internal_review:     'bg-blue-100 text-blue-700',
+  report_drafting:     'bg-[#eef2f7]',
+  data_collection:     'bg-[#eef2f7]',
+  internal_review:     'bg-[#eef2f7]',
   submitted:           'bg-yellow-100 text-yellow-800',
   under_review:        'bg-yellow-100 text-yellow-800',
   queries_raised:      'bg-orange-100 text-orange-700',
@@ -42,13 +42,17 @@ const STATUS_COLORS: Record<string, string> = {
   appeal_determined:   'bg-purple-100 text-purple-700',
 };
 
+const STATUS_BLUE_SET = new Set(['report_drafting', 'data_collection', 'internal_review']);
+
 const TIER_COLORS: Record<string, string> = {
   small:     'bg-[#eef2f7] text-[#3d4756]',
-  medium:    'bg-blue-100 text-blue-700',
-  large:     'bg-indigo-100 text-indigo-700',
+  medium:    'bg-[#eef2f7]',
+  large:     'bg-[#eef2f7]',
   utility:   'bg-orange-100 text-orange-800',
   strategic: 'bg-red-100 text-red-700',
 };
+
+const TIER_BLUE_SET = new Set(['medium', 'large']);
 
 const CATEGORY_LABELS: Record<string, string> = {
   annual_returns:       'Annual Returns',
@@ -198,11 +202,11 @@ export function IppAnnualReportTab() {
                     <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">{item.reporting_year}</td>
                     <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">{item.capacity_mw} MW</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.capacity_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>{item.capacity_tier}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.capacity_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={TIER_BLUE_SET.has(item.capacity_tier) ? { color: 'oklch(0.46 0.16 55)', background: 'oklch(0.94 0.006 250)' } : undefined}>{item.capacity_tier}</span>
                     </td>
                     <td className="py-2 pr-4 text-xs text-[#3d4756]">{CATEGORY_LABELS[item.report_category] ?? item.report_category}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>{item.chain_status.replace(/_/g, ' ')}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_BLUE_SET.has(item.chain_status) ? { color: 'oklch(0.46 0.16 55)', background: 'oklch(0.94 0.006 250)' } : undefined}>{item.chain_status.replace(/_/g, ' ')}</span>
                       {regulator && <span className="ml-1 px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">REGULATOR</span>}
                     </td>
                     <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>

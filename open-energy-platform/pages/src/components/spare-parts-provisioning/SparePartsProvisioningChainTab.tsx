@@ -30,6 +30,7 @@ type Criticality = 'vital' | 'essential' | 'desirable';
 type DemandSource = 'predictive_rul' | 'work_order' | 'reorder_point' | 'manual' | 'rma_replacement';
 
 interface ProvisioningRow {
+  [key: string]: unknown;
   id: string;
   line_number: string;
   source_event: string | null;
@@ -143,8 +144,8 @@ interface KpiSummary {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   demand_identified:    { bg: '#e3e7ec', fg: '#557',    label: 'Demand identified' },
-  requisition_raised:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Requisition raised' },
-  requisition_approved: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Requisition approved' },
+  requisition_raised:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Requisition raised' },
+  requisition_approved: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Requisition approved' },
   po_issued:            { bg: '#fff4d6', fg: '#a06200', label: 'PO issued' },
   backordered:          { bg: '#fde0e0', fg: '#9b1f1f', label: 'Backordered' },
   in_transit:           { bg: '#ffe9d6', fg: '#8a4a00', label: 'In transit' },
@@ -160,14 +161,14 @@ const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
   catastrophic: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Catastrophic' },
   critical:     { bg: '#ffe4b5', fg: '#8a4a00', label: 'Critical' },
   important:    { bg: '#fff4d6', fg: '#a06200', label: 'Important' },
-  standard:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard' },
+  standard:     { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Standard' },
   routine:      { bg: '#e3e7ec', fg: '#557',    label: 'Routine' },
 };
 
 const CRIT_TONE: Record<Criticality, { bg: string; fg: string; label: string }> = {
   vital:     { bg: '#fde0e0', fg: '#9b1f1f', label: 'Vital' },
   essential: { bg: '#fff4d6', fg: '#a06200', label: 'Essential' },
-  desirable: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Desirable' },
+  desirable: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Desirable' },
 };
 
 const SOURCE_LABEL: Record<DemandSource, string> = {
@@ -475,14 +476,14 @@ export function SparePartsProvisioningChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Line #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Part / OEM</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Criticality</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Demand</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Stockout</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Line #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Part / OEM</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Criticality</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Demand</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Stockout</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -496,7 +497,7 @@ export function SparePartsProvisioningChainTab() {
                     onClick={() => loadEvents(r.id)}
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 font-mono text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.line_number}
                       {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
                     </td>
@@ -643,13 +644,13 @@ function Drawer({
             <Pair label="Reportable"        value={row.is_reportable_flag ? 'Yes' : 'No'} />
           </div>
           {row.demand_basis && (
-            <BasisBlock label="Demand basis" tone="#1a3a5c" text={row.demand_basis} />
+            <BasisBlock label="Demand basis" tone="oklch(0.46 0.16 55)" text={row.demand_basis} />
           )}
           {row.requisition_basis && (
-            <BasisBlock label="Requisition basis" tone="#1a3a5c" text={row.requisition_basis} />
+            <BasisBlock label="Requisition basis" tone="oklch(0.46 0.16 55)" text={row.requisition_basis} />
           )}
           {row.approval_basis && (
-            <BasisBlock label="Approval basis" tone="#1a3a5c" text={row.approval_basis} />
+            <BasisBlock label="Approval basis" tone="oklch(0.46 0.16 55)" text={row.approval_basis} />
           )}
           {row.po_basis && (
             <BasisBlock label="PO basis" tone="#a06200" text={row.po_basis} />
@@ -661,7 +662,7 @@ function Drawer({
             <BasisBlock label="Expedite basis" tone="#1f6b3a" text={row.expedite_basis} />
           )}
           {row.shipment_basis && (
-            <BasisBlock label="Shipment basis" tone="#1a3a5c" text={row.shipment_basis} />
+            <BasisBlock label="Shipment basis" tone="oklch(0.46 0.16 55)" text={row.shipment_basis} />
           )}
           {row.inspection_basis && (
             <BasisBlock label="Inspection basis" tone="#1f6b3a" text={row.inspection_basis} />
@@ -740,7 +741,7 @@ function Drawer({
                       <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
                     )}
                   </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

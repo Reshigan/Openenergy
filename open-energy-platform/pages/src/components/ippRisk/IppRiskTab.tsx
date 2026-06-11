@@ -97,9 +97,9 @@ const TIER_COLOR: Record<RiskTier, string> = {
 
 const STATUS_COLOR: Record<RiskStatus, string> = {
   identified:       'bg-[#eef2f7] text-[#2d3748]',
-  assessed:         'bg-blue-50 text-blue-700',
-  quantified:       'bg-blue-100 text-blue-800',
-  response_planned: 'bg-indigo-100 text-indigo-700',
+  assessed:         'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
+  quantified:       'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
+  response_planned: 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   owner_assigned:   'bg-violet-100 text-violet-700',
   monitoring:       'bg-amber-100 text-amber-700',
   triggered:        'bg-red-100 text-red-800',
@@ -388,7 +388,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
                   <td className="px-3 py-2 text-[#6b7685] max-w-[100px] truncate">{row.project_name ?? row.project_id}</td>
                   {!readOnly && (
                     <td className="px-3 py-2">
-                      <button type="button" className="text-xs text-blue-600 hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>Manage</button>
+                      <button type="button" className="text-xs text-[oklch(0.46_0.16_55)] hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>Manage</button>
                     </td>
                   )}
                 </tr>
@@ -457,9 +457,9 @@ export default function IppRiskTab({ readOnly = false }: Props) {
             </div>
 
             {selected.response_plan && (
-              <div className="bg-blue-50 rounded-lg p-3 mb-4">
-                <p className="text-xs font-medium text-blue-800 mb-1">Response plan</p>
-                <p className="text-xs text-blue-700">{selected.response_plan}</p>
+              <div className="bg-[oklch(0.97_0.003_250)] rounded-lg p-3 mb-4">
+                <p className="text-xs font-medium text-[oklch(0.40_0.009_250)] mb-1">Response plan</p>
+                <p className="text-xs text-[oklch(0.46_0.16_55)]">{selected.response_plan}</p>
               </div>
             )}
 
@@ -595,7 +595,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
 }
 
 function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
-  const cls = color === 'red' ? 'text-red-600' : color === 'orange' ? 'text-orange-600' : color === 'blue' ? 'text-blue-600' : 'text-[#2d3748]';
+  const cls = color === 'red' ? 'text-red-600' : color === 'orange' ? 'text-orange-600' : color === 'blue' ? 'text-[oklch(0.46_0.16_55)]' : 'text-[#2d3748]';
   return (
     <div className="bg-white rounded-lg border border-[#dde4ec] p-3">
       <p className="text-[10px] text-[#6b7685] uppercase tracking-wide">{label}</p>

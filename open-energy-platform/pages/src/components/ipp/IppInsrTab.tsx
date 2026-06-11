@@ -28,10 +28,10 @@ interface InsrKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   renewal_triggered:              'bg-[#eef2f7] text-[#6b7685]',
-  coverage_gap_analysis:          'bg-blue-100 text-blue-700',
+  coverage_gap_analysis:          'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   broker_instruction:             'bg-cyan-100 text-cyan-700',
   market_placement:               'bg-sky-100 text-sky-700',
-  terms_received:                 'bg-indigo-100 text-indigo-700',
+  terms_received:                 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   ipp_lender_review:              'bg-violet-100 text-violet-700',
   documentation_preparation:      'bg-purple-100 text-purple-700',
   documents_submitted:            'bg-yellow-100 text-yellow-800',
@@ -58,8 +58,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 // INVERTED SLA — higher premium = more complex = deeper colour
 const TIER_BADGE_COLORS: Record<string, string> = {
-  small:    'bg-blue-100 text-blue-800',
-  medium:   'bg-indigo-100 text-indigo-800',
+  small:    'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
+  medium:   'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
   large:    'bg-purple-100 text-purple-800',
   major:    'bg-orange-100 text-orange-800',
   flagship: 'bg-red-100 text-red-800',
@@ -370,9 +370,10 @@ export function IppInsrTab() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3"
+          className="rounded-lg border p-4 space-y-3"
+          style={{ borderColor: 'oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
         >
-          <div className="text-sm font-semibold text-blue-800">New Insurance Renewal</div>
+          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New Insurance Renewal</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
@@ -585,8 +586,9 @@ export function IppInsrTab() {
                                 ? 'px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border border-yellow-200'
                                 : a.variant === 'success'
                                 ? 'px-2 py-0.5 text-xs rounded bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
-                                : 'px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                                : 'px-2 py-0.5 text-xs rounded border'
                             }
+                            style={!a.variant ? { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.87 0.010 250)' } : undefined}
                           >
                             {a.label}
                           </button>

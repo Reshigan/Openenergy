@@ -55,8 +55,8 @@ interface CommissioningEvent {
 
 const TONE: Record<CommissioningStatus, { bg: string; fg: string; label: string }> = {
   planned:              { bg: '#f0f3f7', fg: '#445566', label: 'Planned' },
-  site_registered:      { bg: '#dbecfb', fg: '#1a3a5c', label: 'Site registered' },
-  devices_registered:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Devices registered' },
+  site_registered:      { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Site registered' },
+  devices_registered:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Devices registered' },
   ingestion_wired:      { bg: '#fff4d6', fg: '#a06200', label: 'Ingestion wired' },
   first_telemetry_ok:   { bg: '#daf5e2', fg: '#1f6b3a', label: 'First telemetry OK' },
   energised:            { bg: '#daf5e2', fg: '#1f6b3a', label: 'Energised' },

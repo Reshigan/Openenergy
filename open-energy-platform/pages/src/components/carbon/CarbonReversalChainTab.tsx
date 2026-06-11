@@ -25,6 +25,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'reversal_reported' | 'under_assessment' | 'loss_quantified'
@@ -35,6 +50,7 @@ type ChainStatus =
 type Tier = 'catastrophic' | 'significant' | 'minor';
 
 interface ReversalRow {
+  [key: string]: unknown;
   id: string;
   reversal_number: string;
   source_event: string | null;
@@ -127,27 +143,25 @@ interface KpiSummary {
   total_replacement: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  reversal_reported:            { bg: '#e3e7ec', fg: '#557',    label: 'Reported' },
-  under_assessment:             { bg: '#dbecfb', fg: '#1a3a5c', label: 'Under assessment' },
-  loss_quantified:              { bg: '#fff4d6', fg: '#a06200', label: 'Loss quantified' },
-  buffer_cancellation_proposed: { bg: '#ffe9d6', fg: '#8a4a00', label: 'Buffer cancellation proposed' },
-  buffer_cancelled:             { bg: '#daf5e2', fg: '#1f6b3a', label: 'Buffer cancelled' },
-  remediation_verified:         { bg: '#daf5e2', fg: '#1f6b3a', label: 'Remediation verified' },
-  replacement_required:         { bg: '#ffe9d6', fg: '#8a4a00', label: 'Replacement required' },
-  replacement_submitted:        { bg: '#ffe9d6', fg: '#8a4a00', label: 'Replacement submitted' },
-  replacement_verified:         { bg: '#daf5e2', fg: '#1f6b3a', label: 'Replacement verified' },
-  closed:                       { bg: '#d4edda', fg: '#155724', label: 'Closed' },
-  escalated:                    { bg: '#fde0e0', fg: '#9b1f1f', label: 'Escalated' },
-  false_alarm:                  { bg: '#f3e0e0', fg: '#6b1f1f', label: 'False alarm' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'reversal_reported',
+  'under_assessment',
+  'loss_quantified',
+  'buffer_cancellation_proposed',
+  'buffer_cancelled',
+  'remediation_verified',
+  'replacement_required',
+  'replacement_submitted',
+  'replacement_verified',
+  'closed',
+];
+const BRANCH_STATES: readonly string[] = [
+  'escalated',
+  'false_alarm',
+];
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  catastrophic: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Catastrophic' },
-  significant:  { bg: '#ffe4b5', fg: '#8a4a00', label: 'Significant' },
-  minor:        { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',                       label: 'Active' },
   { key: 'all',                          label: 'All' },
@@ -172,45 +186,10 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'false_alarm',                  label: 'False alarm' },
 ];
 
-type ActionKind =
-  | 'begin-assessment' | 'quantify-loss' | 'propose-buffer-cancellation'
-  | 'cancel-buffer' | 'verify-remediation' | 'require-replacement'
-  | 'submit-replacement' | 'verify-replacement' | 'close' | 'escalate'
-  | 'dismiss-false-alarm';
-
-// Primary forward action per state.
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  reversal_reported:            'begin-assessment',
-  under_assessment:             'quantify-loss',
-  loss_quantified:              'propose-buffer-cancellation',
-  buffer_cancellation_proposed: 'cancel-buffer',
-  buffer_cancelled:             'verify-remediation',
-  remediation_verified:         'close',
-  replacement_required:         'submit-replacement',
-  replacement_submitted:        'verify-replacement',
-  replacement_verified:         'close',
-  closed:                       null,
-  escalated:                    null,
-  false_alarm:                  null,
-};
-
-// Party annotation per action — the contractual function. Registry owns intake /
-// assessment / buffer cancellation / replacement determination / closure; the
-// VVB owns independent quantification + remediation/replacement verification;
-// the proponent submits replacement credits; the authority owns escalation.
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'begin-assessment':            'Begin assessment (registry)',
-  'quantify-loss':               'Quantify loss (VVB)',
-  'propose-buffer-cancellation': 'Propose buffer cancellation (registry)',
-  'cancel-buffer':               'Cancel buffer credits (registry)',
-  'verify-remediation':          'Verify remediation (VVB)',
-  'require-replacement':         'Require replacement (registry)',
-  'submit-replacement':          'Submit replacement credits (proponent)',
-  'verify-replacement':          'Verify replacement (VVB)',
-  'close':                       'Close reversal (registry)',
-  'escalate':                    'Escalate (authority)',
-  'dismiss-false-alarm':         'Dismiss — false alarm (registry)',
-};
+// ── helpers ───────────────────────────────────────────────────────────────
+const TERMINAL_STATES: ChainStatus[] = ['closed', 'escalated', 'false_alarm'];
+const BUFFER_PATH_STATES: ChainStatus[] = ['buffer_cancellation_proposed', 'buffer_cancelled', 'remediation_verified'];
+const REPLACEMENT_PATH_STATES: ChainStatus[] = ['replacement_required', 'replacement_submitted', 'replacement_verified'];
 
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
@@ -230,59 +209,458 @@ function fmtTco2e(n: number | null | undefined): string {
   return `${n.toLocaleString('en-ZA')} tCO₂e`;
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['closed', 'escalated', 'false_alarm'];
-const BUFFER_PATH_STATES: ChainStatus[] = ['buffer_cancellation_proposed', 'buffer_cancelled', 'remediation_verified'];
-const REPLACEMENT_PATH_STATES: ChainStatus[] = ['replacement_required', 'replacement_submitted', 'replacement_verified'];
+// ── actions ───────────────────────────────────────────────────────────────
+function getActions(row: ReversalRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const status = row.chain_status;
 
+  // Primary forward action per state
+  if (status === 'reversal_reported') {
+    actions.push({
+      key: 'begin-assessment',
+      label: 'Begin assessment (registry)',
+      fields: [
+        {
+          key: 'assessment_basis',
+          label: 'Assessment basis — scope of the reversal review + evidence gathered',
+          type: 'textarea',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'under_assessment') {
+    actions.push({
+      key: 'quantify-loss',
+      label: 'Quantify loss (VVB)',
+      fields: [
+        {
+          key: 'quantification_basis',
+          label: 'Quantification basis — methodology + monitoring used to size the loss',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+        {
+          key: 'reversed_tco2e',
+          label: 'Reversed tCO₂e — credits released back to atmosphere',
+          type: 'number',
+          required: false,
+          placeholder: String(row.reversed_tco2e || ''),
+        },
+        {
+          key: 'reversal_ref',
+          label: 'Reversal reference (e.g. VCS-REV-2026-0007)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'loss_quantified') {
+    actions.push({
+      key: 'propose-buffer-cancellation',
+      label: 'Propose buffer cancellation (registry)',
+      fields: [
+        {
+          key: 'buffer_basis',
+          label: 'Buffer basis — why the buffer pool absorbs this loss (unintentional)',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+        {
+          key: 'buffer_cancelled_tco2e',
+          label: 'Buffer credits to cancel (tCO₂e)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.reversed_tco2e || ''),
+        },
+        {
+          key: 'buffer_pool_ref',
+          label: 'Buffer pool reference (e.g. VCS-AFOLU-POOL)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'buffer_cancellation_proposed') {
+    actions.push({
+      key: 'cancel-buffer',
+      label: 'Cancel buffer credits (registry)',
+      fields: [
+        {
+          key: 'buffer_basis',
+          label: 'Cancellation basis — confirm buffer-pool retirement executed',
+          type: 'textarea',
+          required: false,
+          placeholder: row.buffer_basis || '',
+        },
+        {
+          key: 'buffer_cancelled_tco2e',
+          label: 'Buffer credits cancelled (tCO₂e)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.buffer_cancelled_tco2e || row.reversed_tco2e || ''),
+        },
+        {
+          key: 'buffer_pool_ref',
+          label: 'Buffer pool reference / cancellation serial',
+          type: 'text',
+          required: false,
+          placeholder: row.buffer_pool_ref || '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'buffer_cancelled') {
+    actions.push({
+      key: 'verify-remediation',
+      label: 'Verify remediation (VVB)',
+      fields: [
+        {
+          key: 'remediation_basis',
+          label: 'Remediation basis — site recovery / re-planting / fire-break action',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+        {
+          key: 'verification_basis',
+          label: 'Verification basis — VVB evidence the site is on a recovery trajectory',
+          type: 'textarea',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'replacement_required') {
+    actions.push({
+      key: 'submit-replacement',
+      label: 'Submit replacement credits (proponent)',
+      fields: [
+        {
+          key: 'replacement_basis',
+          label: 'Replacement basis — provenance of the substitute credits being tendered',
+          type: 'textarea',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'replacement_tco2e',
+          label: 'Replacement credits submitted (tCO₂e)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.replacement_tco2e || row.reversed_tco2e || ''),
+        },
+        {
+          key: 'replacement_serial_block',
+          label: 'Replacement serial block (e.g. VCS-0007-2026-0001..5000)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'replacement_submitted') {
+    actions.push({
+      key: 'verify-replacement',
+      label: 'Verify replacement (VVB)',
+      fields: [
+        {
+          key: 'verification_basis',
+          label: 'Verification basis — VVB confirmation the replacement credits are valid + equivalent',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'remediation_verified' || status === 'replacement_verified') {
+    actions.push({
+      key: 'close',
+      label: 'Close reversal (registry)',
+      fields: [
+        {
+          key: 'closure_notes',
+          label: 'Closure notes — outcome + permanence-account reconciliation',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+      ],
+      // close crosses regulator for catastrophic + significant
+      cascadeTo: (row.reversal_tier === 'catastrophic' || row.reversal_tier === 'significant') ? ['regulator'] : [],
+    });
+  }
+
+  // Branch: require-replacement from loss_quantified
+  if (status === 'loss_quantified') {
+    actions.push({
+      key: 'require-replacement',
+      label: 'Require replacement (registry)',
+      fields: [
+        {
+          key: 'replacement_basis',
+          label: 'Replacement basis — why the proponent must replace like-for-like (intentional / at-fault)',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+        {
+          key: 'replacement_tco2e',
+          label: 'Replacement credits required (tCO₂e)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.reversed_tco2e || ''),
+        },
+        {
+          key: 'regulator_ref',
+          label: 'Regulator reference (e.g. NERSA-NOTIFY-2026-0041)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      // require_replacement crosses regulator EVERY tier
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  // Escalate from under_assessment, loss_quantified, replacement_required
+  if (['under_assessment', 'loss_quantified', 'replacement_required'].includes(status)) {
+    actions.push({
+      key: 'escalate',
+      label: 'Escalate (authority)',
+      fields: [
+        {
+          key: 'regulator_ref',
+          label: 'Regulator / Tribunal reference (e.g. NERSA-TRIBUNAL-2026-0014)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'closure_notes',
+          label: 'Escalation basis — fraud, project failure, or dispute requiring authority intervention',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+      ],
+      // escalate crosses regulator EVERY tier
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  // False alarm from reversal_reported, under_assessment
+  if (['reversal_reported', 'under_assessment'].includes(status)) {
+    actions.push({
+      key: 'dismiss-false-alarm',
+      label: 'Dismiss — false alarm (registry)',
+      fields: [
+        {
+          key: 'closure_notes',
+          label: 'Dismissal reason — why the reported reversal did not occur (e.g. monitoring error, recovered)',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: ReversalRow): React.ReactNode {
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+      <DetailPair label="Reversal type" value={row.reversal_type} />
+      <DetailPair label="Cause" value={row.reversal_cause ?? '—'} />
+      <DetailPair label="VVB" value={row.vvb_name ?? '—'} />
+      <DetailPair label="Methodology" value={row.methodology ?? '—'} />
+      <DetailPair label="Province / host" value={row.province ?? row.host_country ?? '—'} />
+      <DetailPair label="Registered project" value={row.registered_project_ref ?? '—'} />
+      <DetailPair label="Credit serial block" value={row.credit_serial_block ?? '—'} />
+      <DetailPair label="Reversed" value={fmtTco2e(row.reversed_tco2e)} />
+      <DetailPair label="Buffer cancelled" value={fmtTco2e(row.buffer_cancelled_tco2e)} />
+      <DetailPair label="Replacement" value={fmtTco2e(row.replacement_tco2e)} />
+      <DetailPair label="Buffer pool ref" value={row.buffer_pool_ref ?? '—'} />
+      <DetailPair label="Replacement serial" value={row.replacement_serial_block ?? '—'} />
+      <DetailPair label="Reversal ref" value={row.reversal_ref ?? '—'} />
+      <DetailPair label="Regulator ref" value={row.regulator_ref ?? '—'} />
+      <DetailPair label="Reason code" value={row.reason_code ?? '—'} />
+      <DetailPair label="Reported" value={fmtDate(row.reversal_reported_at)} />
+      <DetailPair label="Under assessment" value={fmtDate(row.under_assessment_at)} />
+      <DetailPair label="Loss quantified" value={fmtDate(row.loss_quantified_at)} />
+      <DetailPair label="Buffer proposed" value={fmtDate(row.buffer_cancellation_proposed_at)} />
+      <DetailPair label="Buffer cancelled at" value={fmtDate(row.buffer_cancelled_at)} />
+      <DetailPair label="Remediation verified" value={fmtDate(row.remediation_verified_at)} />
+      <DetailPair label="Replacement required" value={fmtDate(row.replacement_required_at)} />
+      <DetailPair label="Replacement submitted" value={fmtDate(row.replacement_submitted_at)} />
+      <DetailPair label="Replacement verified" value={fmtDate(row.replacement_verified_at)} />
+      <DetailPair label="Closed" value={fmtDate(row.closed_at)} />
+      <DetailPair label="SLA deadline" value={fmtDate(row.sla_deadline_at)} />
+      <DetailPair label="SLA status" value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+      <DetailPair label="Escalation lvl" value={String(row.escalation_level)} />
+      <DetailPair label="Reportable" value={row.is_reportable ? 'Yes' : 'No'} />
+      {row.source_wave && (
+        <DetailPair label="Source wave" value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}`} />
+      )}
+      {row.reversal_summary && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Reversal summary</div>
+          <div style={{ color: TX2 }}>{row.reversal_summary}</div>
+        </div>
+      )}
+      {row.assessment_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Assessment basis</div>
+          <div style={{ color: TX2 }}>{row.assessment_basis}</div>
+        </div>
+      )}
+      {row.quantification_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Quantification basis</div>
+          <div style={{ color: TX2 }}>{row.quantification_basis}</div>
+        </div>
+      )}
+      {row.buffer_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Buffer basis</div>
+          <div style={{ color: TX2 }}>{row.buffer_basis}</div>
+        </div>
+      )}
+      {row.remediation_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Remediation basis</div>
+          <div style={{ color: TX2 }}>{row.remediation_basis}</div>
+        </div>
+      )}
+      {row.replacement_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Replacement basis</div>
+          <div style={{ color: TX2 }}>{row.replacement_basis}</div>
+        </div>
+      )}
+      {row.verification_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Verification basis</div>
+          <div style={{ color: TX2 }}>{row.verification_basis}</div>
+        </div>
+      )}
+      {row.closure_notes && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Closure / escalation notes</div>
+          <div style={{ color: TX2 }}>{row.closure_notes}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function CarbonReversalChainTab() {
   const [rows, setRows] = useState<ReversalRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<ReversalRow | null>(null);
-  const [events, setEvents] = useState<ReversalEvent[]>([]);
+  const [filter, setFilter] = useState('active');
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setErr(null);
+    setLoading(true); setErr(null);
     try {
       const res = await api.get<{ data: { items: ReversalRow[] } & KpiSummary }>('/carbon-reversal/chain');
-      setRows(res.data?.data?.items || []);
       const d = res.data?.data;
+      setRows(d?.items || []);
       if (d) {
-        setKpis({
-          total: d.total, open_count: d.open_count, closed_count: d.closed_count,
-          escalated_count: d.escalated_count, false_alarm_count: d.false_alarm_count,
-          buffer_path_count: d.buffer_path_count, replacement_path_count: d.replacement_path_count,
-          breached: d.breached, reportable_total: d.reportable_total,
-          catastrophic_open: d.catastrophic_open, total_reversed_tco2e: d.total_reversed_tco2e,
-          total_buffer_cancelled: d.total_buffer_cancelled, total_replacement: d.total_replacement,
+        setSummary({
+          total: d.total,
+          open_count: d.open_count,
+          closed_count: d.closed_count,
+          escalated_count: d.escalated_count,
+          false_alarm_count: d.false_alarm_count,
+          buffer_path_count: d.buffer_path_count,
+          replacement_path_count: d.replacement_path_count,
+          breached: d.breached,
+          reportable_total: d.reportable_total,
+          catastrophic_open: d.catastrophic_open,
+          total_reversed_tco2e: d.total_reversed_tco2e,
+          total_buffer_cancelled: d.total_buffer_cancelled,
+          total_replacement: d.total_replacement,
         });
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load reversal records');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
-    try {
-      const res = await api.get<{ data: { case: ReversalRow; events: ReversalEvent[] } }>(
-        `/carbon-reversal/chain/${id}`
-      );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load reversal history');
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
+    // For the 'close' action, inject reason_code based on prior state
+    let body: Record<string, string> = { ...values };
+    if (key === 'close') {
+      const row = rows.find(r => r.id === rowId);
+      if (row && !body.reason_code) {
+        body.reason_code = row.chain_status === 'remediation_verified' ? 'buffer_absorbed' : 'replacement_complete';
+      }
     }
-  }, []);
+    // For 'escalate' and 'dismiss-false-alarm', inject reason_code
+    if (key === 'escalate' && !body.reason_code) {
+      body.reason_code = 'escalated';
+    }
+    if (key === 'dismiss-false-alarm' && !body.reason_code) {
+      body.reason_code = 'false_alarm';
+    }
+    try {
+      await api.post(`/carbon-reversal/chain/${rowId}/${key}`, body);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/carbon-reversal/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
+    }
+  }, [load, expandedEvents, rows]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { events: ChainEvent[] } }>(`/carbon-reversal/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
-    return rows.filter((r) => {
+    return rows.filter(r => {
       if (filter === 'all')              return true;
       if (filter === 'active')           return !TERMINAL_STATES.includes(r.chain_status);
       if (filter === 'catastrophic')     return r.reversal_tier === 'catastrophic';
@@ -290,403 +668,108 @@ export function CarbonReversalChainTab() {
       if (filter === 'minor')            return r.reversal_tier === 'minor';
       if (filter === 'buffer_path')      return BUFFER_PATH_STATES.includes(r.chain_status);
       if (filter === 'replacement_path') return REPLACEMENT_PATH_STATES.includes(r.chain_status);
-      if (filter === 'breached')         return r.sla_breached;
+      if (filter === 'breached')         return !!r.sla_breached;
       if (filter === 'reportable')       return r.is_reportable;
       return r.chain_status === filter;
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: ReversalRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'begin-assessment') {
-        const basis = window.prompt('Assessment basis — scope of the reversal review + evidence gathered:') || '';
-        body = { assessment_basis: basis };
-      } else if (action === 'quantify-loss') {
-        const basis = window.prompt('Quantification basis — methodology + monitoring used to size the loss:');
-        if (!basis) return;
-        const tco2e = window.prompt('Reversed tCO₂e — credits released back to atmosphere:', String(row.reversed_tco2e || ''));
-        const ref = window.prompt('Reversal reference (e.g. VCS-REV-2026-0007):') || '';
-        body = { quantification_basis: basis };
-        if (tco2e && !Number.isNaN(Number(tco2e))) body.reversed_tco2e = Number(tco2e);
-        if (ref) body.reversal_ref = ref;
-      } else if (action === 'propose-buffer-cancellation') {
-        const basis = window.prompt('Buffer basis — why the buffer pool absorbs this loss (unintentional):');
-        if (!basis) return;
-        const tco2e = window.prompt('Buffer credits to cancel (tCO₂e):', String(row.reversed_tco2e || ''));
-        const ref = window.prompt('Buffer pool reference (e.g. VCS-AFOLU-POOL):') || '';
-        body = { buffer_basis: basis };
-        if (tco2e && !Number.isNaN(Number(tco2e))) body.buffer_cancelled_tco2e = Number(tco2e);
-        if (ref) body.buffer_pool_ref = ref;
-      } else if (action === 'cancel-buffer') {
-        const basis = window.prompt('Cancellation basis — confirm buffer-pool retirement executed:', row.buffer_basis || '') || '';
-        const tco2e = window.prompt('Buffer credits cancelled (tCO₂e):', String(row.buffer_cancelled_tco2e || row.reversed_tco2e || ''));
-        const ref = window.prompt('Buffer pool reference / cancellation serial:', row.buffer_pool_ref || '') || '';
-        body = { buffer_basis: basis };
-        if (tco2e && !Number.isNaN(Number(tco2e))) body.buffer_cancelled_tco2e = Number(tco2e);
-        if (ref) body.buffer_pool_ref = ref;
-      } else if (action === 'verify-remediation') {
-        const remediation = window.prompt('Remediation basis — site recovery / re-planting / fire-break action:');
-        if (!remediation) return;
-        const verification = window.prompt('Verification basis — VVB evidence the site is on a recovery trajectory:') || '';
-        body = { remediation_basis: remediation, verification_basis: verification };
-      } else if (action === 'require-replacement') {
-        const basis = window.prompt('Replacement basis — why the proponent must replace like-for-like (intentional / at-fault):');
-        if (!basis) return;
-        const tco2e = window.prompt('Replacement credits required (tCO₂e):', String(row.reversed_tco2e || ''));
-        const reg = window.prompt('Regulator reference (e.g. NERSA-NOTIFY-2026-0041):') || '';
-        body = { replacement_basis: basis };
-        if (tco2e && !Number.isNaN(Number(tco2e))) body.replacement_tco2e = Number(tco2e);
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'submit-replacement') {
-        const basis = window.prompt('Replacement basis — provenance of the substitute credits being tendered:') || '';
-        const tco2e = window.prompt('Replacement credits submitted (tCO₂e):', String(row.replacement_tco2e || row.reversed_tco2e || ''));
-        const serial = window.prompt('Replacement serial block (e.g. VCS-0007-2026-0001..5000):') || '';
-        body = { replacement_basis: basis };
-        if (tco2e && !Number.isNaN(Number(tco2e))) body.replacement_tco2e = Number(tco2e);
-        if (serial) body.replacement_serial_block = serial;
-      } else if (action === 'verify-replacement') {
-        const basis = window.prompt('Verification basis — VVB confirmation the replacement credits are valid + equivalent:');
-        if (!basis) return;
-        body = { verification_basis: basis };
-      } else if (action === 'close') {
-        const notes = window.prompt('Closure notes — outcome + permanence-account reconciliation:');
-        if (!notes) return;
-        body = { reason_code: row.chain_status === 'remediation_verified' ? 'buffer_absorbed' : 'replacement_complete', closure_notes: notes };
-      } else if (action === 'escalate') {
-        const reg = window.prompt('Regulator / Tribunal reference (e.g. NERSA-TRIBUNAL-2026-0014):') || '';
-        const notes = window.prompt('Escalation basis — fraud, project failure, or dispute requiring authority intervention:');
-        if (!notes) return;
-        body = { reason_code: 'escalated', closure_notes: notes };
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'dismiss-false-alarm') {
-        const reason = window.prompt('Dismissal reason — why the reported reversal did not occur (e.g. monitoring error, recovered):');
-        if (!reason) return;
-        body = { reason_code: 'false_alarm', closure_notes: reason };
-      }
-      await api.post(`/carbon-reversal/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
+  const kpis = summary ?? {
+    total: 0, open_count: 0, closed_count: 0, escalated_count: 0,
+    false_alarm_count: 0, buffer_path_count: 0, replacement_path_count: 0,
+    breached: 0, reportable_total: 0, catastrophic_open: 0,
+    total_reversed_tco2e: 0, total_buffer_cancelled: 0, total_replacement: 0,
+  };
 
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Carbon reversal &amp; buffer management</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-stage permanence chain · reported → under assessment → loss quantified → then either the buffer path
-            (buffer cancellation proposed → buffer cancelled → remediation verified → closed) for unintentional loss, or
-            the replacement branch (replacement required → submitted → verified → closed) where the proponent is at
-            fault. Assessments can escalate to authority governance; mis-reported reversals dismiss as false alarms.
-            The integrity safeguard between MRV (issuance) and retirement — keeps the market whole when sequestered
-            carbon is released. URGENT SLA: the more catastrophic the reversal, the tighter every window. Escalation
-            and required-replacement cross to the regulator inbox for every tier; closure and SLA breach cross for
-            material tiers (Verra VCS + Gold Standard + Article 6.4).
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Carbon reversal &amp; buffer management</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          12-stage permanence chain · reported → under assessment → loss quantified → then either the buffer path
+          (buffer cancellation proposed → buffer cancelled → remediation verified → closed) for unintentional loss, or
+          the replacement branch (replacement required → submitted → verified → closed) where the proponent is at
+          fault. Assessments can escalate to authority governance; mis-reported reversals dismiss as false alarms.
+          URGENT SLA: the more catastrophic the reversal, the tighter every window. Verra VCS + Gold Standard + Article 6.4.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="Catastrophic open" value={kpis?.catastrophic_open ?? 0} tone={(kpis?.catastrophic_open ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Buffer path" value={kpis?.buffer_path_count ?? 0} tone={(kpis?.buffer_path_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Replacement path" value={kpis?.replacement_path_count ?? 0} tone={(kpis?.replacement_path_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Closed" value={kpis?.closed_count ?? 0} tone="ok" />
-        <Kpi label="Escalated" value={kpis?.escalated_count ?? 0} tone={(kpis?.escalated_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="False alarms" value={kpis?.false_alarm_count ?? 0} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Reversed tCO₂e" value={(kpis?.total_reversed_tco2e ?? 0).toLocaleString('en-ZA')} />
-        <Kpi label="Buffer cancelled" value={(kpis?.total_buffer_cancelled ?? 0).toLocaleString('en-ZA')} />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total" value={kpis.total} />
+        <KpiTile label="Open" value={kpis.open_count} />
+        <KpiTile label="Catastrophic open" value={kpis.catastrophic_open} tone={kpis.catastrophic_open > 0 ? 'bad' : undefined} />
+        <KpiTile label="Buffer path" value={kpis.buffer_path_count} tone={kpis.buffer_path_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="Replacement path" value={kpis.replacement_path_count} tone={kpis.replacement_path_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="SLA breached" value={kpis.breached} tone={kpis.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Closed" value={kpis.closed_count} tone="ok" />
+        <KpiTile label="Escalated" value={kpis.escalated_count} tone={kpis.escalated_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="False alarms" value={kpis.false_alarm_count} />
+        <KpiTile label="Reportable" value={kpis.reportable_total} tone={kpis.reportable_total > 0 ? 'warn' : undefined} />
+        <KpiTile label="Reversed tCO₂e" value={kpis.total_reversed_tco2e.toLocaleString('en-ZA')} />
+        <KpiTile label="Buffer cancelled" value={kpis.total_buffer_cancelled.toLocaleString('en-ZA')} />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{ background: filter === f.key ? ACC : BG2, color: filter === f.key ? '#fff' : TX2, border: `1px solid ${filter === f.key ? ACC : BORDER}` }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>{err}</div>
       )}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Reversal #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Project / proponent</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Cause / type</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Reversed</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.reversal_tier];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.reversal_number}
-                      {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[280px] truncate" title={`${r.project_name} · ${r.project_party_name}`}>
-                      {r.project_name}
-                      <span className="text-[#4a5568]"> · {r.project_party_name}</span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">
-                      {r.reversal_cause ?? '—'}
-                      <span className={r.reversal_type === 'intentional' ? 'text-[#9b1f1f]' : 'text-[#4a5568]'}> · {r.reversal_type}</span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{r.reversed_tco2e ? r.reversed_tco2e.toLocaleString('en-ZA') : '—'}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No reversal records match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.reversal_number}${row.is_reportable ? ' ●' : ''} — ${row.project_name}`}
+              meta={`${row.reversal_tier} · ${row.reversal_type} · ${row.project_party_name}${row.standard ? ` · ${row.standard}` : ''}`}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>No reversal records match.</div>
+          )}
         </div>
       )}
-
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
-      )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: ReversalRow;
-  events: ReversalEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: ReversalRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canRequireReplacement = row.chain_status === 'loss_quantified';
-  const canEscalate = ['under_assessment', 'loss_quantified', 'replacement_required'].includes(row.chain_status);
-  const canFalseAlarm = ['reversal_reported', 'under_assessment'].includes(row.chain_status);
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.reversal_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.project_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.reversal_tier].label} · {row.reversal_type} · proponent {row.project_party_name}
-                {row.standard ? ` · ${row.standard}` : ''}
-              </div>
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"                value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier"                 value={TIER_TONE[row.reversal_tier].label} />
-            <Pair label="Reversal type"        value={row.reversal_type} />
-            <Pair label="Cause"                value={row.reversal_cause ?? '—'} />
-            <Pair label="VVB"                  value={row.vvb_name ?? '—'} />
-            <Pair label="Methodology"          value={row.methodology ?? '—'} />
-            <Pair label="Province / host"      value={row.province ?? row.host_country ?? '—'} />
-            <Pair label="Registered project"   value={row.registered_project_ref ?? '—'} />
-            <Pair label="Credit serial block"  value={row.credit_serial_block ?? '—'} />
-            <Pair label="Reversed"             value={fmtTco2e(row.reversed_tco2e)} />
-            <Pair label="Buffer cancelled"     value={fmtTco2e(row.buffer_cancelled_tco2e)} />
-            <Pair label="Replacement"          value={fmtTco2e(row.replacement_tco2e)} />
-            <Pair label="Buffer pool ref"      value={row.buffer_pool_ref ?? '—'} />
-            <Pair label="Replacement serial"   value={row.replacement_serial_block ?? '—'} />
-            <Pair label="Reversal ref"         value={row.reversal_ref ?? '—'} />
-            <Pair label="Regulator ref"        value={row.regulator_ref ?? '—'} />
-            <Pair label="Reason code"          value={row.reason_code ?? '—'} />
-            <Pair label="Reported"             value={fmtDate(row.reversal_reported_at)} />
-            <Pair label="Under assessment"     value={fmtDate(row.under_assessment_at)} />
-            <Pair label="Loss quantified"      value={fmtDate(row.loss_quantified_at)} />
-            <Pair label="Buffer proposed"      value={fmtDate(row.buffer_cancellation_proposed_at)} />
-            <Pair label="Buffer cancelled at"  value={fmtDate(row.buffer_cancelled_at)} />
-            <Pair label="Remediation verified" value={fmtDate(row.remediation_verified_at)} />
-            <Pair label="Replacement required" value={fmtDate(row.replacement_required_at)} />
-            <Pair label="Replacement submitted" value={fmtDate(row.replacement_submitted_at)} />
-            <Pair label="Replacement verified" value={fmtDate(row.replacement_verified_at)} />
-            <Pair label="Closed"               value={fmtDate(row.closed_at)} />
-            <Pair label="SLA deadline"         value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"           value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"       value={String(row.escalation_level)} />
-            <Pair label="Reportable"           value={row.is_reportable ? 'Yes' : 'No'} />
-          </div>
-          {row.reversal_summary && (
-            <BasisBlock label="Reversal summary" tone="#1a3a5c" text={row.reversal_summary} />
-          )}
-          {row.assessment_basis && (
-            <BasisBlock label="Assessment basis" tone="#1a3a5c" text={row.assessment_basis} />
-          )}
-          {row.quantification_basis && (
-            <BasisBlock label="Quantification basis" tone="#a06200" text={row.quantification_basis} />
-          )}
-          {row.buffer_basis && (
-            <BasisBlock label="Buffer basis" tone="#8a4a00" text={row.buffer_basis} />
-          )}
-          {row.remediation_basis && (
-            <BasisBlock label="Remediation basis" tone="#1f6b3a" text={row.remediation_basis} />
-          )}
-          {row.replacement_basis && (
-            <BasisBlock label="Replacement basis" tone="#8a4a00" text={row.replacement_basis} />
-          )}
-          {row.verification_basis && (
-            <BasisBlock label="Verification basis" tone="#1f6b3a" text={row.verification_basis} />
-          )}
-          {row.closure_notes && (
-            <BasisBlock label="Closure / escalation notes" tone="#155724" text={row.closure_notes} />
-          )}
-        </section>
-
-        {(nextAction || canRequireReplacement || canEscalate || canFalseAlarm) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canRequireReplacement && (
-                <button type="button"
-                  onClick={() => onAct('require-replacement', row)}
-                  className="rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-orange-700 hover:bg-orange-50"
-                >
-                  {ACTION_LABEL['require-replacement']}
-                </button>
-              )}
-              {canEscalate && (
-                <button type="button"
-                  onClick={() => onAct('escalate', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL.escalate}
-                </button>
-              )}
-              {canFalseAlarm && (
-                <button type="button"
-                  onClick={() => onAct('dismiss-false-alarm', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b1f1f] hover:bg-[#f3e0e0]"
-                >
-                  {ACTION_LABEL['dismiss-false-alarm']}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1 }}>{value}</div>
     </div>
   );
 }
+
+export default CarbonReversalChainTab;

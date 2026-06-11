@@ -27,6 +27,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'dossier_compiled' | 'submitted' | 'under_review' | 'revision_required'
@@ -44,6 +59,7 @@ type WorkflowClass =
   | 'training_documentation_pack';
 
 interface HandoverRow {
+  [key: string]: unknown;
   id: string;
   dossier_number: string;
   source_event: string | null;
@@ -147,19 +163,6 @@ interface HandoverRow {
   reportable_per_spec: boolean;
 }
 
-interface HandoverEvent {
-  id: string;
-  dossier_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiSummary {
   total: number;
   open_count: number;
@@ -185,59 +188,28 @@ interface KpiSummary {
   total_handover_cost_zar: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  dossier_compiled:               { bg: '#e3e7ec', fg: '#557',    label: 'Compiled' },
-  submitted:                      { bg: '#dbecfb', fg: '#1a3a5c', label: 'Submitted' },
-  under_review:                   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Under review' },
-  revision_required:              { bg: '#ffe4b5', fg: '#8a4a00', label: 'Revision req.' },
-  approved:                       { bg: '#daf5e2', fg: '#1f6b3a', label: 'Approved' },
-  witnessed_acceptance_scheduled: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Witness scheduled' },
-  witnessed_acceptance:           { bg: '#fff4d6', fg: '#a06200', label: 'Witnessed' },
-  punch_remediated:               { bg: '#fff4d6', fg: '#a06200', label: 'Punch remediated' },
-  training_transferred:           { bg: '#fff4d6', fg: '#a06200', label: 'Training xfer' },
-  warranty_activated:             { bg: '#cfe9d7', fg: '#0f5132', label: 'Warranty active' },
-  operations_owned:               { bg: '#cfe9d7', fg: '#0f5132', label: 'Ops-owned' },
-  archived:                       { bg: '#cfe9d7', fg: '#0f5132', label: 'Archived' },
-  rejected:                       { bg: '#fde0e0', fg: '#9b1f1f', label: 'Rejected' },
-  withdrawn:                      { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
-  voided:                         { bg: '#fde0e0', fg: '#9b1f1f', label: 'Voided' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'dossier_compiled',
+  'submitted',
+  'under_review',
+  'revision_required',
+  'approved',
+  'witnessed_acceptance_scheduled',
+  'witnessed_acceptance',
+  'punch_remediated',
+  'training_transferred',
+  'warranty_activated',
+  'operations_owned',
+  'archived',
+];
+const BRANCH_STATES: readonly string[] = [
+  'rejected',
+  'withdrawn',
+  'voided',
+];
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical' },
-  high:     { bg: '#ffe4b5', fg: '#8a4a00', label: 'High' },
-  standard: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard' },
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-};
-
-const URGENCY_TONE: Record<string, { bg: string; fg: string; label: string }> = {
-  red:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Red' },
-  amber:    { bg: '#ffe4b5', fg: '#8a4a00', label: 'Amber' },
-  yellow:   { bg: '#fff4d6', fg: '#a06200', label: 'Yellow' },
-  green:    { bg: '#daf5e2', fg: '#1f6b3a', label: 'Green' },
-  terminal: { bg: '#e3e7ec', fg: '#557',    label: 'Terminal' },
-};
-
-const AUTHORITY_LABEL: Record<string, string> = {
-  project_engineer:       'Project engineer',
-  commissioning_engineer: 'Commissioning engineer',
-  operations_manager:     'Operations manager',
-  handover_director:      'Handover director',
-};
-
-const WORKFLOW_LABEL: Record<WorkflowClass, string> = {
-  mechanical_drivetrain:        'Mechanical drivetrain',
-  electrical_balance_of_plant:  'Electrical BoP',
-  inverter_skid:                'Inverter skid',
-  transformer_bay:              'Transformer bay',
-  battery_storage_skid:         'Battery storage skid',
-  scada_dms_integration:        'SCADA / DMS integration',
-  civil_structural:             'Civil / structural',
-  protection_relay_package:     'Protection relay package',
-  spare_parts_kit:              'Spare parts kit',
-  training_documentation_pack:  'Training documentation pack',
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'open',                           label: 'Open' },
   { key: 'all',                            label: 'All' },
@@ -263,71 +235,29 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'spares_only',                    label: 'Spares untransferred' },
 ];
 
-type ActionKind =
-  | 'submit' | 'open-review' | 'require-revision' | 'revise-and-resubmit'
-  | 'approve' | 'schedule-witnessed-acceptance' | 'complete-witnessed-acceptance'
-  | 'remediate-punch' | 'transfer-training' | 'activate-warranty'
-  | 'transfer-to-operations' | 'archive'
-  | 'reject' | 'withdraw' | 'void';
-
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  dossier_compiled:               'submit',
-  submitted:                      'open-review',
-  under_review:                   'approve',
-  revision_required:              'revise-and-resubmit',
-  approved:                       'schedule-witnessed-acceptance',
-  witnessed_acceptance_scheduled: 'complete-witnessed-acceptance',
-  witnessed_acceptance:           'remediate-punch',
-  punch_remediated:               'transfer-training',
-  training_transferred:           'activate-warranty',
-  warranty_activated:             'transfer-to-operations',
-  operations_owned:               'archive',
-  archived:                       null,
-  rejected:                       null,
-  withdrawn:                      null,
-  voided:                         null,
-};
-
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'submit':                         'Submit (commissioning engineer)',
-  'open-review':                    'Open review (independent engineer)',
-  'require-revision':               'Require revision (independent engineer)',
-  'revise-and-resubmit':            'Revise & resubmit (handover coordinator)',
-  'approve':                        'Approve (independent engineer)',
-  'schedule-witnessed-acceptance':  'Schedule witnessed acceptance',
-  'complete-witnessed-acceptance':  'Complete witnessed acceptance',
-  'remediate-punch':                'Remediate punch list (contractor)',
-  'transfer-training':              'Transfer training (training lead)',
-  'activate-warranty':              'Activate warranty (warranty administrator)',
-  'transfer-to-operations':         'Transfer to operations (operations manager)',
-  'archive':                        'Archive (handover director)',
-  'reject':                         'Reject (independent engineer)',
-  'withdraw':                       'Withdraw (handover coordinator)',
-  'void':                           'Void (owner)',
-};
-
-const SECONDARY_ACTIONS: Record<ChainStatus, ActionKind[]> = {
-  dossier_compiled:               ['withdraw'],
-  submitted:                      ['reject', 'withdraw'],
-  under_review:                   ['require-revision', 'reject', 'void'],
-  revision_required:              ['void'],
-  approved:                       ['void'],
-  witnessed_acceptance_scheduled: ['void'],
-  witnessed_acceptance:           ['void'],
-  punch_remediated:               ['void'],
-  training_transferred:           ['void'],
-  warranty_activated:             ['void'],
-  operations_owned:               ['void'],
-  archived:                       [],
-  rejected:                       [],
-  withdrawn:                      [],
-  voided:                         [],
-};
-
-const DESTRUCTIVE: ActionKind[] = ['reject', 'withdraw', 'void', 'require-revision'];
-
 const TERMINAL_STATES: ChainStatus[] = ['archived', 'rejected', 'withdrawn', 'voided'];
 
+const WORKFLOW_LABEL: Record<WorkflowClass, string> = {
+  mechanical_drivetrain:        'Mechanical drivetrain',
+  electrical_balance_of_plant:  'Electrical BoP',
+  inverter_skid:                'Inverter skid',
+  transformer_bay:              'Transformer bay',
+  battery_storage_skid:        'Battery storage skid',
+  scada_dms_integration:        'SCADA / DMS integration',
+  civil_structural:             'Civil / structural',
+  protection_relay_package:     'Protection relay package',
+  spare_parts_kit:              'Spare parts kit',
+  training_documentation_pack:  'Training documentation pack',
+};
+
+const AUTHORITY_LABEL: Record<string, string> = {
+  project_engineer:       'Project engineer',
+  commissioning_engineer: 'Commissioning engineer',
+  operations_manager:     'Operations manager',
+  handover_director:      'Handover director',
+};
+
+// ── format helpers ────────────────────────────────────────────────────────
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
   const abs = Math.abs(m);
@@ -361,24 +291,464 @@ function fmtDate(s: string | null): string {
   return new Date(s).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
+// ── action builder ────────────────────────────────────────────────────────
+function getActions(row: HandoverRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
+
+  if (s === 'dossier_compiled') {
+    actions.push({
+      key: 'submit',
+      label: 'Submit (commissioning engineer)',
+      fields: [
+        {
+          key: 'narrative',
+          label: 'Submission note (warranty-blocking dossiers cross NERSA inbox on approve)',
+          type: 'textarea',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw (handover coordinator)',
+      fields: [
+        { key: 'withdrawn_reason', label: 'Withdrawal reason (handover coordinator)', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'submitted') {
+    actions.push({
+      key: 'open-review',
+      label: 'Open review (independent engineer)',
+      fields: [],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'reject',
+      label: 'Reject (independent engineer)',
+      fields: [
+        { key: 'rejected_reason', label: 'Rejection reason (independent engineer)', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw (handover coordinator)',
+      fields: [
+        { key: 'withdrawn_reason', label: 'Withdrawal reason (handover coordinator)', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'under_review') {
+    actions.push({
+      key: 'approve',
+      label: 'Approve (independent engineer)',
+      fields: [
+        {
+          key: 'regulator_ref',
+          label: 'Regulator reference (warranty-blocking approvals cross EVERY tier) — leave blank if not applicable',
+          type: 'text',
+          required: false,
+          placeholder: String(row.regulator_ref ?? ''),
+        },
+        {
+          key: 'dossier_cost_zar',
+          label: 'Dossier cost (ZAR, optional)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.dossier_cost_zar ?? ''),
+        },
+      ],
+      cascadeTo: ['regulator'],
+    });
+    actions.push({
+      key: 'require-revision',
+      label: 'Require revision (independent engineer)',
+      fields: [
+        { key: 'narrative', label: 'Revision instructions (independent engineer)', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'reject',
+      label: 'Reject (independent engineer)',
+      fields: [
+        { key: 'rejected_reason', label: 'Rejection reason (independent engineer)', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with as-built OR spares incomplete crosses regulator EVERY tier', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'revision_required') {
+    actions.push({
+      key: 'revise-and-resubmit',
+      label: 'Revise & resubmit (handover coordinator)',
+      fields: [
+        {
+          key: 'narrative',
+          label: 'Revision note (auto-increments revision count)',
+          type: 'textarea',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with as-built OR spares incomplete crosses regulator EVERY tier', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'approved') {
+    actions.push({
+      key: 'schedule-witnessed-acceptance',
+      label: 'Schedule witnessed acceptance',
+      fields: [
+        {
+          key: 'witness_party',
+          label: 'Witness party (independent_engineer / regulator / lender)',
+          type: 'text',
+          required: false,
+          placeholder: String(row.witness_party ?? 'independent_engineer'),
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with as-built OR spares incomplete crosses regulator EVERY tier', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'witnessed_acceptance_scheduled') {
+    actions.push({
+      key: 'complete-witnessed-acceptance',
+      label: 'Complete witnessed acceptance',
+      fields: [
+        {
+          key: 'witnessed_acceptance_clear',
+          label: 'Witnessed acceptance clear? (1 = clear, 0 = punch raised)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.witnessed_acceptance_clear ?? '1'),
+        },
+        {
+          key: 'punch_count_open',
+          label: 'Open punch count (0 if clear)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.punch_count_open ?? '0'),
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with as-built OR spares incomplete crosses regulator EVERY tier', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'witnessed_acceptance') {
+    actions.push({
+      key: 'remediate-punch',
+      label: 'Remediate punch list (contractor)',
+      fields: [
+        {
+          key: 'punch_count_open',
+          label: 'Open punch count after remediation (0 if all closed)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.punch_count_open ?? '0'),
+        },
+        {
+          key: 'handover_cost_zar',
+          label: 'Handover cost incurred (ZAR, optional)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.handover_cost_zar ?? ''),
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with as-built OR spares incomplete crosses regulator EVERY tier', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'punch_remediated') {
+    actions.push({
+      key: 'transfer-training',
+      label: 'Transfer training (training lead)',
+      fields: [
+        {
+          key: 'training_completion_pct',
+          label: 'Training completion (0-100)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.training_completion_pct ?? '100'),
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with as-built OR spares incomplete crosses regulator EVERY tier', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'training_transferred') {
+    actions.push({
+      key: 'activate-warranty',
+      label: 'Activate warranty (warranty administrator)',
+      fields: [
+        {
+          key: 'warranty_admin_party_name',
+          label: 'Warranty administrator party name',
+          type: 'text',
+          required: false,
+          placeholder: String(row.warranty_admin_party_name ?? ''),
+        },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with as-built OR spares incomplete crosses regulator EVERY tier', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'warranty_activated') {
+    actions.push({
+      key: 'transfer-to-operations',
+      label: 'Transfer to operations (operations manager)',
+      fields: [
+        {
+          key: 'narrative',
+          label: 'Transfer-to-operations note — warranty OR O&M-blocking transfers cross regulator EVERY tier',
+          type: 'textarea',
+          required: false,
+          placeholder: '',
+        },
+      ],
+      cascadeTo: ['regulator'],
+    });
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with as-built OR spares incomplete crosses regulator EVERY tier', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'operations_owned') {
+    actions.push({
+      key: 'archive',
+      label: 'Archive (handover director)',
+      fields: [],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'void',
+      label: 'Void (owner)',
+      fields: [
+        { key: 'voided_reason', label: 'Void reason — voiding with as-built OR spares incomplete crosses regulator EVERY tier', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  return actions;
+}
+
+// ── detail panel ──────────────────────────────────────────────────────────
+function renderDetail(row: HandoverRow): React.ReactNode {
+  const authority = AUTHORITY_LABEL[row.authority_required_live ?? row.authority_required ?? ''] ?? (row.authority_required ?? '—');
+
+  return (
+    <div style={{ fontSize: 11, color: TX2 }}>
+      {/* Live handover completeness battery */}
+      <div className="rounded border mb-2 px-3 py-2" style={{ background: BG2, borderColor: BORDER }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: TX3 }}>Live handover completeness battery</div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+          <DetailPair label="Completeness index" value={fmtNum(row.handover_completeness_index_live, 0)} hint="0-130 (industry baseline=100)" />
+          <DetailPair label="Days open" value={String(row.days_open_live ?? 0)} />
+          <DetailPair label="Days in court" value={String(row.days_in_court_live ?? 0)} hint="Aging in current state" />
+          <DetailPair label="Ball in court" value={row.ball_in_court_party_live ?? '—'} hint="Auto-derived from current state" />
+          <DetailPair label="Tier (live)" value={row.tier_live} />
+          <DetailPair label="Urgency band" value={row.urgency_band} />
+          <DetailPair label="Predicted close" value={fmtDate(row.predicted_close_date_live)} hint="Tier-derived forward-path ETA" />
+          <DetailPair label="Authority" value={authority} />
+        </div>
+      </div>
+
+      {/* Coverage flags */}
+      <div className="rounded border mb-2 px-3 py-2" style={{ background: BG2, borderColor: BORDER }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: TX3 }}>Coverage flags (FLOOR-AT-HIGH)</div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+          <DetailPair label="Blocks warranty" value={row.blocks_warranty_start ? 'Yes' : 'No'} />
+          <DetailPair label="Blocks O&M handover" value={row.blocks_om_handover ? 'Yes' : 'No'} />
+          <DetailPair label="As-built incomplete" value={row.incomplete_as_built ? 'Yes' : 'No'} />
+          <DetailPair label="Spares untransferred" value={row.untransferred_spares ? 'Yes' : 'No'} />
+          <DetailPair label="Revisions" value={String(row.revision_count ?? 0)} />
+          <DetailPair label="Punch open" value={String(row.punch_count_open ?? 0)} />
+          <DetailPair label="As-built %" value={fmtPct((row.as_built_completeness_pct ?? 0) / 100)} />
+          <DetailPair label="Spares %" value={fmtPct((row.spare_parts_completeness_pct ?? 0) / 100)} />
+          <DetailPair label="Training %" value={fmtPct((row.training_completion_pct ?? 0) / 100)} />
+          <DetailPair label="Witness clear" value={row.witnessed_acceptance_clear ? 'Yes' : 'No'} />
+          <DetailPair label="Warranty active" value={row.warranty_activated ? 'Yes' : 'No'} />
+          <DetailPair label="Drawing register" value={row.drawing_register_ref ?? '—'} />
+        </div>
+      </div>
+
+      {/* Handover economics */}
+      <div className="rounded border mb-2 px-3 py-2" style={{ background: BG2, borderColor: BORDER }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: TX3 }}>Handover economics</div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+          <DetailPair label="Dossier cost" value={fmtZar(row.dossier_cost_zar)} />
+          <DetailPair label="Handover cost" value={fmtZar(row.handover_cost_zar)} />
+          <DetailPair label="Total cost" value={fmtZar((row.dossier_cost_zar ?? 0) + (row.handover_cost_zar ?? 0))} />
+          <DetailPair label="Warranty start" value={row.warranty_start_date ?? '—'} />
+          <DetailPair label="Warranty end" value={row.warranty_end_date ?? '—'} />
+          <DetailPair label="Warranty admin" value={row.warranty_admin_party_name ?? '—'} />
+        </div>
+      </div>
+
+      {/* Core fields */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+        <DetailPair label="Workflow class" value={WORKFLOW_LABEL[row.workflow_class]} />
+        <DetailPair label="Priority" value={row.priority_class} />
+        <DetailPair label="Dossier scope" value={row.dossier_scope ?? '—'} />
+        <DetailPair label="Compiled at" value={fmtDate(row.compiled_at)} />
+        <DetailPair label="Acceptance crit." value={row.acceptance_criteria ?? '—'} />
+        <DetailPair label="Spec register" value={row.spec_register_ref ?? '—'} />
+        <DetailPair label="Contractor" value={row.contractor_name ?? '—'} />
+        <DetailPair label="Facility" value={row.facility_name ?? '—'} />
+        <DetailPair label="Owner" value={row.owner_party_name ?? '—'} />
+        <DetailPair label="Indep. engineer" value={row.independent_engineer_party_name ?? '—'} />
+        <DetailPair label="Witness party" value={row.witness_party ?? '—'} />
+        <DetailPair label="Last responder" value={row.last_responder_party ?? '—'} />
+        <DetailPair label="Requester" value={row.requester_party ?? '—'} />
+        <DetailPair label="Approver" value={row.approver_party ?? '—'} />
+        <DetailPair label="O&M blocker ref" value={row.om_handover_blocker_ref ?? '—'} />
+        <DetailPair label="Warranty blocker" value={row.warranty_blocker_ref ?? '—'} />
+        <DetailPair label="Regulator ref" value={row.regulator_ref ?? '—'} />
+        <DetailPair label="Submitted" value={fmtDate(row.submitted_at)} />
+        <DetailPair label="Under review" value={fmtDate(row.under_review_at)} />
+        <DetailPair label="Revision required" value={fmtDate(row.revision_required_at)} />
+        <DetailPair label="Approved" value={fmtDate(row.approved_at)} />
+        <DetailPair label="Witness scheduled" value={fmtDate(row.witnessed_acceptance_scheduled_at)} />
+        <DetailPair label="Witnessed" value={fmtDate(row.witnessed_acceptance_at)} />
+        <DetailPair label="Punch remediated" value={fmtDate(row.punch_remediated_at)} />
+        <DetailPair label="Training xfer" value={fmtDate(row.training_transferred_at)} />
+        <DetailPair label="Warranty active" value={fmtDate(row.warranty_activated_at)} />
+        <DetailPair label="Ops-owned" value={fmtDate(row.operations_owned_at)} />
+        <DetailPair label="Archived" value={fmtDate(row.archived_at)} />
+        <DetailPair label="SLA deadline" value={fmtDate(row.sla_deadline_at)} />
+        <DetailPair label="SLA" value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+        <DetailPair label="Escalation lvl" value={String(row.escalation_level)} />
+        <DetailPair label="Reportable" value={row.is_reportable_flag ? 'Yes' : 'No'} />
+      </div>
+
+      {row.title && (
+        <div className="col-span-2 rounded border mt-2 px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Title</div>
+          <div style={{ color: TX2 }}>{row.title}</div>
+        </div>
+      )}
+      {row.narrative && (
+        <div className="col-span-2 rounded border mt-2 px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Narrative</div>
+          <div style={{ color: TX2 }}>{row.narrative}</div>
+        </div>
+      )}
+      {row.result_text && (
+        <div className="col-span-2 rounded border mt-2 px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: GOOD }}>Result</div>
+          <div style={{ color: TX2 }}>{row.result_text}</div>
+        </div>
+      )}
+      {row.rejected_reason && (
+        <div className="col-span-2 rounded border mt-2 px-2 py-1.5" style={{ background: BG1, borderColor: BAD }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: BAD }}>Rejected reason</div>
+          <div style={{ color: TX2 }}>{row.rejected_reason}</div>
+        </div>
+      )}
+      {row.voided_reason && (
+        <div className="col-span-2 rounded border mt-2 px-2 py-1.5" style={{ background: BG1, borderColor: BAD }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: BAD }}>Voided reason</div>
+          <div style={{ color: TX2 }}>{row.voided_reason}</div>
+        </div>
+      )}
+      {row.withdrawn_reason && (
+        <div className="col-span-2 rounded border mt-2 px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: WARN }}>Withdrawn reason</div>
+          <div style={{ color: TX2 }}>{row.withdrawn_reason}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function HandoverDossierChainTab() {
   const [rows, setRows] = useState<HandoverRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>('open');
-  const [selected, setSelected] = useState<HandoverRow | null>(null);
-  const [events, setEvents] = useState<HandoverEvent[]>([]);
+  const [filter, setFilter] = useState('open');
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setErr(null);
+    setLoading(true); setErr(null);
     try {
       const res = await api.get<{ data: { items: HandoverRow[] } & KpiSummary }>('/ipp/handover-dossier/chain');
-      setRows(res.data?.data?.items || []);
       const d = res.data?.data;
+      setRows(d?.items || []);
       if (d) {
-        setKpis({
+        setSummary({
           total: d.total, open_count: d.open_count,
           archived_count: d.archived_count, rejected_count: d.rejected_count,
           withdrawn_count: d.withdrawn_count, voided_count: d.voided_count,
@@ -399,25 +769,53 @@ export function HandoverDossierChainTab() {
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load handover dossier chain');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { dossier: HandoverRow; events: HandoverEvent[] } }>(`/ipp/handover-dossier/chain/${id}`);
-      if (res.data?.data?.dossier) setSelected(res.data.data.dossier);
-      setEvents(res.data?.data?.events || []);
+      // convert-typed numeric fields
+      const body: Record<string, unknown> = { ...values };
+      for (const numKey of ['witnessed_acceptance_clear', 'punch_count_open', 'training_completion_pct', 'dossier_cost_zar', 'handover_cost_zar']) {
+        if (body[numKey] !== undefined && body[numKey] !== '') {
+          body[numKey] = Number(body[numKey]);
+        }
+        if (body[numKey] === '') delete body[numKey];
+      }
+      // inject last_responder_party from key context
+      if (key === 'require-revision') body.last_responder_party = 'independent_engineer';
+      if (key === 'revise-and-resubmit') body.last_responder_party = 'handover_coordinator';
+      if (key === 'complete-witnessed-acceptance') body.last_responder_party = 'witness';
+      if (key === 'remediate-punch') body.last_responder_party = 'contractor';
+      if (key === 'transfer-training') body.last_responder_party = 'training_lead';
+      if (key === 'transfer-to-operations') body.last_responder_party = 'operations_manager';
+      if (key === 'approve') body.approver_party = 'independent_engineer';
+
+      await api.post(`/ipp/handover-dossier/chain/${rowId}/${key}`, body);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/ipp/handover-dossier/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load handover dossier history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { dossier: HandoverRow; events: ChainEvent[] } }>(`/ipp/handover-dossier/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
-    return rows.filter((r) => {
+    return rows.filter(r => {
       if (filter === 'all')           return true;
       if (filter === 'open')          return !TERMINAL_STATES.includes(r.chain_status);
       if (filter === 'breached')      return r.sla_breached;
@@ -434,449 +832,113 @@ export function HandoverDossierChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: HandoverRow) => {
-    try {
-      let body: Record<string, unknown> = {};
-      if (action === 'submit') {
-        const note = window.prompt('Submission note (warranty-blocking dossiers cross NERSA inbox on approve):') || '';
-        body = note ? { narrative: note } : {};
-      } else if (action === 'open-review') {
-        body = {};
-      } else if (action === 'require-revision') {
-        const note = window.prompt('Revision instructions (independent engineer):');
-        if (!note) return;
-        body = { narrative: note, last_responder_party: 'independent_engineer' };
-      } else if (action === 'revise-and-resubmit') {
-        const note = window.prompt('Revision note (auto-increments revision count):') || '';
-        body = note ? { narrative: note, last_responder_party: 'handover_coordinator' } : { last_responder_party: 'handover_coordinator' };
-      } else if (action === 'approve') {
-        const reg = window.prompt('Regulator reference (warranty-blocking approvals cross EVERY tier) — leave blank if not applicable:') || '';
-        const cost = window.prompt('Dossier cost (ZAR, optional):') || '';
-        body = {
-          approver_party: 'independent_engineer',
-          ...(reg ? { regulator_ref: reg } : {}),
-          ...(cost ? { dossier_cost_zar: Number(cost) } : {}),
-        };
-      } else if (action === 'schedule-witnessed-acceptance') {
-        const witness = window.prompt('Witness party (independent_engineer / regulator / lender):') || 'independent_engineer';
-        body = { witness_party: witness };
-      } else if (action === 'complete-witnessed-acceptance') {
-        const clear = window.prompt('Witnessed acceptance clear? (1 = clear, 0 = punch raised):') || '1';
-        const punches = window.prompt('Open punch count (0 if clear):') || '0';
-        body = {
-          witnessed_acceptance_clear: Number(clear),
-          punch_count_open: Number(punches),
-          last_responder_party: 'witness',
-        };
-      } else if (action === 'remediate-punch') {
-        const punches = window.prompt('Open punch count after remediation (0 if all closed):') || '0';
-        const cost = window.prompt('Handover cost incurred (ZAR, optional):') || '';
-        body = {
-          punch_count_open: Number(punches),
-          last_responder_party: 'contractor',
-          ...(cost ? { handover_cost_zar: Number(cost) } : {}),
-        };
-      } else if (action === 'transfer-training') {
-        const pct = window.prompt('Training completion (0-100):') || '100';
-        body = {
-          training_completion_pct: Number(pct),
-          last_responder_party: 'training_lead',
-        };
-      } else if (action === 'activate-warranty') {
-        const admin = window.prompt('Warranty administrator party name:') || '';
-        body = admin ? { warranty_admin_party_name: admin } : {};
-      } else if (action === 'transfer-to-operations') {
-        const note = window.prompt('Transfer-to-operations note — warranty OR O&M-blocking transfers cross regulator EVERY tier:') || '';
-        body = note ? { narrative: note, last_responder_party: 'operations_manager' } : { last_responder_party: 'operations_manager' };
-      } else if (action === 'archive') {
-        body = {};
-      } else if (action === 'reject') {
-        const reason = window.prompt('Rejection reason (independent engineer):');
-        if (!reason) return;
-        body = { rejected_reason: reason };
-      } else if (action === 'withdraw') {
-        const reason = window.prompt('Withdrawal reason (handover coordinator):');
-        if (!reason) return;
-        body = { withdrawn_reason: reason };
-      } else if (action === 'void') {
-        const reason = window.prompt('Void reason — voiding with as-built OR spares incomplete crosses regulator EVERY tier:');
-        if (!reason) return;
-        body = { voided_reason: reason };
-      }
-      await api.post(`/ipp/handover-dossier/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
+  const kpis = summary;
 
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Handover dossier &middot; Turnover-to-operations</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-state P6 lifecycle for the construction-to-O&amp;M turnover package an IPP project ships at practical
-            completion — dossier_compiled → submitted → under_review → &#123;revision_required loop&#125; → approved
-            → witnessed_acceptance_scheduled → witnessed_acceptance → punch_remediated → training_transferred →
-            warranty_activated → operations_owned → archived, with reject / withdraw / void exception terminals. Beats
-            Procore Handover, Aconex Handover, BIM 360 Handover, Bentley ProjectWise/AssetWise, e-Builder Closeout,
-            ServiceNow Handover, SAP S/4HANA Asset Handover and IBM Maximo Asset Handover via: tier RE-DERIVED on every
-            transition from priority × workflow class with FLOOR-AT-HIGH for blocks_warranty_start /
-            blocks_om_handover / incomplete_as_built / untransferred_spares; URGENT SLA polarity (warranty-clock-running
-            = tightest); ball-in-court tracking; authority tiered project_engineer → commissioning_engineer →
-            operations_manager → handover_director; LIVE battery decoration (minutes_until_sla,
-            handover_completeness_index 0-130 vs industry baseline=100 with as-built/spares/training/witness/warranty
-            bonuses, days_in_court, predicted_close_date_live, urgency_band). SIGNATURE regulator crossings (REIPPPP
-            O&amp;M handover + NERSA §C-5 + OHSA s24): approve crosses EVERY tier on warranty;
-            transfer_to_operations EVERY tier on warranty OR O&amp;M; void EVERY tier on as-built OR spares;
-            sla_breached EVERY tier on warranty, high+critical on O&amp;M.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Handover dossier · Turnover-to-operations</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          12-state P6 lifecycle for the construction-to-O&amp;M turnover package an IPP project ships at practical
+          completion — dossier_compiled → submitted → under_review → revision_required loop → approved →
+          witnessed_acceptance_scheduled → witnessed_acceptance → punch_remediated → training_transferred →
+          warranty_activated → operations_owned → archived, with reject / withdraw / void exception terminals.
+          Beats Procore Handover, Aconex Handover, BIM 360 Handover, Bentley ProjectWise/AssetWise, e-Builder
+          Closeout, ServiceNow Handover, SAP S/4HANA Asset Handover and IBM Maximo Asset Handover.
+          SIGNATURE regulator crossings (REIPPPP O&amp;M handover + NERSA §C-5 + OHSA s24): approve crosses
+          EVERY tier on warranty; transfer_to_operations EVERY tier on warranty OR O&amp;M; void EVERY tier on
+          as-built OR spares; sla_breached EVERY tier on warranty, high+critical on O&amp;M.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total"            value={kpis?.total ?? rows.length} />
-        <Kpi label="Open"             value={kpis?.open_count ?? 0} tone={(kpis?.open_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Archived"         value={kpis?.archived_count ?? 0} tone="ok" />
-        <Kpi label="Rejected"         value={kpis?.rejected_count ?? 0} tone={(kpis?.rejected_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Voided"           value={kpis?.voided_count ?? 0} tone={(kpis?.voided_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="SLA breached"     value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Signature"        value={kpis?.signature_count ?? 0} tone={(kpis?.signature_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Warranty-blocking" value={kpis?.warranty_count ?? 0} tone={(kpis?.warranty_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="O&M-blocking"     value={kpis?.om_count ?? 0} tone={(kpis?.om_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="As-built incompl." value={kpis?.asbuilt_count ?? 0} tone={(kpis?.asbuilt_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Spares untransf." value={kpis?.spares_count ?? 0} tone={(kpis?.spares_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Reportable"       value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Completeness"     value={fmtNum(kpis?.avg_completeness_index, 0)} />
-        <Kpi label="As-built avg"     value={fmtPct((kpis?.avg_as_built_pct ?? 0) / 100)} tone={((kpis?.avg_as_built_pct ?? 0) / 100) < 0.9 ? 'warn' : 'ok'} />
-        <Kpi label="Spares avg"       value={fmtPct((kpis?.avg_spares_pct ?? 0) / 100)} tone={((kpis?.avg_spares_pct ?? 0) / 100) < 0.9 ? 'warn' : 'ok'} />
-        <Kpi label="Training avg"     value={fmtPct((kpis?.avg_training_pct ?? 0) / 100)} tone={((kpis?.avg_training_pct ?? 0) / 100) < 0.9 ? 'warn' : 'ok'} />
-        <Kpi label="Witness clear"    value={kpis?.witness_clear_count ?? 0} />
-        <Kpi label="Warranty active"  value={kpis?.warranty_active_count ?? 0} />
-        <Kpi label="Dossier cost"     value={fmtZar(kpis?.total_dossier_cost_zar)} />
-        <Kpi label="Handover cost"    value={fmtZar(kpis?.total_handover_cost_zar)} tone={(kpis?.total_handover_cost_zar ?? 0) > 0 ? 'warn' : 'ok'} />
+      {/* KPI strip */}
+      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-2">
+        <KpiTile label="Total"             value={kpis?.total ?? rows.length} />
+        <KpiTile label="Open"              value={kpis?.open_count ?? 0} tone={(kpis?.open_count ?? 0) > 0 ? 'warn' : undefined} />
+        <KpiTile label="Archived"          value={kpis?.archived_count ?? 0} />
+        <KpiTile label="Rejected"          value={kpis?.rejected_count ?? 0} tone={(kpis?.rejected_count ?? 0) > 0 ? 'bad' : undefined} />
+        <KpiTile label="Voided"            value={kpis?.voided_count ?? 0} tone={(kpis?.voided_count ?? 0) > 0 ? 'bad' : undefined} />
+        <KpiTile label="SLA breached"      value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : undefined} />
+        <KpiTile label="Signature"         value={kpis?.signature_count ?? 0} tone={(kpis?.signature_count ?? 0) > 0 ? 'warn' : undefined} />
+        <KpiTile label="Warranty-blocking" value={kpis?.warranty_count ?? 0} tone={(kpis?.warranty_count ?? 0) > 0 ? 'bad' : undefined} />
+        <KpiTile label="O&M-blocking"      value={kpis?.om_count ?? 0} tone={(kpis?.om_count ?? 0) > 0 ? 'bad' : undefined} />
+        <KpiTile label="As-built incompl." value={kpis?.asbuilt_count ?? 0} tone={(kpis?.asbuilt_count ?? 0) > 0 ? 'warn' : undefined} />
+        <KpiTile label="Spares untransf."  value={kpis?.spares_count ?? 0} tone={(kpis?.spares_count ?? 0) > 0 ? 'warn' : undefined} />
+        <KpiTile label="Reportable"        value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : undefined} />
+        <KpiTile label="Completeness"      value={fmtNum(kpis?.avg_completeness_index, 0)} />
+        <KpiTile label="As-built avg"      value={fmtPct((kpis?.avg_as_built_pct ?? 0) / 100)} tone={((kpis?.avg_as_built_pct ?? 0) / 100) < 0.9 ? 'warn' : undefined} />
+        <KpiTile label="Spares avg"        value={fmtPct((kpis?.avg_spares_pct ?? 0) / 100)} tone={((kpis?.avg_spares_pct ?? 0) / 100) < 0.9 ? 'warn' : undefined} />
+        <KpiTile label="Training avg"      value={fmtPct((kpis?.avg_training_pct ?? 0) / 100)} tone={((kpis?.avg_training_pct ?? 0) / 100) < 0.9 ? 'warn' : undefined} />
+        <KpiTile label="Witness clear"     value={kpis?.witness_clear_count ?? 0} />
+        <KpiTile label="Warranty active"   value={kpis?.warranty_active_count ?? 0} />
+        <KpiTile label="Dossier cost"      value={fmtZar(kpis?.total_dossier_cost_zar)} />
+        <KpiTile label="Handover cost"     value={fmtZar(kpis?.total_handover_cost_zar)} tone={(kpis?.total_handover_cost_zar ?? 0) > 0 ? 'warn' : undefined} />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>{err}</div>
       )}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">No.</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Project / facility</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Class</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Ball in court</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Urg</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Completeness</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.current_tier];
-                const ut = URGENCY_TONE[r.urgency_band] ?? URGENCY_TONE.green;
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.dossier_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
-                      {r.signature_class_flag && <span className="ml-1 text-[#a06200]" title="Signature class (warranty OR O&M-blocking)">▲</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[260px] truncate" title={`${r.project_name ?? ''} · ${r.facility_name ?? ''}`}>
-                      {r.project_name ?? '—'}
-                      {r.facility_name && <span className="text-[#4a5568]"> · {r.facility_name}</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{WORKFLOW_LABEL[r.workflow_class]}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.ball_in_court_party_live ?? '—'}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[10px] font-medium" style={{ background: ut.bg, color: ut.fg }}>
-                        {ut.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      <span className={(r.handover_completeness_index_live ?? 0) >= 100 ? 'text-[#1f6b3a]' : 'text-[#9b1f1f]'}>
-                        {fmtNum(r.handover_completeness_index_live, 0)}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-3 py-6 text-center text-[#4a5568]">No handover dossier records match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.dossier_number}${row.project_name ? ` · ${row.project_name}` : ''}`}
+              meta={`${WORKFLOW_LABEL[row.workflow_class]} · ${row.current_tier}${row.facility_name ? ` · ${row.facility_name}` : ''}`}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>No handover dossier records match.</div>
+          )}
         </div>
       )}
-
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
-      )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: HandoverRow;
-  events: HandoverEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: HandoverRow) => void;
-}) {
-  const primary = ACTION_FOR_STATE[row.chain_status];
-  const secondary = SECONDARY_ACTIONS[row.chain_status];
-  const authority = AUTHORITY_LABEL[row.authority_required_live ?? row.authority_required ?? ''] ?? (row.authority_required ?? '—');
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[820px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.dossier_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.project_name ?? '—'}{row.compiled_at ? ` · ${row.compiled_at.slice(0, 10)}` : ''}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {WORKFLOW_LABEL[row.workflow_class]}
-                {row.contractor_name ? ` · ${row.contractor_name}` : ''}
-                {row.facility_name ? ` · ${row.facility_name}` : ''}
-              </div>
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Live handover completeness battery</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
-              <Metric label="Completeness index" value={fmtNum(row.handover_completeness_index_live, 0)} bad={(row.handover_completeness_index_live ?? 0) < 100} hint="0-130 (industry baseline=100; as-built/spares/training/witness/warranty bonuses)" />
-              <Metric label="Days open" value={String(row.days_open_live ?? 0)} />
-              <Metric label="Days in court" value={String(row.days_in_court_live ?? 0)} bad={(row.days_in_court_live ?? 0) > 2} hint="Aging in current state" />
-              <Metric label="Ball in court" value={row.ball_in_court_party_live ?? '—'} hint="Auto-derived from current state" />
-              <Metric label="Tier (live)" value={TIER_TONE[row.tier_live].label} bad={row.tier_live === 'critical' || row.tier_live === 'high'} hint="Re-derived every transition" />
-              <Metric label="Urgency band" value={URGENCY_TONE[row.urgency_band]?.label ?? row.urgency_band} bad={row.urgency_band === 'red' || row.urgency_band === 'amber'} />
-              <Metric label="Predicted close" value={fmtDate(row.predicted_close_date_live)} hint="Tier-derived forward-path ETA" />
-              <Metric label="Authority" value={authority} hint="Project engineer → commissioning engineer → operations manager → handover director" />
-            </div>
-          </div>
-
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Coverage flags (FLOOR-AT-HIGH)</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
-              <Metric label="Blocks warranty" value={row.blocks_warranty_start ? 'Yes' : 'No'} bad={!!row.blocks_warranty_start} hint="REIPPPP O&M handover — warranty clock cannot start" />
-              <Metric label="Blocks O&M handover" value={row.blocks_om_handover ? 'Yes' : 'No'} bad={!!row.blocks_om_handover} hint="NERSA §C-5 — blocks transfer to operations" />
-              <Metric label="As-built incomplete" value={row.incomplete_as_built ? 'Yes' : 'No'} bad={!!row.incomplete_as_built} hint="As-built drawings short of acceptance criteria" />
-              <Metric label="Spares untransferred" value={row.untransferred_spares ? 'Yes' : 'No'} bad={!!row.untransferred_spares} hint="Spare parts kit not transferred to operations" />
-              <Metric label="Revisions" value={String(row.revision_count ?? 0)} bad={(row.revision_count ?? 0) > 0} />
-              <Metric label="Punch open" value={String(row.punch_count_open ?? 0)} bad={(row.punch_count_open ?? 0) > 0} />
-              <Metric label="As-built %" value={fmtPct((row.as_built_completeness_pct ?? 0) / 100)} bad={((row.as_built_completeness_pct ?? 0) / 100) < 0.9} hint="+10 completeness bonus at 100%" />
-              <Metric label="Spares %" value={fmtPct((row.spare_parts_completeness_pct ?? 0) / 100)} bad={((row.spare_parts_completeness_pct ?? 0) / 100) < 0.9} hint="+10 completeness bonus at 100%" />
-              <Metric label="Training %" value={fmtPct((row.training_completion_pct ?? 0) / 100)} bad={((row.training_completion_pct ?? 0) / 100) < 0.9} hint="+5 completeness bonus at 100%" />
-              <Metric label="Witness clear" value={row.witnessed_acceptance_clear ? 'Yes' : 'No'} bad={!row.witnessed_acceptance_clear} hint="+5 completeness when clear" />
-              <Metric label="Warranty active" value={row.warranty_activated ? 'Yes' : 'No'} bad={!row.warranty_activated} hint="OEM warranty clock running" />
-              <Metric label="Drawing register" value={row.drawing_register_ref ?? '—'} />
-            </div>
-          </div>
-
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Handover economics</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
-              <Metric label="Dossier cost" value={fmtZar(row.dossier_cost_zar)} hint="Cost expended on dossier compilation + approval" />
-              <Metric label="Handover cost" value={fmtZar(row.handover_cost_zar)} bad={(row.handover_cost_zar ?? 0) > 0} hint="Rework + punch remediation incurred" />
-              <Metric label="Total cost" value={fmtZar(((row.dossier_cost_zar ?? 0) + (row.handover_cost_zar ?? 0)))} bad={((row.handover_cost_zar ?? 0)) > 0} />
-              <Metric label="Warranty start" value={row.warranty_start_date ?? '—'} />
-              <Metric label="Warranty end" value={row.warranty_end_date ?? '—'} />
-              <Metric label="Warranty admin" value={row.warranty_admin_party_name ?? '—'} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"             value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Workflow class"    value={WORKFLOW_LABEL[row.workflow_class]} />
-            <Pair label="Priority"          value={row.priority_class} />
-            <Pair label="Dossier scope"     value={row.dossier_scope ?? '—'} />
-            <Pair label="Compiled at"       value={fmtDate(row.compiled_at)} />
-            <Pair label="Acceptance crit."  value={row.acceptance_criteria ?? '—'} />
-            <Pair label="Drawing register"  value={row.drawing_register_ref ?? '—'} />
-            <Pair label="Spec register"     value={row.spec_register_ref ?? '—'} />
-            <Pair label="Contractor"        value={row.contractor_name ?? '—'} />
-            <Pair label="Facility"          value={row.facility_name ?? '—'} />
-            <Pair label="Owner"             value={row.owner_party_name ?? '—'} />
-            <Pair label="Indep. engineer"   value={row.independent_engineer_party_name ?? '—'} />
-            <Pair label="Witness party"     value={row.witness_party ?? '—'} />
-            <Pair label="Last responder"    value={row.last_responder_party ?? '—'} />
-            <Pair label="Requester"         value={row.requester_party ?? '—'} />
-            <Pair label="Approver"          value={row.approver_party ?? '—'} />
-            <Pair label="O&M blocker ref"   value={row.om_handover_blocker_ref ?? '—'} />
-            <Pair label="Warranty blocker"  value={row.warranty_blocker_ref ?? '—'} />
-            <Pair label="Regulator ref"     value={row.regulator_ref ?? '—'} />
-            <Pair label="Submitted"         value={fmtDate(row.submitted_at)} />
-            <Pair label="Under review"      value={fmtDate(row.under_review_at)} />
-            <Pair label="Revision required" value={fmtDate(row.revision_required_at)} />
-            <Pair label="Approved"          value={fmtDate(row.approved_at)} />
-            <Pair label="Witness scheduled" value={fmtDate(row.witnessed_acceptance_scheduled_at)} />
-            <Pair label="Witnessed"         value={fmtDate(row.witnessed_acceptance_at)} />
-            <Pair label="Punch remediated"  value={fmtDate(row.punch_remediated_at)} />
-            <Pair label="Training xfer"     value={fmtDate(row.training_transferred_at)} />
-            <Pair label="Warranty active"   value={fmtDate(row.warranty_activated_at)} />
-            <Pair label="Ops-owned"         value={fmtDate(row.operations_owned_at)} />
-            <Pair label="Archived"          value={fmtDate(row.archived_at)} />
-            <Pair label="SLA deadline"      value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA"               value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"    value={String(row.escalation_level)} />
-            <Pair label="Reportable"        value={row.is_reportable_flag ? 'Yes' : 'No'} />
-          </div>
-          {row.title && <BasisBlock label="Title" tone="#1a3a5c" text={row.title} />}
-          {row.narrative && <BasisBlock label="Narrative" tone="#1a3a5c" text={row.narrative} />}
-          {row.result_text && <BasisBlock label="Result" tone="#1f6b3a" text={row.result_text} />}
-          {row.rejected_reason && <BasisBlock label="Rejected reason" tone="#9b1f1f" text={row.rejected_reason} />}
-          {row.voided_reason && <BasisBlock label="Voided reason" tone="#9b1f1f" text={row.voided_reason} />}
-          {row.withdrawn_reason && <BasisBlock label="Withdrawn reason" tone="#8a4a00" text={row.withdrawn_reason} />}
-        </section>
-
-        {(primary || secondary.length > 0) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {primary && (
-                <button type="button"
-                  onClick={() => onAct(primary, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[primary]}
-                </button>
-              )}
-              {secondary.map((a) => {
-                const danger = DESTRUCTIVE.includes(a);
-                return (
-                  <button type="button"
-                    key={a}
-                    onClick={() => onAct(a, row)}
-                    className={
-                      danger
-                        ? 'rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50'
-                        : 'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#557] hover:bg-[#f3f5f9]'
-                    }
-                  >
-                    {ACTION_LABEL[a]}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function Metric({ label, value, bad, hint }: { label: string; value: string; bad?: boolean; hint?: string }) {
+function DetailPair({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div title={hint}>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className={`text-[13px] font-semibold tabular-nums ${bad ? 'text-[#9b1f1f]' : 'text-[#0c2a4d]'}`}>{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1, fontSize: 11 }}>{value}</div>
     </div>
   );
 }
 
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
-    </div>
-  );
-}
+export default HandoverDossierChainTab;

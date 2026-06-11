@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface AudRecord {
   id: string;
@@ -29,17 +29,23 @@ interface AudKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   audit_cycle_opened:          'bg-[#eef2f7] text-[#6b7685]',
-  trial_balance_preparation:   'bg-blue-100 text-blue-700',
+  trial_balance_preparation:   'bg-[#e8edf5]',
   year_end_journals:           'bg-cyan-100 text-cyan-700',
-  audit_fieldwork:             'bg-indigo-100 text-indigo-700',
+  audit_fieldwork:             'bg-[#e8edf5]',
   management_accounts_review:  'bg-violet-100 text-violet-700',
   audit_queries_resolution:    'bg-yellow-100 text-yellow-800',
   draft_opinion_review:        'bg-orange-100 text-orange-700',
-  board_approval:              'bg-blue-100 text-blue-800',
+  board_approval:              'bg-[#e8edf5]',
   cipc_submission:             'bg-teal-100 text-teal-700',
   audit_completed:             'bg-green-100 text-green-700',
   audit_qualified:             'bg-red-100 text-red-700',
   audit_lapsed:                'bg-[#eef2f7] text-[#9aa5b4]',
+};
+
+const STATUS_COLOR_STYLES: Record<string, React.CSSProperties> = {
+  trial_balance_preparation:   { color: 'oklch(0.46 0.16 55)' },
+  audit_fieldwork:             { color: 'oklch(0.46 0.16 55)' },
+  board_approval:              { color: 'oklch(0.17 0.010 250)' },
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -72,11 +78,15 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 const TIER_COLORS: Record<string, string> = {
-  small:    'bg-blue-100 text-blue-800',
+  small:    'bg-[#e8edf5]',
   medium:   'bg-yellow-100 text-yellow-800',
   large:    'bg-orange-100 text-orange-800',
   major:    'bg-red-100 text-red-800',
   flagship: 'bg-purple-100 text-purple-800',
+};
+
+const TIER_COLOR_STYLES: Record<string, React.CSSProperties> = {
+  small: { color: 'oklch(0.17 0.010 250)' },
 };
 
 const HARD_TERMINALS = new Set([
@@ -374,9 +384,10 @@ export function IppAnnualAuditTab() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3"
+          className="rounded-lg border p-4 space-y-3"
+          style={{ borderColor: 'oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
         >
-          <div className="text-sm font-semibold text-blue-800">New Annual Financial Statements & Independent Audit</div>
+          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New Annual Financial Statements & Independent Audit</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[#3d4756] mb-1">Financial Year *</label>
@@ -498,12 +509,12 @@ export function IppAnnualAuditTab() {
                       {item.auditor_firm ?? '—'}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_COLOR_STYLES[item.chain_status] ?? {}}>
                         {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                       </span>
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.revenue_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.revenue_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={TIER_COLOR_STYLES[item.revenue_tier] ?? {}}>
                         {item.revenue_tier.charAt(0).toUpperCase() + item.revenue_tier.slice(1)}
                       </span>
                     </td>
@@ -527,7 +538,8 @@ export function IppAnnualAuditTab() {
                       {actions.length > 0 && (
                         <button type="button"
                           onClick={() => openActionPicker(item)}
-                          className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                          className="px-2 py-0.5 text-xs rounded border"
+                          style={{ background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.87 0.010 250)' }}
                         >
                           Actions
                         </button>
@@ -595,10 +607,10 @@ export function IppAnnualAuditTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badge */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_COLOR_STYLES[detailItem.chain_status] ?? {}}>
                   {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.revenue_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.revenue_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={TIER_COLOR_STYLES[detailItem.revenue_tier] ?? {}}>
                   {detailItem.revenue_tier.charAt(0).toUpperCase() + detailItem.revenue_tier.slice(1)}
                 </span>
                 {detailItem.sla_breached === 1 && (

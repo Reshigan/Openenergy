@@ -18,7 +18,7 @@ const TECH_ICON: Record<string, React.ComponentType<{ size?: number }>> = {
 };
 
 const AUDIENCE_META: Record<string, { title: string; subtitle: string; accent: string }> = {
-  lender:     { title: 'Lender portal',     subtitle: 'Read-only portfolio view of financed assets — generation, DSCR, covenants.',  accent: '#1a3a5c' },
+  lender:     { title: 'Lender portal',     subtitle: 'Read-only portfolio view of financed assets — generation, DSCR, covenants.',  accent: 'oklch(0.46 0.16 55)' },
   offtaker:   { title: 'Offtaker portal',   subtitle: 'Live delivery vs commitment for your contracted energy.',                    accent: '#336a38' },
   insurer:    { title: 'Insurer portal',    subtitle: 'Operational risk and claim-trigger events on the insured assets.',           accent: '#6b3a82' },
   contractor: { title: 'Contractor portal', subtitle: 'Work orders, SLA performance and dispatch board for your assigned sites.',   accent: '#b04e0f' },

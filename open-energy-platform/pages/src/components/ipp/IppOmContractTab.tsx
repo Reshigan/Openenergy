@@ -23,9 +23,9 @@ interface OmContract {
 
 const STATUS_COLORS: Record<string, string> = {
   renewal_triggered:          'bg-[#eef2f7] text-[#6b7685]',
-  market_sounding:            'bg-blue-100 text-blue-700',
+  market_sounding:            'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   tender_issued:              'bg-sky-100 text-sky-700',
-  bids_received:              'bg-indigo-100 text-indigo-700',
+  bids_received:              'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   evaluation_complete:        'bg-yellow-100 text-yellow-800',
   preferred_bidder_selected:  'bg-amber-100 text-amber-700',
   lender_consent:             'bg-teal-100 text-teal-700',
@@ -38,7 +38,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   minor:       '#6b7280',
-  moderate:    '#3b82f6',
+  moderate:    'oklch(0.46 0.16 55)',
   significant: '#f59e0b',
   major:       '#ef4444',
   material:    '#7c3aed',

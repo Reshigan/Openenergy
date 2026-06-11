@@ -435,16 +435,15 @@ const ROLE_DISPLAY: Record<string, string> = {
 };
 
 const ADMIN_ROLE_TABS = [
-  { label: 'IPP',       path: '/ipp/workstation',       prefix: '/ipp' },
-  { label: 'Trader',    path: '/trader/workstation',    prefix: '/trader' },
-  { label: 'Lender',    path: '/lender/workstation',    prefix: '/lender' },
-  { label: 'Offtaker',  path: '/offtaker/workstation',  prefix: '/offtaker' },
-  { label: 'Grid',      path: '/grid/workstation',      prefix: '/grid' },
-  { label: 'Carbon',    path: '/carbon/workstation',    prefix: '/carbon' },
-  { label: 'Regulator', path: '/regulator/workstation', prefix: '/regulator' },
-  { label: 'ESCO',      path: '/esco/workstation',      prefix: '/esco' },
-  { label: 'Admin',     path: '/admin',                 prefix: '/admin' },
-  { label: 'Support',   path: '/support/workstation',   prefix: '/support' },
+  { label: 'IPP',       path: '/ipp-lifecycle/workstation',   prefix: '/ipp-lifecycle' },
+  { label: 'Trader',    path: '/trader-risk/workstation',     prefix: '/trader-risk' },
+  { label: 'Lender',    path: '/lender-suite/workstation',    prefix: '/lender-suite' },
+  { label: 'Offtaker',  path: '/offtaker-suite/workstation',  prefix: '/offtaker-suite' },
+  { label: 'Grid',      path: '/grid-operator/workstation',   prefix: '/grid-operator' },
+  { label: 'Carbon',    path: '/carbon-registry/workstation', prefix: '/carbon-registry' },
+  { label: 'Regulator', path: '/regulator-suite/workstation', prefix: '/regulator-suite' },
+  { label: 'Admin',     path: '/admin',                       prefix: '/admin' },
+  { label: 'Support',   path: '/support/workstation',         prefix: '/support' },
 ];
 
 export function FioriShell({ children }: { children: ReactNode }) {
@@ -631,18 +630,16 @@ export function FioriShell({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        {/* Brand mark */}
-        <Link to="/feed" className="flex items-center gap-2.5 ml-1 mr-4 select-none" aria-label="Open Energy Platform — Activity Feed">
-          <div
-            className="flex items-center justify-center rounded p-0.5"
-            style={{ boxShadow: '0 0 0 1px oklch(0.88 0.006 250), 0 1px 4px rgba(15,20,40,0.10)' }}
-          >
-            <LogoMark size={28} variant="colour" />
-          </div>
-          <div className="leading-[1.1]">
-            <div className="text-[11px] font-mono tracking-[0.12em] uppercase" style={{ color: 'oklch(0.55 0.008 250)' }}>Open Energy</div>
-            <div className="text-[13px] font-semibold" style={{ color: 'oklch(0.15 0.025 250)' }}>Platform</div>
-          </div>
+        {/* Brand mark — mockup-b OE/ amber mono */}
+        <Link
+          to="/feed"
+          className="flex items-center select-none ml-1 mr-4"
+          aria-label="Open Energy Platform — Activity Feed"
+          style={{ textDecoration: 'none' }}
+        >
+          <span style={{ fontFamily: '"IBM Plex Mono","Fira Code",monospace', fontSize: 14, fontWeight: 800, color: 'oklch(0.46 0.16 55)', letterSpacing: '0.06em' }}>
+            OE/
+          </span>
         </Link>
 
         {/* Role tabs */}
@@ -657,8 +654,9 @@ export function FioriShell({ children }: { children: ReactNode }) {
                     to={path}
                     className="flex items-center px-2.5 py-1.5 rounded text-[11px] font-semibold transition-colors whitespace-nowrap"
                     style={{
-                      background: active ? 'oklch(0.93 0.006 250)' : 'transparent',
-                      color: active ? 'oklch(0.20 0.025 250)' : 'oklch(0.55 0.008 250)',
+                      background: active ? 'oklch(0.96 0.05 55)' : 'transparent',
+                      color: active ? 'oklch(0.46 0.16 55)' : 'oklch(0.55 0.008 250)',
+                      border: active ? '1px solid oklch(0.80 0.12 55)' : '1px solid transparent',
                     }}
                   >
                     {label}
@@ -668,7 +666,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
             ) : (
               <span
                 className="flex items-center px-3 py-1.5 rounded text-[11px] font-semibold"
-                style={{ background: 'oklch(0.93 0.006 250)', color: 'oklch(0.20 0.025 250)' }}
+                style={{ background: 'oklch(0.96 0.05 55)', color: 'oklch(0.46 0.16 55)', border: '1px solid oklch(0.80 0.12 55)' }}
               >
                 {ROLE_DISPLAY[user.role] ?? user.role}
               </span>
@@ -700,6 +698,16 @@ export function FioriShell({ children }: { children: ReactNode }) {
 
         {/* Action icons */}
         <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => navigate('/actions/new')}
+            className="hidden sm:flex items-center gap-1.5 h-8 px-3 rounded text-[11px] font-bold text-white"
+            style={{ background: 'oklch(0.46 0.16 55)', flexShrink: 0 }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.38 0.18 55)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'oklch(0.46 0.16 55)')}
+          >
+            + New action
+          </button>
           <SastClock />
           <button
             type="button"
@@ -820,11 +828,16 @@ export function FioriShell({ children }: { children: ReactNode }) {
 
       {/* ════════════ Sidebar rail (desktop ≥ 768px only) ════════════ */}
       <aside
-        className="oe-rail fiori-rail hidden"
+        className="oe-rail fiori-rail hidden md:flex md:flex-col"
         data-density={roleTheme.workstationDensity}
         data-chrome={roleTheme.chrome}
         style={{
+          position: 'fixed',
+          left: 0,
           top: 'var(--shell-height)',
+          height: 'calc(100vh - var(--shell-height))',
+          overflowY: 'auto',
+          overflowX: 'hidden',
           width: sidebarWidth,
           transition: 'width 200ms cubic-bezier(0.23,1,0.32,1)',
           zIndex: 40,
@@ -896,8 +909,9 @@ export function FioriShell({ children }: { children: ReactNode }) {
         style={{
           background: 'oklch(0.97 0.003 250)',
           paddingTop: 'var(--shell-height)',
-          paddingLeft: 0,
+          paddingLeft: isMobile ? 0 : sidebarWidth,
           paddingBottom: isMobile ? 'calc(64px + env(safe-area-inset-bottom))' : 0,
+          transition: 'padding-left 200ms cubic-bezier(0.23,1,0.32,1)',
         }}
       >
         <div className="w-full fade-in">

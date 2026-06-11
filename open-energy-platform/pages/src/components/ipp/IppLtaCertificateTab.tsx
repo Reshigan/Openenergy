@@ -29,7 +29,7 @@ interface Kpis {
 
 const STATUS_COLORS: Record<string, string> = {
   certificate_requested:            'bg-[#eef2f7] text-[#6b7685]',
-  site_inspection_in_progress:      'bg-blue-100 text-blue-700',
+  site_inspection_in_progress:      'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   progress_assessment:              'bg-yellow-100 text-yellow-800',
   draft_certificate_issued:         'bg-amber-100 text-amber-700',
   borrower_comments_submitted:      'bg-amber-100 text-amber-700',
@@ -44,8 +44,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   minor:      'bg-[#eef2f7] text-[#3d4756]',
-  moderate:   'bg-blue-100 text-blue-700',
-  significant:'bg-indigo-100 text-indigo-700',
+  moderate:   'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
+  significant:'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   major:      'bg-orange-100 text-orange-800',
   material:   'bg-red-100 text-red-700',
 };

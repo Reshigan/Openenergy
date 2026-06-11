@@ -6,8 +6,26 @@ import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
-import { StitchPage } from '../StitchPage';
 
+// ── Design tokens ────────────────────────────────────────────────────────────
+const BG      = 'oklch(0.96 0.003 250)';
+const BG1     = 'oklch(0.99 0.002 80)';
+const BG2     = 'oklch(0.93 0.004 250)';
+const BORDER  = 'oklch(0.87 0.006 250)';
+const TX1     = 'oklch(0.17 0.010 250)';
+const TX2     = 'oklch(0.40 0.009 250)';
+const TX3     = 'oklch(0.60 0.007 250)';
+const ACC     = 'oklch(0.46 0.16 55)';
+const ACC_BG  = 'oklch(0.96 0.05 55)';
+const BAD     = 'oklch(0.48 0.20 20)';
+const BAD_BG  = 'oklch(0.97 0.04 20)';
+const WARN    = 'oklch(0.50 0.18 55)';
+const WARN_BG = 'oklch(0.96 0.05 55)';
+const GOOD    = 'oklch(0.40 0.16 155)';
+const GOOD_BG = 'oklch(0.95 0.04 155)';
+const MONO    = '"IBM Plex Mono","Fira Code",monospace';
+
+// ── Types ────────────────────────────────────────────────────────────────────
 type ListingType = 'energy' | 'capacity' | 'carbon' | 'equipment' | 'service';
 type ListingStatus = 'active' | 'pending' | 'sold' | 'withdrawn';
 
@@ -65,18 +83,25 @@ const LISTING_TYPES: Array<{ value: ListingType | 'all'; label: string }> = [
 ];
 
 const TYPE_ICONS: Record<ListingType, React.ReactNode> = {
-  energy: <Zap className="w-4 h-4" />,
-  capacity: <Zap className="w-4 h-4" />,
-  carbon: <Leaf className="w-4 h-4" />,
-  equipment: <Package className="w-4 h-4" />,
-  service: <Store className="w-4 h-4" />,
+  energy:    <Zap size={12} />,
+  capacity:  <Zap size={12} />,
+  carbon:    <Leaf size={12} />,
+  equipment: <Package size={12} />,
+  service:   <Store size={12} />,
 };
 
-const STATUS_COLOR: Record<ListingStatus, string> = {
-  active: 'bg-green-100 text-green-700',
-  pending: 'bg-amber-100 text-amber-700',
-  sold: 'bg-[#e8ecf0] text-[#2d3748]',
-  withdrawn: 'bg-[#eef2f7] text-[#6b7685]',
+const statusStyle = (s: ListingStatus | string) => {
+  if (s === 'active')    return { background: GOOD_BG, color: GOOD };
+  if (s === 'pending')   return { background: WARN_BG, color: WARN };
+  if (s === 'sold')      return { background: BG2,     color: TX2 };
+  return { background: BG2, color: TX3 };
+};
+
+const inquiryStatusStyle = (s: string) => {
+  if (s === 'accepted') return { background: GOOD_BG, color: GOOD };
+  if (s === 'rejected') return { background: BAD_BG,  color: BAD };
+  if (s === 'responded') return { background: ACC_BG, color: ACC };
+  return { background: WARN_BG, color: WARN };
 };
 
 const formatMoney = (value: number, currency = 'ZAR') => {
@@ -87,6 +112,7 @@ const formatMoney = (value: number, currency = 'ZAR') => {
   }
 };
 
+// ── Main component ───────────────────────────────────────────────────────────
 export function Marketplace() {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>('browse');
@@ -189,108 +215,365 @@ export function Marketplace() {
 
   const summaryTiles = useMemo(() => ([
     { label: 'Active listings', value: summary?.active_listings ?? '—' },
-    { label: 'My listings', value: summary?.my_listings ?? '—' },
-    { label: 'My inquiries', value: summary?.my_inquiries ?? '—' },
-    { label: 'Categories', value: summary?.by_type?.length ?? '—' },
+    { label: 'My listings',     value: summary?.my_listings ?? '—' },
+    { label: 'My inquiries',    value: summary?.my_inquiries ?? '—' },
+    { label: 'Categories',      value: summary?.by_type?.length ?? '—' },
   ]), [summary]);
 
+  const TABS: Array<{ k: Tab; label: string }> = [
+    { k: 'browse',    label: 'Browse' },
+    { k: 'mine',      label: 'My Listings' },
+    { k: 'inquiries', label: 'My Inquiries' },
+  ];
+
   return (
-    <StitchPage
-      eyebrowIcon={Store}
-      eyebrowLabel="Marketplace"
-      title="Marketplace"
-      subtitle="Capacity, RECs and carbon credits — list, inquire, transact."
-      actions={
-        <>
-          <button type="button" onClick={fetchData} className="p-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]" aria-label="Refresh">
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          <button type="button" onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">
-            <Plus className="w-4 h-4" /> Create listing
-          </button>
-        </>
-      }
-    >
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {summaryTiles.map(t => (
-          <div key={t.label} className="p-4 bg-white border border-ionex-border-100 rounded-xl">
-            <p className="text-xs uppercase tracking-wide text-ionex-text-mute">{t.label}</p>
-            <p className="text-2xl font-semibold text-[#0f1c2e] mt-1">{t.value}</p>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr 380px',
+      height: 'calc(100vh - 50px)',
+      background: BG,
+      overflow: 'hidden',
+      fontFamily: 'inherit',
+    }}>
+      {/* ── LEFT COLUMN ── */}
+      <div style={{ overflowY: 'auto', padding: '24px 28px' }}>
+        {/* Page header */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Store size={20} color={ACC} />
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: TX1, margin: 0 }}>Marketplace</h1>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={fetchData}
+                style={{
+                  background: 'transparent',
+                  border: `1px solid ${BORDER}`,
+                  borderRadius: 6,
+                  padding: '7px 10px',
+                  cursor: 'pointer',
+                  color: TX2,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                aria-label="Refresh"
+              >
+                <RefreshCw size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCreate(true)}
+                style={{
+                  background: ACC,
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '8px 14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <Plus size={14} /> Create listing
+              </button>
+            </div>
           </div>
-        ))}
-      </div>
-
-      <div className="border-b border-ionex-border-100 flex gap-6">
-        {([
-          { k: 'browse', label: 'Browse' },
-          { k: 'mine', label: 'My listings' },
-          { k: 'inquiries', label: 'My inquiries' },
-        ] as Array<{ k: Tab; label: string }>).map(t => (
-          <button type="button"
-            key={t.k}
-            onClick={() => setTab(t.k)}
-            className={`pb-3 border-b-2 transition-colors ${tab === t.k ? 'border-ionex-brand text-ionex-brand font-semibold' : 'border-transparent text-ionex-text-mute hover:text-[#0f1c2e]'}`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'browse' && (
-        <div className="flex flex-wrap gap-3">
-          <div className="flex-1 min-w-[260px] relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ionex-text-mute" />
-            <input
-              type="text"
-              placeholder="Search listings by title or description"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-ionex-border-200 rounded-lg focus:border-ionex-brand"
-            />
-          </div>
-          <select
-            value={typeFilter}
-            onChange={e => setTypeFilter(e.target.value)}
-            className="px-4 py-2 border border-ionex-border-200 rounded-lg"
-          >
-            {LISTING_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
+          <p style={{ fontSize: 13, color: TX2, margin: '4px 0 0' }}>
+            Capacity, RECs and carbon credits — list, inquire, transact.
+          </p>
         </div>
-      )}
 
-      {loading && <Skeleton variant="card" rows={4} />}
-      {error && <ErrorBanner message={error} onRetry={fetchData} />}
+        {/* KPI strip */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+          {summaryTiles.map(t => (
+            <div key={t.label} style={{
+              background: BG1,
+              border: `1px solid ${BORDER}`,
+              borderRadius: 8,
+              padding: '12px 16px',
+              flex: 1,
+              minWidth: 100,
+            }}>
+              <div style={{ fontSize: 10, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                {t.label}
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: TX1, fontFamily: MONO, marginTop: 4 }}>
+                {t.value}
+              </div>
+            </div>
+          ))}
+        </div>
 
-      {!loading && !error && tab !== 'inquiries' && (
-        listings.length === 0 ? (
-          <EmptyState icon={<Store className="w-8 h-8" />} title="No listings" description={tab === 'mine' ? "You haven't created a listing yet." : 'No listings match your filters.'} />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {listings.map(l => (
-              <ListingCard
-                key={l.id}
-                listing={l}
-                isMine={l.seller_id === user?.id}
-                onOpen={() => openListing(l)}
-                onInquire={() => setShowInquire(l)}
+        {/* Tab bar */}
+        <div style={{ display: 'flex', gap: 0, borderBottom: `2px solid ${BORDER}`, marginBottom: 20 }}>
+          {TABS.map(t => (
+            <button
+              key={t.k}
+              type="button"
+              onClick={() => setTab(t.k)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                borderBottom: tab === t.k ? `2px solid ${ACC}` : '2px solid transparent',
+                marginBottom: -2,
+                padding: '8px 16px',
+                fontSize: 13,
+                fontWeight: tab === t.k ? 700 : 500,
+                color: tab === t.k ? ACC : TX2,
+                cursor: 'pointer',
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {error && <ErrorBanner message={error} onRetry={fetchData} />}
+        {loading && <Skeleton variant="card" rows={4} />}
+
+        {/* Listings grid */}
+        {!loading && !error && tab !== 'inquiries' && (
+          listings.length === 0 ? (
+            <EmptyState
+              icon={<Store size={32} color={TX3} />}
+              title="No listings"
+              description={tab === 'mine' ? "You haven't created a listing yet." : 'No listings match your filters.'}
+            />
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: 16,
+            }}>
+              {listings.map(l => (
+                <ListingCard
+                  key={l.id}
+                  listing={l}
+                  isMine={l.seller_id === user?.id}
+                  onOpen={() => openListing(l)}
+                  onInquire={() => setShowInquire(l)}
+                />
+              ))}
+            </div>
+          )
+        )}
+
+        {/* Inquiries list */}
+        {!loading && !error && tab === 'inquiries' && (
+          myInquiries.length === 0 ? (
+            <EmptyState
+              icon={<MessageSquare size={32} color={TX3} />}
+              title="No inquiries"
+              description="You haven't inquired on any listings yet."
+            />
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {myInquiries.map(inq => (
+                <InquiryRow key={inq.id} inquiry={inq} />
+              ))}
+            </div>
+          )
+        )}
+      </div>
+
+      {/* ── RIGHT COLUMN ── */}
+      <div style={{
+        borderLeft: `1px solid ${BORDER}`,
+        background: BG1,
+        overflowY: 'auto',
+        padding: '24px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}>
+        {/* Search (browse tab only) */}
+        {tab === 'browse' && (
+          <div style={{
+            background: BG,
+            border: `1px solid ${BORDER}`,
+            borderRadius: 8,
+            padding: '16px',
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+              Search &amp; Filter
+            </div>
+            <div style={{ position: 'relative', marginBottom: 10 }}>
+              <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: TX3 }} />
+              <input
+                type="text"
+                placeholder="Search listings…"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  paddingLeft: 30,
+                  paddingRight: 12,
+                  paddingTop: 8,
+                  paddingBottom: 8,
+                  border: `1px solid ${BORDER}`,
+                  borderRadius: 6,
+                  fontSize: 13,
+                  color: TX1,
+                  background: BG1,
+                  outline: 'none',
+                }}
               />
+            </div>
+            <select
+              value={typeFilter}
+              onChange={e => setTypeFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: `1px solid ${BORDER}`,
+                borderRadius: 6,
+                fontSize: 13,
+                color: TX1,
+                background: BG1,
+                cursor: 'pointer',
+              }}
+            >
+              {LISTING_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+        )}
+
+        {/* Quick actions */}
+        <div style={{
+          background: BG,
+          border: `1px solid ${BORDER}`,
+          borderRadius: 8,
+          padding: '16px',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            Quick Actions
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              style={{
+                background: ACC,
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                padding: '9px 14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: 13,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                justifyContent: 'center',
+              }}
+            >
+              <Plus size={14} /> New Listing
+            </button>
+            <button
+              type="button"
+              onClick={fetchData}
+              style={{
+                background: 'transparent',
+                color: ACC,
+                border: `1px solid ${ACC}`,
+                borderRadius: 6,
+                padding: '8px 14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: 13,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                justifyContent: 'center',
+              }}
+            >
+              <RefreshCw size={14} /> Refresh
+            </button>
+          </div>
+        </div>
+
+        {/* Summary stats */}
+        <div style={{
+          background: BG,
+          border: `1px solid ${BORDER}`,
+          borderRadius: 8,
+          padding: '16px',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            Market Summary
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {summaryTiles.map(t => (
+              <div key={t.label} style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '7px 10px',
+                background: BG1,
+                borderRadius: 6,
+                border: `1px solid ${BORDER}`,
+              }}>
+                <span style={{ fontSize: 12, color: TX2 }}>{t.label}</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: TX1, fontFamily: MONO }}>{t.value}</span>
+              </div>
             ))}
           </div>
-        )
-      )}
+        </div>
 
-      {!loading && !error && tab === 'inquiries' && (
-        myInquiries.length === 0 ? (
-          <EmptyState icon={<MessageSquare className="w-8 h-8" />} title="No inquiries" description="You haven't inquired on any listings yet." />
-        ) : (
-          <div className="space-y-3">
-            {myInquiries.map(inq => (
-              <InquiryRow key={inq.id} inquiry={inq} />
-            ))}
+        {/* By-type breakdown */}
+        {summary?.by_type && summary.by_type.length > 0 && (
+          <div style={{
+            background: BG,
+            border: `1px solid ${BORDER}`,
+            borderRadius: 8,
+            padding: '16px',
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+              By Category
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {summary.by_type.map(bt => (
+                <div key={bt.listing_type} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <span style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 12,
+                    color: TX2,
+                    textTransform: 'capitalize',
+                  }}>
+                    {TYPE_ICONS[bt.listing_type as ListingType] ?? <Tag size={12} />}
+                    {bt.listing_type.replace('_', ' ')}
+                  </span>
+                  <span style={{
+                    background: ACC_BG,
+                    color: ACC,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: 10,
+                    fontFamily: MONO,
+                  }}>
+                    {bt.c}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-        )
-      )}
+        )}
+      </div>
 
+      {/* ── MODALS ── */}
       {selectedListing && (
         <ListingDetailModal
           listing={selectedListing}
@@ -318,48 +601,133 @@ export function Marketplace() {
           onSent={() => { setShowInquire(null); setTab('inquiries'); }}
         />
       )}
-    </StitchPage>
+    </div>
   );
 }
 
+export default Marketplace;
+
+// ── Listing card ─────────────────────────────────────────────────────────────
 function ListingCard({ listing, isMine, onOpen, onInquire }: {
   listing: Listing;
   isMine: boolean;
   onOpen: () => void;
   onInquire: () => void;
 }) {
+  const ss = statusStyle(listing.status);
   return (
-    <div className="bg-white rounded-xl border border-ionex-border-100 hover:shadow-md transition-shadow flex flex-col">
-      <div className="p-5 flex-1 space-y-3">
-        <div className="flex items-start justify-between">
-          <span className="flex items-center gap-1 px-2 py-1 bg-ionex-brand/10 text-ionex-brand text-xs rounded-full">
-            {TYPE_ICONS[listing.listing_type] || <Tag className="w-4 h-4" />}
+    <div style={{
+      background: BG1,
+      border: `1px solid ${BORDER}`,
+      borderRadius: 8,
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      <div style={{ padding: '14px 16px', flex: 1 }}>
+        {/* Type + status row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            background: ACC_BG,
+            color: ACC,
+            fontSize: 10,
+            fontWeight: 700,
+            padding: '3px 8px',
+            borderRadius: 10,
+            letterSpacing: '0.04em',
+          }}>
+            {TYPE_ICONS[listing.listing_type] ?? <Tag size={12} />}
             {listing.listing_type.replace('_', ' ').toUpperCase()}
           </span>
-          <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLOR[listing.status] || 'bg-[#eef2f7] text-[#2d3748]'}`}>
+          <span style={{
+            ...ss,
+            fontSize: 10,
+            fontWeight: 700,
+            padding: '3px 8px',
+            borderRadius: 10,
+            textTransform: 'uppercase',
+          }}>
             {listing.status}
           </span>
         </div>
-        <div>
-          <h3 className="font-semibold text-[#0f1c2e]">{listing.title}</h3>
-          {listing.seller_company && <p className="text-sm text-ionex-text-mute">by {listing.seller_company}</p>}
+
+        {/* Title */}
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: TX1 }}>{listing.title}</div>
+          {listing.seller_company && (
+            <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>by {listing.seller_company}</div>
+          )}
         </div>
+
         {listing.description && (
-          <p className="text-sm text-[#3d4756] line-clamp-3">{listing.description}</p>
+          <div style={{
+            fontSize: 12,
+            color: TX2,
+            marginBottom: 10,
+            overflow: 'hidden',
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+          }}>
+            {listing.description}
+          </div>
         )}
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          <span className="font-semibold text-[#0f1c2e]">{formatMoney(listing.price, listing.currency)}{listing.price_unit ? ` / ${listing.price_unit}` : ''}</span>
+
+        {/* Price + volume */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', fontSize: 12 }}>
+          <span style={{ fontWeight: 700, color: TX1, fontFamily: MONO }}>
+            {formatMoney(listing.price, listing.currency)}{listing.price_unit ? ` / ${listing.price_unit}` : ''}
+          </span>
           {listing.volume_available != null && (
-            <span className="text-ionex-text-mute">{listing.volume_available}{listing.volume_unit ? ` ${listing.volume_unit}` : ''} available</span>
+            <span style={{ color: TX3 }}>
+              {listing.volume_available}{listing.volume_unit ? ` ${listing.volume_unit}` : ''} avail.
+            </span>
           )}
         </div>
       </div>
-      <div className="p-4 border-t border-ionex-border-100 flex gap-2">
-        <button type="button" onClick={onOpen} className="flex-1 px-3 py-2 border border-ionex-border-200 rounded-lg text-sm hover:bg-[#eef2f7]">
+
+      {/* Actions */}
+      <div style={{
+        padding: '10px 16px',
+        borderTop: `1px solid ${BORDER}`,
+        display: 'flex',
+        gap: 8,
+      }}>
+        <button
+          type="button"
+          onClick={onOpen}
+          style={{
+            flex: 1,
+            padding: '7px 10px',
+            background: 'transparent',
+            border: `1px solid ${BORDER}`,
+            borderRadius: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            color: TX1,
+            cursor: 'pointer',
+          }}
+        >
           View details
         </button>
         {!isMine && listing.status === 'active' && (
-          <button type="button" onClick={onInquire} className="flex-1 px-3 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-light">
+          <button
+            type="button"
+            onClick={onInquire}
+            style={{
+              flex: 1,
+              padding: '7px 10px',
+              background: ACC,
+              border: 'none',
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#fff',
+              cursor: 'pointer',
+            }}
+          >
             Inquire
           </button>
         )}
@@ -368,30 +736,60 @@ function ListingCard({ listing, isMine, onOpen, onInquire }: {
   );
 }
 
+// ── Inquiry row ───────────────────────────────────────────────────────────────
 function InquiryRow({ inquiry }: { inquiry: Inquiry }) {
-  const statusIcon: Record<Inquiry['status'], React.ReactNode> = {
-    pending: <Clock className="w-4 h-4 text-amber-600" />,
-    responded: <MessageSquare className="w-4 h-4 text-blue-600" />,
-    accepted: <CheckCircle2 className="w-4 h-4 text-green-600" />,
-    rejected: <XCircle className="w-4 h-4 text-red-600" />,
-  };
+  const ss = inquiryStatusStyle(inquiry.status);
+  const Icon = {
+    pending:   <Clock size={14} color={WARN} />,
+    responded: <MessageSquare size={14} color={ACC} />,
+    accepted:  <CheckCircle2 size={14} color={GOOD} />,
+    rejected:  <XCircle size={14} color={BAD} />,
+  }[inquiry.status];
+
   return (
-    <div className="p-4 bg-white border border-ionex-border-100 rounded-lg flex items-center justify-between gap-4">
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-[#0f1c2e] truncate">{inquiry.listing_title || 'Listing'}</p>
-        <p className="text-sm text-ionex-text-mute truncate">
-          {inquiry.seller_company || inquiry.seller_name || 'Seller'} · sent {new Date(inquiry.created_at).toLocaleDateString()}
-        </p>
-        {inquiry.message && <p className="text-sm text-[#3d4756] mt-1 truncate">“{inquiry.message}”</p>}
+    <div style={{
+      background: BG1,
+      border: `1px solid ${BORDER}`,
+      borderRadius: 8,
+      padding: '12px 16px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: TX1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {inquiry.listing_title || 'Listing'}
+        </div>
+        <div style={{ fontSize: 12, color: TX3, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {inquiry.seller_company || inquiry.seller_name || 'Seller'} · {new Date(inquiry.created_at).toLocaleDateString()}
+        </div>
+        {inquiry.message && (
+          <div style={{ fontSize: 12, color: TX2, marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            "{inquiry.message}"
+          </div>
+        )}
       </div>
-      <span className="flex items-center gap-1 text-sm capitalize">
-        {statusIcon[inquiry.status]}
+      <span style={{
+        ...ss,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        fontSize: 11,
+        fontWeight: 700,
+        padding: '3px 10px',
+        borderRadius: 10,
+        textTransform: 'capitalize',
+        whiteSpace: 'nowrap',
+      }}>
+        {Icon}
         {inquiry.status}
       </span>
     </div>
   );
 }
 
+// ── Listing detail modal ──────────────────────────────────────────────────────
 function ListingDetailModal({ listing, isMine, inquiries, inquiriesLoading, onClose, onInquire, onWithdraw, onRespond }: {
   listing: Listing;
   isMine: boolean;
@@ -403,86 +801,138 @@ function ListingDetailModal({ listing, isMine, inquiries, inquiriesLoading, onCl
   onRespond: (inquiryId: string, status: 'accepted' | 'rejected', message?: string) => void;
 }) {
   useEscapeKey(onClose);
+  const ss = statusStyle(listing.status);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-ionex-border-100 flex items-start justify-between gap-4">
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', padding: 16 }}
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        style={{ background: BG1, borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', maxWidth: 640, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ padding: '18px 22px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div>
-            <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLOR[listing.status]}`}>{listing.status}</span>
-            <h2 className="text-xl font-bold mt-2">{listing.title}</h2>
-            {listing.seller_company && <p className="text-sm text-ionex-text-mute">by {listing.seller_company}</p>}
+            <span style={{ ...ss, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 10, textTransform: 'uppercase' }}>
+              {listing.status}
+            </span>
+            <div style={{ fontSize: 18, fontWeight: 700, color: TX1, marginTop: 6 }}>{listing.title}</div>
+            {listing.seller_company && <div style={{ fontSize: 13, color: TX3, marginTop: 2 }}>by {listing.seller_company}</div>}
           </div>
-          <button type="button" onClick={onClose} className="p-2 hover:bg-[#eef2f7] rounded-lg">✕</button>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '6px 10px', cursor: 'pointer', color: TX2, fontSize: 14 }}
+          >
+            ✕
+          </button>
         </div>
-        <div className="p-5 space-y-4">
-          {listing.description && <p className="text-[#2d3748] whitespace-pre-wrap">{listing.description}</p>}
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-ionex-text-mute">Price</p>
-              <p className="font-semibold">{formatMoney(listing.price, listing.currency)}{listing.price_unit ? ` / ${listing.price_unit}` : ''}</p>
+
+        {/* Body */}
+        <div style={{ padding: '18px 22px' }}>
+          {listing.description && (
+            <p style={{ fontSize: 13, color: TX2, whiteSpace: 'pre-wrap', marginBottom: 16 }}>{listing.description}</p>
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+            <div style={{ background: BG2, borderRadius: 6, padding: '10px 14px' }}>
+              <div style={{ fontSize: 11, color: TX3, marginBottom: 4 }}>Price</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: TX1, fontFamily: MONO }}>
+                {formatMoney(listing.price, listing.currency)}{listing.price_unit ? ` / ${listing.price_unit}` : ''}
+              </div>
             </div>
             {listing.volume_available != null && (
-              <div>
-                <p className="text-ionex-text-mute">Volume available</p>
-                <p className="font-semibold">{listing.volume_available}{listing.volume_unit ? ` ${listing.volume_unit}` : ''}</p>
+              <div style={{ background: BG2, borderRadius: 6, padding: '10px 14px' }}>
+                <div style={{ fontSize: 11, color: TX3, marginBottom: 4 }}>Volume available</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: TX1, fontFamily: MONO }}>
+                  {listing.volume_available}{listing.volume_unit ? ` ${listing.volume_unit}` : ''}
+                </div>
               </div>
             )}
             {listing.delivery_start && (
-              <div>
-                <p className="text-ionex-text-mute">Delivery start</p>
-                <p className="font-semibold">{listing.delivery_start}</p>
+              <div style={{ background: BG2, borderRadius: 6, padding: '10px 14px' }}>
+                <div style={{ fontSize: 11, color: TX3, marginBottom: 4 }}>Delivery start</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: TX1 }}>{listing.delivery_start}</div>
               </div>
             )}
             {listing.delivery_end && (
-              <div>
-                <p className="text-ionex-text-mute">Delivery end</p>
-                <p className="font-semibold">{listing.delivery_end}</p>
+              <div style={{ background: BG2, borderRadius: 6, padding: '10px 14px' }}>
+                <div style={{ fontSize: 11, color: TX3, marginBottom: 4 }}>Delivery end</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: TX1 }}>{listing.delivery_end}</div>
               </div>
             )}
           </div>
 
           {!isMine && listing.status === 'active' && (
-            <button type="button" onClick={onInquire} className="w-full py-3 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light">
+            <button
+              type="button"
+              onClick={onInquire}
+              style={{ width: '100%', padding: '10px 0', background: ACC, color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 14 }}
+            >
               Inquire about this listing
             </button>
           )}
           {isMine && listing.status === 'active' && (
-            <button type="button" onClick={onWithdraw} className="w-full py-3 border border-red-300 text-red-700 rounded-lg hover:bg-red-50">
+            <button
+              type="button"
+              onClick={onWithdraw}
+              style={{ width: '100%', padding: '10px 0', background: BAD_BG, color: BAD, border: `1px solid ${BAD}`, borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 14 }}
+            >
               Withdraw listing
             </button>
           )}
         </div>
 
+        {/* Inquiries (seller view) */}
         {isMine && (
-          <div className="p-5 border-t border-ionex-border-100 space-y-3">
-            <h3 className="font-semibold text-[#0f1c2e]">Inquiries</h3>
+          <div style={{ padding: '18px 22px', borderTop: `1px solid ${BORDER}` }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+              Inquiries
+            </div>
             {inquiriesLoading && <Skeleton variant="card" rows={2} />}
             {!inquiriesLoading && (!inquiries || inquiries.length === 0) && (
-              <p className="text-sm text-ionex-text-mute">No inquiries yet.</p>
+              <p style={{ fontSize: 13, color: TX3 }}>No inquiries yet.</p>
             )}
             {!inquiriesLoading && inquiries && inquiries.length > 0 && (
-              <div className="space-y-2">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {inquiries.map(inq => (
-                  <div key={inq.id} className="p-3 bg-[#f8fafc] rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0">
-                        <p className="font-medium text-[#0f1c2e]">{inq.buyer_company || inq.buyer_name || inq.buyer_id}</p>
-                        <p className="text-xs text-ionex-text-mute">{new Date(inq.created_at).toLocaleString()}</p>
+                  <div key={inq.id} style={{ background: BG2, borderRadius: 6, padding: '12px 14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: TX1 }}>
+                          {inq.buyer_company || inq.buyer_name || inq.buyer_id}
+                        </div>
+                        <div style={{ fontSize: 11, color: TX3 }}>{new Date(inq.created_at).toLocaleString()}</div>
                       </div>
-                      <span className="text-sm capitalize">{inq.status}</span>
+                      <span style={{
+                        ...inquiryStatusStyle(inq.status),
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: 10,
+                        textTransform: 'capitalize',
+                      }}>
+                        {inq.status}
+                      </span>
                     </div>
-                    {inq.message && <p className="text-sm text-[#2d3748] mt-2">“{inq.message}”</p>}
+                    {inq.message && (
+                      <p style={{ fontSize: 12, color: TX2, margin: '0 0 8px' }}>"{inq.message}"</p>
+                    )}
                     {inq.status === 'pending' && (
-                      <div className="flex gap-2 mt-3">
-                        <button type="button"
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          type="button"
                           onClick={() => onRespond(inq.id, 'accepted')}
-                          className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
+                          style={{ flex: 1, padding: '7px 0', background: GOOD, color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                         >
                           Accept
                         </button>
-                        <button type="button"
+                        <button
+                          type="button"
                           onClick={() => onRespond(inq.id, 'rejected')}
-                          className="flex-1 px-3 py-2 border border-red-300 text-red-700 rounded-lg text-sm hover:bg-red-50"
+                          style={{ flex: 1, padding: '7px 0', background: BAD_BG, color: BAD, border: `1px solid ${BAD}`, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                         >
                           Reject
                         </button>
@@ -499,11 +949,11 @@ function ListingDetailModal({ listing, isMine, inquiries, inquiriesLoading, onCl
   );
 }
 
+// ── Create listing modal ──────────────────────────────────────────────────────
 function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void; }) {
   useEscapeKey(onClose);
   const [form, setForm] = useState({
     listing_type: 'carbon' as ListingType,
-    // defaults below match tonnes+ZAR for carbon; user can edit
     title: '',
     description: '',
     price: '',
@@ -545,60 +995,106 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
     }
   };
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    boxSizing: 'border-box',
+    padding: '8px 12px',
+    border: `1px solid ${BORDER}`,
+    borderRadius: 6,
+    fontSize: 13,
+    color: TX1,
+    background: BG1,
+    outline: 'none',
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
-          <h2 className="text-xl font-bold">Create listing</h2>
-          <button type="button" onClick={onClose} className="p-2 hover:bg-[#eef2f7] rounded-lg">✕</button>
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', padding: 16 }}
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        style={{ background: BG1, borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', maxWidth: 520, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ padding: '18px 22px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 17, fontWeight: 700, color: TX1 }}>Create listing</div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '6px 10px', cursor: 'pointer', color: TX2 }}
+          >
+            ✕
+          </button>
         </div>
-        <div className="p-5 space-y-4">
+
+        <div style={{ padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           {err && <ErrorBanner message={err} />}
           <Field label="Type">
             <select
               value={form.listing_type}
               onChange={e => setForm(f => ({ ...f, listing_type: e.target.value as ListingType }))}
-              className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg"
+              style={inputStyle}
             >
               {LISTING_TYPES.filter(t => t.value !== 'all').map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </Field>
           <Field label="Title *">
-            <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
+            <input
+              value={form.title}
+              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+              style={inputStyle}
+            />
           </Field>
           <Field label="Description">
-            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
+            <textarea
+              value={form.description}
+              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              rows={3}
+              style={{ ...inputStyle, resize: 'vertical' }}
+            />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Field label="Price *">
-              <input value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} type="number" step="any" className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
+              <input value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} type="number" step="any" style={inputStyle} />
             </Field>
             <Field label="Price unit">
-              <input value={form.price_unit} onChange={e => setForm(f => ({ ...f, price_unit: e.target.value }))} placeholder="per_tonne / per_mwh / per_rec" className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
+              <input value={form.price_unit} onChange={e => setForm(f => ({ ...f, price_unit: e.target.value }))} placeholder="per_tonne / per_mwh" style={inputStyle} />
             </Field>
             <Field label="Currency">
-              <input value={form.currency} onChange={e => setForm(f => ({ ...f, currency: e.target.value }))} className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
+              <input value={form.currency} onChange={e => setForm(f => ({ ...f, currency: e.target.value }))} style={inputStyle} />
             </Field>
             <Field label="Volume available">
-              <input value={form.volume_available} onChange={e => setForm(f => ({ ...f, volume_available: e.target.value }))} type="number" step="any" className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
+              <input value={form.volume_available} onChange={e => setForm(f => ({ ...f, volume_available: e.target.value }))} type="number" step="any" style={inputStyle} />
             </Field>
             <Field label="Volume unit">
-              <input value={form.volume_unit} onChange={e => setForm(f => ({ ...f, volume_unit: e.target.value }))} placeholder="tonnes / mwh / recs" className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
+              <input value={form.volume_unit} onChange={e => setForm(f => ({ ...f, volume_unit: e.target.value }))} placeholder="tonnes / mwh / recs" style={inputStyle} />
             </Field>
             <Field label="Delivery start">
-              <input value={form.delivery_start} onChange={e => setForm(f => ({ ...f, delivery_start: e.target.value }))} type="date" className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
+              <input value={form.delivery_start} onChange={e => setForm(f => ({ ...f, delivery_start: e.target.value }))} type="date" style={inputStyle} />
             </Field>
             <Field label="Delivery end">
-              <input value={form.delivery_end} onChange={e => setForm(f => ({ ...f, delivery_end: e.target.value }))} type="date" className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg" />
+              <input value={form.delivery_end} onChange={e => setForm(f => ({ ...f, delivery_end: e.target.value }))} type="date" style={inputStyle} />
             </Field>
           </div>
         </div>
-        <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
-          <button type="button"
+
+        {/* Footer */}
+        <div style={{ padding: '14px 22px', borderTop: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ padding: '8px 16px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 13, fontWeight: 600, color: TX1, cursor: 'pointer' }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
             onClick={submit}
             disabled={submitting}
-            className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50"
+            style={{ padding: '8px 16px', background: ACC, border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer', opacity: submitting ? 0.55 : 1 }}
           >
             {submitting ? 'Creating…' : 'Create listing'}
           </button>
@@ -608,6 +1104,7 @@ function CreateListingModal({ onClose, onCreated }: { onClose: () => void; onCre
   );
 }
 
+// ── Inquire modal ─────────────────────────────────────────────────────────────
 function InquireModal({ listing, onClose, onSent }: { listing: Listing; onClose: () => void; onSent: () => void; }) {
   useEscapeKey(onClose);
   const [message, setMessage] = useState('');
@@ -628,16 +1125,32 @@ function InquireModal({ listing, onClose, onSent }: { listing: Listing; onClose:
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full" onClick={e => e.stopPropagation()}>
-        <div className="p-5 border-b border-ionex-border-100 flex items-center justify-between">
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', padding: 16 }}
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        style={{ background: BG1, borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', maxWidth: 440, width: '100%' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ padding: '18px 22px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h2 className="text-xl font-bold">Inquire</h2>
-            <p className="text-sm text-ionex-text-mute">{listing.title}</p>
+            <div style={{ fontSize: 17, fontWeight: 700, color: TX1 }}>Inquire</div>
+            <div style={{ fontSize: 12, color: TX3, marginTop: 2 }}>{listing.title}</div>
           </div>
-          <button type="button" onClick={onClose} className="p-2 hover:bg-[#eef2f7] rounded-lg">✕</button>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '6px 10px', cursor: 'pointer', color: TX2 }}
+          >
+            ✕
+          </button>
         </div>
-        <div className="p-5 space-y-3">
+
+        <div style={{ padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           {err && <ErrorBanner message={err} />}
           <Field label="Message to seller (optional)">
             <textarea
@@ -645,16 +1158,36 @@ function InquireModal({ listing, onClose, onSent }: { listing: Listing; onClose:
               value={message}
               onChange={e => setMessage(e.target.value)}
               placeholder="Volume wanted, delivery terms, any constraints…"
-              className="w-full px-3 py-2 border border-ionex-border-200 rounded-lg"
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                padding: '8px 12px',
+                border: `1px solid ${BORDER}`,
+                borderRadius: 6,
+                fontSize: 13,
+                color: TX1,
+                background: BG1,
+                outline: 'none',
+                resize: 'vertical',
+              }}
             />
           </Field>
         </div>
-        <div className="p-5 border-t border-ionex-border-100 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 border border-ionex-border-200 rounded-lg hover:bg-[#eef2f7]">Cancel</button>
-          <button type="button"
+
+        {/* Footer */}
+        <div style={{ padding: '14px 22px', borderTop: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ padding: '8px 16px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 13, fontWeight: 600, color: TX1, cursor: 'pointer' }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
             onClick={submit}
             disabled={submitting}
-            className="px-4 py-2 bg-ionex-brand text-white rounded-lg hover:bg-ionex-brand-light disabled:opacity-50"
+            style={{ padding: '8px 16px', background: ACC, border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer', opacity: submitting ? 0.55 : 1 }}
           >
             {submitting ? 'Sending…' : 'Send inquiry'}
           </button>
@@ -664,10 +1197,11 @@ function InquireModal({ listing, onClose, onSent }: { listing: Listing; onClose:
   );
 }
 
+// ── Form field helper ─────────────────────────────────────────────────────────
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block space-y-1">
-      <span className="text-sm font-medium text-[#2d3748]">{label}</span>
+    <label style={{ display: 'block' }}>
+      <span style={{ display: 'block', fontSize: 12, fontWeight: 600, color: TX2, marginBottom: 5 }}>{label}</span>
       {children}
     </label>
   );

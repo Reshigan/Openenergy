@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface AelLicence {
   id: string;
@@ -32,19 +32,19 @@ interface AelLicence {
   updated_at: string;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  ael_triggered:                   'bg-[#eef2f7] text-[#6b7685]',
-  emissions_inventory:             'bg-blue-100 text-blue-700',
-  application_preparation:         'bg-indigo-100 text-indigo-700',
-  application_submitted:           'bg-yellow-100 text-yellow-800',
-  authority_completeness_review:   'bg-cyan-100 text-cyan-700',
-  public_participation_open:       'bg-sky-100 text-sky-700',
-  public_participation_closed:     'bg-teal-100 text-teal-700',
-  technical_assessment:            'bg-purple-100 text-purple-700',
-  authority_final_review:          'bg-amber-100 text-amber-700',
-  ael_granted:                     'bg-green-100 text-green-700',
-  ael_refused:                     'bg-red-100 text-red-700',
-  ael_lapsed:                      'bg-orange-100 text-orange-700',
+const STATUS_COLORS: Record<string, { cls: string; style?: React.CSSProperties }> = {
+  ael_triggered:                   { cls: 'bg-[#eef2f7] text-[#6b7685]' },
+  emissions_inventory:             { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  application_preparation:         { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  application_submitted:           { cls: 'bg-yellow-100 text-yellow-800' },
+  authority_completeness_review:   { cls: 'bg-cyan-100 text-cyan-700' },
+  public_participation_open:       { cls: 'bg-sky-100 text-sky-700' },
+  public_participation_closed:     { cls: 'bg-teal-100 text-teal-700' },
+  technical_assessment:            { cls: 'bg-purple-100 text-purple-700' },
+  authority_final_review:          { cls: 'bg-amber-100 text-amber-700' },
+  ael_granted:                     { cls: 'bg-green-100 text-green-700' },
+  ael_refused:                     { cls: 'bg-red-100 text-red-700' },
+  ael_lapsed:                      { cls: 'bg-orange-100 text-orange-700' },
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -284,7 +284,10 @@ export function IppAelTab() {
                     </td>
                     <td className="py-2 pr-4">
                       <div className="flex items-center gap-1 flex-wrap">
-                        <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status]?.cls ?? 'bg-[#eef2f7] text-[#6b7685]'}`}
+                          style={STATUS_COLORS[item.chain_status]?.style}
+                        >
                           {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
                         </span>
                         {regulator && (

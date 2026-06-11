@@ -25,6 +25,7 @@ type ChainStatus =
 type Tier = 'minor' | 'standard' | 'material' | 'severe';
 
 interface CaseRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   source_event: string | null;
@@ -154,8 +155,8 @@ interface KpiSummary {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   case_opened:            { bg: '#e3e7ec', fg: '#557',    label: 'Case opened' },
-  allegations_drafted:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Allegations drafted' },
-  allegations_served:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Allegations served' },
+  allegations_drafted:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Allegations drafted' },
+  allegations_served:     { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Allegations served' },
   representations_period: { bg: '#fff4d6', fg: '#a06200', label: 'Audi (representations open)' },
   hearing_held:           { bg: '#fff4d6', fg: '#a06200', label: 'Hearing held' },
   determination:          { bg: '#ffe4b5', fg: '#8a4a00', label: 'Determination' },
@@ -170,7 +171,7 @@ const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }>
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
   severe:   { bg: '#fde0e0', fg: '#9b1f1f', label: 'Severe (≥R1m)' },
   material: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Material (R500k–R1m)' },
-  standard: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard (R100k–R500k)' },
+  standard: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Standard (R100k–R500k)' },
   minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor (<R100k)' },
 };
 
@@ -287,6 +288,84 @@ function fmtDate(s: string | null): string {
 
 const TERMINAL_STATES: ChainStatus[] = ['paid', 'dismissed', 'withdrawn'];
 
+interface ActionField {
+  key: string;
+  label: string;
+  type?: 'text' | 'number' | 'date';
+  defaultValue?: string;
+  required?: boolean;
+  hint?: string;
+}
+
+interface PendingAction {
+  action: ActionKind;
+  row: CaseRow;
+  fields: ActionField[];
+}
+
+const ACTION_FIELDS: Partial<Record<ActionKind, (row: CaseRow) => ActionField[]>> = {
+  'draft-allegations': (row) => [
+    { key: 'allegations_summary', label: 'Allegations summary — what is being alleged?', required: true },
+    { key: 'era_section_cited', label: 'ERA section cited (e.g. s35(1)(a))' },
+    { key: 'offence_count', label: 'Offence count (stacking allowed under ERA s35)', type: 'number', defaultValue: String(row.offence_count || 1) },
+    { key: 'proposed_penalty_per_offence_zar', label: 'Proposed penalty PER OFFENCE (ZAR) — ERA s35 cap R1m/offence applied automatically', type: 'number', defaultValue: String(row.proposed_penalty_per_offence_zar || 0) },
+    { key: 'allegations_basis', label: 'Allegations basis — drafting rationale' },
+  ],
+  'serve-allegations': () => [
+    { key: 'serve_ref', label: 'Service reference (sheriff / registered post / personal service)' },
+    { key: 'notes', label: 'Service notes' },
+  ],
+  'open-representations': () => [
+    { key: 'serve_ref', label: 'Representations reference' },
+    { key: 'notes', label: 'Note — written representations now open (PAJA s4 / ERA s35(3) audi)' },
+  ],
+  'hold-hearing': (row) => [
+    { key: 'hearing_held_flag', label: 'Was the oral hearing held? (1/0)', type: 'number', defaultValue: String(row.hearing_held_flag || 1) },
+    { key: 'hearing_ref', label: 'Hearing reference / panel composition' },
+    { key: 'notes', label: 'Hearing notes' },
+  ],
+  'make-determination': () => [
+    { key: 'determination_liable_flag', label: 'Determination: liable? (1=liable / 0=not liable)', type: 'number', defaultValue: '1' },
+    { key: 'determination_basis', label: 'Determination basis — Council reasons (PAJA s5)', required: true },
+    { key: 'determination_summary', label: 'Determination summary' },
+    { key: 'regulator_ref', label: 'Regulator reference (severe + liable crosses every tier; material+ for others)' },
+  ],
+  'impose-penalty': (row) => [
+    { key: 'imposed_penalty_zar', label: 'Imposed penalty (ZAR) — public register entry (W93 SIGNATURE — every tier crosses)', type: 'number', defaultValue: String(row.proposed_penalty_total_zar_live ?? row.proposed_penalty_total_zar ?? 0), required: true },
+    { key: 'payment_due_date', label: 'Payment due date (YYYY-MM-DD)', type: 'date' },
+    { key: 'penalty_basis', label: 'Penalty basis — quantum reasoning' },
+    { key: 'penalty_ref', label: 'Penalty notice reference' },
+    { key: 'regulator_ref', label: 'Regulator reference (every penalty imposed is publicly registered)' },
+  ],
+  'record-payment': () => [
+    { key: 'recovered_zar', label: 'Payment amount (ZAR)', type: 'number', required: true },
+    { key: 'payment_ref', label: 'Payment reference' },
+    { key: 'notes', label: 'Payment notes' },
+  ],
+  'lodge-appeal': (row) => [
+    { key: 'appeal_forum', label: 'Appeal forum (electricity_regulator_tribunal / high_court)', defaultValue: row.appeal_forum ?? 'electricity_regulator_tribunal' },
+    { key: 'appeal_ref', label: 'Appeal reference' },
+    { key: 'appeal_basis', label: 'Appeal basis — grounds', required: true },
+    { key: 'regulator_ref', label: 'Regulator reference (Tribunal signal — every tier crosses)' },
+  ],
+  'initiate-enforcement': (row) => [
+    { key: 'enforcement_step', label: 'Enforcement step (demand_letter / writ_issued / sheriff_attachment / garnishee / contempt_application)', defaultValue: row.enforcement_step ?? 'demand_letter' },
+    { key: 'enforcement_ref', label: 'Enforcement reference' },
+    { key: 'enforcement_basis', label: 'Enforcement basis — why escalating to court', required: true },
+    { key: 'regulator_ref', label: 'Regulator reference (court-system signal — every tier crosses)' },
+  ],
+  'dismiss': () => [
+    { key: 'notes', label: 'Dismissal basis — Council finds no contravention OR enforcement avenue exhausted', required: true },
+    { key: 'regulator_ref', label: 'Regulator reference (material+severe crosses)' },
+  ],
+  'withdraw': () => [
+    { key: 'notes', label: 'Withdrawal note — NERSA elects not to pursue', required: true },
+  ],
+  'cancel': () => [
+    { key: 'notes', label: 'Cancellation note — administrative cancel (wrong respondent etc)', required: true },
+  ],
+};
+
 export function EnforcementActionChainTab() {
   const [rows, setRows] = useState<CaseRow[]>([]);
   const [kpis, setKpis] = useState<KpiSummary | null>(null);
@@ -295,6 +374,7 @@ export function EnforcementActionChainTab() {
   const [filter, setFilter] = useState<string>('open');
   const [selected, setSelected] = useState<CaseRow | null>(null);
   const [events, setEvents] = useState<CaseEvent[]>([]);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -352,101 +432,30 @@ export function EnforcementActionChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: CaseRow) => {
+  const requestAct = useCallback((action: ActionKind, row: CaseRow) => {
+    const fieldsFn = ACTION_FIELDS[action];
+    const fields = fieldsFn ? fieldsFn(row) : [];
+    if (fields.length === 0) {
+      void submitAct(action, row, {});
+    } else {
+      setPendingAction({ action, row, fields });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const submitAct = useCallback(async (action: ActionKind, row: CaseRow, values: Record<string, string>) => {
+    setPendingAction(null);
     try {
-      let body: Record<string, string | number> = {};
-      if (action === 'draft-allegations') {
-        const summary = window.prompt('Allegations summary — what is being alleged?');
-        if (!summary) return;
-        const era = window.prompt('ERA section cited (e.g. s35(1)(a)):') || '';
-        const offences = window.prompt('Offence count (stacking allowed under ERA s35):', String(row.offence_count || 1)) || '1';
-        const perOff = window.prompt('Proposed penalty PER OFFENCE (ZAR) — ERA s35 cap R1m/offence applied automatically:', String(row.proposed_penalty_per_offence_zar || 0)) || '';
-        const basis = window.prompt('Allegations basis — drafting rationale:') || '';
-        body = { allegations_summary: summary, allegations_basis: basis };
-        if (era) body.era_section_cited = era;
-        if (offences && !Number.isNaN(Number(offences))) body.offence_count = Number(offences);
-        if (perOff && !Number.isNaN(Number(perOff))) body.proposed_penalty_per_offence_zar = Number(perOff);
-      } else if (action === 'serve-allegations') {
-        const ref = window.prompt('Service reference (sheriff / registered post / personal service):') || '';
-        const notes = window.prompt('Service notes:') || '';
-        body = {};
-        if (ref) body.serve_ref = ref;
-        if (notes) body.notes = notes;
-      } else if (action === 'open-representations') {
-        const ref = window.prompt('Representations reference:') || '';
-        const notes = window.prompt('Note — written representations now open (PAJA s4 / ERA s35(3) audi):') || '';
-        body = {};
-        if (ref) body.serve_ref = ref;
-        if (notes) body.notes = notes;
-      } else if (action === 'hold-hearing') {
-        const heardFlag = window.prompt('Was the oral hearing held? (1/0)', String(row.hearing_held_flag || 1)) || '1';
-        const ref = window.prompt('Hearing reference / panel composition:') || '';
-        const notes = window.prompt('Hearing notes:') || '';
-        body = { hearing_held_flag: Number(heardFlag) || 0 };
-        if (ref) body.hearing_ref = ref;
-        if (notes) body.notes = notes;
-      } else if (action === 'make-determination') {
-        const liable = window.prompt('Determination: liable? (1=liable / 0=not liable):', '1') || '1';
-        const basis = window.prompt('Determination basis — Council reasons (PAJA s5):');
-        if (!basis) return;
-        const summary = window.prompt('Determination summary:') || '';
-        const reg = window.prompt('Regulator reference (severe + liable crosses every tier; material+ for others):') || '';
-        body = { determination_liable_flag: Number(liable) || 0, determination_basis: basis };
-        if (summary) body.determination_summary = summary;
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'impose-penalty') {
-        const imposed = window.prompt('Imposed penalty (ZAR) — public register entry (W93 SIGNATURE — every tier crosses):', String(row.proposed_penalty_total_zar_live ?? row.proposed_penalty_total_zar ?? 0));
-        if (!imposed) return;
-        const due = window.prompt('Payment due date (YYYY-MM-DD):') || '';
-        const basis = window.prompt('Penalty basis — quantum reasoning:') || '';
-        const ref = window.prompt('Penalty notice reference:') || '';
-        const reg = window.prompt('Regulator reference (every penalty imposed is publicly registered):') || '';
-        body = { imposed_penalty_zar: Number(imposed) || 0 };
-        if (due) body.payment_due_date = due;
-        if (basis) body.penalty_basis = basis;
-        if (ref) body.penalty_ref = ref;
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'record-payment') {
-        const amount = window.prompt('Payment amount (ZAR):');
-        if (!amount) return;
-        const ref = window.prompt('Payment reference:') || '';
-        const notes = window.prompt('Payment notes:') || '';
-        body = { recovered_zar: Number(amount) || 0 };
-        if (ref) body.payment_ref = ref;
-        if (notes) body.notes = notes;
-      } else if (action === 'lodge-appeal') {
-        const forum = window.prompt('Appeal forum (electricity_regulator_tribunal / high_court):', row.appeal_forum ?? 'electricity_regulator_tribunal') || 'electricity_regulator_tribunal';
-        const ref = window.prompt('Appeal reference:') || '';
-        const basis = window.prompt('Appeal basis — grounds:');
-        if (!basis) return;
-        const reg = window.prompt('Regulator reference (Tribunal signal — every tier crosses):') || '';
-        body = { appeal_forum: forum, appeal_basis: basis };
-        if (ref) body.appeal_ref = ref;
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'initiate-enforcement') {
-        const step = window.prompt('Enforcement step (demand_letter / writ_issued / sheriff_attachment / garnishee / contempt_application):', row.enforcement_step ?? 'demand_letter') || 'demand_letter';
-        const ref = window.prompt('Enforcement reference:') || '';
-        const basis = window.prompt('Enforcement basis — why escalating to court:');
-        if (!basis) return;
-        const reg = window.prompt('Regulator reference (court-system signal — every tier crosses):') || '';
-        body = { enforcement_step: step, enforcement_basis: basis };
-        if (ref) body.enforcement_ref = ref;
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'dismiss') {
-        const basis = window.prompt('Dismissal basis — Council finds no contravention OR enforcement avenue exhausted:');
-        if (!basis) return;
-        const reg = window.prompt('Regulator reference (material+severe crosses):') || '';
-        body = { reason_code: 'dismissed', notes: basis };
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'withdraw') {
-        const basis = window.prompt('Withdrawal note — NERSA elects not to pursue:');
-        if (!basis) return;
-        body = { reason_code: 'withdrawn', notes: basis };
-      } else if (action === 'cancel') {
-        const basis = window.prompt('Cancellation note — administrative cancel (wrong respondent etc):');
-        if (!basis) return;
-        body = { reason_code: 'cancelled', notes: basis };
+      const body: Record<string, string | number> = {};
+      // map string values to their correct types and skip empties for optional fields
+      const numericKeys = new Set(['offence_count', 'proposed_penalty_per_offence_zar', 'hearing_held_flag', 'determination_liable_flag', 'imposed_penalty_zar', 'recovered_zar']);
+      for (const [k, v] of Object.entries(values)) {
+        if (!v && v !== '0') continue;
+        body[k] = numericKeys.has(k) ? (Number(v) || 0) : v;
       }
+      // action-specific reason codes
+      if (action === 'dismiss')   body.reason_code = 'dismissed';
+      if (action === 'withdraw')  body.reason_code = 'withdrawn';
+      if (action === 'cancel')    body.reason_code = 'cancelled';
       await api.post(`/regulator/enforcement-action/chain/${row.id}/${action}`, body);
       await load();
       if (selected?.id === row.id) await loadEvents(row.id);
@@ -525,15 +534,15 @@ export function EnforcementActionChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Respondent / allegation</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Class</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Proposed</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Imposed</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Recovered</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Case #</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Respondent / allegation</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Class</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Tier</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-right">Proposed</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-right">Imposed</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-right">Recovered</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">State</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-right">SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -547,7 +556,7 @@ export function EnforcementActionChainTab() {
                     onClick={() => loadEvents(r.id)}
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 font-mono text-[11px] text-[oklch(0.46_0.16_55)]">
                       {r.case_number}
                       {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator (public register)">●</span>}
                       {r.signature_class_flag && <span className="ml-1 text-[#9b1f1f]" title="Floor-at-severe class (safety_violation / systemic_market_abuse / repeat_offender)">★</span>}
@@ -589,8 +598,98 @@ export function EnforcementActionChainTab() {
       )}
 
       {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={requestAct} />
       )}
+      {pendingAction && (
+        <ActionModal
+          pending={pendingAction}
+          onSubmit={(values) => void submitAct(pendingAction.action, pendingAction.row, values)}
+          onCancel={() => setPendingAction(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ActionModal({
+  pending,
+  onSubmit,
+  onCancel,
+}: {
+  pending: PendingAction;
+  onSubmit: (values: Record<string, string>) => void;
+  onCancel: () => void;
+}) {
+  const [vals, setVals] = React.useState<Record<string, string>>(() =>
+    Object.fromEntries(pending.fields.map((f) => [f.key, f.defaultValue ?? '']))
+  );
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(vals);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onCancel}>
+      <div
+        className="w-full max-w-lg bg-white rounded-lg shadow-2xl overflow-y-auto max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3 flex items-center justify-between">
+          <div className="text-sm font-semibold text-[#0c2a4d]">{ACTION_LABEL[pending.action]}</div>
+          <button type="button" onClick={onCancel} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
+        </header>
+        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-3">
+          {pending.fields.map((f) => (
+            <div key={f.key}>
+              <label className="block text-[11px] uppercase tracking-wider text-[#4a5568] mb-1">
+                {f.label}{f.required && <span className="ml-1 text-red-600">*</span>}
+              </label>
+              {f.type === 'number' ? (
+                <input
+                  type="number"
+                  className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[13px] text-[#0c2a4d] focus:outline-none focus:border-[#c2873a]"
+                  value={vals[f.key] ?? ''}
+                  onChange={(e) => setVals((v) => ({ ...v, [f.key]: e.target.value }))}
+                  required={f.required}
+                />
+              ) : f.type === 'date' ? (
+                <input
+                  type="date"
+                  className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[13px] text-[#0c2a4d] focus:outline-none focus:border-[#c2873a]"
+                  value={vals[f.key] ?? ''}
+                  onChange={(e) => setVals((v) => ({ ...v, [f.key]: e.target.value }))}
+                  required={f.required}
+                />
+              ) : (
+                <textarea
+                  rows={2}
+                  className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[13px] text-[#0c2a4d] focus:outline-none focus:border-[#c2873a] resize-y"
+                  value={vals[f.key] ?? ''}
+                  onChange={(e) => setVals((v) => ({ ...v, [f.key]: e.target.value }))}
+                  required={f.required}
+                />
+              )}
+              {f.hint && <div className="mt-0.5 text-[10px] text-[#4a5568]">{f.hint}</div>}
+            </div>
+          ))}
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded border border-[#d8dde6] bg-white px-4 py-1.5 text-[12px] font-medium text-[#557] hover:bg-[#f3f5f9]"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="rounded bg-[#c2873a] px-4 py-1.5 text-[12px] font-medium text-white hover:bg-[#b07730]"
+            >
+              Confirm
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
@@ -717,7 +816,7 @@ function Drawer({
             <Pair label="Escalation lvl"       value={String(row.escalation_level)} />
             <Pair label="Reportable"           value={row.is_reportable_flag ? 'Yes (public register)' : 'No'} />
           </div>
-          {row.allegations_basis && <BasisBlock label="Allegations basis" tone="#1a3a5c" text={row.allegations_basis} />}
+          {row.allegations_basis && <BasisBlock label="Allegations basis" tone="oklch(0.46 0.16 55)" text={row.allegations_basis} />}
           {row.representations_summary && <BasisBlock label="Representations summary" tone="#a06200" text={row.representations_summary} />}
           {row.determination_basis && <BasisBlock label="Determination basis (PAJA s5 reasons)" tone="#8a4a00" text={row.determination_basis} />}
           {row.determination_summary && <BasisBlock label="Determination summary" tone="#8a4a00" text={row.determination_summary} />}
@@ -778,7 +877,7 @@ function Drawer({
                       <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
                     )}
                   </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1 text-[oklch(0.46_0.16_55)]">{e.notes}</div>}
                 </li>
               ))}
             </ol>

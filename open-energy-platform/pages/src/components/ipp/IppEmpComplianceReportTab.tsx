@@ -30,11 +30,11 @@ interface EmpKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   report_period_opened:            'bg-[#eef2f7] text-[#3d4756]',
-  eco_data_collection:             'bg-blue-100 text-blue-700',
+  eco_data_collection:             'bg-[#eef2f7] text-[#3d4756]',
   monitoring_results_compilation:  'bg-cyan-100 text-cyan-700',
   incident_review:                 'bg-amber-100 text-amber-700',
   draft_report_preparation:        'bg-purple-100 text-purple-700',
-  internal_review:                 'bg-indigo-100 text-indigo-700',
+  internal_review:                 'bg-[#e8ecf0] text-[#3d4756]',
   eco_sign_off:                    'bg-teal-100 text-teal-700',
   competent_authority_submission:  'bg-orange-100 text-orange-700',
   ca_review_in_progress:           'bg-yellow-100 text-yellow-800',
@@ -61,7 +61,7 @@ const STATUS_LABELS: Record<string, string> = {
 const MITIGATION_COLORS: Record<string, string> = {
   on_track:   'bg-green-100 text-green-700',
   delayed:    'bg-amber-100 text-amber-700',
-  remediated: 'bg-blue-100 text-blue-700',
+  remediated: 'bg-[#eef2f7] text-[#3d4756]',
   escalated:  'bg-red-100 text-red-700',
 };
 
@@ -81,8 +81,8 @@ const ACTION_LABELS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   small:    'bg-[#eef2f7] text-[#3d4756]',
-  medium:   'bg-blue-100 text-blue-700',
-  large:    'bg-indigo-100 text-indigo-700',
+  medium:   'bg-[#eef2f7] text-[#3d4756]',
+  large:    'bg-[#e8ecf0] text-[#3d4756]',
   major:    'bg-purple-100 text-purple-700',
   flagship: 'bg-amber-100 text-amber-700',
 };
@@ -411,9 +411,10 @@ export function IppEmpComplianceReportTab() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3"
+          className="rounded-lg border p-4 space-y-3"
+          style={{ borderColor: 'oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
         >
-          <div className="text-sm font-semibold text-blue-800">New EMP Annual Compliance Report</div>
+          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New EMP Annual Compliance Report</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[#3d4756] mb-1">Project Name *</label>
@@ -588,7 +589,8 @@ export function IppEmpComplianceReportTab() {
                       {actions.length > 0 && (
                         <button type="button"
                           onClick={() => openActionPicker(item)}
-                          className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                          className="px-2 py-0.5 text-xs rounded border"
+                          style={{ background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.87 0.010 250)' }}
                         >
                           Actions
                         </button>

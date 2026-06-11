@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { CSSProperties } from 'react';
 
 interface BfsStudy {
   id: string;
@@ -21,19 +22,20 @@ interface BfsStudy {
   updated_at: string;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  bfs_triggered:             'bg-[#eef2f7] text-[#6b7685]',
-  scope_definition:          'bg-blue-100 text-blue-700',
-  data_collection:           'bg-sky-100 text-sky-700',
-  analysis_in_progress:      'bg-indigo-100 text-indigo-700',
-  draft_bfs_issued:          'bg-yellow-100 text-yellow-800',
-  peer_review:               'bg-amber-100 text-amber-700',
-  ipp_comments_submitted:    'bg-teal-100 text-teal-700',
-  ie_review:                 'bg-purple-100 text-purple-700',
-  queries_raised:            'bg-orange-100 text-orange-700',
-  responses_submitted:       'bg-cyan-100 text-cyan-700',
-  bfs_certified:             'bg-green-100 text-green-700',
-  bfs_rejected:              'bg-red-100 text-red-700',
+type StatusStyle = { className: string; style?: CSSProperties };
+const STATUS_COLORS: Record<string, StatusStyle> = {
+  bfs_triggered:             { className: 'bg-[#eef2f7] text-[#6b7685]' },
+  scope_definition:          { className: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  data_collection:           { className: 'bg-sky-100 text-sky-700' },
+  analysis_in_progress:      { className: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
+  draft_bfs_issued:          { className: 'bg-yellow-100 text-yellow-800' },
+  peer_review:               { className: 'bg-amber-100 text-amber-700' },
+  ipp_comments_submitted:    { className: 'bg-teal-100 text-teal-700' },
+  ie_review:                 { className: 'bg-purple-100 text-purple-700' },
+  queries_raised:            { className: 'bg-orange-100 text-orange-700' },
+  responses_submitted:       { className: 'bg-cyan-100 text-cyan-700' },
+  bfs_certified:             { className: 'bg-green-100 text-green-700' },
+  bfs_rejected:              { className: 'bg-red-100 text-red-700' },
 };
 
 const TIER_COLORS: Record<string, string> = {
@@ -181,7 +183,7 @@ export function IppBfsTab() {
                       <span className="px-2 py-0.5 rounded text-xs text-white font-medium" style={{ backgroundColor: tierColor }}>{item.bfs_capacity_tier}</span>
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>{item.chain_status.replace(/_/g, ' ')}</span>
+                      {(() => { const sc = STATUS_COLORS[item.chain_status] ?? { className: 'bg-[#eef2f7] text-[#6b7685]' }; return <span className={`px-2 py-0.5 rounded text-xs ${sc.className}`} style={sc.style}>{item.chain_status.replace(/_/g, ' ')}</span>; })()}
                     </td>
                     <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}

@@ -25,6 +25,7 @@ type ChainStatus =
 type Severity = 'critical' | 'high' | 'medium' | 'low';
 
 interface OutageRow {
+  [key: string]: unknown;
   id: string;
   outage_number: string;
   participant_id: string;
@@ -71,11 +72,11 @@ interface OutageEvent {
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   draft:        { bg: '#e3e7ec', fg: '#557',    label: 'Draft' },
   submitted:    { bg: '#fff4d6', fg: '#a06200', label: 'Submitted' },
-  under_review: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Under review' },
+  under_review: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Under review' },
   approved:     { bg: '#daf5e2', fg: '#1f6b3a', label: 'Approved' },
   rejected:     { bg: '#fde0e0', fg: '#9b1f1f', label: 'Rejected' },
   rescheduled:  { bg: '#fff4d6', fg: '#a06200', label: 'Rescheduled' },
-  notified:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Notified' },
+  notified:     { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Notified' },
   in_progress:  { bg: '#fde0e0', fg: '#9b1f1f', label: 'In progress' },
   restoring:    { bg: '#ffe4b5', fg: '#8a4a00', label: 'Restoring' },
   restored:     { bg: '#daf5e2', fg: '#1f6b3a', label: 'Restored' },
@@ -292,14 +293,14 @@ export function PlannedOutageChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Outage #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Asset</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Category</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">MW</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Severity</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Window</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Outage #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Asset</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Category</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>MW</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Severity</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Window</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -315,7 +316,7 @@ export function PlannedOutageChainTab() {
                     <td className="px-3 py-2 font-mono text-[11px] text-[#0c2a4d]">{r.outage_number}</td>
                     <td className="px-3 py-2 text-[#0c2a4d]">{r.asset_name ?? '—'}</td>
                     <td className="px-3 py-2 text-[#4a5568]">{r.category}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtMw(r.affected_mw)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtMw(r.affected_mw)}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: sv.bg, color: sv.fg }}>
                         {sv.label}
@@ -424,13 +425,13 @@ function Drawer({
           {row.reason && (
             <div className="mt-3 text-[12px]">
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">Reason</div>
-              <div className="text-[#1a3a5c]">{row.reason}</div>
+              <div style={{ color: 'oklch(0.46 0.16 55)' }}>{row.reason}</div>
             </div>
           )}
           {row.contingency_notes && (
             <div className="mt-3 text-[12px]">
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">Contingency (N-1 assessment)</div>
-              <div className="text-[#1a3a5c] whitespace-pre-wrap">{row.contingency_notes}</div>
+              <div className="whitespace-pre-wrap" style={{ color: 'oklch(0.46 0.16 55)' }}>{row.contingency_notes}</div>
             </div>
           )}
           {row.rejection_reason && (
@@ -504,7 +505,7 @@ function Drawer({
                   {(e.from_status || e.to_status) && (
                     <div className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</div>
                   )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

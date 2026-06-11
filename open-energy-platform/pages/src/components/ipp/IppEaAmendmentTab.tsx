@@ -34,9 +34,9 @@ interface EaAmendment {
 
 const STATUS_COLORS: Record<string, string> = {
   ea_amendment_triggered:      'bg-[#eef2f7] text-[#6b7685]',
-  scope_defined:               'bg-blue-100 text-blue-700',
+  scope_defined:               'bg-[#eef2f7] text-[#3d4756]',
   application_in_preparation:  'bg-sky-100 text-sky-700',
-  application_submitted:       'bg-indigo-100 text-indigo-700',
+  application_submitted:       'bg-[#e8ecf0] text-[#3d4756]',
   dffe_completeness_review:    'bg-yellow-100 text-yellow-800',
   public_participation_open:   'bg-teal-100 text-teal-700',
   public_participation_closed: 'bg-cyan-100 text-cyan-700',
@@ -64,7 +64,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   small:     '#6b7280',
-  medium:    '#3b82f6',
+  medium:    'oklch(0.46 0.16 55)',
   large:     '#f59e0b',
   utility:   '#ef4444',
   strategic: '#7c3aed',

@@ -26,7 +26,7 @@
 //   initiate_buy_in    crosses material + systemic (formal market interv.);
 //   sla_breached       crosses material + systemic.
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../lib/api';
 
 type ChainStatus =
@@ -41,6 +41,7 @@ type InstrumentClass = 'equity' | 'bond' | 'etf' | 'derivative' | 'cash_equivale
 type UrgencyBand = 'green' | 'amber' | 'red' | 'critical';
 
 interface SfRow {
+  [key: string]: unknown;
   id: string;
   fail_number: string;
   trader_desk_name: string;
@@ -163,7 +164,7 @@ interface KpiSummary {
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   instruction_pending:     { bg: '#e3e7ec', fg: '#557',    label: 'Instruction pending' },
   fail_recorded:           { bg: '#fff4d6', fg: '#a06200', label: 'Fail recorded' },
-  extension_granted:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Extension granted' },
+  extension_granted:       { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Extension granted' },
   penalty_accruing:        { bg: '#ffe9d6', fg: '#8a4a00', label: 'Penalty accruing' },
   buy_in_initiated:        { bg: '#ffe4b5', fg: '#8a4a00', label: 'Buy-in initiated' },
   buy_in_executing:        { bg: '#ffd9a0', fg: '#8a4a00', label: 'Buy-in executing' },
@@ -177,7 +178,7 @@ const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }>
 
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
   minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor (<R100k)' },
-  standard: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard (<R1m)' },
+  standard: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Standard (<R1m)' },
   material: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Material (<R10m)' },
   systemic: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Systemic (≥R10m)' },
 };
@@ -257,7 +258,17 @@ const ACTION_LABEL: Record<ActionKind, string> = {
   'write-off':                'WRITE OFF — uncollectable loss (counterparty credit)',
 };
 
+const ALL_STATES: ChainStatus[] = [
+  'instruction_pending', 'fail_recorded', 'extension_granted', 'penalty_accruing',
+  'buy_in_initiated', 'buy_in_executing', 'buy_in_settled', 'cash_compensation', 'closed_resolved',
+];
+
+const BRANCH_STATES: ChainStatus[] = ['dispute_raised', 'force_majeure_suspended', 'written_off'];
+
 const TERMINAL_STATES: ChainStatus[] = ['closed_resolved', 'written_off'];
+
+interface ModalField { key: string; label: string; placeholder?: string; defaultValue?: string; required?: boolean; }
+interface PendingAction { action: ActionKind; row: SfRow; fields: ModalField[]; }
 
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
@@ -293,6 +304,7 @@ export function SettlementFailChainTab() {
   const [filter, setFilter] = useState<string>('active');
   const [selected, setSelected] = useState<SfRow | null>(null);
   const [events, setEvents] = useState<SfEvent[]>([]);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -353,81 +365,72 @@ export function SettlementFailChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: SfRow) => {
+  const openAction = useCallback((action: ActionKind, row: SfRow) => {
+    const ACTION_FIELDS: Record<ActionKind, ModalField[]> = {
+      'record-fail': [
+        { key: 'chain_basis', label: 'Record fail basis — receiving leg did not arrive on S', required: true },
+        { key: 'fail_reason_code', label: 'Fail reason code', placeholder: 'insufficient_securities', defaultValue: 'insufficient_securities' },
+      ],
+      'grant-extension': [
+        { key: 'chain_basis', label: 'Extension basis — bilateral extension agreed', required: true },
+        { key: 'extension_granted_until', label: 'Extension until (ISO datetime)', placeholder: '2026-06-15T12:00:00Z' },
+      ],
+      'begin-penalty': [
+        { key: 'chain_basis', label: 'Begin penalty basis — CSDR-equivalent daily accrual starts', required: true },
+      ],
+      'initiate-buy-in': [
+        { key: 'chain_basis', label: 'Initiate buy-in basis — formal market intervention (large tiers cross regulator)', required: true },
+        { key: 'buy_in_agent_id', label: 'Buy-in agent ID', defaultValue: String(row.buy_in_agent_name ?? '') },
+        { key: 'buy_in_agent_name', label: 'Buy-in agent name', defaultValue: String(row.buy_in_agent_name ?? '') },
+      ],
+      'execute-buy-in': [
+        { key: 'chain_basis', label: 'Execute buy-in basis — replacement procurement trade', required: true },
+        { key: 'buy_in_price_zar', label: 'Buy-in price (ZAR)', defaultValue: String(row.fail_price_zar ?? 0) },
+        { key: 'buy_in_value_zar', label: 'Buy-in value (ZAR)', defaultValue: String(row.fail_value_zar ?? 0) },
+      ],
+      'settle-buy-in': [
+        { key: 'chain_basis', label: 'Settle buy-in basis — replacement leg settled cleanly', required: true },
+      ],
+      'switch-cash-compensation': [
+        { key: 'chain_basis', label: 'Switch to cash compensation basis — buy-in uneconomic, settle in cash', required: true },
+        { key: 'cash_compensation_value_zar', label: 'Cash compensation value (ZAR)', defaultValue: String(row.fail_value_zar ?? 0) },
+      ],
+      'close-resolved': [
+        { key: 'chain_basis', label: 'Close resolved basis — buy-in settled, fail closed clean', required: true },
+      ],
+      'close-cash': [
+        { key: 'chain_basis', label: 'Close via cash basis — cash compensation finalised (large tiers cross regulator)', required: true },
+      ],
+      'raise-dispute': [
+        { key: 'chain_basis', label: 'Dispute basis — counterparty challenges the fail or quantum', required: true },
+      ],
+      'resolve-dispute': [
+        { key: 'chain_basis', label: 'Resolve dispute basis — dispute settled, return to penalty accrual', required: true },
+      ],
+      'suspend-force-majeure': [
+        { key: 'chain_basis', label: 'Force majeure basis — market disruption pauses the chain', required: true },
+      ],
+      'resume': [
+        { key: 'chain_basis', label: 'Resume basis — force majeure lifted, resume accrual', required: true },
+      ],
+      'write-off': [
+        { key: 'chain_basis', label: 'Write-off basis — UNCOLLECTABLE LOSS (ALWAYS crosses regulator — W85 hard line)', required: true },
+        { key: 'reason_code', label: 'Reason code', placeholder: 'counterparty_insolvency / systemic_default / extended_unresolved', defaultValue: 'counterparty_insolvency' },
+      ],
+    };
+    setPendingAction({ action, row, fields: ACTION_FIELDS[action] });
+  }, []);
+
+  const submitAction = useCallback(async (values: Record<string, string>) => {
+    if (!pendingAction) return;
+    const { action, row } = pendingAction;
+    setPendingAction(null);
     try {
-      let body: Record<string, string | number> = {};
-      if (action === 'record-fail') {
-        const basis = window.prompt('Record fail basis — receiving leg did not arrive on S:');
-        if (!basis) return;
-        const reason = window.prompt('Fail reason code (insufficient_securities/insufficient_cash/instruction_mismatch/late_matching/counterparty_default/operational_error/systemic_disruption):', 'insufficient_securities') || '';
-        body = { chain_basis: basis };
-        if (reason) body.fail_reason_code = reason;
-      } else if (action === 'grant-extension') {
-        const basis = window.prompt('Extension basis — bilateral extension agreed:');
-        if (!basis) return;
-        const until = window.prompt('Extension until (ISO datetime):') || '';
-        body = { chain_basis: basis };
-        if (until) body.extension_granted_until = until;
-      } else if (action === 'begin-penalty') {
-        const basis = window.prompt('Begin penalty basis — CSDR-equivalent daily accrual starts:');
-        if (!basis) return;
-        body = { chain_basis: basis };
-      } else if (action === 'initiate-buy-in') {
-        const basis = window.prompt('Initiate buy-in basis — formal market intervention (large tiers cross regulator):');
-        if (!basis) return;
-        const agentId = window.prompt('Buy-in agent ID:', row.buy_in_agent_name || '') || '';
-        const agentName = window.prompt('Buy-in agent name:', row.buy_in_agent_name || '') || '';
-        body = { chain_basis: basis };
-        if (agentId) body.buy_in_agent_id = agentId;
-        if (agentName) body.buy_in_agent_name = agentName;
-      } else if (action === 'execute-buy-in') {
-        const basis = window.prompt('Execute buy-in basis — replacement procurement trade:');
-        if (!basis) return;
-        const price = window.prompt('Buy-in price (ZAR):', String(row.fail_price_zar || 0));
-        const value = window.prompt('Buy-in value (ZAR):', String(row.fail_value_zar || 0));
-        body = { chain_basis: basis };
-        if (price && !Number.isNaN(Number(price))) body.buy_in_price_zar = Number(price);
-        if (value && !Number.isNaN(Number(value))) body.buy_in_value_zar = Number(value);
-      } else if (action === 'settle-buy-in') {
-        const basis = window.prompt('Settle buy-in basis — replacement leg settled cleanly:');
-        if (!basis) return;
-        body = { chain_basis: basis };
-      } else if (action === 'switch-cash-compensation') {
-        const basis = window.prompt('Switch to cash compensation basis — buy-in uneconomic, settle in cash:');
-        if (!basis) return;
-        const value = window.prompt('Cash compensation value (ZAR):', String(row.fail_value_zar || 0));
-        body = { chain_basis: basis };
-        if (value && !Number.isNaN(Number(value))) body.cash_compensation_value_zar = Number(value);
-      } else if (action === 'close-resolved') {
-        const basis = window.prompt('Close resolved basis — buy-in settled, fail closed clean:');
-        if (!basis) return;
-        body = { chain_basis: basis };
-      } else if (action === 'close-cash') {
-        const basis = window.prompt('Close via cash basis — cash compensation finalised (large tiers cross regulator):');
-        if (!basis) return;
-        body = { chain_basis: basis };
-      } else if (action === 'raise-dispute') {
-        const basis = window.prompt('Dispute basis — counterparty challenges the fail or quantum:');
-        if (!basis) return;
-        body = { chain_basis: basis };
-      } else if (action === 'resolve-dispute') {
-        const basis = window.prompt('Resolve dispute basis — dispute settled, return to penalty accrual:');
-        if (!basis) return;
-        body = { chain_basis: basis };
-      } else if (action === 'suspend-force-majeure') {
-        const basis = window.prompt('Force majeure basis — market disruption pauses the chain:');
-        if (!basis) return;
-        body = { chain_basis: basis };
-      } else if (action === 'resume') {
-        const basis = window.prompt('Resume basis — force majeure lifted, resume accrual:');
-        if (!basis) return;
-        body = { chain_basis: basis };
-      } else if (action === 'write-off') {
-        const basis = window.prompt('Write-off basis — UNCOLLECTABLE LOSS (ALWAYS crosses regulator — W85 hard line):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. counterparty_insolvency / systemic_default / extended_unresolved):', 'counterparty_insolvency') || '';
-        body = { chain_basis: basis };
-        if (reason) body.reason_code = reason;
+      const body: Record<string, string | number> = {};
+      for (const [k, v] of Object.entries(values)) {
+        if (!v) continue;
+        const num = Number(v);
+        body[k] = !Number.isNaN(num) && v.trim() !== '' && ['buy_in_price_zar','buy_in_value_zar','cash_compensation_value_zar'].includes(k) ? num : v;
       }
       await api.post(`/settlement-fail/chain/${row.id}/${action}`, body);
       await load();
@@ -435,7 +438,7 @@ export function SettlementFailChainTab() {
     } catch (e) {
       setErr(e instanceof Error ? e.message : `Failed to ${action}`);
     }
-  }, [load, loadEvents, selected]);
+  }, [pendingAction, load, loadEvents, selected]);
 
   return (
     <div className="p-5">
@@ -506,17 +509,17 @@ export function SettlementFailChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Fail #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Counterparty</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Instrument</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Class</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Value</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Age</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Penalty</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Urgency</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Fail #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Counterparty</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Instrument</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Class</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Value</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Age</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Penalty</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Urgency</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -530,7 +533,7 @@ export function SettlementFailChainTab() {
                     onClick={() => loadEvents(r.id)}
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 font-mono text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.fail_number}
                       {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to FSCA/JSE-STRATE">●</span>}
                       {r.is_systemic_carrier_flag && <span className="ml-1 text-[#8a4a00]" title="Systemic carrier">★</span>}
@@ -542,7 +545,7 @@ export function SettlementFailChainTab() {
                       {r.instrument_name || r.isin || '—'}
                     </td>
                     <td className="px-3 py-2 text-[#4a5568]">{INSTRUMENT_LABEL[r.instrument_class]}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtZar(r.fail_value_zar)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtZar(r.fail_value_zar)}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
                         {tt.label}
@@ -577,7 +580,15 @@ export function SettlementFailChainTab() {
       )}
 
       {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={openAction} />
+      )}
+      {pendingAction && (
+        <ActionPromptModal
+          title={ACTION_LABEL[pendingAction.action]}
+          fields={pendingAction.fields}
+          onSubmit={submitAction}
+          onCancel={() => setPendingAction(null)}
+        />
       )}
     </div>
   );
@@ -713,9 +724,9 @@ function Drawer({
             <Pair label="Regulator ref" value={row.regulator_ref ?? '—'} />
           </div>
           {row.fail_summary && (
-            <BasisBlock label="Fail summary" tone="#1a3a5c" text={row.fail_summary} />
+            <BasisBlock label="Fail summary" tone="oklch(0.46 0.16 55)" text={row.fail_summary} />
           )}
-          {row.chain_basis && <BasisBlock label="Chain basis" tone="#1a3a5c" text={row.chain_basis} />}
+          {row.chain_basis && <BasisBlock label="Chain basis" tone="oklch(0.46 0.16 55)" text={row.chain_basis} />}
         </section>
 
         {(primary || canExtend || canDispute || canFm || canSwitchCash || canWriteOff) && (
@@ -733,7 +744,7 @@ function Drawer({
               {canExtend && (
                 <button type="button"
                   onClick={() => onAct('grant-extension', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#1a3a5c] hover:bg-[#f3f5f9]"
+                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}
                 >
                   {ACTION_LABEL['grant-extension']}
                 </button>
@@ -794,7 +805,7 @@ function Drawer({
                       <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
                     )}
                   </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>
@@ -819,6 +830,70 @@ function Pair({ label, value }: { label: string; value: string }) {
     <div>
       <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
       <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+    </div>
+  );
+}
+
+function ActionPromptModal({
+  title, fields, onSubmit, onCancel,
+}: {
+  title: string;
+  fields: ModalField[];
+  onSubmit: (values: Record<string, string>) => void;
+  onCancel: () => void;
+}) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formRef.current) return;
+    const data = new FormData(formRef.current);
+    const values: Record<string, string> = {};
+    for (const f of fields) values[f.key] = (data.get(f.key) as string) || '';
+    onSubmit(values);
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onCancel}>
+      <div
+        className="w-full max-w-md rounded-lg bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="border-b border-[#d8dde6] px-5 py-3">
+          <div className="text-[13px] font-semibold text-[#0c2a4d]">{title}</div>
+        </header>
+        <form ref={formRef} onSubmit={handleSubmit}>
+          <div className="px-5 py-4 space-y-3">
+            {fields.map((f) => (
+              <div key={f.key}>
+                <label className="block text-[11px] uppercase tracking-wider text-[#4a5568] mb-1">
+                  {f.label}{f.required && <span className="text-red-600 ml-0.5">*</span>}
+                </label>
+                <input
+                  name={f.key}
+                  defaultValue={f.defaultValue ?? ''}
+                  placeholder={f.placeholder ?? ''}
+                  required={f.required}
+                  className="w-full rounded border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[#0c2a4d] outline-none focus:border-[#c2873a]"
+                />
+              </div>
+            ))}
+          </div>
+          <footer className="flex justify-end gap-2 border-t border-[#d8dde6] px-5 py-3">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#4a5568] hover:bg-[#f3f5f9]"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#b07635]"
+            >
+              Confirm
+            </button>
+          </footer>
+        </form>
+      </div>
     </div>
   );
 }

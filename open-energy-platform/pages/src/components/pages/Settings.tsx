@@ -4,7 +4,6 @@ import { User, Bell, Globe, Lock, ShieldCheck, Save } from 'lucide-react';
 import { api } from '../../context/AuthContext';
 import { useAuth } from '../../lib/useAuth';
 import { Skeleton } from '../Skeleton';
-import { StitchPage } from '../StitchPage';
 
 // Unified /settings page — every role lands here from the avatar menu.
 // Four panes:
@@ -13,6 +12,20 @@ import { StitchPage } from '../StitchPage';
 //                     (via GET / PUT /auth/preferences)
 //   3. Password     — current + new (POST /auth/change-password)
 //   4. Security     — link to /settings/security (MFA + sessions)
+
+const BG      = 'oklch(0.96 0.003 250)';
+const BG1     = 'oklch(0.99 0.002 80)';
+const BG2     = 'oklch(0.93 0.004 250)';
+const BORDER  = 'oklch(0.87 0.006 250)';
+const TX1     = 'oklch(0.17 0.010 250)';
+const TX2     = 'oklch(0.40 0.009 250)';
+const TX3     = 'oklch(0.60 0.007 250)';
+const ACC     = 'oklch(0.46 0.16 55)';
+const BAD     = 'oklch(0.48 0.20 20)';
+const BAD_BG  = 'oklch(0.97 0.04 20)';
+const GOOD    = 'oklch(0.40 0.16 155)';
+const GOOD_BG = 'oklch(0.95 0.04 155)';
+const MONO    = '"IBM Plex Mono","Fira Code",monospace';
 
 type Prefs = {
   notify_email_contracts: number;
@@ -27,6 +40,132 @@ type Prefs = {
 };
 
 type Msg = { kind: 'ok' | 'err'; text: string } | null;
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  border: `1px solid ${BORDER}`,
+  borderRadius: 6,
+  padding: '8px 10px',
+  fontSize: 13,
+  color: TX1,
+  background: BG,
+  outline: 'none',
+  boxSizing: 'border-box',
+};
+
+const readonlyInputStyle: React.CSSProperties = {
+  ...inputStyle,
+  background: BG2,
+  color: TX2,
+};
+
+function Msg({ msg }: { msg: Msg }) {
+  if (!msg) return null;
+  return (
+    <span style={{
+      fontSize: 12,
+      color: msg.kind === 'ok' ? GOOD : BAD,
+      background: msg.kind === 'ok' ? GOOD_BG : BAD_BG,
+      padding: '4px 10px',
+      borderRadius: 6,
+      fontWeight: 500,
+    }}>
+      {msg.text}
+    </span>
+  );
+}
+
+function SectionCard({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
+  return (
+    <div style={{
+      background: BG1,
+      border: `1px solid ${BORDER}`,
+      borderRadius: 8,
+      marginBottom: 16,
+      overflow: 'hidden',
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '12px 20px',
+        borderBottom: `1px solid ${BORDER}`,
+        background: BG2,
+      }}>
+        <Icon size={14} style={{ color: TX2 }} />
+        <span style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          {title}
+        </span>
+      </div>
+      <div style={{ padding: '16px 20px' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ fontSize: 11, color: TX3, fontWeight: 600, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      {children}
+    </div>
+  );
+}
+
+function PrefRow({ label, on, onChange }: { label: string; on: boolean; onChange: () => void }) {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '9px 0',
+      borderBottom: `1px solid ${BORDER}`,
+    }}>
+      <span style={{ fontSize: 13, color: TX1 }}>{label}</span>
+      <button
+        type="button"
+        onClick={onChange}
+        aria-pressed={on}
+        style={{
+          position: 'relative',
+          display: 'inline-flex',
+          height: 20,
+          width: 36,
+          alignItems: 'center',
+          borderRadius: 10,
+          border: 'none',
+          cursor: 'pointer',
+          background: on ? ACC : BORDER,
+          transition: 'background 0.15s',
+          flexShrink: 0,
+        }}
+      >
+        <span style={{
+          display: 'inline-block',
+          height: 14,
+          width: 14,
+          borderRadius: '50%',
+          background: '#fff',
+          transform: on ? 'translateX(18px)' : 'translateX(3px)',
+          transition: 'transform 0.15s',
+        }} />
+      </button>
+    </div>
+  );
+}
+
+function LabelInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <FieldLabel>{label}</FieldLabel>
+      <input
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        style={inputStyle}
+      />
+    </div>
+  );
+}
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -130,7 +269,7 @@ export default function Settings() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-4">
+      <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-40 w-full" />
         <Skeleton className="h-40 w-full" />
@@ -138,175 +277,336 @@ export default function Settings() {
     );
   }
 
-  return (
-    <StitchPage
-      eyebrowIcon={User}
-      eyebrowLabel="Account"
-      title="Settings"
-      subtitle={`Profile, preferences and security for ${user?.email}`}
-    >
-      {/* Profile */}
-      <section className="bg-white border border-ionex-border-soft rounded-xl">
-        <header className="px-5 py-4 border-b border-ionex-border-soft flex items-center gap-2">
-          <User className="w-4 h-4 text-[#6b7685]" />
-          <h2 className="font-semibold">Profile</h2>
-        </header>
-        <div className="p-5 space-y-3 text-sm">
-          <div>
-            <label className="block text-xs text-ionex-text-mute mb-1">Full name</label>
-            <input value={name} onChange={(e) => setName(e.target.value)}
-              className="w-full max-w-md border border-ionex-border rounded-md px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="block text-xs text-ionex-text-mute mb-1">Company</label>
-            <input value={company} onChange={(e) => setCompany(e.target.value)}
-              className="w-full max-w-md border border-ionex-border rounded-md px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label className="block text-xs text-ionex-text-mute mb-1">Email (read-only)</label>
-            <input value={user?.email || ''} readOnly
-              className="w-full max-w-md border border-ionex-border-soft bg-[#f8fafc] rounded-md px-3 py-2 text-sm text-[#3d4756]" />
-          </div>
-          <div>
-            <label className="block text-xs text-ionex-text-mute mb-1">Role (read-only)</label>
-            <input value={user?.role || ''} readOnly
-              className="w-full max-w-md border border-ionex-border-soft bg-[#f8fafc] rounded-md px-3 py-2 text-sm text-[#3d4756]" />
-          </div>
-          <div className="flex items-center gap-3 pt-2">
-            <button type="button" onClick={saveProfile}
-              className="flex items-center gap-1 px-4 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-deep">
-              <Save className="w-4 h-4" /> Save profile
-            </button>
-            {profileMsg && (
-              <span className={profileMsg.kind === 'ok' ? 'text-green-700 text-xs' : 'text-red-700 text-xs'}>
-                {profileMsg.text}
-              </span>
-            )}
-          </div>
-        </div>
-      </section>
+  const notifCount = prefs
+    ? [prefs.notify_email_contracts, prefs.notify_email_settlement, prefs.notify_email_covenants, prefs.notify_email_lois, prefs.notify_in_app]
+        .filter(Boolean).length
+    : 0;
 
-      {/* Preferences */}
-      <section className="bg-white border border-ionex-border-soft rounded-xl">
-        <header className="px-5 py-4 border-b border-ionex-border-soft flex items-center gap-2">
-          <Bell className="w-4 h-4 text-[#6b7685]" />
-          <h2 className="font-semibold">Notification preferences</h2>
-        </header>
-        <div className="p-5 space-y-3 text-sm">
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr 380px',
+      height: 'calc(100vh - 50px)',
+      background: BG,
+      overflow: 'hidden',
+    }}>
+      {/* LEFT COLUMN */}
+      <div style={{ overflowY: 'auto', padding: '24px 28px' }}>
+        {/* Page header */}
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: TX1, margin: 0 }}>Settings</h1>
+          <p style={{ fontSize: 13, color: TX2, margin: '4px 0 0' }}>
+            Profile, preferences and security for{' '}
+            <span style={{ fontFamily: MONO, color: TX1 }}>{user?.email}</span>
+          </p>
+        </div>
+
+        {/* Profile */}
+        <SectionCard icon={User} title="Profile">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <FieldLabel>Full name</FieldLabel>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                style={{ ...inputStyle, maxWidth: 400 }}
+              />
+            </div>
+            <div>
+              <FieldLabel>Company</FieldLabel>
+              <input
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                style={{ ...inputStyle, maxWidth: 400 }}
+              />
+            </div>
+            <div>
+              <FieldLabel>Email (read-only)</FieldLabel>
+              <input
+                value={user?.email || ''}
+                readOnly
+                style={{ ...readonlyInputStyle, maxWidth: 400 }}
+              />
+            </div>
+            <div>
+              <FieldLabel>Role (read-only)</FieldLabel>
+              <input
+                value={user?.role || ''}
+                readOnly
+                style={{ ...readonlyInputStyle, maxWidth: 400, fontFamily: MONO }}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4 }}>
+              <button
+                type="button"
+                onClick={saveProfile}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: ACC, color: '#fff', border: 'none',
+                  padding: '8px 16px', borderRadius: 6, fontWeight: 600,
+                  cursor: 'pointer', fontSize: 13,
+                }}
+              >
+                <Save size={14} /> Save profile
+              </button>
+              <Msg msg={profileMsg} />
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* Notification Preferences */}
+        <SectionCard icon={Bell} title="Notification preferences">
           {prefs && (
-            <>
-              <PrefRow label="Contract signed / countersigned"
-                on={!!prefs.notify_email_contracts} onChange={() => toggle('notify_email_contracts')} />
-              <PrefRow label="Settlement — invoice paid / dispute raised"
-                on={!!prefs.notify_email_settlement} onChange={() => toggle('notify_email_settlement')} />
-              <PrefRow label="Covenant breach / near-breach (lenders)"
-                on={!!prefs.notify_email_covenants} onChange={() => toggle('notify_email_covenants')} />
-              <PrefRow label="LOI received / accepted / declined"
-                on={!!prefs.notify_email_lois} onChange={() => toggle('notify_email_lois')} />
-              <PrefRow label="In-app toasts (all events)"
-                on={!!prefs.notify_in_app} onChange={() => toggle('notify_in_app')} />
-              <hr className="my-2 border-ionex-border-soft" />
-              <div className="flex items-center gap-2 text-xs text-ionex-text-mute">
-                <Globe className="w-3.5 h-3.5" /> Regional
+            <div>
+              <PrefRow
+                label="Contract signed / countersigned"
+                on={!!prefs.notify_email_contracts}
+                onChange={() => toggle('notify_email_contracts')}
+              />
+              <PrefRow
+                label="Settlement — invoice paid / dispute raised"
+                on={!!prefs.notify_email_settlement}
+                onChange={() => toggle('notify_email_settlement')}
+              />
+              <PrefRow
+                label="Covenant breach / near-breach (lenders)"
+                on={!!prefs.notify_email_covenants}
+                onChange={() => toggle('notify_email_covenants')}
+              />
+              <PrefRow
+                label="LOI received / accepted / declined"
+                on={!!prefs.notify_email_lois}
+                onChange={() => toggle('notify_email_lois')}
+              />
+              <PrefRow
+                label="In-app toasts (all events)"
+                on={!!prefs.notify_in_app}
+                onChange={() => toggle('notify_in_app')}
+              />
+
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                margin: '16px 0 12px',
+                fontSize: 11, color: TX3, fontWeight: 700,
+                textTransform: 'uppercase', letterSpacing: '0.05em',
+              }}>
+                <Globe size={12} /> Regional
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                 <LabelInput label="Locale" value={prefs.locale} onChange={(v) => setPrefs({ ...prefs, locale: v })} />
                 <LabelInput label="Currency" value={prefs.currency} onChange={(v) => setPrefs({ ...prefs, currency: v })} />
                 <LabelInput label="Timezone" value={prefs.timezone} onChange={(v) => setPrefs({ ...prefs, timezone: v })} />
                 <LabelInput label="Date format" value={prefs.date_format} onChange={(v) => setPrefs({ ...prefs, date_format: v })} />
               </div>
-              <div className="flex items-center gap-3 pt-2">
-                <button type="button" onClick={savePrefs}
-                  className="flex items-center gap-1 px-4 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-deep">
-                  <Save className="w-4 h-4" /> Save preferences
-                </button>
-                {prefsMsg && (
-                  <span className={prefsMsg.kind === 'ok' ? 'text-green-700 text-xs' : 'text-red-700 text-xs'}>
-                    {prefsMsg.text}
-                  </span>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </section>
 
-      {/* Password */}
-      <section className="bg-white border border-ionex-border-soft rounded-xl">
-        <header className="px-5 py-4 border-b border-ionex-border-soft flex items-center gap-2">
-          <Lock className="w-4 h-4 text-[#6b7685]" />
-          <h2 className="font-semibold">Change password</h2>
-        </header>
-        <div className="p-5 space-y-3 text-sm">
-          <div>
-            <label className="block text-xs text-ionex-text-mute mb-1">Current password</label>
-            <input type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)}
-              className="w-full max-w-md border border-ionex-border rounded-md px-3 py-2 text-sm" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={savePrefs}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    background: ACC, color: '#fff', border: 'none',
+                    padding: '8px 16px', borderRadius: 6, fontWeight: 600,
+                    cursor: 'pointer', fontSize: 13,
+                  }}
+                >
+                  <Save size={14} /> Save preferences
+                </button>
+                <Msg msg={prefsMsg} />
+              </div>
+            </div>
+          )}
+        </SectionCard>
+
+        {/* Password */}
+        <SectionCard icon={Lock} title="Change password">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <FieldLabel>Current password</FieldLabel>
+              <input
+                type="password"
+                value={currentPw}
+                onChange={(e) => setCurrentPw(e.target.value)}
+                style={{ ...inputStyle, maxWidth: 400 }}
+              />
+            </div>
+            <div>
+              <FieldLabel>New password</FieldLabel>
+              <input
+                type="password"
+                value={newPw}
+                onChange={(e) => setNewPw(e.target.value)}
+                style={{ ...inputStyle, maxWidth: 400 }}
+              />
+              <div style={{ fontSize: 11, color: TX3, marginTop: 4 }}>
+                Changing your password revokes all other active sessions.
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4 }}>
+              <button
+                type="button"
+                onClick={changePassword}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: ACC, color: '#fff', border: 'none',
+                  padding: '8px 16px', borderRadius: 6, fontWeight: 600,
+                  cursor: 'pointer', fontSize: 13,
+                }}
+              >
+                <Save size={14} /> Change password
+              </button>
+              <Msg msg={pwMsg} />
+            </div>
           </div>
-          <div>
-            <label className="block text-xs text-ionex-text-mute mb-1">New password</label>
-            <input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)}
-              className="w-full max-w-md border border-ionex-border rounded-md px-3 py-2 text-sm" />
-            <p className="text-[11px] text-ionex-text-mute mt-1">
-              Changing your password revokes all other active sessions.
-            </p>
+        </SectionCard>
+      </div>
+
+      {/* RIGHT COLUMN */}
+      <div style={{
+        borderLeft: `1px solid ${BORDER}`,
+        background: BG1,
+        overflowY: 'auto',
+        padding: '24px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}>
+        {/* Account summary */}
+        <div style={{
+          background: BG,
+          border: `1px solid ${BORDER}`,
+          borderRadius: 8,
+          padding: '16px 20px',
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 14 }}>
+            Account
           </div>
-          <div className="flex items-center gap-3 pt-2">
-            <button type="button" onClick={changePassword}
-              className="flex items-center gap-1 px-4 py-2 bg-ionex-brand text-white rounded-lg text-sm hover:bg-ionex-brand-deep">
-              <Save className="w-4 h-4" /> Change password
-            </button>
-            {pwMsg && (
-              <span className={pwMsg.kind === 'ok' ? 'text-green-700 text-xs' : 'text-red-700 text-xs'}>
-                {pwMsg.text}
-              </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 11, color: TX3, marginBottom: 2 }}>Email</div>
+              <div style={{ fontSize: 13, color: TX1, fontFamily: MONO, wordBreak: 'break-all' }}>{user?.email}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: TX3, marginBottom: 2 }}>Role</div>
+              <div style={{ fontSize: 13, color: TX1, fontFamily: MONO }}>{user?.role}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: TX3, marginBottom: 2 }}>Display name</div>
+              <div style={{ fontSize: 13, color: name ? TX1 : TX3 }}>{name || '—'}</div>
+            </div>
+            {company && (
+              <div>
+                <div style={{ fontSize: 11, color: TX3, marginBottom: 2 }}>Company</div>
+                <div style={{ fontSize: 13, color: TX1 }}>{company}</div>
+              </div>
             )}
           </div>
         </div>
-      </section>
 
-      {/* Security link */}
-      <section className="bg-white border border-ionex-border-soft rounded-xl">
-        <header className="px-5 py-4 border-b border-ionex-border-soft flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-[#6b7685]" />
-          <h2 className="font-semibold">Security</h2>
-        </header>
-        <div className="p-5 text-sm">
-          <p className="mb-3 text-ionex-text-sub">
-            Two-factor authentication (TOTP), active sessions, and backup codes live on the security page.
+        {/* Notifications summary */}
+        <div style={{
+          background: BG,
+          border: `1px solid ${BORDER}`,
+          borderRadius: 8,
+          padding: '16px 20px',
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 14 }}>
+            Notifications
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: TX1, fontFamily: MONO }}>
+            {notifCount}<span style={{ fontSize: 13, color: TX3, fontWeight: 400, marginLeft: 6 }}>/ 5 active</span>
+          </div>
+          <div style={{ fontSize: 12, color: TX3, marginTop: 4 }}>
+            {notifCount === 0 ? 'All notifications off' : notifCount === 5 ? 'All channels enabled' : 'Some channels enabled'}
+          </div>
+          {prefs && (
+            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {[
+                { key: 'notify_email_contracts' as const, label: 'Contracts' },
+                { key: 'notify_email_settlement' as const, label: 'Settlement' },
+                { key: 'notify_email_covenants' as const, label: 'Covenants' },
+                { key: 'notify_email_lois' as const, label: 'LOIs' },
+                { key: 'notify_in_app' as const, label: 'In-app' },
+              ].map(({ key, label }) => (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 12, color: TX2 }}>{label}</span>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700,
+                    color: prefs[key] ? GOOD : TX3,
+                    background: prefs[key] ? GOOD_BG : BG2,
+                    padding: '2px 7px', borderRadius: 10,
+                  }}>
+                    {prefs[key] ? 'ON' : 'OFF'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Regional summary */}
+        {prefs && (
+          <div style={{
+            background: BG,
+            border: `1px solid ${BORDER}`,
+            borderRadius: 8,
+            padding: '16px 20px',
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 14 }}>
+              Regional
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                { label: 'Locale', value: prefs.locale },
+                { label: 'Currency', value: prefs.currency },
+                { label: 'Timezone', value: prefs.timezone },
+                { label: 'Date format', value: prefs.date_format },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, color: TX3 }}>{label}</span>
+                  <span style={{ fontSize: 12, color: TX1, fontFamily: MONO }}>{value || '—'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Security */}
+        <div style={{
+          background: BG,
+          border: `1px solid ${BORDER}`,
+          borderRadius: 8,
+          padding: '16px 20px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <ShieldCheck size={14} style={{ color: TX2 }} />
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Security
+            </div>
+          </div>
+          <p style={{ fontSize: 12, color: TX2, margin: '0 0 12px', lineHeight: 1.5 }}>
+            Two-factor authentication (TOTP), active sessions, and backup codes.
           </p>
-          <button type="button" onClick={() => navigate('/settings/security')}
-            className="px-4 py-2 border border-ionex-brand text-ionex-brand rounded-lg text-sm hover:bg-ionex-brand hover:text-white">
+          <button
+            type="button"
+            onClick={() => navigate('/settings/security')}
+            style={{
+              width: '100%',
+              background: 'transparent',
+              color: ACC,
+              border: `1px solid ${ACC}`,
+              padding: '8px 16px',
+              borderRadius: 6,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: 13,
+            }}
+          >
             Open security settings
           </button>
         </div>
-      </section>
-    </StitchPage>
-  );
-}
-
-function PrefRow({ label, on, onChange }: { label: string; on: boolean; onChange: () => void }) {
-  return (
-    <label className="flex items-center justify-between gap-3 py-1 cursor-pointer">
-      <span className="text-sm text-[#1e2a38]">{label}</span>
-      <button
-        type="button"
-        onClick={onChange}
-        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${on ? 'bg-ionex-brand' : 'bg-gray-300'}`}
-        aria-pressed={on}
-      >
-        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${on ? 'translate-x-5' : 'translate-x-1'}`} />
-      </button>
-    </label>
-  );
-}
-
-function LabelInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <div>
-      <label className="block text-xs text-ionex-text-mute mb-1">{label}</label>
-      <input value={value || ''} onChange={(e) => onChange(e.target.value)}
-        className="w-full border border-ionex-border rounded-md px-3 py-2 text-sm" />
+      </div>
     </div>
   );
 }

@@ -27,6 +27,7 @@ type ChainStatus =
 type Tier = 'utility_scale' | 'commercial' | 'embedded';
 
 interface TariffIdxRow {
+  [key: string]: unknown;
   id: string;
   indexation_number: string;
   source_event: string | null;
@@ -116,8 +117,8 @@ interface KpiSummary {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   indexation_due:        { bg: '#e3e7ec', fg: '#557',    label: 'Indexation due' },
-  index_published:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Index published' },
-  escalation_calculated: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Escalation calculated' },
+  index_published:       { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Index published' },
+  escalation_calculated: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Escalation calculated' },
   notice_issued:         { bg: '#fff4d6', fg: '#a06200', label: 'Notice issued' },
   under_review:          { bg: '#fff4d6', fg: '#a06200', label: 'Under review' },
   tariff_agreed:         { bg: '#daf5e2', fg: '#1f6b3a', label: 'Tariff agreed' },
@@ -405,13 +406,13 @@ export function TariffIndexationTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Indexation #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Project / offtaker</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Yr</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Base → proposed</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Indexation #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Project / offtaker</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Yr</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Base → proposed</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -425,7 +426,7 @@ export function TariffIndexationTab() {
                     onClick={() => loadEvents(r.id)}
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 font-mono text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.indexation_number}
                       {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
                     </td>
@@ -439,7 +440,7 @@ export function TariffIndexationTab() {
                       </span>
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums text-[#4a5568]">{r.contract_year ?? '—'}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {fmtTariff(r.base_tariff_zar_mwh)} → {fmtTariff(shown)}
                     </td>
                     <td className="px-3 py-2">
@@ -551,13 +552,13 @@ function Drawer({
             <Pair label="Reportable"       value={row.is_reportable ? 'Yes' : 'No'} />
           </div>
           {row.calculation_basis && (
-            <BasisBlock label="Calculation basis" tone="#1a3a5c" text={row.calculation_basis} />
+            <BasisBlock label="Calculation basis" tone="oklch(0.46 0.16 55)" text={row.calculation_basis} />
           )}
           {row.notice_basis && (
-            <BasisBlock label="Notice basis" tone="#1a3a5c" text={row.notice_basis} />
+            <BasisBlock label="Notice basis" tone="oklch(0.46 0.16 55)" text={row.notice_basis} />
           )}
           {row.review_basis && (
-            <BasisBlock label="Review basis" tone="#1a3a5c" text={row.review_basis} />
+            <BasisBlock label="Review basis" tone="oklch(0.46 0.16 55)" text={row.review_basis} />
           )}
           {row.dispute_basis && (
             <BasisBlock label="Dispute basis" tone="#a04040" text={row.dispute_basis} />
@@ -633,7 +634,7 @@ function Drawer({
                       <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
                     )}
                   </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

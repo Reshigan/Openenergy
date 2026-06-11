@@ -45,7 +45,7 @@ const SEVERITY_TONE: Record<Severity, { bg: string; fg: string }> = {
   critical: { bg: '#fde0e0', fg: '#9b1f1f' },
   high: { bg: '#ffe5cc', fg: '#a04200' },
   medium: { bg: '#fff4d6', fg: '#a06200' },
-  low: { bg: '#dbecfb', fg: '#1a3a5c' },
+  low: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)' },
   info: { bg: '#f0f3f7', fg: '#445566' },
 };
 
@@ -136,12 +136,12 @@ export function InboxTab() {
             key={s}
             data-testid={`regulator-inbox-filter-${s}`}
             onClick={() => setFilter(s)}
-            className={`h-7 px-3 rounded-full text-[11px] font-semibold border ${filter === s ? 'bg-[#c2873a] text-white border-[#1a3a5c]' : 'bg-white text-[#445566] border-[#d8dee6]'}`}
+            className={`h-7 px-3 rounded-full text-[11px] font-semibold border ${filter === s ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]' : 'bg-white text-[#445566] border-[#d8dee6]'}`}
           >
             {s === 'all' ? 'All' : STATUS_TONE[s].label}
           </button>
         ))}
-        <button type="button" onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[#d8dee6] bg-white text-[#1a3a5c] ml-auto">
+        <button type="button" onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[#d8dee6] bg-white text-[oklch(0.46_0.16_55)] ml-auto">
           Refresh
         </button>
       </div>
@@ -200,15 +200,15 @@ export function InboxTab() {
 
       {/* Drill-down */}
       {drillRow && (
-        <div data-testid="regulator-inbox-drill" className="border border-[#1a3a5c] rounded-md p-4 bg-[#f7f9fb] space-y-3">
+        <div data-testid="regulator-inbox-drill" className="border border-[oklch(0.46_0.16_55)] rounded-md p-4 bg-[#f7f9fb] space-y-3">
           <div className="flex justify-between items-start">
             <div>
               <div className="text-[11px] uppercase font-bold text-[#6b7685]">
                 {drillRow.source_event} · {drillRow.source_entity_type}/{drillRow.source_entity_id.slice(0, 12)}…
               </div>
-              <div className="text-[14px] font-bold text-[#1a3a5c]">{drillRow.title}</div>
+              <div className="text-[14px] font-bold text-[oklch(0.46_0.16_55)]">{drillRow.title}</div>
             </div>
-            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685] hover:text-[#1a3a5c]">Close ×</button>
+            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685] hover:text-[oklch(0.46_0.16_55)]">Close ×</button>
           </div>
           <div className="grid grid-cols-2 gap-3 text-[12px]">
             <Field label="Status" value={STATUS_TONE[drillRow.ack_status].label} />
@@ -224,7 +224,7 @@ export function InboxTab() {
           )}
           {drillRow.body_json && (
             <details className="text-[11px]">
-              <summary className="cursor-pointer text-[#1a3a5c] font-semibold">Event payload</summary>
+              <summary className="cursor-pointer text-[oklch(0.46_0.16_55)] font-semibold">Event payload</summary>
               <pre className="mt-2 p-2 bg-white border border-[#e5e9ee] rounded font-mono text-[10px] overflow-auto whitespace-pre-wrap">
                 {(() => {
                   try { return JSON.stringify(JSON.parse(drillRow.body_json!), null, 2); }
@@ -277,7 +277,7 @@ export function InboxTab() {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'good' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'good' ? '#1f6b3a' : '#1a3a5c';
+  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'good' ? '#1f6b3a' : 'oklch(0.46 0.16 55)';
   return (
     <div className="bg-white border border-[#e5e9ee] rounded-md p-3">
       <div className="text-[10px] uppercase font-bold text-[#6b7685]">{label}</div>
@@ -290,7 +290,7 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
       <div className="text-[10px] uppercase font-bold text-[#6b7685]">{label}</div>
-      <div className="text-[12px] text-[#1a3a5c]">{value}</div>
+      <div className="text-[12px] text-[oklch(0.46_0.16_55)]">{value}</div>
     </div>
   );
 }

@@ -29,6 +29,7 @@ type ChainStatus =
 type Klass = 'multi_year' | 'annual_tariff' | 'sseg_feedin';
 
 interface DeterminationRow {
+  [key: string]: unknown;
   id: string;
   determination_number: string;
   source_event: string | null;
@@ -132,8 +133,8 @@ interface KpiSummary {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   application_received:      { bg: '#e3e7ec', fg: '#557',    label: 'Application received' },
-  completeness_review:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Completeness review' },
-  public_consultation:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Public consultation' },
+  completeness_review:       { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Completeness review' },
+  public_consultation:       { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Public consultation' },
   revenue_analysis:          { bg: '#e0e7ff', fg: '#3730a3', label: 'Revenue analysis' },
   draft_determination:       { bg: '#fff4d6', fg: '#a06200', label: 'Draft determination' },
   council_deliberation:      { bg: '#ffe9d6', fg: '#8a4a00', label: 'Council deliberation' },
@@ -449,14 +450,14 @@ export function TariffDeterminationChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Determination #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Entity / applicant</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Class</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Period</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Allowed rev.</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Increase</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Determination #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Entity / applicant</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Class</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Period</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Allowed rev.</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Increase</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -469,7 +470,7 @@ export function TariffDeterminationChainTab() {
                     onClick={() => loadEvents(r.id)}
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 font-mono text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.determination_number}
                       {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
                     </td>
@@ -483,8 +484,8 @@ export function TariffDeterminationChainTab() {
                       </span>
                     </td>
                     <td className="px-3 py-2 text-[#4a5568]">{r.mypd_period ?? r.price_year ?? '—'}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtZarM(r.allowed_revenue_zar_m)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtPct(r.tariff_increase_pct)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtZarM(r.allowed_revenue_zar_m)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtPct(r.tariff_increase_pct)}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
                         {cs.label}
@@ -597,13 +598,13 @@ function Drawer({
             <Pair label="Reportable"          value={row.is_reportable ? 'Yes' : 'No'} />
           </div>
           {row.application_basis && (
-            <BasisBlock label="Application basis" tone="#1a3a5c" text={row.application_basis} />
+            <BasisBlock label="Application basis" tone="oklch(0.46 0.16 55)" text={row.application_basis} />
           )}
           {row.completeness_basis && (
-            <BasisBlock label="Completeness basis" tone="#1a3a5c" text={row.completeness_basis} />
+            <BasisBlock label="Completeness basis" tone="oklch(0.46 0.16 55)" text={row.completeness_basis} />
           )}
           {row.consultation_basis && (
-            <BasisBlock label="Consultation basis" tone="#1a3a5c" text={row.consultation_basis} />
+            <BasisBlock label="Consultation basis" tone="oklch(0.46 0.16 55)" text={row.consultation_basis} />
           )}
           {row.analysis_basis && (
             <BasisBlock label="Analysis basis" tone="#3730a3" text={row.analysis_basis} />
@@ -693,7 +694,7 @@ function Drawer({
                       <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
                     )}
                   </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

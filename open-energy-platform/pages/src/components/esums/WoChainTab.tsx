@@ -4,12 +4,30 @@
 //
 //   • KPI strip: total / critical open / breached / escalated / by status
 //   • Filter pills by chain state + priority
-//   • Listing with priority pill + SLA countdown
-//   • Drill-down: timeline + per-state action buttons (11 transitions)
+//   • ChainCard list with inline expand
+//   • Actions use ActionModal (via ChainCard pendingAction)
+//   • Audit timeline shown lazily via events prop
+//   • Priority-tiered SLAs (critical 15m / 1–2h per stage)
+//   • Critical-priority cancels and breaches escalate to the regulator inbox
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
 
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
+
+// ── types ─────────────────────────────────────────────────────────────────
 type ChainStatus =
   | 'created' | 'assigned' | 'acknowledged' | 'en_route' | 'on_site'
   | 'diagnosing' | 'repairing' | 'testing' | 'completed' | 'verified'
@@ -18,6 +36,7 @@ type ChainStatus =
 type Priority = 'critical' | 'high' | 'medium' | 'low';
 
 interface WoRow {
+  [key: string]: unknown;
   id: string;
   wo_number: string;
   site_id: string;
@@ -30,6 +49,7 @@ interface WoRow {
   title: string | null;
   description: string | null;
   sla_deadline: string | null;
+  sla_deadline_at?: string | null;
   sla_breached?: boolean;
   last_sla_breach_at: string | null;
   escalation_level: number;
@@ -39,40 +59,25 @@ interface WoRow {
   resolution_notes: string | null;
 }
 
-interface WoEvent {
-  id: string;
-  wo_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
+interface KpiType {
+  total: number;
+  critical_open: number;
+  breached: number;
+  escalated: number;
+  in_field: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  created:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Created' },
-  assigned:     { bg: '#fff4d6', fg: '#a06200', label: 'Assigned' },
-  acknowledged: { bg: '#fff4d6', fg: '#a06200', label: 'Acknowledged' },
-  en_route:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'En route' },
-  on_site:      { bg: '#dbecfb', fg: '#1a3a5c', label: 'On site' },
-  diagnosing:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Diagnosing' },
-  repairing:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Repairing' },
-  testing:      { bg: '#fff4d6', fg: '#a06200', label: 'Testing' },
-  completed:    { bg: '#daf5e2', fg: '#1f6b3a', label: 'Completed' },
-  verified:     { bg: '#daf5e2', fg: '#1f6b3a', label: 'Verified' },
-  closed:       { bg: '#e3e7ec', fg: '#557',    label: 'Closed' },
-  cancelled:    { bg: '#e3e7ec', fg: '#557',    label: 'Cancelled' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'created', 'assigned', 'acknowledged', 'en_route', 'on_site',
+  'diagnosing', 'repairing', 'testing', 'completed', 'verified', 'closed',
+];
 
-const PRIORITY_TONE: Record<Priority, { bg: string; fg: string; label: string }> = {
-  critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical' },
-  high:     { bg: '#ffe4b5', fg: '#8a4a00', label: 'High' },
-  medium:   { bg: '#fff4d6', fg: '#a06200', label: 'Medium' },
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-};
+const BRANCH_STATES: readonly string[] = [
+  'cancelled',
+];
 
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',        label: 'Active' },
   { key: 'all',           label: 'All' },
@@ -90,40 +95,7 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'cancelled',     label: 'Cancelled' },
 ];
 
-type ActionKind =
-  | 'assign' | 'acknowledge' | 'depart' | 'arrive'
-  | 'diagnose' | 'repair' | 'test' | 'complete'
-  | 'verify' | 'close' | 'cancel';
-
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  created:      'assign',
-  assigned:     'acknowledge',
-  acknowledged: 'depart',
-  en_route:     'arrive',
-  on_site:      'diagnose',
-  diagnosing:   'repair',
-  repairing:    'test',
-  testing:      'complete',
-  completed:    'verify',
-  verified:     'close',
-  closed:       null,
-  cancelled:    null,
-};
-
-const ACTION_LABEL: Record<ActionKind, string> = {
-  assign:      'Assign to technician',
-  acknowledge: 'Technician acknowledge',
-  depart:      'Depart (en route)',
-  arrive:      'Arrive on site',
-  diagnose:    'Begin diagnosis',
-  repair:      'Start repair',
-  test:        'Begin testing',
-  complete:    'Mark completed',
-  verify:      'Senior tech verify',
-  close:       'Close + archive',
-  cancel:      'Cancel WO',
-};
-
+// ── helpers ───────────────────────────────────────────────────────────────
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
   if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
@@ -137,13 +109,156 @@ function fmtDate(s: string | null): string {
   return d.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
+// ── actions ───────────────────────────────────────────────────────────────
+function getActions(row: WoRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const cs = row.chain_status;
+
+  // Primary forward action per state
+  if (cs === 'created') {
+    actions.push({
+      key: 'assign',
+      label: 'Assign to technician',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  } else if (cs === 'assigned') {
+    actions.push({
+      key: 'acknowledge',
+      label: 'Technician acknowledge',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  } else if (cs === 'acknowledged') {
+    actions.push({
+      key: 'depart',
+      label: 'Depart (en route)',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  } else if (cs === 'en_route') {
+    actions.push({
+      key: 'arrive',
+      label: 'Arrive on site',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  } else if (cs === 'on_site') {
+    actions.push({
+      key: 'diagnose',
+      label: 'Begin diagnosis',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  } else if (cs === 'diagnosing') {
+    actions.push({
+      key: 'repair',
+      label: 'Start repair',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  } else if (cs === 'repairing') {
+    actions.push({
+      key: 'test',
+      label: 'Begin testing',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  } else if (cs === 'testing') {
+    actions.push({
+      key: 'complete',
+      label: 'Mark completed',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  } else if (cs === 'completed') {
+    actions.push({
+      key: 'verify',
+      label: 'Senior tech verify',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  } else if (cs === 'verified') {
+    actions.push({
+      key: 'close',
+      label: 'Close + archive',
+      tone: 'primary',
+      fields: [],
+      cascadeTo: [],
+    });
+  }
+
+  // Cancel available on non-terminal, non-verified states
+  if (cs !== 'closed' && cs !== 'cancelled' && cs !== 'verified') {
+    actions.push({
+      key: 'cancel',
+      label: 'Cancel WO',
+      tone: 'danger',
+      // Critical-priority cancels escalate to regulator inbox
+      cascadeTo: row.priority === 'critical' ? ['regulator'] : [],
+      fields: [
+        {
+          key: 'notes',
+          label: 'Reason for cancel',
+          type: 'textarea',
+          required: true,
+          placeholder: '',
+        },
+      ],
+    });
+  }
+
+  return actions;
+}
+
+// ── detail panel ──────────────────────────────────────────────────────────
+function renderDetail(row: WoRow): React.ReactNode {
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+      <DetailPair label="Priority"      value={row.priority.charAt(0).toUpperCase() + row.priority.slice(1)} />
+      <DetailPair label="State"         value={row.chain_status.replace(/_/g, ' ')} />
+      <DetailPair label="Assigned to"   value={row.assigned_to ?? '—'} />
+      <DetailPair label="Escalation"    value={String(row.escalation_level)} />
+      <DetailPair label="SLA deadline"  value={fmtDate(row.sla_deadline ?? row.sla_deadline_at ?? null)} />
+      <DetailPair label="SLA status"    value={row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+      <DetailPair label="Site"          value={row.site_id} />
+      <DetailPair label="Category"      value={row.category} />
+      {row.fault_id && (
+        <DetailPair label="Fault ref"   value={row.fault_id} />
+      )}
+      <DetailPair label="Created"       value={fmtDate(row.created_at)} />
+      {row.description && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-1" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Description</div>
+          <div style={{ color: TX2 }}>{row.description}</div>
+        </div>
+      )}
+      {row.resolution_notes && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-1" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Resolution notes</div>
+          <div style={{ color: TX2 }}>{row.resolution_notes}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function WoChainTab() {
   const [rows, setRows] = useState<WoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<WoRow | null>(null);
-  const [events, setEvents] = useState<WoEvent[]>([]);
+  const [filter, setFilter] = useState('active');
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -160,28 +275,41 @@ export function WoChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { wo: WoRow; events: WoEvent[] } }>(`/esums/wo-chain/${id}`);
-      if (res.data?.data?.wo) setSelected(res.data.data.wo);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/esums/wo-chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { wo: WoRow; events: ChainEvent[] } }>(`/esums/wo-chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load WO history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { wo: WoRow; events: ChainEvent[] } }>(`/esums/wo-chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (filter === 'all')       return true;
       if (filter === 'active')    return r.chain_status !== 'closed' && r.chain_status !== 'cancelled';
       if (filter === 'critical')  return r.priority === 'critical';
-      if (filter === 'breached')  return r.sla_breached;
+      if (filter === 'breached')  return !!r.sla_breached;
       if (filter === 'escalated') return r.escalation_level > 0;
       return r.chain_status === filter;
     });
   }, [rows, filter]);
 
-  const kpis = useMemo(() => {
+  const kpis = useMemo<KpiType>(() => {
     let critical_open = 0, breached = 0, escalated = 0, in_field = 0;
     for (const r of rows) {
       if (r.priority === 'critical' && r.chain_status !== 'closed' && r.chain_status !== 'cancelled') critical_open++;
@@ -192,226 +320,107 @@ export function WoChainTab() {
     return { total: rows.length, critical_open, breached, escalated, in_field };
   }, [rows]);
 
-  const act = useCallback(async (action: ActionKind, row: WoRow) => {
-    try {
-      let notes: string | undefined;
-      if (action === 'cancel') {
-        const r = window.prompt('Reason for cancel:');
-        if (!r) return;
-        notes = r;
-      }
-      await api.post(`/esums/wo-chain/${row.id}/${action}`, notes ? { notes } : {});
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Work order dispatch chain</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-stage P6 chain · created → assigned → acknowledged → en route → on site → diagnosing → repairing → testing → completed → verified → closed.
-            Priority-tiered SLAs (critical 15m / 1–2h per stage). Critical-priority cancels and breaches escalate to the regulator inbox.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Work order dispatch chain</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          12-stage P6 chain · created → assigned → acknowledged → en route → on site → diagnosing → repairing → testing → completed → verified → closed.
+          Priority-tiered SLAs (critical 15m / 1–2h per stage). Critical-priority cancels and breaches escalate to the regulator inbox.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Kpi label="Total WOs" value={kpis.total} />
-        <Kpi label="Critical open" value={kpis.critical_open} tone={kpis.critical_open > 0 ? 'bad' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis.breached} tone={kpis.breached > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Escalated" value={kpis.escalated} tone={kpis.escalated > 0 ? 'warn' : 'ok'} />
-        <Kpi label="In field" value={kpis.in_field} />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total WOs"     value={kpis.total} />
+        <KpiTile label="Critical open" value={kpis.critical_open} tone={kpis.critical_open > 0 ? 'bad' : undefined} />
+        <KpiTile label="SLA breached"  value={kpis.breached}      tone={kpis.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Escalated"     value={kpis.escalated}     tone={kpis.escalated > 0 ? 'warn' : undefined} />
+        <KpiTile label="In field"      value={kpis.in_field} />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">WO #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Title</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Site</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Pri</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tech</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const pri = PRIORITY_TONE[r.priority];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[#0c2a4d]">{r.wo_number}</td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">{r.title ?? '—'}</td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.site_id}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: pri.bg, color: pri.fg }}>
-                        {pri.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.assigned_to ?? '—'}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No work orders match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]"
+          style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]"
+          style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading...
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{
+                ...row,
+                sla_deadline_at: row.sla_deadline_at ?? row.sla_deadline ?? null,
+              }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={row.wo_number + (row.title ? ` — ${row.title}` : '')}
+              meta={
+                <span style={{ fontFamily: MONO, fontSize: 10, color: TX3 }}>
+                  {row.priority.toUpperCase()} · {row.site_id} · {row.category}
+                  {row.assigned_to ? ` · ${row.assigned_to}` : ''}
+                </span>
+              }
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]"
+              style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No work orders match.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: WoRow;
-  events: WoEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: WoRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canCancel = row.chain_status !== 'closed' && row.chain_status !== 'cancelled' && row.chain_status !== 'verified';
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[640px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.wo_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.title ?? '—'}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">Site {row.site_id} · {row.category}</div>
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="Priority"  value={PRIORITY_TONE[row.priority].label} />
-            <Pair label="State"     value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Assigned"  value={row.assigned_to ?? '—'} />
-            <Pair label="Escalation" value={String(row.escalation_level)} />
-            <Pair label="SLA deadline" value={fmtDate(row.sla_deadline)} />
-            <Pair label="SLA status" value={row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-          </div>
-        </section>
-
-        {(nextAction || canCancel) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canCancel && (
-                <button type="button"
-                  onClick={() => onAct('cancel', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL.cancel}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  {(e.from_status || e.to_status) && (
-                    <div className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</div>
-                  )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1, fontSize: 11 }}>{value}</div>
     </div>
   );
 }
+
+export default WoChainTab;

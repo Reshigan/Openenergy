@@ -218,17 +218,17 @@ export function EscoWorkstationPage() {
       role="esco"
       eyebrow="ESCO · Workstation"
       title="O&M operations workstation"
-      subtitle="Work orders · PM compliance · Asset health · Availability guarantees. Full O&M lifecycle — no spreadsheets."
+      subtitle="Site portfolio → Work orders & PM → Asset health → Safety & permits → Supply chain → Compliance"
       backHref="/esco"
       backLabel="ESCO console"
       wizards={ESCO_WIZARDS}
       tour={ESCO_TOUR}
       tabs={[
-        { key: 'service-contracts', label: 'Service contracts', group: 'Portfolio', chainKey: 'service_contract', body: () => <ServiceContractChainTab /> },
+        { key: 'service-contracts', label: 'Service contracts', group: 'Site portfolio', chainKey: 'service_contract', body: () => <ServiceContractChainTab /> },
         {
           key: 'sites-portfolio',
           label: 'Sites under management',
-          group: 'Portfolio',
+          group: 'Site portfolio',
           body: () => (
             <ListingTable
               endpoint="/esums/commissioning"
@@ -244,21 +244,21 @@ export function EscoWorkstationPage() {
             />
           ),
         },
-        { key: 'work-orders', label: 'Work orders (W16)', group: 'Operations', chainKey: 'om_work_order', body: () => <WoChainTab /> },
-        { key: 'pm-compliance', label: 'PM compliance (W59)', group: 'Operations', chainKey: 'pm_compliance', body: () => <PmComplianceChainTab /> },
-        { key: 'permit-to-work', label: 'Permit-to-work (W64)', group: 'Operations', chainKey: 'permit_to_work', body: () => <PermitToWorkChainTab /> },
-        { key: 'commissioning', label: 'Site commissioning (W12)', group: 'Operations', chainKey: 'commissioning', body: () => <CommissioningTab /> },
-        { key: 'prognostics', label: 'Asset prognostics (W71)', group: 'Asset Health', chainKey: 'asset_prognostics', body: () => <PredictiveAssetHealthChainTab /> },
-        { key: 'availability', label: 'Availability guarantees (W51)', group: 'Asset Health', chainKey: 'availability_guarantee', body: () => <AvailabilityGuaranteeChainTab /> },
-        { key: 'spare-parts', label: 'Spare parts (W72)', group: 'Supply Chain', chainKey: 'spare_parts_provisioning', body: () => <SparePartsProvisioningChainTab /> },
-        { key: 'vendor-escalation', label: 'Vendor escalation (W35)', group: 'Supply Chain', chainKey: 'vendor_escalation', body: () => <VendorEscalationChainTab /> },
-        { key: 'warranty-claims', label: 'Warranty claims (W15)', group: 'Supply Chain', chainKey: 'warranty_claim', body: () => <WarrantyClaimChainTab /> },
-        { key: 'warranty-recovery', label: 'Warranty recovery (W63)', group: 'Supply Chain', chainKey: 'warranty_recovery', body: () => <WarrantyRecoveryChainTab /> },
-        { key: 'hse', label: 'HSE incidents (W25)', group: 'Safety', chainKey: 'hse_incident', body: () => <HseIncidentChainTab /> },
+        { key: 'work-orders', label: 'Work orders (W16)', group: 'Work orders', chainKey: 'om_work_order', body: () => <WoChainTab /> },
+        { key: 'pm-compliance', label: 'PM compliance (W59)', group: 'Work orders', chainKey: 'pm_compliance', body: () => <PmComplianceChainTab /> },
+        { key: 'permit-to-work', label: 'Permit-to-work (W64)', group: 'Work orders', chainKey: 'permit_to_work', body: () => <PermitToWorkChainTab /> },
+        { key: 'commissioning', label: 'Site commissioning (W12)', group: 'Work orders', chainKey: 'commissioning', body: () => <CommissioningTab /> },
+        { key: 'prognostics', label: 'Asset prognostics (W71)', group: 'Asset health & AI', chainKey: 'asset_prognostics', body: () => <PredictiveAssetHealthChainTab /> },
+        { key: 'availability', label: 'Availability guarantees (W51)', group: 'Asset health & AI', chainKey: 'availability_guarantee', body: () => <AvailabilityGuaranteeChainTab /> },
+        { key: 'spare-parts', label: 'Spare parts (W72)', group: 'Supply chain', chainKey: 'spare_parts_provisioning', body: () => <SparePartsProvisioningChainTab /> },
+        { key: 'vendor-escalation', label: 'Vendor escalation (W35)', group: 'Supply chain', chainKey: 'vendor_escalation', body: () => <VendorEscalationChainTab /> },
+        { key: 'warranty-claims', label: 'Warranty claims (W15)', group: 'Supply chain', chainKey: 'warranty_claim', body: () => <WarrantyClaimChainTab /> },
+        { key: 'warranty-recovery', label: 'Warranty recovery (W63)', group: 'Supply chain', chainKey: 'warranty_recovery', body: () => <WarrantyRecoveryChainTab /> },
+        { key: 'hse', label: 'HSE incidents (W25)', group: 'Safety & permits', chainKey: 'hse_incident', body: () => <HseIncidentChainTab /> },
         {
           key: 'audit',
           label: 'Audit trail',
-          group: 'Compliance',
+          group: 'Reporting & compliance',
           body: () => <AuditPanel prefix="/esums" reconHint="event_id, entity_type, actor_id, timestamp" />,
         },
       ]}

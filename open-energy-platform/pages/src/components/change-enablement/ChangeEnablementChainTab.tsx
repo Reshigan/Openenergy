@@ -24,6 +24,20 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'change_requested' | 'assessment' | 'cab_review' | 'approved' | 'scheduled'
@@ -33,6 +47,7 @@ type ChainStatus =
 type Tier = 'emergency_change' | 'normal_change' | 'standard_change';
 
 interface ChangeRow {
+  [key: string]: unknown;
   id: string;
   change_number: string;
   source_event: string | null;
@@ -89,19 +104,7 @@ interface ChangeRow {
   sla_breached?: boolean;
   sla_window_minutes?: number;
   breach_crosses_regulator?: boolean;
-}
-
-interface ChangeEvent {
-  id: string;
-  change_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
+  case_number?: string;
 }
 
 interface KpiSummary {
@@ -119,26 +122,12 @@ interface KpiSummary {
   total_affected_ci: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  change_requested: { bg: '#e3e7ec', fg: '#557',    label: 'Requested' },
-  assessment:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Assessment' },
-  cab_review:       { bg: '#fff4d6', fg: '#a06200', label: 'CAB review' },
-  approved:         { bg: '#ffe9d6', fg: '#8a4a00', label: 'Approved' },
-  scheduled:        { bg: '#ffe9d6', fg: '#8a4a00', label: 'Scheduled' },
-  implementing:     { bg: '#daf5e2', fg: '#1f6b3a', label: 'Implementing' },
-  implemented:      { bg: '#daf5e2', fg: '#1f6b3a', label: 'Implemented' },
-  pir:              { bg: '#daf5e2', fg: '#1f6b3a', label: 'PIR' },
-  closed:           { bg: '#d4edda', fg: '#155724', label: 'Closed' },
-  rejected:         { bg: '#fde0e0', fg: '#9b1f1f', label: 'Rejected' },
-  rolled_back:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Rolled back' },
-  cancelled:        { bg: '#f3e0e0', fg: '#6b1f1f', label: 'Cancelled' },
-};
+const ALL_STATES = [
+  'change_requested', 'assessment', 'cab_review', 'approved',
+  'scheduled', 'implementing', 'implemented', 'pir', 'closed',
+] as const;
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  emergency_change: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Emergency' },
-  normal_change:    { bg: '#ffe4b5', fg: '#8a4a00', label: 'Normal' },
-  standard_change:  { bg: '#e3e7ec', fg: '#557',    label: 'Standard' },
-};
+const BRANCH_STATES = ['rejected', 'rolled_back', 'cancelled'] as const;
 
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',           label: 'Active' },
@@ -160,80 +149,293 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'cancelled',        label: 'Cancelled' },
 ];
 
-type ActionKind =
-  | 'assess' | 'submit-to-cab' | 'approve' | 'reject' | 'emergency-approve'
-  | 'schedule' | 'begin-implementation' | 'complete-implementation'
-  | 'initiate-pir' | 'close' | 'roll-back' | 'cancel';
-
-// Primary forward action per state.
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  change_requested: 'assess',
-  assessment:       'submit-to-cab',
-  cab_review:       'approve',
-  approved:         'schedule',
-  scheduled:        'begin-implementation',
-  implementing:     'complete-implementation',
-  implemented:      'initiate-pir',
-  pir:              'close',
-  closed:           null,
-  rejected:         null,
-  rolled_back:      null,
-  cancelled:        null,
-};
-
-// Functional party annotation per action. change_requester owns intake +
-// assessment + withdrawal; change_authority owns CAB/ECAB authorisation + PIR +
-// closure; implementer owns scheduling + implementation + backout.
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'assess':                  'Assess risk (requester)',
-  'submit-to-cab':           'Submit to CAB (requester)',
-  'approve':                 'Approve (CAB / authority)',
-  'reject':                  'Reject (CAB / authority)',
-  'emergency-approve':       'Emergency approve — ECAB (authority)',
-  'schedule':                'Schedule change window (implementer)',
-  'begin-implementation':    'Begin implementation (implementer)',
-  'complete-implementation': 'Complete implementation (implementer)',
-  'initiate-pir':            'Initiate PIR (authority)',
-  'close':                   'Close change (authority)',
-  'roll-back':               'Back out change (implementer)',
-  'cancel':                  'Cancel (requester)',
-};
-
-function fmtMinutes(m: number | null | undefined): string {
-  if (m === null || m === undefined) return '—';
-  if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
-  if (Math.abs(m) >= 60) return `${Math.round(m / 60)}h`;
-  return `${m}m`;
-}
-
-function fmtDate(s: string | null): string {
-  if (!s) return '—';
-  const d = new Date(s);
-  return d.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
-}
-
 const TERMINAL_STATES: ChainStatus[] = ['closed', 'rejected', 'rolled_back', 'cancelled'];
 const WITHDRAWABLE_STATES: ChainStatus[] = ['change_requested', 'assessment', 'cab_review', 'approved', 'scheduled'];
 const BACKOUT_STATES: ChainStatus[] = ['implementing', 'implemented'];
 
+function fmtDate(s: string | null): string {
+  if (!s) return '—';
+  return new Date(s).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+function getActions(row: ChangeRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
+
+  if (s === 'change_requested') {
+    actions.push({
+      key: 'assess',
+      label: 'Assess risk (requester)',
+      tone: 'primary',
+      fields: [
+        { key: 'change_category', label: 'Change category (software / infrastructure / configuration / data / security)', type: 'text', required: false },
+        { key: 'change_summary', label: 'Change summary — what is changing and why, in one line', type: 'text', required: false },
+        { key: 'assessment_basis', label: 'Assessment basis — risk, impact, affected services', type: 'textarea', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'assessment') {
+    actions.push({
+      key: 'submit-to-cab',
+      label: 'Submit to CAB (requester)',
+      tone: 'primary',
+      fields: [
+        { key: 'cab_ref', label: 'CAB docket reference (e.g. CAB-2026-0042)', type: 'text', required: false },
+        { key: 'cab_basis', label: 'CAB submission basis — what the board must weigh', type: 'textarea', required: false },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'emergency-approve',
+      label: 'Emergency approve — ECAB (authority)',
+      tone: 'warn',
+      fields: [
+        { key: 'approval_basis', label: 'ECAB authorisation basis — why this bypasses full CAB', type: 'textarea', required: true },
+        { key: 'cab_ref', label: 'ECAB decision reference (e.g. ECAB-2026-0007)', type: 'text', required: false },
+        { key: 'regulator_ref', label: 'Regulator notification reference (emergency change is reportable)', type: 'text', required: false },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'cab_review') {
+    actions.push({
+      key: 'approve',
+      label: 'Approve (CAB / authority)',
+      tone: 'primary',
+      fields: [
+        { key: 'approval_basis', label: 'Approval basis — CAB decision rationale', type: 'textarea', required: true },
+        { key: 'cab_ref', label: 'CAB decision reference (e.g. CAB-2026-0042)', type: 'text', required: false },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'reject',
+      label: 'Reject (CAB / authority)',
+      tone: 'danger',
+      fields: [
+        { key: 'cab_basis', label: 'Rejection basis — why CAB declined authorisation', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'approved') {
+    actions.push({
+      key: 'schedule',
+      label: 'Schedule change window (implementer)',
+      tone: 'primary',
+      fields: [
+        { key: 'scheduled_start_at', label: 'Scheduled start (ISO, e.g. 2026-06-01T22:00:00Z)', type: 'text', required: false },
+        { key: 'scheduled_end_at', label: 'Scheduled end (ISO)', type: 'text', required: false },
+        { key: 'backout_plan', label: 'Backout plan — how to reverse if it fails', type: 'textarea', required: false },
+        { key: 'schedule_basis', label: 'Schedule basis — change window rationale', type: 'textarea', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'scheduled') {
+    actions.push({
+      key: 'begin-implementation',
+      label: 'Begin implementation (implementer)',
+      tone: 'primary',
+      fields: [
+        { key: 'release_ref', label: 'Release / deployment package id (e.g. REL-2026-0118)', type: 'text', required: false },
+        { key: 'implementation_basis', label: 'Implementation basis — steps being executed', type: 'textarea', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'implementing') {
+    actions.push({
+      key: 'complete-implementation',
+      label: 'Complete implementation (implementer)',
+      tone: 'primary',
+      fields: [
+        { key: 'implementation_basis', label: 'Implementation outcome — what shipped, verification at the gate', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'implemented') {
+    actions.push({
+      key: 'initiate-pir',
+      label: 'Initiate PIR (authority)',
+      tone: 'primary',
+      fields: [
+        { key: 'verification_basis', label: 'PIR basis — post-implementation review scope', type: 'textarea', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'pir') {
+    actions.push({
+      key: 'close',
+      label: 'Close change (authority)',
+      tone: 'primary',
+      fields: [
+        { key: 'closure_notes', label: 'Closure notes — PIR outcome, success confirmation', type: 'textarea', required: true },
+        { key: 'regulator_ref', label: 'Regulator reference, if an emergency change (post-change report)', type: 'text', required: false },
+        { key: 'verification_basis', label: 'Verification basis — evidence the change succeeded', type: 'textarea', required: false },
+      ],
+      cascadeTo: row.change_class === 'emergency_change' ? ['regulator'] : [],
+    });
+  }
+
+  if (BACKOUT_STATES.includes(s)) {
+    actions.push({
+      key: 'roll-back',
+      label: 'Back out change (implementer)',
+      tone: 'danger',
+      fields: [
+        { key: 'rollback_basis', label: 'Backout basis — why the change is being reversed', type: 'textarea', required: true },
+        { key: 'rollback_ref', label: 'Backout record reference (e.g. BACKOUT-2026-0006)', type: 'text', required: false },
+        { key: 'regulator_ref', label: 'Regulator reference (change-induced failure is reportable)', type: 'text', required: false },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (WITHDRAWABLE_STATES.includes(s)) {
+    actions.push({
+      key: 'cancel',
+      label: 'Cancel (requester)',
+      tone: 'ghost',
+      fields: [
+        { key: 'closure_notes', label: 'Cancellation reason (e.g. superseded, no-longer-required, duplicate)', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: ChangeRow): React.ReactNode {
+  return (
+    <div>
+      <div
+        className="grid gap-x-6 gap-y-2"
+        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}
+      >
+        <DetailPair label="Class"           value={row.change_class.replace(/_/g, ' ')} />
+        <DetailPair label="Category"        value={row.change_category ?? '—'} />
+        <DetailPair label="Affected CIs"    value={String(row.affected_ci_count ?? 0)} />
+        <DetailPair label="Owner"           value={row.owner_party_name} />
+        {row.affected_tenant && <DetailPair label="Tenant" value={row.affected_tenant} />}
+        <DetailPair label="Problem ref"     value={row.problem_ref ?? '—'} />
+        <DetailPair label="CAB ref"         value={row.cab_ref ?? '—'} />
+        <DetailPair label="Release ref"     value={row.release_ref ?? '—'} />
+        <DetailPair label="Rollback ref"    value={row.rollback_ref ?? '—'} />
+        <DetailPair label="Regulator ref"   value={row.regulator_ref ?? '—'} />
+        <DetailPair label="Reason code"     value={row.reason_code ?? '—'} />
+        <DetailPair label="Window start"    value={fmtDate(row.scheduled_start_at)} />
+        <DetailPair label="Window end"      value={fmtDate(row.scheduled_end_at)} />
+        <DetailPair label="Requested"       value={fmtDate(row.change_requested_at)} />
+        <DetailPair label="Assessment"      value={fmtDate(row.assessment_at)} />
+        <DetailPair label="CAB review"      value={fmtDate(row.cab_review_at)} />
+        <DetailPair label="Approved"        value={fmtDate(row.approved_at)} />
+        <DetailPair label="Scheduled"       value={fmtDate(row.scheduled_at)} />
+        <DetailPair label="Implementing"    value={fmtDate(row.implementing_at)} />
+        <DetailPair label="Implemented"     value={fmtDate(row.implemented_at)} />
+        <DetailPair label="PIR"             value={fmtDate(row.pir_at)} />
+        <DetailPair label="Closed"          value={fmtDate(row.closed_at)} />
+        <DetailPair label="Escalation lvl"  value={String(row.escalation_level)} />
+        <DetailPair label="Reportable"      value={row.is_reportable ? 'Yes' : 'No'} />
+        {row.source_wave && <DetailPair label="Source wave" value={row.source_wave} />}
+        {row.source_entity_id && <DetailPair label="Source entity" value={row.source_entity_id} />}
+      </div>
+      {row.change_summary && (
+        <div className="mt-3">
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX2, marginBottom: 2 }}>Change summary</div>
+          <div style={{ fontSize: 12, color: TX1, whiteSpace: 'pre-wrap' }}>{row.change_summary}</div>
+        </div>
+      )}
+      {row.assessment_basis && (
+        <div className="mt-3">
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX2, marginBottom: 2 }}>Assessment basis</div>
+          <div style={{ fontSize: 12, color: TX1, whiteSpace: 'pre-wrap' }}>{row.assessment_basis}</div>
+        </div>
+      )}
+      {row.cab_basis && (
+        <div className="mt-3">
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: WARN, marginBottom: 2 }}>CAB basis</div>
+          <div style={{ fontSize: 12, color: TX1, whiteSpace: 'pre-wrap' }}>{row.cab_basis}</div>
+        </div>
+      )}
+      {row.approval_basis && (
+        <div className="mt-3">
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: ACC, marginBottom: 2 }}>Approval basis</div>
+          <div style={{ fontSize: 12, color: TX1, whiteSpace: 'pre-wrap' }}>{row.approval_basis}</div>
+        </div>
+      )}
+      {row.backout_plan && (
+        <div className="mt-3">
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: WARN, marginBottom: 2 }}>Backout plan</div>
+          <div style={{ fontSize: 12, color: TX1, whiteSpace: 'pre-wrap' }}>{row.backout_plan}</div>
+        </div>
+      )}
+      {row.schedule_basis && (
+        <div className="mt-3">
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX2, marginBottom: 2 }}>Schedule basis</div>
+          <div style={{ fontSize: 12, color: TX1, whiteSpace: 'pre-wrap' }}>{row.schedule_basis}</div>
+        </div>
+      )}
+      {row.implementation_basis && (
+        <div className="mt-3">
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: GOOD, marginBottom: 2 }}>Implementation basis</div>
+          <div style={{ fontSize: 12, color: TX1, whiteSpace: 'pre-wrap' }}>{row.implementation_basis}</div>
+        </div>
+      )}
+      {row.verification_basis && (
+        <div className="mt-3">
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: GOOD, marginBottom: 2 }}>Verification / PIR basis</div>
+          <div style={{ fontSize: 12, color: TX1, whiteSpace: 'pre-wrap' }}>{row.verification_basis}</div>
+        </div>
+      )}
+      {row.rollback_basis && (
+        <div className="mt-3">
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: BAD, marginBottom: 2 }}>Backout basis</div>
+          <div style={{ fontSize: 12, color: TX1, whiteSpace: 'pre-wrap' }}>{row.rollback_basis}</div>
+        </div>
+      )}
+      {row.closure_notes && (
+        <div className="mt-3">
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: GOOD, marginBottom: 2 }}>Closure / decision notes</div>
+          <div style={{ fontSize: 12, color: TX1, whiteSpace: 'pre-wrap' }}>{row.closure_notes}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ChangeEnablementChainTab() {
   const [rows, setRows] = useState<ChangeRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<ChangeRow | null>(null);
-  const [events, setEvents] = useState<ChangeEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
       const res = await api.get<{ data: { items: ChangeRow[] } & KpiSummary }>('/change-enablement/chain');
-      setRows(res.data?.data?.items || []);
+      const items = (res.data?.data?.items || []).map((r) => ({
+        ...r,
+        case_number: r.change_number,
+      }));
+      setRows(items);
       const d = res.data?.data;
       if (d) {
-        setKpis({
+        setSummary({
           total: d.total, open_count: d.open_count, closed_count: d.closed_count,
           rejected_count: d.rejected_count, rolled_back_count: d.rolled_back_count,
           cancelled_count: d.cancelled_count, awaiting_cab_count: d.awaiting_cab_count,
@@ -251,17 +453,39 @@ export function ChangeEnablementChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: ChangeRow; events: ChangeEvent[] } }>(
+      // Build body from values, injecting fixed fields per action
+      const body: Record<string, string> = { ...values };
+      if (key === 'reject') {
+        body.reason_code = 'cab_declined';
+        if (values.cab_basis) body.closure_notes = values.cab_basis;
+      } else if (key === 'roll-back') {
+        body.reason_code = 'change_induced_failure';
+        if (values.rollback_basis) body.closure_notes = values.rollback_basis;
+      } else if (key === 'cancel') {
+        body.reason_code = 'cancelled';
+      } else if (key === 'close') {
+        body.reason_code = 'implemented_successfully';
+      }
+      await api.post(`/change-enablement/chain/${rowId}/${key}`, body);
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
+    }
+  }, [load]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: ChangeRow; events: ChainEvent[] } }>(
         `/change-enablement/chain/${id}`
       );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load change history');
+      setExpandedEvents((prev) => ({ ...prev, [id]: res.data?.data?.events || [] }));
+    } catch {
+      // silent — audit timeline stays empty
     }
-  }, []);
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -272,134 +496,55 @@ export function ChangeEnablementChainTab() {
       if (filter === 'standard_change')  return r.change_class === 'standard_change';
       if (filter === 'awaiting_cab')     return r.chain_status === 'cab_review';
       if (filter === 'implementing')     return r.chain_status === 'implementing';
-      if (filter === 'breached')         return r.sla_breached;
+      if (filter === 'breached')         return !!r.sla_breached;
       if (filter === 'reportable')       return r.is_reportable;
       return r.chain_status === filter;
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: ChangeRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'assess') {
-        const cat = window.prompt('Change category (software / infrastructure / configuration / data / security):', row.change_category || '');
-        const summary = window.prompt('Change summary — what is changing and why, in one line:', row.change_summary || '') || '';
-        const basis = window.prompt('Assessment basis — risk, impact, affected services:') || '';
-        body = { change_summary: summary, assessment_basis: basis };
-        if (cat) body.change_category = cat;
-      } else if (action === 'submit-to-cab') {
-        const ref = window.prompt('CAB docket reference (e.g. CAB-2026-0042):') || '';
-        const basis = window.prompt('CAB submission basis — what the board must weigh:') || '';
-        body = { cab_basis: basis };
-        if (ref) body.cab_ref = ref;
-      } else if (action === 'approve') {
-        const basis = window.prompt('Approval basis — CAB decision rationale:');
-        if (!basis) return;
-        const ref = window.prompt('CAB decision reference (e.g. CAB-2026-0042):') || '';
-        body = { approval_basis: basis };
-        if (ref) body.cab_ref = ref;
-      } else if (action === 'emergency-approve') {
-        const basis = window.prompt('ECAB authorisation basis — why this bypasses full CAB:');
-        if (!basis) return;
-        const ref = window.prompt('ECAB decision reference (e.g. ECAB-2026-0007):') || '';
-        const reg = window.prompt('Regulator notification reference (emergency change is reportable):') || '';
-        body = { approval_basis: basis };
-        if (ref) body.cab_ref = ref;
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'reject') {
-        const basis = window.prompt('Rejection basis — why CAB declined authorisation:');
-        if (!basis) return;
-        body = { reason_code: 'cab_declined', cab_basis: basis, closure_notes: basis };
-      } else if (action === 'schedule') {
-        const start = window.prompt('Scheduled start (ISO, e.g. 2026-06-01T22:00:00Z):') || '';
-        const end = window.prompt('Scheduled end (ISO):') || '';
-        const plan = window.prompt('Backout plan — how to reverse if it fails:') || '';
-        const basis = window.prompt('Schedule basis — change window rationale:') || '';
-        body = { schedule_basis: basis, backout_plan: plan };
-        if (start) body.scheduled_start_at = start;
-        if (end) body.scheduled_end_at = end;
-      } else if (action === 'begin-implementation') {
-        const ref = window.prompt('Release / deployment package id (e.g. REL-2026-0118):') || '';
-        const basis = window.prompt('Implementation basis — steps being executed:') || '';
-        body = { implementation_basis: basis };
-        if (ref) body.release_ref = ref;
-      } else if (action === 'complete-implementation') {
-        const basis = window.prompt('Implementation outcome — what shipped, verification at the gate:');
-        if (!basis) return;
-        body = { implementation_basis: basis };
-      } else if (action === 'initiate-pir') {
-        const basis = window.prompt('PIR basis — post-implementation review scope:') || '';
-        body = { verification_basis: basis };
-      } else if (action === 'close') {
-        const notes = window.prompt('Closure notes — PIR outcome, success confirmation:');
-        if (!notes) return;
-        const reg = window.prompt('Regulator reference, if an emergency change (post-change report):') || '';
-        const basis = window.prompt('Verification basis — evidence the change succeeded:') || '';
-        body = { reason_code: 'implemented_successfully', closure_notes: notes, verification_basis: basis };
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'roll-back') {
-        const basis = window.prompt('Backout basis — why the change is being reversed:');
-        if (!basis) return;
-        const ref = window.prompt('Backout record reference (e.g. BACKOUT-2026-0006):') || '';
-        const reg = window.prompt('Regulator reference (change-induced failure is reportable):') || '';
-        body = { reason_code: 'change_induced_failure', rollback_basis: basis, closure_notes: basis };
-        if (ref) body.rollback_ref = ref;
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'cancel') {
-        const reason = window.prompt('Cancellation reason (e.g. superseded, no-longer-required, duplicate):');
-        if (!reason) return;
-        body = { reason_code: 'cancelled', closure_notes: reason };
-      }
-      await api.post(`/change-enablement/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
+    <div className="p-5" style={{ background: BG, minHeight: '100%' }}>
+      <header className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Change enablement</h2>
-          <p className="text-xs text-[#4a5568]">
+          <h2 className="text-lg font-semibold" style={{ color: TX1 }}>Change enablement</h2>
+          <p className="text-xs mt-0.5" style={{ color: TX3 }}>
             12-stage ITIL change-enablement chain · requested → assessment → CAB review → approved → scheduled →
-            implementing → implemented → PIR → closed. An emergency change can fast-path through ECAB
-            (assessment → approved); CAB can reject; a failed change can back out from implementing or implemented;
-            pre-implementation records can cancel. The RFC lifecycle — receives W41 problem-management handoffs and
-            governs every change to a service or configuration item. URGENT SLA: the more urgent the change class,
-            the tighter every window. Reportable to the regulator inbox: roll-back (emergency + normal),
-            emergency-approve + close + SLA breach (emergency). ITIL 4 Change Enablement + ISO/IEC 20000-1 §8.5.1.
+            implementing → implemented → PIR → closed. Emergency fast-path via ECAB (assessment → approved);
+            CAB can reject; failed changes back out from implementing or implemented; pre-implementation records
+            can cancel. Receives W41 problem-management handoffs. URGENT SLA: more urgent class = tighter window.
+            Reportable: roll-back (emergency + normal), emergency-approve + close + SLA breach (emergency).
+            ITIL 4 Change Enablement + ISO/IEC 20000-1 §8.5.1.
           </p>
         </div>
       </header>
 
       <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="Emergency open" value={kpis?.emergency_open ?? 0} tone={(kpis?.emergency_open ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Awaiting CAB" value={kpis?.awaiting_cab_count ?? 0} tone={(kpis?.awaiting_cab_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Implementing" value={kpis?.in_implementation_count ?? 0} tone={(kpis?.in_implementation_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Closed" value={kpis?.closed_count ?? 0} tone="ok" />
-        <Kpi label="Rejected" value={kpis?.rejected_count ?? 0} tone={(kpis?.rejected_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Rolled back" value={kpis?.rolled_back_count ?? 0} tone={(kpis?.rolled_back_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Cancelled" value={kpis?.cancelled_count ?? 0} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Affected CIs" value={kpis?.total_affected_ci ?? 0} />
+        <KpiTile label="Total"           value={summary?.total ?? rows.length} />
+        <KpiTile label="Open"            value={summary?.open_count ?? 0} />
+        <KpiTile label="Emergency open"  value={summary?.emergency_open ?? 0}          tone={(summary?.emergency_open ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Awaiting CAB"    value={summary?.awaiting_cab_count ?? 0}       tone={(summary?.awaiting_cab_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Implementing"    value={summary?.in_implementation_count ?? 0}  tone={(summary?.in_implementation_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="SLA breached"    value={summary?.breached ?? 0}                tone={(summary?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Closed"          value={summary?.closed_count ?? 0}             tone="ok" />
+        <KpiTile label="Rejected"        value={summary?.rejected_count ?? 0}           tone={(summary?.rejected_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Rolled back"     value={summary?.rolled_back_count ?? 0}        tone={(summary?.rolled_back_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Cancelled"       value={summary?.cancelled_count ?? 0} />
+        <KpiTile label="Reportable"      value={summary?.reportable_total ?? 0}         tone={(summary?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Affected CIs"    value={summary?.total_affected_ci ?? 0} />
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         {FILTERS.map((f) => (
-          <button type="button"
+          <button
+            type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
+            className="rounded px-2 py-1 text-[11px] font-medium transition-colors"
+            style={
               filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
+                ? { background: ACC, color: '#fff', border: `1px solid ${ACC}` }
+                : { background: BG1, color: TX2, border: `1px solid ${BORDER}` }
+            }
           >
             {f.label}
           </button>
@@ -407,278 +552,74 @@ export function ChangeEnablementChainTab() {
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Change #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Service / owner</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Class</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Category</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">CIs</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.change_class];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.change_number}
-                      {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[280px] truncate" title={`${r.service_name} · ${r.owner_party_name}`}>
-                      {r.service_name}
-                      <span className="text-[#4a5568]"> · {r.owner_party_name}</span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.change_category ?? '—'}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{r.affected_ci_count || '—'}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No change requests match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="mb-3 rounded border px-3 py-2 text-[12px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-sm" style={{ background: BG1, borderColor: BORDER, color: TX2 }}>
+          Loading...
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-sm" style={{ background: BG1, borderColor: BORDER, color: TX2 }}>
+              No change requests match.
+            </div>
+          )}
+          {filtered.map((row) => (
+            <ChainCard
+              key={row.id}
+              item={row}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={row.service_name}
+              meta={
+                <span>
+                  <span style={{ fontFamily: MONO }}>{row.change_number}</span>
+                  {' · '}
+                  {row.change_class.replace(/_/g, ' ')}
+                  {' · '}
+                  {row.owner_party_name}
+                  {row.change_category ? ` · ${row.change_category}` : ''}
+                  {row.affected_ci_count ? ` · ${row.affected_ci_count} CI${row.affected_ci_count !== 1 ? 's' : ''}` : ''}
+                  {row.is_reportable ? (
+                    <span style={{ color: BAD, marginLeft: 4 }} title="Reportable to regulator">● reportable</span>
+                  ) : null}
+                </span>
+              }
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
+    <div className="rounded border px-3 py-2" style={{ background: BG1, borderColor: BORDER }}>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3 }}>{label}</div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: ChangeRow;
-  events: ChangeEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: ChangeRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canEmergencyApprove = row.chain_status === 'assessment';
-  const canReject = row.chain_status === 'cab_review';
-  const canBackout = BACKOUT_STATES.includes(row.chain_status);
-  const canCancel = WITHDRAWABLE_STATES.includes(row.chain_status);
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.change_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.service_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.change_class].label} · owner {row.owner_party_name}
-                {row.affected_tenant ? ` · tenant ${row.affected_tenant}` : ''}
-              </div>
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                  {row.problem_ref ? ` · problem ${row.problem_ref}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"            value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Class"            value={TIER_TONE[row.change_class].label} />
-            <Pair label="Category"         value={row.change_category ?? '—'} />
-            <Pair label="Affected CIs"     value={String(row.affected_ci_count ?? 0)} />
-            <Pair label="Problem ref"      value={row.problem_ref ?? '—'} />
-            <Pair label="CAB ref"          value={row.cab_ref ?? '—'} />
-            <Pair label="Release ref"      value={row.release_ref ?? '—'} />
-            <Pair label="Rollback ref"     value={row.rollback_ref ?? '—'} />
-            <Pair label="Regulator ref"    value={row.regulator_ref ?? '—'} />
-            <Pair label="Reason code"      value={row.reason_code ?? '—'} />
-            <Pair label="Window start"     value={fmtDate(row.scheduled_start_at)} />
-            <Pair label="Window end"       value={fmtDate(row.scheduled_end_at)} />
-            <Pair label="Requested"        value={fmtDate(row.change_requested_at)} />
-            <Pair label="Assessment"       value={fmtDate(row.assessment_at)} />
-            <Pair label="CAB review"       value={fmtDate(row.cab_review_at)} />
-            <Pair label="Approved"         value={fmtDate(row.approved_at)} />
-            <Pair label="Scheduled"        value={fmtDate(row.scheduled_at)} />
-            <Pair label="Implementing"     value={fmtDate(row.implementing_at)} />
-            <Pair label="Implemented"      value={fmtDate(row.implemented_at)} />
-            <Pair label="PIR"              value={fmtDate(row.pir_at)} />
-            <Pair label="Closed"           value={fmtDate(row.closed_at)} />
-            <Pair label="SLA deadline"     value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"       value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"   value={String(row.escalation_level)} />
-            <Pair label="Reportable"       value={row.is_reportable ? 'Yes' : 'No'} />
-          </div>
-          {row.change_summary && (
-            <BasisBlock label="Change summary" tone="#1a3a5c" text={row.change_summary} />
-          )}
-          {row.assessment_basis && (
-            <BasisBlock label="Assessment basis" tone="#1a3a5c" text={row.assessment_basis} />
-          )}
-          {row.cab_basis && (
-            <BasisBlock label="CAB basis" tone="#a06200" text={row.cab_basis} />
-          )}
-          {row.approval_basis && (
-            <BasisBlock label="Approval basis" tone="#8a4a00" text={row.approval_basis} />
-          )}
-          {row.backout_plan && (
-            <BasisBlock label="Backout plan" tone="#8a4a00" text={row.backout_plan} />
-          )}
-          {row.schedule_basis && (
-            <BasisBlock label="Schedule basis" tone="#8a4a00" text={row.schedule_basis} />
-          )}
-          {row.implementation_basis && (
-            <BasisBlock label="Implementation basis" tone="#1f6b3a" text={row.implementation_basis} />
-          )}
-          {row.verification_basis && (
-            <BasisBlock label="Verification / PIR basis" tone="#1f6b3a" text={row.verification_basis} />
-          )}
-          {row.rollback_basis && (
-            <BasisBlock label="Backout basis" tone="#9b1f1f" text={row.rollback_basis} />
-          )}
-          {row.closure_notes && (
-            <BasisBlock label="Closure / decision notes" tone="#155724" text={row.closure_notes} />
-          )}
-        </section>
-
-        {(nextAction || canEmergencyApprove || canReject || canBackout || canCancel) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canEmergencyApprove && (
-                <button type="button"
-                  onClick={() => onAct('emergency-approve', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['emergency-approve']}
-                </button>
-              )}
-              {canReject && (
-                <button type="button"
-                  onClick={() => onAct('reject', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL.reject}
-                </button>
-              )}
-              {canBackout && (
-                <button type="button"
-                  onClick={() => onAct('roll-back', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['roll-back']}
-                </button>
-              )}
-              {canCancel && (
-                <button type="button"
-                  onClick={() => onAct('cancel', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b1f1f] hover:bg-[#f3e0e0]"
-                >
-                  {ACTION_LABEL.cancel}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 12, color: TX1 }}>{value}</div>
     </div>
   );
 }
+
+export default ChangeEnablementChainTab;

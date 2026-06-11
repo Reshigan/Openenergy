@@ -30,8 +30,8 @@ interface Kpis {
 
 const STATUS_COLORS: Record<string, string> = {
   cert_request_submitted: 'bg-[#eef2f7] text-[#6b7685]',
-  ie_site_visit:          'bg-blue-100 text-blue-700',
-  draft_report:           'bg-indigo-100 text-indigo-700',
+  ie_site_visit:          'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
+  draft_report:           'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   borrower_review:        'bg-purple-100 text-purple-700',
   comments_raised:        'bg-orange-100 text-orange-800',
   comments_resolved:      'bg-yellow-100 text-yellow-800',
@@ -42,7 +42,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   minor:        'bg-[#eef2f7] text-[#3d4756]',
-  moderate:     'bg-blue-100 text-blue-700',
+  moderate:     'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   significant:  'bg-yellow-100 text-yellow-800',
   major:        'bg-orange-100 text-orange-800',
   material:     'bg-red-100 text-red-800',
@@ -155,7 +155,7 @@ export function IppIeCertTab() {
         ))}
         <span className="ml-1 text-[#9aa5b4]">|</span>
         {['minor','moderate','significant','major','material'].map(t => (
-          <button type="button" key={t} onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>{t}</button>
+          <button type="button" key={t} onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`} style={filterTier === t ? { background: 'oklch(0.46 0.16 55)' } : undefined}>{t}</button>
         ))}
         <button type="button" onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]">+ New IE Cert</button>
         <button type="button" onClick={() => load(filterStatus, filterTier)} className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border">Refresh</button>
@@ -182,7 +182,7 @@ export function IppIeCertTab() {
                 <tr key={ie.id} className="border-b hover:bg-[#eef2f7] cursor-pointer" onClick={() => setSelected(ie)}>
                   <td className="py-2 pr-4 text-xs max-w-[180px] truncate">{ie.description?.slice(0, 60) ?? ie.project_id}</td>
                   <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[ie.milestone_tier]}`}>{ie.milestone_tier}</span></td>
-                  <td className="py-2 pr-4 text-xs font-medium text-indigo-700">{fmtZar(ie.milestone_value_zar)}</td>
+                  <td className="py-2 pr-4 text-xs font-medium" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtZar(ie.milestone_value_zar)}</td>
                   <td className="py-2 pr-4 text-xs text-[#6b7685]">{ie.milestone_category ? CATEGORY_LABELS[ie.milestone_category] ?? ie.milestone_category : '—'}</td>
                   <td className="py-2 pr-4 text-xs text-[#6b7685] max-w-[120px] truncate">{ie.ie_firm ?? '—'}</td>
                   <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[ie.chain_status]}`}>{ie.chain_status.replace(/_/g, ' ')}</span></td>
@@ -190,7 +190,7 @@ export function IppIeCertTab() {
                   <td className={`py-2 pr-4 text-xs ${ie.sla_breached ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                     {ie.sla_breached ? '⚠ BREACHED' : fmtDate(ie.sla_due_at)}
                   </td>
-                  <td className="py-2 text-xs text-indigo-600">View →</td>
+                  <td className="py-2 text-xs" style={{ color: 'oklch(0.46 0.16 55)' }}>View →</td>
                 </tr>
               ))}
               {items.length === 0 && <tr><td colSpan={9} className="py-6 text-center text-[#9aa5b4] text-sm">No IE certification records found</td></tr>}
@@ -224,9 +224,9 @@ export function IppIeCertTab() {
                 {ACTION_MAP[selected.chain_status].map(a => (
                   <button type="button" key={a.action} disabled={actionPending}
                     onClick={() => doAction(selected.id, a.action)}
-                    className={`w-full text-left px-3 py-2 rounded border text-sm ${a.danger ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-[#dde4ec] text-[#2d3748] hover:bg-indigo-50 hover:border-indigo-300'}`}>
+                    className={`w-full text-left px-3 py-2 rounded border text-sm ${a.danger ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-[#dde4ec] text-[#2d3748]'}`}>
                     {a.label}
-                    {a.tag && <span className={`ml-2 text-xs px-1 rounded ${a.tag.includes('REGULATOR') ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{a.tag}</span>}
+                    {a.tag && <span className={`ml-2 text-xs px-1 rounded ${a.tag.includes('REGULATOR') ? 'bg-red-100 text-red-700' : ''}`} style={!a.tag.includes('REGULATOR') ? { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } : undefined}>{a.tag}</span>}
                   </button>
                 ))}
               </div>

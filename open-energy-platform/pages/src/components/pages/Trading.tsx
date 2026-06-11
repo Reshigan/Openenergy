@@ -12,7 +12,22 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { ExportBar } from '../ExportBar';
-import { StitchPage } from '../StitchPage';
+// ─── Design tokens ───────────────────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const BAD_BG = 'oklch(0.97 0.04 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const WARN_BG= 'oklch(0.96 0.05 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const GOOD_BG= 'oklch(0.95 0.04 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 /* ════════════════════════════════════════════════════════════════════════
  * Trading Terminal — Trader role
@@ -80,29 +95,140 @@ interface AlgoRule {
   last_fired_at?: string | null;
 }
 
+const TAB_DESCRIPTIONS: Partial<Record<Tab, string>> = {
+  terminal:    'Live order book depth, order ticket with pre-trade guard feedback, and last-print tape.',
+  algo:        'Create and manage algorithmic trading rules — auto-fires when trigger prices are crossed.',
+  backtest:    'Replay a strategy against historical print data to validate performance before live deployment.',
+  blotter:     'Real-time fills feed with position summary, open P&L, and cleared-volume breakdown.',
+  risk:        'VaR (1d/99%), margin utilisation, credit headroom, and pre-trade guard status.',
+  allocations: 'Post-execution block allocation to sub-accounts per DTCC-ITP / Traiana workflow.',
+  fees:        'Brokerage, exchange, clearing, regulatory, and tax fee ledger per fill.',
+  rejections:  'Pre-trade guard rejection log — reason codes, notional impact, AI remediation hints.',
+  exceptions:  'Operational exception queue — settlement breaks, unmatched allocations, reporting failures.',
+};
+
 export function Trading() {
   const [tab, setTab] = useState<Tab>('terminal');
+  const tabDesc = TAB_DESCRIPTIONS[tab] ?? '';
+  const activeLabel = TABS.find(t => t.id === tab)?.label ?? '';
 
   return (
-    <StitchPage
-      eyebrowIcon={Zap}
-      eyebrowLabel="Energy Trading"
-      title="Trading Terminal"
-      subtitle="Live order book, algorithmic rules, strategy backtester, real-time blotter and risk dashboard."
-      tabs={TABS}
-      activeTab={tab}
-      onTabChange={(id) => setTab(id as Tab)}
-    >
-      {tab === 'terminal' && <TerminalTab onSeeRejections={() => setTab('rejections')} />}
-      {tab === 'algo' && <AlgoRulesTab />}
-      {tab === 'backtest' && <BacktesterTab />}
-      {tab === 'blotter' && <BlotterTab />}
-      {tab === 'risk' && <RiskTab />}
-      {tab === 'rejections' && <RejectionsTab />}
-      {tab === 'exceptions' && <ExceptionsTab />}
-      {tab === 'allocations' && <AllocationsTab />}
-      {tab === 'fees' && <FeesTab />}
-    </StitchPage>
+    <div style={{
+      display: 'grid', gridTemplateColumns: '1fr 380px',
+      height: 'calc(100vh - 50px)', background: BG, overflow: 'hidden',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+    }}>
+      {/* ── LEFT COLUMN ─────────────────────────────────────────────────── */}
+      <div style={{ overflowY: 'auto', padding: '24px 28px' }}>
+        {/* Header */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <Zap size={14} color={TX3} />
+            <span style={{ fontSize: 11, fontWeight: 600, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Energy Trading</span>
+          </div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: TX1, margin: 0 }}>Trading Terminal</h1>
+          <p style={{ fontSize: 13, color: TX2, margin: '4px 0 0' }}>Live order book, algorithmic rules, strategy backtester, real-time blotter and risk dashboard.</p>
+        </div>
+
+        {/* Tab bar */}
+        <div style={{ display: 'flex', gap: 2, borderBottom: `2px solid ${BORDER}`, marginBottom: 20, flexWrap: 'wrap' }}>
+          {TABS.map(t => {
+            const Icon = t.icon;
+            return (
+              <button key={t.id} type="button" onClick={() => setTab(t.id)} style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
+                fontSize: 13, fontWeight: tab === t.id ? 700 : 500,
+                color: tab === t.id ? ACC : TX2,
+                background: 'transparent', border: 'none',
+                borderBottom: `2px solid ${tab === t.id ? ACC : 'transparent'}`,
+                marginBottom: -2, cursor: 'pointer',
+              }}>
+                <Icon size={13} />{t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Tab content */}
+        {tab === 'terminal'    && <TerminalTab onSeeRejections={() => setTab('rejections')} />}
+        {tab === 'algo'        && <AlgoRulesTab />}
+        {tab === 'backtest'    && <BacktesterTab />}
+        {tab === 'blotter'     && <BlotterTab />}
+        {tab === 'risk'        && <RiskTab />}
+        {tab === 'rejections'  && <RejectionsTab />}
+        {tab === 'exceptions'  && <ExceptionsTab />}
+        {tab === 'allocations' && <AllocationsTab />}
+        {tab === 'fees'        && <FeesTab />}
+      </div>
+
+      {/* ── RIGHT COLUMN ────────────────────────────────────────────────── */}
+      <div style={{
+        borderLeft: `1px solid ${BORDER}`, background: BG1,
+        overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 16,
+      }}>
+        {/* Active tab context */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Current View</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: TX1, marginBottom: 6 }}>{activeLabel}</div>
+          {tabDesc && <p style={{ fontSize: 12, color: TX2, margin: 0, lineHeight: 1.6 }}>{tabDesc}</p>}
+        </div>
+
+        {/* Pre-trade guard status */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Pre-Trade Guards</div>
+          {[
+            { label: 'Credit Check',     desc: 'Available collateral vs notional',    status: 'active' },
+            { label: 'Exposure Limit',   desc: 'Gross + net position caps',           status: 'active' },
+            { label: 'Mark Age',         desc: 'Price stale >15 min blocked',         status: 'active' },
+            { label: 'Halt Check',       desc: 'Market + instrument halt detection',  status: 'active' },
+            { label: 'KYC Gate',         desc: 'Approved counterparty required',      status: 'active' },
+            { label: 'Algo Cert',        desc: 'Certified algo required for DEA',     status: 'active' },
+          ].map(g => (
+            <div key={g.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: GOOD, marginTop: 4, flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: TX1 }}>{g.label}</div>
+                <div style={{ fontSize: 11, color: TX3 }}>{g.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Order type quick reference */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Order Types</div>
+          {[
+            { code: 'LIMIT',      tif: 'GTC/GTD/DAY', desc: 'Price-constrained, rests in book' },
+            { code: 'MARKET',     tif: 'IOC',         desc: 'Fills at best available price'    },
+            { code: 'IOC',        tif: 'IOC',         desc: 'Immediate partial fill, cancel rest'},
+            { code: 'FOK',        tif: 'FOK',         desc: 'All-or-nothing immediate'          },
+            { code: 'STOP',       tif: 'GTC',         desc: 'Triggers market order at stop'     },
+            { code: 'STOP-LIMIT', tif: 'GTC',         desc: 'Triggers limit order at stop'      },
+          ].map(o => (
+            <div key={o.code} style={{ marginBottom: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: TX1, fontFamily: MONO }}>{o.code}</span>
+                <span style={{ fontSize: 10, color: TX3, fontFamily: MONO }}>{o.tif}</span>
+              </div>
+              <div style={{ fontSize: 11, color: TX2 }}>{o.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Energy types */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Energy Markets</div>
+          {['solar', 'wind', 'hydro', 'gas', 'coal', 'nuclear', 'storage'].map(e => (
+            <div key={e} style={{
+              display: 'inline-block', margin: '0 4px 6px 0',
+              background: BG2, border: `1px solid ${BORDER}`,
+              borderRadius: 4, padding: '3px 8px',
+              fontSize: 11, fontFamily: MONO, color: TX2, textTransform: 'capitalize',
+            }}>{e}</div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -324,7 +450,7 @@ function TerminalTab({ onSeeRejections }: { onSeeRejections: () => void }) {
                   type="button"
                   onClick={() => setOrder({ ...order, volume: String(suggest.suggested_volume_mwh) })}
                   title={`Free collateral ${formatZAR(suggest.free_collateral_zar)} · headroom ${formatZAR(suggest.headroom_zar)}${suggest.mark_price_zar_mwh ? ` · mark R${num(suggest.mark_price_zar_mwh)}` : ''}`}
-                  className="mt-1 inline-flex items-center gap-1 text-[10px] text-[#3b82c4] hover:text-[#1a3a5c] hover:underline">
+                  className="mt-1 inline-flex items-center gap-1 text-[10px] text-[oklch(0.46_0.16_55)] hover:text-[oklch(0.46_0.16_55)] hover:underline">
                   <Sparkles size={10} /> max safe: {num(suggest.suggested_volume_mwh, 1)} MWh
                 </button>
               )}
@@ -437,15 +563,15 @@ function TerminalTab({ onSeeRejections }: { onSeeRejections: () => void }) {
                 <AreaChart data={[...prints].reverse()}>
                   <defs>
                     <linearGradient id="prGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#3b82c4" stopOpacity={0.45} />
-                      <stop offset="100%" stopColor="#3b82c4" stopOpacity={0} />
+                      <stop offset="0%" stopColor="oklch(0.46 0.16 55)" stopOpacity={0.45} />
+                      <stop offset="100%" stopColor="oklch(0.46 0.16 55)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid stroke="#eef2f7" strokeDasharray="3 3" />
                   <XAxis dataKey="matched_at" tickFormatter={(v) => new Date(v).toLocaleTimeString().slice(0,5)} fontSize={10} stroke="#6b7685" />
                   <YAxis tickFormatter={(v) => `R${v}`} fontSize={10} stroke="#6b7685" />
                   <Tooltip formatter={(v: number) => formatZAR(v)} labelFormatter={(v) => new Date(v).toLocaleString()} />
-                  <Area type="monotone" dataKey="matched_price" stroke="#1a3a5c" strokeWidth={2} fill="url(#prGrad)" />
+                  <Area type="monotone" dataKey="matched_price" stroke="oklch(0.46 0.16 55)" strokeWidth={2} fill="url(#prGrad)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -541,7 +667,7 @@ function AlgoRulesTab() {
                         </button>
                       </td>
                       <td className="px-4 py-2 text-right">
-                        <button type="button" onClick={() => setEditing(r)} className="text-[12px] text-[#3b82c4] hover:underline">Edit</button>
+                        <button type="button" onClick={() => setEditing(r)} className="text-[12px] text-[oklch(0.46_0.16_55)] hover:underline">Edit</button>
                       </td>
                     </tr>
                   ))}
@@ -644,7 +770,7 @@ function BacktesterTab() {
                   <XAxis dataKey="t" fontSize={10} stroke="#6b7685" />
                   <YAxis tickFormatter={(v) => `R${num(v)}`} fontSize={10} stroke="#6b7685" />
                   <Tooltip formatter={(v: number) => formatZAR(v)} />
-                  <Line type="monotone" dataKey="v" stroke="#1a3a5c" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="v" stroke="oklch(0.46 0.16 55)" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -814,7 +940,7 @@ function RiskTab() {
 
       {narrative?.headline && (
         <div className="rounded-lg border border-[#dde4ec] bg-[#fafbfd] px-4 py-2 text-[12px] text-[#3d4756] flex items-start gap-2">
-          <Sparkles size={12} className="mt-0.5 text-[#3b82c4] flex-shrink-0" />
+          <Sparkles size={12} className="mt-0.5 text-[oklch(0.46_0.16_55)] flex-shrink-0" />
           <div className="flex-1">{narrative.headline}</div>
         </div>
       )}
@@ -973,7 +1099,7 @@ function RejectionCard({
       </div>
       {(loading || expl?.human_explanation) && (
         <div className="mt-2 flex items-start gap-2 text-[#3d4756]">
-          <Sparkles size={11} className="mt-0.5 text-[#3b82c4] flex-shrink-0" />
+          <Sparkles size={11} className="mt-0.5 text-[oklch(0.46_0.16_55)] flex-shrink-0" />
           <div className="flex-1">
             {loading ? <span className="text-[#6b7685]">Generating explanation…</span> : expl?.human_explanation}
           </div>
@@ -985,13 +1111,13 @@ function RejectionCard({
             <button type="button"
               key={i}
               onClick={() => onApplyRemediation(r.action, r.payload)}
-              className="h-7 px-3 rounded text-[11px] font-semibold bg-white border border-[#dde4ec] text-[#1a3a5c] hover:bg-[#eef2f7]">
+              className="h-7 px-3 rounded text-[11px] font-semibold bg-white border border-[#dde4ec] text-[oklch(0.46_0.16_55)] hover:bg-[#eef2f7]">
               {r.label}
             </button>
           ))}
           <button type="button"
             onClick={onSeeAll}
-            className="h-7 px-3 rounded text-[11px] font-semibold text-[#3b82c4] hover:underline">
+            className="h-7 px-3 rounded text-[11px] font-semibold text-[oklch(0.46_0.16_55)] hover:underline">
             All my rejections →
           </button>
         </div>
@@ -1099,7 +1225,7 @@ function RejectionsTab() {
                           </td>
                           <td className="px-4 py-2 text-right font-mono">{formatZAR(r.notional_zar)}</td>
                           <td className="px-4 py-2 text-right">
-                            <button type="button" onClick={() => toggle(r.id)} className="text-[11px] text-[#3b82c4] hover:underline inline-flex items-center gap-1">
+                            <button type="button" onClick={() => toggle(r.id)} className="text-[11px] text-[oklch(0.46_0.16_55)] hover:underline inline-flex items-center gap-1">
                               <Sparkles size={10} /> Why this happened {ex && ex !== 'error' && ex !== 'loading' ? '↑' : '→'}
                             </button>
                           </td>
@@ -1118,13 +1244,13 @@ function RejectionsTab() {
                           <tr className="border-t border-[#eef2f7] bg-[#fafbfd]">
                             <td colSpan={5} className="px-6 py-3">
                               <div className="flex items-start gap-2 text-[12px] text-[#3d4756]">
-                                <Sparkles size={12} className="mt-0.5 text-[#3b82c4] flex-shrink-0" />
+                                <Sparkles size={12} className="mt-0.5 text-[oklch(0.46_0.16_55)] flex-shrink-0" />
                                 <div className="flex-1">{ex.human_explanation}</div>
                               </div>
                               {ex.suggested_remediations.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-2">
                                   {ex.suggested_remediations.map((s, i) => (
-                                    <span key={i} className="h-6 px-2 rounded bg-white border border-[#dde4ec] text-[11px] text-[#1a3a5c] inline-flex items-center">
+                                    <span key={i} className="h-6 px-2 rounded bg-white border border-[#dde4ec] text-[11px] text-[oklch(0.46_0.16_55)] inline-flex items-center">
                                       {s.label}
                                     </span>
                                   ))}
@@ -1211,7 +1337,7 @@ function MyOrdersPanel({
                   <td className="px-4 py-2 text-right">
                     {isLive && (
                       <div className="inline-flex items-center gap-1">
-                        <button type="button" onClick={() => onAmend(o)} className="h-6 px-2 rounded text-[11px] text-[#3b82c4] hover:bg-[#eef2f7] inline-flex items-center gap-1">
+                        <button type="button" onClick={() => onAmend(o)} className="h-6 px-2 rounded text-[11px] text-[oklch(0.46_0.16_55)] hover:bg-[#eef2f7] inline-flex items-center gap-1">
                           <Edit3 size={10} /> Amend
                         </button>
                         <button type="button" onClick={() => onCancel(o.id)} className="h-6 px-2 rounded text-[11px] text-[#c0392b] hover:bg-[#fdf2f1]">
@@ -1232,7 +1358,7 @@ function MyOrdersPanel({
 
 function StatusPill({ status }: { status: string }) {
   const tone =
-    status === 'open' ? { bg: '#dbecfb', fg: '#1a5d97' } :
+    status === 'open' ? { bg: 'oklch(0.94 0.02 250)', fg: '#1a5d97' } :
     status === 'partial' ? { bg: '#ffe9c2', fg: '#9b6610' } :
     status === 'matched' ? { bg: '#cdf0dd', fg: '#1a8a5b' } :
     status === 'cancelled' ? { bg: '#eef2f7', fg: '#6b7685' } :
@@ -1377,7 +1503,7 @@ type TradeExceptionRow = {
 
 const EX_SEVERITY_PILL: Record<string, string> = {
   low: 'bg-[#eef2f7] text-[#2d3748]',
-  medium: 'bg-blue-100 text-blue-700',
+  medium: 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   high: 'bg-amber-100 text-amber-800',
   critical: 'bg-red-100 text-red-700',
 };
@@ -1479,7 +1605,7 @@ function ExceptionsTab() {
                   <td className="px-4 py-2">
                     <div className="flex gap-1">
                       {r.status === 'open' && (
-                        <button type="button" onClick={() => transition(r.id, 'investigating')} className="px-2 py-1 text-[11px] bg-blue-50 text-blue-700 rounded">Investigate</button>
+                        <button type="button" onClick={() => transition(r.id, 'investigating')} className="px-2 py-1 text-[11px] bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)] rounded">Investigate</button>
                       )}
                       {(r.status === 'open' || r.status === 'investigating') && (
                         <>
@@ -1986,8 +2112,8 @@ type FeeRow = {
 };
 
 const FEE_TYPE_PILL: Record<string, string> = {
-  brokerage:     'bg-blue-100 text-blue-700',
-  exchange:      'bg-indigo-100 text-indigo-700',
+  brokerage:     'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
+  exchange:      'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   clearing:      'bg-purple-100 text-purple-700',
   market_data:   'bg-amber-100 text-amber-800',
   regulatory:    'bg-rose-100 text-rose-700',

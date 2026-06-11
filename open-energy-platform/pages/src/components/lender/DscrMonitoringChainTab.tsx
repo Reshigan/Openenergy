@@ -35,6 +35,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'period_open' | 'data_collected' | 'computed' | 'certified_clean'
@@ -45,6 +60,7 @@ type Tier = 'minor' | 'standard' | 'material' | 'severe';
 type Urgency = 'critical' | 'high' | 'medium' | 'low';
 
 interface DscrRow {
+  [key: string]: unknown;
   id: string;
   monitoring_number: string;
   source_event: string | null;
@@ -171,35 +187,26 @@ interface KpiSummary {
   severe_tier_count: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  period_open:      { bg: '#e3e7ec', fg: '#557',    label: 'Period open' },
-  data_collected:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Data collected' },
-  computed:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Computed' },
-  certified_clean:  { bg: '#d4edda', fg: '#155724', label: 'Certified clean' },
-  watch:            { bg: '#fff4d6', fg: '#a06200', label: 'Watch' },
-  breach_recorded:  { bg: '#ffe4b5', fg: '#8a4a00', label: 'Breach recorded' },
-  cure_proposed:    { bg: '#ffd9b3', fg: '#8a4a00', label: 'Cure proposed' },
-  cure_in_progress: { bg: '#ffd9b3', fg: '#8a4a00', label: 'Cure in progress' },
-  cure_validated:   { bg: '#d4edda', fg: '#155724', label: 'Cure validated' },
-  lock_up:          { bg: '#f3c0c0', fg: '#5a1818', label: 'Lock-up' },
-  accelerated:      { bg: '#f3c0c0', fg: '#5a1818', label: 'Accelerated' },
-  waived:           { bg: '#e3e7ec', fg: '#557',    label: 'Waived' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'period_open',
+  'data_collected',
+  'computed',
+  'watch',
+  'breach_recorded',
+  'cure_proposed',
+  'cure_in_progress',
+  'cure_validated',
+  'lock_up',
+  'certified_clean',
+];
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#d4edda', fg: '#155724', label: 'Minor (≥1.30×)' },
-  standard: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard (≥1.20×)' },
-  material: { bg: '#fff4d6', fg: '#a06200', label: 'Material (≥1.00×)' },
-  severe:   { bg: '#fde0e0', fg: '#9b1f1f', label: 'Severe (<1.00×)' },
-};
+const BRANCH_STATES: readonly string[] = [
+  'accelerated',
+  'waived',
+];
 
-const URGENCY_TONE: Record<Urgency, { bg: string; fg: string; label: string }> = {
-  critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical' },
-  high:     { bg: '#ffe4b5', fg: '#8a4a00', label: 'High' },
-  medium:   { bg: '#fff4d6', fg: '#a06200', label: 'Medium' },
-  low:      { bg: '#d4edda', fg: '#155724', label: 'Low' },
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'open',             label: 'Open' },
   { key: 'all',              label: 'All' },
@@ -226,61 +233,9 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'critical',         label: 'Critical urgency' },
 ];
 
-type ActionKind =
-  | 'collect-data' | 'compute-ratios' | 'certify-clean' | 'place-on-watch'
-  | 'record-breach' | 'enter-lock-up' | 'propose-cure' | 'reject-cure'
-  | 'execute-cure' | 'validate-cure' | 'fail-cure' | 'declare-acceleration'
-  | 'waive-breach';
+const TERMINAL_STATES: ChainStatus[] = ['certified_clean', 'accelerated', 'waived'];
 
-// Allowed actions per state — primary forward action first. Mirrors the spec
-// TRANSITIONS map so the UI never offers an invalid step.
-const ALLOWED_ACTIONS: Record<ChainStatus, ActionKind[]> = {
-  period_open:      ['collect-data'],
-  data_collected:   ['compute-ratios'],
-  computed:         ['certify-clean', 'place-on-watch', 'record-breach'],
-  certified_clean:  [],
-  watch:            ['certify-clean', 'record-breach'],
-  breach_recorded:  ['propose-cure', 'enter-lock-up', 'waive-breach'],
-  cure_proposed:    ['execute-cure', 'reject-cure'],
-  cure_in_progress: ['validate-cure', 'fail-cure'],
-  cure_validated:   ['certify-clean'],
-  lock_up:          ['propose-cure', 'declare-acceleration'],
-  accelerated:      [],
-  waived:           [],
-};
-
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'collect-data':         'Collect data (borrower)',
-  'compute-ratios':       'Compute ratios (lender)',
-  'certify-clean':        'Certify clean (lender)',
-  'place-on-watch':       'Place on watch (lender)',
-  'record-breach':        'Record breach (lender)',
-  'enter-lock-up':        'Enter distribution lock-up (lender)',
-  'propose-cure':         'Propose cure (borrower)',
-  'reject-cure':          'Reject cure (lender)',
-  'execute-cure':         'Execute cure (borrower)',
-  'validate-cure':        'Validate cure (independent engineer)',
-  'fail-cure':            'Fail cure — escalate (lender)',
-  'declare-acceleration': 'Declare acceleration — IFRS 9 Stage 3 (lender)',
-  'waive-breach':         'Waive breach (lender)',
-};
-
-const ACTION_TONE: Record<ActionKind, 'primary' | 'danger' | 'warn' | 'good' | 'muted'> = {
-  'collect-data':         'primary',
-  'compute-ratios':       'primary',
-  'certify-clean':        'good',
-  'place-on-watch':       'warn',
-  'record-breach':        'warn',
-  'enter-lock-up':        'warn',
-  'propose-cure':         'primary',
-  'reject-cure':          'warn',
-  'execute-cure':         'good',
-  'validate-cure':        'good',
-  'fail-cure':            'danger',
-  'declare-acceleration': 'danger',
-  'waive-breach':         'muted',
-};
-
+// ── format helpers ────────────────────────────────────────────────────────
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
   if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
@@ -312,26 +267,336 @@ function fmtNum(n: number | null | undefined, dp = 2): string {
   return n.toFixed(dp);
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['certified_clean', 'accelerated', 'waived'];
+// ── actions ───────────────────────────────────────────────────────────────
+function getActions(row: DscrRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
 
+  if (s === 'period_open') {
+    actions.push({
+      key: 'collect-data',
+      label: 'Collect data (borrower)',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — borrower submitting CFADS / debt-service data for the test period', type: 'textarea', required: true, placeholder: '' },
+        { key: 'cfads_period_zar', label: 'CFADS for the period (ZAR)', type: 'number', required: false, placeholder: String(row.cfads_period_zar ?? '') },
+        { key: 'debt_service_period_zar', label: 'Debt service for the period (ZAR)', type: 'number', required: false, placeholder: String(row.debt_service_period_zar ?? '') },
+        { key: 'shortfall_zar', label: 'Shortfall vs scheduled debt service (ZAR, 0 if none)', type: 'number', required: false, placeholder: String(row.shortfall_zar ?? 0) },
+        { key: 'outstanding_debt_zar', label: 'Outstanding debt (ZAR)', type: 'number', required: false, placeholder: String(row.outstanding_debt_zar ?? '') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'data_collected') {
+    actions.push({
+      key: 'compute-ratios',
+      label: 'Compute ratios (lender)',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — lender desk computing DSCR / LLCR / PLCR from the collected cash data', type: 'textarea', required: true, placeholder: '' },
+        { key: 'current_dscr', label: 'Measured DSCR for this period', type: 'number', required: false, placeholder: String(row.current_dscr ?? '') },
+        { key: 'forward_dscr_p12m', label: 'Forward-looking DSCR (12m)', type: 'number', required: false, placeholder: String(row.forward_dscr_p12m ?? '') },
+        { key: 'backward_dscr_12m', label: 'Backward-looking DSCR (12m)', type: 'number', required: false, placeholder: String(row.backward_dscr_12m ?? '') },
+        { key: 'llcr_value', label: 'LLCR value', type: 'number', required: false, placeholder: String(row.llcr_value ?? '') },
+        { key: 'plcr_value', label: 'PLCR value', type: 'number', required: false, placeholder: String(row.plcr_value ?? '') },
+        { key: 'npv_loan_life_zar', label: 'NPV loan life cash-flows (ZAR)', type: 'number', required: false, placeholder: String(row.npv_loan_life_zar ?? '') },
+        { key: 'npv_project_life_zar', label: 'NPV project life cash-flows (ZAR)', type: 'number', required: false, placeholder: String(row.npv_project_life_zar ?? '') },
+        { key: 'annual_trend', label: 'Annual DSCR trend (negative = deteriorating)', type: 'number', required: false, placeholder: String(row.annual_trend ?? 0) },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'computed' || s === 'watch' || s === 'cure_validated') {
+    actions.push({
+      key: 'certify-clean',
+      label: 'Certify clean (lender)',
+      tone: 'ghost',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — ratios met the pass threshold, certifying the period clean', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'computed') {
+    actions.push({
+      key: 'place-on-watch',
+      label: 'Place on watch (lender)',
+      tone: 'warn',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — DSCR above lock-up but below pass; place on the watch list', type: 'textarea', required: true, placeholder: '' },
+        { key: 'reason_code', label: 'Reason code (e.g. trend_negative / curtailment / fx_drift)', type: 'text', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'record-breach',
+      label: 'Record breach (lender)',
+      tone: 'warn',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — DSCR breached the lock-up threshold; record a covenant breach', type: 'textarea', required: true, placeholder: '' },
+        { key: 'reason_code', label: 'Reason code (e.g. lockup_breach / hard_breach / default_floor)', type: 'text', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'watch') {
+    actions.push({
+      key: 'record-breach',
+      label: 'Record breach (lender)',
+      tone: 'warn',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — DSCR breached the lock-up threshold; record a covenant breach', type: 'textarea', required: true, placeholder: '' },
+        { key: 'reason_code', label: 'Reason code (e.g. lockup_breach / hard_breach / default_floor)', type: 'text', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'breach_recorded') {
+    actions.push({
+      key: 'propose-cure',
+      label: 'Propose cure (borrower)',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — borrower proposing an equity cure / DSRA top-up / restructure', type: 'textarea', required: true, placeholder: '' },
+        { key: 'proposed_cure_amount_zar', label: 'Proposed cure amount (ZAR)', type: 'number', required: false, placeholder: String(row.proposed_cure_amount_zar ?? row.shortfall_zar ?? '') },
+        { key: 'equity_cure_available_zar', label: 'Equity cure available (ZAR)', type: 'number', required: false, placeholder: String(row.equity_cure_available_zar ?? '') },
+        { key: 'dsra_balance_zar', label: 'DSRA balance available (ZAR)', type: 'number', required: false, placeholder: String(row.dsra_balance_zar ?? '') },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'enter-lock-up',
+      label: 'Enter distribution lock-up (lender)',
+      tone: 'warn',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — distribution lock-up notice issued under the LMA waterfall', type: 'textarea', required: true, placeholder: '' },
+      ],
+      // crosses regulator for material + severe
+      cascadeTo: ['regulator'],
+    });
+    actions.push({
+      key: 'waive-breach',
+      label: 'Waive breach (lender)',
+      tone: 'ghost',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — lender granting forbearance / waiver of the breach (crosses regulator for material+severe)', type: 'textarea', required: true, placeholder: '' },
+        { key: 'reason_code', label: 'Reason code (e.g. temporary_waiver / refinance_pending / restructure_under_way)', type: 'text', required: false, placeholder: '' },
+      ],
+      // crosses regulator for material + severe
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (s === 'cure_proposed') {
+    actions.push({
+      key: 'execute-cure',
+      label: 'Execute cure (borrower)',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — borrower executing the agreed cure (equity injection / DSRA draw)', type: 'textarea', required: true, placeholder: '' },
+        { key: 'executed_cure_amount_zar', label: 'Executed cure amount (ZAR)', type: 'number', required: false, placeholder: String(row.executed_cure_amount_zar ?? row.proposed_cure_amount_zar ?? '') },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'reject-cure',
+      label: 'Reject cure (lender)',
+      tone: 'warn',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — lender rejecting the cure proposal (return to breach_recorded)', type: 'textarea', required: true, placeholder: '' },
+        { key: 'reason_code', label: 'Reason code (e.g. insufficient_cure / over_cap / unrealistic_source)', type: 'text', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'cure_in_progress') {
+    actions.push({
+      key: 'validate-cure',
+      label: 'Validate cure (independent engineer)',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — independent engineer / agent validating the cure restores DSCR', type: 'textarea', required: true, placeholder: '' },
+        { key: 'current_dscr', label: 'Restored DSCR (post-cure)', type: 'number', required: false, placeholder: String(row.current_dscr ?? '') },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'fail-cure',
+      label: 'Fail cure — escalate (lender)',
+      tone: 'danger',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — cure failed / DSCR did not recover; escalating to acceleration', type: 'textarea', required: true, placeholder: '' },
+        { key: 'reason_code', label: 'Reason code (e.g. cure_failed / dscr_not_restored / abandoned)', type: 'text', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'lock_up') {
+    actions.push({
+      key: 'propose-cure',
+      label: 'Propose cure (borrower)',
+      tone: 'primary',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — borrower proposing an equity cure / DSRA top-up / restructure', type: 'textarea', required: true, placeholder: '' },
+        { key: 'proposed_cure_amount_zar', label: 'Proposed cure amount (ZAR)', type: 'number', required: false, placeholder: String(row.proposed_cure_amount_zar ?? row.shortfall_zar ?? '') },
+        { key: 'equity_cure_available_zar', label: 'Equity cure available (ZAR)', type: 'number', required: false, placeholder: String(row.equity_cure_available_zar ?? '') },
+        { key: 'dsra_balance_zar', label: 'DSRA balance available (ZAR)', type: 'number', required: false, placeholder: String(row.dsra_balance_zar ?? '') },
+      ],
+      cascadeTo: [],
+    });
+    actions.push({
+      key: 'declare-acceleration',
+      label: 'Declare acceleration — IFRS 9 Stage 3 (lender)',
+      tone: 'danger',
+      fields: [
+        { key: 'chain_basis', label: 'Basis — declaring acceleration / event of default; IFRS 9 Stage 3 trigger (crosses regulator for EVERY tier)', type: 'textarea', required: true, placeholder: '' },
+        { key: 'reason_code', label: 'Reason code (e.g. lockup_failed / cure_window_lapsed / hard_breach)', type: 'text', required: false, placeholder: '' },
+      ],
+      // SIGNATURE: crosses regulator for EVERY tier
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  return actions;
+}
+
+// ── detail renderer ───────────────────────────────────────────────────────
+function renderDetail(row: DscrRow): React.ReactNode {
+  return (
+    <div style={{ fontSize: 11, color: TX2 }}>
+      {/* Live coverage-defense battery */}
+      <div className="mb-2">
+        <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 4 }}>
+          Live coverage-defense battery
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+          <DetailPair label="Severity index"           value={fmtNum(row.severity_index_live)} />
+          <DetailPair label="Urgency band"             value={row.urgency_band_live ?? '—'} />
+          <DetailPair label="Headroom to lock-up (mo)" value={row.headroom_to_lockup_months_live != null ? fmtNum(row.headroom_to_lockup_months_live, 1) : '—'} />
+          <DetailPair label="Cure runway (days)"       value={row.cure_runway_days_live != null ? String(row.cure_runway_days_live) : '—'} />
+          <DetailPair label="Equity-cure coverage"     value={fmtRatio(row.equity_cure_coverage_ratio_live)} />
+          <DetailPair label="DSRA coverage"            value={fmtRatio(row.dsra_coverage_ratio_live)} />
+          <DetailPair label="Forward DSCR (live)"      value={fmtRatio(row.forward_dscr_live)} />
+          <DetailPair label="LLCR (live)"              value={fmtRatio(row.llcr_live)} />
+          <DetailPair label="PLCR (live)"              value={fmtRatio(row.plcr_live)} />
+          <DetailPair label="Cross-default risk"       value={row.cross_default_risk_flag_live ? 'YES' : 'No'} />
+        </div>
+      </div>
+
+      {/* Ratios & cash */}
+      <div className="mb-2">
+        <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 4 }}>
+          Ratios &amp; cash
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+          <DetailPair label="Current DSCR"         value={fmtRatio(row.current_dscr)} />
+          <DetailPair label="Forward DSCR (p12m)"  value={fmtRatio(row.forward_dscr_p12m)} />
+          <DetailPair label="Backward DSCR (12m)"  value={fmtRatio(row.backward_dscr_12m)} />
+          <DetailPair label="LLCR"                 value={fmtRatio(row.llcr_value)} />
+          <DetailPair label="PLCR"                 value={fmtRatio(row.plcr_value)} />
+          <DetailPair label="Annual trend"         value={fmtNum(row.annual_trend, 3)} />
+          <DetailPair label="Pass threshold"       value={fmtRatio(row.pass_threshold)} />
+          <DetailPair label="Lock-up threshold"    value={fmtRatio(row.lockup_threshold)} />
+          <DetailPair label="Default floor"        value={fmtRatio(row.default_floor)} />
+          <DetailPair label="Equity-cure cap (×)"  value={fmtNum(row.equity_cure_cap_multiple, 1)} />
+          <DetailPair label="CFADS (period)"       value={fmtZar(row.cfads_period_zar)} />
+          <DetailPair label="Debt service (period)" value={fmtZar(row.debt_service_period_zar)} />
+          <DetailPair label="Shortfall"            value={fmtZar(row.shortfall_zar)} />
+          <DetailPair label="Outstanding debt"     value={fmtZar(row.outstanding_debt_zar)} />
+          <DetailPair label="NPV loan life"        value={fmtZar(row.npv_loan_life_zar)} />
+          <DetailPair label="NPV project life"     value={fmtZar(row.npv_project_life_zar)} />
+          <DetailPair label="Equity cure available" value={fmtZar(row.equity_cure_available_zar)} />
+          <DetailPair label="DSRA balance"         value={fmtZar(row.dsra_balance_zar)} />
+          <DetailPair label="Proposed cure"        value={fmtZar(row.proposed_cure_amount_zar)} />
+          <DetailPair label="Executed cure"        value={fmtZar(row.executed_cure_amount_zar)} />
+          <DetailPair label="Sister loan"          value={row.sister_loan_id ?? '—'} />
+          <DetailPair label="Sister loan DSCR"     value={fmtRatio(row.sister_loan_dscr)} />
+        </div>
+      </div>
+
+      {/* Lifecycle timestamps */}
+      <div className="mb-2">
+        <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 4 }}>
+          Lifecycle timestamps
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+          <DetailPair label="Period open"      value={fmtDate(row.period_open_at)} />
+          <DetailPair label="Data collected"   value={fmtDate(row.data_collected_at)} />
+          <DetailPair label="Computed"         value={fmtDate(row.computed_at)} />
+          <DetailPair label="Certified clean"  value={fmtDate(row.certified_clean_at)} />
+          <DetailPair label="Watch"            value={fmtDate(row.watch_at)} />
+          <DetailPair label="Breach recorded"  value={fmtDate(row.breach_recorded_at)} />
+          <DetailPair label="Cure proposed"    value={fmtDate(row.cure_proposed_at)} />
+          <DetailPair label="Cure in progress" value={fmtDate(row.cure_in_progress_at)} />
+          <DetailPair label="Cure validated"   value={fmtDate(row.cure_validated_at)} />
+          <DetailPair label="Lock-up"          value={fmtDate(row.lock_up_at)} />
+          <DetailPair label="Accelerated"      value={fmtDate(row.accelerated_at)} />
+          <DetailPair label="Waived"           value={fmtDate(row.waived_at)} />
+          <DetailPair label="SLA deadline"     value={fmtDate(row.sla_deadline_at)} />
+          <DetailPair label="Last SLA breach"  value={fmtDate(row.last_sla_breach_at)} />
+          <DetailPair label="SLA status"       value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+          <DetailPair label="Escalation lvl"   value={String(row.escalation_level)} />
+          <DetailPair label="Reportable"       value={row.is_reportable_flag ? 'Yes' : 'No'} />
+          <DetailPair label="Reason code"      value={row.reason_code ?? '—'} />
+          <DetailPair label="Regulator ref"    value={row.regulator_ref ?? '—'} />
+          <DetailPair label="Last action ref"  value={row.last_action_ref ?? '—'} />
+        </div>
+      </div>
+
+      {/* Basis blocks */}
+      {row.chain_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 2 }}>Chain basis</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.chain_basis}</div>
+        </div>
+      )}
+      {row.monitoring_summary && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: GOOD, marginBottom: 2 }}>Monitoring summary</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.monitoring_summary}</div>
+        </div>
+      )}
+
+      {/* Period & party info */}
+      <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5">
+        <DetailPair label="Period"          value={`${row.test_period_label} (${row.test_period_start} → ${row.test_period_end})`} />
+        <DetailPair label="Test date"       value={row.test_date} />
+        <DetailPair label="Facility"        value={row.facility_name} />
+        <DetailPair label="Project"         value={row.project_name} />
+        <DetailPair label="Lender agent"    value={row.lender_agent_name} />
+        {row.source_wave && (
+          <DetailPair label="Source wave"   value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}`} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function DscrMonitoringChainTab() {
   const [rows, setRows] = useState<DscrRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>('open');
-  const [selected, setSelected] = useState<DscrRow | null>(null);
-  const [events, setEvents] = useState<DscrEvent[]>([]);
+  const [filter, setFilter] = useState('open');
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
       const res = await api.get<{ data: { items: DscrRow[] } & KpiSummary }>('/dscr-monitoring/chain');
-      setRows(res.data?.data?.items || []);
       const d = res.data?.data;
+      setRows(d?.items || []);
       if (d) {
-        setKpis({
+        setSummary({
           total: d.total,
           open_count: d.open_count,
           certified_clean_count: d.certified_clean_count,
@@ -359,20 +624,40 @@ export function DscrMonitoringChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: DscrRow; events: DscrEvent[] } }>(
-        `/dscr-monitoring/chain/${id}`,
-      );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/dscr-monitoring/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/dscr-monitoring/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load DSCR history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: DscrRow; events: DscrEvent[] } }>(`/dscr-monitoring/chain/${id}`);
+      const evts = (res.data?.data?.events ?? []).map((e: DscrEvent) => ({
+        id: e.id,
+        event_type: e.event_type,
+        from_status: e.from_status,
+        to_status: e.to_status,
+        actor_party: e.actor_party,
+        notes: e.notes,
+        created_at: e.created_at,
+      } as ChainEvent));
+      setExpandedEvents(prev => ({ ...prev, [id]: evts }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
-    return rows.filter((r) => {
+    return rows.filter(r => {
       if (filter === 'all')          return true;
       if (filter === 'open')         return !TERMINAL_STATES.includes(r.chain_status);
       if (filter === 'breached')     return !!r.sla_breached;
@@ -387,461 +672,132 @@ export function DscrMonitoringChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: DscrRow) => {
-    try {
-      let body: Record<string, string | number | boolean> = {};
-      if (action === 'collect-data') {
-        const basis = window.prompt('Basis — borrower submitting CFADS / debt-service data for the test period:');
-        if (!basis) return;
-        const cfads = window.prompt('CFADS for the period (ZAR):', String(row.cfads_period_zar ?? ''));
-        const ds = window.prompt('Debt service for the period (ZAR):', String(row.debt_service_period_zar ?? ''));
-        const sf = window.prompt('Shortfall vs scheduled debt service (ZAR, 0 if none):', String(row.shortfall_zar ?? 0));
-        const od = window.prompt('Outstanding debt (ZAR):', String(row.outstanding_debt_zar ?? ''));
-        body = { chain_basis: basis };
-        if (cfads && !Number.isNaN(Number(cfads))) body.cfads_period_zar = Number(cfads);
-        if (ds && !Number.isNaN(Number(ds))) body.debt_service_period_zar = Number(ds);
-        if (sf && !Number.isNaN(Number(sf))) body.shortfall_zar = Number(sf);
-        if (od && !Number.isNaN(Number(od))) body.outstanding_debt_zar = Number(od);
-      } else if (action === 'compute-ratios') {
-        const basis = window.prompt('Basis — lender desk computing DSCR / LLCR / PLCR from the collected cash data:');
-        if (!basis) return;
-        const dscr = window.prompt('Measured DSCR for this period:', String(row.current_dscr ?? ''));
-        const fwd = window.prompt('Forward-looking DSCR (12m):', String(row.forward_dscr_p12m ?? ''));
-        const bwd = window.prompt('Backward-looking DSCR (12m):', String(row.backward_dscr_12m ?? ''));
-        const llcr = window.prompt('LLCR value:', String(row.llcr_value ?? ''));
-        const plcr = window.prompt('PLCR value:', String(row.plcr_value ?? ''));
-        const npvLoan = window.prompt('NPV loan life cash-flows (ZAR):', String(row.npv_loan_life_zar ?? ''));
-        const npvProj = window.prompt('NPV project life cash-flows (ZAR):', String(row.npv_project_life_zar ?? ''));
-        const trend = window.prompt('Annual DSCR trend (negative = deteriorating):', String(row.annual_trend ?? 0));
-        body = { chain_basis: basis };
-        if (dscr && !Number.isNaN(Number(dscr))) body.current_dscr = Number(dscr);
-        if (fwd && !Number.isNaN(Number(fwd))) body.forward_dscr_p12m = Number(fwd);
-        if (bwd && !Number.isNaN(Number(bwd))) body.backward_dscr_12m = Number(bwd);
-        if (llcr && !Number.isNaN(Number(llcr))) body.llcr_value = Number(llcr);
-        if (plcr && !Number.isNaN(Number(plcr))) body.plcr_value = Number(plcr);
-        if (npvLoan && !Number.isNaN(Number(npvLoan))) body.npv_loan_life_zar = Number(npvLoan);
-        if (npvProj && !Number.isNaN(Number(npvProj))) body.npv_project_life_zar = Number(npvProj);
-        if (trend && !Number.isNaN(Number(trend))) body.annual_trend = Number(trend);
-      } else if (action === 'certify-clean') {
-        const basis = window.prompt('Basis — ratios met the pass threshold, certifying the period clean:');
-        if (!basis) return;
-        body = { chain_basis: basis };
-      } else if (action === 'place-on-watch') {
-        const basis = window.prompt('Basis — DSCR above lock-up but below pass; place on the watch list:');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. trend_negative / curtailment / fx_drift):') || '';
-        body = { chain_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'record-breach') {
-        const basis = window.prompt('Basis — DSCR breached the lock-up threshold; record a covenant breach:');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. lockup_breach / hard_breach / default_floor):') || '';
-        body = { chain_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'enter-lock-up') {
-        const basis = window.prompt('Basis — distribution lock-up notice issued under the LMA waterfall:');
-        if (!basis) return;
-        body = { chain_basis: basis };
-      } else if (action === 'propose-cure') {
-        const basis = window.prompt('Basis — borrower proposing an equity cure / DSRA top-up / restructure:');
-        if (!basis) return;
-        const proposed = window.prompt('Proposed cure amount (ZAR):', String(row.proposed_cure_amount_zar ?? row.shortfall_zar ?? ''));
-        const equity = window.prompt('Equity cure available (ZAR):', String(row.equity_cure_available_zar ?? ''));
-        const dsra = window.prompt('DSRA balance available (ZAR):', String(row.dsra_balance_zar ?? ''));
-        body = { chain_basis: basis };
-        if (proposed && !Number.isNaN(Number(proposed))) body.proposed_cure_amount_zar = Number(proposed);
-        if (equity && !Number.isNaN(Number(equity))) body.equity_cure_available_zar = Number(equity);
-        if (dsra && !Number.isNaN(Number(dsra))) body.dsra_balance_zar = Number(dsra);
-      } else if (action === 'reject-cure') {
-        const basis = window.prompt('Basis — lender rejecting the cure proposal (return to breach_recorded):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. insufficient_cure / over_cap / unrealistic_source):') || '';
-        body = { chain_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'execute-cure') {
-        const basis = window.prompt('Basis — borrower executing the agreed cure (equity injection / DSRA draw):');
-        if (!basis) return;
-        const exec = window.prompt('Executed cure amount (ZAR):', String(row.executed_cure_amount_zar ?? row.proposed_cure_amount_zar ?? ''));
-        body = { chain_basis: basis };
-        if (exec && !Number.isNaN(Number(exec))) body.executed_cure_amount_zar = Number(exec);
-      } else if (action === 'validate-cure') {
-        const basis = window.prompt('Basis — independent engineer / agent validating the cure restores DSCR:');
-        if (!basis) return;
-        const dscr = window.prompt('Restored DSCR (post-cure):', String(row.current_dscr ?? ''));
-        body = { chain_basis: basis };
-        if (dscr && !Number.isNaN(Number(dscr))) body.current_dscr = Number(dscr);
-      } else if (action === 'fail-cure') {
-        const basis = window.prompt('Basis — cure failed / DSCR did not recover; escalating to acceleration:');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. cure_failed / dscr_not_restored / abandoned):') || '';
-        body = { chain_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'declare-acceleration') {
-        const basis = window.prompt('Basis — declaring acceleration / event of default; IFRS 9 Stage 3 trigger (crosses regulator for EVERY tier):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. lockup_failed / cure_window_lapsed / hard_breach):') || '';
-        body = { chain_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'waive-breach') {
-        const basis = window.prompt('Basis — lender granting forbearance / waiver of the breach (crosses regulator for material+severe):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. temporary_waiver / refinance_pending / restructure_under_way):') || '';
-        body = { chain_basis: basis };
-        if (reason) body.reason_code = reason;
-      }
-      await api.post(`/dscr-monitoring/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
+  const kpis = summary ?? {
+    total: rows.length,
+    open_count: 0,
+    certified_clean_count: 0,
+    accelerated_count: 0,
+    waived_count: 0,
+    breach_count: 0,
+    cure_active_count: 0,
+    lock_up_count: 0,
+    watch_count: 0,
+    breached: 0,
+    reportable_total: 0,
+    total_outstanding_zar: 0,
+    total_shortfall_zar: 0,
+    critical_urgency_count: 0,
+    cross_default_count: 0,
+    severe_tier_count: 0,
+  };
 
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">DSCR monitoring & cure — the coverage-defense engine</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-state DSCR monitoring lifecycle · the rolling MONITOR counterpart to the periodic covenant CERTIFICATE
-            (W38). LMA covenant schedule + SARB IFRS 9 Stage 2/3 trigger framework + Basel III LCR/NSFR. A best-in-class
-            lender treasury tests DSCR / LLCR / PLCR on each contractual test date and routes the loan through a 12-state
-            cure lifecycle — clean certification, watch, breach, lock-up, cure proposal/execution/validation, acceleration
-            (W45 pickup) or waiver. URGENT SLA: the LOWER the current DSCR, the TIGHTER every window. Tier is RE-DERIVED
-            on every transition from the current measured DSCR — a project can deteriorate from minor into severe across
-            periods, or recover after a successful cure. The live coverage-defense battery (severity index, headroom to
-            lock-up, cure runway, equity-cure coverage, DSRA coverage, forward DSCR, LLCR, PLCR, cross-default flag,
-            urgency band) re-computes on every fetch so the desk sees defensibility without rebuilding a spreadsheet.
-            Single write — the lender desk drives every step; actor_party records the lender, the borrower, or the
-            independent engineer. The W86 SIGNATURE is COVERAGE-DEFENSE — declare_acceleration crosses the regulator for
-            EVERY tier (IFRS 9 Stage 3 trigger, sister of W45 write_off, W77 declare_breach, W68 declare_default — a
-            categorical prudential event). waive_breach, enter_lock_up and sla_breached cross for material + severe.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>DSCR monitoring &amp; cure — the coverage-defense engine</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          12-state DSCR monitoring lifecycle · the rolling MONITOR counterpart to the periodic covenant CERTIFICATE (W38).
+          LMA covenant schedule + SARB IFRS 9 Stage 2/3 trigger framework + Basel III LCR/NSFR. URGENT SLA: the LOWER
+          the current DSCR, the TIGHTER every window. Tier is RE-DERIVED on every transition. SIGNATURE:
+          declare_acceleration crosses regulator for EVERY tier (IFRS 9 Stage 3). waive_breach + enter_lock_up cross
+          for material + severe.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} tone={(kpis?.open_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Certified clean" value={kpis?.certified_clean_count ?? 0} tone="ok" />
-        <Kpi label="Watch" value={kpis?.watch_count ?? 0} tone={(kpis?.watch_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Breach" value={kpis?.breach_count ?? 0} tone={(kpis?.breach_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Cure active" value={kpis?.cure_active_count ?? 0} tone={(kpis?.cure_active_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Lock-up" value={kpis?.lock_up_count ?? 0} tone={(kpis?.lock_up_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Accelerated" value={kpis?.accelerated_count ?? 0} tone={(kpis?.accelerated_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Waived" value={kpis?.waived_count ?? 0} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Critical urgency" value={kpis?.critical_urgency_count ?? 0} tone={(kpis?.critical_urgency_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Cross-default risk" value={kpis?.cross_default_count ?? 0} tone={(kpis?.cross_default_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Severe tier" value={kpis?.severe_tier_count ?? 0} tone={(kpis?.severe_tier_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Outstanding" value={fmtZar(kpis?.total_outstanding_zar ?? 0)} />
-        <Kpi label="Shortfall" value={fmtZar(kpis?.total_shortfall_zar ?? 0)} tone={(kpis?.total_shortfall_zar ?? 0) > 0 ? 'warn' : 'ok'} />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total"            value={kpis.total} />
+        <KpiTile label="Open"             value={kpis.open_count}             tone={kpis.open_count > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Certified clean"  value={kpis.certified_clean_count}  tone="ok" />
+        <KpiTile label="Watch"            value={kpis.watch_count}            tone={kpis.watch_count > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Breach"           value={kpis.breach_count}           tone={kpis.breach_count > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Cure active"      value={kpis.cure_active_count}      tone={kpis.cure_active_count > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Lock-up"          value={kpis.lock_up_count}          tone={kpis.lock_up_count > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Accelerated"      value={kpis.accelerated_count}      tone={kpis.accelerated_count > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Waived"           value={kpis.waived_count} />
+        <KpiTile label="SLA breached"     value={kpis.breached}               tone={kpis.breached > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Reportable"       value={kpis.reportable_total}       tone={kpis.reportable_total > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Critical urgency" value={kpis.critical_urgency_count} tone={kpis.critical_urgency_count > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Cross-default"    value={kpis.cross_default_count}    tone={kpis.cross_default_count > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Severe tier"      value={kpis.severe_tier_count}      tone={kpis.severe_tier_count > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Outstanding"      value={fmtZar(kpis.total_outstanding_zar)} />
+        <KpiTile label="Shortfall"        value={fmtZar(kpis.total_shortfall_zar)}   tone={kpis.total_shortfall_zar > 0 ? 'warn' : 'ok'} />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Monitor #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Borrower / Project</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Period</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">DSCR</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Urgency</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.dscr_tier];
-                const ub = r.urgency_band_live ? URGENCY_TONE[r.urgency_band_live] : null;
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.monitoring_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to the regulator">●</span>}
-                      {r.is_systemic_carrier_flag && <span className="ml-1 text-[#9b1f1f]" title="Systemic carrier">▲</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[200px] truncate" title={`${r.borrower_name} · ${r.project_name}`}>
-                      <div className="font-medium">{r.borrower_name}</div>
-                      <div className="text-[10px] text-[#4a5568] truncate">{r.project_name}</div>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.test_period_label}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">
-                      {fmtRatio(r.current_dscr)}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      {ub ? (
-                        <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: ub.bg, color: ub.fg }}>
-                          {ub.label}
-                        </span>
-                      ) : <span className="text-[#4a5568]">—</span>}
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={8} className="px-3 py-6 text-center text-[#4a5568]">No DSCR monitoring records match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]"
+          style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]"
+          style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading...
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={row.monitoring_number}
+              meta={`${row.borrower_name} · ${row.project_name} · ${row.dscr_tier} · DSCR ${fmtRatio(row.current_dscr)}`}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]"
+              style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No DSCR monitoring records match.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color, fontFamily: MONO }} className="tabular-nums">{value}</div>
     </div>
   );
 }
 
-const BTN_CLASS: Record<'primary' | 'danger' | 'warn' | 'good' | 'muted', string> = {
-  primary: 'rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]',
-  danger:  'rounded border border-red-400 bg-white px-3 py-1.5 text-[12px] font-medium text-red-800 hover:bg-red-50',
-  warn:    'rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-orange-700 hover:bg-orange-50',
-  good:    'rounded border border-green-300 bg-white px-3 py-1.5 text-[12px] font-medium text-green-800 hover:bg-green-50',
-  muted:   'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b1f1f] hover:bg-[#f3e0e0]',
-};
-
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: DscrRow;
-  events: DscrEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: DscrRow) => void;
-}) {
-  const actions = ALLOWED_ACTIONS[row.chain_status] || [];
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[760px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.monitoring_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.borrower_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {row.project_name}
-                {row.facility_name ? ` · ${row.facility_name}` : ''}
-              </div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.dscr_tier].label}
-                {row.urgency_band_live ? ` · urgency ${URGENCY_TONE[row.urgency_band_live].label.toLowerCase()}` : ''}
-              </div>
-              <div className="mt-1 text-[11px] text-[#4a5568]">
-                {row.lender_agent_name} (agent) → {row.borrower_name}
-                {row.escalation_level > 0 ? ` · escalation lvl ${row.escalation_level}` : ''}
-                {row.is_systemic_carrier_flag ? ' · SYSTEMIC CARRIER' : ''}
-              </div>
-              <div className="mt-1 text-[11px] text-[#4a5568]">
-                Period {row.test_period_label} ({row.test_period_start} → {row.test_period_end}) · test {row.test_date}
-              </div>
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Live coverage-defense battery</div>
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="Severity index"              value={fmtNum(row.severity_index_live)} />
-            <Pair label="Urgency band"                value={row.urgency_band_live ? URGENCY_TONE[row.urgency_band_live].label : '—'} />
-            <Pair label="Headroom to lock-up (mo)"    value={row.headroom_to_lockup_months_live != null ? fmtNum(row.headroom_to_lockup_months_live, 1) : '—'} />
-            <Pair label="Cure runway (days)"          value={row.cure_runway_days_live != null ? String(row.cure_runway_days_live) : '—'} />
-            <Pair label="Equity-cure coverage"        value={fmtRatio(row.equity_cure_coverage_ratio_live)} />
-            <Pair label="DSRA coverage"               value={fmtRatio(row.dsra_coverage_ratio_live)} />
-            <Pair label="Forward DSCR (live)"         value={fmtRatio(row.forward_dscr_live)} />
-            <Pair label="LLCR (live)"                 value={fmtRatio(row.llcr_live)} />
-            <Pair label="PLCR (live)"                 value={fmtRatio(row.plcr_live)} />
-            <Pair label="Cross-default risk"          value={row.cross_default_risk_flag_live ? 'YES' : 'No'} />
-          </div>
-        </section>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Ratios & cash</div>
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"                       value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier (re-derived)"           value={TIER_TONE[row.dscr_tier].label} />
-            <Pair label="Current DSCR"                value={fmtRatio(row.current_dscr)} />
-            <Pair label="Forward DSCR (p12m)"         value={fmtRatio(row.forward_dscr_p12m)} />
-            <Pair label="Backward DSCR (12m)"         value={fmtRatio(row.backward_dscr_12m)} />
-            <Pair label="LLCR"                        value={fmtRatio(row.llcr_value)} />
-            <Pair label="PLCR"                        value={fmtRatio(row.plcr_value)} />
-            <Pair label="Annual trend"                value={fmtNum(row.annual_trend, 3)} />
-            <Pair label="Pass threshold"              value={fmtRatio(row.pass_threshold)} />
-            <Pair label="Lock-up threshold"           value={fmtRatio(row.lockup_threshold)} />
-            <Pair label="Default floor"               value={fmtRatio(row.default_floor)} />
-            <Pair label="Equity-cure cap (×)"         value={fmtNum(row.equity_cure_cap_multiple, 1)} />
-            <Pair label="CFADS (period)"              value={fmtZar(row.cfads_period_zar)} />
-            <Pair label="Debt service (period)"       value={fmtZar(row.debt_service_period_zar)} />
-            <Pair label="Shortfall"                   value={fmtZar(row.shortfall_zar)} />
-            <Pair label="Outstanding debt"            value={fmtZar(row.outstanding_debt_zar)} />
-            <Pair label="NPV loan life"               value={fmtZar(row.npv_loan_life_zar)} />
-            <Pair label="NPV project life"            value={fmtZar(row.npv_project_life_zar)} />
-            <Pair label="Equity cure available"       value={fmtZar(row.equity_cure_available_zar)} />
-            <Pair label="DSRA balance"                value={fmtZar(row.dsra_balance_zar)} />
-            <Pair label="Proposed cure"               value={fmtZar(row.proposed_cure_amount_zar)} />
-            <Pair label="Executed cure"               value={fmtZar(row.executed_cure_amount_zar)} />
-            <Pair label="Sister loan"                 value={row.sister_loan_id ?? '—'} />
-            <Pair label="Sister loan DSCR"            value={fmtRatio(row.sister_loan_dscr)} />
-          </div>
-        </section>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Lifecycle timestamps</div>
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="Period open"          value={fmtDate(row.period_open_at)} />
-            <Pair label="Data collected"       value={fmtDate(row.data_collected_at)} />
-            <Pair label="Computed"             value={fmtDate(row.computed_at)} />
-            <Pair label="Certified clean"      value={fmtDate(row.certified_clean_at)} />
-            <Pair label="Watch"                value={fmtDate(row.watch_at)} />
-            <Pair label="Breach recorded"      value={fmtDate(row.breach_recorded_at)} />
-            <Pair label="Cure proposed"        value={fmtDate(row.cure_proposed_at)} />
-            <Pair label="Cure in progress"     value={fmtDate(row.cure_in_progress_at)} />
-            <Pair label="Cure validated"       value={fmtDate(row.cure_validated_at)} />
-            <Pair label="Lock-up"              value={fmtDate(row.lock_up_at)} />
-            <Pair label="Accelerated"          value={fmtDate(row.accelerated_at)} />
-            <Pair label="Waived"               value={fmtDate(row.waived_at)} />
-            <Pair label="SLA deadline"         value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="Last SLA breach"      value={fmtDate(row.last_sla_breach_at)} />
-            <Pair label="SLA status"           value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"       value={String(row.escalation_level)} />
-            <Pair label="Reportable"           value={row.is_reportable_flag ? 'Yes' : 'No'} />
-            <Pair label="Reason code"          value={row.reason_code ?? '—'} />
-            <Pair label="Regulator ref"        value={row.regulator_ref ?? '—'} />
-            <Pair label="Last action ref"      value={row.last_action_ref ?? '—'} />
-          </div>
-          {row.chain_basis && (
-            <BasisBlock label="Chain basis" tone="#1a3a5c" text={row.chain_basis} />
-          )}
-          {row.monitoring_summary && (
-            <BasisBlock label="Monitoring summary" tone="#155724" text={row.monitoring_summary} />
-          )}
-        </section>
-
-        {actions.length > 0 && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {actions.map((a, idx) => (
-                <button type="button"
-                  key={a}
-                  onClick={() => onAct(a, row)}
-                  className={idx === 0 ? BTN_CLASS.primary : BTN_CLASS[ACTION_TONE[a]]}
-                >
-                  {ACTION_LABEL[a]}
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3 }}>{label}</div>
+      <div style={{ color: TX1, fontSize: 11 }}>{value}</div>
     </div>
   );
 }
+
+export default DscrMonitoringChainTab;

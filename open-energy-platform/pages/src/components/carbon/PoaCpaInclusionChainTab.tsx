@@ -29,6 +29,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'cpa_proposed' | 'eligibility_screening' | 'methodology_check' | 'loa_pending'
@@ -40,6 +55,7 @@ type Tier = 'micro' | 'small' | 'medium' | 'large' | 'mega';
 type TransferType = 'article6' | 'voluntary' | 'compliance';
 
 interface CpaRow {
+  [key: string]: unknown;
   id: string;
   cpa_number: string;
   source_event: string | null;
@@ -137,19 +153,6 @@ interface CpaRow {
   programme_headroom_live?: number;
 }
 
-interface CpaEvent {
-  id: string;
-  inclusion_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiSummary {
   total: number;
   open_count: number;
@@ -167,35 +170,26 @@ interface KpiSummary {
   included_annual_er: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  cpa_proposed:          { bg: '#e3e7ec', fg: '#557',    label: 'Proposed' },
-  eligibility_screening: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Eligibility screening' },
-  methodology_check:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Methodology check' },
-  loa_pending:           { bg: '#fff4d6', fg: '#a06200', label: 'LoA pending' },
-  inclusion_review:      { bg: '#fff4d6', fg: '#a06200', label: 'Inclusion review' },
-  included:              { bg: '#d4edda', fg: '#155724', label: 'Included' },
-  monitoring:            { bg: '#dbf0e6', fg: '#1a6b48', label: 'Monitoring' },
-  verified:              { bg: '#d4edda', fg: '#155724', label: 'Verified' },
-  rejected:              { bg: '#fde0e0', fg: '#9b1f1f', label: 'Rejected' },
-  excluded:              { bg: '#fbd3d3', fg: '#7a1414', label: 'Excluded (delisted)' },
-  withdrawn:             { bg: '#f3e0e0', fg: '#6b1f1f', label: 'Withdrawn' },
-  completed:             { bg: '#e6e9ed', fg: '#3a4a5c', label: 'Completed' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'cpa_proposed',
+  'eligibility_screening',
+  'methodology_check',
+  'loa_pending',
+  'inclusion_review',
+  'included',
+  'monitoring',
+  'verified',
+];
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  micro:  { bg: '#e3e7ec', fg: '#557',    label: 'Micro (<1k)' },
-  small:  { bg: '#dbecfb', fg: '#1a3a5c', label: 'Small (<10k)' },
-  medium: { bg: '#fff4d6', fg: '#a06200', label: 'Medium (<100k)' },
-  large:  { bg: '#ffe4b5', fg: '#8a4a00', label: 'Large (<500k)' },
-  mega:   { bg: '#fde0e0', fg: '#9b1f1f', label: 'Mega (≥500k)' },
-};
+const BRANCH_STATES: readonly string[] = [
+  'rejected',
+  'excluded',
+  'withdrawn',
+  'completed',
+];
 
-const TRANSFER_LABEL: Record<TransferType, string> = {
-  article6:   'Article 6 (ITMO)',
-  voluntary:  'Voluntary',
-  compliance: 'Compliance',
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',                label: 'Active' },
   { key: 'all',                   label: 'All' },
@@ -221,52 +215,26 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'completed',             label: 'Completed' },
 ];
 
-type ActionKind =
-  | 'screen-eligibility' | 'check-methodology' | 'request-loa' | 'submit-inclusion'
-  | 'approve-inclusion' | 'begin-monitoring' | 'verify-period' | 'continue-monitoring'
-  | 'reject-cpa' | 'exclude-cpa' | 'withdraw-cpa' | 'complete-cpa';
-
-// Primary forward action per state.
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  cpa_proposed:          'screen-eligibility',
-  eligibility_screening: 'check-methodology',
-  methodology_check:     'request-loa',
-  loa_pending:           'submit-inclusion',
-  inclusion_review:      'approve-inclusion',
-  included:              'begin-monitoring',
-  monitoring:            'verify-period',
-  verified:              'continue-monitoring',
-  rejected:              null,
-  excluded:              null,
-  withdrawn:             null,
-  completed:             null,
-};
-
-// Party annotation per action mirrors the spec ACTION_PARTY map: the
-// COORDINATING ENTITY screens / checks methodology / approves inclusion /
-// continues monitoring / rejects / excludes / completes; the DNA issues the
-// host-country Letter of Approval; the PROPONENT submits inclusion / begins
-// monitoring / withdraws; the VVB verifies the monitoring period.
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'screen-eligibility':  'Screen eligibility (coordinating entity)',
-  'check-methodology':   'Check methodology (coordinating entity)',
-  'request-loa':         'Request host-country LoA (DNA)',
-  'submit-inclusion':    'Submit for inclusion (proponent)',
-  'approve-inclusion':   'Approve inclusion (coordinating entity)',
-  'begin-monitoring':    'Begin monitoring (proponent)',
-  'verify-period':       'Verify period (VVB)',
-  'continue-monitoring': 'Continue monitoring (coordinating entity)',
-  'reject-cpa':          'Reject CPA (coordinating entity)',
-  'exclude-cpa':         'Exclude / delist CPA (coordinating entity)',
-  'withdraw-cpa':        'Withdraw CPA (proponent)',
-  'complete-cpa':        'Complete CPA (coordinating entity)',
-};
-
+// ── state/tier helpers ────────────────────────────────────────────────────
 const TERMINAL_STATES: ChainStatus[] = ['rejected', 'excluded', 'withdrawn', 'completed'];
 const REJECTABLE_STATES: ChainStatus[] = ['eligibility_screening', 'methodology_check', 'inclusion_review'];
 const EXCLUDABLE_STATES: ChainStatus[] = ['included', 'monitoring', 'verified'];
 const WITHDRAWABLE_STATES: ChainStatus[] = ['cpa_proposed', 'eligibility_screening', 'methodology_check', 'loa_pending', 'inclusion_review'];
 const COMPLETABLE_STATES: ChainStatus[] = ['monitoring', 'verified'];
+
+const TIER_LABEL: Record<Tier, string> = {
+  micro:  'Micro (<1k)',
+  small:  'Small (<10k)',
+  medium: 'Medium (<100k)',
+  large:  'Large (<500k)',
+  mega:   'Mega (≥500k)',
+};
+
+const TRANSFER_LABEL: Record<TransferType, string> = {
+  article6:   'Article 6 (ITMO)',
+  voluntary:  'Voluntary',
+  compliance: 'Compliance',
+};
 
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
@@ -291,30 +259,350 @@ function fmtScore(n: number | null | undefined): string {
   return `${n}/100`;
 }
 
+// ── action builder ────────────────────────────────────────────────────────
+function getActions(row: CpaRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const requiresCA = row.requires_corresponding_adjustment_flag ?? !!row.requires_corresponding_adjustment;
+
+  // Primary forward action
+  switch (row.chain_status) {
+    case 'cpa_proposed':
+      actions.push({
+        key: 'screen-eligibility',
+        label: 'Screen eligibility (coordinating entity)',
+        tone: 'primary',
+        cascadeTo: [],
+        fields: [
+          { key: 'screening_basis', label: 'Screening basis — the automated eligibility assessment of the proposed CPA against the programme inclusion criteria', type: 'textarea', required: true },
+          { key: 'screening_ref', label: 'Screening reference (e.g. SCR-2026-0007)', type: 'text', required: false, placeholder: '' },
+          { key: 'geo_key', label: 'Geo key (erf / parcel / grid-node id — drives the double-counting / overlap guard)', type: 'text', required: false, placeholder: row.geo_key || '' },
+          { key: 'methodology_applicability', label: 'Methodology applicability (0..1)', type: 'number', required: false, placeholder: String(row.methodology_applicability ?? 0.8) },
+          { key: 'additionality_strength', label: 'Additionality strength (0..1)', type: 'number', required: false, placeholder: String(row.additionality_strength ?? 0.8) },
+          { key: 'monitoring_readiness', label: 'Monitoring readiness (0..1)', type: 'number', required: false, placeholder: String(row.monitoring_readiness ?? 0.8) },
+          { key: 'loa_confidence', label: 'LoA confidence (0..1)', type: 'number', required: false, placeholder: String(row.loa_confidence ?? 0.8) },
+        ],
+      });
+      break;
+    case 'eligibility_screening':
+      actions.push({
+        key: 'check-methodology',
+        label: 'Check methodology (coordinating entity)',
+        tone: 'primary',
+        cascadeTo: [],
+        fields: [
+          { key: 'methodology_basis', label: 'Methodology basis — confirmation the CPA conforms to the registered programme methodology', type: 'textarea', required: true },
+          { key: 'methodology_ref', label: 'Methodology reference (e.g. METH-2026-0007)', type: 'text', required: false, placeholder: '' },
+          { key: 'methodology_id', label: 'Methodology id (e.g. AMS-I.D / VM0042)', type: 'text', required: false, placeholder: row.methodology_id || '' },
+        ],
+      });
+      break;
+    case 'methodology_check':
+      actions.push({
+        key: 'request-loa',
+        label: 'Request host-country LoA (DNA)',
+        tone: 'primary',
+        cascadeTo: [],
+        fields: [
+          { key: 'loa_basis', label: 'LoA basis — the host-country DNA Letter of Approval gating inclusion', type: 'textarea', required: true },
+          { key: 'loa_ref', label: 'LoA reference (e.g. LOA-ZA-2026-0007)', type: 'text', required: false, placeholder: '' },
+          { key: 'corresponding_adjustment_ref', label: 'Corresponding-adjustment reference (Article 6 only — the NDC authorisation)', type: 'text', required: false, placeholder: row.corresponding_adjustment_ref || '' },
+        ],
+      });
+      break;
+    case 'loa_pending':
+      actions.push({
+        key: 'submit-inclusion',
+        label: 'Submit for inclusion (proponent)',
+        tone: 'primary',
+        cascadeTo: [],
+        fields: [
+          { key: 'inclusion_basis', label: 'Inclusion basis — the inclusion request submitted into the registered programme', type: 'textarea', required: true },
+          { key: 'inclusion_ref', label: 'Inclusion reference (e.g. INC-2026-0007)', type: 'text', required: false, placeholder: '' },
+        ],
+      });
+      break;
+    case 'inclusion_review':
+      // approve_inclusion crosses regulator when Article 6 (CA required) OR large/mega tiers
+      actions.push({
+        key: 'approve-inclusion',
+        label: 'Approve inclusion (coordinating entity)',
+        tone: 'primary',
+        cascadeTo: (requiresCA || row.cpa_tier === 'large' || row.cpa_tier === 'mega') ? ['regulator'] : [],
+        fields: [
+          { key: 'inclusion_basis', label: 'Inclusion approval basis — the CPA is screened into the programme', type: 'textarea', required: true },
+          { key: 'inclusion_ref', label: 'Inclusion reference (e.g. INC-2026-0007)', type: 'text', required: false, placeholder: '' },
+          { key: 'included_er_tco2e', label: 'Programme included ER after this CPA (tCO₂e — leave blank to add this CPA to the running total)', type: 'number', required: false, placeholder: '' },
+          { key: 'regulator_ref', label: 'Regulator reference (if reportable)', type: 'text', required: false, placeholder: '' },
+        ],
+      });
+      break;
+    case 'included':
+      actions.push({
+        key: 'begin-monitoring',
+        label: 'Begin monitoring (proponent)',
+        tone: 'primary',
+        cascadeTo: [],
+        fields: [
+          { key: 'monitoring_basis', label: 'Monitoring basis — the CPA enters its monitoring period under the programme', type: 'textarea', required: true },
+          { key: 'monitoring_ref', label: 'Monitoring reference (e.g. MON-2026-0007)', type: 'text', required: false, placeholder: '' },
+        ],
+      });
+      break;
+    case 'monitoring':
+      actions.push({
+        key: 'verify-period',
+        label: 'Verify period (VVB)',
+        tone: 'primary',
+        cascadeTo: [],
+        fields: [
+          { key: 'verification_basis', label: 'Verification basis — the VVB confirms ongoing conformance for the monitoring period', type: 'textarea', required: true },
+          { key: 'verification_ref', label: 'Verification reference (e.g. VER-2026-0007)', type: 'text', required: false, placeholder: '' },
+        ],
+      });
+      break;
+    case 'verified':
+      actions.push({
+        key: 'continue-monitoring',
+        label: 'Continue monitoring (coordinating entity)',
+        tone: 'primary',
+        cascadeTo: [],
+        fields: [
+          { key: 'monitoring_basis', label: 'Monitoring basis — the CPA continues into the next monitoring period', type: 'textarea', required: true },
+          { key: 'monitoring_ref', label: 'Monitoring reference (e.g. MON-2026-0008)', type: 'text', required: false, placeholder: '' },
+        ],
+      });
+      break;
+    default:
+      break;
+  }
+
+  // Secondary: reject — available from eligibility_screening, methodology_check, inclusion_review
+  // reject_cpa crosses regulator for large/mega tiers
+  if (REJECTABLE_STATES.includes(row.chain_status)) {
+    actions.push({
+      key: 'reject-cpa',
+      label: 'Reject CPA (coordinating entity)',
+      tone: 'danger',
+      cascadeTo: (row.cpa_tier === 'large' || row.cpa_tier === 'mega') ? ['regulator'] : [],
+      fields: [
+        { key: 'rejection_basis', label: 'Rejection basis — the CPA failed eligibility, methodology or inclusion review', type: 'textarea', required: true },
+        { key: 'reason_code', label: 'Reason code (e.g. methodology_mismatch / additionality_fail / overlap)', type: 'text', required: false, placeholder: 'methodology_mismatch' },
+        { key: 'rejection_ref', label: 'Rejection reference (e.g. REJ-2026-0007)', type: 'text', required: false, placeholder: '' },
+        { key: 'regulator_ref', label: 'Regulator reference (large/mega only)', type: 'text', required: false, placeholder: '' },
+      ],
+    });
+  }
+
+  // Secondary: exclude — available from included, monitoring, verified
+  // exclude_cpa crosses regulator for EVERY tier (W73 signature)
+  if (EXCLUDABLE_STATES.includes(row.chain_status)) {
+    actions.push({
+      key: 'exclude-cpa',
+      label: 'Exclude / delist CPA (coordinating entity)',
+      tone: 'danger',
+      cascadeTo: ['regulator'],
+      fields: [
+        { key: 'exclusion_basis', label: 'Exclusion basis — DELIST the CPA for non-conformance after inclusion (the W73 signature)', type: 'textarea', required: true },
+        { key: 'reason_code', label: 'Reason code (e.g. non_conformance / reversal / monitoring_lapse)', type: 'text', required: false, placeholder: 'non_conformance' },
+        { key: 'exclusion_ref', label: 'Exclusion reference (e.g. EXC-2026-0007)', type: 'text', required: false, placeholder: '' },
+        { key: 'regulator_ref', label: 'Regulator reference (delisting always reportable)', type: 'text', required: false, placeholder: '' },
+      ],
+    });
+  }
+
+  // Secondary: complete — available from monitoring, verified
+  if (COMPLETABLE_STATES.includes(row.chain_status)) {
+    actions.push({
+      key: 'complete-cpa',
+      label: 'Complete CPA (coordinating entity)',
+      tone: 'ghost',
+      cascadeTo: [],
+      fields: [
+        { key: 'completion_basis', label: 'Completion basis — the CPA reached the end of crediting under the programme', type: 'textarea', required: true },
+        { key: 'completion_ref', label: 'Completion reference (e.g. CMP-2026-0007)', type: 'text', required: false, placeholder: '' },
+      ],
+    });
+  }
+
+  // Secondary: withdraw — available before inclusion
+  if (WITHDRAWABLE_STATES.includes(row.chain_status)) {
+    actions.push({
+      key: 'withdraw-cpa',
+      label: 'Withdraw CPA (proponent)',
+      tone: 'warn',
+      cascadeTo: [],
+      fields: [
+        { key: 'withdrawal_basis', label: 'Withdrawal basis — the proponent pulls the CPA before inclusion', type: 'textarea', required: true },
+        { key: 'reason_code', label: 'Reason code (e.g. proponent_withdrawn / commercial)', type: 'text', required: false, placeholder: 'proponent_withdrawn' },
+        { key: 'withdrawal_ref', label: 'Withdrawal reference (e.g. WDR-2026-0007)', type: 'text', required: false, placeholder: '' },
+      ],
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: CpaRow): React.ReactNode {
+  const requiresCA = row.requires_corresponding_adjustment_flag ?? !!row.requires_corresponding_adjustment;
+  const reportable = row.is_reportable_flag ?? !!row.is_reportable;
+  const headroom = row.programme_headroom_live ?? row.programme_headroom_tco2e;
+
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+      <DetailPair label="Registry standard"    value={row.registry_standard ?? '—'} />
+      <DetailPair label="Transfer type"        value={TRANSFER_LABEL[row.transfer_type]} />
+      <DetailPair label="Methodology"          value={row.methodology_id ?? '—'} />
+      <DetailPair label="Host country"         value={row.host_country ?? '—'} />
+      <DetailPair label="Corresp. adjustment"  value={requiresCA ? 'Required (Article 6)' : 'Not required'} />
+      <DetailPair label="CA reference"         value={row.corresponding_adjustment_ref ?? '—'} />
+      <DetailPair label="Geo key"              value={row.geo_key ?? '—'} />
+      <DetailPair label="Annual ER"            value={fmtTco2e(row.annual_er_tco2e)} />
+      <DetailPair label="Eligibility score"    value={fmtScore(row.eligibility_score)} />
+      <DetailPair label="Predicted inclusion"  value={row.predicted_inclusion_days ? `${row.predicted_inclusion_days}d` : '—'} />
+      <DetailPair label="Methodology applic."  value={row.methodology_applicability != null ? row.methodology_applicability.toFixed(2) : '—'} />
+      <DetailPair label="Additionality"        value={row.additionality_strength != null ? row.additionality_strength.toFixed(2) : '—'} />
+      <DetailPair label="Monitoring readiness" value={row.monitoring_readiness != null ? row.monitoring_readiness.toFixed(2) : '—'} />
+      <DetailPair label="LoA confidence"       value={row.loa_confidence != null ? row.loa_confidence.toFixed(2) : '—'} />
+      <DetailPair label="Programme cap"        value={fmtTco2e(row.programme_cap_er_tco2e)} />
+      <DetailPair label="Included ER"          value={fmtTco2e(row.included_er_tco2e)} />
+      <DetailPair label="Programme headroom"   value={fmtTco2e(headroom)} />
+      <DetailPair label="Vintage year"         value={row.vintage_year ? String(row.vintage_year) : '—'} />
+      <DetailPair label="Crediting period"     value={`${row.crediting_period_start || '—'} → ${row.crediting_period_end || '—'}`} />
+      <DetailPair label="Proponent"            value={row.proponent_party_name ?? '—'} />
+      <DetailPair label="Coordinating entity"  value={row.coordinating_entity_name ?? '—'} />
+      <DetailPair label="DNA"                  value={row.dna_name ?? '—'} />
+      <DetailPair label="VVB"                  value={row.vvb_name ?? '—'} />
+      <DetailPair label="Screening ref"        value={row.screening_ref ?? '—'} />
+      <DetailPair label="Methodology ref"      value={row.methodology_ref ?? '—'} />
+      <DetailPair label="LoA ref"              value={row.loa_ref ?? '—'} />
+      <DetailPair label="Inclusion ref"        value={row.inclusion_ref ?? '—'} />
+      <DetailPair label="Verification ref"     value={row.verification_ref ?? '—'} />
+      <DetailPair label="Regulator ref"        value={row.regulator_ref ?? '—'} />
+      <DetailPair label="Reason code"          value={row.reason_code ?? '—'} />
+      <DetailPair label="Monitoring round"     value={String(row.monitoring_round)} />
+      <DetailPair label="Proposed"             value={fmtDate(row.cpa_proposed_at)} />
+      <DetailPair label="Screened"             value={fmtDate(row.eligibility_screening_at)} />
+      <DetailPair label="Methodology checked"  value={fmtDate(row.methodology_check_at)} />
+      <DetailPair label="LoA pending"          value={fmtDate(row.loa_pending_at)} />
+      <DetailPair label="Inclusion review"     value={fmtDate(row.inclusion_review_at)} />
+      <DetailPair label="Included"             value={fmtDate(row.included_at)} />
+      <DetailPair label="Monitoring"           value={fmtDate(row.monitoring_at)} />
+      <DetailPair label="Verified"             value={fmtDate(row.verified_at)} />
+      <DetailPair label="SLA deadline"         value={fmtDate(row.sla_deadline_at)} />
+      <DetailPair label="SLA status"           value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+      <DetailPair label="Escalation lvl"       value={String(row.escalation_level)} />
+      <DetailPair label="Reportable"           value={reportable ? 'Yes' : 'No'} />
+      {row.source_wave && (
+        <DetailPair label="Sourced from" value={`${row.source_wave}${row.source_entity_id ? ' · ' + row.source_entity_id : ''}`} />
+      )}
+
+      {row.cpa_summary && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mt-1" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>CPA summary</div>
+          <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{row.cpa_summary}</div>
+        </div>
+      )}
+      {row.proposal_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Proposal basis</div>
+          <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{row.proposal_basis}</div>
+        </div>
+      )}
+      {row.screening_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Screening basis</div>
+          <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{row.screening_basis}</div>
+        </div>
+      )}
+      {row.methodology_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Methodology basis</div>
+          <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{row.methodology_basis}</div>
+        </div>
+      )}
+      {row.loa_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: WARN }}>LoA basis (DNA)</div>
+          <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{row.loa_basis}</div>
+        </div>
+      )}
+      {row.inclusion_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: WARN }}>Inclusion basis</div>
+          <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{row.inclusion_basis}</div>
+        </div>
+      )}
+      {row.monitoring_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: GOOD }}>Monitoring basis</div>
+          <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{row.monitoring_basis}</div>
+        </div>
+      )}
+      {row.verification_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: GOOD }}>Verification basis (VVB)</div>
+          <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{row.verification_basis}</div>
+        </div>
+      )}
+      {row.rejection_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: BAD }}>Rejection basis</div>
+          <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{row.rejection_basis}</div>
+        </div>
+      )}
+      {row.exclusion_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: BAD }}>Exclusion / delisting basis</div>
+          <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{row.exclusion_basis}</div>
+        </div>
+      )}
+      {row.withdrawal_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: BAD }}>Withdrawal basis</div>
+          <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{row.withdrawal_basis}</div>
+        </div>
+      )}
+      {row.completion_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Completion basis</div>
+          <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{row.completion_basis}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function PoaCpaInclusionChainTab() {
   const [rows, setRows] = useState<CpaRow[]>([]);
   const [kpis, setKpis] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<CpaRow | null>(null);
-  const [events, setEvents] = useState<CpaEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
       const res = await api.get<{ data: { items: CpaRow[] } & KpiSummary }>('/poa-inclusion/chain');
-      setRows(res.data?.data?.items || []);
       const d = res.data?.data;
+      setRows(d?.items || []);
       if (d) {
         setKpis({
-          total: d.total, open_count: d.open_count, included_count: d.included_count,
-          monitoring_count: d.monitoring_count, verified_count: d.verified_count,
-          excluded_count: d.excluded_count, rejected_count: d.rejected_count,
-          withdrawn_count: d.withdrawn_count, completed_count: d.completed_count,
-          breached: d.breached, reportable_total: d.reportable_total,
-          article6_count: d.article6_count, total_annual_er: d.total_annual_er,
+          total: d.total,
+          open_count: d.open_count,
+          included_count: d.included_count,
+          monitoring_count: d.monitoring_count,
+          verified_count: d.verified_count,
+          excluded_count: d.excluded_count,
+          rejected_count: d.rejected_count,
+          withdrawn_count: d.withdrawn_count,
+          completed_count: d.completed_count,
+          breached: d.breached,
+          reportable_total: d.reportable_total,
+          article6_count: d.article6_count,
+          total_annual_er: d.total_annual_er,
           included_annual_er: d.included_annual_er,
         });
       }
@@ -327,23 +615,34 @@ export function PoaCpaInclusionChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: CpaRow; events: CpaEvent[] } }>(
-        `/poa-inclusion/chain/${id}`
-      );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/poa-inclusion/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/poa-inclusion/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load CPA history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: CpaRow; events: ChainEvent[] } }>(`/poa-inclusion/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (filter === 'all')        return true;
       if (filter === 'active')     return !TERMINAL_STATES.includes(r.chain_status);
-      if (filter === 'breached')   return r.sla_breached;
+      if (filter === 'breached')   return !!r.sla_breached;
       if (filter === 'reportable') return r.is_reportable_flag ?? !!r.is_reportable;
       if (filter === 'article6')   return r.transfer_type === 'article6';
       if (filter === 'micro' || filter === 'small' || filter === 'medium' || filter === 'large' || filter === 'mega') {
@@ -353,485 +652,124 @@ export function PoaCpaInclusionChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: CpaRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'screen-eligibility') {
-        const basis = window.prompt('Screening basis — the automated eligibility assessment of the proposed CPA against the programme inclusion criteria:');
-        if (!basis) return;
-        const ref = window.prompt('Screening reference (e.g. SCR-2026-0007):') || '';
-        const geo = window.prompt('Geo key (erf / parcel / grid-node id — drives the double-counting / overlap guard):', row.geo_key || '') || '';
-        const ma = window.prompt('Methodology applicability (0..1):', String(row.methodology_applicability ?? 0.8));
-        const ad = window.prompt('Additionality strength (0..1):', String(row.additionality_strength ?? 0.8));
-        const mr = window.prompt('Monitoring readiness (0..1):', String(row.monitoring_readiness ?? 0.8));
-        const lc = window.prompt('LoA confidence (0..1):', String(row.loa_confidence ?? 0.8));
-        body = { screening_basis: basis };
-        if (ref) body.screening_ref = ref;
-        if (geo) body.geo_key = geo;
-        if (ma && !Number.isNaN(Number(ma))) body.methodology_applicability = Number(ma);
-        if (ad && !Number.isNaN(Number(ad))) body.additionality_strength = Number(ad);
-        if (mr && !Number.isNaN(Number(mr))) body.monitoring_readiness = Number(mr);
-        if (lc && !Number.isNaN(Number(lc))) body.loa_confidence = Number(lc);
-      } else if (action === 'check-methodology') {
-        const basis = window.prompt('Methodology basis — confirmation the CPA conforms to the registered programme methodology:');
-        if (!basis) return;
-        const ref = window.prompt('Methodology reference (e.g. METH-2026-0007):') || '';
-        const methId = window.prompt('Methodology id (e.g. AMS-I.D / VM0042):', row.methodology_id || '') || '';
-        body = { methodology_basis: basis };
-        if (ref) body.methodology_ref = ref;
-        if (methId) body.methodology_id = methId;
-      } else if (action === 'request-loa') {
-        const basis = window.prompt('LoA basis — the host-country DNA Letter of Approval gating inclusion:');
-        if (!basis) return;
-        const ref = window.prompt('LoA reference (e.g. LOA-ZA-2026-0007):') || '';
-        const caRef = window.prompt('Corresponding-adjustment reference (Article 6 only — the NDC authorisation):', row.corresponding_adjustment_ref || '') || '';
-        body = { loa_basis: basis };
-        if (ref) body.loa_ref = ref;
-        if (caRef) body.corresponding_adjustment_ref = caRef;
-      } else if (action === 'submit-inclusion') {
-        const basis = window.prompt('Inclusion basis — the inclusion request submitted into the registered programme:');
-        if (!basis) return;
-        const ref = window.prompt('Inclusion reference (e.g. INC-2026-0007):') || '';
-        body = { inclusion_basis: basis };
-        if (ref) body.inclusion_ref = ref;
-      } else if (action === 'approve-inclusion') {
-        const basis = window.prompt('Inclusion approval basis — the CPA is screened into the programme:');
-        if (!basis) return;
-        const ref = window.prompt('Inclusion reference (e.g. INC-2026-0007):') || '';
-        const includedEr = window.prompt('Programme included ER after this CPA (tCO₂e — leave blank to add this CPA to the running total):', '');
-        const regRef = window.prompt('Regulator reference (if reportable):', '') || '';
-        body = { inclusion_basis: basis };
-        if (ref) body.inclusion_ref = ref;
-        if (includedEr && !Number.isNaN(Number(includedEr))) body.included_er_tco2e = Number(includedEr);
-        if (regRef) body.regulator_ref = regRef;
-      } else if (action === 'begin-monitoring') {
-        const basis = window.prompt('Monitoring basis — the CPA enters its monitoring period under the programme:');
-        if (!basis) return;
-        const ref = window.prompt('Monitoring reference (e.g. MON-2026-0007):') || '';
-        body = { monitoring_basis: basis };
-        if (ref) body.monitoring_ref = ref;
-      } else if (action === 'verify-period') {
-        const basis = window.prompt('Verification basis — the VVB confirms ongoing conformance for the monitoring period:');
-        if (!basis) return;
-        const ref = window.prompt('Verification reference (e.g. VER-2026-0007):') || '';
-        body = { verification_basis: basis };
-        if (ref) body.verification_ref = ref;
-      } else if (action === 'continue-monitoring') {
-        const basis = window.prompt('Monitoring basis — the CPA continues into the next monitoring period:');
-        if (!basis) return;
-        const ref = window.prompt('Monitoring reference (e.g. MON-2026-0008):') || '';
-        body = { monitoring_basis: basis };
-        if (ref) body.monitoring_ref = ref;
-      } else if (action === 'reject-cpa') {
-        const basis = window.prompt('Rejection basis — the CPA failed eligibility, methodology or inclusion review:');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. methodology_mismatch / additionality_fail / overlap):', 'methodology_mismatch') || '';
-        const ref = window.prompt('Rejection reference (e.g. REJ-2026-0007):') || '';
-        const regRef = window.prompt('Regulator reference (large/mega only):', '') || '';
-        body = { rejection_basis: basis };
-        if (reason) body.reason_code = reason;
-        if (ref) body.rejection_ref = ref;
-        if (regRef) body.regulator_ref = regRef;
-      } else if (action === 'exclude-cpa') {
-        const basis = window.prompt('Exclusion basis — DELIST the CPA for non-conformance after inclusion (the W73 signature):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. non_conformance / reversal / monitoring_lapse):', 'non_conformance') || '';
-        const ref = window.prompt('Exclusion reference (e.g. EXC-2026-0007):') || '';
-        const regRef = window.prompt('Regulator reference (delisting always reportable):', '') || '';
-        body = { exclusion_basis: basis };
-        if (reason) body.reason_code = reason;
-        if (ref) body.exclusion_ref = ref;
-        if (regRef) body.regulator_ref = regRef;
-      } else if (action === 'withdraw-cpa') {
-        const basis = window.prompt('Withdrawal basis — the proponent pulls the CPA before inclusion:');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. proponent_withdrawn / commercial):', 'proponent_withdrawn') || '';
-        const ref = window.prompt('Withdrawal reference (e.g. WDR-2026-0007):') || '';
-        body = { withdrawal_basis: basis };
-        if (reason) body.reason_code = reason;
-        if (ref) body.withdrawal_ref = ref;
-      } else if (action === 'complete-cpa') {
-        const basis = window.prompt('Completion basis — the CPA reached the end of crediting under the programme:');
-        if (!basis) return;
-        const ref = window.prompt('Completion reference (e.g. CMP-2026-0007):') || '';
-        body = { completion_basis: basis };
-        if (ref) body.completion_ref = ref;
-      }
-      await api.post(`/poa-inclusion/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
+  const k = kpis ?? {
+    total: rows.length, open_count: 0, included_count: 0, monitoring_count: 0,
+    verified_count: 0, excluded_count: 0, rejected_count: 0, withdrawn_count: 0,
+    completed_count: 0, breached: 0, reportable_total: 0, article6_count: 0,
+    total_annual_er: 0, included_annual_er: 0,
+  };
 
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Carbon PoA — CPA inclusion &amp; conformance</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-stage one-to-many inclusion chain · proposed → eligibility screening → methodology check →
-            LoA pending → inclusion review → included → monitoring → verified, with a verified ↔ monitoring
-            conformance loop. A registered Programme of Activities screens individual Component Project
-            Activities (CPAs) in over its lifetime, gated on a host-country Letter of Approval, and DELISTS
-            (excludes) them if they stop conforming. INVERTED SLA: the larger the CPA, the longer every window —
-            a micro CPA gets the fast-track. The W73 signature is delisting-driven — exclude_cpa crosses to the
-            regulator inbox for every tier; approve_inclusion crosses when a corresponding adjustment is required
-            (Article 6) else for the large tiers; reject and SLA breach cross for the large tiers. Beats CDM PoA /
-            GS4GG / Verra grouped projects via automated eligibility scoring, a real-time double-counting / overlap
-            guard, programme-cap headroom and an SLA-driven inclusion turnaround the desk can quote up front.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Carbon PoA — CPA inclusion &amp; conformance</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          12-stage one-to-many inclusion chain · proposed → eligibility screening → methodology check →
+          LoA pending → inclusion review → included → monitoring → verified, with a verified ↔ monitoring
+          conformance loop. INVERTED SLA: the larger the CPA, the longer every window.
+          The W73 signature is delisting-driven — exclude_cpa crosses to the regulator inbox for every tier.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="Included" value={kpis?.included_count ?? 0} tone="ok" />
-        <Kpi label="Monitoring" value={kpis?.monitoring_count ?? 0} tone={(kpis?.monitoring_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Verified" value={kpis?.verified_count ?? 0} tone="ok" />
-        <Kpi label="Excluded (delisted)" value={kpis?.excluded_count ?? 0} tone={(kpis?.excluded_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Rejected" value={kpis?.rejected_count ?? 0} tone={(kpis?.rejected_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Withdrawn" value={kpis?.withdrawn_count ?? 0} />
-        <Kpi label="Completed" value={kpis?.completed_count ?? 0} tone="ok" />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Article 6 (CA)" value={kpis?.article6_count ?? 0} tone={(kpis?.article6_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Total ER/yr" value={fmtTco2e(kpis?.total_annual_er ?? 0)} />
-        <Kpi label="Included ER/yr" value={fmtTco2e(kpis?.included_annual_er ?? 0)} tone="ok" />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total"              value={k.total} />
+        <KpiTile label="Open"               value={k.open_count} />
+        <KpiTile label="Included"           value={k.included_count}     tone={k.included_count > 0 ? 'ok' : undefined} />
+        <KpiTile label="Monitoring"         value={k.monitoring_count}   tone={k.monitoring_count > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Verified"           value={k.verified_count}     tone={k.verified_count > 0 ? 'ok' : undefined} />
+        <KpiTile label="Excluded (delisted)"value={k.excluded_count}     tone={k.excluded_count > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Rejected"           value={k.rejected_count}     tone={k.rejected_count > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Withdrawn"          value={k.withdrawn_count} />
+        <KpiTile label="Completed"          value={k.completed_count}    tone={k.completed_count > 0 ? 'ok' : undefined} />
+        <KpiTile label="SLA breached"       value={k.breached}           tone={k.breached > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Article 6 (CA)"     value={k.article6_count}     tone={k.article6_count > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Reportable"         value={k.reportable_total}   tone={k.reportable_total > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Total ER/yr"        value={fmtTco2e(k.total_annual_er)} />
+        <KpiTile label="Included ER/yr"     value={fmtTco2e(k.included_annual_er)} tone={k.included_annual_er > 0 ? 'ok' : undefined} />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>{err}</div>
       )}
+
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">CPA #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Programme / CPA</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Transfer</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">ER/yr</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Elig.</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.cpa_tier];
-                const ca = r.transfer_type === 'article6';
-                const reportable = r.is_reportable_flag ?? !!r.is_reportable;
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.cpa_number}
-                      {reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[220px] truncate" title={`${r.programme_name || ''}${r.cpa_name ? ' / ' + r.cpa_name : ''}`}>
-                      <div className="truncate">{r.programme_name || '—'}</div>
-                      {r.cpa_name && <div className="text-[10px] text-[#4a5568] truncate">{r.cpa_name}</div>}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">
-                      {TRANSFER_LABEL[r.transfer_type]}
-                      {ca && <span className="ml-1 text-[#a06200]" title="Corresponding adjustment required">⚑</span>}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">
-                      {(r.annual_er_tco2e || 0).toLocaleString('en-ZA')}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#4a5568]">
-                      {fmtScore(r.eligibility_score)}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={8} className="px-3 py-6 text-center text-[#4a5568]">No CPAs match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {filtered.map(row => {
+            const requiresCA = row.requires_corresponding_adjustment_flag ?? !!row.requires_corresponding_adjustment;
+            const reportable = row.is_reportable_flag ?? !!row.is_reportable;
+            return (
+              <ChainCard
+                key={row.id}
+                item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+                allStates={ALL_STATES}
+                branchStates={BRANCH_STATES}
+                title={row.cpa_name || row.programme_name || row.cpa_number}
+                meta={
+                  <span style={{ color: TX3, fontSize: 11 }}>
+                    <span style={{ fontFamily: MONO }}>{row.cpa_number}</span>
+                    {' · '}{TIER_LABEL[row.cpa_tier]}
+                    {' · '}{TRANSFER_LABEL[row.transfer_type]}
+                    {requiresCA && <span style={{ color: WARN }}> ⚑ CA</span>}
+                    {reportable && <span style={{ color: BAD }}> ● reportable</span>}
+                    {row.programme_name && row.cpa_name ? <span>{' · '}{row.programme_name}</span> : null}
+                    {row.monitoring_round > 0 ? <span>{' · '}round {row.monitoring_round}</span> : null}
+                    {' · '}ER {(row.annual_er_tco2e || 0).toLocaleString('en-ZA')} tCO₂e/yr
+                    {row.eligibility_score != null ? <span>{' · '}elig. {fmtScore(row.eligibility_score)}</span> : null}
+                  </span>
+                }
+                actions={getActions(row)}
+                onAction={(key, values) => handleAction(row.id, key, values)}
+                cascadeTo={[]}
+                detail={renderDetail(row)}
+                events={expandedEvents[row.id]}
+                onExpand={handleExpand}
+              />
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>No CPAs match.</div>
+          )}
         </div>
       )}
-
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
-      )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: CpaRow;
-  events: CpaEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: CpaRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canReject = REJECTABLE_STATES.includes(row.chain_status);
-  const canExclude = EXCLUDABLE_STATES.includes(row.chain_status);
-  const canComplete = COMPLETABLE_STATES.includes(row.chain_status);
-  const canWithdraw = WITHDRAWABLE_STATES.includes(row.chain_status);
-  const requiresCA = row.requires_corresponding_adjustment_flag ?? !!row.requires_corresponding_adjustment;
-  const reportable = row.is_reportable_flag ?? !!row.is_reportable;
-  const headroom = row.programme_headroom_live ?? row.programme_headroom_tco2e;
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.cpa_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.cpa_name || row.programme_name || row.cpa_number}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.cpa_tier].label} · {row.registry_standard || '—'} · {TRANSFER_LABEL[row.transfer_type]}
-              </div>
-              <div className="mt-1 text-[11px] text-[#4a5568]">
-                {row.programme_name || row.programme_id}
-                {row.monitoring_round > 0 ? ` · monitoring round ${row.monitoring_round}` : ''}
-              </div>
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"                value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier"                 value={TIER_TONE[row.cpa_tier].label} />
-            <Pair label="Registry standard"    value={row.registry_standard ?? '—'} />
-            <Pair label="Transfer type"        value={TRANSFER_LABEL[row.transfer_type]} />
-            <Pair label="Methodology"          value={row.methodology_id ?? '—'} />
-            <Pair label="Host country"         value={row.host_country ?? '—'} />
-            <Pair label="Corresp. adjustment"  value={requiresCA ? 'Required (Article 6)' : 'Not required'} />
-            <Pair label="CA reference"         value={row.corresponding_adjustment_ref ?? '—'} />
-            <Pair label="Geo key"              value={row.geo_key ?? '—'} />
-            <Pair label="Annual ER"            value={fmtTco2e(row.annual_er_tco2e)} />
-            <Pair label="Eligibility score"    value={fmtScore(row.eligibility_score)} />
-            <Pair label="Predicted inclusion"  value={row.predicted_inclusion_days ? `${row.predicted_inclusion_days}d` : '—'} />
-            <Pair label="Methodology applic."  value={row.methodology_applicability != null ? row.methodology_applicability.toFixed(2) : '—'} />
-            <Pair label="Additionality"        value={row.additionality_strength != null ? row.additionality_strength.toFixed(2) : '—'} />
-            <Pair label="Monitoring readiness" value={row.monitoring_readiness != null ? row.monitoring_readiness.toFixed(2) : '—'} />
-            <Pair label="LoA confidence"       value={row.loa_confidence != null ? row.loa_confidence.toFixed(2) : '—'} />
-            <Pair label="Programme cap"        value={fmtTco2e(row.programme_cap_er_tco2e)} />
-            <Pair label="Included ER"          value={fmtTco2e(row.included_er_tco2e)} />
-            <Pair label="Programme headroom"   value={fmtTco2e(headroom)} />
-            <Pair label="Vintage year"         value={row.vintage_year ? String(row.vintage_year) : '—'} />
-            <Pair label="Crediting period"     value={`${row.crediting_period_start || '—'} → ${row.crediting_period_end || '—'}`} />
-            <Pair label="Proponent"            value={row.proponent_party_name ?? '—'} />
-            <Pair label="Coordinating entity"  value={row.coordinating_entity_name ?? '—'} />
-            <Pair label="DNA"                  value={row.dna_name ?? '—'} />
-            <Pair label="VVB"                  value={row.vvb_name ?? '—'} />
-            <Pair label="Screening ref"        value={row.screening_ref ?? '—'} />
-            <Pair label="Methodology ref"      value={row.methodology_ref ?? '—'} />
-            <Pair label="LoA ref"              value={row.loa_ref ?? '—'} />
-            <Pair label="Inclusion ref"        value={row.inclusion_ref ?? '—'} />
-            <Pair label="Verification ref"     value={row.verification_ref ?? '—'} />
-            <Pair label="Regulator ref"        value={row.regulator_ref ?? '—'} />
-            <Pair label="Reason code"          value={row.reason_code ?? '—'} />
-            <Pair label="Proposed"             value={fmtDate(row.cpa_proposed_at)} />
-            <Pair label="Screened"             value={fmtDate(row.eligibility_screening_at)} />
-            <Pair label="Methodology checked"  value={fmtDate(row.methodology_check_at)} />
-            <Pair label="LoA pending"          value={fmtDate(row.loa_pending_at)} />
-            <Pair label="Inclusion review"     value={fmtDate(row.inclusion_review_at)} />
-            <Pair label="Included"             value={fmtDate(row.included_at)} />
-            <Pair label="Monitoring"           value={fmtDate(row.monitoring_at)} />
-            <Pair label="Verified"             value={fmtDate(row.verified_at)} />
-            <Pair label="SLA deadline"         value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"           value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"       value={String(row.escalation_level)} />
-            <Pair label="Reportable"           value={reportable ? 'Yes' : 'No'} />
-          </div>
-          {row.cpa_summary && (
-            <BasisBlock label="CPA summary" tone="#1a3a5c" text={row.cpa_summary} />
-          )}
-          {row.proposal_basis && (
-            <BasisBlock label="Proposal basis" tone="#1a3a5c" text={row.proposal_basis} />
-          )}
-          {row.screening_basis && (
-            <BasisBlock label="Screening basis" tone="#1a3a5c" text={row.screening_basis} />
-          )}
-          {row.methodology_basis && (
-            <BasisBlock label="Methodology basis" tone="#1a3a5c" text={row.methodology_basis} />
-          )}
-          {row.loa_basis && (
-            <BasisBlock label="LoA basis (DNA)" tone="#a06200" text={row.loa_basis} />
-          )}
-          {row.inclusion_basis && (
-            <BasisBlock label="Inclusion basis" tone="#a06200" text={row.inclusion_basis} />
-          )}
-          {row.monitoring_basis && (
-            <BasisBlock label="Monitoring basis" tone="#1a6b48" text={row.monitoring_basis} />
-          )}
-          {row.verification_basis && (
-            <BasisBlock label="Verification basis (VVB)" tone="#155724" text={row.verification_basis} />
-          )}
-          {row.rejection_basis && (
-            <BasisBlock label="Rejection basis" tone="#9b1f1f" text={row.rejection_basis} />
-          )}
-          {row.exclusion_basis && (
-            <BasisBlock label="Exclusion / delisting basis" tone="#7a1414" text={row.exclusion_basis} />
-          )}
-          {row.withdrawal_basis && (
-            <BasisBlock label="Withdrawal basis" tone="#6b1f1f" text={row.withdrawal_basis} />
-          )}
-          {row.completion_basis && (
-            <BasisBlock label="Completion basis" tone="#3a4a5c" text={row.completion_basis} />
-          )}
-        </section>
-
-        {(nextAction || canReject || canExclude || canComplete || canWithdraw) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canComplete && (
-                <button type="button"
-                  onClick={() => onAct('complete-cpa', row)}
-                  className="rounded border border-green-300 bg-white px-3 py-1.5 text-[12px] font-medium text-green-700 hover:bg-green-50"
-                >
-                  {ACTION_LABEL['complete-cpa']}
-                </button>
-              )}
-              {canReject && (
-                <button type="button"
-                  onClick={() => onAct('reject-cpa', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['reject-cpa']}
-                </button>
-              )}
-              {canExclude && (
-                <button type="button"
-                  onClick={() => onAct('exclude-cpa', row)}
-                  className="rounded border border-red-400 bg-white px-3 py-1.5 text-[12px] font-medium text-[#7a1414] hover:bg-[#fbd3d3]"
-                >
-                  {ACTION_LABEL['exclude-cpa']}
-                </button>
-              )}
-              {canWithdraw && (
-                <button type="button"
-                  onClick={() => onAct('withdraw-cpa', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b1f1f] hover:bg-[#f3e0e0]"
-                >
-                  {ACTION_LABEL['withdraw-cpa']}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1, fontSize: 11 }}>{value}</div>
     </div>
   );
 }
+
+export default PoaCpaInclusionChainTab;

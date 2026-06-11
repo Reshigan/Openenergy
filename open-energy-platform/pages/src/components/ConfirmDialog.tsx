@@ -35,7 +35,7 @@ export function ConfirmDialog({
   const variantStyles = {
     danger: 'border-red-200 bg-[#fff5f5]',
     warning: 'border-yellow-200 bg-[#fffbf0]',
-    info: 'border-blue-200 bg-[#f0f7ff]',
+    info: 'bg-[oklch(0.96_0.008_250)] border-[oklch(0.82_0.03_250)]',
   };
 
   const buttonStyles = {
@@ -49,7 +49,7 @@ export function ConfirmDialog({
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
         <div className={`p-4 rounded-t-xl border-b ${variantStyles[variant]}`}>
           <div className="flex items-center gap-3">
-            <AlertTriangle className={`w-5 h-5 ${variant === 'danger' ? 'text-red-600' : variant === 'warning' ? 'text-yellow-600' : 'text-blue-600'}`} />
+            <AlertTriangle style={{ color: variant === 'danger' ? 'oklch(0.48 0.20 20)' : variant === 'warning' ? 'oklch(0.50 0.16 70)' : 'oklch(0.46 0.16 55)' }} className="w-5 h-5" />
             <h3 className="text-lg font-semibold">{title}</h3>
             <button type="button" aria-label="Close" onClick={onCancel} className="ml-auto p-1 hover:bg-[#f8fafc]/50 rounded">
               <X className="w-5 h-5" />

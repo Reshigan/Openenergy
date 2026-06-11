@@ -25,6 +25,20 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'inventoried' | 'impact_assessed' | 'classified' | 'notified'
@@ -36,6 +50,7 @@ type Tier = 'minor' | 'standard' | 'material' | 'systemic';
 type UrgencyBand = 'green' | 'amber' | 'red' | 'critical';
 
 interface BxtRow {
+  [key: string]: unknown;
   id: string;
   transition_number: string;
   source_event: string | null;
@@ -107,19 +122,6 @@ interface BxtRow {
   interbank_flag_live?: boolean;
 }
 
-interface BxtEvent {
-  id: string;
-  transition_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiSummary {
   total: number;
   open_count: number;
@@ -150,37 +152,15 @@ interface KpiSummary {
   transitioned_clean_pct: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  inventoried:        { bg: '#e3e7ec', fg: '#557',    label: 'Inventoried' },
-  impact_assessed:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Impact assessed' },
-  classified:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Fallback classified' },
-  notified:           { bg: '#fff4d6', fg: '#a06200', label: 'Counterparty notified' },
-  responded:          { bg: '#fff4d6', fg: '#a06200', label: 'Response recorded' },
-  amendment_drafted:  { bg: '#ffe9d6', fg: '#8a4a00', label: 'Amendment drafted' },
-  amendment_executed: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Amendment executed' },
-  vt_settled:         { bg: '#daf5e2', fg: '#1f6b3a', label: 'Value transfer settled' },
-  transitioned_clean: { bg: '#c6efd6', fg: '#125a2d', label: 'Transitioned clean' },
-  disputed:           { bg: '#fde0e0', fg: '#9b1f1f', label: 'Disputed' },
-  on_hold:            { bg: '#e3e7ec', fg: '#557',    label: 'On hold' },
-  terminated_legacy:  { bg: '#fde0e0', fg: '#9b1f1f', label: 'Legacy terminated' },
-  cancelled:          { bg: '#e3e7ec', fg: '#557',    label: 'Cancelled' },
-};
+const ALL_STATES = [
+  'inventoried', 'impact_assessed', 'classified', 'notified',
+  'responded', 'amendment_drafted', 'amendment_executed', 'vt_settled',
+  'transitioned_clean',
+] as const;
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-  standard: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard' },
-  material: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Material' },
-  systemic: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Systemic' },
-};
+const BRANCH_STATES = ['disputed', 'on_hold', 'terminated_legacy', 'cancelled'] as const;
 
-const URGENCY_TONE: Record<UrgencyBand, { bg: string; fg: string; label: string }> = {
-  green:    { bg: '#daf5e2', fg: '#1f6b3a', label: 'Green' },
-  amber:    { bg: '#fff4d6', fg: '#a06200', label: 'Amber' },
-  red:      { bg: '#ffe4b5', fg: '#8a4a00', label: 'Red' },
-  critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical' },
-};
-
-const FILTERS: Array<{ key: string; label: string }> = [
+const FILTERS = [
   { key: 'open',               label: 'Open' },
   { key: 'all',                label: 'All' },
   { key: 'minor',              label: 'Minor' },
@@ -197,64 +177,7 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'cancelled',          label: 'Cancelled' },
 ];
 
-type ActionKind =
-  | 'assess-impact' | 'classify-fallback' | 'notify-counterparty'
-  | 'record-response' | 'draft-amendment' | 'execute-amendment'
-  | 'settle-vt' | 'complete-transition'
-  | 'raise-dispute' | 'resolve-dispute'
-  | 'place-on-hold' | 'resume'
-  | 'terminate-legacy' | 'cancel';
-
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  inventoried:        'assess-impact',
-  impact_assessed:    'classify-fallback',
-  classified:         'notify-counterparty',
-  notified:           'record-response',
-  responded:          'draft-amendment',
-  amendment_drafted:  'execute-amendment',
-  amendment_executed: 'settle-vt',
-  vt_settled:         'complete-transition',
-  disputed:           'resolve-dispute',
-  on_hold:            'resume',
-  transitioned_clean: null,
-  terminated_legacy:  null,
-  cancelled:          null,
-};
-
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'assess-impact':       'Assess impact (risk validation)',
-  'classify-fallback':   'Classify fallback (docs / legal)',
-  'notify-counterparty': 'Notify counterparty (transition desk)',
-  'record-response':     'Record counterparty response',
-  'draft-amendment':     'Draft confirmation amendment (docs / legal)',
-  'execute-amendment':   'Execute amendment (docs / legal)',
-  'settle-vt':           'Settle value transfer (counterparty credit)',
-  'complete-transition': 'Complete transition',
-  'raise-dispute':       'Raise dispute',
-  'resolve-dispute':     'Resolve dispute',
-  'place-on-hold':       'Place on hold',
-  'resume':              'Resume transition',
-  'terminate-legacy':    'Terminate legacy trade (last resort)',
-  'cancel':              'Cancel transition',
-};
-
-const SECONDARY_ACTIONS: Record<ChainStatus, ActionKind[]> = {
-  inventoried:        ['place-on-hold', 'cancel'],
-  impact_assessed:    ['raise-dispute', 'place-on-hold', 'cancel'],
-  classified:         ['raise-dispute', 'place-on-hold', 'cancel'],
-  notified:           ['raise-dispute', 'place-on-hold', 'cancel'],
-  responded:          ['raise-dispute', 'place-on-hold', 'cancel'],
-  amendment_drafted:  ['raise-dispute', 'place-on-hold', 'terminate-legacy', 'cancel'],
-  amendment_executed: ['raise-dispute', 'terminate-legacy'],
-  vt_settled:         ['raise-dispute'],
-  disputed:           ['terminate-legacy', 'cancel'],
-  on_hold:            ['cancel'],
-  transitioned_clean: [],
-  terminated_legacy:  [],
-  cancelled:          [],
-};
-
-const DESTRUCTIVE: ActionKind[] = ['raise-dispute', 'terminate-legacy', 'cancel', 'place-on-hold'];
+const TERMINAL_STATES: ChainStatus[] = ['transitioned_clean', 'terminated_legacy', 'cancelled'];
 
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '-';
@@ -297,16 +220,283 @@ function fmtDate(s: string | null): string {
   return d.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['transitioned_clean', 'terminated_legacy', 'cancelled'];
+function getActions(row: BxtRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+
+  if (row.chain_status === 'inventoried') {
+    actions.push({
+      key: 'assess-impact',
+      label: 'Assess impact (risk validation)',
+      tone: 'primary',
+      fields: [
+        { key: 'pv01_zar', label: 'PV01 ZAR (sensitivity to 1 bp parallel shift)', type: 'text', required: false, placeholder: String(row.pv01_zar || 0) },
+        { key: 'value_transfer_zar', label: 'Value transfer ZAR (estimated economic delta on switch)', type: 'text', required: false, placeholder: String(row.value_transfer_zar || 0) },
+        { key: 'hedge_effective_flag', label: 'Hedge effective flag (1 = effective, 0 = ineffective)', type: 'text', required: false, placeholder: String(row.hedge_effective_flag ?? 1) },
+        { key: 'last_action_ref', label: 'Last action ref (impact study id)', type: 'text', required: false },
+      ],
+    });
+    actions.push({ key: 'place-on-hold', label: 'Place on hold', tone: 'warn', fields: [{ key: 'transition_summary', label: 'Hold reason (counterparty unresponsive / waiting on legal opinion / pending market consultation)', type: 'textarea', required: true }] });
+    actions.push({ key: 'cancel', label: 'Cancel transition', tone: 'danger', fields: [{ key: 'transition_summary', label: 'Cancellation reason (trade matured / closed-out / superseded by master amendment)', type: 'textarea', required: true }] });
+  }
+
+  if (row.chain_status === 'impact_assessed') {
+    actions.push({
+      key: 'classify-fallback',
+      label: 'Classify fallback (docs / legal)',
+      tone: 'primary',
+      fields: [
+        { key: 'replacement_rate', label: 'Replacement rate (compounded_zaronia_1m / 3m / 6m / term_zaronia_1m / 3m / 6m / zaronia_overnight)', type: 'text', required: false, placeholder: row.replacement_rate || '' },
+        { key: 'fallback_class', label: 'Fallback class (isda_protocol / bilateral_amendment / hardwired / legislative_safe_harbour / synthetic_legacy)', type: 'text', required: false, placeholder: row.fallback_class || '' },
+        { key: 'protocol_adherence_flag', label: 'Protocol adherence flag (1 = ISDA 2020 adhered, 0 = bilateral path)', type: 'text', required: false, placeholder: String(row.protocol_adherence_flag ?? 0) },
+        { key: 'last_action_ref', label: 'Last action ref (legal opinion id)', type: 'text', required: false },
+      ],
+    });
+    actions.push({ key: 'raise-dispute', label: 'Raise dispute', tone: 'danger', fields: [
+      { key: 'dispute_concentration', label: 'Dispute concentration (number of disputed trades for this counterparty)', type: 'text', required: false, placeholder: String(row.dispute_concentration || 1) },
+      { key: 'predicted_resolution_days', label: 'Predicted resolution days', type: 'text', required: false, placeholder: String(row.predicted_resolution_days || 30) },
+      { key: 'last_action_ref', label: 'Last action ref (dispute notice id)', type: 'text', required: false },
+      { key: 'regulator_ref', label: 'Regulator reference (REQUIRED if systemic - SARB MPG dispute notification)', type: 'text', required: false, placeholder: row.regulator_ref || '' },
+    ], cascadeTo: ['regulator'] });
+    actions.push({ key: 'place-on-hold', label: 'Place on hold', tone: 'warn', fields: [{ key: 'transition_summary', label: 'Hold reason', type: 'textarea', required: true }] });
+    actions.push({ key: 'cancel', label: 'Cancel transition', tone: 'danger', fields: [{ key: 'transition_summary', label: 'Cancellation reason', type: 'textarea', required: true }] });
+  }
+
+  if (row.chain_status === 'classified') {
+    actions.push({
+      key: 'notify-counterparty',
+      label: 'Notify counterparty (transition desk)',
+      tone: 'primary',
+      fields: [
+        { key: 'last_action_ref', label: 'Last action ref (notification dispatch id)', type: 'text', required: false },
+      ],
+    });
+    actions.push({ key: 'raise-dispute', label: 'Raise dispute', tone: 'danger', fields: [
+      { key: 'dispute_concentration', label: 'Dispute concentration', type: 'text', required: false, placeholder: String(row.dispute_concentration || 1) },
+      { key: 'predicted_resolution_days', label: 'Predicted resolution days', type: 'text', required: false, placeholder: String(row.predicted_resolution_days || 30) },
+      { key: 'last_action_ref', label: 'Last action ref (dispute notice id)', type: 'text', required: false },
+      { key: 'regulator_ref', label: 'Regulator reference (REQUIRED if systemic)', type: 'text', required: false, placeholder: row.regulator_ref || '' },
+    ], cascadeTo: ['regulator'] });
+    actions.push({ key: 'place-on-hold', label: 'Place on hold', tone: 'warn', fields: [{ key: 'transition_summary', label: 'Hold reason', type: 'textarea', required: true }] });
+    actions.push({ key: 'cancel', label: 'Cancel transition', tone: 'danger', fields: [{ key: 'transition_summary', label: 'Cancellation reason', type: 'textarea', required: true }] });
+  }
+
+  if (row.chain_status === 'notified') {
+    actions.push({
+      key: 'record-response',
+      label: 'Record counterparty response',
+      tone: 'primary',
+      fields: [
+        { key: 'counterparty_response_pct', label: 'Counterparty response percentage (0-100)', type: 'text', required: false, placeholder: String(row.counterparty_response_pct || 0) },
+        { key: 'last_action_ref', label: 'Last action ref (counterparty response id)', type: 'text', required: false },
+      ],
+    });
+    actions.push({ key: 'raise-dispute', label: 'Raise dispute', tone: 'danger', fields: [
+      { key: 'dispute_concentration', label: 'Dispute concentration', type: 'text', required: false, placeholder: String(row.dispute_concentration || 1) },
+      { key: 'predicted_resolution_days', label: 'Predicted resolution days', type: 'text', required: false, placeholder: String(row.predicted_resolution_days || 30) },
+      { key: 'last_action_ref', label: 'Last action ref (dispute notice id)', type: 'text', required: false },
+      { key: 'regulator_ref', label: 'Regulator reference (REQUIRED if systemic)', type: 'text', required: false, placeholder: row.regulator_ref || '' },
+    ], cascadeTo: ['regulator'] });
+    actions.push({ key: 'place-on-hold', label: 'Place on hold', tone: 'warn', fields: [{ key: 'transition_summary', label: 'Hold reason', type: 'textarea', required: true }] });
+    actions.push({ key: 'cancel', label: 'Cancel transition', tone: 'danger', fields: [{ key: 'transition_summary', label: 'Cancellation reason', type: 'textarea', required: true }] });
+  }
+
+  if (row.chain_status === 'responded') {
+    actions.push({
+      key: 'draft-amendment',
+      label: 'Draft confirmation amendment (docs / legal)',
+      tone: 'primary',
+      fields: [
+        { key: 'last_action_ref', label: 'Last action ref (draft amendment id)', type: 'text', required: false },
+      ],
+    });
+    actions.push({ key: 'raise-dispute', label: 'Raise dispute', tone: 'danger', fields: [
+      { key: 'dispute_concentration', label: 'Dispute concentration', type: 'text', required: false, placeholder: String(row.dispute_concentration || 1) },
+      { key: 'predicted_resolution_days', label: 'Predicted resolution days', type: 'text', required: false, placeholder: String(row.predicted_resolution_days || 30) },
+      { key: 'last_action_ref', label: 'Last action ref (dispute notice id)', type: 'text', required: false },
+      { key: 'regulator_ref', label: 'Regulator reference (REQUIRED if systemic)', type: 'text', required: false, placeholder: row.regulator_ref || '' },
+    ], cascadeTo: ['regulator'] });
+    actions.push({ key: 'place-on-hold', label: 'Place on hold', tone: 'warn', fields: [{ key: 'transition_summary', label: 'Hold reason', type: 'textarea', required: true }] });
+    actions.push({ key: 'cancel', label: 'Cancel transition', tone: 'danger', fields: [{ key: 'transition_summary', label: 'Cancellation reason', type: 'textarea', required: true }] });
+  }
+
+  if (row.chain_status === 'amendment_drafted') {
+    actions.push({
+      key: 'execute-amendment',
+      label: 'Execute amendment (docs / legal)',
+      tone: 'primary',
+      fields: [
+        { key: 'last_action_ref', label: 'Last action ref (executed amendment id / MarkitWire ack)', type: 'text', required: false },
+      ],
+    });
+    actions.push({ key: 'raise-dispute', label: 'Raise dispute', tone: 'danger', fields: [
+      { key: 'dispute_concentration', label: 'Dispute concentration', type: 'text', required: false },
+      { key: 'predicted_resolution_days', label: 'Predicted resolution days', type: 'text', required: false },
+      { key: 'last_action_ref', label: 'Last action ref (dispute notice id)', type: 'text', required: false },
+      { key: 'regulator_ref', label: 'Regulator reference (REQUIRED if systemic)', type: 'text', required: false },
+    ], cascadeTo: ['regulator'] });
+    actions.push({ key: 'place-on-hold', label: 'Place on hold', tone: 'warn', fields: [{ key: 'transition_summary', label: 'Hold reason', type: 'textarea', required: true }] });
+    actions.push({ key: 'terminate-legacy', label: 'Terminate legacy trade (last resort)', tone: 'danger', fields: [
+      { key: 'transition_summary', label: 'Termination reason - SARB MPG hard line, ALWAYS crosses regulator', type: 'textarea', required: true },
+      { key: 'regulator_ref', label: 'Regulator reference (REQUIRED - SARB MPG termination notice)', type: 'text', required: false, placeholder: row.regulator_ref || '' },
+      { key: 'last_action_ref', label: 'Last action ref (termination notice id)', type: 'text', required: false },
+    ], cascadeTo: ['regulator'] });
+    actions.push({ key: 'cancel', label: 'Cancel transition', tone: 'danger', fields: [{ key: 'transition_summary', label: 'Cancellation reason', type: 'textarea', required: true }] });
+  }
+
+  if (row.chain_status === 'amendment_executed') {
+    actions.push({
+      key: 'settle-vt',
+      label: 'Settle value transfer (counterparty credit)',
+      tone: 'primary',
+      fields: [
+        { key: 'value_transfer_zar', label: 'Value transfer ZAR settled (final agreed quantum)', type: 'text', required: false, placeholder: String(row.value_transfer_zar || 0) },
+        { key: 'last_action_ref', label: 'Last action ref (settlement instruction id)', type: 'text', required: false },
+      ],
+    });
+    actions.push({ key: 'raise-dispute', label: 'Raise dispute', tone: 'danger', fields: [
+      { key: 'dispute_concentration', label: 'Dispute concentration', type: 'text', required: false },
+      { key: 'predicted_resolution_days', label: 'Predicted resolution days', type: 'text', required: false },
+      { key: 'last_action_ref', label: 'Last action ref (dispute notice id)', type: 'text', required: false },
+      { key: 'regulator_ref', label: 'Regulator reference (REQUIRED if systemic)', type: 'text', required: false },
+    ], cascadeTo: ['regulator'] });
+    actions.push({ key: 'terminate-legacy', label: 'Terminate legacy trade (last resort)', tone: 'danger', fields: [
+      { key: 'transition_summary', label: 'Termination reason - SARB MPG hard line, ALWAYS crosses regulator', type: 'textarea', required: true },
+      { key: 'regulator_ref', label: 'Regulator reference (REQUIRED - SARB MPG termination notice)', type: 'text', required: false, placeholder: row.regulator_ref || '' },
+      { key: 'last_action_ref', label: 'Last action ref (termination notice id)', type: 'text', required: false },
+    ], cascadeTo: ['regulator'] });
+  }
+
+  if (row.chain_status === 'vt_settled') {
+    actions.push({
+      key: 'complete-transition',
+      label: 'Complete transition',
+      tone: 'primary',
+      fields: [
+        { key: 'regulator_ref', label: 'Regulator reference (REQUIRED if material / systemic - SARB MPG completion report)', type: 'text', required: false, placeholder: row.regulator_ref || '' },
+        { key: 'last_action_ref', label: 'Last action ref (completion certificate id)', type: 'text', required: false },
+      ],
+      cascadeTo: ['regulator'],
+    });
+    actions.push({ key: 'raise-dispute', label: 'Raise dispute', tone: 'danger', fields: [
+      { key: 'dispute_concentration', label: 'Dispute concentration', type: 'text', required: false },
+      { key: 'predicted_resolution_days', label: 'Predicted resolution days', type: 'text', required: false },
+      { key: 'last_action_ref', label: 'Last action ref (dispute notice id)', type: 'text', required: false },
+      { key: 'regulator_ref', label: 'Regulator reference (REQUIRED if systemic)', type: 'text', required: false },
+    ], cascadeTo: ['regulator'] });
+  }
+
+  if (row.chain_status === 'disputed') {
+    actions.push({
+      key: 'resolve-dispute',
+      label: 'Resolve dispute',
+      tone: 'primary',
+      fields: [
+        { key: 'last_action_ref', label: 'Last action ref (dispute resolution memo)', type: 'text', required: false },
+      ],
+    });
+    actions.push({ key: 'terminate-legacy', label: 'Terminate legacy trade (last resort)', tone: 'danger', fields: [
+      { key: 'transition_summary', label: 'Termination reason - SARB MPG hard line, ALWAYS crosses regulator', type: 'textarea', required: true },
+      { key: 'regulator_ref', label: 'Regulator reference (REQUIRED - SARB MPG termination notice)', type: 'text', required: false, placeholder: row.regulator_ref || '' },
+      { key: 'last_action_ref', label: 'Last action ref (termination notice id)', type: 'text', required: false },
+    ], cascadeTo: ['regulator'] });
+    actions.push({ key: 'cancel', label: 'Cancel transition', tone: 'danger', fields: [{ key: 'transition_summary', label: 'Cancellation reason', type: 'textarea', required: true }] });
+  }
+
+  if (row.chain_status === 'on_hold') {
+    actions.push({
+      key: 'resume',
+      label: 'Resume transition',
+      tone: 'primary',
+      fields: [
+        { key: 'last_action_ref', label: 'Last action ref (resume order id)', type: 'text', required: false },
+      ],
+    });
+    actions.push({ key: 'cancel', label: 'Cancel transition', tone: 'danger', fields: [{ key: 'transition_summary', label: 'Cancellation reason', type: 'textarea', required: true }] });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: BxtRow): React.ReactNode {
+  return (
+    <div>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 8 }}>
+        Live transition-risk &amp; integrity battery
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginBottom: 12 }}>
+        <DetailPair label="PV01 ZAR (1 bp shift)"   value={fmtZar(row.pv01_zar_live ?? row.pv01_zar)} />
+        <DetailPair label="Value transfer ZAR"       value={fmtZar(row.value_transfer_zar_live ?? row.value_transfer_zar)} />
+        <DetailPair label="Fallback basis"           value={fmtBps(row.fallback_basis_bps_live ?? row.isda_spread_bps)} />
+        <DetailPair label="Compounded ZARONIA rate"  value={fmtRate(row.compounded_zaronia_rate_live ?? row.compounded_zaronia_rate)} />
+        <DetailPair label="ZARONIA overnight"        value={fmtRate(row.zaronia_overnight)} />
+        <DetailPair label="ISDA spread"              value={fmtBps(row.isda_spread_bps)} />
+        <DetailPair label="Days to cessation"        value={fmtDays(row.days_to_cessation_live ?? row.days_to_cessation)} />
+        <DetailPair label="Hedge effective"          value={(row.hedge_effective_flag_live ?? row.hedge_effective_flag) === 1 ? 'Yes' : 'No'} />
+        <DetailPair label="Counterparty response"    value={fmtPct(row.counterparty_response_pct)} />
+        <DetailPair label="Protocol adherence"       value={row.protocol_adherence_flag === 1 ? 'ISDA 2020 adhered' : 'Bilateral path'} />
+        <DetailPair label="Predicted resolution"     value={fmtDays(row.predicted_resolution_days_live ?? row.predicted_resolution_days)} />
+        <DetailPair label="Dispute concentration"    value={String(row.dispute_concentration || 0)} />
+        <DetailPair label="Urgency band"             value={row.urgency_band_live ? row.urgency_band_live.charAt(0).toUpperCase() + row.urgency_band_live.slice(1) : '-'} />
+        <DetailPair label="Systemic carrier"         value={row.systemic_carrier_live ? 'YES' : 'No'} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
+        <DetailPair label="Trade ref"          value={row.trade_ref} />
+        <DetailPair label="Instrument"         value={row.instrument_type} />
+        <DetailPair label="Legacy benchmark"   value={row.legacy_benchmark} />
+        <DetailPair label="Replacement rate"   value={row.replacement_rate ?? '-'} />
+        <DetailPair label="Fallback class"     value={row.fallback_class ?? '-'} />
+        <DetailPair label="Counterparty"       value={row.counterparty_name} />
+        <DetailPair label="Interbank"          value={row.counterparty_interbank === 1 ? 'Yes' : 'No'} />
+        <DetailPair label="Counterparty NAV"   value={fmtZar(row.counterparty_nav_zar)} />
+        <DetailPair label="Notional"           value={fmtZar(row.notional_zar)} />
+        <DetailPair label="Remaining years"    value={`${(row.remaining_years || 0).toLocaleString('en-ZA', { maximumFractionDigits: 2 })} yr`} />
+        <DetailPair label="Trade start"        value={fmtDate(row.trade_start_at)} />
+        <DetailPair label="Trade maturity"     value={fmtDate(row.trade_maturity_at)} />
+        <DetailPair label="Cessation date"     value={fmtDate(row.cessation_date)} />
+        <DetailPair label="Last action ref"    value={row.last_action_ref ?? '-'} />
+        <DetailPair label="Regulator ref"      value={row.regulator_ref ?? '-'} />
+        <DetailPair label="Inventoried"        value={fmtDate(row.inventoried_at)} />
+        <DetailPair label="Impact assessed"    value={fmtDate(row.impact_assessed_at)} />
+        <DetailPair label="Classified"         value={fmtDate(row.classified_at)} />
+        <DetailPair label="Notified"           value={fmtDate(row.notified_at)} />
+        <DetailPair label="Response recorded"  value={fmtDate(row.responded_at)} />
+        <DetailPair label="Amendment drafted"  value={fmtDate(row.amendment_drafted_at)} />
+        <DetailPair label="Amendment executed" value={fmtDate(row.amendment_executed_at)} />
+        <DetailPair label="VT settled"         value={fmtDate(row.vt_settled_at)} />
+        <DetailPair label="Transitioned clean" value={fmtDate(row.transitioned_clean_at)} />
+        <DetailPair label="Disputed"           value={fmtDate(row.disputed_at)} />
+        <DetailPair label="On hold"            value={fmtDate(row.on_hold_at)} />
+        <DetailPair label="Terminated legacy"  value={fmtDate(row.terminated_legacy_at)} />
+        <DetailPair label="Cancelled"          value={fmtDate(row.cancelled_at)} />
+        <DetailPair label="SLA deadline"       value={fmtDate(row.sla_deadline_at)} />
+        <DetailPair label="SLA window"         value={row.sla_window_minutes ? fmtMinutes(row.sla_window_minutes) : '-'} />
+        <DetailPair label="SLA status"         value={row.is_terminal ? '-' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+        <DetailPair label="Escalation lvl"     value={String(row.escalation_level)} />
+        <DetailPair label="Reportable"         value={row.is_reportable_flag ? 'Yes' : 'No'} />
+        <DetailPair label="Breach crosses reg." value={row.breach_crosses_regulator ? 'Yes' : 'No'} />
+      </div>
+      {row.transition_summary && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX2, marginBottom: 2 }}>Transition summary</div>
+          <div style={{ fontSize: 12, color: TX1, whiteSpace: 'pre-wrap' }}>{row.transition_summary}</div>
+        </div>
+      )}
+      {row.source_wave && (
+        <div style={{ marginTop: 8, fontSize: 11, color: TX3 }}>
+          Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function BenchmarkTransitionChainTab() {
   const [rows, setRows] = useState<BxtRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('open');
-  const [selected, setSelected] = useState<BxtRow | null>(null);
-  const [events, setEvents] = useState<BxtEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -316,7 +506,7 @@ export function BenchmarkTransitionChainTab() {
       setRows(res.data?.data?.items || []);
       const d = res.data?.data;
       if (d) {
-        setKpis({
+        setSummary({
           total: d.total, open_count: d.open_count,
           inventoried_count: d.inventoried_count,
           impact_assessed_count: d.impact_assessed_count,
@@ -353,17 +543,37 @@ export function BenchmarkTransitionChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: BxtRow; events: BxtEvent[] } }>(
+      const body: Record<string, string | number> = {};
+      for (const [k, v] of Object.entries(values)) {
+        if (v === '') continue;
+        if (['pv01_zar', 'value_transfer_zar', 'hedge_effective_flag', 'protocol_adherence_flag',
+             'counterparty_response_pct', 'dispute_concentration', 'predicted_resolution_days'].includes(k)) {
+          const n = Number(v);
+          if (!Number.isNaN(n)) body[k] = n;
+        } else {
+          body[k] = v;
+        }
+      }
+      await api.post(`/benchmark-transition/chain/${rowId}/${key}`, body);
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
+    }
+  }, [load]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: BxtRow; events: ChainEvent[] } }>(
         `/benchmark-transition/chain/${id}`
       );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load transition history');
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events || [] }));
+    } catch {
+      // non-fatal
     }
-  }, []);
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -379,157 +589,58 @@ export function BenchmarkTransitionChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: BxtRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'assess-impact') {
-        const pv01 = window.prompt('PV01 ZAR (sensitivity to 1 bp parallel shift):', String(row.pv01_zar || 0)) || '';
-        const vt = window.prompt('Value transfer ZAR (estimated economic delta on switch):', String(row.value_transfer_zar || 0)) || '';
-        const hedge = window.prompt('Hedge effective flag (1 = effective, 0 = ineffective):', String(row.hedge_effective_flag ?? 1)) || '';
-        const ref = window.prompt('Last action ref (impact study id):') || '';
-        body = {};
-        if (pv01 && !Number.isNaN(Number(pv01))) body.pv01_zar = Number(pv01);
-        if (vt && !Number.isNaN(Number(vt))) body.value_transfer_zar = Number(vt);
-        if (hedge === '0' || hedge === '1') body.hedge_effective_flag = Number(hedge);
-        if (ref) body.last_action_ref = ref;
-      } else if (action === 'classify-fallback') {
-        const repl = window.prompt('Replacement rate (compounded_zaronia_1m / 3m / 6m / term_zaronia_1m / 3m / 6m / zaronia_overnight):', row.replacement_rate || '') || '';
-        const cls = window.prompt('Fallback class (isda_protocol / bilateral_amendment / hardwired / legislative_safe_harbour / synthetic_legacy):', row.fallback_class || '') || '';
-        const proto = window.prompt('Protocol adherence flag (1 = ISDA 2020 adhered, 0 = bilateral path):', String(row.protocol_adherence_flag ?? 0)) || '';
-        const ref = window.prompt('Last action ref (legal opinion id):') || '';
-        body = {};
-        if (repl) body.replacement_rate = repl;
-        if (cls) body.fallback_class = cls;
-        if (proto === '0' || proto === '1') body.protocol_adherence_flag = Number(proto);
-        if (ref) body.last_action_ref = ref;
-      } else if (action === 'notify-counterparty') {
-        const ref = window.prompt('Last action ref (notification dispatch id):') || '';
-        body = {};
-        if (ref) body.last_action_ref = ref;
-      } else if (action === 'record-response') {
-        const resp = window.prompt('Counterparty response percentage (0-100):', String(row.counterparty_response_pct || 0)) || '';
-        const ref = window.prompt('Last action ref (counterparty response id):') || '';
-        body = {};
-        if (resp && !Number.isNaN(Number(resp))) body.counterparty_response_pct = Number(resp);
-        if (ref) body.last_action_ref = ref;
-      } else if (action === 'draft-amendment') {
-        const ref = window.prompt('Last action ref (draft amendment id):') || '';
-        body = {};
-        if (ref) body.last_action_ref = ref;
-      } else if (action === 'execute-amendment') {
-        const ref = window.prompt('Last action ref (executed amendment id / MarkitWire ack):') || '';
-        body = {};
-        if (ref) body.last_action_ref = ref;
-      } else if (action === 'settle-vt') {
-        const vt = window.prompt('Value transfer ZAR settled (final agreed quantum):', String(row.value_transfer_zar || 0)) || '';
-        const ref = window.prompt('Last action ref (settlement instruction id):') || '';
-        body = {};
-        if (vt && !Number.isNaN(Number(vt))) body.value_transfer_zar = Number(vt);
-        if (ref) body.last_action_ref = ref;
-      } else if (action === 'complete-transition') {
-        const reg = window.prompt('Regulator reference (REQUIRED if material / systemic - SARB MPG completion report):', row.regulator_ref || '') || '';
-        const ref = window.prompt('Last action ref (completion certificate id):') || '';
-        body = {};
-        if (reg) body.regulator_ref = reg;
-        if (ref) body.last_action_ref = ref;
-      } else if (action === 'raise-dispute') {
-        const conc = window.prompt('Dispute concentration (number of disputed trades for this counterparty):', String(row.dispute_concentration || 1)) || '';
-        const pred = window.prompt('Predicted resolution days:', String(row.predicted_resolution_days || 30)) || '';
-        const ref = window.prompt('Last action ref (dispute notice id):') || '';
-        const reg = window.prompt('Regulator reference (REQUIRED if systemic - SARB MPG dispute notification):', row.regulator_ref || '') || '';
-        body = {};
-        if (conc && !Number.isNaN(Number(conc))) body.dispute_concentration = Number(conc);
-        if (pred && !Number.isNaN(Number(pred))) body.predicted_resolution_days = Number(pred);
-        if (ref) body.last_action_ref = ref;
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'resolve-dispute') {
-        const ref = window.prompt('Last action ref (dispute resolution memo):') || '';
-        body = {};
-        if (ref) body.last_action_ref = ref;
-      } else if (action === 'place-on-hold') {
-        const reason = window.prompt('Hold reason (counterparty unresponsive / waiting on legal opinion / pending market consultation):');
-        if (!reason) return;
-        body = { transition_summary: reason };
-      } else if (action === 'resume') {
-        const ref = window.prompt('Last action ref (resume order id):') || '';
-        body = {};
-        if (ref) body.last_action_ref = ref;
-      } else if (action === 'terminate-legacy') {
-        const reason = window.prompt('Termination reason - SARB MPG hard line, ALWAYS crosses regulator:');
-        if (!reason) return;
-        const reg = window.prompt('Regulator reference (REQUIRED - SARB MPG termination notice):', row.regulator_ref || '') || '';
-        const ref = window.prompt('Last action ref (termination notice id):') || '';
-        body = { transition_summary: reason };
-        if (reg) body.regulator_ref = reg;
-        if (ref) body.last_action_ref = ref;
-      } else if (action === 'cancel') {
-        const reason = window.prompt('Cancellation reason (trade matured / closed-out / superseded by master amendment):');
-        if (!reason) return;
-        body = { transition_summary: reason };
-      }
-      await api.post(`/benchmark-transition/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Benchmark transition &middot; JIBAR cessation &amp; ZARONIA fallback</h2>
-          <p className="text-xs text-[#4a5568]">
-            13-stage JIBAR-cessation transition chain &middot; inventoried &rarr; impact assessed &rarr; fallback classified
-            &rarr; notified &rarr; response recorded &rarr; amendment drafted &rarr; amendment executed &rarr; value-transfer
-            settled &rarr; transitioned clean, with disputed &harr; classified loop, on-hold &harr; classified loop, and
-            terminate-legacy &middot; cancel branches. Covers JIBAR 1m / 3m / 6m / 12m referenced IRS, basis swaps, FRAs,
-            FRNs, syndicated loans, structured notes, cross-currency swaps moving onto ZARONIA-based replacement rates with
-            ISDA spread-adjustment and SARB Market Practitioners Group integrity oversight. SA equivalent of the LIBOR
-            cessation programme &mdash; distinct from W9 / W29 / W36 / W44 / W52 / W60 / W68 / W76 / W85 Trader chains.
-            DIFFERENTIATOR over Bloomberg AIM &middot; Refinitiv Eikon IBOR-transition &middot; ICE LIBOR fallbacks &middot;
-            FINASTRA Loan IQ &middot; MUREX MX.3 &middot; Calypso &middot; NumeriX &middot; MarkitWire &middot; DTCC TCC:
-            LIVE PORTFOLIO-INTEGRITY programme with re-derived tier on every transition (notional &times; interbank &times;
-            days-to-cessation floor), transition-risk battery (PV01 ZAR, value-transfer ZAR, fallback basis bps, compounded
-            ZARONIA, hedge effectiveness, counterparty response %, predicted resolution days, urgency band, systemic-carrier
-            flag), and TRANSITION-INTEGRITY signature: terminate_legacy crosses regulator EVERY tier (SARB MPG hard line),
-            complete_transition on material+systemic, raise_dispute on systemic only, SLA breach on material+systemic.
-          </p>
-        </div>
+    <div style={{ padding: 20, background: BG, minHeight: '100%' }}>
+      <header style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: TX1, margin: 0 }}>
+          Benchmark transition &middot; JIBAR cessation &amp; ZARONIA fallback
+        </h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 4, lineHeight: 1.5 }}>
+          13-stage JIBAR-cessation transition chain &middot; inventoried &rarr; impact assessed &rarr; fallback classified
+          &rarr; notified &rarr; response recorded &rarr; amendment drafted &rarr; amendment executed &rarr; value-transfer
+          settled &rarr; transitioned clean &mdash; ZARONIA-based replacement rates, ISDA spread-adjustment, SARB MPG oversight.
+          TRANSITION-INTEGRITY signature: terminate_legacy crosses regulator EVERY tier, complete_transition material+systemic,
+          raise_dispute systemic only.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total transitions" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="Transitioned clean" value={kpis?.transitioned_clean_count ?? 0} tone="ok" />
-        <Kpi label="Disputed" value={kpis?.disputed_count ?? 0} tone={(kpis?.disputed_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Terminated legacy" value={kpis?.terminated_legacy_count ?? 0} tone={(kpis?.terminated_legacy_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Cancelled" value={kpis?.cancelled_count ?? 0} />
-        <Kpi label="Systemic" value={kpis?.systemic_count ?? 0} tone={(kpis?.systemic_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Material" value={kpis?.material_count ?? 0} tone={(kpis?.material_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Interbank" value={kpis?.interbank_count ?? 0} tone={(kpis?.interbank_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Critical urgency" value={kpis?.critical_urgency_count ?? 0} tone={(kpis?.critical_urgency_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Total notional" value={fmtZar(kpis?.total_notional_zar)} />
-        <Kpi label="Open notional" value={fmtZar(kpis?.total_open_notional_zar)} />
-        <Kpi label="Total PV01" value={fmtZar(kpis?.total_pv01_zar)} />
-        <Kpi label="Total value transfer" value={fmtZar(kpis?.total_value_transfer_zar)} tone={(kpis?.total_value_transfer_zar ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Protocol adoption" value={fmtPct(kpis?.protocol_adoption_pct)} />
-        <Kpi label="Clean transition rate" value={fmtPct(kpis?.transitioned_clean_pct)} tone="ok" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8, marginBottom: 16 }}>
+        <KpiTile label="Total transitions"     value={summary?.total ?? rows.length} />
+        <KpiTile label="Open"                  value={summary?.open_count ?? 0} />
+        <KpiTile label="Transitioned clean"    value={summary?.transitioned_clean_count ?? 0} tone="ok" />
+        <KpiTile label="Disputed"              value={summary?.disputed_count ?? 0} tone={(summary?.disputed_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Terminated legacy"     value={summary?.terminated_legacy_count ?? 0} tone={(summary?.terminated_legacy_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Cancelled"             value={summary?.cancelled_count ?? 0} />
+        <KpiTile label="Systemic"              value={summary?.systemic_count ?? 0} tone={(summary?.systemic_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Material"              value={summary?.material_count ?? 0} tone={(summary?.material_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Interbank"             value={summary?.interbank_count ?? 0} tone={(summary?.interbank_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Critical urgency"      value={summary?.critical_urgency_count ?? 0} tone={(summary?.critical_urgency_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="SLA breached"          value={summary?.breached ?? 0} tone={(summary?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Reportable"            value={summary?.reportable_total ?? 0} tone={(summary?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Total notional"        value={fmtZar(summary?.total_notional_zar)} />
+        <KpiTile label="Open notional"         value={fmtZar(summary?.total_open_notional_zar)} />
+        <KpiTile label="Total PV01"            value={fmtZar(summary?.total_pv01_zar)} />
+        <KpiTile label="Total value transfer"  value={fmtZar(summary?.total_value_transfer_zar)} tone={(summary?.total_value_transfer_zar ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Protocol adoption"     value={fmtPct(summary?.protocol_adoption_pct)} />
+        <KpiTile label="Clean transition rate" value={fmtPct(summary?.transitioned_clean_pct)} tone="ok" />
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
         {FILTERS.map((f) => (
-          <button type="button"
+          <button
+            type="button"
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
+            style={{
+              padding: '3px 10px',
+              borderRadius: 4,
+              fontSize: 11,
+              fontWeight: 500,
+              cursor: 'pointer',
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+              background: filter === f.key ? ACC : BG1,
+              color: filter === f.key ? '#fff' : TX2,
+            }}
           >
             {f.label}
           </button>
@@ -537,276 +648,70 @@ export function BenchmarkTransitionChainTab() {
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Transition #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Trade / counterparty</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Instrument &middot; legacy</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Notional</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Urgency</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Days to cessation</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.transition_tier];
-                const ut = r.urgency_band_live ? URGENCY_TONE[r.urgency_band_live] : null;
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.transition_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">&bull;</span>}
-                      {r.counterparty_interbank === 1 && <span className="ml-1 text-[#a06200]" title="Interbank counterparty">IB</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[240px] truncate" title={`${r.trade_ref} &middot; ${r.counterparty_name}`}>
-                      <div className="font-medium">{r.trade_ref}</div>
-                      <div className="text-[11px] text-[#4a5568]">{r.counterparty_name}</div>
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d]">
-                      <div>{r.instrument_type}</div>
-                      <div className="text-[11px] text-[#4a5568]">{r.legacy_benchmark} &rarr; {r.replacement_rate || '-'}</div>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#0c2a4d]">{fmtZar(r.notional_zar)}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      {ut && (
-                        <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: ut.bg, color: ut.fg }}>
-                          {ut.label}
-                        </span>
-                      )}
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${(r.days_to_cessation_live ?? 9999) < 30 ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {fmtDays(r.days_to_cessation_live)}
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '-' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-3 py-6 text-center text-[#4a5568]">No transitions match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 4, background: 'oklch(0.97 0.04 20)', border: `1px solid ${BAD}`, color: BAD, fontSize: 12 }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div style={{ padding: '24px 16px', textAlign: 'center', fontSize: 13, color: TX3, background: BG1, borderRadius: 6, border: `1px solid ${BORDER}` }}>
+          Loading...
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {filtered.length === 0 ? (
+            <div style={{ padding: '24px 16px', textAlign: 'center', fontSize: 13, color: TX3, background: BG1, borderRadius: 6, border: `1px solid ${BORDER}` }}>
+              No transitions match.
+            </div>
+          ) : (
+            filtered.map((row) => (
+              <ChainCard
+                key={row.id}
+                item={{ ...row, case_number: row.transition_number }}
+                allStates={ALL_STATES}
+                branchStates={BRANCH_STATES}
+                title={`${row.trade_ref} · ${row.counterparty_name}`}
+                meta={
+                  <span>
+                    {row.instrument_type} · {row.legacy_benchmark} → {row.replacement_rate || '-'} · {fmtZar(row.notional_zar)} · {row.transition_tier}
+                    {row.counterparty_interbank === 1 ? ' · interbank' : ''}
+                    {row.is_reportable_flag ? ' · reportable' : ''}
+                    {row.urgency_band_live ? ` · urgency:${row.urgency_band_live}` : ''}
+                    {(row.days_to_cessation_live ?? 9999) < 30 ? ` · ⚠ ${fmtDays(row.days_to_cessation_live)} to cessation` : ''}
+                  </span>
+                }
+                actions={getActions(row)}
+                onAction={(key, values) => handleAction(row.id, key, values)}
+                onExpand={handleExpand}
+                events={expandedEvents[row.id]}
+                cascadeTo={['regulator']}
+                detail={renderDetail(row)}
+              />
+            ))
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 6, padding: '8px 12px' }}>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, fontFamily: MONO, color, marginTop: 2 }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: BxtRow;
-  events: BxtEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: BxtRow) => void;
-}) {
-  const primary = ACTION_FOR_STATE[row.chain_status];
-  const secondary = SECONDARY_ACTIONS[row.chain_status];
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[780px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.transition_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.trade_ref}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {row.counterparty_name} &middot; {row.instrument_type} &middot; {row.legacy_benchmark} &rarr; {row.replacement_rate || '-'}
-                {row.counterparty_interbank === 1 ? ' &middot; interbank' : ''}
-              </div>
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` &middot; ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">&times;</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Live transition-risk &amp; integrity battery</div>
-            <div className="grid grid-cols-2 gap-2 text-[12px]">
-              <Pair label="PV01 ZAR (1 bp shift)"        value={fmtZar(row.pv01_zar_live ?? row.pv01_zar)} />
-              <Pair label="Value transfer ZAR"           value={fmtZar(row.value_transfer_zar_live ?? row.value_transfer_zar)} />
-              <Pair label="Fallback basis"               value={fmtBps(row.fallback_basis_bps_live ?? row.isda_spread_bps)} />
-              <Pair label="Compounded ZARONIA rate"      value={fmtRate(row.compounded_zaronia_rate_live ?? row.compounded_zaronia_rate)} />
-              <Pair label="ZARONIA overnight"            value={fmtRate(row.zaronia_overnight)} />
-              <Pair label="ISDA spread"                  value={fmtBps(row.isda_spread_bps)} />
-              <Pair label="Days to cessation"            value={fmtDays(row.days_to_cessation_live ?? row.days_to_cessation)} />
-              <Pair label="Hedge effective"              value={(row.hedge_effective_flag_live ?? row.hedge_effective_flag) === 1 ? 'Yes' : 'No'} />
-              <Pair label="Counterparty response"        value={fmtPct(row.counterparty_response_pct)} />
-              <Pair label="Protocol adherence"           value={row.protocol_adherence_flag === 1 ? 'ISDA 2020 adhered' : 'Bilateral path'} />
-              <Pair label="Predicted resolution"         value={fmtDays(row.predicted_resolution_days_live ?? row.predicted_resolution_days)} />
-              <Pair label="Dispute concentration"        value={String(row.dispute_concentration || 0)} />
-              <Pair label="Urgency band"                 value={row.urgency_band_live ? URGENCY_TONE[row.urgency_band_live].label : '-'} />
-              <Pair label="Systemic carrier"             value={row.systemic_carrier_live ? 'YES' : 'No'} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"                value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier (re-derived)"    value={TIER_TONE[row.transition_tier].label} />
-            <Pair label="Trade ref"            value={row.trade_ref} />
-            <Pair label="Instrument"           value={row.instrument_type} />
-            <Pair label="Legacy benchmark"     value={row.legacy_benchmark} />
-            <Pair label="Replacement rate"     value={row.replacement_rate ?? '-'} />
-            <Pair label="Fallback class"       value={row.fallback_class ?? '-'} />
-            <Pair label="Counterparty"         value={row.counterparty_name} />
-            <Pair label="Interbank"            value={row.counterparty_interbank === 1 ? 'Yes' : 'No'} />
-            <Pair label="Counterparty NAV"     value={fmtZar(row.counterparty_nav_zar)} />
-            <Pair label="Notional"             value={fmtZar(row.notional_zar)} />
-            <Pair label="Remaining years"      value={`${(row.remaining_years || 0).toLocaleString('en-ZA', { maximumFractionDigits: 2 })} yr`} />
-            <Pair label="Trade start"          value={fmtDate(row.trade_start_at)} />
-            <Pair label="Trade maturity"       value={fmtDate(row.trade_maturity_at)} />
-            <Pair label="Cessation date"       value={fmtDate(row.cessation_date)} />
-            <Pair label="Last action ref"      value={row.last_action_ref ?? '-'} />
-            <Pair label="Regulator ref"        value={row.regulator_ref ?? '-'} />
-            <Pair label="Inventoried"          value={fmtDate(row.inventoried_at)} />
-            <Pair label="Impact assessed"      value={fmtDate(row.impact_assessed_at)} />
-            <Pair label="Classified"           value={fmtDate(row.classified_at)} />
-            <Pair label="Notified"             value={fmtDate(row.notified_at)} />
-            <Pair label="Response recorded"    value={fmtDate(row.responded_at)} />
-            <Pair label="Amendment drafted"    value={fmtDate(row.amendment_drafted_at)} />
-            <Pair label="Amendment executed"   value={fmtDate(row.amendment_executed_at)} />
-            <Pair label="VT settled"           value={fmtDate(row.vt_settled_at)} />
-            <Pair label="Transitioned clean"   value={fmtDate(row.transitioned_clean_at)} />
-            <Pair label="Disputed"             value={fmtDate(row.disputed_at)} />
-            <Pair label="On hold"              value={fmtDate(row.on_hold_at)} />
-            <Pair label="Terminated legacy"    value={fmtDate(row.terminated_legacy_at)} />
-            <Pair label="Cancelled"            value={fmtDate(row.cancelled_at)} />
-            <Pair label="SLA deadline"         value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA window"           value={row.sla_window_minutes ? fmtMinutes(row.sla_window_minutes) : '-'} />
-            <Pair label="SLA status"           value={row.is_terminal ? '-' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"       value={String(row.escalation_level)} />
-            <Pair label="Reportable"           value={row.is_reportable_flag ? 'Yes' : 'No'} />
-            <Pair label="Breach crosses reg."  value={row.breach_crosses_regulator ? 'Yes' : 'No'} />
-          </div>
-          {row.transition_summary && <BasisBlock label="Transition summary" tone="#1a3a5c" text={row.transition_summary} />}
-        </section>
-
-        {(primary || secondary.length > 0) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {primary && (
-                <button type="button"
-                  onClick={() => onAct(primary, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[primary]}
-                </button>
-              )}
-              {secondary.map((a) => {
-                const danger = DESTRUCTIVE.includes(a);
-                return (
-                  <button type="button"
-                    key={a}
-                    onClick={() => onAct(a, row)}
-                    className={
-                      danger
-                        ? 'rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50'
-                        : 'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#557] hover:bg-[#f3f5f9]'
-                    }
-                  >
-                    {ACTION_LABEL[a]}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '-'} &rarr; {e.to_status ?? '-'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 12, color: TX1, marginTop: 1 }}>{value}</div>
     </div>
   );
 }
+
+export default BenchmarkTransitionChainTab;

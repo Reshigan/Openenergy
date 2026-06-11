@@ -30,13 +30,13 @@ interface QgrKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   report_quarter_opened:           'bg-[#eef2f7] text-[#6b7685]',
-  operations_data_collection:      'bg-blue-100 text-blue-700',
+  operations_data_collection:      'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   environmental_data_compilation:  'bg-cyan-100 text-cyan-700',
-  financial_data_compilation:      'bg-indigo-100 text-indigo-700',
+  financial_data_compilation:      'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   social_indicators_tabulation:    'bg-purple-100 text-purple-700',
   internal_review:                 'bg-yellow-100 text-yellow-800',
   board_approval:                  'bg-orange-100 text-orange-700',
-  ipp_office_submission:           'bg-blue-100 text-blue-800',
+  ipp_office_submission:           'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
   acknowledgement_pending:         'bg-yellow-100 text-yellow-700',
   report_accepted:                 'bg-green-100 text-green-700',
   report_rejected:                 'bg-red-100 text-red-700',
@@ -73,7 +73,7 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 const TIER_COLORS: Record<string, string> = {
-  small:    'bg-blue-100 text-blue-800',
+  small:    'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
   medium:   'bg-yellow-100 text-yellow-800',
   large:    'bg-orange-100 text-orange-800',
   major:    'bg-red-100 text-red-800',
@@ -396,9 +396,9 @@ export function IppQuarterlyGenReportTab() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3"
+          className="rounded-lg border border-[oklch(0.87_0.012_250)] bg-[oklch(0.97_0.003_250)] p-4 space-y-3"
         >
-          <div className="text-sm font-semibold text-blue-800">New DMRE Quarterly Generation Report</div>
+          <div className="text-sm font-semibold text-[oklch(0.40_0.009_250)]">New DMRE Quarterly Generation Report</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
@@ -578,7 +578,7 @@ export function IppQuarterlyGenReportTab() {
                       {actions.length > 0 && (
                         <button type="button"
                           onClick={() => openActionPicker(item)}
-                          className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                          className="px-2 py-0.5 text-xs rounded bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)] hover:bg-[oklch(0.94_0.008_250)] border border-[oklch(0.87_0.012_250)]"
                         >
                           Actions
                         </button>

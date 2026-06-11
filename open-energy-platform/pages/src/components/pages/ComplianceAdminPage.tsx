@@ -32,7 +32,7 @@ export function ComplianceAdminPage() {
       title="Compliance operations"
       subtitle="POPIA Info Officer dashboard, KYC review queue, MFA lockouts, regulator submission tracking, status incident management."
     >
-      <div className="border-b border-[#dde4ec] flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1" style={{ borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
         {([
           { k: 'info-officer', label: 'Info Officer',  icon: <ShieldCheck size={13} /> },
           { k: 'sar',          label: 'SARs',          icon: <FileText    size={13} /> },
@@ -44,7 +44,11 @@ export function ComplianceAdminPage() {
           { k: 'maintenance',  label: 'Maintenance',   icon: <Calendar    size={13} /> },
         ] as Array<{ k: Tab; label: string; icon: React.ReactNode }>).map((t) => (
           <button type="button" key={t.k} onClick={() => setTab(t.k)}
-            className={`h-10 px-3 text-[12px] font-semibold inline-flex items-center gap-1 border-b-2 transition-colors ${tab === t.k ? 'border-[#3b82c4] text-[#3b82c4]' : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'}`}>
+            className="h-10 px-3 text-[12px] font-semibold inline-flex items-center gap-1 border-b-2 transition-colors"
+            style={tab === t.k
+              ? { borderColor: 'oklch(0.46 0.16 55)', color: 'oklch(0.46 0.16 55)' }
+              : { borderColor: 'transparent', color: 'oklch(0.40 0.009 250)' }
+            }>
             {t.icon} {t.label}
           </button>
         ))}
@@ -115,7 +119,11 @@ function SarTab() {
       <div className="flex flex-wrap gap-1 text-[11px]">
         {['all', 'open', 'in_progress', 'fulfilled', 'rejected', 'escalated'].map((s) => (
           <button type="button" key={s} onClick={() => setFilter(s)}
-                  className={`h-7 px-2.5 rounded-full font-semibold border ${filter === s ? 'bg-[#c2873a] text-white border-[#1a3a5c]' : 'bg-white border-[#dde4ec]'}`}>
+                  className="h-7 px-2.5 rounded-full font-semibold"
+                  style={filter === s
+                    ? { background: 'oklch(0.46 0.16 55)', color: '#fff', border: '1px solid oklch(0.40 0.15 55)' }
+                    : { background: 'oklch(0.99 0.002 80)', border: '1px solid oklch(0.87 0.006 250)', color: 'oklch(0.17 0.010 250)' }
+                  }>
             {s.replace(/_/g, ' ')}
           </button>
         ))}
@@ -137,15 +145,15 @@ function SarTab() {
                 <td className="text-right space-x-2">
                   {!['fulfilled', 'rejected'].includes(s.status) && (
                     <>
-                      <button type="button" onClick={() => respond(s.id, 'fulfilled')} className="text-[11px] text-[#1a8a5b] font-semibold">Fulfil</button>
-                      <button type="button" onClick={() => respond(s.id, 'rejected')}  className="text-[11px] text-[#c0392b] font-semibold">Reject</button>
+                      <button type="button" onClick={() => respond(s.id, 'fulfilled')} className="text-[11px] font-semibold" style={{ color: 'oklch(0.45 0.15 150)' }}>Fulfil</button>
+                      <button type="button" onClick={() => respond(s.id, 'rejected')}  className="text-[11px] font-semibold" style={{ color: 'oklch(0.48 0.20 20)' }}>Reject</button>
                     </>
                   )}
                 </td>
               </tr>
             );
           })}
-          {!rows.length && <tr><td colSpan={6} className="text-[#6b7685] italic py-3">No SARs in this state.</td></tr>}
+          {!rows.length && <tr><td colSpan={6} className="italic py-3" style={{ color: 'oklch(0.40 0.009 250)' }}>No SARs in this state.</td></tr>}
         </Table>
       </Section>
     </div>
@@ -170,11 +178,13 @@ function KycReviewTab() {
       <Section title="PEP / sanctions screen">
         <div className="p-3 flex gap-2 items-center">
           <input value={screenName} onChange={(e) => setScreenName(e.target.value)} placeholder="Full legal name"
-                 className="h-9 flex-1 px-3 rounded border border-[#dde4ec] text-[12px]" />
-          <button type="button" onClick={screen} className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold">Screen</button>
+                 className="h-9 flex-1 px-3 rounded text-[12px]"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }} />
+          <button type="button" onClick={screen} className="h-9 px-3 rounded text-white text-[12px] font-semibold"
+                  style={{ background: 'oklch(0.46 0.16 55)' }}>Screen</button>
         </div>
         {screenResult && (
-          <div className="p-3 border-t border-[#eef2f7] text-[12px]">
+          <div className="p-3 text-[12px]" style={{ borderTop: '1px solid oklch(0.87 0.006 250)' }}>
             {screenResult.cleared ? (
               <div className="widget-tone-good-text font-semibold">✓ No matches against UN / OFAC / EU / UK / SA-PEP lists</div>
             ) : (
@@ -204,7 +214,7 @@ function KycReviewTab() {
               </td>
             </tr>
           ))}
-          {!pending.length && <tr><td colSpan={4} className="text-[#6b7685] italic py-3">Nothing pending.</td></tr>}
+          {!pending.length && <tr><td colSpan={4} className="italic py-3" style={{ color: 'oklch(0.40 0.009 250)' }}>Nothing pending.</td></tr>}
         </Table>
       </Section>
     </div>
@@ -233,12 +243,12 @@ function DevicesTab() {
               <td className="text-right">
                 {!k.revoked_at && (
                   <button type="button" onClick={async () => { await api.post(`/auth-deep/webauthn/credentials/${k.id}/revoke`, {}); void load(); }}
-                          className="text-[11px] text-[#c0392b]">Revoke</button>
+                          className="text-[11px]" style={{ color: 'oklch(0.48 0.20 20)' }}>Revoke</button>
                 )}
               </td>
             </tr>
           ))}
-          {!keys.length && <tr><td colSpan={4} className="text-[#6b7685] italic py-3">No keys enrolled.</td></tr>}
+          {!keys.length && <tr><td colSpan={4} className="italic py-3" style={{ color: 'oklch(0.40 0.009 250)' }}>No keys enrolled.</td></tr>}
         </Table>
       </Section>
       <Section title={`Trusted devices (${devs.filter((d) => !d.revoked).length})`}>
@@ -251,12 +261,12 @@ function DevicesTab() {
               <td className="text-right">
                 {d.revoked !== 1 && (
                   <button type="button" onClick={async () => { await api.post(`/auth-deep/devices/${d.id}/revoke`, {}); void load(); }}
-                          className="text-[11px] text-[#c0392b]">Revoke</button>
+                          className="text-[11px]" style={{ color: 'oklch(0.48 0.20 20)' }}>Revoke</button>
                 )}
               </td>
             </tr>
           ))}
-          {!devs.length && <tr><td colSpan={4} className="text-[#6b7685] italic py-3">No trusted devices.</td></tr>}
+          {!devs.length && <tr><td colSpan={4} className="italic py-3" style={{ color: 'oklch(0.40 0.009 250)' }}>No trusted devices.</td></tr>}
         </Table>
       </Section>
     </div>
@@ -283,10 +293,15 @@ function LockoutsTab() {
               <td className="font-mono text-[11px]">{r.ip}</td>
               <td className="text-right font-mono">{r.attempts}</td>
               <td className="font-mono text-[10px]">{r.locked_until ? new Date(r.locked_until).toLocaleString() : '—'}</td>
-              <td className="text-right"><button type="button" onClick={() => clear(r.participant_id)} className="text-[11px] text-[#1a8a5b] inline-flex items-center gap-1"><Unlock size={11} /> Clear</button></td>
+              <td className="text-right">
+                <button type="button" onClick={() => clear(r.participant_id)} className="text-[11px] inline-flex items-center gap-1"
+                        style={{ color: 'oklch(0.45 0.15 150)' }}>
+                  <Unlock size={11} /> Clear
+                </button>
+              </td>
             </tr>
           ))}
-          {!rows.length && <tr><td colSpan={5} className="text-[#6b7685] italic py-3">No active lockouts — good.</td></tr>}
+          {!rows.length && <tr><td colSpan={5} className="italic py-3" style={{ color: 'oklch(0.40 0.009 250)' }}>No active lockouts — good.</td></tr>}
         </Table>
       </Section>
     </div>
@@ -300,7 +315,7 @@ function SubmissionsTab() {
   return (
     <div className="mt-3">
       <Section title="Regulator submissions">
-        <div className="p-2 text-[11px] text-[#6b7685]">
+        <div className="p-2 text-[11px]" style={{ color: 'oklch(0.40 0.009 250)' }}>
           Submissions go via the Regulator Packs tab on /settings/compliance. This view tracks ack receipts + resubmission chains.
         </div>
         <Table headers={['Kind', 'Submitted to', 'Submitted at', 'Status', 'Ack ID']}>
@@ -317,7 +332,7 @@ function SubmissionsTab() {
               <td className="font-mono text-[10px]">{r.acknowledgment_id || '—'}</td>
             </tr>
           ))}
-          {!rows.length && <tr><td colSpan={5} className="text-[#6b7685] italic py-3">No submissions yet.</td></tr>}
+          {!rows.length && <tr><td colSpan={5} className="italic py-3" style={{ color: 'oklch(0.40 0.009 250)' }}>No submissions yet.</td></tr>}
         </Table>
       </Section>
     </div>
@@ -350,16 +365,21 @@ function IncidentsTab() {
       <Section title="Open an incident">
         <div className="p-3 grid grid-cols-1 md:grid-cols-4 gap-2">
           <input placeholder="Title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-                 className="h-9 px-2 rounded border border-[#dde4ec] text-[12px] md:col-span-2" />
+                 className="h-9 px-2 rounded text-[12px] md:col-span-2"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }} />
           <select value={draft.severity} onChange={(e) => setDraft({ ...draft, severity: e.target.value as any })}
-                  className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]">
+                  className="h-9 px-2 rounded text-[12px]"
+                  style={{ border: '1px solid oklch(0.87 0.006 250)' }}>
             <option value="info">info</option><option value="minor">minor</option><option value="major">major</option><option value="critical">critical</option>
           </select>
           <input placeholder="Components (comma-sep)" value={draft.components} onChange={(e) => setDraft({ ...draft, components: e.target.value })}
-                 className="h-9 px-2 rounded border border-[#dde4ec] text-[12px] font-mono" />
+                 className="h-9 px-2 rounded text-[12px] font-mono"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }} />
           <input placeholder="Body (optional)" value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })}
-                 className="h-9 px-2 rounded border border-[#dde4ec] text-[12px] md:col-span-3" />
-          <button type="button" onClick={create} className="h-9 px-3 rounded bg-[#c0392b] text-white text-[12px] font-semibold">Open incident</button>
+                 className="h-9 px-2 rounded text-[12px] md:col-span-3"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }} />
+          <button type="button" onClick={create} className="h-9 px-3 rounded text-white text-[12px] font-semibold"
+                  style={{ background: 'oklch(0.48 0.20 20)' }}>Open incident</button>
         </div>
       </Section>
       <Section title={`Incidents (last 30 days)`}>
@@ -386,7 +406,7 @@ function IncidentsTab() {
               </td>
             </tr>
           ))}
-          {!rows.length && <tr><td colSpan={5} className="text-[#6b7685] italic py-3">No incidents.</td></tr>}
+          {!rows.length && <tr><td colSpan={5} className="italic py-3" style={{ color: 'oklch(0.40 0.009 250)' }}>No incidents.</td></tr>}
         </Table>
       </Section>
     </div>
@@ -415,12 +435,19 @@ function MaintenanceTab() {
       <Section title="Schedule maintenance window">
         <div className="p-3 grid grid-cols-1 md:grid-cols-4 gap-2">
           <input placeholder="Title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-                 className="h-9 px-2 rounded border border-[#dde4ec] text-[12px] md:col-span-2" />
+                 className="h-9 px-2 rounded text-[12px] md:col-span-2"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }} />
           <input placeholder="Components (comma-sep)" value={draft.components} onChange={(e) => setDraft({ ...draft, components: e.target.value })}
-                 className="h-9 px-2 rounded border border-[#dde4ec] text-[12px] font-mono md:col-span-2" />
-          <input type="datetime-local" value={draft.starts_at} onChange={(e) => setDraft({ ...draft, starts_at: e.target.value })} className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]" />
-          <input type="datetime-local" value={draft.ends_at}   onChange={(e) => setDraft({ ...draft, ends_at: e.target.value })}   className="h-9 px-2 rounded border border-[#dde4ec] text-[12px]" />
-          <button type="button" onClick={create} className="h-9 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold md:col-span-2">Schedule</button>
+                 className="h-9 px-2 rounded text-[12px] font-mono md:col-span-2"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }} />
+          <input type="datetime-local" value={draft.starts_at} onChange={(e) => setDraft({ ...draft, starts_at: e.target.value })}
+                 className="h-9 px-2 rounded text-[12px]"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }} />
+          <input type="datetime-local" value={draft.ends_at}   onChange={(e) => setDraft({ ...draft, ends_at: e.target.value })}
+                 className="h-9 px-2 rounded text-[12px]"
+                 style={{ border: '1px solid oklch(0.87 0.006 250)' }} />
+          <button type="button" onClick={create} className="h-9 px-3 rounded text-white text-[12px] font-semibold md:col-span-2"
+                  style={{ background: 'oklch(0.46 0.16 55)' }}>Schedule</button>
         </div>
       </Section>
       <Section title="Upcoming + recent maintenance">
@@ -438,7 +465,7 @@ function MaintenanceTab() {
               }`}>{r.status.replace(/_/g, ' ')}</span></td>
             </tr>
           ))}
-          {!rows.length && <tr><td colSpan={5} className="text-[#6b7685] italic py-3">No windows scheduled.</td></tr>}
+          {!rows.length && <tr><td colSpan={5} className="italic py-3" style={{ color: 'oklch(0.40 0.009 250)' }}>No windows scheduled.</td></tr>}
         </Table>
       </Section>
     </div>

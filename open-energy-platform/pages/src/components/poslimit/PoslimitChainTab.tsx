@@ -27,6 +27,7 @@ type ChainStatus =
 type Tier = 'prop' | 'market_maker' | 'retail';
 
 interface PosLimitRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   trader_party: string;
@@ -94,7 +95,7 @@ const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }>
   hard_breach:         { bg: '#fde0e0', fg: '#9b1f1f', label: 'Hard breach' },
   margin_call_issued:  { bg: '#fde0e0', fg: '#9b1f1f', label: 'Margin call' },
   reduction_required:  { bg: '#fbe7d0', fg: '#7a4500', label: 'Reduction req' },
-  reduction_executing: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Reducing' },
+  reduction_executing: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Reducing' },
   cured:               { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Cured' },
   escalated:           { bg: '#fcc3c3', fg: '#7a0e0e', label: 'Liquidated' },
   false_alarm:         { bg: '#e3e7ec', fg: '#557',    label: 'False alarm' },
@@ -350,7 +351,7 @@ export function PoslimitChainTab() {
       <div className="mb-3 flex flex-wrap items-center gap-4 text-[11px] text-[#4a5568]">
         <span>Cured: <span className="font-semibold text-[#1f6b3a]">{kpis.cured_count}</span></span>
         <span>False alarms: <span className="font-semibold text-[#557]">{kpis.false_alarm_count}</span></span>
-        <span>Margin posted: <span className="font-semibold text-[#1a3a5c]">{fmtZar(kpis.margin_posted_total_zar)}</span></span>
+        <span>Margin posted: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{fmtZar(kpis.margin_posted_total_zar)}</span></span>
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -379,16 +380,16 @@ export function PoslimitChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Trader / desk</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Instrument</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Util%</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Pos / cap MW</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Reg ref</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Margin called</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Case #</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Trader / desk</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Tier</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Instrument</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-right">Util%</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-right">Pos / cap MW</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">State</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Reg ref</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-right">Margin called</th>
+                <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)] text-right">SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -403,7 +404,7 @@ export function PoslimitChainTab() {
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
                     <td className="px-3 py-2 font-mono text-[#0c2a4d]">{r.case_number}</td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">{r.trader_party}</td>
+                    <td className="px-3 py-2 text-[oklch(0.46_0.16_55)]">{r.trader_party}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tier.bg, color: tier.fg }}>
                         {tier.label}
@@ -413,7 +414,7 @@ export function PoslimitChainTab() {
                       <div className="font-mono text-[11px]">{r.instrument}</div>
                       <div className="text-[10px] text-[#6b7685]">{r.instrument_class} · {r.tenor}</div>
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.utilisation_pct >= 100 ? 'text-red-700 font-semibold' : r.utilisation_pct >= 90 ? 'text-[#a06200]' : 'text-[#1a3a5c]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${r.utilisation_pct >= 100 ? 'text-red-700 font-semibold' : r.utilisation_pct >= 90 ? 'text-[#a06200]' : 'text-[oklch(0.46_0.16_55)]'}`}>
                       {fmtPct(r.utilisation_pct)}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums text-[#4a5568]">
@@ -425,7 +426,7 @@ export function PoslimitChainTab() {
                       </span>
                     </td>
                     <td className="px-3 py-2 font-mono text-[11px] text-[#4a5568]">{regRef}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtZar(r.margin_called_zar)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[oklch(0.46_0.16_55)]">{fmtZar(r.margin_called_zar)}</td>
                     <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
                       {r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
                     </td>
@@ -517,7 +518,7 @@ function Drawer({
             <Pair label="Reason code"        value={row.reason_code ?? '—'} />
           </div>
           {row.rod_notes && (
-            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[oklch(0.46_0.16_55)]">
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">ROD notes</div>
               {row.rod_notes}
             </div>
@@ -579,7 +580,7 @@ function Drawer({
                   {(e.from_status || e.to_status) && (
                     <div className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</div>
                   )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1 text-[oklch(0.46_0.16_55)]">{e.notes}</div>}
                 </li>
               ))}
             </ol>

@@ -56,8 +56,8 @@ interface ChainEvent {
 
 const TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   draft:                  { bg: '#f0f3f7', fg: '#445566', label: 'Draft' },
-  submitted:              { bg: '#dbecfb', fg: '#1a3a5c', label: 'Submitted' },
-  doe_assigned:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'DOE assigned' },
+  submitted:              { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Submitted' },
+  doe_assigned:           { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'DOE assigned' },
   doe_review:             { bg: '#fff4d6', fg: '#a06200', label: 'DOE reviewing' },
   doe_opinion_positive:   { bg: '#daf5e2', fg: '#1f6b3a', label: 'DOE positive' },
   doe_opinion_qualified:  { bg: '#fff4d6', fg: '#a06200', label: 'DOE qualified' },
@@ -66,7 +66,7 @@ const TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   cra_review:             { bg: '#fff4d6', fg: '#a06200', label: 'CRA reviewing' },
   cra_approved:           { bg: '#daf5e2', fg: '#1f6b3a', label: 'CRA approved' },
   cra_rejected:           { bg: '#fde0e0', fg: '#9b1f1f', label: 'CRA rejected' },
-  issuance_authorized:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Issuance authorized' },
+  issuance_authorized:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Issuance authorized' },
   issued:                 { bg: '#daf5e2', fg: '#1f6b3a', label: 'Issued' },
   withdrawn:              { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
 };

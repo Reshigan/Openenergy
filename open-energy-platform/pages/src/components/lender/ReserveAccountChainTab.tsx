@@ -27,6 +27,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'reserve_required' | 'funding_scheduled' | 'funding_in_progress' | 'funded'
@@ -36,6 +51,7 @@ type ChainStatus =
 type Tier = 'small' | 'medium' | 'large' | 'major' | 'systemic';
 
 interface ReserveRow {
+  [key: string]: unknown;
   id: string;
   reserve_number: string;
   source_event: string | null;
@@ -137,28 +153,23 @@ interface KpiSummary {
   funded_target_zar: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  reserve_required:    { bg: '#e3e7ec', fg: '#557',    label: 'Reserve required' },
-  funding_scheduled:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Funding scheduled' },
-  funding_in_progress: { bg: '#fff4d6', fg: '#a06200', label: 'Funding in progress' },
-  funded:              { bg: '#d4edda', fg: '#155724', label: 'Funded' },
-  shortfall_flagged:   { bg: '#ffe4b5', fg: '#8a4a00', label: 'Shortfall flagged' },
-  cure_pending:        { bg: '#ffd9b3', fg: '#8a4a00', label: 'Cure pending' },
-  drawdown_authorized: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Drawdown authorised' },
-  drawn:               { bg: '#fff4d6', fg: '#a06200', label: 'Drawn' },
-  release_requested:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Release requested' },
-  released:            { bg: '#d4edda', fg: '#155724', label: 'Released' },
-  breached:            { bg: '#f3c0c0', fg: '#5a1818', label: 'Breached' },
-  cancelled:           { bg: '#e3e7ec', fg: '#557',    label: 'Cancelled' },
-};
-
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  small:    { bg: '#e3e7ec', fg: '#557',    label: 'Small (<R10m)' },
-  medium:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Medium (<R50m)' },
-  large:    { bg: '#fff4d6', fg: '#a06200', label: 'Large (<R250m)' },
-  major:    { bg: '#ffe4b5', fg: '#8a4a00', label: 'Major (<R1bn)' },
-  systemic: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Systemic (≥R1bn)' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'reserve_required',
+  'funding_scheduled',
+  'funding_in_progress',
+  'funded',
+  'shortfall_flagged',
+  'cure_pending',
+  'drawdown_authorized',
+  'drawn',
+  'release_requested',
+  'released',
+];
+const BRANCH_STATES: readonly string[] = [
+  'breached',
+  'cancelled',
+];
 
 const RESERVE_TYPE_LABEL: Record<string, string> = {
   dsra:        'DSRA',
@@ -167,6 +178,7 @@ const RESERVE_TYPE_LABEL: Record<string, string> = {
   tax_reserve: 'Tax reserve',
 };
 
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'open',                label: 'Open' },
   { key: 'all',                 label: 'All' },
@@ -190,61 +202,7 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'cancelled',           label: 'Cancelled' },
 ];
 
-type ActionKind =
-  | 'schedule-funding' | 'commence-funding' | 'confirm-funding' | 'flag-shortfall'
-  | 'open-cure' | 'authorize-drawdown' | 'execute-drawdown' | 'replenish-reserve'
-  | 'waive-requirement' | 'declare-breach' | 'request-release' | 'release-reserve'
-  | 'cancel-reserve';
-
-// Allowed actions per state, primary forward action first. Mirrors the spec
-// TRANSITIONS map so the UI never offers an invalid step.
-const ALLOWED_ACTIONS: Record<ChainStatus, ActionKind[]> = {
-  reserve_required:    ['schedule-funding', 'cancel-reserve'],
-  funding_scheduled:   ['commence-funding', 'cancel-reserve'],
-  funding_in_progress: ['confirm-funding', 'cancel-reserve'],
-  funded:              ['flag-shortfall', 'authorize-drawdown', 'request-release'],
-  shortfall_flagged:   ['open-cure', 'authorize-drawdown'],
-  cure_pending:        ['replenish-reserve', 'waive-requirement', 'declare-breach'],
-  drawdown_authorized: ['execute-drawdown'],
-  drawn:               ['replenish-reserve', 'waive-requirement', 'declare-breach'],
-  release_requested:   ['release-reserve'],
-  released:            [],
-  breached:            [],
-  cancelled:           [],
-};
-
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'schedule-funding':   'Schedule funding (lender)',
-  'commence-funding':   'Commence funding (borrower)',
-  'confirm-funding':    'Confirm funded (account bank)',
-  'flag-shortfall':     'Flag shortfall (lender)',
-  'open-cure':          'Open cure period (lender)',
-  'authorize-drawdown': 'Authorise drawdown (lender)',
-  'execute-drawdown':   'Execute drawdown (account bank)',
-  'replenish-reserve':  'Replenish reserve (borrower)',
-  'waive-requirement':  'Waive requirement (lender)',
-  'declare-breach':     'Declare breach — event of default (lender)',
-  'request-release':    'Request release (borrower)',
-  'release-reserve':    'Release reserve (account bank)',
-  'cancel-reserve':     'Cancel reserve (lender)',
-};
-
-const ACTION_TONE: Record<ActionKind, 'primary' | 'danger' | 'warn' | 'good' | 'muted'> = {
-  'schedule-funding':   'primary',
-  'commence-funding':   'primary',
-  'confirm-funding':    'good',
-  'flag-shortfall':     'warn',
-  'open-cure':          'warn',
-  'authorize-drawdown': 'warn',
-  'execute-drawdown':   'warn',
-  'replenish-reserve':  'good',
-  'waive-requirement':  'muted',
-  'declare-breach':     'danger',
-  'request-release':    'primary',
-  'release-reserve':    'good',
-  'cancel-reserve':     'muted',
-};
-
+// ── format helpers ────────────────────────────────────────────────────────
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
   if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
@@ -268,14 +226,532 @@ function fmtZar(n: number | null | undefined): string {
 
 const TERMINAL_STATES: ChainStatus[] = ['released', 'breached', 'cancelled'];
 
+// ── action builder ────────────────────────────────────────────────────────
+function getActions(row: ReserveRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
+
+  if (s === 'reserve_required') {
+    actions.push({
+      key: 'schedule-funding',
+      label: 'Schedule funding (lender)',
+      tone: 'primary',
+      cascadeTo: [],
+      fields: [
+        {
+          key: 'funding_basis',
+          label: 'Funding basis — the funding instruction (cash deposit / LC issuance against the target balance)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'funding_mode',
+          label: 'Funding mode (cash / letter_of_credit / hybrid)',
+          type: 'text',
+          required: false,
+          placeholder: row.funding_mode ?? 'cash',
+        },
+        {
+          key: 'account_bank',
+          label: 'Account bank holding the controlled account',
+          type: 'text',
+          required: false,
+          placeholder: row.account_bank ?? '',
+        },
+        {
+          key: 'next_test_date',
+          label: 'Next test date',
+          type: 'date',
+          required: false,
+          placeholder: row.next_test_date ?? '',
+        },
+      ],
+    });
+    actions.push({
+      key: 'cancel-reserve',
+      label: 'Cancel reserve (lender)',
+      tone: 'muted',
+      cascadeTo: [],
+      fields: [
+        {
+          key: 'cancel_basis',
+          label: 'Cancel basis — the reserve obligation falling away before funding (facility cancelled / refinanced)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. facility_cancelled / refinanced / superseded)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+    });
+  }
+
+  if (s === 'funding_scheduled') {
+    actions.push({
+      key: 'commence-funding',
+      label: 'Commence funding (borrower)',
+      tone: 'primary',
+      cascadeTo: [],
+      fields: [
+        {
+          key: 'funding_basis',
+          label: 'Funding basis — the borrower commencing the cash transfer / LC delivery',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'funding_ref',
+          label: 'Funding reference (e.g. FUND-2026-0011)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'account_number',
+          label: 'Reserve account number',
+          type: 'text',
+          required: false,
+          placeholder: row.account_number ?? '',
+        },
+      ],
+    });
+    actions.push({
+      key: 'cancel-reserve',
+      label: 'Cancel reserve (lender)',
+      tone: 'muted',
+      cascadeTo: [],
+      fields: [
+        {
+          key: 'cancel_basis',
+          label: 'Cancel basis — the reserve obligation falling away before funding (facility cancelled / refinanced)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. facility_cancelled / refinanced / superseded)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+    });
+  }
+
+  if (s === 'funding_in_progress') {
+    actions.push({
+      key: 'confirm-funding',
+      label: 'Confirm funded (account bank)',
+      tone: 'good',
+      cascadeTo: [],
+      fields: [
+        {
+          key: 'funding_basis',
+          label: 'Funding basis — the account bank confirming the target balance is met',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'current_balance_zar',
+          label: 'Confirmed current balance (ZAR)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.current_balance_zar ?? row.target_amount_zar ?? ''),
+        },
+        {
+          key: 'next_test_date',
+          label: 'Next test date',
+          type: 'date',
+          required: false,
+          placeholder: row.next_test_date ?? '',
+        },
+      ],
+    });
+    actions.push({
+      key: 'cancel-reserve',
+      label: 'Cancel reserve (lender)',
+      tone: 'muted',
+      cascadeTo: [],
+      fields: [
+        {
+          key: 'cancel_basis',
+          label: 'Cancel basis — the reserve obligation falling away before funding (facility cancelled / refinanced)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. facility_cancelled / refinanced / superseded)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+    });
+  }
+
+  if (s === 'funded') {
+    actions.push({
+      key: 'flag-shortfall',
+      label: 'Flag shortfall (lender)',
+      tone: 'warn',
+      cascadeTo: [],
+      fields: [
+        {
+          key: 'shortfall_basis',
+          label: 'Shortfall basis — the test date showing balance below target',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'shortfall_reason_code',
+          label: 'Shortfall reason code (lc_lapse / fx_move / missed_sweep / dscr_dip)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'shortfall_amount_zar',
+          label: 'Shortfall amount (ZAR)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.shortfall_amount_zar ?? ''),
+        },
+        {
+          key: 'current_balance_zar',
+          label: 'Current balance at test (ZAR)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.current_balance_zar ?? ''),
+        },
+      ],
+    });
+    actions.push({
+      key: 'authorize-drawdown',
+      label: 'Authorise drawdown (lender)',
+      tone: 'warn',
+      cascadeTo: [],
+      fields: [
+        {
+          key: 'drawdown_basis',
+          label: 'Drawdown basis — authorising a draw to meet debt service the cashflow could not cover',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'drawdown_ref',
+          label: 'Drawdown reference (e.g. DRAW-2026-0011)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+    });
+    actions.push({
+      key: 'request-release',
+      label: 'Request release (borrower)',
+      tone: 'primary',
+      cascadeTo: [],
+      fields: [
+        {
+          key: 'release_basis',
+          label: 'Release basis — maturity / deleveraging / contractual step-down releasing the reserve',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'release_ref',
+          label: 'Release reference (e.g. REL-2026-0011)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'release_due_date',
+          label: 'Release due date',
+          type: 'date',
+          required: false,
+          placeholder: row.release_due_date ?? '',
+        },
+      ],
+    });
+  }
+
+  if (s === 'shortfall_flagged') {
+    actions.push({
+      key: 'open-cure',
+      label: 'Open cure period (lender)',
+      tone: 'warn',
+      cascadeTo: [],
+      fields: [
+        {
+          key: 'cure_basis',
+          label: 'Cure basis — opening the contractual cure window for the shortfall',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'cure_ref',
+          label: 'Cure reference (e.g. CURE-2026-0011)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'cure_deadline',
+          label: 'Cure deadline',
+          type: 'date',
+          required: false,
+          placeholder: row.cure_deadline ?? '',
+        },
+      ],
+    });
+    actions.push({
+      key: 'authorize-drawdown',
+      label: 'Authorise drawdown (lender)',
+      tone: 'warn',
+      cascadeTo: [],
+      fields: [
+        {
+          key: 'drawdown_basis',
+          label: 'Drawdown basis — authorising a draw to meet debt service the cashflow could not cover',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'drawdown_ref',
+          label: 'Drawdown reference (e.g. DRAW-2026-0011)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+    });
+  }
+
+  if (s === 'cure_pending' || s === 'drawn') {
+    actions.push({
+      key: 'replenish-reserve',
+      label: 'Replenish reserve (borrower)',
+      tone: 'good',
+      cascadeTo: [],
+      fields: [
+        {
+          key: 'replenishment_basis',
+          label: 'Replenishment basis — the borrower topping the reserve back to target',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'replenishment_ref',
+          label: 'Replenishment reference (e.g. REPL-2026-0011)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+        {
+          key: 'current_balance_zar',
+          label: 'Restored balance (ZAR)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.target_amount_zar ?? ''),
+        },
+      ],
+    });
+    actions.push({
+      // waiver crosses regulator for major + systemic tiers
+      key: 'waive-requirement',
+      label: 'Waive requirement (lender)',
+      tone: 'muted',
+      cascadeTo: (row.reserve_tier === 'major' || row.reserve_tier === 'systemic') ? ['regulator'] : [],
+      fields: [
+        {
+          key: 'waiver_basis',
+          label: 'Waiver basis — lender forbearance on the shortfall / replenishment requirement',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. temporary_waiver / step_down / restructure)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+    });
+    actions.push({
+      // declare_breach crosses regulator EVERY tier (W77 signature)
+      key: 'declare-breach',
+      label: 'Declare breach — event of default (lender)',
+      tone: 'danger',
+      cascadeTo: ['regulator'],
+      fields: [
+        {
+          key: 'breach_basis',
+          label: 'Breach basis — failure to cure / replenish inside the window (event of default)',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'reason_code',
+          label: 'Reason code (e.g. cure_failed / replenish_failed / abandoned)',
+          type: 'text',
+          required: false,
+          placeholder: '',
+        },
+      ],
+    });
+  }
+
+  if (s === 'drawdown_authorized') {
+    actions.push({
+      key: 'execute-drawdown',
+      label: 'Execute drawdown (account bank)',
+      tone: 'warn',
+      cascadeTo: [],
+      fields: [
+        {
+          key: 'drawdown_basis',
+          label: 'Drawdown basis — the account bank moving cash out of the reserve',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'drawn_amount_zar',
+          label: 'Drawn amount (ZAR)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.drawn_amount_zar ?? ''),
+        },
+        {
+          key: 'current_balance_zar',
+          label: 'Post-draw current balance (ZAR)',
+          type: 'number',
+          required: false,
+          placeholder: String(row.current_balance_zar ?? ''),
+        },
+      ],
+    });
+  }
+
+  if (s === 'release_requested') {
+    actions.push({
+      key: 'release-reserve',
+      label: 'Release reserve (account bank)',
+      tone: 'good',
+      cascadeTo: [],
+      fields: [
+        {
+          key: 'release_basis',
+          label: 'Release basis — the account bank releasing the reserve cash back to the borrower',
+          type: 'textarea',
+          required: true,
+        },
+        {
+          key: 'release_ref',
+          label: 'Release reference',
+          type: 'text',
+          required: false,
+          placeholder: row.release_ref ?? '',
+        },
+      ],
+    });
+  }
+
+  return actions;
+}
+
+// ── detail renderer ───────────────────────────────────────────────────────
+function renderDetail(row: ReserveRow): React.ReactNode {
+  return (
+    <div style={{ fontSize: 11, color: TX2 }}>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+        <DetailPair label="Reserve type"        value={row.reserve_type ? (RESERVE_TYPE_LABEL[row.reserve_type] ?? row.reserve_type) : '—'} />
+        <DetailPair label="Funding mode"        value={row.funding_mode ?? '—'} />
+        <DetailPair label="Target basis"        value={row.target_basis ?? '—'} />
+        <DetailPair label="Target amount"       value={fmtZar(row.target_amount_zar)} />
+        <DetailPair label="Current balance"     value={fmtZar(row.current_balance_zar)} />
+        <DetailPair label="Drawn amount"        value={fmtZar(row.drawn_amount_zar)} />
+        <DetailPair label="Shortfall amount"    value={fmtZar(row.shortfall_amount_zar)} />
+        <DetailPair label="Account bank"        value={row.account_bank ?? '—'} />
+        <DetailPair label="Account number"      value={row.account_number ?? '—'} />
+        <DetailPair label="Currency"            value={row.currency ?? '—'} />
+        <DetailPair label="Shortfall reason"    value={row.shortfall_reason_code ?? '—'} />
+        <DetailPair label="Reason code"         value={row.reason_code ?? '—'} />
+        <DetailPair label="Funding ref"         value={row.funding_ref ?? '—'} />
+        <DetailPair label="Cure ref"            value={row.cure_ref ?? '—'} />
+        <DetailPair label="Drawdown ref"        value={row.drawdown_ref ?? '—'} />
+        <DetailPair label="Replenishment ref"   value={row.replenishment_ref ?? '—'} />
+        <DetailPair label="Waiver ref"          value={row.waiver_ref ?? '—'} />
+        <DetailPair label="Release ref"         value={row.release_ref ?? '—'} />
+        <DetailPair label="Breach ref"          value={row.breach_ref ?? '—'} />
+        <DetailPair label="Next test date"      value={fmtDate(row.next_test_date)} />
+        <DetailPair label="Cure deadline"       value={fmtDate(row.cure_deadline)} />
+        <DetailPair label="Release due"         value={fmtDate(row.release_due_date)} />
+        <DetailPair label="Reserve required"    value={fmtDate(row.reserve_required_at)} />
+        <DetailPair label="Funding scheduled"   value={fmtDate(row.funding_scheduled_at)} />
+        <DetailPair label="Funding in progress" value={fmtDate(row.funding_in_progress_at)} />
+        <DetailPair label="Funded"              value={fmtDate(row.funded_at)} />
+        <DetailPair label="Shortfall flagged"   value={fmtDate(row.shortfall_flagged_at)} />
+        <DetailPair label="Cure pending"        value={fmtDate(row.cure_pending_at)} />
+        <DetailPair label="Drawdown authorised" value={fmtDate(row.drawdown_authorized_at)} />
+        <DetailPair label="Drawn"               value={fmtDate(row.drawn_at)} />
+        <DetailPair label="Release requested"   value={fmtDate(row.release_requested_at)} />
+        <DetailPair label="Released"            value={fmtDate(row.released_at)} />
+        <DetailPair label="Breached"            value={fmtDate(row.breached_at)} />
+        <DetailPair label="SLA deadline"        value={fmtDate(row.sla_deadline_at)} />
+        <DetailPair label="SLA status"          value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+        <DetailPair label="Escalation lvl"      value={String(row.escalation_level)} />
+        <DetailPair label="Reportable"          value={row.is_reportable ? 'Yes' : 'No'} />
+        {row.facility_ref && <DetailPair label="Facility ref" value={row.facility_ref} />}
+        {row.project_id && <DetailPair label="Project ID" value={row.project_id} />}
+        {row.loan_agreement_ref && <DetailPair label="Loan agreement ref" value={row.loan_agreement_ref} />}
+        {row.source_wave && <DetailPair label="Source wave" value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}`} />}
+      </div>
+      {row.funding_basis && (
+        <BasisBlock label="Funding basis" text={row.funding_basis} />
+      )}
+      {row.shortfall_basis && (
+        <BasisBlock label="Shortfall basis" text={row.shortfall_basis} />
+      )}
+      {row.cure_basis && (
+        <BasisBlock label="Cure basis" text={row.cure_basis} />
+      )}
+      {row.drawdown_basis && (
+        <BasisBlock label="Drawdown basis" text={row.drawdown_basis} />
+      )}
+      {row.replenishment_basis && (
+        <BasisBlock label="Replenishment basis" text={row.replenishment_basis} />
+      )}
+      {row.waiver_basis && (
+        <BasisBlock label="Waiver basis" text={row.waiver_basis} />
+      )}
+      {row.breach_basis && (
+        <BasisBlock label="Breach basis (event of default)" text={row.breach_basis} />
+      )}
+      {row.release_basis && (
+        <BasisBlock label="Release basis" text={row.release_basis} />
+      )}
+      {row.cancel_basis && (
+        <BasisBlock label="Cancel basis" text={row.cancel_basis} />
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function ReserveAccountChainTab() {
   const [rows, setRows] = useState<ReserveRow[]>([]);
   const [kpis, setKpis] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('open');
-  const [selected, setSelected] = useState<ReserveRow | null>(null);
-  const [events, setEvents] = useState<ReserveEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -286,12 +762,19 @@ export function ReserveAccountChainTab() {
       const d = res.data?.data;
       if (d) {
         setKpis({
-          total: d.total, open_count: d.open_count, funded_count: d.funded_count,
-          shortfall_count: d.shortfall_count, drawn_count: d.drawn_count,
-          release_count: d.release_count, breach_count: d.breach_count,
-          cancelled_count: d.cancelled_count, breached: d.breached,
-          reportable_total: d.reportable_total, large_open: d.large_open,
-          total_target_zar: d.total_target_zar, funded_target_zar: d.funded_target_zar,
+          total: d.total,
+          open_count: d.open_count,
+          funded_count: d.funded_count,
+          shortfall_count: d.shortfall_count,
+          drawn_count: d.drawn_count,
+          release_count: d.release_count,
+          breach_count: d.breach_count,
+          cancelled_count: d.cancelled_count,
+          breached: d.breached,
+          reportable_total: d.reportable_total,
+          large_open: d.large_open,
+          total_target_zar: d.total_target_zar,
+          funded_target_zar: d.funded_target_zar,
         });
       }
     } catch (e) {
@@ -303,17 +786,28 @@ export function ReserveAccountChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: ReserveRow; events: ReserveEvent[] } }>(
-        `/reserve-account/chain/${id}`
-      );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/reserve-account/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/reserve-account/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load reserve history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: ReserveRow; events: ChainEvent[] } }>(`/reserve-account/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -328,435 +822,133 @@ export function ReserveAccountChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: ReserveRow) => {
-    try {
-      let body: Record<string, string | number | boolean> = {};
-      if (action === 'schedule-funding') {
-        const basis = window.prompt('Funding basis — the funding instruction (cash deposit / LC issuance against the target balance):');
-        if (!basis) return;
-        const mode = window.prompt('Funding mode (cash / letter_of_credit / hybrid):', row.funding_mode ?? 'cash') || '';
-        const bank = window.prompt('Account bank holding the controlled account:', row.account_bank ?? '') || '';
-        const test = window.prompt('Next test date (YYYY-MM-DD):', row.next_test_date ?? '') || '';
-        body = { funding_basis: basis };
-        if (mode) body.funding_mode = mode;
-        if (bank) body.account_bank = bank;
-        if (test) body.next_test_date = test;
-      } else if (action === 'commence-funding') {
-        const basis = window.prompt('Funding basis — the borrower commencing the cash transfer / LC delivery:');
-        if (!basis) return;
-        const ref = window.prompt('Funding reference (e.g. FUND-2026-0011):') || '';
-        const acct = window.prompt('Reserve account number:', row.account_number ?? '') || '';
-        body = { funding_basis: basis };
-        if (ref) body.funding_ref = ref;
-        if (acct) body.account_number = acct;
-      } else if (action === 'confirm-funding') {
-        const basis = window.prompt('Funding basis — the account bank confirming the target balance is met:');
-        if (!basis) return;
-        const bal = window.prompt('Confirmed current balance (ZAR):', String(row.current_balance_zar ?? row.target_amount_zar ?? ''));
-        const test = window.prompt('Next test date (YYYY-MM-DD):', row.next_test_date ?? '') || '';
-        body = { funding_basis: basis };
-        if (bal && !Number.isNaN(Number(bal))) body.current_balance_zar = Number(bal);
-        if (test) body.next_test_date = test;
-      } else if (action === 'flag-shortfall') {
-        const basis = window.prompt('Shortfall basis — the test date showing balance below target:');
-        if (!basis) return;
-        const reason = window.prompt('Shortfall reason code (lc_lapse / fx_move / missed_sweep / dscr_dip):') || '';
-        const amt = window.prompt('Shortfall amount (ZAR):', String(row.shortfall_amount_zar ?? ''));
-        const bal = window.prompt('Current balance at test (ZAR):', String(row.current_balance_zar ?? ''));
-        body = { shortfall_basis: basis };
-        if (reason) body.shortfall_reason_code = reason;
-        if (amt && !Number.isNaN(Number(amt))) body.shortfall_amount_zar = Number(amt);
-        if (bal && !Number.isNaN(Number(bal))) body.current_balance_zar = Number(bal);
-      } else if (action === 'open-cure') {
-        const basis = window.prompt('Cure basis — opening the contractual cure window for the shortfall:');
-        if (!basis) return;
-        const ref = window.prompt('Cure reference (e.g. CURE-2026-0011):') || '';
-        const deadline = window.prompt('Cure deadline (YYYY-MM-DD):', row.cure_deadline ?? '') || '';
-        body = { cure_basis: basis };
-        if (ref) body.cure_ref = ref;
-        if (deadline) body.cure_deadline = deadline;
-      } else if (action === 'authorize-drawdown') {
-        const basis = window.prompt('Drawdown basis — authorising a draw to meet debt service the cashflow could not cover:');
-        if (!basis) return;
-        const ref = window.prompt('Drawdown reference (e.g. DRAW-2026-0011):') || '';
-        body = { drawdown_basis: basis };
-        if (ref) body.drawdown_ref = ref;
-      } else if (action === 'execute-drawdown') {
-        const basis = window.prompt('Drawdown basis — the account bank moving cash out of the reserve:');
-        if (!basis) return;
-        const amt = window.prompt('Drawn amount (ZAR):', String(row.drawn_amount_zar ?? ''));
-        const bal = window.prompt('Post-draw current balance (ZAR):', String(row.current_balance_zar ?? ''));
-        body = { drawdown_basis: basis };
-        if (amt && !Number.isNaN(Number(amt))) body.drawn_amount_zar = Number(amt);
-        if (bal && !Number.isNaN(Number(bal))) body.current_balance_zar = Number(bal);
-      } else if (action === 'replenish-reserve') {
-        const basis = window.prompt('Replenishment basis — the borrower topping the reserve back to target:');
-        if (!basis) return;
-        const ref = window.prompt('Replenishment reference (e.g. REPL-2026-0011):') || '';
-        const bal = window.prompt('Restored balance (ZAR):', String(row.target_amount_zar ?? ''));
-        body = { replenishment_basis: basis };
-        if (ref) body.replenishment_ref = ref;
-        if (bal && !Number.isNaN(Number(bal))) body.current_balance_zar = Number(bal);
-      } else if (action === 'waive-requirement') {
-        const basis = window.prompt('Waiver basis — lender forbearance on the shortfall / replenishment requirement:');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. temporary_waiver / step_down / restructure):') || '';
-        body = { waiver_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'declare-breach') {
-        const basis = window.prompt('Breach basis — failure to cure / replenish inside the window (event of default):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. cure_failed / replenish_failed / abandoned):') || '';
-        body = { breach_basis: basis };
-        if (reason) body.reason_code = reason;
-      } else if (action === 'request-release') {
-        const basis = window.prompt('Release basis — maturity / deleveraging / contractual step-down releasing the reserve:');
-        if (!basis) return;
-        const ref = window.prompt('Release reference (e.g. REL-2026-0011):') || '';
-        const due = window.prompt('Release due date (YYYY-MM-DD):', row.release_due_date ?? '') || '';
-        body = { release_basis: basis };
-        if (ref) body.release_ref = ref;
-        if (due) body.release_due_date = due;
-      } else if (action === 'release-reserve') {
-        const basis = window.prompt('Release basis — the account bank releasing the reserve cash back to the borrower:');
-        if (!basis) return;
-        const ref = window.prompt('Release reference:', row.release_ref ?? '') || '';
-        body = { release_basis: basis };
-        if (ref) body.release_ref = ref;
-      } else if (action === 'cancel-reserve') {
-        const basis = window.prompt('Cancel basis — the reserve obligation falling away before funding (facility cancelled / refinanced):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. facility_cancelled / refinanced / superseded):') || '';
-        body = { cancel_basis: basis };
-        if (reason) body.reason_code = reason;
-      }
-      await api.post(`/reserve-account/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
+  const k = kpis ?? {
+    total: rows.length, open_count: 0, funded_count: 0, shortfall_count: 0,
+    drawn_count: 0, release_count: 0, breach_count: 0, cancelled_count: 0,
+    breached: 0, reportable_total: 0, large_open: 0, total_target_zar: 0, funded_target_zar: 0,
+  };
 
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Reserve accounts — DSRA / MRA funding, cure & release</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-state reserve-account lifecycle · a project-finance facility requires the borrower to fund and
-            MAINTAIN controlled reserve accounts (Debt Service Reserve Account + Maintenance Reserve Account).
-            reserve required → funding scheduled → funding in progress → funded → (monitored) → release requested
-            → released. A test date showing balance below target flags a SHORTFALL, which opens a cure window —
-            replenished, waived or, on failure, BREACHED (event of default). A legitimate DRAW to meet debt service
-            is authorised, executed and then replenished. URGENT SLA: the larger the reserve target, the tighter
-            every window; the healthy steady state funded carries no deadline. Single write — the agent / lender
-            drives every step; the borrower funds and replenishes, the account bank confirms balances and moves
-            cash. The W77 signature — a reserve BREACH crosses to the regulator for EVERY tier; a waiver and an SLA
-            breach cross for the large tiers (major + systemic).
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>
+          Reserve accounts — DSRA / MRA funding, cure &amp; release
+        </h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          12-state reserve-account lifecycle · a project-finance facility requires the borrower to fund and
+          MAINTAIN controlled reserve accounts (Debt Service Reserve Account + Maintenance Reserve Account).
+          reserve required → funding scheduled → funding in progress → funded → (monitored) → release requested
+          → released. A test date showing balance below target flags a SHORTFALL, which opens a cure window —
+          replenished, waived or, on failure, BREACHED (event of default). URGENT SLA: the larger the reserve
+          target, the tighter every window. The W77 signature — a reserve BREACH crosses to the regulator for
+          EVERY tier; a waiver and an SLA breach cross for the large tiers (major + systemic).
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} tone={(kpis?.open_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Funded" value={kpis?.funded_count ?? 0} tone="ok" />
-        <Kpi label="Shortfall" value={kpis?.shortfall_count ?? 0} tone={(kpis?.shortfall_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Drawn" value={kpis?.drawn_count ?? 0} tone={(kpis?.drawn_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Large open" value={kpis?.large_open ?? 0} tone={(kpis?.large_open ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Breached" value={kpis?.breach_count ?? 0} tone={(kpis?.breach_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Released" value={kpis?.release_count ?? 0} tone="ok" />
-        <Kpi label="Target value" value={fmtZar(kpis?.total_target_zar ?? 0)} />
-        <Kpi label="Funded value" value={fmtZar(kpis?.funded_target_zar ?? 0)} tone="ok" />
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total"        value={k.total} />
+        <KpiTile label="Open"         value={k.open_count}         tone={k.open_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="Funded"       value={k.funded_count}       tone="ok" />
+        <KpiTile label="Shortfall"    value={k.shortfall_count}    tone={k.shortfall_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="Drawn"        value={k.drawn_count}        tone={k.drawn_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="Large open"   value={k.large_open}         tone={k.large_open > 0 ? 'warn' : undefined} />
+        <KpiTile label="SLA breached" value={k.breached}           tone={k.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Reportable"   value={k.reportable_total}   tone={k.reportable_total > 0 ? 'warn' : undefined} />
+        <KpiTile label="Breached"     value={k.breach_count}       tone={k.breach_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="Released"     value={k.release_count}      tone="ok" />
+        <KpiTile label="Target value" value={fmtZar(k.total_target_zar)} />
+        <KpiTile label="Funded value" value={fmtZar(k.funded_target_zar)} tone="ok" />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Reserve #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Borrower</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Type</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Target</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.reserve_tier];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.reserve_number}
-                      {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to the regulator">●</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[180px] truncate" title={r.borrower_name}>
-                      {r.borrower_name}
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.reserve_type ? (RESERVE_TYPE_LABEL[r.reserve_type] ?? r.reserve_type) : '—'}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">
-                      {fmtZar(r.target_amount_zar)}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No reserve accounts match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]"
+          style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]"
+          style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading...
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.reserve_number}${row.is_reportable ? ' ●' : ''}`}
+              meta={[
+                `${row.borrower_name}`,
+                row.reserve_type ? (RESERVE_TYPE_LABEL[row.reserve_type] ?? row.reserve_type) : null,
+                `${row.reserve_tier} · ${fmtZar(row.target_amount_zar)}`,
+                row.account_bank ?? null,
+              ].filter(Boolean).join(' · ')}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]"
+              style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No reserve accounts match.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-const BTN_CLASS: Record<'primary' | 'danger' | 'warn' | 'good' | 'muted', string> = {
-  primary: 'rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]',
-  danger:  'rounded border border-red-400 bg-white px-3 py-1.5 text-[12px] font-medium text-red-800 hover:bg-red-50',
-  warn:    'rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-orange-700 hover:bg-orange-50',
-  good:    'rounded border border-green-300 bg-white px-3 py-1.5 text-[12px] font-medium text-green-800 hover:bg-green-50',
-  muted:   'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b1f1f] hover:bg-[#f3e0e0]',
-};
-
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: ReserveRow;
-  events: ReserveEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: ReserveRow) => void;
-}) {
-  const actions = ALLOWED_ACTIONS[row.chain_status] || [];
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.reserve_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.borrower_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.reserve_tier].label}
-                {row.reserve_type ? ` · ${RESERVE_TYPE_LABEL[row.reserve_type] ?? row.reserve_type}` : ''}
-                {row.funding_mode ? ` · ${row.funding_mode}` : ''}
-              </div>
-              <div className="mt-1 text-[11px] text-[#4a5568]">
-                {row.lender_name} (agent) → {row.borrower_name}
-                {row.account_bank ? ` · ${row.account_bank}` : ''}
-                {row.escalation_level > 0 ? ` · escalation lvl ${row.escalation_level}` : ''}
-              </div>
-              {row.facility_ref && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Facility {row.facility_ref}{row.project_id ? ` · ${row.project_id}` : ''}
-                </div>
-              )}
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"               value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier"                value={TIER_TONE[row.reserve_tier].label} />
-            <Pair label="Reserve type"         value={row.reserve_type ? (RESERVE_TYPE_LABEL[row.reserve_type] ?? row.reserve_type) : '—'} />
-            <Pair label="Funding mode"         value={row.funding_mode ?? '—'} />
-            <Pair label="Target basis"         value={row.target_basis ?? '—'} />
-            <Pair label="Target amount"        value={fmtZar(row.target_amount_zar)} />
-            <Pair label="Current balance"      value={fmtZar(row.current_balance_zar)} />
-            <Pair label="Drawn amount"         value={fmtZar(row.drawn_amount_zar)} />
-            <Pair label="Shortfall amount"     value={fmtZar(row.shortfall_amount_zar)} />
-            <Pair label="Account bank"         value={row.account_bank ?? '—'} />
-            <Pair label="Account number"       value={row.account_number ?? '—'} />
-            <Pair label="Currency"             value={row.currency ?? '—'} />
-            <Pair label="Shortfall reason"     value={row.shortfall_reason_code ?? '—'} />
-            <Pair label="Reason code"          value={row.reason_code ?? '—'} />
-            <Pair label="Funding ref"          value={row.funding_ref ?? '—'} />
-            <Pair label="Cure ref"             value={row.cure_ref ?? '—'} />
-            <Pair label="Drawdown ref"         value={row.drawdown_ref ?? '—'} />
-            <Pair label="Replenishment ref"    value={row.replenishment_ref ?? '—'} />
-            <Pair label="Waiver ref"           value={row.waiver_ref ?? '—'} />
-            <Pair label="Release ref"          value={row.release_ref ?? '—'} />
-            <Pair label="Breach ref"           value={row.breach_ref ?? '—'} />
-            <Pair label="Next test date"       value={fmtDate(row.next_test_date)} />
-            <Pair label="Cure deadline"        value={fmtDate(row.cure_deadline)} />
-            <Pair label="Release due"          value={fmtDate(row.release_due_date)} />
-            <Pair label="Reserve required"     value={fmtDate(row.reserve_required_at)} />
-            <Pair label="Funding scheduled"    value={fmtDate(row.funding_scheduled_at)} />
-            <Pair label="Funding in progress"  value={fmtDate(row.funding_in_progress_at)} />
-            <Pair label="Funded"               value={fmtDate(row.funded_at)} />
-            <Pair label="Shortfall flagged"    value={fmtDate(row.shortfall_flagged_at)} />
-            <Pair label="Cure pending"         value={fmtDate(row.cure_pending_at)} />
-            <Pair label="Drawdown authorised"  value={fmtDate(row.drawdown_authorized_at)} />
-            <Pair label="Drawn"                value={fmtDate(row.drawn_at)} />
-            <Pair label="Release requested"    value={fmtDate(row.release_requested_at)} />
-            <Pair label="Released"             value={fmtDate(row.released_at)} />
-            <Pair label="Breached"             value={fmtDate(row.breached_at)} />
-            <Pair label="SLA deadline"         value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"           value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"       value={String(row.escalation_level)} />
-            <Pair label="Reportable"           value={row.is_reportable ? 'Yes' : 'No'} />
-          </div>
-          {row.funding_basis && (
-            <BasisBlock label="Funding basis" tone="#1a3a5c" text={row.funding_basis} />
-          )}
-          {row.shortfall_basis && (
-            <BasisBlock label="Shortfall basis" tone="#8a4a00" text={row.shortfall_basis} />
-          )}
-          {row.cure_basis && (
-            <BasisBlock label="Cure basis" tone="#a06200" text={row.cure_basis} />
-          )}
-          {row.drawdown_basis && (
-            <BasisBlock label="Drawdown basis" tone="#8a4a00" text={row.drawdown_basis} />
-          )}
-          {row.replenishment_basis && (
-            <BasisBlock label="Replenishment basis" tone="#155724" text={row.replenishment_basis} />
-          )}
-          {row.waiver_basis && (
-            <BasisBlock label="Waiver basis" tone="#6b1f1f" text={row.waiver_basis} />
-          )}
-          {row.breach_basis && (
-            <BasisBlock label="Breach basis (event of default)" tone="#9b1f1f" text={row.breach_basis} />
-          )}
-          {row.release_basis && (
-            <BasisBlock label="Release basis" tone="#155724" text={row.release_basis} />
-          )}
-          {row.cancel_basis && (
-            <BasisBlock label="Cancel basis" tone="#557" text={row.cancel_basis} />
-          )}
-        </section>
-
-        {actions.length > 0 && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {actions.map((a, idx) => (
-                <button type="button"
-                  key={a}
-                  onClick={() => onAct(a, row)}
-                  className={idx === 0 ? BTN_CLASS.primary : BTN_CLASS[ACTION_TONE[a]]}
-                >
-                  {ACTION_LABEL[a]}
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1 }}>{value}</div>
     </div>
   );
 }
+
+function BasisBlock({ label, text }: { label: string; text: string }) {
+  return (
+    <div className="col-span-2 rounded border px-2 py-1.5 mt-2" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="whitespace-pre-wrap" style={{ color: TX2 }}>{text}</div>
+    </div>
+  );
+}
+
+export default ReserveAccountChainTab;

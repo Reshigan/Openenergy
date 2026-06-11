@@ -16,6 +16,22 @@ import { ErrorBanner } from '../ErrorBanner';
 import { Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { OutageImpact } from '../widgets/OutageImpact';
 
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const GOOD_BG= 'oklch(0.95 0.04 155)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const BAD_BG = 'oklch(0.97 0.04 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const WARN_BG= 'oklch(0.96 0.05 55)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
+
 type Response = {
   id: string;
   outage_id: string;
@@ -26,6 +42,12 @@ type Response = {
   eta_minutes: number | null;
   responded_at: string;
 };
+
+function responseColor(type: Response['response_type']) {
+  if (type === 'restored' || type === 'closed') return { bg: GOOD_BG, fg: GOOD };
+  if (type === 'escalated') return { bg: BAD_BG, fg: BAD };
+  return { bg: WARN_BG, fg: WARN };
+}
 
 export function GridOutageDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -50,8 +72,6 @@ export function GridOutageDetailPage() {
 
   useEffect(() => { void load(); }, [load]);
 
-  // Current state — newest non-closed response, or "closed" if any
-  // close response exists.
   const sorted = [...responses].sort((a, b) =>
     new Date(b.responded_at).getTime() - new Date(a.responded_at).getTime(),
   );
@@ -62,86 +82,353 @@ export function GridOutageDetailPage() {
     new Date(a.responded_at).getTime() - new Date(b.responded_at).getTime(),
   )[0];
 
+  const durationHours =
+    firstResponse && (isRestored || isClosed)
+      ? Math.max(
+          0.5,
+          (new Date(sorted[0].responded_at).getTime() - new Date(firstResponse.responded_at).getTime()) / 3_600_000,
+        )
+      : undefined;
+
+  const stateColors = isClosed || isRestored
+    ? { bg: GOOD_BG, fg: GOOD }
+    : latestState === 'escalated'
+    ? { bg: BAD_BG, fg: BAD }
+    : { bg: WARN_BG, fg: WARN };
+
+  const countByType = responses.reduce<Record<string, number>>((acc, r) => {
+    acc[r.response_type] = (acc[r.response_type] || 0) + 1;
+    return acc;
+  }, {});
+
   return (
-    <div className="p-6 lg:p-10 space-y-4 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 text-[12px]" style={{ color: '#6b7685' }}>
-            <Link to="/grid-operator/workstation" className="hover:underline">Grid ops workstation</Link>
-            <span>/</span>
-            <span style={{ color: '#0f1c2e', fontWeight: 600 }}>Outage</span>
-          </div>
-          <h1 className="mt-2 font-display text-[24px] font-bold tracking-tight" style={{ color: 'var(--oe-on-surface)' }}>
-            Outage <span className="font-mono text-[20px]">{(id || '').slice(0, 16)}…</span>
-          </h1>
-          <p className="text-[13px] text-[#3d4756]">
-            <Pill tone={isClosed || isRestored ? 'good' : latestState === 'escalated' ? 'bad' : 'warn'}>
-              {latestState.replace(/_/g, ' ')}
-            </Pill>
-            {' '}· {responses.length} response{responses.length === 1 ? '' : 's'} logged
-            {firstResponse && <> · first response {new Date(firstResponse.responded_at).toLocaleString()}</>}
-          </p>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr 380px',
+      height: 'calc(100vh - 50px)',
+      background: BG,
+      overflow: 'hidden',
+    }}>
+      {/* LEFT COLUMN */}
+      <div style={{ overflowY: 'auto', padding: '24px 28px' }}>
+        {/* Breadcrumb */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: TX3, marginBottom: 8 }}>
+          <Link to="/grid-operator/workstation" style={{ color: TX3, textDecoration: 'none' }}>
+            Grid ops workstation
+          </Link>
+          <span>/</span>
+          <span style={{ color: TX2, fontWeight: 600 }}>Outage detail</span>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => navigate('/grid-operator/workstation?tab=outage')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
-            <ArrowLeft size={12} /> Workstation
+
+        {/* Page header */}
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: TX1, margin: 0 }}>
+            Outage&nbsp;
+            <span style={{ fontFamily: MONO, fontSize: 18, color: TX2 }}>
+              {(id || '').slice(0, 16)}…
+            </span>
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+            <span style={{
+              background: stateColors.bg,
+              color: stateColors.fg,
+              padding: '2px 10px',
+              borderRadius: 12,
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+            }}>
+              {latestState.replace(/_/g, ' ')}
+            </span>
+            <span style={{ fontSize: 13, color: TX2 }}>
+              {responses.length} response{responses.length === 1 ? '' : 's'} logged
+            </span>
+            {firstResponse && (
+              <span style={{ fontSize: 12, color: TX3 }}>
+                · first at {new Date(firstResponse.responded_at).toLocaleString()}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* KPI strip */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+          <div style={{
+            background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+            padding: '12px 16px', flex: 1, minWidth: 120,
+          }}>
+            <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              TOTAL RESPONSES
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: TX1, fontFamily: MONO, marginTop: 4 }}>
+              {responses.length}
+            </div>
+          </div>
+          <div style={{
+            background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+            padding: '12px 16px', flex: 1, minWidth: 120,
+          }}>
+            <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              STATUS
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: stateColors.fg, fontFamily: MONO, marginTop: 4, textTransform: 'capitalize' }}>
+              {latestState.replace(/_/g, ' ')}
+            </div>
+          </div>
+          {durationHours !== undefined && (
+            <div style={{
+              background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+              padding: '12px 16px', flex: 1, minWidth: 120,
+            }}>
+              <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                DURATION
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: TX1, fontFamily: MONO, marginTop: 4 }}>
+                {durationHours.toFixed(1)}h
+              </div>
+            </div>
+          )}
+          {firstResponse && (
+            <div style={{
+              background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+              padding: '12px 16px', flex: 1, minWidth: 120,
+            }}>
+              <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                FIRST RESPONSE
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: TX1, fontFamily: MONO, marginTop: 4 }}>
+                {new Date(firstResponse.responded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {loading && <Skeleton variant="card" rows={4} />}
+        {err && <ErrorBanner message={err} onRetry={() => void load()} />}
+
+        {!loading && !err && (
+          <OutageImpact durationHours={durationHours} />
+        )}
+
+        {!loading && !err && responses.length === 0 && (
+          <div style={{
+            background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+            padding: '32px 24px', textAlign: 'center', marginTop: 16,
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: TX1 }}>No responses logged</div>
+            <div style={{ fontSize: 12, color: TX3, marginTop: 6 }}>
+              Log the first response (acknowledged / dispatched crew / etc.) to start the incident timeline.
+            </div>
+          </div>
+        )}
+
+        {!loading && !err && responses.length > 0 && (
+          <div style={{
+            background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+            padding: '16px 20px', marginTop: 16,
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+              RESPONSE TIMELINE (NEWEST FIRST)
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${BORDER}` }}>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: TX2, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    TYPE
+                  </th>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: TX2, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    RESPONDER
+                  </th>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: TX2, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    ETA
+                  </th>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: TX2, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    NOTES
+                  </th>
+                  <th style={{ textAlign: 'right', padding: '8px 12px', color: TX2, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    TIMESTAMP
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sorted.map((r, i) => {
+                  const rc = responseColor(r.response_type);
+                  return (
+                    <tr key={r.id} style={{ borderBottom: `1px solid ${BORDER}`, background: i % 2 === 1 ? BG2 : 'transparent' }}>
+                      <td style={{ padding: '10px 12px' }}>
+                        <span style={{
+                          background: rc.bg,
+                          color: rc.fg,
+                          padding: '2px 8px',
+                          borderRadius: 12,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          textTransform: 'capitalize',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {r.response_type.replace(/_/g, ' ')}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 12px', color: TX2, fontFamily: MONO, fontSize: 12 }}>
+                        {r.responder_id.slice(0, 14)}…
+                      </td>
+                      <td style={{ padding: '10px 12px', color: TX2, fontFamily: MONO, fontSize: 12 }}>
+                        {r.eta_minutes != null ? `${r.eta_minutes} min` : '—'}
+                      </td>
+                      <td style={{ padding: '10px 12px', color: TX1, fontSize: 12, maxWidth: 260 }}>
+                        {r.notes
+                          ? <span style={{ whiteSpace: 'pre-wrap' }}>{r.notes}</span>
+                          : <span style={{ color: TX3 }}>—</span>}
+                      </td>
+                      <td style={{ padding: '10px 12px', color: TX3, fontFamily: MONO, fontSize: 11, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        {new Date(r.responded_at).toLocaleString()}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT COLUMN */}
+      <div style={{
+        borderLeft: `1px solid ${BORDER}`,
+        background: BG1,
+        overflowY: 'auto',
+        padding: '24px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}>
+        {/* Navigation */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => navigate('/grid-operator/workstation?tab=outage')}
+            style={{
+              background: 'transparent',
+              color: ACC,
+              border: `1px solid ${ACC}`,
+              padding: '8px 16px',
+              borderRadius: 6,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              justifyContent: 'center',
+            }}
+          >
+            <ArrowLeft size={14} /> Workstation
           </button>
-          <button type="button" onClick={() => void load()} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
-            <RefreshCw size={12} /> Refresh
+          <button
+            type="button"
+            onClick={() => void load()}
+            style={{
+              background: 'transparent',
+              color: ACC,
+              border: `1px solid ${ACC}`,
+              padding: '8px 16px',
+              borderRadius: 6,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              justifyContent: 'center',
+            }}
+          >
+            <RefreshCw size={14} /> Refresh
           </button>
           {!isClosed && (
-            <button type="button" onClick={() => setLogging(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
-              + Log response
+            <button
+              type="button"
+              onClick={() => setLogging(true)}
+              style={{
+                background: ACC,
+                color: '#fff',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: 6,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: 13,
+              }}
+            >
+              + Log Response
             </button>
           )}
         </div>
-      </header>
 
-      {loading && <Skeleton variant="card" rows={4} />}
-      {err && <ErrorBanner message={err} onRetry={() => void load()} />}
-
-      {!loading && !err && (
-        <OutageImpact
-          durationHours={
-            firstResponse && (isRestored || isClosed)
-              ? Math.max(
-                  0.5,
-                  (new Date(sorted[0].responded_at).getTime() - new Date(firstResponse.responded_at).getTime()) / 3_600_000,
-                )
-              : undefined
-          }
-        />
-      )}
-
-      {!loading && !err && responses.length === 0 && (
-        <div className="rounded-xl border border-[#dde4ec] bg-white p-6 text-center">
-          <div className="text-[14px] font-semibold text-[#0f1c2e]">No responses logged</div>
-          <div className="text-[12px] text-[#6b7685] mt-1">Log the first response (acknowledged / dispatched crew / etc.) to start the incident timeline.</div>
+        {/* Outage summary */}
+        <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            OUTAGE ID
+          </div>
+          <div style={{ fontFamily: MONO, fontSize: 12, color: TX1, wordBreak: 'break-all' }}>
+            {id}
+          </div>
         </div>
-      )}
 
-      {!loading && !err && responses.length > 0 && (
-        <section>
-          <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#6b7685' }}>Response timeline (newest first)</h2>
-          <ol className="space-y-2">
-            {sorted.map(r => (
-              <li key={r.id} className="rounded-xl border border-[#dde4ec] bg-white p-3">
-                <div className="flex items-center gap-2 text-[12px]">
-                  <Pill tone={r.response_type === 'restored' || r.response_type === 'closed' ? 'good' : r.response_type === 'escalated' ? 'bad' : 'warn'}>
-                    {r.response_type.replace(/_/g, ' ')}
-                  </Pill>
-                  <span className="text-[#6b7685]">by <span className="font-mono">{r.responder_id.slice(0, 14)}…</span></span>
-                  <span className="text-[#6b7685] ml-auto">{new Date(r.responded_at).toLocaleString()}</span>
-                </div>
-                {r.eta_minutes != null && (
-                  <div className="mt-1 text-[11px] text-[#6b7685]">ETA: {r.eta_minutes} min</div>
-                )}
-                {r.notes && <div className="mt-1 text-[13px] whitespace-pre-wrap">{r.notes}</div>}
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
+        {/* Response type breakdown */}
+        {responses.length > 0 && (
+          <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+              RESPONSE BREAKDOWN
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {Object.entries(countByType).map(([type, count]) => {
+                const rc = responseColor(type as Response['response_type']);
+                return (
+                  <div key={type} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{
+                      background: rc.bg,
+                      color: rc.fg,
+                      padding: '2px 8px',
+                      borderRadius: 12,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textTransform: 'capitalize',
+                    }}>
+                      {type.replace(/_/g, ' ')}
+                    </span>
+                    <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: TX1 }}>
+                      {count}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Current status card */}
+        <div style={{ background: stateColors.bg, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+            CURRENT STATUS
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: stateColors.fg, textTransform: 'capitalize' }}>
+            {latestState.replace(/_/g, ' ')}
+          </div>
+          {isClosed && (
+            <div style={{ fontSize: 12, color: TX2, marginTop: 4 }}>Incident closed.</div>
+          )}
+          {isRestored && !isClosed && (
+            <div style={{ fontSize: 12, color: TX2, marginTop: 4 }}>Service restored — pending closure.</div>
+          )}
+          {!isClosed && !isRestored && responses.length > 0 && (
+            <div style={{ fontSize: 12, color: TX2, marginTop: 4 }}>Incident in progress.</div>
+          )}
+          {responses.length === 0 && (
+            <div style={{ fontSize: 12, color: TX3, marginTop: 4 }}>No responses yet.</div>
+          )}
+        </div>
+      </div>
 
       {logging && (
         <ActionModal

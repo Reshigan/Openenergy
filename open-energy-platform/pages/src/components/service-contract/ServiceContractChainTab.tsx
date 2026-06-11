@@ -19,6 +19,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { type FieldSpec } from '../launch/WorkstationShell';
 
 type ChainStatus =
   | 'draft' | 'quoted' | 'pending_activation' | 'active' | 'renewal_due'
@@ -28,6 +29,7 @@ type ChainStatus =
 type Tier = 'basic' | 'standard' | 'premium' | 'mission_critical';
 
 interface ContractRow {
+  [key: string]: unknown;
   id: string;
   contract_number: string;
   source_event: string | null;
@@ -148,8 +150,8 @@ interface KpiSummary {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   draft:              { bg: '#e3e7ec', fg: '#557',    label: 'Draft' },
-  quoted:             { bg: '#dbecfb', fg: '#1a3a5c', label: 'Quoted' },
-  pending_activation: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Pending activation' },
+  quoted:             { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Quoted' },
+  pending_activation: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Pending activation' },
   active:             { bg: '#d4edda', fg: '#155724', label: 'Active' },
   renewal_due:        { bg: '#fff4d6', fg: '#a06200', label: 'Renewal due' },
   renewal_quoted:     { bg: '#fff4d6', fg: '#a06200', label: 'Renewal quoted' },
@@ -164,7 +166,7 @@ const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }>
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
   mission_critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Mission-critical' },
   premium:          { bg: '#ffe4b5', fg: '#8a4a00', label: 'Premium' },
-  standard:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard' },
+  standard:         { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Standard' },
   basic:            { bg: '#e3e7ec', fg: '#557',    label: 'Basic' },
 };
 
@@ -281,6 +283,67 @@ function fmtList(json: string | null): string {
 
 const TERMINAL_STATES: ChainStatus[] = ['renewed', 'expired', 'cancelled'];
 
+const ACTION_FIELDS: Record<ActionKind, FieldSpec[]> = {
+  'issue-quote': [
+    { key: 'annual_value_zar', label: 'Annual contract value (ZAR)', type: 'text', required: false },
+    { key: 'quote_ref',        label: 'Quote reference',              type: 'text', required: false },
+    { key: 'quote_basis',      label: 'Quote basis — coverage scope + pricing rationale', type: 'textarea', required: true },
+  ],
+  'accept-quote': [
+    { key: 'acceptance_ref',   label: 'Acceptance reference (customer PO)', type: 'text',     required: false },
+    { key: 'acceptance_basis', label: 'Acceptance basis — customer sign-off', type: 'textarea', required: true },
+  ],
+  'activate-coverage': [
+    { key: 'term_start',        label: 'Term start (YYYY-MM-DD)',  type: 'text',     required: false },
+    { key: 'term_end',          label: 'Term end (YYYY-MM-DD)',    type: 'text',     required: false },
+    { key: 'activation_ref',    label: 'Activation reference',     type: 'text',     required: false },
+    { key: 'activation_basis',  label: 'Activation basis — coverage live, entitlements opened', type: 'textarea', required: true },
+  ],
+  'open-renewal': [
+    { key: 'renewal_ref',   label: 'Renewal reference',  type: 'text',     required: false },
+    { key: 'renewal_basis', label: 'Renewal basis — renewal window opened ahead of term end', type: 'textarea', required: true },
+  ],
+  'issue-renewal-quote': [
+    { key: 'renewal_value_zar',   label: 'Renewal annual value (ZAR)',        type: 'text',     required: false },
+    { key: 'renewal_uplift_pct',  label: 'Renewal uplift (%) — e.g. CPI escalation', type: 'text', required: false },
+    { key: 'renewal_quote_ref',   label: 'Renewal quote reference',           type: 'text',     required: false },
+    { key: 'renewal_quote_basis', label: 'Renewal quote basis — pricing + escalation rationale', type: 'textarea', required: true },
+  ],
+  'begin-negotiation': [
+    { key: 'negotiation_ref',   label: 'Negotiation reference',  type: 'text',     required: false },
+    { key: 'negotiation_basis', label: 'Negotiation basis — customer counter / scope discussion', type: 'textarea', required: true },
+  ],
+  'confirm-renewal': [
+    { key: 'renewal_value_zar', label: 'Confirmed renewal annual value (ZAR)', type: 'text',     required: false },
+    { key: 'term_start',        label: 'New term start (YYYY-MM-DD)',          type: 'text',     required: false },
+    { key: 'term_end',          label: 'New term end (YYYY-MM-DD)',            type: 'text',     required: false },
+    { key: 'renewal_ref',       label: 'Renewal reference',                   type: 'text',     required: false },
+    { key: 'renewal_basis',     label: 'Renewal basis — contract renewed, coverage continuous', type: 'textarea', required: true },
+  ],
+  'enter-grace': [
+    { key: 'grace_ref',   label: 'Grace reference',  type: 'text',     required: false },
+    { key: 'grace_basis', label: 'Grace basis — term ended mid-renewal; conditional grace coverage runs', type: 'textarea', required: true },
+  ],
+  'suspend-coverage': [
+    { key: 'suspend_reason',    label: 'Suspend reason — non-payment / breach', type: 'text',     required: true },
+    { key: 'suspension_ref',    label: 'Suspension reference',                  type: 'text',     required: false },
+    { key: 'suspension_basis',  label: 'Suspension basis — coverage suspended, support gated', type: 'textarea', required: true },
+  ],
+  'reinstate-coverage': [
+    { key: 'reinstatement_ref',   label: 'Reinstatement reference',  type: 'text',     required: false },
+    { key: 'reinstatement_basis', label: 'Reinstatement basis — arrears cleared / breach cured, coverage restored', type: 'textarea', required: true },
+  ],
+  'expire-coverage': [
+    { key: 'expiry_basis',   label: 'Expiry basis — grace blown / coverage terminated; a HIGH-tier gap is reportable', type: 'textarea', required: true },
+    { key: 'regulator_ref',  label: 'Regulator reference (coverage gap on premium / mission-critical is reportable)', type: 'text',     required: false },
+  ],
+  'cancel-contract': [
+    { key: 'cancellation_basis', label: 'Cancellation basis — why the contract is terminated', type: 'textarea', required: true },
+    { key: 'refund_zar',         label: 'Pro-rated refund (ZAR), if any',                     type: 'text',     required: false },
+    { key: 'regulator_ref',      label: 'Regulator reference (cancelling mission-critical coverage is reportable)', type: 'text', required: false },
+  ],
+};
+
 export function ServiceContractChainTab() {
   const [rows, setRows] = useState<ContractRow[]>([]);
   const [kpis, setKpis] = useState<KpiSummary | null>(null);
@@ -289,6 +352,7 @@ export function ServiceContractChainTab() {
   const [filter, setFilter] = useState<string>('active');
   const [selected, setSelected] = useState<ContractRow | null>(null);
   const [events, setEvents] = useState<ContractEvent[]>([]);
+  const [pendingAction, setPendingAction] = useState<{ action: ActionKind; row: ContractRow } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -347,101 +411,35 @@ export function ServiceContractChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: ContractRow) => {
+  const openAction = useCallback((action: ActionKind, row: ContractRow) => {
+    setPendingAction({ action, row });
+  }, []);
+
+  const submitAction = useCallback(async (values: Record<string, string>) => {
+    if (!pendingAction) return;
+    const { action, row } = pendingAction;
+    setPendingAction(null);
     try {
-      let body: Record<string, string | number> = {};
-      if (action === 'issue-quote') {
-        const acv = window.prompt('Annual contract value (ZAR):', String(row.annual_value_zar ?? '')) || '';
-        const ref = window.prompt('Quote reference:') || '';
-        const basis = window.prompt('Quote basis — coverage scope + pricing rationale:') || '';
-        body = { quote_basis: basis };
-        if (ref) body.quote_ref = ref;
-        if (acv && !Number.isNaN(Number(acv))) body.annual_value_zar = Number(acv);
-      } else if (action === 'accept-quote') {
-        const ref = window.prompt('Acceptance reference (customer PO):') || '';
-        const basis = window.prompt('Acceptance basis — customer sign-off:') || '';
-        body = { acceptance_basis: basis };
-        if (ref) body.acceptance_ref = ref;
-      } else if (action === 'activate-coverage') {
-        const start = window.prompt('Term start (YYYY-MM-DD):', row.term_start || '') || '';
-        const end = window.prompt('Term end (YYYY-MM-DD):', row.term_end || '') || '';
-        const ref = window.prompt('Activation reference:') || '';
-        const basis = window.prompt('Activation basis — coverage live, entitlements opened:') || '';
-        body = { activation_basis: basis };
-        if (ref) body.activation_ref = ref;
-        if (start) body.term_start = start;
-        if (end) body.term_end = end;
-      } else if (action === 'open-renewal') {
-        const ref = window.prompt('Renewal reference:') || '';
-        const basis = window.prompt('Renewal basis — renewal window opened ahead of term end:') || '';
-        body = { renewal_basis: basis };
-        if (ref) body.renewal_ref = ref;
-      } else if (action === 'issue-renewal-quote') {
-        const val = window.prompt('Renewal annual value (ZAR):', row.renewal_value_zar != null ? String(row.renewal_value_zar) : '') || '';
-        const uplift = window.prompt('Renewal uplift (%) — e.g. CPI escalation:', row.renewal_uplift_pct != null ? String(row.renewal_uplift_pct) : '') || '';
-        const ref = window.prompt('Renewal quote reference:') || '';
-        const basis = window.prompt('Renewal quote basis — pricing + escalation rationale:') || '';
-        body = { renewal_quote_basis: basis };
-        if (ref) body.renewal_quote_ref = ref;
-        if (val && !Number.isNaN(Number(val))) body.renewal_value_zar = Number(val);
-        if (uplift && !Number.isNaN(Number(uplift))) body.renewal_uplift_pct = Number(uplift);
-      } else if (action === 'begin-negotiation') {
-        const ref = window.prompt('Negotiation reference:') || '';
-        const basis = window.prompt('Negotiation basis — customer counter / scope discussion:') || '';
-        body = { negotiation_basis: basis };
-        if (ref) body.negotiation_ref = ref;
-      } else if (action === 'confirm-renewal') {
-        const val = window.prompt('Confirmed renewal annual value (ZAR):', row.renewal_value_zar != null ? String(row.renewal_value_zar) : '') || '';
-        const start = window.prompt('New term start (YYYY-MM-DD):') || '';
-        const end = window.prompt('New term end (YYYY-MM-DD):') || '';
-        const ref = window.prompt('Renewal reference:') || '';
-        const basis = window.prompt('Renewal basis — contract renewed, coverage continuous:') || '';
-        body = { renewal_basis: basis };
-        if (ref) body.renewal_ref = ref;
-        if (val && !Number.isNaN(Number(val))) body.renewal_value_zar = Number(val);
-        if (start) body.term_start = start;
-        if (end) body.term_end = end;
-      } else if (action === 'enter-grace') {
-        const basis = window.prompt('Grace basis — term ended mid-renewal; conditional grace coverage runs:');
-        if (!basis) return;
-        const ref = window.prompt('Grace reference:') || '';
-        body = { grace_basis: basis };
-        if (ref) body.grace_ref = ref;
-      } else if (action === 'suspend-coverage') {
-        const reason = window.prompt('Suspend reason — non-payment / breach:');
-        if (!reason) return;
-        const basis = window.prompt('Suspension basis — coverage suspended, support gated:') || '';
-        const ref = window.prompt('Suspension reference:') || '';
-        body = { suspend_reason: reason, suspension_basis: basis, reason_code: 'non_payment' };
-        if (ref) body.suspension_ref = ref;
-      } else if (action === 'reinstate-coverage') {
-        const basis = window.prompt('Reinstatement basis — arrears cleared / breach cured, coverage restored:');
-        if (!basis) return;
-        const ref = window.prompt('Reinstatement reference:') || '';
-        body = { reinstatement_basis: basis };
-        if (ref) body.reinstatement_ref = ref;
-      } else if (action === 'expire-coverage') {
-        const basis = window.prompt('Expiry basis — grace blown / coverage terminated; a HIGH-tier gap is reportable:');
-        if (!basis) return;
-        const reg = window.prompt('Regulator reference (a coverage gap on premium / mission-critical assets is reportable):') || '';
-        body = { expiry_basis: basis, reason_code: 'lapsed' };
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'cancel-contract') {
-        const basis = window.prompt('Cancellation basis — why the contract is terminated:');
-        if (!basis) return;
-        const refund = window.prompt('Pro-rated refund (ZAR), if any:') || '';
-        const reg = window.prompt('Regulator reference (cancelling mission-critical coverage is reportable):') || '';
-        body = { cancellation_basis: basis, reason_code: 'cancelled' };
-        if (refund && !Number.isNaN(Number(refund))) body.refund_zar = Number(refund);
-        if (reg) body.regulator_ref = reg;
+      const body: Record<string, string | number> = {};
+      for (const [k, v] of Object.entries(values)) {
+        if (!v) continue;
+        const numericKeys = ['annual_value_zar', 'renewal_value_zar', 'renewal_uplift_pct', 'refund_zar'];
+        if (numericKeys.includes(k) && !Number.isNaN(Number(v))) {
+          body[k] = Number(v);
+        } else {
+          body[k] = v;
+        }
       }
+      if (action === 'suspend-coverage') body.reason_code = 'non_payment';
+      if (action === 'expire-coverage')  body.reason_code = 'lapsed';
+      if (action === 'cancel-contract')  body.reason_code = 'cancelled';
       await api.post(`/service-contract/chain/${row.id}/${action}`, body);
       await load();
       if (selected?.id === row.id) await loadEvents(row.id);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
+      setErr(e instanceof Error ? e.message : `Failed to ${pendingAction?.action ?? 'act'}`);
     }
-  }, [load, loadEvents, selected]);
+  }, [pendingAction, load, loadEvents, selected]);
 
   return (
     <div className="p-5">
@@ -505,14 +503,14 @@ export function ServiceContractChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Contract #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Customer / site</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Coverage tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Type</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Annual value</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Term end</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Contract #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Customer / site</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Coverage tier</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Type</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Annual value</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Term end</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -525,7 +523,7 @@ export function ServiceContractChainTab() {
                     onClick={() => loadEvents(r.id)}
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 font-mono text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.contract_number}
                       {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
                     </td>
@@ -561,7 +559,15 @@ export function ServiceContractChainTab() {
       )}
 
       {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={openAction} />
+      )}
+      {pendingAction && (
+        <ActionModal
+          action={pendingAction.action}
+          fields={ACTION_FIELDS[pendingAction.action]}
+          onSubmit={submitAction}
+          onCancel={() => setPendingAction(null)}
+        />
       )}
     </div>
   );
@@ -573,6 +579,69 @@ function Kpi({ label, value, tone }: { label: string; value: number | string; to
     <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
       <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    </div>
+  );
+}
+
+function ActionModal({
+  action, fields, onSubmit, onCancel,
+}: {
+  action: ActionKind;
+  fields: FieldSpec[];
+  onSubmit: (values: Record<string, string>) => void;
+  onCancel: () => void;
+}) {
+  const [vals, setVals] = useState<Record<string, string>>(() =>
+    Object.fromEntries(fields.map((f) => [f.key, '']))
+  );
+  const set = (k: string, v: string) => setVals((prev) => ({ ...prev, [k]: v }));
+  const canSubmit = fields.filter((f) => f.required).every((f) => (vals[f.key] ?? '').trim());
+  return (
+    <div className="fixed inset-0 z-40 bg-black/50 flex items-center justify-center p-4" onClick={onCancel}>
+      <div
+        className="bg-white rounded-lg shadow-2xl w-full max-w-md overflow-y-auto max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-4 py-3 flex items-center justify-between">
+          <span className="font-semibold text-[13px] text-[#0c2a4d]">{ACTION_LABEL[action]}</span>
+          <button type="button" onClick={onCancel} className="text-[#4a5568] hover:text-[#0c2a4d] text-lg leading-none">✕</button>
+        </header>
+        <div className="px-4 py-4 space-y-3">
+          {fields.map((f) => (
+            <div key={f.key}>
+              <label className="block text-[11px] font-medium text-[#4a5568] mb-1">
+                {f.label}{f.required && <span className="text-red-600 ml-0.5">*</span>}
+              </label>
+              {f.type === 'textarea' ? (
+                <textarea
+                  className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[12px] text-[#0c2a4d] focus:outline-none focus:border-[#c2873a] resize-none"
+                  rows={3}
+                  value={vals[f.key] ?? ''}
+                  onChange={(e) => set(f.key, e.target.value)}
+                />
+              ) : (
+                <input
+                  type="text"
+                  className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[12px] text-[#0c2a4d] focus:outline-none focus:border-[#c2873a]"
+                  value={vals[f.key] ?? ''}
+                  onChange={(e) => set(f.key, e.target.value)}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+        <footer className="border-t border-[#d8dde6] px-4 py-3 flex justify-end gap-2">
+          <button type="button" onClick={onCancel} className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#557] hover:bg-[#f3f5f9]">Cancel</button>
+          <button
+            type="button"
+            disabled={!canSubmit}
+            onClick={() => onSubmit(vals)}
+            className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#a06200] disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Confirm
+          </button>
+        </footer>
+      </div>
     </div>
   );
 }
@@ -665,8 +734,8 @@ function Drawer({
             <Pair label="Escalation lvl"    value={String(row.escalation_level)} />
             <Pair label="Reportable"        value={row.is_reportable_flag ? 'Yes' : 'No'} />
           </div>
-          {row.quote_basis && <BasisBlock label="Quote basis" tone="#1a3a5c" text={row.quote_basis} />}
-          {row.acceptance_basis && <BasisBlock label="Acceptance basis" tone="#1a3a5c" text={row.acceptance_basis} />}
+          {row.quote_basis && <BasisBlock label="Quote basis" tone="oklch(0.46 0.16 55)" text={row.quote_basis} />}
+          {row.acceptance_basis && <BasisBlock label="Acceptance basis" tone="oklch(0.46 0.16 55)" text={row.acceptance_basis} />}
           {row.activation_basis && <BasisBlock label="Activation basis" tone="#1f6b3a" text={row.activation_basis} />}
           {row.renewal_basis && <BasisBlock label="Renewal basis" tone="#1f6b3a" text={row.renewal_basis} />}
           {row.renewal_quote_basis && <BasisBlock label="Renewal quote basis" tone="#a06200" text={row.renewal_quote_basis} />}
@@ -730,7 +799,7 @@ function Drawer({
                       <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
                     )}
                   </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

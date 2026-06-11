@@ -28,6 +28,20 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'connection_ready' | 'program_review' | 'program_approved'
@@ -38,6 +52,7 @@ type ChainStatus =
 type Tier = 'embedded' | 'distribution' | 'sub_transmission' | 'transmission' | 'bulk';
 
 interface EnergizationRow {
+  [key: string]: unknown;
   id: string;
   energization_number: string;
   source_event: string | null;
@@ -101,19 +116,7 @@ interface EnergizationRow {
   sla_breached?: boolean;
   sla_window_minutes?: number;
   breach_crosses_regulator?: boolean;
-}
-
-interface EnergizationEvent {
-  id: string;
-  energization_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
+  case_number?: string;
 }
 
 interface KpiSummary {
@@ -130,101 +133,53 @@ interface KpiSummary {
   energized_capacity_mw: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  connection_ready:            { bg: '#e3e7ec', fg: '#557',    label: 'Connection ready' },
-  program_review:              { bg: '#dbecfb', fg: '#1a3a5c', label: 'Programme review' },
-  program_approved:            { bg: '#dbecfb', fg: '#1a3a5c', label: 'Programme approved' },
-  pre_energization_inspection: { bg: '#fff4d6', fg: '#a06200', label: 'Pre-energization inspection' },
-  energization_authorized:     { bg: '#ffe9d6', fg: '#8a4a00', label: 'Energization authorized' },
-  cold_commissioning:          { bg: '#ffe9d6', fg: '#8a4a00', label: 'Cold commissioning' },
-  synchronized:                { bg: '#e4f0ff', fg: '#1a3a5c', label: 'Synchronized' },
-  trial_operation:             { bg: '#e4f0ff', fg: '#1a3a5c', label: 'Trial operation' },
-  compliance_testing:          { bg: '#fff4d6', fg: '#a06200', label: 'Compliance testing' },
-  commercial_operation:        { bg: '#d4edda', fg: '#155724', label: 'Commercial operation' },
-  commissioning_suspended:     { bg: '#fdd0d0', fg: '#7a1010', label: 'Commissioning suspended' },
-  connection_withdrawn:        { bg: '#f3e0e0', fg: '#6b1f1f', label: 'Connection withdrawn' },
-};
+const ALL_STATES = [
+  'connection_ready',
+  'program_review',
+  'program_approved',
+  'pre_energization_inspection',
+  'energization_authorized',
+  'cold_commissioning',
+  'synchronized',
+  'trial_operation',
+  'compliance_testing',
+  'commercial_operation',
+] as const;
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  embedded:         { bg: '#e3e7ec', fg: '#557',    label: 'Embedded (<1 MW)' },
-  distribution:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Distribution (<10 MW)' },
-  sub_transmission: { bg: '#fff4d6', fg: '#a06200', label: 'Sub-transmission (<50 MW)' },
-  transmission:     { bg: '#ffe4b5', fg: '#8a4a00', label: 'Transmission (<200 MW)' },
-  bulk:             { bg: '#fde0e0', fg: '#9b1f1f', label: 'Bulk (≥200 MW)' },
-};
+const BRANCH_STATES = [
+  'commissioning_suspended',
+  'connection_withdrawn',
+] as const;
 
-const FILTERS: Array<{ key: string; label: string }> = [
-  { key: 'active',                  label: 'Active' },
-  { key: 'all',                     label: 'All' },
-  { key: 'embedded',                label: 'Embedded' },
-  { key: 'distribution',            label: 'Distribution' },
-  { key: 'sub_transmission',        label: 'Sub-transmission' },
-  { key: 'transmission',            label: 'Transmission' },
-  { key: 'bulk',                    label: 'Bulk' },
+const FILTERS = [
+  { key: 'active',                      label: 'Active' },
+  { key: 'all',                         label: 'All' },
+  { key: 'embedded',                    label: 'Embedded' },
+  { key: 'distribution',               label: 'Distribution' },
+  { key: 'sub_transmission',           label: 'Sub-transmission' },
+  { key: 'transmission',               label: 'Transmission' },
+  { key: 'bulk',                        label: 'Bulk' },
   { key: 'pre_energization_inspection', label: 'Inspection' },
-  { key: 'cold_commissioning',      label: 'Cold commissioning' },
-  { key: 'synchronized',            label: 'Synchronized' },
-  { key: 'trial_operation',         label: 'Trial operation' },
-  { key: 'compliance_testing',      label: 'Compliance testing' },
-  { key: 'commissioning_suspended', label: 'Suspended' },
-  { key: 'breached',                label: 'SLA breached' },
-  { key: 'reportable',              label: 'Reportable' },
-  { key: 'commercial_operation',    label: 'Commercial operation' },
-  { key: 'connection_withdrawn',    label: 'Withdrawn' },
+  { key: 'cold_commissioning',          label: 'Cold commissioning' },
+  { key: 'synchronized',               label: 'Synchronized' },
+  { key: 'trial_operation',            label: 'Trial operation' },
+  { key: 'compliance_testing',         label: 'Compliance testing' },
+  { key: 'commissioning_suspended',    label: 'Suspended' },
+  { key: 'breached',                   label: 'SLA breached' },
+  { key: 'reportable',                 label: 'Reportable' },
+  { key: 'commercial_operation',       label: 'Commercial operation' },
+  { key: 'connection_withdrawn',       label: 'Withdrawn' },
 ];
 
-type ActionKind =
-  | 'submit-program' | 'approve-program' | 'conduct-inspection' | 'authorize-energization'
-  | 'begin-cold-commissioning' | 'authorize-synchronization' | 'begin-trial-operation'
-  | 'begin-compliance-testing' | 'issue-cod' | 'suspend-commissioning'
-  | 'resume-commissioning' | 'withdraw-connection';
-
-// Primary forward action per state.
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  connection_ready:            'submit-program',
-  program_review:              'approve-program',
-  program_approved:            'conduct-inspection',
-  pre_energization_inspection: 'authorize-energization',
-  energization_authorized:     'begin-cold-commissioning',
-  cold_commissioning:          'authorize-synchronization',
-  synchronized:                'begin-trial-operation',
-  trial_operation:             'begin-compliance-testing',
-  compliance_testing:          'issue-cod',
-  commercial_operation:        null,
-  commissioning_suspended:     'resume-commissioning',
-  connection_withdrawn:        null,
-};
-
-// Party annotation per action — which side of the split write performs it. The
-// connected FACILITY (IPP developer) submits the programme, runs cold commissioning
-// and the trial-operation period, and may withdraw; the System Operator (operator)
-// approves, inspects, authorizes, witnesses, tests, issues the COD, suspends/resumes.
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'submit-program':           'Submit commissioning programme (facility)',
-  'approve-program':          'Approve programme (operator)',
-  'conduct-inspection':       'Conduct pre-energization inspection (operator)',
-  'authorize-energization':   'Authorize energization (operator)',
-  'begin-cold-commissioning': 'Begin cold commissioning (facility)',
-  'authorize-synchronization':'Authorize synchronization (operator)',
-  'begin-trial-operation':    'Begin trial operation (facility)',
-  'begin-compliance-testing': 'Begin compliance testing (operator)',
-  'issue-cod':                'Issue COD certificate (operator)',
-  'suspend-commissioning':    'Suspend commissioning (operator)',
-  'resume-commissioning':     'Resume commissioning (operator)',
-  'withdraw-connection':      'Withdraw connection (facility)',
-};
-
-function fmtMinutes(m: number | null | undefined): string {
-  if (m === null || m === undefined) return '—';
-  if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
-  if (Math.abs(m) >= 60) return `${Math.round(m / 60)}h`;
-  return `${m}m`;
-}
+const TERMINAL_STATES: ChainStatus[] = ['commercial_operation', 'connection_withdrawn'];
+const SUSPENDABLE_STATES: ChainStatus[] = [
+  'pre_energization_inspection', 'energization_authorized', 'cold_commissioning',
+  'synchronized', 'trial_operation', 'compliance_testing',
+];
 
 function fmtDate(s: string | null): string {
   if (!s) return '—';
-  const d = new Date(s);
-  return d.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+  return new Date(s).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function fmtMw(n: number | null | undefined): string {
@@ -234,20 +189,270 @@ function fmtMw(n: number | null | undefined): string {
   return `${n.toFixed(n < 1 ? 2 : 1)} MW`;
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['commercial_operation', 'connection_withdrawn'];
-const SUSPENDABLE_STATES: ChainStatus[] = [
-  'pre_energization_inspection', 'energization_authorized', 'cold_commissioning',
-  'synchronized', 'trial_operation', 'compliance_testing',
-];
+function getActions(row: EnergizationRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const canSuspend = SUSPENDABLE_STATES.includes(row.chain_status);
+  const canWithdraw = !TERMINAL_STATES.includes(row.chain_status);
+
+  if (row.chain_status === 'connection_ready') {
+    actions.push({
+      key: 'submit-program',
+      label: 'Submit commissioning programme (facility)',
+      tone: 'primary',
+      cascadeTo: [],
+      fields: [
+        { key: 'program_basis', label: 'Programme basis — the commissioning & energization programme submitted by the facility', type: 'textarea', required: true },
+        { key: 'program_ref', label: 'Programme reference (e.g. PROG-2026-0007)', type: 'text', required: false },
+        { key: 'connection_capacity_mw', label: 'Restate connection capacity (MW) — blank to keep', type: 'text', required: false },
+      ],
+    });
+  }
+  if (row.chain_status === 'program_review') {
+    actions.push({
+      key: 'approve-program',
+      label: 'Approve programme (operator)',
+      tone: 'primary',
+      cascadeTo: [],
+      fields: [
+        { key: 'approval_basis', label: 'Approval basis — SO approves the commissioning programme & hold-point schedule', type: 'textarea', required: true },
+      ],
+    });
+  }
+  if (row.chain_status === 'program_approved') {
+    actions.push({
+      key: 'conduct-inspection',
+      label: 'Conduct pre-energization inspection (operator)',
+      tone: 'primary',
+      cascadeTo: [],
+      fields: [
+        { key: 'inspection_basis', label: 'Inspection basis — pre-energization physical / protection inspection result', type: 'textarea', required: true },
+        { key: 'inspection_ref', label: 'Inspection reference (e.g. INSP-2026-0007)', type: 'text', required: false },
+      ],
+    });
+  }
+  if (row.chain_status === 'pre_energization_inspection') {
+    actions.push({
+      key: 'authorize-energization',
+      label: 'Authorize energization (operator)',
+      tone: 'primary',
+      cascadeTo: ['regulator'],
+      fields: [
+        { key: 'energization_basis', label: 'Energization basis — SO authorizes back-energization of the connection (large tiers cross to regulator)', type: 'textarea', required: true },
+        { key: 'energization_ref', label: 'Energization authorization reference (e.g. EAUTH-2026-0007)', type: 'text', required: false },
+      ],
+    });
+  }
+  if (row.chain_status === 'energization_authorized') {
+    actions.push({
+      key: 'begin-cold-commissioning',
+      label: 'Begin cold commissioning (facility)',
+      tone: 'primary',
+      cascadeTo: [],
+      fields: [
+        { key: 'cold_commissioning_basis', label: 'Cold-commissioning basis — facility begins de-energized equipment checks & cold tests', type: 'textarea', required: true },
+      ],
+    });
+  }
+  if (row.chain_status === 'cold_commissioning') {
+    actions.push({
+      key: 'authorize-synchronization',
+      label: 'Authorize synchronization (operator)',
+      tone: 'primary',
+      cascadeTo: [],
+      fields: [
+        { key: 'synchronization_basis', label: 'Synchronization basis — SO authorizes first synchronization to the grid', type: 'textarea', required: true },
+        { key: 'synchronization_ref', label: 'Synchronization reference (e.g. SYNC-2026-0007)', type: 'text', required: false },
+      ],
+    });
+  }
+  if (row.chain_status === 'synchronized') {
+    actions.push({
+      key: 'begin-trial-operation',
+      label: 'Begin trial operation (facility)',
+      tone: 'primary',
+      cascadeTo: [],
+      fields: [
+        { key: 'trial_operation_basis', label: 'Trial-operation basis — facility begins the supervised trial-operation period', type: 'textarea', required: true },
+      ],
+    });
+  }
+  if (row.chain_status === 'trial_operation') {
+    actions.push({
+      key: 'begin-compliance-testing',
+      label: 'Begin compliance testing (operator)',
+      tone: 'primary',
+      cascadeTo: [],
+      fields: [
+        { key: 'compliance_test_basis', label: 'Compliance-testing basis — Grid Code compliance / performance testing begins', type: 'textarea', required: true },
+        { key: 'compliance_test_ref', label: 'Compliance-test reference (e.g. GCT-2026-0007)', type: 'text', required: false },
+      ],
+    });
+  }
+  if (row.chain_status === 'compliance_testing') {
+    actions.push({
+      key: 'issue-cod',
+      label: 'Issue COD certificate (operator)',
+      tone: 'primary',
+      cascadeTo: ['regulator'],
+      fields: [
+        { key: 'cod_basis', label: 'COD basis — Commercial Operation Date certified; the plant may now sell energy (crosses to regulator for every tier)', type: 'textarea', required: true },
+        { key: 'cod_certificate_no', label: 'COD certificate number (e.g. COD-2026-0007)', type: 'text', required: false },
+        { key: 'cod_date', label: 'COD date (YYYY-MM-DD)', type: 'text', required: false },
+      ],
+    });
+  }
+  if (row.chain_status === 'commissioning_suspended') {
+    actions.push({
+      key: 'resume-commissioning',
+      label: 'Resume commissioning (operator)',
+      tone: 'primary',
+      cascadeTo: [],
+      fields: [
+        { key: 'resumption_basis', label: 'Resumption basis — the suspension cause is cleared; commissioning restarts from programme-approved', type: 'textarea', required: true },
+      ],
+    });
+  }
+  if (canSuspend) {
+    actions.push({
+      key: 'suspend-commissioning',
+      label: 'Suspend commissioning (operator)',
+      tone: 'warn',
+      cascadeTo: ['regulator'],
+      fields: [
+        { key: 'suspension_basis', label: 'Suspension basis — a hold-point failed / safety concern; commissioning is suspended (large tiers cross to regulator)', type: 'textarea', required: true },
+        { key: 'suspension_ref', label: 'Suspension reference (e.g. SUSP-2026-0007)', type: 'text', required: false },
+        { key: 'reason_code', label: 'Reason code (e.g. protection_failure / safety_nonconformance)', type: 'text', required: false },
+      ],
+    });
+  }
+  if (canWithdraw) {
+    actions.push({
+      key: 'withdraw-connection',
+      label: 'Withdraw connection (facility)',
+      tone: 'danger',
+      cascadeTo: [],
+      fields: [
+        { key: 'withdrawal_basis', label: 'Withdrawal basis — the connection is withdrawn before commercial operation', type: 'textarea', required: true },
+        { key: 'withdrawal_ref', label: 'Withdrawal reference (e.g. WDR-2026-0007)', type: 'text', required: false },
+        { key: 'reason_code', label: 'Reason code (e.g. developer_cancelled / capacity_lapsed)', type: 'text', required: false },
+      ],
+    });
+  }
+  return actions;
+}
+
+function renderDetail(row: EnergizationRow): React.ReactNode {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px 16px' }}>
+      <DetailPair label="Tier"                   value={row.connection_tier.replace(/_/g, ' ')} />
+      <DetailPair label="Capacity"               value={fmtMw(row.connection_capacity_mw)} />
+      <DetailPair label="Voltage"                value={row.voltage_kv != null ? `${row.voltage_kv} kV` : '—'} />
+      <DetailPair label="Technology"             value={row.technology ?? '—'} />
+      <DetailPair label="Connection point"       value={row.connection_point ?? '—'} />
+      <DetailPair label="Network operator"       value={row.network_operator ?? '—'} />
+      <DetailPair label="GCA ref"                value={row.gca_ref ?? '—'} />
+      <DetailPair label="Capacity alloc ref"     value={row.capacity_allocation_ref ?? '—'} />
+      <DetailPair label="COD certificate"        value={row.cod_certificate_no ?? '—'} />
+      <DetailPair label="COD date"               value={row.cod_date ?? '—'} />
+      <DetailPair label="Programme ref"          value={row.program_ref ?? '—'} />
+      <DetailPair label="Inspection ref"         value={row.inspection_ref ?? '—'} />
+      <DetailPair label="Energization ref"       value={row.energization_ref ?? '—'} />
+      <DetailPair label="Synchronization ref"    value={row.synchronization_ref ?? '—'} />
+      <DetailPair label="Compliance-test ref"    value={row.compliance_test_ref ?? '—'} />
+      <DetailPair label="Suspension ref"         value={row.suspension_ref ?? '—'} />
+      <DetailPair label="Withdrawal ref"         value={row.withdrawal_ref ?? '—'} />
+      <DetailPair label="Reason code"            value={row.reason_code ?? '—'} />
+      <DetailPair label="Ready"                  value={fmtDate(row.connection_ready_at)} />
+      <DetailPair label="Programme review"       value={fmtDate(row.program_review_at)} />
+      <DetailPair label="Programme approved"     value={fmtDate(row.program_approved_at)} />
+      <DetailPair label="Inspection"             value={fmtDate(row.pre_energization_inspection_at)} />
+      <DetailPair label="Energization auth"      value={fmtDate(row.energization_authorized_at)} />
+      <DetailPair label="Cold commissioning"     value={fmtDate(row.cold_commissioning_at)} />
+      <DetailPair label="Synchronized"           value={fmtDate(row.synchronized_at)} />
+      <DetailPair label="Trial operation"        value={fmtDate(row.trial_operation_at)} />
+      <DetailPair label="Compliance testing"     value={fmtDate(row.compliance_testing_at)} />
+      <DetailPair label="Commercial operation"   value={fmtDate(row.commercial_operation_at)} />
+      <DetailPair label="Suspended"              value={fmtDate(row.commissioning_suspended_at)} />
+      <DetailPair label="Withdrawn"              value={fmtDate(row.connection_withdrawn_at)} />
+      <DetailPair label="SLA deadline"           value={fmtDate(row.sla_deadline_at)} />
+      <DetailPair label="Reportable"             value={row.is_reportable ? 'Yes' : 'No'} />
+      {row.source_wave && (
+        <DetailPair label="Source wave"          value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}`} />
+      )}
+      {row.escalation_level > 0 && (
+        <DetailPair label="Escalation level"     value={String(row.escalation_level)} />
+      )}
+      {row.program_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Programme basis (facility)" value={row.program_basis} />
+        </div>
+      )}
+      {row.approval_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Approval basis" value={row.approval_basis} />
+        </div>
+      )}
+      {row.inspection_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Inspection basis" value={row.inspection_basis} />
+        </div>
+      )}
+      {row.energization_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Energization basis" value={row.energization_basis} />
+        </div>
+      )}
+      {row.cold_commissioning_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Cold-commissioning basis (facility)" value={row.cold_commissioning_basis} />
+        </div>
+      )}
+      {row.synchronization_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Synchronization basis" value={row.synchronization_basis} />
+        </div>
+      )}
+      {row.trial_operation_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Trial-operation basis (facility)" value={row.trial_operation_basis} />
+        </div>
+      )}
+      {row.compliance_test_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Compliance-test basis" value={row.compliance_test_basis} />
+        </div>
+      )}
+      {row.cod_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="COD basis" value={row.cod_basis} />
+        </div>
+      )}
+      {row.suspension_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Suspension basis" value={row.suspension_basis} />
+        </div>
+      )}
+      {row.resumption_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Resumption basis" value={row.resumption_basis} />
+        </div>
+      )}
+      {row.withdrawal_basis && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <DetailPair label="Withdrawal basis" value={row.withdrawal_basis} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function ConnectionEnergizationChainTab() {
   const [rows, setRows] = useState<EnergizationRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<EnergizationRow | null>(null);
-  const [events, setEvents] = useState<EnergizationEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -257,7 +462,7 @@ export function ConnectionEnergizationChainTab() {
       setRows(res.data?.data?.items || []);
       const d = res.data?.data;
       if (d) {
-        setKpis({
+        setSummary({
           total: d.total, ready_count: d.ready_count, open_count: d.open_count,
           suspended_count: d.suspended_count, energized_count: d.energized_count,
           withdrawn_count: d.withdrawn_count, breached: d.breached,
@@ -274,160 +479,88 @@ export function ConnectionEnergizationChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: EnergizationRow; events: EnergizationEvent[] } }>(
+      await api.post(`/connection-energization/chain/${rowId}/${key}`, values);
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
+    }
+  }, [load]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: EnergizationRow; events: ChainEvent[] } }>(
         `/connection-energization/chain/${id}`
       );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load energization history');
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events || [] }));
+    } catch {
+      // silently ignore; events just won't show
     }
-  }, []);
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (filter === 'all')        return true;
       if (filter === 'active')     return !TERMINAL_STATES.includes(r.chain_status);
-      if (filter === 'breached')   return r.sla_breached;
+      if (filter === 'breached')   return !!r.sla_breached;
       if (filter === 'reportable') return r.is_reportable;
-      if (filter === 'embedded' || filter === 'distribution' || filter === 'sub_transmission' || filter === 'transmission' || filter === 'bulk') {
+      if (['embedded', 'distribution', 'sub_transmission', 'transmission', 'bulk'].includes(filter)) {
         return r.connection_tier === filter;
       }
       return r.chain_status === filter;
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: EnergizationRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'submit-program') {
-        const basis = window.prompt('Programme basis — the commissioning & energization programme submitted by the facility:');
-        if (!basis) return;
-        const ref = window.prompt('Programme reference (e.g. PROG-2026-0007):', row.program_ref || '') || '';
-        const mw = window.prompt('Restate connection capacity (MW) — blank to keep:', String(row.connection_capacity_mw || ''));
-        body = { program_basis: basis };
-        if (ref) body.program_ref = ref;
-        if (mw && !Number.isNaN(Number(mw))) body.connection_capacity_mw = Number(mw);
-      } else if (action === 'approve-program') {
-        const basis = window.prompt('Approval basis — SO approves the commissioning programme & hold-point schedule:');
-        if (!basis) return;
-        body = { approval_basis: basis };
-      } else if (action === 'conduct-inspection') {
-        const basis = window.prompt('Inspection basis — pre-energization physical / protection inspection result:');
-        if (!basis) return;
-        const ref = window.prompt('Inspection reference (e.g. INSP-2026-0007):') || '';
-        body = { inspection_basis: basis };
-        if (ref) body.inspection_ref = ref;
-      } else if (action === 'authorize-energization') {
-        const basis = window.prompt('Energization basis — SO authorizes back-energization of the connection (large tiers cross to regulator):');
-        if (!basis) return;
-        const ref = window.prompt('Energization authorization reference (e.g. EAUTH-2026-0007):') || '';
-        body = { energization_basis: basis };
-        if (ref) body.energization_ref = ref;
-      } else if (action === 'begin-cold-commissioning') {
-        const basis = window.prompt('Cold-commissioning basis — facility begins de-energized equipment checks & cold tests:');
-        if (!basis) return;
-        body = { cold_commissioning_basis: basis };
-      } else if (action === 'authorize-synchronization') {
-        const basis = window.prompt('Synchronization basis — SO authorizes first synchronization to the grid:');
-        if (!basis) return;
-        const ref = window.prompt('Synchronization reference (e.g. SYNC-2026-0007):') || '';
-        body = { synchronization_basis: basis };
-        if (ref) body.synchronization_ref = ref;
-      } else if (action === 'begin-trial-operation') {
-        const basis = window.prompt('Trial-operation basis — facility begins the supervised trial-operation period:');
-        if (!basis) return;
-        body = { trial_operation_basis: basis };
-      } else if (action === 'begin-compliance-testing') {
-        const basis = window.prompt('Compliance-testing basis — Grid Code compliance / performance testing begins:');
-        if (!basis) return;
-        const ref = window.prompt('Compliance-test reference (e.g. GCT-2026-0007):') || '';
-        body = { compliance_test_basis: basis };
-        if (ref) body.compliance_test_ref = ref;
-      } else if (action === 'issue-cod') {
-        const basis = window.prompt('COD basis — Commercial Operation Date certified; the plant may now sell energy (crosses to regulator for every tier):');
-        if (!basis) return;
-        const cert = window.prompt('COD certificate number (e.g. COD-2026-0007):') || '';
-        const date = window.prompt('COD date (YYYY-MM-DD):') || '';
-        body = { cod_basis: basis };
-        if (cert) body.cod_certificate_no = cert;
-        if (date) body.cod_date = date;
-      } else if (action === 'suspend-commissioning') {
-        const basis = window.prompt('Suspension basis — a hold-point failed / safety concern; commissioning is suspended (large tiers cross to regulator):');
-        if (!basis) return;
-        const ref = window.prompt('Suspension reference (e.g. SUSP-2026-0007):') || '';
-        const reason = window.prompt('Reason code (e.g. protection_failure / safety_nonconformance):', 'hold_point_failed') || '';
-        body = { suspension_basis: basis };
-        if (ref) body.suspension_ref = ref;
-        if (reason) body.reason_code = reason;
-      } else if (action === 'resume-commissioning') {
-        const basis = window.prompt('Resumption basis — the suspension cause is cleared; commissioning restarts from programme-approved:');
-        if (!basis) return;
-        body = { resumption_basis: basis };
-      } else if (action === 'withdraw-connection') {
-        const basis = window.prompt('Withdrawal basis — the connection is withdrawn before commercial operation:');
-        if (!basis) return;
-        const ref = window.prompt('Withdrawal reference (e.g. WDR-2026-0007):') || '';
-        const reason = window.prompt('Reason code (e.g. developer_cancelled / capacity_lapsed):', 'developer_cancelled') || '';
-        body = { withdrawal_basis: basis };
-        if (ref) body.withdrawal_ref = ref;
-        if (reason) body.reason_code = reason;
-      }
-      await api.post(`/connection-energization/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Connection energization &amp; commissioning</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-stage SA Grid Code / NTCSA commissioning hold-point gate — the physical go-live for a new generator
-            after it wins capacity (W58) and signs its Grid Connection Agreement (W28). connection ready → programme
-            review → approved → pre-energization inspection → energization authorized → cold commissioning →
-            synchronized → trial operation → compliance testing → commercial operation, with a suspend-on-failed-hold-point
-            branch (→ commissioning suspended → resume) and a withdraw-before-COD exit. Split write: the facility (IPP)
-            submits the programme, runs cold commissioning and trial operation, and may withdraw; the System Operator
-            approves, inspects, authorizes, witnesses, tests and certifies COD. Beats Eskom/NTCSA&apos;s connect-to-energize
-            backlog with auto-scheduled witnessed hold-points, captured evidence and SLA-driven sign-off. INVERTED SLA:
-            the larger the connection, the longer every window. The W75 signature — issuing the COD crosses to the regulator
-            for EVERY tier (new generation reaching commercial operation is always notifiable); energization authorization,
-            suspension and SLA breaches cross for the large tiers (transmission + bulk).
-          </p>
-        </div>
+    <div style={{ padding: '20px', background: BG, minHeight: '100%' }}>
+      <header style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: TX1, margin: 0 }}>
+          Connection energization &amp; commissioning
+        </h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 4, maxWidth: 720 }}>
+          12-stage SA Grid Code / NTCSA commissioning hold-point gate — the physical go-live for a new generator
+          after it wins capacity (W58) and signs its Grid Connection Agreement (W28). Split write: facility (IPP)
+          submits programme, runs cold commissioning and trial operation, may withdraw; System Operator approves,
+          inspects, authorizes, witnesses, tests and certifies COD. INVERTED SLA: larger connection = longer window.
+          W75 signature: issue_cod crosses to regulator every tier; authorize_energization, suspend and SLA breaches
+          cross for large tiers (transmission + bulk).
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="Connection ready" value={kpis?.ready_count ?? 0} />
-        <Kpi label="Suspended" value={kpis?.suspended_count ?? 0} tone={(kpis?.suspended_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Large open" value={kpis?.large_open ?? 0} tone={(kpis?.large_open ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Commercial operation" value={kpis?.energized_count ?? 0} tone="ok" />
-        <Kpi label="Withdrawn" value={kpis?.withdrawn_count ?? 0} tone={(kpis?.withdrawn_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Capacity in chain" value={fmtMw(kpis?.total_capacity_mw ?? 0)} />
-        <Kpi label="Energized capacity" value={fmtMw(kpis?.energized_capacity_mw ?? 0)} tone="ok" />
+      {/* KPI strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8, marginBottom: 16 }}>
+        <KpiTile label="Total"               value={summary?.total ?? rows.length} />
+        <KpiTile label="Open"                value={summary?.open_count ?? 0} />
+        <KpiTile label="Connection ready"    value={summary?.ready_count ?? 0} />
+        <KpiTile label="Suspended"           value={summary?.suspended_count ?? 0}     tone={(summary?.suspended_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="SLA breached"        value={summary?.breached ?? 0}             tone={(summary?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Large open"          value={summary?.large_open ?? 0}           tone={(summary?.large_open ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Commercial op."      value={summary?.energized_count ?? 0}      tone="ok" />
+        <KpiTile label="Withdrawn"           value={summary?.withdrawn_count ?? 0}      tone={(summary?.withdrawn_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Reportable"          value={summary?.reportable_total ?? 0}     tone={(summary?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Capacity in chain"   value={fmtMw(summary?.total_capacity_mw ?? 0)} />
+        <KpiTile label="Energized capacity"  value={fmtMw(summary?.energized_capacity_mw ?? 0)} tone="ok" />
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      {/* Filter pills */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
         {FILTERS.map((f) => (
-          <button type="button"
+          <button
             key={f.key}
+            type="button"
             onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
+            style={{
+              padding: '3px 10px',
+              borderRadius: 4,
+              fontSize: 11,
+              fontWeight: 500,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+              background: filter === f.key ? ACC : BG1,
+              color: filter === f.key ? '#fff' : TX2,
+              cursor: 'pointer',
+            }}
           >
             {f.label}
           </button>
@@ -435,281 +568,60 @@ export function ConnectionEnergizationChainTab() {
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Energization #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Facility</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Technology</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Capacity</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.connection_tier];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.energization_number}
-                      {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to the regulator">●</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[180px] truncate" title={r.facility_name}>
-                      {r.facility_name}
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.technology ?? '—'}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtMw(r.connection_capacity_mw)}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No energizations match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 4, border: `1px solid ${BAD}40`, background: `${BAD}10`, color: BAD, fontSize: 12 }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div style={{ padding: '24px', textAlign: 'center', color: TX3, fontSize: 13, background: BG1, borderRadius: 6, border: `1px solid ${BORDER}` }}>
+          Loading...
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ padding: '24px', textAlign: 'center', color: TX3, fontSize: 13, background: BG1, borderRadius: 6, border: `1px solid ${BORDER}` }}>
+          No energizations match.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {filtered.map((row) => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, case_number: row.energization_number }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={row.facility_name}
+              meta={`${row.connection_tier.replace(/_/g, ' ')} · ${fmtMw(row.connection_capacity_mw)}${row.technology ? ` · ${row.technology}` : ''}${row.voltage_kv != null ? ` · ${row.voltage_kv} kV` : ''}`}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div style={{ padding: '8px 12px', borderRadius: 6, border: `1px solid ${BORDER}`, background: BG1 }}>
+      <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, fontFamily: MONO, color, lineHeight: 1 }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: EnergizationRow;
-  events: EnergizationEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: EnergizationRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canSuspend = SUSPENDABLE_STATES.includes(row.chain_status);
-  const canWithdraw = !TERMINAL_STATES.includes(row.chain_status);
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.energization_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.facility_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.connection_tier].label} · {fmtMw(row.connection_capacity_mw)}
-                {row.technology ? ` · ${row.technology}` : ''}
-                {row.voltage_kv != null ? ` · ${row.voltage_kv} kV` : ''}
-              </div>
-              <div className="mt-1 text-[11px] text-[#4a5568]">
-                {row.connection_point ? `Connection point ${row.connection_point}` : ''}
-                {row.network_operator ? ` · ${row.network_operator}` : ''}
-                {row.escalation_level > 0 ? ` · escalation lvl ${row.escalation_level}` : ''}
-              </div>
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                  {row.gca_ref ? ` · GCA ${row.gca_ref}` : ''}
-                  {row.capacity_allocation_ref ? ` · capacity ${row.capacity_allocation_ref}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"             value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier"              value={TIER_TONE[row.connection_tier].label} />
-            <Pair label="Capacity"          value={fmtMw(row.connection_capacity_mw)} />
-            <Pair label="Voltage"           value={row.voltage_kv != null ? `${row.voltage_kv} kV` : '—'} />
-            <Pair label="Technology"        value={row.technology ?? '—'} />
-            <Pair label="Connection point"  value={row.connection_point ?? '—'} />
-            <Pair label="Network operator"  value={row.network_operator ?? '—'} />
-            <Pair label="GCA ref"           value={row.gca_ref ?? '—'} />
-            <Pair label="Capacity alloc ref" value={row.capacity_allocation_ref ?? '—'} />
-            <Pair label="COD certificate"   value={row.cod_certificate_no ?? '—'} />
-            <Pair label="COD date"          value={row.cod_date ?? '—'} />
-            <Pair label="Programme ref"     value={row.program_ref ?? '—'} />
-            <Pair label="Inspection ref"    value={row.inspection_ref ?? '—'} />
-            <Pair label="Energization ref"  value={row.energization_ref ?? '—'} />
-            <Pair label="Synchronization ref" value={row.synchronization_ref ?? '—'} />
-            <Pair label="Compliance-test ref" value={row.compliance_test_ref ?? '—'} />
-            <Pair label="Suspension ref"    value={row.suspension_ref ?? '—'} />
-            <Pair label="Withdrawal ref"    value={row.withdrawal_ref ?? '—'} />
-            <Pair label="Reason code"       value={row.reason_code ?? '—'} />
-            <Pair label="Ready"             value={fmtDate(row.connection_ready_at)} />
-            <Pair label="Programme review"  value={fmtDate(row.program_review_at)} />
-            <Pair label="Programme approved" value={fmtDate(row.program_approved_at)} />
-            <Pair label="Inspection"        value={fmtDate(row.pre_energization_inspection_at)} />
-            <Pair label="Energization auth" value={fmtDate(row.energization_authorized_at)} />
-            <Pair label="Cold commissioning" value={fmtDate(row.cold_commissioning_at)} />
-            <Pair label="Synchronized"      value={fmtDate(row.synchronized_at)} />
-            <Pair label="Trial operation"   value={fmtDate(row.trial_operation_at)} />
-            <Pair label="Compliance testing" value={fmtDate(row.compliance_testing_at)} />
-            <Pair label="Commercial operation" value={fmtDate(row.commercial_operation_at)} />
-            <Pair label="Suspended"         value={fmtDate(row.commissioning_suspended_at)} />
-            <Pair label="Withdrawn"         value={fmtDate(row.connection_withdrawn_at)} />
-            <Pair label="SLA deadline"      value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"        value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Reportable"        value={row.is_reportable ? 'Yes' : 'No'} />
-          </div>
-          {row.program_basis && (
-            <BasisBlock label="Programme basis (facility)" tone="#1a3a5c" text={row.program_basis} />
-          )}
-          {row.approval_basis && (
-            <BasisBlock label="Approval basis" tone="#1a3a5c" text={row.approval_basis} />
-          )}
-          {row.inspection_basis && (
-            <BasisBlock label="Inspection basis" tone="#a06200" text={row.inspection_basis} />
-          )}
-          {row.energization_basis && (
-            <BasisBlock label="Energization basis" tone="#8a4a00" text={row.energization_basis} />
-          )}
-          {row.cold_commissioning_basis && (
-            <BasisBlock label="Cold-commissioning basis (facility)" tone="#8a4a00" text={row.cold_commissioning_basis} />
-          )}
-          {row.synchronization_basis && (
-            <BasisBlock label="Synchronization basis" tone="#1a3a5c" text={row.synchronization_basis} />
-          )}
-          {row.trial_operation_basis && (
-            <BasisBlock label="Trial-operation basis (facility)" tone="#1a3a5c" text={row.trial_operation_basis} />
-          )}
-          {row.compliance_test_basis && (
-            <BasisBlock label="Compliance-test basis" tone="#a06200" text={row.compliance_test_basis} />
-          )}
-          {row.cod_basis && (
-            <BasisBlock label="COD basis" tone="#155724" text={row.cod_basis} />
-          )}
-          {row.suspension_basis && (
-            <BasisBlock label="Suspension basis" tone="#7a1010" text={row.suspension_basis} />
-          )}
-          {row.resumption_basis && (
-            <BasisBlock label="Resumption basis" tone="#155724" text={row.resumption_basis} />
-          )}
-          {row.withdrawal_basis && (
-            <BasisBlock label="Withdrawal basis" tone="#6b1f1f" text={row.withdrawal_basis} />
-          )}
-        </section>
-
-        {(nextAction || canSuspend || canWithdraw) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canSuspend && (
-                <button type="button"
-                  onClick={() => onAct('suspend-commissioning', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['suspend-commissioning']}
-                </button>
-              )}
-              {canWithdraw && (
-                <button type="button"
-                  onClick={() => onAct('withdraw-connection', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b1f1f] hover:bg-[#f3e0e0]"
-                >
-                  {ACTION_LABEL['withdraw-connection']}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 1 }}>{label}</div>
+      <div style={{ fontSize: 12, color: TX1, wordBreak: 'break-word' }}>{value}</div>
     </div>
   );
 }
+
+export default ConnectionEnergizationChainTab;

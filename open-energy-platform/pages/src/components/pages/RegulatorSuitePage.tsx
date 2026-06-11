@@ -465,7 +465,7 @@ export function RegulatorSuitePage() {
       heroTitle="Regulator workbench"
       heroSubtitle="Licensing, tariff determinations, enforcement and market surveillance."
       aiBriefRole="regulator"
-      aiBriefAccent={{ from: '#1a8a5b', to: '#3b82c4' }}
+      aiBriefAccent={{ from: '#1a8a5b', to: 'oklch(0.46 0.16 55)' }}
     />
   );
 }

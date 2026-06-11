@@ -18,6 +18,10 @@ import { OEIcon } from '../OEIcon';
 import { EntityFileShell } from '../file/EntityFileShell';
 import { contractFileTabs, contractHero, type ContractFileData } from '../file/contractFileConfig';
 
+const ACC    = 'oklch(0.46 0.16 55)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+
 export function ContractDetail() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -38,17 +42,29 @@ export function ContractDetail() {
             <button
               type="button"
               onClick={() => navigate('/contracts')}
-              className="h-9 px-3 rounded-md bg-white/15 border border-white/20 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/25"
+              style={{
+                height: 34, padding: '0 12px', borderRadius: 6,
+                background: 'transparent', border: `1px solid ${BORDER}`,
+                color: TX2, fontSize: 12, fontWeight: 600,
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                cursor: 'pointer',
+              }}
             >
-              <OEIcon name="chevron-left" size={14} /> All contracts
+              <OEIcon name="chevron-left" size={13} /> All contracts
             </button>
             {data.linked.project && (
               <button
                 type="button"
                 onClick={() => navigate(`/projects/${data.linked.project.id}`)}
-                className="h-9 px-3 rounded-md bg-white text-[#1a3a5c] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/90"
+                style={{
+                  height: 34, padding: '0 12px', borderRadius: 6,
+                  background: ACC, border: 'none',
+                  color: '#fff', fontSize: 12, fontWeight: 600,
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  cursor: 'pointer',
+                }}
               >
-                <OEIcon name="flow" size={14} /> Open project file
+                <OEIcon name="flow" size={13} /> Open project file
               </button>
             )}
           </>

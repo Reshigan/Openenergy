@@ -13,7 +13,24 @@ import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
-import { Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
+import { ActionModal, FieldSpec } from '../launch/WorkstationShell';
+
+// ── design tokens ──────────────────────────────────────────────────────
+const BG      = 'oklch(0.96 0.003 250)';
+const BG1     = 'oklch(0.99 0.002 80)';
+const BG2     = 'oklch(0.93 0.004 250)';
+const BORDER  = 'oklch(0.87 0.006 250)';
+const TX1     = 'oklch(0.17 0.010 250)';
+const TX2     = 'oklch(0.40 0.009 250)';
+const TX3     = 'oklch(0.60 0.007 250)';
+const ACC     = 'oklch(0.46 0.16 55)';
+const BAD     = 'oklch(0.48 0.20 20)';
+const BAD_BG  = 'oklch(0.97 0.04 20)';
+const WARN    = 'oklch(0.50 0.18 55)';
+const WARN_BG = 'oklch(0.96 0.05 55)';
+const GOOD    = 'oklch(0.40 0.16 155)';
+const GOOD_BG = 'oklch(0.95 0.04 155)';
+const MONO    = '"IBM Plex Mono","Fira Code",monospace';
 
 type Ticket = {
   id: string;
@@ -52,6 +69,36 @@ type Escalation = {
   escalated_at: string;
   resolved_at: string | null;
 };
+
+// ── helpers ────────────────────────────────────────────────────────────
+function statusColors(status: Ticket['status']): { bg: string; color: string } {
+  if (status === 'resolved' || status === 'closed') return { bg: GOOD_BG, color: GOOD };
+  if (status === 'open') return { bg: BAD_BG, color: BAD };
+  return { bg: WARN_BG, color: WARN };
+}
+
+function priorityColors(p: Ticket['priority']): { bg: string; color: string } {
+  if (p === 'urgent') return { bg: BAD_BG, color: BAD };
+  if (p === 'high') return { bg: WARN_BG, color: WARN };
+  return { bg: BG2, color: TX2 };
+}
+
+function escalationColors(s: Escalation['status']): { bg: string; color: string } {
+  if (s === 'resolved') return { bg: GOOD_BG, color: GOOD };
+  if (s === 'rejected') return { bg: BAD_BG, color: BAD };
+  return { bg: WARN_BG, color: WARN };
+}
+
+function Badge({ bg, color, children }: { bg: string; color: string; children: React.ReactNode }) {
+  return (
+    <span style={{
+      background: bg, color, padding: '2px 8px',
+      borderRadius: 12, fontSize: 11, fontWeight: 600,
+    }}>
+      {children}
+    </span>
+  );
+}
 
 export function SupportTicketDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -101,135 +148,340 @@ export function SupportTicketDetailPage() {
     }
   };
 
-  if (loading) return <div className="p-6"><Skeleton variant="card" rows={6} /></div>;
-  if (err) return <div className="p-6"><ErrorBanner message={err} onRetry={() => void load()} /></div>;
+  if (loading) return <div style={{ padding: 24 }}><Skeleton variant="card" rows={6} /></div>;
+  if (err) return <div style={{ padding: 24 }}><ErrorBanner message={err} onRetry={() => void load()} /></div>;
   if (!ticket) return null;
 
+  const sc = statusColors(ticket.status);
+  const pc = priorityColors(ticket.priority);
+  const publicComments = comments.filter(c => c.visibility === 'public');
+  const internalComments = comments.filter(c => c.visibility === 'internal');
+
   return (
-    <div className="p-6 lg:p-10 space-y-4 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685]">
-            Ticket · <span className="font-mono">{ticket.ticket_number}</span>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr 380px',
+      height: 'calc(100vh - 50px)',
+      background: BG,
+      overflow: 'hidden',
+    }}>
+      {/* ── LEFT COLUMN ── */}
+      <div style={{ overflowY: 'auto', padding: '24px 28px' }}>
+
+        {/* Header */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', fontFamily: MONO, marginBottom: 4 }}>
+            Ticket · {ticket.ticket_number}
           </div>
-          <h1 className="mt-2 font-display text-[24px] font-bold tracking-tight" style={{ color: 'var(--oe-on-surface)' }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: TX1, margin: 0, lineHeight: 1.3 }}>
             {ticket.subject}
           </h1>
-          <p className="text-[13px] text-[#3d4756]">
-            <Pill tone={ticket.status === 'resolved' || ticket.status === 'closed' ? 'good' : ticket.status === 'open' ? 'bad' : 'warn'}>{ticket.status.replace(/_/g, ' ')}</Pill>
-            {' '}<Pill tone="info">{ticket.category}</Pill>
-            {' '}<Pill tone={ticket.priority === 'urgent' ? 'bad' : ticket.priority === 'high' ? 'warn' : 'neutral'}>{ticket.priority}</Pill>
-            {' '}· filed {new Date(ticket.created_at).toLocaleString()}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => navigate('/support/workstation')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
-            <ArrowLeft size={12} /> Workstation
-          </button>
-          <button type="button" onClick={() => void load()} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
-            <RefreshCw size={12} /> Refresh
-          </button>
-          {isAgent && ticket.status !== 'resolved' && ticket.status !== 'closed' && (
-            <>
-              <button type="button" onClick={() => setTransitioning(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
-                Transition
-              </button>
-              <button type="button" onClick={() => setEscalating(true)} className="h-9 px-3 rounded-md bg-amber-600 text-white text-[12px] font-semibold">
-                Escalate
-              </button>
-            </>
-          )}
-        </div>
-      </header>
-
-      {ticket.description && (
-        <div className="rounded-xl border border-[#dde4ec] bg-white p-4">
-          <div className="text-[10px] uppercase tracking-wide text-[#6b7685] mb-1">Description</div>
-          <div className="text-[13px] whitespace-pre-wrap">{ticket.description}</div>
-        </div>
-      )}
-
-      {ticket.resolution && (
-        <div className="rounded-xl border border-green-200 bg-green-50 p-4">
-          <div className="text-[10px] uppercase tracking-wide text-green-700 mb-1">Resolution</div>
-          <div className="text-[13px] whitespace-pre-wrap">{ticket.resolution}</div>
-          {ticket.resolved_at && (
-            <div className="text-[11px] text-[#6b7685] mt-1">Resolved {new Date(ticket.resolved_at).toLocaleString()}</div>
-          )}
-        </div>
-      )}
-
-      {escalations.length > 0 && (
-        <section>
-          <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#6b7685' }}>Escalations ({escalations.length})</h2>
-          <div className="space-y-2">
-            {escalations.map(e => (
-              <div key={e.id} className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-                <div className="flex items-center gap-2 text-[12px]">
-                  <Pill tone={e.status === 'resolved' ? 'good' : e.status === 'rejected' ? 'bad' : 'warn'}>{e.status}</Pill>
-                  <span className="text-[#6b7685]">→ <span className="font-mono">{e.escalated_to}</span></span>
-                  <span className="text-[#6b7685] ml-auto">{new Date(e.escalated_at).toLocaleString()}</span>
-                </div>
-                <div className="mt-1 text-[12px]">{e.reason}</div>
-              </div>
-            ))}
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 8 }}>
+            <Badge bg={sc.bg} color={sc.color}>{ticket.status.replace(/_/g, ' ')}</Badge>
+            <Badge bg={BG2} color={TX2}>{ticket.category}</Badge>
+            <Badge bg={pc.bg} color={pc.color}>{ticket.priority}</Badge>
+            <span style={{ fontSize: 12, color: TX3, marginLeft: 4 }}>
+              Filed {new Date(ticket.created_at).toLocaleString()}
+            </span>
           </div>
-        </section>
-      )}
+        </div>
 
-      <section>
-        <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-2" style={{ color: '#6b7685' }}>
-          Conversation ({comments.length} comment{comments.length === 1 ? '' : 's'})
-        </h2>
-        {comments.length === 0 ? (
-          <div className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#6b7685]">No replies yet.</div>
-        ) : (
-          <div className="space-y-2">
-            {comments.map(c => (
-              <div key={c.id} className={`rounded-xl border p-3 ${c.visibility === 'internal' ? 'border-amber-200 bg-amber-50' : 'border-[#dde4ec] bg-white'}`}>
-                <div className="flex items-center gap-2 text-[11px] text-[#6b7685]">
-                  <span className="font-mono">{c.author_id.slice(0, 14)}…</span>
-                  <span>·</span>
-                  <span>{new Date(c.created_at).toLocaleString()}</span>
-                  {c.visibility === 'internal' && <Pill tone="warn">internal</Pill>}
-                </div>
-                <div className="mt-1 text-[13px] whitespace-pre-wrap">{c.body}</div>
-              </div>
-            ))}
+        {/* KPI strip */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+          <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '12px 16px', flex: 1, minWidth: 100 }}>
+            <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Comments</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: TX1, fontFamily: MONO, marginTop: 4 }}>{comments.length}</div>
+          </div>
+          <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '12px 16px', flex: 1, minWidth: 100 }}>
+            <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Internal</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: TX1, fontFamily: MONO, marginTop: 4 }}>{internalComments.length}</div>
+          </div>
+          <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '12px 16px', flex: 1, minWidth: 100 }}>
+            <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Escalations</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: escalations.length > 0 ? WARN : TX1, fontFamily: MONO, marginTop: 4 }}>{escalations.length}</div>
+          </div>
+          <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '12px 16px', flex: 1, minWidth: 100 }}>
+            <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Updated</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: TX1, marginTop: 6 }}>
+              {new Date(ticket.updated_at).toLocaleDateString()}
+            </div>
+          </div>
+        </div>
+
+        {/* Description */}
+        {ticket.description && (
+          <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+              Description
+            </div>
+            <div style={{ fontSize: 13, color: TX1, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+              {ticket.description}
+            </div>
           </div>
         )}
-      </section>
 
-      {/* Reply box */}
-      <section>
-        <div className="rounded-xl border border-[#dde4ec] bg-white p-3">
-          <div className="text-[10px] uppercase tracking-wide text-[#6b7685] mb-2">Add a comment</div>
+        {/* Resolution */}
+        {ticket.resolution && (
+          <div style={{ background: GOOD_BG, border: `1px solid ${GOOD}`, borderRadius: 8, padding: '16px 20px', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: GOOD, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+              Resolution
+            </div>
+            <div style={{ fontSize: 13, color: TX1, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+              {ticket.resolution}
+            </div>
+            {ticket.resolved_at && (
+              <div style={{ fontSize: 11, color: TX3, marginTop: 8, fontFamily: MONO }}>
+                Resolved {new Date(ticket.resolved_at).toLocaleString()}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Escalations */}
+        {escalations.length > 0 && (
+          <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+              Escalations ({escalations.length})
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {escalations.map(e => {
+                const ec = escalationColors(e.status);
+                return (
+                  <div key={e.id} style={{
+                    background: WARN_BG, border: `1px solid ${WARN}`,
+                    borderRadius: 6, padding: '10px 14px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <Badge bg={ec.bg} color={ec.color}>{e.status}</Badge>
+                      <span style={{ fontSize: 12, color: TX2 }}>
+                        → <span style={{ fontFamily: MONO }}>{e.escalated_to}</span>
+                      </span>
+                      <span style={{ fontSize: 11, color: TX3, marginLeft: 'auto', fontFamily: MONO }}>
+                        {new Date(e.escalated_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: TX1 }}>{e.reason}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Conversation */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px', marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            Conversation ({comments.length} comment{comments.length === 1 ? '' : 's'})
+          </div>
+          {comments.length === 0 ? (
+            <div style={{ fontSize: 13, color: TX3, padding: '12px 0' }}>No replies yet.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {comments.map((c, i) => (
+                <div key={c.id} style={{
+                  border: `1px solid ${c.visibility === 'internal' ? WARN : BORDER}`,
+                  background: c.visibility === 'internal' ? WARN_BG : i % 2 === 1 ? BG2 : BG1,
+                  borderRadius: 6, padding: '10px 14px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, color: TX3, fontFamily: MONO }}>
+                      {c.author_id.slice(0, 14)}…
+                    </span>
+                    <span style={{ fontSize: 11, color: TX3 }}>
+                      {new Date(c.created_at).toLocaleString()}
+                    </span>
+                    {c.visibility === 'internal' && (
+                      <Badge bg={WARN_BG} color={WARN}>internal</Badge>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 13, color: TX1, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                    {c.body}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Reply box */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            Add a comment
+          </div>
           <textarea
             value={reply}
             onChange={(e) => setReply(e.target.value)}
             rows={3}
             placeholder="Type your reply…"
-            className="w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none text-[13px]"
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              padding: '8px 12px', border: `1px solid ${BORDER}`,
+              borderRadius: 6, resize: 'none', fontSize: 13,
+              color: TX1, background: BG, outline: 'none', lineHeight: 1.5,
+              fontFamily: 'inherit',
+            }}
           />
-          <div className="mt-2 flex items-center justify-between">
+          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             {isAgent ? (
-              <div className="flex items-center gap-2 text-[11px] text-[#6b7685]">
-                Visibility:
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: TX3 }}>
+                <span>Visibility:</span>
                 {(['public', 'internal'] as const).map(v => (
-                  <button type="button" key={v} onClick={() => setReplyVisibility(v)}
-                    className={`px-2 py-0.5 rounded ${replyVisibility === v ? 'bg-[#c2873a] text-white' : 'border border-[#dde4ec] text-[#3d4756]'}`}>
+                  <button
+                    type="button" key={v}
+                    onClick={() => setReplyVisibility(v)}
+                    style={{
+                      padding: '3px 10px', borderRadius: 5, fontSize: 12, cursor: 'pointer', fontWeight: 600,
+                      background: replyVisibility === v ? ACC : 'transparent',
+                      color: replyVisibility === v ? '#fff' : TX2,
+                      border: replyVisibility === v ? 'none' : `1px solid ${BORDER}`,
+                    }}
+                  >
                     {v}
                   </button>
                 ))}
               </div>
             ) : <div />}
-            <button type="button" onClick={postComment} disabled={posting || !reply.trim()} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-1 disabled:opacity-50">
+            <button
+              type="button"
+              onClick={postComment}
+              disabled={posting || !reply.trim()}
+              style={{
+                background: ACC, color: '#fff', border: 'none',
+                padding: '8px 16px', borderRadius: 6, fontWeight: 600,
+                cursor: posting || !reply.trim() ? 'not-allowed' : 'pointer',
+                fontSize: 13, opacity: posting || !reply.trim() ? 0.5 : 1,
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}
+            >
               <Send size={12} /> {posting ? 'Posting…' : 'Post'}
             </button>
           </div>
         </div>
-      </section>
+      </div>
 
+      {/* ── RIGHT COLUMN ── */}
+      <div style={{
+        borderLeft: `1px solid ${BORDER}`,
+        background: BG1,
+        overflowY: 'auto',
+        padding: '24px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}>
+        {/* Navigation */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => navigate('/support/workstation')}
+            style={{
+              background: 'transparent', color: TX2, border: `1px solid ${BORDER}`,
+              padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer',
+              fontSize: 13, display: 'flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            <ArrowLeft size={13} /> Workstation
+          </button>
+          <button
+            type="button"
+            onClick={() => void load()}
+            style={{
+              background: 'transparent', color: TX2, border: `1px solid ${BORDER}`,
+              padding: '8px 16px', borderRadius: 6, fontWeight: 600, cursor: 'pointer',
+              fontSize: 13, display: 'flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            <RefreshCw size={13} /> Refresh
+          </button>
+        </div>
+
+        {/* Agent actions */}
+        {isAgent && ticket.status !== 'resolved' && ticket.status !== 'closed' && (
+          <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+              Agent Actions
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setTransitioning(true)}
+                style={{
+                  background: ACC, color: '#fff', border: 'none',
+                  padding: '8px 16px', borderRadius: 6, fontWeight: 600,
+                  cursor: 'pointer', fontSize: 13,
+                }}
+              >
+                Transition Status
+              </button>
+              <button
+                type="button"
+                onClick={() => setEscalating(true)}
+                style={{
+                  background: 'transparent', color: ACC, border: `1px solid ${ACC}`,
+                  padding: '8px 16px', borderRadius: 6, fontWeight: 600,
+                  cursor: 'pointer', fontSize: 13,
+                }}
+              >
+                Escalate Ticket
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Ticket metadata */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            Ticket Details
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              { label: 'Ticket #', value: ticket.ticket_number },
+              { label: 'Status', value: <Badge bg={sc.bg} color={sc.color}>{ticket.status.replace(/_/g, ' ')}</Badge> },
+              { label: 'Priority', value: <Badge bg={pc.bg} color={pc.color}>{ticket.priority}</Badge> },
+              { label: 'Category', value: ticket.category },
+              { label: 'Reporter', value: ticket.reporter_id.slice(0, 16) + '…' },
+              { label: 'Assignee', value: ticket.assignee_id ? ticket.assignee_id.slice(0, 16) + '…' : '—' },
+              { label: 'Filed', value: new Date(ticket.created_at).toLocaleDateString() },
+              { label: 'Updated', value: new Date(ticket.updated_at).toLocaleDateString() },
+            ].map(row => (
+              <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: TX3 }}>{row.label}</span>
+                <span style={{ fontSize: 12, color: TX1, fontFamily: typeof row.value === 'string' ? MONO : undefined, fontWeight: 500 }}>
+                  {row.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Conversation summary */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            Activity Summary
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, color: TX3 }}>Total comments</span>
+              <span style={{ fontSize: 12, color: TX1, fontFamily: MONO, fontWeight: 600 }}>{comments.length}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, color: TX3 }}>Public</span>
+              <span style={{ fontSize: 12, color: TX1, fontFamily: MONO, fontWeight: 600 }}>{publicComments.length}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, color: TX3 }}>Internal</span>
+              <span style={{ fontSize: 12, color: WARN, fontFamily: MONO, fontWeight: 600 }}>{internalComments.length}</span>
+            </div>
+            <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 8, marginTop: 2 }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, color: TX3 }}>Escalations</span>
+              <span style={{ fontSize: 12, color: escalations.length > 0 ? WARN : TX1, fontFamily: MONO, fontWeight: 600 }}>{escalations.length}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Modals ── */}
       {transitioning && (
         <ActionModal
           title={`Transition ticket · current: ${ticket.status}`}

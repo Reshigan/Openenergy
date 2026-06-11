@@ -350,7 +350,7 @@ export function IppLifecyclePage() {
       heroTitle="IPP project file"
       heroSubtitle="EPC, environmental, land, insurance and community evidence pack."
       aiBriefRole="ipp_developer"
-      aiBriefAccent={{ from: '#1f9b95', to: '#1a3a5c' }}
+      aiBriefAccent={{ from: '#1f9b95', to: 'oklch(0.46 0.16 55)' }}
     />
   );
 }

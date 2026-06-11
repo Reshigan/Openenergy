@@ -48,10 +48,17 @@ const NEXT_ACTION: Record<string, { to: string; label: string }> = {
 };
 
 const PRIORITY_TONE: Record<string, string> = {
-  critical: 'bg-[#fde0db] text-[#c0392b] border-[#c0392b]',
-  high:     'bg-[#fef3e6] text-[#b04e0f] border-[#b04e0f]',
-  medium:   'bg-[#eef2f7] text-[#1a3a5c] border-[#1a3a5c]',
-  low:      'bg-[#eef2f7] text-[#6b7685] border-[#dde4ec]',
+  critical: '',
+  high:     '',
+  medium:   '',
+  low:      '',
+};
+
+const PRIORITY_STYLE: Record<string, React.CSSProperties> = {
+  critical: { background: 'oklch(0.97 0.04 20)', color: 'oklch(0.48 0.20 20)', borderColor: 'oklch(0.85 0.08 20)' },
+  high:     { background: 'oklch(0.96 0.003 250)', color: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.87 0.006 250)' },
+  medium:   { background: 'oklch(0.96 0.003 250)', color: 'oklch(0.17 0.010 250)', borderColor: 'oklch(0.87 0.006 250)' },
+  low:      { background: 'oklch(0.96 0.003 250)', color: 'oklch(0.60 0.007 250)', borderColor: 'oklch(0.87 0.006 250)' },
 };
 
 export function EsumsOmFieldWosPage() {
@@ -173,8 +180,9 @@ export function EsumsOmFieldWosPage() {
 
   // ─── List view ───
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-20">
-      <header className={`text-white px-4 py-3 sticky top-0 z-10 flex items-center justify-between shadow ${offline ? 'bg-[#b04e0f]' : 'bg-[#c2873a]'}`}>
+    <div className="pb-20" style={{ minHeight: 'calc(100vh - 50px)', background: 'oklch(0.96 0.003 250)' }}>
+      <header className="text-white px-4 py-3 sticky top-0 z-10 flex items-center justify-between shadow"
+              style={{ background: 'oklch(0.46 0.16 55)' }}>
         <button type="button" onClick={() => navigate('/esums')} className="p-1.5 -ml-1.5"><ArrowLeft size={20} /></button>
         <div className="text-center flex-1">
           <div className="text-[10px] uppercase tracking-wider opacity-80 inline-flex items-center gap-1">
@@ -187,33 +195,36 @@ export function EsumsOmFieldWosPage() {
 
       <div className="p-3 space-y-2">
         {rows.length === 0 ? (
-          <div className="rounded-lg bg-white border border-[#e2e8f0] p-6 text-center">
-            <Wrench size={28} className="mx-auto text-[#6b7685]" />
-            <div className="mt-2 text-[14px] font-semibold text-[#0f1c2e]">No assigned WOs</div>
-            <div className="text-[12px] text-[#6b7685] mt-1">You're caught up. Pull to refresh.</div>
+          <div className="rounded-lg border p-6 text-center"
+               style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.87 0.006 250)' }}>
+            <Wrench size={28} className="mx-auto" style={{ color: 'oklch(0.60 0.007 250)' }} />
+            <div className="mt-2 text-[14px] font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>No assigned WOs</div>
+            <div className="text-[12px] mt-1" style={{ color: 'oklch(0.60 0.007 250)' }}>You're caught up. Pull to refresh.</div>
           </div>
         ) : rows.map((w) => {
           const minsLeft = Math.round((new Date(w.sla_deadline).getTime() - Date.now()) / 60_000);
-          const slaTone = minsLeft < 0 ? 'text-[#c0392b]' : minsLeft < 60 ? 'text-[#b04e0f]' : 'text-[#1a8a5b]';
+          const slaColor = minsLeft < 0 ? 'oklch(0.48 0.20 20)' : minsLeft < 60 ? 'oklch(0.46 0.16 55)' : 'oklch(0.45 0.15 150)';
           return (
             <button type="button" key={w.id} onClick={() => setActive(w)} className="w-full text-left block">
-              <div className="rounded-lg bg-white border border-[#e2e8f0] p-3 shadow-sm active:bg-[#fafbfd]">
+              <div className="rounded-lg border p-3 shadow-sm"
+                   style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.87 0.006 250)' }}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-[12px] font-bold text-[#0f1c2e]">{w.wo_number}</span>
-                  <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${PRIORITY_TONE[w.priority]}`}>
+                  <span className="font-mono text-[12px] font-bold" style={{ color: 'oklch(0.17 0.010 250)' }}>{w.wo_number}</span>
+                  <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border"
+                        style={PRIORITY_STYLE[w.priority]}>
                     {w.priority}
                   </span>
                 </div>
-                <div className="mt-1 text-[14px] font-semibold text-[#0f1c2e]">{w.title}</div>
-                <div className="mt-1 text-[12px] text-[#3d4756] inline-flex items-center gap-1">
+                <div className="mt-1 text-[14px] font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{w.title}</div>
+                <div className="mt-1 text-[12px] inline-flex items-center gap-1" style={{ color: 'oklch(0.40 0.009 250)' }}>
                   <MapPin size={11} /> {w.site_name}
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px]">
-                  <span className="capitalize text-[#6b7685]">{w.status.replace(/_/g, ' ')}</span>
-                  <span className={`font-mono font-semibold ${slaTone}`}>
+                  <span className="capitalize" style={{ color: 'oklch(0.60 0.007 250)' }}>{w.status.replace(/_/g, ' ')}</span>
+                  <span className="font-mono font-semibold" style={{ color: slaColor }}>
                     {minsLeft < 0 ? `⚠ ${Math.abs(minsLeft)}m over SLA` : `SLA ${minsLeft}m`}
                   </span>
-                  <ChevronRight size={14} className="text-[#6b7685]" />
+                  <ChevronRight size={14} style={{ color: 'oklch(0.60 0.007 250)' }} />
                 </div>
               </div>
             </button>
@@ -237,20 +248,23 @@ function FieldWoDetail({
   const next = NEXT_ACTION[wo.status];
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-32">
-      <header className="bg-[#c2873a] text-white px-4 py-3 sticky top-0 z-10 flex items-center gap-2 shadow">
+    <div className="pb-32" style={{ minHeight: 'calc(100vh - 50px)', background: 'oklch(0.96 0.003 250)' }}>
+      <header className="text-white px-4 py-3 sticky top-0 z-10 flex items-center gap-2 shadow"
+              style={{ background: 'oklch(0.46 0.16 55)' }}>
         <button type="button" onClick={onBack} className="p-1.5 -ml-1.5"><ArrowLeft size={20} /></button>
         <div className="flex-1 min-w-0">
           <div className="text-[10px] uppercase tracking-wider opacity-80">{wo.site_name}</div>
           <div className="font-mono text-[14px] font-semibold truncate">{wo.wo_number}</div>
         </div>
-        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${PRIORITY_TONE[wo.priority]}`}>{wo.priority}</span>
+        <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border"
+              style={PRIORITY_STYLE[wo.priority]}>{wo.priority}</span>
       </header>
 
       <div className="p-3 space-y-3">
-        <section className="rounded-lg bg-white border border-[#e2e8f0] p-4 shadow-sm">
-          <div className="text-[16px] font-semibold text-[#0f1c2e] leading-tight">{wo.title}</div>
-          {wo.description && <p className="mt-1 text-[13px] text-[#3d4756] leading-snug">{wo.description}</p>}
+        <section className="rounded-lg border p-4 shadow-sm"
+                 style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.87 0.006 250)' }}>
+          <div className="text-[16px] font-semibold leading-tight" style={{ color: 'oklch(0.17 0.010 250)' }}>{wo.title}</div>
+          {wo.description && <p className="mt-1 text-[13px] leading-snug" style={{ color: 'oklch(0.40 0.009 250)' }}>{wo.description}</p>}
           <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
             <Stat label="State" value={wo.status.replace(/_/g, ' ')} />
             <Stat label="SLA" tone={minsLeft < 0 ? 'bad' : minsLeft < 60 ? 'warn' : 'good'}
@@ -258,8 +272,9 @@ function FieldWoDetail({
           </div>
         </section>
 
-        <section className="rounded-lg bg-white border border-[#e2e8f0] p-3 shadow-sm">
-          <div className="text-[11px] uppercase tracking-wider text-[#6b7685] font-bold">Photo evidence</div>
+        <section className="rounded-lg border p-3 shadow-sm"
+                 style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.87 0.006 250)' }}>
+          <div className="text-[11px] uppercase tracking-wider font-bold" style={{ color: 'oklch(0.60 0.007 250)' }}>Photo evidence</div>
           <div className="mt-2 grid grid-cols-3 gap-2">
             <PhotoButton label="Before" onChoose={(f) => onPhoto(f, 'before')} />
             <PhotoButton label="During" onChoose={(f) => onPhoto(f, 'during')} />
@@ -267,13 +282,16 @@ function FieldWoDetail({
           </div>
         </section>
 
-        <section className="rounded-lg bg-white border border-[#e2e8f0] p-3 shadow-sm space-y-2">
-          <div className="text-[11px] uppercase tracking-wider text-[#6b7685] font-bold">Quick actions</div>
-          <a href={`tel:`} className="flex items-center gap-2 px-3 py-2.5 rounded border border-[#e2e8f0] text-[13px]">
+        <section className="rounded-lg border p-3 shadow-sm space-y-2"
+                 style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.87 0.006 250)' }}>
+          <div className="text-[11px] uppercase tracking-wider font-bold" style={{ color: 'oklch(0.60 0.007 250)' }}>Quick actions</div>
+          <a href={`tel:`} className="flex items-center gap-2 px-3 py-2.5 rounded border text-[13px]"
+             style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
             <Phone size={14} /> Call site contact
           </a>
           <a href={`geo:0,0?q=${encodeURIComponent(wo.site_name)}`}
-             className="flex items-center gap-2 px-3 py-2.5 rounded border border-[#e2e8f0] text-[13px]">
+             className="flex items-center gap-2 px-3 py-2.5 rounded border text-[13px]"
+             style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
             <Navigation size={14} /> Navigate to site
           </a>
         </section>
@@ -281,19 +299,22 @@ function FieldWoDetail({
 
       {/* Sticky bottom action bar */}
       {next && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#dde4ec] px-3 py-2 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] flex gap-2">
+        <div className="fixed bottom-0 left-0 right-0 border-t px-3 py-2 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] flex gap-2"
+             style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.87 0.006 250)' }}>
           {wo.status === 'en_route' ? (
             <button type="button"
               disabled={busy}
               onClick={onOnSite}
-              className="flex-1 h-12 rounded-lg bg-[#c2873a] text-white font-semibold text-[14px] inline-flex items-center justify-center gap-2 disabled:opacity-50">
+              className="flex-1 h-12 rounded-lg text-white font-semibold text-[14px] inline-flex items-center justify-center gap-2 disabled:opacity-50"
+              style={{ background: 'oklch(0.46 0.16 55)' }}>
               <MapPin size={16} /> Arrived (check-in)
             </button>
           ) : (
             <button type="button"
               disabled={busy}
               onClick={() => onTransition(wo, next.to)}
-              className="flex-1 h-12 rounded-lg bg-[#c2873a] text-white font-semibold text-[14px] inline-flex items-center justify-center gap-2 disabled:opacity-50">
+              className="flex-1 h-12 rounded-lg text-white font-semibold text-[14px] inline-flex items-center justify-center gap-2 disabled:opacity-50"
+              style={{ background: 'oklch(0.46 0.16 55)' }}>
               <Check size={16} /> {next.label}
             </button>
           )}
@@ -304,11 +325,11 @@ function FieldWoDetail({
 }
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: 'good' | 'warn' | 'bad' }) {
-  const toneCls = tone === 'bad' ? 'text-[#c0392b]' : tone === 'warn' ? 'text-[#b04e0f]' : tone === 'good' ? 'text-[#1a8a5b]' : 'text-[#0f1c2e]';
+  const toneColor = tone === 'bad' ? 'oklch(0.48 0.20 20)' : tone === 'warn' ? 'oklch(0.46 0.16 55)' : tone === 'good' ? 'oklch(0.45 0.15 150)' : 'oklch(0.17 0.010 250)';
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685] font-bold">{label}</div>
-      <div className={`text-[14px] font-semibold capitalize ${toneCls}`}>{value}</div>
+      <div className="text-[10px] uppercase tracking-wider font-bold" style={{ color: 'oklch(0.60 0.007 250)' }}>{label}</div>
+      <div className="text-[14px] font-semibold capitalize" style={{ color: toneColor }}>{value}</div>
     </div>
   );
 }
@@ -316,9 +337,10 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: 'go
 function PhotoButton({ label, onChoose }: { label: string; onChoose: (file: File) => Promise<void> }) {
   const id = `photo-${label.toLowerCase()}`;
   return (
-    <label htmlFor={id} className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#dde4ec] py-4 active:bg-[#fafbfd] cursor-pointer">
-      <Camera size={20} className="text-[#3b82c4]" />
-      <span className="mt-1 text-[11px] font-semibold text-[#3d4756]">{label}</span>
+    <label htmlFor={id} className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed py-4 cursor-pointer"
+           style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
+      <Camera size={20} style={{ color: 'oklch(0.46 0.16 55)' }} />
+      <span className="mt-1 text-[11px] font-semibold" style={{ color: 'oklch(0.40 0.009 250)' }}>{label}</span>
       <input id={id} type="file" accept="image/*" capture="environment" className="hidden"
              onChange={(e) => { const f = e.target.files?.[0]; if (f) void onChoose(f); e.currentTarget.value = ''; }} />
     </label>

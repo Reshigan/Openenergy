@@ -21,6 +21,7 @@ type ChainStatus =
 type Tier = 'senior' | 'mezz' | 'equity';
 
 interface DrawdownRow {
+  [key: string]: unknown;
   id: string;
   drawdown_number: string;
   facility_id: string | null;
@@ -73,7 +74,7 @@ interface DrawdownEvent {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   requested:           { bg: '#e3e7ec', fg: '#557',    label: 'Requested' },
-  documents_submitted: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Documents in' },
+  documents_submitted: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Documents in' },
   ie_review:           { bg: '#fff4d6', fg: '#a06200', label: 'IE review' },
   cp_checklist:        { bg: '#fff4d6', fg: '#a06200', label: 'CP checklist' },
   on_hold:             { bg: '#ffe4e1', fg: '#a04040', label: 'On hold (query)' },
@@ -329,13 +330,13 @@ export function DrawdownChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Drawdown #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Project / tranche</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Amount</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Lender</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Drawdown #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Project / tranche</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Amount</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Lender</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -348,7 +349,7 @@ export function DrawdownChainTab() {
                     onClick={() => loadEvents(r.id)}
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">{r.drawdown_number}</td>
+                    <td className="px-3 py-2 font-mono text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>{r.drawdown_number}</td>
                     <td className="px-3 py-2 text-[#0c2a4d] max-w-[280px] truncate" title={`${r.project_name} · ${r.tranche_label}`}>
                       {r.project_name}
                       <span className="text-[#4a5568]"> · {r.tranche_label}</span>
@@ -358,7 +359,7 @@ export function DrawdownChainTab() {
                         {r.tranche_tier}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtZar(r.amount_zar)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtZar(r.amount_zar)}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
                         {cs.label}
@@ -477,7 +478,7 @@ function Drawer({
           {row.drawdown_notes && (
             <div className="mt-3 text-[12px]">
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">Drawdown notes</div>
-              <div className="text-[#1a3a5c] whitespace-pre-wrap">{row.drawdown_notes}</div>
+              <div className="whitespace-pre-wrap" style={{ color: 'oklch(0.46 0.16 55)' }}>{row.drawdown_notes}</div>
             </div>
           )}
         </section>
@@ -537,7 +538,7 @@ function Drawer({
                   {(e.from_status || e.to_status) && (
                     <div className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</div>
                   )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

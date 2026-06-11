@@ -486,7 +486,7 @@ export function LenderSuitePage() {
       heroTitle="Lender workbench"
       heroSubtitle="Covenants, IE certs, waterfalls, reserves and stress scenarios."
       aiBriefRole="lender"
-      aiBriefAccent={{ from: '#1a8a5b', to: '#3b82c4' }}
+      aiBriefAccent={{ from: '#1a8a5b', to: 'oklch(0.46 0.16 55)' }}
     />
   );
 }

@@ -23,9 +23,9 @@ interface CommunityTrustReport {
 
 const STATUS_COLORS: Record<string, string> = {
   report_due:           'bg-[#eef2f7] text-[#6b7685]',
-  data_preparation:     'bg-blue-100 text-blue-700',
+  data_preparation:     'bg-[#eef7f0] text-[#3d4756]',
   trustee_review:       'bg-sky-100 text-sky-700',
-  report_drafted:       'bg-indigo-100 text-indigo-700',
+  report_drafted:       'bg-[#eef2f7] text-[#3d4756]',
   ipp_review:           'bg-yellow-100 text-yellow-800',
   submitted_to_dtic:    'bg-amber-100 text-amber-700',
   dtic_review:          'bg-orange-100 text-orange-700',
@@ -39,7 +39,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   minor:       '#6b7280',
-  moderate:    '#3b82f6',
+  moderate:    'oklch(0.46 0.16 55)',
   significant: '#f59e0b',
   major:       '#ef4444',
   material:    '#7c3aed',

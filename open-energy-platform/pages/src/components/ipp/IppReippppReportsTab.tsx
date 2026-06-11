@@ -29,8 +29,8 @@ interface ReippppReportKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   report_cycle_opened:        'bg-[#eef2f7] text-[#6b7685]',
-  data_collection:            'bg-blue-100 text-blue-700',
-  local_content_verification: 'bg-blue-100 text-blue-700',
+  data_collection:            'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
+  local_content_verification: 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   ed_spend_reconciliation:    'bg-yellow-100 text-yellow-800',
   job_creation_tabulation:    'bg-yellow-100 text-yellow-800',
   internal_review:            'bg-orange-100 text-orange-700',
@@ -59,7 +59,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const CAPACITY_TIER_COLORS: Record<string, string> = {
   small:    'bg-[#eef2f7] text-[#2d3748]',
-  medium:   'bg-blue-100 text-blue-800',
+  medium:   'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
   large:    'bg-yellow-100 text-yellow-800',
   major:    'bg-orange-100 text-orange-800',
   flagship: 'bg-red-100 text-red-800',
@@ -401,9 +401,9 @@ export function IppReippppReportsTab() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3"
+          className="rounded-lg border border-[oklch(0.87_0.012_250)] bg-[oklch(0.97_0.003_250)] p-4 space-y-3"
         >
-          <div className="text-sm font-semibold text-blue-800">New REIPPPP Annual Progress Report</div>
+          <div className="text-sm font-semibold text-[oklch(0.40_0.009_250)]">New REIPPPP Annual Progress Report</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
@@ -619,7 +619,7 @@ export function IppReippppReportsTab() {
                       {actions.length > 0 && (
                         <button type="button"
                           onClick={() => openActionPicker(item)}
-                          className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                          className="px-2 py-0.5 text-xs rounded bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)] hover:bg-[oklch(0.94_0.008_250)] border border-[oklch(0.87_0.012_250)]"
                         >
                           Actions
                         </button>

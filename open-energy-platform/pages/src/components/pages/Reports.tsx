@@ -3,7 +3,6 @@ import { FileText, Loader2, Printer, Sparkles, Filter, Download, Table as TableI
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
 import { NarrativeText } from '../NarrativeText';
-import { StitchPage } from '../StitchPage';
 
 type Period = '30d' | '90d' | '12m' | 'ytd';
 
@@ -121,6 +120,24 @@ function readPath(obj: Record<string, unknown>, path: string): unknown {
   }, obj);
 }
 
+// Design tokens
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const ACC_BG = 'oklch(0.96 0.05 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const BAD_BG = 'oklch(0.97 0.04 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const WARN_BG= 'oklch(0.96 0.05 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const GOOD_BG= 'oklch(0.95 0.04 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
+
 export function Reports() {
   const { user } = useAuth();
   const [period, setPeriod] = useState<Period>('90d');
@@ -133,10 +150,6 @@ export function Reports() {
   const [csvBusy, setCsvBusy] = useState<string | null>(null);
 
   const isAdminLike = user?.role === 'admin' || user?.role === 'support';
-  // Start empty so we wait for AuthContext to hydrate before firing any
-  // /reports fetch — otherwise a support user who mounts before `user` lands
-  // would default to 'admin' and stay there. When user resolves below we
-  // sync this state to their own role as the sensible starting view.
   const [selectedRole, setSelectedRole] = useState<string>('');
 
   useEffect(() => {
@@ -206,191 +219,414 @@ export function Reports() {
     }
   }, [role]);
 
+  const summaryEntries = detailed ? Object.entries(detailed.summary) : [];
+  const totalRows = detailed
+    ? detailed.sections.reduce((acc, s) => acc + s.rows.length, 0)
+    : 0;
+
   return (
-    <StitchPage
-      eyebrowIcon={FileText}
-      eyebrowLabel={`${role.replace('_', ' ')} — deep reporting`}
-      title={title}
-      subtitle="AI-narrated executive summary, detailed tables and CSV export — grounded in live platform data."
-      actions={
-        <div className="flex items-center gap-2 flex-wrap">
-          {isAdminLike && (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr 380px',
+      height: 'calc(100vh - 50px)',
+      background: BG,
+      overflow: 'hidden',
+    }}>
+      {/* LEFT COLUMN */}
+      <div style={{ overflowY: 'auto', padding: '24px 28px' }}>
+        {/* Page header */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <FileText size={16} style={{ color: TX3 }} />
+            <span style={{ fontSize: 11, color: TX3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              {role.replace('_', ' ')} — deep reporting
+            </span>
+          </div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: TX1, margin: 0 }}>{title}</h1>
+          <p style={{ fontSize: 13, color: TX2, margin: '4px 0 0' }}>
+            AI-narrated executive summary, detailed tables and CSV export — grounded in live platform data.
+          </p>
+        </div>
+
+        {/* Error banner */}
+        {error && (
+          <div style={{
+            background: BAD_BG, border: `1px solid ${BAD}`, borderRadius: 6,
+            padding: '8px 14px', fontSize: 13, color: BAD, marginBottom: 16,
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* KPI strip — from AI report */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+          {loading && layout.map((l) => (
+            <div key={l.key} style={{
+              background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+              padding: '12px 16px', flex: '1 1 120px', minWidth: 120, minHeight: 72,
+              opacity: 0.5,
+            }} />
+          ))}
+          {!loading && kpis.map((k) => (
+            <div key={k.label} style={{
+              background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+              padding: '12px 16px', flex: '1 1 120px', minWidth: 120,
+            }}>
+              <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                {k.label}
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: TX1, fontFamily: MONO, marginTop: 4 }}>
+                {k.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Key metrics from /reports/:role */}
+        {!detailedLoading && detailed && summaryEntries.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+              <TableIcon size={13} style={{ color: TX3 }} />
+              <span style={{ fontSize: 11, color: TX2, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Key metrics
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {summaryEntries.map(([k, v]) => (
+                <div key={k} style={{
+                  background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+                  padding: '12px 16px', flex: '1 1 120px', minWidth: 120,
+                }}>
+                  <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                    {k.replace(/_/g, ' ')}
+                  </div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: TX1, fontFamily: MONO, marginTop: 4 }}>
+                    {typeof v === 'number' ? num(v) : String(v)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Executive summary */}
+        <div style={{
+          background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+          overflow: 'hidden', marginBottom: 20,
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 20px', borderBottom: `1px solid ${BORDER}`,
+            background: ACC_BG,
+          }}>
+            <Sparkles size={15} style={{ color: ACC }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: TX1 }}>Executive summary</span>
+            {aiData?.narrative?.fallback && (
+              <span style={{
+                marginLeft: 'auto', fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
+                letterSpacing: '0.05em', color: WARN, background: WARN_BG,
+                borderRadius: 4, padding: '2px 8px',
+              }}>
+                Deterministic fallback
+              </span>
+            )}
+          </div>
+          <div style={{ padding: '16px 20px' }}>
+            {loading ? (
+              <div style={{ fontSize: 13, color: TX2, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                Generating executive summary…
+              </div>
+            ) : (
+              <NarrativeText
+                text={aiData?.narrative?.text}
+                emptyLabel="No narrative generated."
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Detailed error */}
+        {detailedError && (
+          <div style={{
+            background: BAD_BG, border: `1px solid ${BAD}`, borderRadius: 6,
+            padding: '8px 14px', fontSize: 13, color: BAD, marginBottom: 16,
+          }}>
+            {detailedError}
+          </div>
+        )}
+
+        {/* Detailed sections loading */}
+        {detailedLoading && (
+          <div style={{
+            background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+            padding: '20px', fontSize: 13, color: TX2,
+            display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16,
+          }}>
+            <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+            Loading detailed tables…
+          </div>
+        )}
+
+        {/* Detailed sections */}
+        {!detailedLoading && detailed && detailed.sections.map((section) => (
+          <div key={section.key} style={{
+            background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+            overflow: 'hidden', marginBottom: 16,
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '10px 20px', borderBottom: `1px solid ${BORDER}`,
+            }}>
+              <TableIcon size={13} style={{ color: TX3 }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: TX1 }}>{section.label}</span>
+              <span style={{ fontSize: 11, color: TX3, marginLeft: 2 }}>({section.rows.length} rows)</span>
+              <button
+                type="button"
+                onClick={() => downloadCsv(section.key)}
+                disabled={csvBusy === section.key || section.rows.length === 0}
+                aria-label={`Download ${section.label} as CSV`}
+                style={{
+                  marginLeft: 'auto',
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  height: 28, padding: '0 10px', borderRadius: 6,
+                  border: `1px solid ${BORDER}`, background: 'transparent',
+                  fontSize: 12, color: TX2, cursor: 'pointer',
+                  opacity: (csvBusy === section.key || section.rows.length === 0) ? 0.4 : 1,
+                }}
+              >
+                {csvBusy === section.key
+                  ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                  : <Download size={12} />}
+                CSV
+              </button>
+            </div>
+            {section.rows.length === 0 ? (
+              <div style={{ padding: '16px 20px', fontSize: 13, color: TX3 }}>No data for this period.</div>
+            ) : (
+              <div style={{ overflowX: 'auto', maxHeight: 480, overflowY: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ borderBottom: `2px solid ${BORDER}`, background: BG2 }}>
+                      {Object.keys(section.rows[0]).map((col) => (
+                        <th key={col} style={{
+                          textAlign: 'left', padding: '8px 12px', color: TX2,
+                          fontWeight: 600, fontSize: 10, textTransform: 'uppercase',
+                          letterSpacing: '0.05em', position: 'sticky', top: 0, background: BG2,
+                        }}>
+                          {col.replace(/_/g, ' ')}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {section.rows.slice(0, 200).map((row, i) => (
+                      <tr key={i} style={{
+                        borderBottom: `1px solid ${BORDER}`,
+                        background: i % 2 === 1 ? BG2 : 'transparent',
+                      }}>
+                        {Object.keys(section.rows[0]).map((col) => (
+                          <td key={col} style={{
+                            padding: '8px 12px', color: TX1,
+                            whiteSpace: 'nowrap', fontFamily: typeof row[col] === 'number' ? MONO : 'inherit',
+                          }}>
+                            {formatCell(row[col])}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {section.rows.length > 200 && (
+                  <div style={{
+                    padding: '8px 12px', fontSize: 11, color: TX3,
+                    background: BG2, borderTop: `1px solid ${BORDER}`,
+                  }}>
+                    Showing first 200 rows — download CSV for the full set.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+
+        {/* Raw KPI payload */}
+        <div style={{
+          background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+          overflow: 'hidden', marginBottom: 16,
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 20px', borderBottom: `1px solid ${BORDER}`,
+          }}>
+            <Filter size={13} style={{ color: TX3 }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: TX1 }}>Raw AI KPI payload</span>
+          </div>
+          <pre style={{
+            padding: '16px 20px', fontSize: 11, lineHeight: 1.7, color: TX2,
+            maxHeight: 320, overflowY: 'auto', background: BG2,
+            fontFamily: MONO, margin: 0,
+          }}>
+            {aiData ? JSON.stringify(aiData.kpis, null, 2) : ''}
+          </pre>
+        </div>
+      </div>
+
+      {/* RIGHT COLUMN */}
+      <div style={{
+        borderLeft: `1px solid ${BORDER}`,
+        background: BG1,
+        overflowY: 'auto',
+        padding: '24px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}>
+        {/* Role selector (admin/support only) */}
+        {isAdminLike && (
+          <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 16px' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+              Report role
+            </div>
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="h-9 px-3 rounded-lg border border-[#d0d5dd] bg-white text-[13px] text-[#0f1c2e]"
               aria-label="Select role to report on"
+              style={{
+                width: '100%', height: 34, padding: '0 10px', borderRadius: 6,
+                border: `1px solid ${BORDER}`, background: BG1, fontSize: 13,
+                color: TX1, outline: 'none',
+              }}
             >
               {SELECTABLE_ROLES.map((r) => (
                 <option key={r.value} value={r.value}>{r.label}</option>
               ))}
             </select>
-          )}
-          <div className="inline-flex items-center gap-1 bg-white border border-[#dde4ec] rounded-lg p-1">
+          </div>
+        )}
+
+        {/* Period selector */}
+        <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 16px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+            Period
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
             {(['30d', '90d', '12m', 'ytd'] as Period[]).map((p) => (
-              <button type="button"
+              <button
+                type="button"
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`h-8 px-3 rounded-md text-[12px] font-semibold ${period === p ? 'bg-[#3b82c4] text-white' : 'text-[#6b7685] hover:bg-[#f5f6fa]'}`}
+                style={{
+                  height: 34, borderRadius: 6, border: period === p ? 'none' : `1px solid ${BORDER}`,
+                  background: period === p ? ACC : 'transparent',
+                  color: period === p ? '#fff' : TX2,
+                  fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  letterSpacing: '0.04em',
+                }}
               >
                 {p.toUpperCase()}
               </button>
             ))}
           </div>
-          <button type="button"
-            onClick={() => window.print()}
-            className="h-9 px-3 rounded-lg border border-[#d0d5dd] text-[13px] text-[#6b7685] hover:bg-[#f8fafc] inline-flex items-center gap-2"
-          >
-            <Printer size={14} /> Print / PDF
-          </button>
         </div>
-      }
-    >
 
-      {error && (
-        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] text-[13px] text-[#c0392b] px-4 py-2">
-          {error}
-        </div>
-      )}
-
-      {/* KPI matrix (from AI report) */}
-      <section className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        {loading && layout.map((l) => (
-          <div key={l.key} className="rounded-lg border border-[#dde4ec] bg-white p-4 animate-pulse h-[88px]" />
-        ))}
-        {!loading && kpis.map((k) => (
-          <div key={k.label} className="rounded-lg border border-[#dde4ec] bg-white p-4">
-            <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{k.label}</div>
-            <div className="mt-1 text-[18px] font-semibold text-[#0f1c2e]">{k.value}</div>
+        {/* Quick actions */}
+        <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 16px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+            Actions
           </div>
-        ))}
-      </section>
-
-      {/* Detailed summary tiles (from /reports/:role) */}
-      {/* Hide while a fresh fetch is in-flight so we never show stale
-          cross-role tiles during a role-selector switch. */}
-      {!detailedLoading && detailed && (
-        <section>
-          <div className="flex items-center gap-2 mb-2">
-            <TableIcon size={14} className="text-[#6b7685]" />
-            <h2 className="text-[13px] uppercase tracking-wider text-[#6b7685] font-semibold">Key metrics</h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3">
-            {Object.entries(detailed.summary).map(([k, v]) => (
-              <div key={k} className="rounded-lg border border-[#dde4ec] bg-white p-4">
-                <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{k.replace(/_/g, ' ')}</div>
-                <div className="mt-1 text-[18px] font-semibold text-[#0f1c2e]">
-                  {typeof v === 'number' ? num(v) : String(v)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* AI executive summary */}
-      <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
-        <header className="flex items-center gap-2 px-5 py-3 border-b border-[#f0f0f0] bg-gradient-to-r from-[#f5f6fa] to-[#eaf0ff]">
-          <Sparkles size={16} className="text-[#1f9b95]" />
-          <h2 className="text-[14px] font-semibold text-[#0f1c2e]">Executive summary</h2>
-          {aiData?.narrative?.fallback && (
-            <span className="ml-auto text-[10px] uppercase tracking-wider text-[#8b6d00] bg-[#fff4d6] rounded px-2 py-[2px]">
-              Deterministic fallback
-            </span>
-          )}
-        </header>
-        <div className="p-5">
-          {loading && (
-            <div className="text-[13px] text-[#6b7685]">
-              <Loader2 size={14} className="inline animate-spin mr-2" />
-              Generating executive summary…
-            </div>
-          )}
-          {!loading && (
-            <NarrativeText
-              text={aiData?.narrative?.text}
-              emptyLabel="No narrative generated."
-            />
-          )}
-        </div>
-      </section>
-
-      {/* Detailed sections with CSV export */}
-      {detailedError && (
-        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] text-[13px] text-[#c0392b] px-4 py-2">
-          {detailedError}
-        </div>
-      )}
-
-      {detailedLoading && (
-        <div className="rounded-xl border border-[#dde4ec] bg-white p-6 text-[13px] text-[#6b7685]">
-          <Loader2 size={14} className="inline animate-spin mr-2" />Loading detailed tables…
-        </div>
-      )}
-
-      {!detailedLoading && detailed && detailed.sections.map((section) => (
-        <section key={section.key} className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
-          <header className="flex items-center gap-2 px-5 py-3 border-b border-[#f0f0f0]">
-            <TableIcon size={14} className="text-[#6b7685]" />
-            <h2 className="text-[14px] font-semibold text-[#0f1c2e]">{section.label}</h2>
-            <span className="text-[11px] text-[#6b7685] ml-1">({section.rows.length} rows)</span>
-            <button type="button"
-              onClick={() => downloadCsv(section.key)}
-              disabled={csvBusy === section.key || section.rows.length === 0}
-              className="ml-auto h-7 px-3 rounded-md border border-[#d0d5dd] text-[12px] text-[#6b7685] hover:bg-[#f5f6fa] inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label={`Download ${section.label} as CSV`}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                height: 36, borderRadius: 6, border: `1px solid ${ACC}`,
+                background: 'transparent', color: ACC,
+                fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              }}
             >
-              {csvBusy === section.key ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
-              CSV
+              <Printer size={13} /> Print / PDF
             </button>
-          </header>
-          {section.rows.length === 0 ? (
-            <div className="p-5 text-[13px] text-[#6b7685]">No data for this period.</div>
-          ) : (
-            <div className="overflow-auto max-h-[480px]">
-              <table className="w-full text-[12px]">
-                <thead className="bg-[#fafbfd] sticky top-0">
-                  <tr>
-                    {Object.keys(section.rows[0]).map((col) => (
-                      <th key={col} className="text-left px-3 py-2 border-b border-[#f0f0f0] text-[10px] uppercase tracking-wider text-[#6b7685] font-semibold">
-                        {col.replace(/_/g, ' ')}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {section.rows.slice(0, 200).map((row, i) => (
-                    <tr key={i} className="border-b border-[#f5f6fa] hover:bg-[#fafbfd]">
-                      {Object.keys(section.rows[0]).map((col) => (
-                        <td key={col} className="px-3 py-1.5 text-[#0f1c2e] whitespace-nowrap">
-                          {formatCell(row[col])}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {section.rows.length > 200 && (
-                <div className="px-3 py-2 text-[11px] text-[#6b7685] bg-[#fafbfd] border-t border-[#f0f0f0]">
-                  Showing first 200 rows — download CSV for the full set.
-                </div>
-              )}
-            </div>
-          )}
-        </section>
-      ))}
+          </div>
+        </div>
 
-      {/* Raw KPI dump (drill-down) */}
-      <section className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
-        <header className="flex items-center gap-2 px-5 py-3 border-b border-[#f0f0f0]">
-          <Filter size={14} className="text-[#6b7685]" />
-          <h2 className="text-[14px] font-semibold text-[#0f1c2e]">Raw AI KPI payload</h2>
-        </header>
-        <pre className="px-5 py-4 text-[11px] leading-relaxed text-[#6b7685] max-h-96 overflow-auto bg-[#fafbfd]">
-          {aiData ? JSON.stringify(aiData.kpis, null, 2) : ''}
-        </pre>
-      </section>
-    </StitchPage>
+        {/* Report summary stats */}
+        <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 16px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            Report summary
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+              <span style={{ color: TX2 }}>Role</span>
+              <span style={{ color: TX1, fontWeight: 600, textTransform: 'capitalize' }}>
+                {role.replace(/_/g, ' ')}
+              </span>
+            </div>
+            <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+              <span style={{ color: TX2 }}>Period</span>
+              <span style={{ color: TX1, fontFamily: MONO, fontWeight: 600 }}>{period.toUpperCase()}</span>
+            </div>
+            <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+              <span style={{ color: TX2 }}>KPI tiles</span>
+              <span style={{ color: TX1, fontFamily: MONO, fontWeight: 600 }}>{kpis.length}</span>
+            </div>
+            <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+              <span style={{ color: TX2 }}>Sections</span>
+              <span style={{ color: TX1, fontFamily: MONO, fontWeight: 600 }}>
+                {detailed ? detailed.sections.length : '—'}
+              </span>
+            </div>
+            <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+              <span style={{ color: TX2 }}>Total rows</span>
+              <span style={{ color: TX1, fontFamily: MONO, fontWeight: 600 }}>
+                {detailed ? totalRows.toLocaleString() : '—'}
+              </span>
+            </div>
+            {detailed?.generated_at && (
+              <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+                <span style={{ color: TX3 }}>Generated</span>
+                <span style={{ color: TX3, fontFamily: MONO }}>
+                  {new Date(detailed.generated_at).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' })}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* AI narrative status */}
+        <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+            <Sparkles size={13} style={{ color: ACC }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              AI narrative
+            </span>
+          </div>
+          {loading ? (
+            <div style={{ fontSize: 12, color: TX3, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+              Generating…
+            </div>
+          ) : aiData?.narrative?.text ? (
+            <div style={{ fontSize: 12, color: TX2 }}>
+              <span style={{
+                display: 'inline-block',
+                background: aiData.narrative.fallback ? WARN_BG : GOOD_BG,
+                color: aiData.narrative.fallback ? WARN : GOOD,
+                borderRadius: 10, padding: '2px 8px', fontSize: 11, fontWeight: 600,
+              }}>
+                {aiData.narrative.fallback ? 'Deterministic fallback' : 'AI generated'}
+              </span>
+              <div style={{ marginTop: 6, color: TX3, lineHeight: 1.5 }}>
+                {aiData.narrative.text.slice(0, 120)}{aiData.narrative.text.length > 120 ? '…' : ''}
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: TX3 }}>No narrative available.</div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

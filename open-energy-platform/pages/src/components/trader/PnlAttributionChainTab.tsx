@@ -27,6 +27,7 @@ type Authority = 'trader' | 'desk_head' | 'market_risk_manager' | 'CFO';
 type Ifrs9Stage = 'stage_1' | 'stage_2' | 'stage_3';
 
 interface PnaRow {
+  [key: string]: unknown;
   id: string;
   pnl_number: string;
   book_id: string;
@@ -152,9 +153,9 @@ interface PnaEvent {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   day_open:               { bg: '#e3e7ec', fg: '#445',    label: 'Day open' },
-  mtm_run:                { bg: '#dbecfb', fg: '#1a3a5c', label: 'MTM run' },
-  realised_computed:      { bg: '#dbecfb', fg: '#1a3a5c', label: 'Realised computed' },
-  unrealised_computed:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Unrealised computed' },
+  mtm_run:                { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'MTM run' },
+  realised_computed:      { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Realised computed' },
+  unrealised_computed:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Unrealised computed' },
   attribution_decomposed: { bg: '#fff4d6', fg: '#a06200', label: 'Attribution decomposed' },
   risk_decomposed:        { bg: '#fff4d6', fg: '#a06200', label: 'Risk decomposed' },
   benchmark_compared:     { bg: '#fff4d6', fg: '#a06200', label: 'Benchmark compared' },
@@ -496,9 +497,9 @@ export function PnlAttributionChainTab() {
         <span>Reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
         <span>Variance imminent: <span className="font-semibold text-[#a06200]">{kpis.variance_imminent_count}</span></span>
         <span>Restate risk: <span className="font-semibold text-[#9b1f1f]">{kpis.restate_risk_count}</span></span>
-        <span>Bridges to W2 (risk): <span className="font-semibold text-[#1a3a5c]">{kpis.trading_risk_bridged_count}</span></span>
-        <span>Bridges to W107 (pretrade): <span className="font-semibold text-[#1a3a5c]">{kpis.pretrade_bridged_count}</span></span>
-        <span>Bridges to W44 (reporting): <span className="font-semibold text-[#1a3a5c]">{kpis.trade_reporting_bridged_count}</span></span>
+        <span>Bridges to W2 (risk): <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.trading_risk_bridged_count}</span></span>
+        <span>Bridges to W107 (pretrade): <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.pretrade_bridged_count}</span></span>
+        <span>Bridges to W44 (reporting): <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.trade_reporting_bridged_count}</span></span>
         <span>Total daily P&amp;L: <span className={`font-semibold ${kpis.total_daily_pnl_zar_sum >= 0 ? 'text-[#1f5b3a]' : 'text-[#9b1f1f]'}`}>{fmtZar(kpis.total_daily_pnl_zar_sum)}</span></span>
       </div>
 
@@ -528,16 +529,16 @@ export function PnlAttributionChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">P&amp;L #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Book / Date</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Notional</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Daily P&amp;L</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Attr gap</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">IFRS9</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Urgency</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>P&amp;L #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Book / Date</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Notional</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Daily P&amp;L</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Attr gap</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>IFRS9</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Urgency</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -558,7 +559,7 @@ export function PnlAttributionChainTab() {
                       {r.pnl_number}
                       {r.is_reportable_flag && <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">REG</span>}
                     </td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">
+                    <td className="px-3 py-2" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       <div className="text-[11px] font-medium">{r.book_label ?? r.book_id}</div>
                       <div className="text-[10px] text-[#6b7685]">
                         {r.business_date}
@@ -799,7 +800,7 @@ function Drawer({
               {events.map((e) => (
                 <div key={e.id} className="flex items-baseline gap-3 border-b border-[#e3e7ec] py-1 text-[11px]">
                   <span className="font-mono text-[#6b7685]">{fmtDate(e.created_at)}</span>
-                  <span className="font-semibold text-[#1a3a5c]">{e.event_type}</span>
+                  <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.event_type}</span>
                   {e.from_status && e.to_status && (
                     <span className="text-[#4a5568]">{e.from_status} {'→'} {e.to_status}</span>
                   )}
@@ -819,7 +820,7 @@ function Drawer({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-[#1a3a5c]">{title}</h3>
+      <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-wider" style={{ color: 'oklch(0.46 0.16 55)' }}>{title}</h3>
       <div className="rounded border border-[#d8dde6] bg-[#fafbfd] p-3">{children}</div>
     </div>
   );
@@ -830,7 +831,7 @@ function Grid({ children }: { children: React.ReactNode }) {
 }
 
 function Field({ label, value, tone }: { label: string; value: string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'ok' ? '#1f5b3a' : '#1a3a5c';
+  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'ok' ? '#1f5b3a' : 'oklch(0.46 0.16 55)';
   return (
     <div className="rounded border border-[#e3e7ec] bg-white px-2 py-1.5">
       <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">{label}</div>
@@ -854,7 +855,7 @@ function ActionButton({
   onClick: () => void;
   tone: 'primary' | 'warn' | 'danger';
 }) {
-  const bg = tone === 'danger' ? '#7a0e0e' : tone === 'warn' ? '#a06200' : '#1a3a5c';
+  const bg = tone === 'danger' ? '#7a0e0e' : tone === 'warn' ? '#a06200' : 'oklch(0.46 0.16 55)';
   return (
     <button type="button"
       onClick={onClick}

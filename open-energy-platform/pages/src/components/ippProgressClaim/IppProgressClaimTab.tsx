@@ -112,7 +112,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  interim: 'bg-blue-50 text-blue-700',
+  interim: 'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
   milestone: 'bg-purple-100 text-purple-700',
   final: 'bg-green-100 text-green-700',
   variation: 'bg-amber-100 text-amber-700',
@@ -121,8 +121,8 @@ const TYPE_COLOR: Record<string, string> = {
 
 const STATUS_COLOR: Record<ClaimStatus, string> = {
   submitted:              'bg-[#eef2f7] text-[#2d3748]',
-  quantity_survey_review: 'bg-blue-50 text-blue-700',
-  pm_review:              'bg-indigo-100 text-indigo-700',
+  quantity_survey_review: 'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
+  pm_review:              'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   engineer_certified:     'bg-violet-100 text-violet-700',
   approved:               'bg-emerald-100 text-emerald-700',
   payment_processed:      'bg-green-100 text-green-800',
@@ -193,7 +193,7 @@ function Flag({ label, title, cls }: { label: string; title: string; cls: string
 
 function KpiCard({ label, value, color }: { label: string; value: string | number; color: string }) {
   const colors: Record<string, string> = {
-    blue:   'bg-blue-50 text-blue-900 border-blue-200',
+    blue:   'bg-[oklch(0.97_0.003_250)] text-[oklch(0.17_0.010_250)] border-[oklch(0.87_0.012_250)]',
     red:    'bg-red-50 text-red-900 border-red-200',
     orange: 'bg-orange-50 text-orange-900 border-orange-200',
     green:  'bg-green-50 text-green-900 border-green-200',
@@ -526,13 +526,13 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
                           <Flag label="SLA!" title="SLA breached" cls="bg-red-200 text-red-900" />
                         )}
                         {!!row.is_reportable && (
-                          <Flag label="RPT" title="Regulator notified" cls="bg-blue-100 text-blue-800" />
+                          <Flag label="RPT" title="Regulator notified" cls="bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]" />
                         )}
                       </div>
                     </td>
                     {!readOnly && (
                       <td className="px-3 py-2">
-                        <button type="button" className="text-[10px] text-blue-600 hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>
+                        <button type="button" className="text-[10px] text-[oklch(0.46_0.16_55)] hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>
                           Open
                         </button>
                       </td>
@@ -627,15 +627,15 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
             {(selected.qs_notes || selected.pm_notes || selected.engineer_certification_notes) && (
               <div className="space-y-2">
                 {selected.qs_notes && (
-                  <div className="text-xs bg-blue-50 rounded p-2">
-                    <span className="font-semibold text-blue-800">QS notes:</span>
-                    <span className="ml-1 text-blue-700">{selected.qs_notes}</span>
+                  <div className="text-xs bg-[oklch(0.97_0.003_250)] rounded p-2">
+                    <span className="font-semibold text-[oklch(0.40_0.009_250)]">QS notes:</span>
+                    <span className="ml-1 text-[oklch(0.46_0.16_55)]">{selected.qs_notes}</span>
                   </div>
                 )}
                 {selected.pm_notes && (
-                  <div className="text-xs bg-indigo-50 rounded p-2">
-                    <span className="font-semibold text-indigo-800">PM notes:</span>
-                    <span className="ml-1 text-indigo-700">{selected.pm_notes}</span>
+                  <div className="text-xs bg-[oklch(0.97_0.003_250)] rounded p-2">
+                    <span className="font-semibold text-[oklch(0.40_0.009_250)]">PM notes:</span>
+                    <span className="ml-1 text-[oklch(0.46_0.16_55)]">{selected.pm_notes}</span>
                   </div>
                 )}
                 {selected.engineer_certification_notes && (

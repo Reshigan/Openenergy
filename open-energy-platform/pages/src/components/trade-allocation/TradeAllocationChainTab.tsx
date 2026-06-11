@@ -24,8 +24,11 @@
 // MarkitWire confirmation and Traiana/CME give-up with auto-allocation by standing SSI,
 // same-day-affirmation SLAs, real-time break detection and structured break reason codes.
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../lib/api';
+
+interface ModalField { key: string; label: string; placeholder?: string; defaultValue?: string; }
+interface PendingAction { action: ActionKind; row: AllocationRow; fields: ModalField[]; }
 
 type ChainStatus =
   | 'executed' | 'allocation_pending' | 'allocated' | 'give_up_pending' | 'give_up_accepted'
@@ -35,6 +38,7 @@ type ChainStatus =
 type Tier = 'micro' | 'small' | 'medium' | 'large' | 'block';
 
 interface AllocationRow {
+  [key: string]: unknown;
   id: string;
   allocation_number: string;
   source_event: string | null;
@@ -133,13 +137,13 @@ interface KpiSummary {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   executed:              { bg: '#e3e7ec', fg: '#557',    label: 'Executed' },
-  allocation_pending:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Allocation pending' },
-  allocated:             { bg: '#dbecfb', fg: '#1a3a5c', label: 'Allocated' },
+  allocation_pending:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Allocation pending' },
+  allocated:             { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Allocated' },
   give_up_pending:       { bg: '#fff4d6', fg: '#a06200', label: 'Give-up pending' },
-  give_up_accepted:      { bg: '#e4f0ff', fg: '#1a3a5c', label: 'Give-up accepted' },
+  give_up_accepted:      { bg: '#e4f0ff', fg: 'oklch(0.46 0.16 55)', label: 'Give-up accepted' },
   confirmation_issued:   { bg: '#ffe9d6', fg: '#8a4a00', label: 'Confirmation issued' },
-  affirmed:              { bg: '#e4f0ff', fg: '#1a3a5c', label: 'Affirmed' },
-  matched:               { bg: '#dbecfb', fg: '#1a3a5c', label: 'Matched' },
+  affirmed:              { bg: '#e4f0ff', fg: 'oklch(0.46 0.16 55)', label: 'Affirmed' },
+  matched:               { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Matched' },
   settlement_instructed: { bg: '#fff4d6', fg: '#a06200', label: 'Settlement instructed' },
   settled:               { bg: '#d4edda', fg: '#155724', label: 'Settled' },
   break_review:          { bg: '#fdd0d0', fg: '#7a1010', label: 'Break review' },
@@ -148,7 +152,7 @@ const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }>
 
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
   micro:  { bg: '#e3e7ec', fg: '#557',    label: 'Micro (<R1m)' },
-  small:  { bg: '#dbecfb', fg: '#1a3a5c', label: 'Small (<R10m)' },
+  small:  { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Small (<R10m)' },
   medium: { bg: '#fff4d6', fg: '#a06200', label: 'Medium (<R50m)' },
   large:  { bg: '#ffe4b5', fg: '#8a4a00', label: 'Large (<R250m)' },
   block:  { bg: '#fde0e0', fg: '#9b1f1f', label: 'Block (≥R250m)' },
@@ -252,6 +256,7 @@ export function TradeAllocationChainTab() {
   const [filter, setFilter] = useState<string>('active');
   const [selected, setSelected] = useState<AllocationRow | null>(null);
   const [events, setEvents] = useState<AllocationEvent[]>([]);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -303,101 +308,87 @@ export function TradeAllocationChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: AllocationRow) => {
+  const ACTION_FIELDS: Record<ActionKind, ModalField[]> = useMemo(() => ({
+    'prepare-allocation': [
+      { key: 'allocation_basis', label: 'Allocation basis', placeholder: 'Pro-rata / average-price scheme used to split the block' },
+      { key: 'allocation_ref',   label: 'Allocation reference', placeholder: 'e.g. ALLOC-2026-0007' },
+      { key: 'block_account',    label: 'Block account (pre-allocation)', placeholder: '' },
+    ],
+    'allocate-block': [
+      { key: 'allocation_basis', label: 'Allocation basis', placeholder: 'Confirm the per-sub-account allocation' },
+      { key: 'allocation_legs',  label: 'Sub-account legs (number)', placeholder: '' },
+      { key: 'allocation_ref',   label: 'Allocation reference', placeholder: 'e.g. ALLOC-2026-0007' },
+    ],
+    'designate-give-up': [
+      { key: 'give_up_basis',  label: 'Give-up basis', placeholder: 'Executing broker is not the clearing broker; give up to clearer' },
+      { key: 'clearing_party', label: 'Clearing party (give-up target)', placeholder: '' },
+      { key: 'give_up_ref',    label: 'Give-up reference', placeholder: 'e.g. GU-2026-0007' },
+    ],
+    'accept-give-up': [
+      { key: 'give_up_basis', label: 'Give-up acceptance basis', placeholder: 'Clearing broker accepts the give-up' },
+    ],
+    'issue-confirmation': [
+      { key: 'confirmation_basis', label: 'Confirmation basis', placeholder: 'Executing broker issues the trade confirmation' },
+      { key: 'confirmation_ref',   label: 'Confirmation reference', placeholder: 'e.g. CONF-2026-0007' },
+    ],
+    'affirm-confirmation': [
+      { key: 'affirmation_basis', label: 'Affirmation basis', placeholder: 'Counterparty affirms the confirmation (same-day discipline)' },
+      { key: 'affirmation_ref',   label: 'Affirmation reference', placeholder: 'e.g. AFF-2026-0007' },
+    ],
+    'match-trade': [
+      { key: 'match_basis', label: 'Match basis', placeholder: 'Central matching reconciles both sides (DTCC/Omgeo CTM-style)' },
+      { key: 'match_ref',   label: 'Match reference', placeholder: 'e.g. MATCH-2026-0007' },
+    ],
+    'instruct-settlement': [
+      { key: 'settlement_basis',           label: 'Settlement-instruction basis', placeholder: 'Release the instruction against the SSI' },
+      { key: 'ssi_ref',                    label: 'SSI reference (standing settlement instruction)', placeholder: '' },
+      { key: 'settlement_instruction_ref', label: 'Settlement-instruction reference', placeholder: 'e.g. SI-2026-0007' },
+      { key: 'settlement_date',            label: 'Settlement date (YYYY-MM-DD)', placeholder: '' },
+    ],
+    'settle-trade': [
+      { key: 'settlement_basis', label: 'Settlement basis', placeholder: 'Trade settles at the CSD (final DvP)' },
+      { key: 'csd_ref',          label: 'CSD / settlement reference', placeholder: 'e.g. CSD-2026-0007' },
+    ],
+    'flag-break': [
+      { key: 'break_basis',       label: 'Break basis', placeholder: 'A discrepancy was detected; reportable for every tier under settlement discipline' },
+      { key: 'break_reason_code', label: 'Break reason code', placeholder: 'e.g. economics_mismatch / ssi_mismatch / quantity_break', defaultValue: 'economics_mismatch' },
+      { key: 'break_ref',         label: 'Break reference', placeholder: 'e.g. BRK-2026-0007' },
+    ],
+    'resolve-break': [
+      { key: 'resolution_basis',  label: 'Resolution basis', placeholder: 'The break is reasoned and resolved; re-issue the confirmation' },
+      { key: 'confirmation_ref',  label: 'Re-issued confirmation reference', placeholder: 'e.g. CONF-2026-0007R' },
+    ],
+    'cancel-trade': [
+      { key: 'cancel_basis', label: 'Cancellation basis', placeholder: 'Pull the trade before it locks in (large tiers cross to regulator)' },
+      { key: 'reason_code',  label: 'Reason code', placeholder: 'e.g. erroneous_trade / counterparty_dispute', defaultValue: 'erroneous_trade' },
+      { key: 'cancel_ref',   label: 'Cancellation reference', placeholder: 'e.g. CXL-2026-0007' },
+    ],
+  }), []);
+
+  const act = useCallback((action: ActionKind, row: AllocationRow) => {
+    setPendingAction({ action, row, fields: ACTION_FIELDS[action] });
+  }, [ACTION_FIELDS]);
+
+  const confirmAction = useCallback(async (values: Record<string, string>) => {
+    if (!pendingAction) return;
+    const { action, row } = pendingAction;
+    setPendingAction(null);
     try {
-      let body: Record<string, string | number> = {};
-      if (action === 'prepare-allocation') {
-        const basis = window.prompt('Allocation basis — pro-rata / average-price scheme used to split the block:');
-        if (!basis) return;
-        const ref = window.prompt('Allocation reference (e.g. ALLOC-2026-0007):') || '';
-        const acct = window.prompt('Block account (pre-allocation):', row.block_account || '') || '';
-        body = { allocation_basis: basis };
-        if (ref) body.allocation_ref = ref;
-        if (acct) body.block_account = acct;
-      } else if (action === 'allocate-block') {
-        const basis = window.prompt('Allocation basis — confirm the per-sub-account allocation:');
-        if (!basis) return;
-        const legs = window.prompt('Number of sub-account legs:', String(row.allocation_legs || ''));
-        const ref = window.prompt('Allocation reference (e.g. ALLOC-2026-0007):', row.allocation_ref || '') || '';
-        body = { allocation_basis: basis };
-        if (legs && !Number.isNaN(Number(legs))) body.allocation_legs = Number(legs);
-        if (ref) body.allocation_ref = ref;
-      } else if (action === 'designate-give-up') {
-        const basis = window.prompt('Give-up basis — executing broker is not the clearing broker; give up to clearer:');
-        if (!basis) return;
-        const clearer = window.prompt('Clearing party (give-up target):', row.clearing_party || '') || '';
-        const ref = window.prompt('Give-up reference (e.g. GU-2026-0007):') || '';
-        body = { give_up_basis: basis };
-        if (clearer) body.clearing_party = clearer;
-        if (ref) body.give_up_ref = ref;
-      } else if (action === 'accept-give-up') {
-        const basis = window.prompt('Give-up acceptance basis — clearing broker accepts the give-up:');
-        if (!basis) return;
-        body = { give_up_basis: basis };
-      } else if (action === 'issue-confirmation') {
-        const basis = window.prompt('Confirmation basis — executing broker issues the trade confirmation:');
-        if (!basis) return;
-        const ref = window.prompt('Confirmation reference (e.g. CONF-2026-0007):') || '';
-        body = { confirmation_basis: basis };
-        if (ref) body.confirmation_ref = ref;
-      } else if (action === 'affirm-confirmation') {
-        const basis = window.prompt('Affirmation basis — counterparty affirms the confirmation (same-day discipline):');
-        if (!basis) return;
-        const ref = window.prompt('Affirmation reference (e.g. AFF-2026-0007):') || '';
-        body = { affirmation_basis: basis };
-        if (ref) body.affirmation_ref = ref;
-      } else if (action === 'match-trade') {
-        const basis = window.prompt('Match basis — central matching reconciles both sides (DTCC/Omgeo CTM-style):');
-        if (!basis) return;
-        const ref = window.prompt('Match reference (e.g. MATCH-2026-0007):') || '';
-        body = { match_basis: basis };
-        if (ref) body.match_ref = ref;
-      } else if (action === 'instruct-settlement') {
-        const basis = window.prompt('Settlement-instruction basis — release the instruction against the SSI:');
-        if (!basis) return;
-        const ssi = window.prompt('SSI reference (standing settlement instruction):', row.ssi_ref || '') || '';
-        const ref = window.prompt('Settlement-instruction reference (e.g. SI-2026-0007):') || '';
-        const date = window.prompt('Settlement date (YYYY-MM-DD):', row.settlement_date || '') || '';
-        body = { settlement_basis: basis };
-        if (ssi) body.ssi_ref = ssi;
-        if (ref) body.settlement_instruction_ref = ref;
-        if (date) body.settlement_date = date;
-      } else if (action === 'settle-trade') {
-        const basis = window.prompt('Settlement basis — trade settles at the CSD (final DvP):');
-        if (!basis) return;
-        const ref = window.prompt('CSD / settlement reference (e.g. CSD-2026-0007):') || '';
-        body = { settlement_basis: basis };
-        if (ref) body.csd_ref = ref;
-      } else if (action === 'flag-break') {
-        const basis = window.prompt('Break basis — a discrepancy was detected; under settlement discipline this is reportable for every tier:');
-        if (!basis) return;
-        const reason = window.prompt('Break reason code (e.g. economics_mismatch / ssi_mismatch / quantity_break):', 'economics_mismatch') || '';
-        const ref = window.prompt('Break reference (e.g. BRK-2026-0007):') || '';
-        body = { break_basis: basis };
-        if (reason) { body.break_reason_code = reason; body.reason_code = reason; }
-        if (ref) body.break_ref = ref;
-      } else if (action === 'resolve-break') {
-        const basis = window.prompt('Resolution basis — the break is reasoned and resolved; re-issue the confirmation:');
-        if (!basis) return;
-        const ref = window.prompt('Re-issued confirmation reference (e.g. CONF-2026-0007R):') || '';
-        body = { resolution_basis: basis };
-        if (ref) body.confirmation_ref = ref;
-      } else if (action === 'cancel-trade') {
-        const basis = window.prompt('Cancellation basis — pull the trade before it locks in (large tiers cross to regulator):');
-        if (!basis) return;
-        const reason = window.prompt('Reason code (e.g. erroneous_trade / counterparty_dispute):', 'erroneous_trade') || '';
-        const ref = window.prompt('Cancellation reference (e.g. CXL-2026-0007):') || '';
-        body = { cancel_basis: basis };
-        if (reason) body.reason_code = reason;
-        if (ref) body.cancel_ref = ref;
+      const body: Record<string, string | number> = {};
+      for (const [k, v] of Object.entries(values)) {
+        if (!v) continue;
+        if (k === 'allocation_legs' && !Number.isNaN(Number(v))) { body[k] = Number(v); }
+        else { body[k] = v; }
       }
+      // flag-break mirrors break_reason_code → reason_code
+      if (action === 'flag-break' && values.break_reason_code) body.reason_code = values.break_reason_code;
       await api.post(`/trade-allocation/chain/${row.id}/${action}`, body);
       await load();
       if (selected?.id === row.id) await loadEvents(row.id);
     } catch (e) {
       setErr(e instanceof Error ? e.message : `Failed to ${action}`);
     }
-  }, [load, loadEvents, selected]);
+  }, [pendingAction, load, loadEvents, selected]);
 
   return (
     <div className="p-5">
@@ -460,13 +451,13 @@ export function TradeAllocationChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Allocation #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Counterparty</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Instrument</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Notional</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Allocation #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Counterparty</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Instrument</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Notional</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -479,7 +470,7 @@ export function TradeAllocationChainTab() {
                     onClick={() => loadEvents(r.id)}
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 font-mono text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.allocation_number}
                       {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to the regulator">●</span>}
                     </td>
@@ -492,7 +483,7 @@ export function TradeAllocationChainTab() {
                         {tt.label}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtZar(r.notional_zar)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtZar(r.notional_zar)}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
                         {cs.label}
@@ -514,6 +505,15 @@ export function TradeAllocationChainTab() {
 
       {selected && (
         <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      )}
+      {pendingAction && (
+        <ActionModal
+          title={ACTION_LABEL[pendingAction.action]}
+          fields={pendingAction.fields}
+          row={pendingAction.row}
+          onConfirm={confirmAction}
+          onCancel={() => setPendingAction(null)}
+        />
       )}
     </div>
   );
@@ -620,7 +620,7 @@ function Drawer({
             <Pair label="Reportable"         value={row.is_reportable ? 'Yes' : 'No'} />
           </div>
           {row.allocation_basis && (
-            <BasisBlock label="Allocation basis (middle office)" tone="#1a3a5c" text={row.allocation_basis} />
+            <BasisBlock label="Allocation basis (middle office)" tone="oklch(0.46 0.16 55)" text={row.allocation_basis} />
           )}
           {row.give_up_basis && (
             <BasisBlock label="Give-up basis" tone="#a06200" text={row.give_up_basis} />
@@ -629,10 +629,10 @@ function Drawer({
             <BasisBlock label="Confirmation basis" tone="#8a4a00" text={row.confirmation_basis} />
           )}
           {row.affirmation_basis && (
-            <BasisBlock label="Affirmation basis (counterparty)" tone="#1a3a5c" text={row.affirmation_basis} />
+            <BasisBlock label="Affirmation basis (counterparty)" tone="oklch(0.46 0.16 55)" text={row.affirmation_basis} />
           )}
           {row.match_basis && (
-            <BasisBlock label="Match basis" tone="#1a3a5c" text={row.match_basis} />
+            <BasisBlock label="Match basis" tone="oklch(0.46 0.16 55)" text={row.match_basis} />
           )}
           {row.settlement_basis && (
             <BasisBlock label="Settlement basis" tone="#155724" text={row.settlement_basis} />
@@ -708,7 +708,7 @@ function Drawer({
                       <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
                     )}
                   </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>
@@ -733,6 +733,62 @@ function Pair({ label, value }: { label: string; value: string }) {
     <div>
       <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
       <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+    </div>
+  );
+}
+
+function ActionModal({
+  title, fields, row, onConfirm, onCancel,
+}: {
+  title: string;
+  fields: ModalField[];
+  row: AllocationRow;
+  onConfirm: (values: Record<string, string>) => void;
+  onCancel: () => void;
+}) {
+  const defaultValues = Object.fromEntries(
+    fields.map((f) => [f.key, f.defaultValue ?? (row[f.key] != null ? String(row[f.key]) : '')])
+  );
+  const [vals, setVals] = useState<Record<string, string>>(defaultValues);
+  const firstRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => { firstRef.current?.focus(); }, []);
+
+  return (
+    <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center" onClick={onCancel}>
+      <div
+        className="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
+          <div className="text-sm font-semibold text-[#0c2a4d]">{title}</div>
+        </header>
+        <div className="px-5 py-4 space-y-3 max-h-[60vh] overflow-y-auto">
+          {fields.map((f, i) => (
+            <div key={f.key}>
+              <label className="block text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">{f.label}</label>
+              <textarea
+                ref={i === 0 ? firstRef : undefined}
+                rows={i === 0 ? 3 : 1}
+                className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px] text-[#0c2a4d] resize-none focus:outline-none focus:border-[#c2873a]"
+                placeholder={f.placeholder}
+                value={vals[f.key] ?? ''}
+                onChange={(e) => setVals((prev) => ({ ...prev, [f.key]: e.target.value }))}
+              />
+            </div>
+          ))}
+        </div>
+        <footer className="border-t border-[#d8dde6] px-5 py-3 flex justify-end gap-2">
+          <button type="button" onClick={onCancel}
+            className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] text-[#4a5568] hover:bg-[#f3f5f9]">
+            Cancel
+          </button>
+          <button type="button"
+            onClick={() => onConfirm(vals)}
+            className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#b07530]">
+            Confirm
+          </button>
+        </footer>
+      </div>
     </div>
   );
 }

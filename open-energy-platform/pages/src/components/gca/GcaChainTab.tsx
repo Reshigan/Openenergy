@@ -9,11 +9,25 @@
 //   • KPI strip: total / studies open / cost phase / agreement / construction
 //     / transmission open / breached / cost accepted total / capacity in service
 //   • Filter pills by tier + state + reportable
-//   • Listing with tier pill + MW + SLA countdown
+//   • ChainCard list with tier pill + MW + SLA countdown
 //   • Drill-down: timeline + role-aware action button (11 transitions)
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'application_filed' | 'studies_required' | 'studies_executing'
@@ -24,7 +38,7 @@ type ChainStatus =
 
 type Tier = 'transmission' | 'distribution' | 'embedded';
 
-interface GcaRow {
+interface GcaRow extends Record<string, unknown> {
   id: string;
   case_number: string;
   project_id: string;
@@ -84,26 +98,25 @@ interface GcaEvent {
   created_at: string;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  application_filed:            { bg: '#dbecfb', fg: '#1a3a5c', label: 'Application filed' },
-  studies_required:             { bg: '#dbecfb', fg: '#1a3a5c', label: 'Studies required' },
-  studies_executing:            { bg: '#fff4d6', fg: '#a06200', label: 'Studies executing' },
-  cost_estimate_issued:         { bg: '#fff4d6', fg: '#a06200', label: 'Cost estimate issued' },
-  cost_accepted:                { bg: '#daf5e2', fg: '#1f6b3a', label: 'Cost accepted' },
-  connection_agreement_drafted: { bg: '#daf5e2', fg: '#1f6b3a', label: 'UNGCA drafted' },
-  executed:                     { bg: '#daf5e2', fg: '#1f6b3a', label: 'UNGCA executed' },
-  construction:                 { bg: '#ffe4b5', fg: '#8a4a00', label: 'Construction' },
-  energised:                    { bg: '#daf5e2', fg: '#1f6b3a', label: 'Energised' },
-  in_service:                   { bg: '#cfe6d3', fg: '#1f5b3a', label: 'In service' },
-  rejected:                     { bg: '#fde0e0', fg: '#9b1f1f', label: 'Rejected' },
-  withdrawn:                    { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
-};
+interface KpiData {
+  total: number;
+  studies: number;
+  cost_phase: number;
+  agreement: number;
+  construction_ph: number;
+  transmission: number;
+  breached: number;
+  cost_total: number;
+  mw_service: number;
+}
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  transmission: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Transmission' },
-  distribution: { bg: '#fff4d6', fg: '#a06200', label: 'Distribution' },
-  embedded:     { bg: '#daf5e2', fg: '#1f6b3a', label: 'Embedded SSEG' },
-};
+const ALL_STATES = [
+  'application_filed', 'studies_required', 'studies_executing',
+  'cost_estimate_issued', 'cost_accepted', 'connection_agreement_drafted',
+  'executed', 'construction', 'energised', 'in_service',
+] as const;
+
+const BRANCH_STATES = ['rejected', 'withdrawn'] as const;
 
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',                       label: 'Active' },
@@ -127,41 +140,6 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'withdrawn',                    label: 'Withdrawn' },
 ];
 
-type ActionKind =
-  | 'request-studies' | 'begin-studies' | 'issue-cost-estimate'
-  | 'accept-cost' | 'draft-agreement' | 'execute-agreement'
-  | 'begin-construction' | 'energise' | 'commission'
-  | 'reject' | 'withdraw';
-
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  application_filed:            'request-studies',
-  studies_required:             'begin-studies',
-  studies_executing:            'issue-cost-estimate',
-  cost_estimate_issued:         'accept-cost',
-  cost_accepted:                'draft-agreement',
-  connection_agreement_drafted: 'execute-agreement',
-  executed:                     'begin-construction',
-  construction:                 'energise',
-  energised:                    'commission',
-  in_service:                   null,
-  rejected:                     null,
-  withdrawn:                    null,
-};
-
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'request-studies':     'Request studies (Grid)',
-  'begin-studies':       'Begin GIA studies (Grid)',
-  'issue-cost-estimate': 'Issue cost estimate (Grid)',
-  'accept-cost':         'Accept cost (IPP)',
-  'draft-agreement':     'Draft UNGCA (Grid)',
-  'execute-agreement':   'Sign UNGCA (IPP)',
-  'begin-construction':  'Mobilise construction (IPP)',
-  'energise':            'Energise connection (Grid)',
-  'commission':          'Commission to service (Grid)',
-  'reject':              'Reject application (Grid)',
-  'withdraw':            'Withdraw application (IPP)',
-};
-
 const REJECTABLE: ChainStatus[] = [
   'application_filed', 'studies_required', 'studies_executing', 'cost_estimate_issued',
 ];
@@ -171,17 +149,15 @@ const WITHDRAWABLE: ChainStatus[] = [
   'cost_estimate_issued', 'cost_accepted', 'connection_agreement_drafted',
 ];
 
-function fmtMinutes(m: number | null | undefined): string {
-  if (m === null || m === undefined) return '—';
-  if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
-  if (Math.abs(m) >= 60) return `${Math.round(m / 60)}h`;
-  return `${m}m`;
-}
+const TIER_LABEL: Record<Tier, string> = {
+  transmission: 'Transmission',
+  distribution: 'Distribution',
+  embedded:     'Embedded SSEG',
+};
 
 function fmtDate(s: string | null): string {
   if (!s) return '—';
-  const d = new Date(s);
-  return d.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+  return new Date(s).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function fmtZar(n: number | null | undefined): string {
@@ -197,20 +173,169 @@ function fmtMW(n: number): string {
   return `${n}MW`;
 }
 
+function getActions(row: GcaRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
+
+  if (s === 'application_filed') {
+    actions.push({ key: 'request-studies', label: 'Request studies (Grid)', tone: 'primary', cascadeTo: ['ipp_developer'] });
+  }
+  if (s === 'studies_required') {
+    actions.push({
+      key: 'begin-studies', label: 'Begin GIA studies (Grid)', tone: 'primary',
+      cascadeTo: ['ipp_developer'],
+      fields: [{ key: 'gia_ref', label: 'GIA / load-flow study reference (e.g. GIA-ESK-2026-0142)', type: 'text', required: false }],
+    });
+  }
+  if (s === 'studies_executing') {
+    actions.push({
+      key: 'issue-cost-estimate', label: 'Issue cost estimate (Grid)', tone: 'primary',
+      cascadeTo: ['ipp_developer'],
+      fields: [
+        { key: 'cost_estimate_zar', label: 'Cost estimate (ZAR)', type: 'text', required: true },
+        { key: 'gia_ref', label: 'GIA reference (optional)', type: 'text', required: false },
+      ],
+    });
+  }
+  if (s === 'cost_estimate_issued') {
+    actions.push({
+      key: 'accept-cost', label: 'Accept cost (IPP)', tone: 'primary',
+      cascadeTo: ['grid_operator'],
+      fields: [{ key: 'cost_accepted_zar', label: 'Accepted cost (ZAR — typically matches estimate)', type: 'text', required: true }],
+    });
+  }
+  if (s === 'cost_accepted') {
+    actions.push({ key: 'draft-agreement', label: 'Draft UNGCA (Grid)', tone: 'primary', cascadeTo: ['ipp_developer'] });
+  }
+  if (s === 'connection_agreement_drafted') {
+    const fields: ChainAction['fields'] = [
+      { key: 'ungca_ref', label: 'UNGCA reference (e.g. UNGCA-ESK-2026-0017)', type: 'text', required: true },
+    ];
+    if (row.connection_tier === 'transmission') {
+      fields.push(
+        { key: 'regulator_authority', label: 'Regulator (NERSA for transmission)', type: 'text', required: false },
+        { key: 'regulator_ref', label: 'NERSA C-1 acknowledgement reference (e.g. NERSA-C1-2026-0142)', type: 'text', required: false },
+      );
+    }
+    actions.push({
+      key: 'execute-agreement', label: 'Sign UNGCA (IPP)', tone: 'primary',
+      cascadeTo: row.connection_tier === 'transmission' ? ['grid_operator', 'regulator'] : ['grid_operator'],
+      fields,
+    });
+  }
+  if (s === 'executed') {
+    actions.push({ key: 'begin-construction', label: 'Mobilise construction (IPP)', tone: 'primary', cascadeTo: ['grid_operator'] });
+  }
+  if (s === 'construction') {
+    actions.push({
+      key: 'energise', label: 'Energise connection (Grid)', tone: 'primary',
+      cascadeTo: ['ipp_developer'],
+      fields: [{ key: 'energisation_date_actual', label: 'Actual energisation date (ISO, optional — defaults to now)', type: 'text', required: false }],
+    });
+  }
+  if (s === 'energised') {
+    actions.push({ key: 'commission', label: 'Commission to service (Grid)', tone: 'primary', cascadeTo: ['ipp_developer'] });
+  }
+
+  if (REJECTABLE.includes(s)) {
+    actions.push({
+      key: 'reject', label: 'Reject application (Grid)', tone: 'danger',
+      cascadeTo: ['ipp_developer', 'regulator'],
+      fields: [{ key: 'rod_reason', label: 'Reason for rejection (grid stability / load / phasing)', type: 'textarea', required: true }],
+    });
+  }
+  if (WITHDRAWABLE.includes(s)) {
+    actions.push({
+      key: 'withdraw', label: 'Withdraw application (IPP)', tone: 'ghost',
+      fields: [{ key: 'withdrawal_reason', label: 'Reason for withdrawal', type: 'textarea', required: true }],
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: GcaRow): React.ReactNode {
+  return (
+    <div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+          gap: '12px 16px',
+        }}
+      >
+        <DetailPair label="Project ID"           value={row.project_id} />
+        <DetailPair label="IPP party"            value={row.ipp_party} />
+        <DetailPair label="Network party"        value={row.network_party} />
+        <DetailPair label="Connection tier"      value={TIER_LABEL[row.connection_tier]} />
+        <DetailPair label="Voltage"              value={`${row.voltage_kv} kV`} />
+        <DetailPair label="Substation"           value={row.poc_substation} />
+        <DetailPair label="Capacity"             value={fmtMW(row.capacity_mw)} />
+        <DetailPair label="Technology"           value={row.technology} />
+        <DetailPair label="GIA ref"              value={row.gia_ref ?? '—'} />
+        <DetailPair label="Cost estimate"        value={fmtZar(row.cost_estimate_zar)} />
+        <DetailPair label="Cost accepted"        value={fmtZar(row.cost_accepted_zar)} />
+        <DetailPair label="UNGCA ref"            value={row.ungca_ref ?? '—'} />
+        <DetailPair label="Energisation planned" value={fmtDate(row.energisation_date_planned)} />
+        <DetailPair label="Energisation actual"  value={fmtDate(row.energisation_date_actual)} />
+        <DetailPair label="Regulator"            value={row.regulator_authority ?? '—'} />
+        <DetailPair label="Regulator ref"        value={row.regulator_ref ?? '—'} />
+        <DetailPair label="Escalation level"     value={String(row.escalation_level)} />
+        <DetailPair label="SLA deadline"         value={fmtDate(row.sla_deadline_at)} />
+        <DetailPair label="Filed at"             value={fmtDate(row.application_filed_at)} />
+      </div>
+      {row.rod_reason && (
+        <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 6, border: `1px solid ${BAD}40`, background: 'oklch(0.97 0.04 20)', fontSize: 12, color: BAD }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4, color: BAD }}>Rejection reason</div>
+          {row.rod_reason}
+        </div>
+      )}
+      {row.withdrawal_reason && (
+        <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 6, border: `1px solid ${BORDER}`, background: BG2, fontSize: 12, color: TX2 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4, color: TX3 }}>Withdrawal reason</div>
+          {row.withdrawal_reason}
+        </div>
+      )}
+      {row.closure_notes && (
+        <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 6, border: `1px solid ${BORDER}`, background: BG2, fontSize: 12, color: TX2 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4, color: TX3 }}>Closure notes</div>
+          {row.closure_notes}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function GcaChainTab() {
   const [rows, setRows] = useState<GcaRow[]>([]);
+  const [summary, setSummary] = useState<KpiData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<GcaRow | null>(null);
-  const [events, setEvents] = useState<GcaEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
       const res = await api.get<{ data: { items: GcaRow[] } }>('/gca/connection-chain');
-      setRows(res.data?.data?.items || []);
+      const items = res.data?.data?.items || [];
+      setRows(items);
+
+      // Compute KPIs client-side
+      let studies = 0, cost_phase = 0, agreement = 0, construction_ph = 0;
+      let transmission = 0, breached = 0, cost_total = 0, mw_service = 0;
+      for (const r of items) {
+        if (r.chain_status === 'studies_required' || r.chain_status === 'studies_executing') studies++;
+        if (r.chain_status === 'cost_estimate_issued' || r.chain_status === 'cost_accepted') cost_phase++;
+        if (r.chain_status === 'connection_agreement_drafted') agreement++;
+        if (r.chain_status === 'construction' || r.chain_status === 'energised') construction_ph++;
+        if (r.connection_tier === 'transmission' && !r.is_terminal) transmission++;
+        if (r.sla_breached && !r.is_terminal) breached++;
+        cost_total += r.cost_accepted_zar || 0;
+        if (r.chain_status === 'in_service') mw_service += r.capacity_mw || 0;
+      }
+      setSummary({ total: items.length, studies, cost_phase, agreement, construction_ph, transmission, breached, cost_total, mw_service });
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load GCA chain');
     } finally {
@@ -220,22 +345,45 @@ export function GcaChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
+    try {
+      const body: Record<string, unknown> = { ...values };
+      // Coerce numeric fields
+      if (values.cost_estimate_zar) body.cost_estimate_zar = Number(values.cost_estimate_zar);
+      if (values.cost_accepted_zar) body.cost_accepted_zar = Number(values.cost_accepted_zar);
+      await api.post(`/gca/connection-chain/${rowId}/${key}`, body);
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
+    }
+  }, [load]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
     try {
       const res = await api.get<{ data: { case: GcaRow; events: GcaEvent[] } }>(`/gca/connection-chain/${id}`);
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load GCA case history');
+      const evts = (res.data?.data?.events || []).map((e) => ({
+        id: e.id,
+        event_type: e.event_type,
+        from_status: e.from_status,
+        to_status: e.to_status,
+        actor_id: e.actor_id,
+        notes: e.notes,
+        payload: e.payload,
+        created_at: e.created_at,
+      })) satisfies ChainEvent[];
+      setExpandedEvents((prev) => ({ ...prev, [id]: evts }));
+    } catch {
+      // non-fatal — events just won't show
     }
-  }, []);
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (filter === 'all')        return true;
       if (filter === 'active')     return !r.is_terminal;
-      if (filter === 'reportable') return r.is_reportable;
-      if (filter === 'breached')   return r.sla_breached;
+      if (filter === 'reportable') return !!r.is_reportable;
+      if (filter === 'breached')   return !!r.sla_breached;
       if (filter === 'transmission' || filter === 'distribution' || filter === 'embedded') {
         return r.connection_tier === filter;
       }
@@ -243,111 +391,65 @@ export function GcaChainTab() {
     });
   }, [rows, filter]);
 
-  const kpis = useMemo(() => {
-    let studies = 0, cost_phase = 0, agreement = 0, construction_ph = 0;
-    let transmission = 0, breached = 0;
-    let cost_total = 0, mw_service = 0;
-    for (const r of rows) {
-      if (r.chain_status === 'studies_required' || r.chain_status === 'studies_executing') studies++;
-      if (r.chain_status === 'cost_estimate_issued' || r.chain_status === 'cost_accepted') cost_phase++;
-      if (r.chain_status === 'connection_agreement_drafted') agreement++;
-      if (r.chain_status === 'construction' || r.chain_status === 'energised') construction_ph++;
-      if (r.connection_tier === 'transmission' && !r.is_terminal) transmission++;
-      if (r.sla_breached && !r.is_terminal) breached++;
-      cost_total += r.cost_accepted_zar || 0;
-      if (r.chain_status === 'in_service') mw_service += r.capacity_mw || 0;
-    }
-    return {
-      total: rows.length, studies, cost_phase, agreement, construction_ph,
-      transmission, breached, cost_total, mw_service,
-    };
-  }, [rows]);
-
-  const act = useCallback(async (action: ActionKind, row: GcaRow) => {
-    try {
-      const body: Record<string, unknown> = {};
-      if (action === 'begin-studies') {
-        const ref = window.prompt('GIA / load-flow study reference (e.g. GIA-ESK-2026-0142):', row.gia_ref ?? '');
-        if (ref) body.gia_ref = ref;
-      } else if (action === 'issue-cost-estimate') {
-        const amt = window.prompt('Cost estimate (ZAR):');
-        if (!amt) return;
-        body.cost_estimate_zar = Number(amt);
-        const ref = window.prompt('GIA reference (optional):', row.gia_ref ?? '');
-        if (ref) body.gia_ref = ref;
-      } else if (action === 'accept-cost') {
-        const amt = window.prompt('Accepted cost (ZAR — typically matches estimate):', String(row.cost_estimate_zar ?? ''));
-        if (!amt) return;
-        body.cost_accepted_zar = Number(amt);
-      } else if (action === 'execute-agreement') {
-        const ref = window.prompt('UNGCA reference (e.g. UNGCA-ESK-2026-0017):');
-        if (!ref) return;
-        body.ungca_ref = ref;
-        if (row.connection_tier === 'transmission') {
-          const auth = window.prompt('Regulator (NERSA for transmission):', 'NERSA');
-          if (auth) body.regulator_authority = auth;
-          const regRef = window.prompt('NERSA C-1 acknowledgement reference (e.g. NERSA-C1-2026-0142):');
-          if (regRef) body.regulator_ref = regRef;
-        }
-      } else if (action === 'energise') {
-        const dt = window.prompt('Actual energisation date (ISO, optional — defaults to now):');
-        if (dt) body.energisation_date_actual = dt;
-      } else if (action === 'reject') {
-        const reason = window.prompt('Reason for rejection (grid stability / load / phasing):');
-        if (!reason) return;
-        body.rod_reason = reason;
-      } else if (action === 'withdraw') {
-        const reason = window.prompt('Reason for withdrawal:');
-        if (!reason) return;
-        body.withdrawal_reason = reason;
-      }
-      await api.post(`/gca/connection-chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Grid Connection Agreement (UNGCA) chain — NERSA Grid Code C-1</h2>
-          <p className="text-xs text-[#4a5568]">
-            10-state lifecycle every IPP executes with Eskom Transmission/Distribution before COD: application →
-            studies → cost estimate → cost accepted → UNGCA drafted → executed → construction → energised → in service.
-            Inverted SLA tiers (transmission gets 730d construction window vs 90d embedded); transmission +
-            distribution rejections + SLA breaches cross to NERSA inbox.
-          </p>
-        </div>
+    <div style={{ padding: '20px', background: BG, minHeight: '100%' }}>
+      <header style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: TX1, margin: 0 }}>
+          Grid Connection Agreement (UNGCA) chain — NERSA Grid Code C-1
+        </h2>
+        <p style={{ fontSize: 11, color: TX3, margin: '4px 0 0' }}>
+          10-state lifecycle every IPP executes with Eskom Transmission/Distribution before COD: application →
+          studies → cost estimate → cost accepted → UNGCA drafted → executed → construction → energised → in service.
+          Inverted SLA tiers (transmission gets 730d construction window vs 90d embedded); transmission +
+          distribution rejections + SLA breaches cross to NERSA inbox.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-8 gap-3">
-        <Kpi label="Total"            value={kpis.total} />
-        <Kpi label="Studies open"     value={kpis.studies} />
-        <Kpi label="Cost phase"       value={kpis.cost_phase} />
-        <Kpi label="UNGCA drafted"    value={kpis.agreement} />
-        <Kpi label="Construction"     value={kpis.construction_ph}        tone={kpis.construction_ph > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Transmission act" value={kpis.transmission}           tone={kpis.transmission > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached"     value={kpis.breached}               tone={kpis.breached > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Cost accepted"    value={fmtZar(kpis.cost_total)} />
-      </div>
+      {summary && (
+        <>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
+              gap: 10,
+              marginBottom: 8,
+            }}
+          >
+            <KpiTile label="Total"            value={summary.total} />
+            <KpiTile label="Studies open"     value={summary.studies} />
+            <KpiTile label="Cost phase"       value={summary.cost_phase} />
+            <KpiTile label="UNGCA drafted"    value={summary.agreement} />
+            <KpiTile label="Construction"     value={summary.construction_ph}  tone={summary.construction_ph > 0 ? 'warn' : 'ok'} />
+            <KpiTile label="Transmission act" value={summary.transmission}      tone={summary.transmission > 0 ? 'warn' : 'ok'} />
+            <KpiTile label="SLA breached"     value={summary.breached}          tone={summary.breached > 0 ? 'bad' : 'ok'} />
+            <KpiTile label="Cost accepted"    value={fmtZar(summary.cost_total)} />
+          </div>
+          <div style={{ fontSize: 11, color: TX3, marginBottom: 12 }}>
+            Capacity in service:{' '}
+            <span style={{ fontWeight: 700, color: GOOD }}>
+              {summary.mw_service.toLocaleString('en-ZA')} MW
+            </span>
+          </div>
+        </>
+      )}
 
-      <div className="mb-3 text-[11px] text-[#4a5568]">
-        Capacity in service: <span className="font-semibold text-[#1f6b3a]">{kpis.mw_service.toLocaleString('en-ZA')} MW</span>
-      </div>
-
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
         {FILTERS.map((f) => (
-          <button type="button"
+          <button
             key={f.key}
+            type="button"
             onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
+            style={{
+              padding: '3px 10px',
+              borderRadius: 5,
+              fontSize: 11,
+              fontWeight: 500,
+              cursor: 'pointer',
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+              background: filter === f.key ? ACC : BG1,
+              color: filter === f.key ? '#fff' : TX2,
+              transition: 'background 120ms, color 120ms',
+            }}
           >
             {f.label}
           </button>
@@ -355,222 +457,72 @@ export function GcaChainTab() {
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Project</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">MW</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">kV</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">PoC</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Reg ref</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Cost</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tier = TIER_TONE[r.connection_tier];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[#0c2a4d]">{r.case_number}</td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">{r.project_name}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tier.bg, color: tier.fg }}>
-                        {tier.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtMW(r.capacity_mw)}</td>
-                    <td className="px-3 py-2 tabular-nums text-[#4a5568]">{r.voltage_kv}</td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.poc_substation}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#4a5568]">{r.regulator_ref ?? '—'}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtZar(r.cost_accepted_zar ?? r.cost_estimate_zar)}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={10} className="px-3 py-6 text-center text-[#4a5568]">No GCA cases match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div style={{ marginBottom: 10, padding: '8px 12px', borderRadius: 6, border: `1px solid ${BAD}50`, background: 'oklch(0.97 0.04 20)', fontSize: 12, color: BAD }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: TX3, background: BG1, borderRadius: 8, border: `1px solid ${BORDER}` }}>
+          Loading…
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: TX3, background: BG1, borderRadius: 8, border: `1px solid ${BORDER}` }}>
+          No GCA cases match.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {filtered.map((row) => (
+            <ChainCard
+              key={row.id}
+              item={row}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={row.project_name}
+              meta={
+                <span>
+                  <span style={{ fontFamily: MONO, fontSize: 10 }}>{row.case_number}</span>
+                  {' · '}
+                  {TIER_LABEL[row.connection_tier]}
+                  {' · '}
+                  {fmtMW(row.capacity_mw)}
+                  {' '}
+                  {row.technology}
+                  {' · '}
+                  {row.voltage_kv}kV @ {row.poc_substation}
+                  {row.cost_accepted_zar != null && ` · Cost: ${fmtZar(row.cost_accepted_zar)}`}
+                  {row.regulator_ref && ` · NERSA: ${row.regulator_ref}`}
+                </span>
+              }
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              onExpand={handleExpand}
+              events={expandedEvents[row.id]}
+              cascadeTo={row.connection_tier === 'transmission' ? ['regulator', 'ipp_developer', 'grid_operator'] : ['ipp_developer', 'grid_operator']}
+              detail={renderDetail(row)}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div style={{ borderRadius: 7, border: `1px solid ${BORDER}`, background: BG1, padding: '8px 12px' }}>
+      <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: GcaRow;
-  events: GcaEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: GcaRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canReject = REJECTABLE.includes(row.chain_status);
-  const canWithdraw = WITHDRAWABLE.includes(row.chain_status);
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.case_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.project_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.connection_tier].label} · {fmtMW(row.capacity_mw)} {row.technology} · {row.voltage_kv}kV @ {row.poc_substation}
-              </div>
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="Project"            value={row.project_id} />
-            <Pair label="IPP party"          value={row.ipp_party} />
-            <Pair label="Network party"      value={row.network_party} />
-            <Pair label="Connection tier"    value={TIER_TONE[row.connection_tier].label} />
-            <Pair label="Voltage"            value={`${row.voltage_kv} kV`} />
-            <Pair label="Substation"         value={row.poc_substation} />
-            <Pair label="Capacity"           value={fmtMW(row.capacity_mw)} />
-            <Pair label="Technology"         value={row.technology} />
-            <Pair label="GIA ref"            value={row.gia_ref ?? '—'} />
-            <Pair label="Cost estimate"      value={fmtZar(row.cost_estimate_zar)} />
-            <Pair label="Cost accepted"      value={fmtZar(row.cost_accepted_zar)} />
-            <Pair label="UNGCA ref"          value={row.ungca_ref ?? '—'} />
-            <Pair label="Energisation planned" value={fmtDate(row.energisation_date_planned)} />
-            <Pair label="Energisation actual"  value={fmtDate(row.energisation_date_actual)} />
-            <Pair label="Regulator"          value={row.regulator_authority ?? '—'} />
-            <Pair label="Regulator ref"      value={row.regulator_ref ?? '—'} />
-            <Pair label="State"              value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Escalation"         value={String(row.escalation_level)} />
-            <Pair label="SLA deadline"       value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"         value={row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-          </div>
-          {row.rod_reason && (
-            <div className="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-800">
-              <div className="text-[10px] uppercase tracking-wider mb-1">Rejection reason</div>
-              {row.rod_reason}
-            </div>
-          )}
-          {row.withdrawal_reason && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
-              <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Withdrawal reason</div>
-              {row.withdrawal_reason}
-            </div>
-          )}
-          {row.closure_notes && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
-              <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Closure notes</div>
-              {row.closure_notes}
-            </div>
-          )}
-        </section>
-
-        {(nextAction || canReject || canWithdraw) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canReject && (
-                <button type="button"
-                  onClick={() => onAct('reject', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL.reject}
-                </button>
-              )}
-              {canWithdraw && (
-                <button type="button"
-                  onClick={() => onAct('withdraw', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#4a5568] hover:bg-[#f3f5f9]"
-                >
-                  {ACTION_LABEL.withdraw}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  {(e.from_status || e.to_status) && (
-                    <div className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</div>
-                  )}
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 12, color: TX1, fontFamily: value.startsWith('R') || value.match(/^\d/) ? MONO : undefined }}>{value}</div>
     </div>
   );
 }

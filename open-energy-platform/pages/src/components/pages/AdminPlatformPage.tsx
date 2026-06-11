@@ -363,7 +363,7 @@ export function AdminPlatformPage() {
       heroTitle="Operations control"
       heroSubtitle="Tenants, provisioning, billing health, feature flags and platform-wide quotas."
       aiBriefRole="admin"
-      aiBriefAccent={{ from: '#3b82c4', to: '#1a3a5c' }}
+      aiBriefAccent={{ from: 'oklch(0.46 0.16 55)', to: 'oklch(0.46 0.16 55)' }}
     />
   );
 }

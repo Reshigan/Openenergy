@@ -117,7 +117,7 @@ export function SettlementWaterfall({ totalAmount, breaks, fees, payments }: Pro
               {steps.map((s, i) => (
                 <Cell
                   key={i}
-                  fill={s.kind === 'total' ? '#1a3a5c' : s.kind === 'add' ? '#b04e0f' : '#1a8a5b'}
+                  fill={s.kind === 'total' ? 'oklch(0.46 0.16 55)' : s.kind === 'add' ? '#b04e0f' : '#1a8a5b'}
                 />
               ))}
               <LabelList

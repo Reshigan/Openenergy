@@ -20,6 +20,24 @@ import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 
+// ── Design tokens ────────────────────────────────────────────────────────────
+const BG      = 'oklch(0.96 0.003 250)';
+const BG1     = 'oklch(0.99 0.002 80)';
+const BG2     = 'oklch(0.93 0.004 250)';
+const BORDER  = 'oklch(0.87 0.006 250)';
+const TX1     = 'oklch(0.17 0.010 250)';
+const TX2     = 'oklch(0.40 0.009 250)';
+const TX3     = 'oklch(0.60 0.007 250)';
+const ACC     = 'oklch(0.46 0.16 55)';
+const ACC_BG  = 'oklch(0.96 0.05 55)';
+const BAD     = 'oklch(0.48 0.20 20)';
+const BAD_BG  = 'oklch(0.97 0.04 20)';
+const WARN    = 'oklch(0.50 0.18 55)';
+const WARN_BG = 'oklch(0.96 0.05 55)';
+const GOOD    = 'oklch(0.40 0.16 155)';
+const GOOD_BG = 'oklch(0.95 0.04 155)';
+const MONO    = '"IBM Plex Mono","Fira Code",monospace';
+
 type WorkoutAction = {
   id: string;
   covenant_test_id: string;
@@ -37,7 +55,6 @@ type WorkoutAction = {
   resolution_notes: string | null;
   resolved_at: string | null;
   resolved_by: string | null;
-  // joined covenant + test context
   covenant_code: string;
   covenant_name: string;
   covenant_type: string;
@@ -56,29 +73,28 @@ type Advice = {
   source: 'deterministic' | 'ai_gateway' | 'fallback';
 };
 
-const SEVERITY_PILL: Record<string, string> = {
-  low: 'bg-[#eef2f7] text-[#2d3748]',
-  medium: 'bg-blue-100 text-blue-700',
-  high: 'bg-amber-100 text-amber-800',
-  critical: 'bg-red-100 text-red-700',
-};
-const STATUS_PILL: Record<string, string> = {
-  open: 'bg-red-100 text-red-700',
-  investigating: 'bg-amber-100 text-amber-800',
-  resolved: 'bg-green-100 text-green-700',
-  rejected: 'bg-[#e8ecf0] text-[#2d3748]',
-};
-const ACTION_PILL: Record<string, string> = {
-  cure_plan: 'bg-blue-50 text-blue-700',
-  waiver_request: 'bg-amber-50 text-amber-800',
-  amendment_request: 'bg-indigo-50 text-indigo-700',
-  acceleration_notice: 'bg-red-50 text-red-700',
-  workout: 'bg-purple-50 text-purple-700',
-  no_action: 'bg-[#eef2f7] text-[#2d3748]',
-};
+// ── Status/severity helpers ──────────────────────────────────────────────────
+function statusColors(s: string): { bg: string; color: string } {
+  if (s === 'open')         return { bg: BAD_BG,  color: BAD  };
+  if (s === 'investigating') return { bg: WARN_BG, color: WARN };
+  if (s === 'resolved')     return { bg: GOOD_BG, color: GOOD };
+  return { bg: BG2, color: TX2 };
+}
 
-const fmtZAR = (v: number) =>
-  new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(v || 0);
+function severityColors(s: string): { bg: string; color: string } {
+  if (s === 'critical') return { bg: BAD_BG,  color: BAD  };
+  if (s === 'high')     return { bg: WARN_BG, color: WARN };
+  if (s === 'medium')   return { bg: ACC_BG,  color: ACC  };
+  return { bg: BG2, color: TX2 };
+}
+
+function actionColors(a: string): { bg: string; color: string } {
+  if (a === 'acceleration_notice') return { bg: BAD_BG,  color: BAD  };
+  if (a === 'waiver_request')      return { bg: WARN_BG, color: WARN };
+  if (a === 'cure_plan')           return { bg: GOOD_BG, color: GOOD };
+  if (a === 'workout')             return { bg: ACC_BG,  color: ACC  };
+  return { bg: BG2, color: TX2 };
+}
 
 export function LenderWorkoutPage() {
   const navigate = useNavigate();
@@ -136,143 +152,419 @@ export function LenderWorkoutPage() {
     }
   };
 
-  return (
-    <div className="p-6 lg:p-10 space-y-4 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-[#6b7685] bg-white border border-[#dde4ec] rounded-full px-3 py-1">
-            Lender · Workout queue
-          </div>
-          <h1 className="mt-2 font-display text-[28px] font-bold tracking-tight" style={{ color: 'var(--oe-on-surface)' }}>Covenant workout queue</h1>
-          <p className="text-[13px] text-[#3d4756]">Cure plans, waivers, amendments and accelerations against every breached covenant. AI advisor inline per row.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => navigate('/lender-suite')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
-            <ArrowLeft size={12} /> Lender suite
-          </button>
-          <button type="button" onClick={() => void load()} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
-            <RefreshCw size={12} /> Refresh
-          </button>
-        </div>
-      </header>
+  // ── KPI counts ──────────────────────────────────────────────────────────
+  const total        = rows.length;
+  const openCount    = rows.filter(r => r.status === 'open').length;
+  const invCount     = rows.filter(r => r.status === 'investigating').length;
+  const critCount    = rows.filter(r => r.severity === 'critical').length;
+  const resolvedCount = rows.filter(r => r.status === 'resolved').length;
 
-      <div className="flex flex-wrap gap-2 items-center">
-        <span className="text-[12px] text-[#6b7685]">Status:</span>
-        {(['all', 'open', 'investigating', 'resolved', 'rejected'] as const).map(s => (
-          <button type="button" key={s} onClick={() => setStatus(s)} className={`px-3 py-1 rounded-full text-[11px] capitalize ${status === s ? 'bg-[#c2873a] text-white' : 'bg-white border border-[#dde4ec] text-[#3d4756]'}`}>
-            {s.replace(/_/g, ' ')}
-          </button>
-        ))}
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr 380px',
+      height: 'calc(100vh - 50px)',
+      background: BG,
+      overflow: 'hidden',
+    }}>
+      {/* ── LEFT COLUMN ── */}
+      <div style={{ overflowY: 'auto', padding: '24px 28px' }}>
+
+        {/* Page header */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <button
+              type="button"
+              onClick={() => navigate('/lender-suite')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                background: 'transparent', border: `1px solid ${BORDER}`,
+                color: TX2, borderRadius: 6, padding: '4px 10px',
+                fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              <ArrowLeft size={12} /> Lender suite
+            </button>
+          </div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: TX1, margin: 0 }}>Covenant Workout Queue</h1>
+          <p style={{ fontSize: 13, color: TX2, margin: '4px 0 0' }}>
+            Cure plans, waivers, amendments and accelerations against every breached covenant. AI advisor inline per row.
+          </p>
+        </div>
+
+        {/* KPI strip */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+          {[
+            { label: 'Total', value: total, color: TX1 },
+            { label: 'Open', value: openCount, color: BAD },
+            { label: 'Investigating', value: invCount, color: WARN },
+            { label: 'Critical', value: critCount, color: BAD },
+            { label: 'Resolved', value: resolvedCount, color: GOOD },
+          ].map(k => (
+            <div key={k.label} style={{
+              background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8,
+              padding: '12px 16px', flex: 1, minWidth: 90,
+            }}>
+              <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                {k.label}
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: k.color, fontFamily: MONO, marginTop: 4 }}>
+                {k.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Error / loading / empty */}
+        {loading && <Skeleton variant="card" rows={4} />}
+        {err && <ErrorBanner message={err} onRetry={() => void load()} />}
+        {!loading && !err && rows.length === 0 && (
+          <EmptyState title="Empty queue" description="Workout actions filed against breached covenants will appear here." />
+        )}
+
+        {/* Main table */}
+        {!loading && !err && rows.length > 0 && (
+          <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${BORDER}` }}>
+                  {['Covenant', 'Test', 'Action', 'Severity', 'Status', 'Filed', 'Cure by', 'Transitions'].map(col => (
+                    <th key={col} style={{
+                      textAlign: 'left', padding: '8px 12px',
+                      color: TX2, fontWeight: 600, fontSize: 11,
+                      textTransform: 'uppercase', letterSpacing: '0.05em',
+                      background: BG2,
+                    }}>
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((a, i) => {
+                  const sc = statusColors(a.status);
+                  const sevc = severityColors(a.severity);
+                  const ac = actionColors(a.action_type);
+                  const advice = advices[a.id];
+                  return (
+                    <React.Fragment key={a.id}>
+                      <tr style={{ borderBottom: `1px solid ${BORDER}`, background: i % 2 === 1 ? BG2 : 'transparent' }}>
+                        <td style={{ padding: '10px 12px', color: TX1 }}>
+                          <div style={{ fontWeight: 600, fontFamily: MONO, fontSize: 12 }}>{a.covenant_code}</div>
+                          <div style={{ fontSize: 11, color: TX3, marginTop: 2 }}>{a.covenant_name}</div>
+                        </td>
+                        <td style={{ padding: '10px 12px', color: TX2, fontSize: 11, fontFamily: MONO }}>
+                          {a.test_period || '—'}{' '}
+                          {a.measured_value != null && a.threshold != null
+                            ? <span>{a.measured_value} / {a.threshold}</span>
+                            : null}
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <span style={{
+                            background: ac.bg, color: ac.color,
+                            padding: '2px 8px', borderRadius: 12,
+                            fontSize: 11, fontWeight: 600,
+                          }}>
+                            {a.action_type.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <span style={{
+                            background: sevc.bg, color: sevc.color,
+                            padding: '2px 8px', borderRadius: 12,
+                            fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
+                          }}>
+                            {a.severity}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <span style={{
+                            background: sc.bg, color: sc.color,
+                            padding: '2px 8px', borderRadius: 12,
+                            fontSize: 11, fontWeight: 600,
+                          }}>
+                            {a.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 12px', color: TX3, fontSize: 11, fontFamily: MONO }}>
+                          {new Date(a.filed_at).toLocaleDateString()}
+                        </td>
+                        <td style={{ padding: '10px 12px', color: TX3, fontSize: 11, fontFamily: MONO }}>
+                          {a.cure_deadline ? new Date(a.cure_deadline).toLocaleDateString() : '—'}
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                            {a.status === 'open' && (
+                              <button
+                                type="button"
+                                onClick={() => transition(a.id, 'investigating')}
+                                style={{
+                                  padding: '3px 8px', fontSize: 11, fontWeight: 600,
+                                  background: WARN_BG, color: WARN,
+                                  border: 'none', borderRadius: 4, cursor: 'pointer',
+                                }}
+                              >
+                                Investigate
+                              </button>
+                            )}
+                            {(a.status === 'open' || a.status === 'investigating') && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => setTransitioning({ ...a, status: 'resolved' as WorkoutAction['status'] })}
+                                  style={{
+                                    padding: '3px 8px', fontSize: 11, fontWeight: 600,
+                                    background: GOOD_BG, color: GOOD,
+                                    border: 'none', borderRadius: 4, cursor: 'pointer',
+                                  }}
+                                >
+                                  Resolve
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setTransitioning({ ...a, status: 'rejected' as WorkoutAction['status'] })}
+                                  style={{
+                                    padding: '3px 8px', fontSize: 11, fontWeight: 600,
+                                    background: BG2, color: TX2,
+                                    border: 'none', borderRadius: 4, cursor: 'pointer',
+                                  }}
+                                >
+                                  Reject
+                                </button>
+                              </>
+                            )}
+                            {(a.status === 'resolved' || a.status === 'rejected') && (
+                              <span style={{ fontSize: 11, color: TX3 }}>{a.resolution_outcome || '—'}</span>
+                            )}
+                            {!advice && a.status !== 'resolved' && a.status !== 'rejected' && (
+                              <button
+                                type="button"
+                                onClick={() => advise(a)}
+                                style={{
+                                  padding: '3px 8px', fontSize: 11, fontWeight: 600,
+                                  background: ACC_BG, color: ACC,
+                                  border: 'none', borderRadius: 4, cursor: 'pointer',
+                                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                                }}
+                              >
+                                <Lightbulb size={11} /> Advise
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* AI advice inline card */}
+                      {advice && (
+                        <tr>
+                          <td colSpan={8} style={{ padding: '0 12px 12px', background: i % 2 === 1 ? BG2 : 'transparent' }}>
+                            <div style={{
+                              background: ACC_BG,
+                              border: `1px solid ${BORDER}`,
+                              borderRadius: 8,
+                              padding: '12px 16px',
+                              display: 'flex',
+                              gap: 12,
+                              alignItems: 'flex-start',
+                            }}>
+                              <Lightbulb size={16} style={{ color: ACC, flexShrink: 0, marginTop: 2 }} />
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: TX1 }}>
+                                  AI recommendation:{' '}
+                                  <span style={{ textTransform: 'uppercase', color: ACC }}>
+                                    {advice.recommendation.replace(/_/g, ' ')}
+                                  </span>
+                                  <span style={{ marginLeft: 8, fontSize: 11, color: TX3, fontWeight: 400, fontFamily: MONO }}>
+                                    {(advice.confidence * 100).toFixed(0)}% confidence · {advice.source}
+                                  </span>
+                                </div>
+                                <p style={{ margin: '6px 0 10px', fontSize: 12, color: TX2, lineHeight: 1.5 }}>
+                                  {advice.rationale}
+                                </p>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                  {advice.advice_id && (
+                                    <button
+                                      type="button"
+                                      onClick={() => acceptAdvice(advice.advice_id)}
+                                      style={{
+                                        padding: '4px 12px', fontSize: 11, fontWeight: 600,
+                                        background: ACC, color: '#fff',
+                                        border: 'none', borderRadius: 4, cursor: 'pointer',
+                                      }}
+                                    >
+                                      Accept
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => dismissAdvice(a.id)}
+                                    style={{
+                                      padding: '4px 12px', fontSize: 11, fontWeight: 600,
+                                      background: BG1, color: TX2,
+                                      border: `1px solid ${BORDER}`, borderRadius: 4, cursor: 'pointer',
+                                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                                    }}
+                                  >
+                                    <X size={10} /> Dismiss
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {loading && <Skeleton variant="card" rows={4} />}
-      {err && <ErrorBanner message={err} onRetry={() => void load()} />}
-      {!loading && !err && rows.length === 0 && (
-        <EmptyState title="Empty queue" description="Workout actions filed against breached covenants will appear here." />
-      )}
-      {!loading && !err && rows.length > 0 && (
-        <div className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
-          <table className="w-full text-[13px]">
-            <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
-              <tr>
-                <th className="px-4 py-2">Covenant</th>
-                <th className="px-4 py-2">Test</th>
-                <th className="px-4 py-2">Action</th>
-                <th className="px-4 py-2">Severity</th>
-                <th className="px-4 py-2">Status</th>
-                <th className="px-4 py-2">Filed</th>
-                <th className="px-4 py-2">Cure by</th>
-                <th className="px-4 py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(a => (
-                <React.Fragment key={a.id}>
-                  <tr className="border-t border-[#e5ebf2] hover:bg-[#f8fafc]">
-                    <td className="px-4 py-2">
-                      <div className="font-medium">{a.covenant_code}</div>
-                      <div className="text-[11px] text-[#6b7685]">{a.covenant_name}</div>
-                    </td>
-                    <td className="px-4 py-2 text-[11px]">
-                      {a.test_period || '—'} ·{' '}
-                      {a.measured_value != null && a.threshold != null
-                        ? <>{a.measured_value} / {a.threshold}</>
-                        : '—'}
-                    </td>
-                    <td className="px-4 py-2">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${ACTION_PILL[a.action_type] || 'bg-[#eef2f7]'}`}>
-                        {a.action_type.replace(/_/g, ' ')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase ${SEVERITY_PILL[a.severity] || 'bg-[#eef2f7]'}`}>{a.severity}</span>
-                    </td>
-                    <td className="px-4 py-2">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] capitalize ${STATUS_PILL[a.status] || 'bg-[#eef2f7]'}`}>{a.status}</span>
-                    </td>
-                    <td className="px-4 py-2 text-[11px] text-[#6b7685]">{new Date(a.filed_at).toLocaleDateString()}</td>
-                    <td className="px-4 py-2 text-[11px] text-[#6b7685]">{a.cure_deadline ? new Date(a.cure_deadline).toLocaleDateString() : '—'}</td>
-                    <td className="px-4 py-2">
-                      <div className="flex flex-wrap gap-1">
-                        {a.status === 'open' && (
-                          <button type="button" onClick={() => transition(a.id, 'investigating')} className="px-2 py-1 text-[11px] bg-blue-50 text-blue-700 rounded">Investigate</button>
-                        )}
-                        {(a.status === 'open' || a.status === 'investigating') && (
-                          <>
-                            <button type="button" onClick={() => setTransitioning({ ...a, status: 'resolved' as any })} className="px-2 py-1 text-[11px] bg-green-50 text-green-700 rounded">Resolve</button>
-                            <button type="button" onClick={() => setTransitioning({ ...a, status: 'rejected' as any })} className="px-2 py-1 text-[11px] bg-[#eef2f7] text-[#2d3748] rounded">Reject</button>
-                          </>
-                        )}
-                        {(a.status === 'resolved' || a.status === 'rejected') && (
-                          <span className="text-[11px] text-[#6b7685]">{a.resolution_outcome || '—'}</span>
-                        )}
-                        {!advices[a.id] && a.status !== 'resolved' && a.status !== 'rejected' && (
-                          <button type="button" onClick={() => advise(a)} className="px-2 py-1 text-[11px] bg-amber-50 text-amber-800 rounded inline-flex items-center gap-1">
-                            <Lightbulb size={12} /> Advise
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                  {advices[a.id] && (
-                    <tr>
-                      <td colSpan={8} className="px-4 py-2 bg-amber-50/50 border-t border-amber-200/60">
-                        <div className="flex items-start gap-3">
-                          <Lightbulb size={16} className="flex-shrink-0 mt-0.5 text-amber-700" />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[12px] font-semibold text-[#0f1c2e]">
-                              AI recommendation: <span className="uppercase">{advices[a.id].recommendation.replace(/_/g, ' ')}</span>
-                              <span className="ml-2 text-[10px] text-[#6b7685]">
-                                confidence {(advices[a.id].confidence * 100).toFixed(0)}% · source {advices[a.id].source}
-                              </span>
-                            </div>
-                            <p className="mt-1 text-[12px] text-[#3d4756]">{advices[a.id].rationale}</p>
-                            <div className="mt-2 flex gap-2">
-                              {advices[a.id].advice_id && (
-                                <button type="button" onClick={() => acceptAdvice(advices[a.id].advice_id)} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">Accept</button>
-                              )}
-                              <button type="button" onClick={() => dismissAdvice(a.id)} className="px-2 py-1 text-[11px] bg-white border border-[#dde4ec] text-[#3d4756] rounded inline-flex items-center gap-1">
-                                <X size={10} /> Dismiss
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* ── RIGHT COLUMN ── */}
+      <div style={{
+        borderLeft: `1px solid ${BORDER}`,
+        background: BG1,
+        overflowY: 'auto',
+        padding: '24px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}>
 
+        {/* Refresh */}
+        <button
+          type="button"
+          onClick={() => void load()}
+          style={{
+            background: ACC, color: '#fff', border: 'none',
+            padding: '9px 16px', borderRadius: 6, fontWeight: 600,
+            cursor: 'pointer', fontSize: 13,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}
+        >
+          <RefreshCw size={13} /> Refresh queue
+        </button>
+
+        {/* Status filter */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+            Filter by status
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {(['all', 'open', 'investigating', 'resolved', 'rejected'] as const).map(s => {
+              const active = status === s;
+              const sc = s === 'all' ? { bg: ACC_BG, color: ACC } : statusColors(s);
+              return (
+                <button
+                  type="button"
+                  key={s}
+                  onClick={() => setStatus(s)}
+                  style={{
+                    padding: '7px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                    textAlign: 'left', cursor: 'pointer', textTransform: 'capitalize',
+                    background: active ? (s === 'all' ? ACC : sc.bg) : 'transparent',
+                    color: active ? (s === 'all' ? ACC : sc.color) : TX2,
+                    border: active ? `1px solid ${s === 'all' ? ACC : sc.color}` : `1px solid transparent`,
+                    transition: 'all 0.12s',
+                  }}
+                >
+                  {s.replace(/_/g, ' ')}
+                  {s !== 'all' && (
+                    <span style={{ float: 'right', fontFamily: MONO, fontSize: 11, color: TX3 }}>
+                      {rows.filter(r => r.status === s).length}
+                    </span>
+                  )}
+                  {s === 'all' && (
+                    <span style={{ float: 'right', fontFamily: MONO, fontSize: 11, color: TX3 }}>
+                      {rows.length}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Summary stats */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            Queue summary
+          </div>
+          {[
+            { label: 'Open breaches', value: openCount, color: BAD },
+            { label: 'Under investigation', value: invCount, color: WARN },
+            { label: 'Critical severity', value: critCount, color: BAD },
+            { label: 'Resolved', value: resolvedCount, color: GOOD },
+          ].map(stat => (
+            <div key={stat.label} style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '7px 0', borderBottom: `1px solid ${BORDER}`,
+            }}>
+              <span style={{ fontSize: 12, color: TX2 }}>{stat.label}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, fontFamily: MONO, color: stat.color }}>
+                {stat.value}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Severity breakdown */}
+        <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            Severity breakdown
+          </div>
+          {(['critical', 'high', 'medium', 'low'] as const).map(sev => {
+            const count = rows.filter(r => r.severity === sev).length;
+            const c = severityColors(sev);
+            return (
+              <div key={sev} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '6px 0', borderBottom: `1px solid ${BORDER}`,
+              }}>
+                <span style={{
+                  background: c.bg, color: c.color,
+                  padding: '2px 8px', borderRadius: 12,
+                  fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
+                }}>
+                  {sev}
+                </span>
+                <span style={{ fontSize: 14, fontWeight: 700, fontFamily: MONO, color: c.color }}>
+                  {count}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* AI advice tip */}
+        <div style={{ background: ACC_BG, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 16px' }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <Lightbulb size={15} style={{ color: ACC, flexShrink: 0, marginTop: 1 }} />
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: TX1, marginBottom: 4 }}>
+                AI Covenant Advisor
+              </div>
+              <p style={{ fontSize: 11, color: TX2, margin: 0, lineHeight: 1.5 }}>
+                Click <strong>Advise</strong> on any open or investigating row to get a deterministic recommendation — cure plan, waiver, amendment or acceleration — with confidence score and rationale.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Resolve/Reject modal ── */}
       {transitioning && (
-        <ResolveModal action={transitioning} onClose={() => setTransitioning(null)} onSubmit={async (notes, outcome) => {
-          const to = transitioning.status as 'resolved' | 'rejected';
-          setTransitioning(null);
-          await transition(transitioning.id, to, notes, outcome);
-        }} />
+        <ResolveModal
+          action={transitioning}
+          onClose={() => setTransitioning(null)}
+          onSubmit={async (notes, outcome) => {
+            const to = transitioning.status as 'resolved' | 'rejected';
+            setTransitioning(null);
+            await transition(transitioning.id, to, notes, outcome);
+          }}
+        />
       )}
     </div>
   );
@@ -291,24 +583,72 @@ function ResolveModal({
   const [notes, setNotes] = useState('');
   const [outcome, setOutcome] = useState<string>(isResolved ? 'cured' : 'no_action');
   const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  const [modalErr, setModalErr] = useState<string | null>(null);
+
   const submit = async () => {
-    if (notes.trim().length < 3) { setErr('Notes ≥3 chars required.'); return; }
-    setSaving(true); setErr(null);
-    try { await onSubmit(notes, outcome); } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'failed'); setSaving(false); }
+    if (notes.trim().length < 3) { setModalErr('Notes ≥3 chars required.'); return; }
+    setSaving(true); setModalErr(null);
+    try { await onSubmit(notes, outcome); } catch (e: unknown) {
+      setModalErr(e instanceof Error ? e.message : 'failed');
+      setSaving(false);
+    }
   };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
-          <h3 className="text-[16px] font-semibold text-[#0f1c2e]">{isResolved ? 'Resolve' : 'Reject'} workout action · {action.covenant_code}</h3>
-          <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 50,
+        background: 'rgba(0,0,0,0.4)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: BG1, borderRadius: 10, boxShadow: '0 8px 40px rgba(0,0,0,0.18)',
+          maxWidth: 520, width: '100%', maxHeight: '90vh', overflowY: 'auto',
+          border: `1px solid ${BORDER}`,
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Modal header */}
+        <div style={{
+          padding: '16px 20px', borderBottom: `1px solid ${BORDER}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: TX1 }}>
+            {isResolved ? 'Resolve' : 'Reject'} workout action
+            <span style={{ marginLeft: 8, fontFamily: MONO, fontSize: 13, color: TX3, fontWeight: 400 }}>
+              {action.covenant_code}
+            </span>
+          </h3>
+          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: TX2 }}>
+            <X size={18} />
+          </button>
         </div>
-        <div className="p-5 space-y-3">
-          {err && <div className="text-[12px] text-red-700">{err}</div>}
-          <label className="block text-[13px]">
-            <span className="text-[#6b7685]">Outcome</span>
-            <select value={outcome} onChange={(e) => setOutcome(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg">
+
+        {/* Modal body */}
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {modalErr && (
+            <div style={{ background: BAD_BG, color: BAD, padding: '8px 12px', borderRadius: 6, fontSize: 12 }}>
+              {modalErr}
+            </div>
+          )}
+
+          <label style={{ display: 'block', fontSize: 13 }}>
+            <span style={{ color: TX2, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Outcome
+            </span>
+            <select
+              value={outcome}
+              onChange={e => setOutcome(e.target.value)}
+              style={{
+                marginTop: 6, width: '100%', padding: '8px 12px',
+                border: `1px solid ${BORDER}`, borderRadius: 6,
+                fontSize: 13, color: TX1, background: BG,
+              }}
+            >
               {isResolved ? (
                 <>
                   <option value="cured">Cured (test now passes)</option>
@@ -318,19 +658,53 @@ function ResolveModal({
                   <option value="written_off">Written off</option>
                 </>
               ) : (
-                <>
-                  <option value="no_action">No action — not material</option>
-                </>
+                <option value="no_action">No action — not material</option>
               )}
             </select>
           </label>
-          <label className="block text-[13px]">
-            <span className="text-[#6b7685]">Notes</span>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} placeholder="What changed? ≥3 chars required." className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
+
+          <label style={{ display: 'block', fontSize: 13 }}>
+            <span style={{ color: TX2, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Notes
+            </span>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              rows={4}
+              placeholder="What changed? ≥3 chars required."
+              style={{
+                marginTop: 6, width: '100%', padding: '8px 12px',
+                border: `1px solid ${BORDER}`, borderRadius: 6,
+                fontSize: 13, color: TX1, background: BG,
+                resize: 'none', boxSizing: 'border-box',
+              }}
+            />
           </label>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-[#eef2f7]">Cancel</button>
-            <button type="button" onClick={submit} disabled={saving} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 ${isResolved ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'}`}>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: '8px 16px', border: `1px solid ${BORDER}`,
+                borderRadius: 6, background: 'transparent',
+                color: TX2, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={submit}
+              disabled={saving}
+              style={{
+                padding: '8px 16px', border: 'none', borderRadius: 6,
+                background: isResolved ? GOOD : TX2,
+                color: '#fff', fontSize: 13, fontWeight: 600,
+                cursor: saving ? 'not-allowed' : 'pointer',
+                opacity: saving ? 0.6 : 1,
+              }}
+            >
               {saving ? 'Saving…' : (isResolved ? 'Resolve' : 'Reject')}
             </button>
           </div>
@@ -339,3 +713,5 @@ function ResolveModal({
     </div>
   );
 }
+
+export default LenderWorkoutPage;

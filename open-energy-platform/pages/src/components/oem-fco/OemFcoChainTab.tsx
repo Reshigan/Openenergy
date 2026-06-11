@@ -34,6 +34,7 @@ type ChangeClass =
 type UrgencyBand = 'urgent' | 'due_soon' | 'on_track' | 'over_due';
 
 interface FcoRow {
+  [key: string]: unknown;
   id: string;
   campaign_number: string;
   source_event: string | null;
@@ -148,9 +149,9 @@ interface KpiSummary {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   draft:                 { bg: '#e3e7ec', fg: '#557',    label: 'Draft' },
-  under_review:          { bg: '#dbecfb', fg: '#1a3a5c', label: 'Under review' },
+  under_review:          { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Under review' },
   approved:              { bg: '#daf5e2', fg: '#1f6b3a', label: 'Approved' },
-  population_identified: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Population identified' },
+  population_identified: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Population identified' },
   notification_sent:     { bg: '#fff4d6', fg: '#a06200', label: 'Notification sent' },
   acknowledged:          { bg: '#fff4d6', fg: '#a06200', label: 'Acknowledged' },
   scheduling:            { bg: '#ffe9d6', fg: '#8a4a00', label: 'Scheduling' },
@@ -164,7 +165,7 @@ const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }>
 const CLASS_TONE: Record<ChangeClass, { bg: string; fg: string; label: string }> = {
   mandatory_safety:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Mandatory · safety' },
   mandatory_performance: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Mandatory · performance' },
-  recommended:           { bg: '#dbecfb', fg: '#1a3a5c', label: 'Recommended' },
+  recommended:           { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Recommended' },
   optional:              { bg: '#e3e7ec', fg: '#557',    label: 'Optional' },
 };
 
@@ -519,15 +520,15 @@ export function OemFcoChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Campaign #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">OEM / product</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Class</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Units</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">MW</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Coverage</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Urgency</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Campaign #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>OEM / product</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Class</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Units</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>MW</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Coverage</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Urgency</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -541,7 +542,7 @@ export function OemFcoChainTab() {
                     onClick={() => loadEvents(r.id)}
                     className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
                   >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 font-mono text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.campaign_number}
                       {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
                     </td>
@@ -693,8 +694,8 @@ function Drawer({
             <Pair label="Escalation lvl"      value={String(row.escalation_level)} />
             <Pair label="Reportable"          value={row.is_reportable_flag ? 'Yes' : 'No'} />
           </div>
-          {row.technical_summary && <BasisBlock label="Technical summary" tone="#1a3a5c" text={row.technical_summary} />}
-          {row.campaign_summary && <BasisBlock label="Campaign summary" tone="#1a3a5c" text={row.campaign_summary} />}
+          {row.technical_summary && <BasisBlock label="Technical summary" tone="oklch(0.46 0.16 55)" text={row.technical_summary} />}
+          {row.campaign_summary && <BasisBlock label="Campaign summary" tone="oklch(0.46 0.16 55)" text={row.campaign_summary} />}
         </section>
 
         {(primary || secondary.length > 0) && (
@@ -749,7 +750,7 @@ function Drawer({
                       <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
                     )}
                   </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

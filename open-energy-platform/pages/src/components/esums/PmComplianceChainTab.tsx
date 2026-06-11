@@ -19,6 +19,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'pm_scheduled' | 'work_assigned' | 'in_progress' | 'on_hold' | 'completed'
@@ -29,6 +44,7 @@ type CriticalityTier =
   | 'routine' | 'standard' | 'significant' | 'critical' | 'safety_critical';
 
 interface PmRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   source_event: string | null;
@@ -87,19 +103,6 @@ interface PmRow {
   created_at: string;
 }
 
-interface PmEvent {
-  id: string;
-  pm_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiData {
   total: number;
   open_count: number;
@@ -119,35 +122,26 @@ interface KpiData {
   total_actual_cost_zar: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  pm_scheduled:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Scheduled' },
-  work_assigned:        { bg: '#dbecfb', fg: '#1a3a5c', label: 'Work assigned' },
-  in_progress:          { bg: '#fff4d6', fg: '#a06200', label: 'In progress' },
-  on_hold:              { bg: '#fff4d6', fg: '#a06200', label: 'On hold' },
-  completed:            { bg: '#daf5e2', fg: '#1f6b3a', label: 'Completed' },
-  verification_pending: { bg: '#fff4d6', fg: '#a06200', label: 'Verification pending' },
-  rework_required:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Rework required' },
-  deferral_requested:   { bg: '#fff4d6', fg: '#a06200', label: 'Deferral requested' },
-  closed:               { bg: '#e3e7ec', fg: '#557',    label: 'Closed' },
-  deferred:             { bg: '#e3e7ec', fg: '#557',    label: 'Deferred' },
-  skipped:              { bg: '#fbd0d0', fg: '#7a1414', label: 'Skipped' },
-  cancelled:            { bg: '#e3e7ec', fg: '#557',    label: 'Cancelled' },
-};
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'pm_scheduled',
+  'work_assigned',
+  'in_progress',
+  'on_hold',
+  'completed',
+  'verification_pending',
+  'rework_required',
+  'deferral_requested',
+  'closed',
+];
 
-const TIER_TONE: Record<CriticalityTier, { bg: string; fg: string; label: string }> = {
-  routine:         { bg: '#e3e7ec', fg: '#557',    label: 'Routine' },
-  standard:        { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard' },
-  significant:     { bg: '#fff4d6', fg: '#a06200', label: 'Significant' },
-  critical:        { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical' },
-  safety_critical: { bg: '#fbd0d0', fg: '#7a1414', label: 'Safety-critical' },
-};
+const BRANCH_STATES: readonly string[] = [
+  'deferred',
+  'skipped',
+  'cancelled',
+];
 
-const PARTY_TONE: Record<string, { bg: string; fg: string }> = {
-  asset_owner:   { bg: '#dbecfb', fg: '#1a3a5c' },
-  om_contractor: { bg: '#fff4d6', fg: '#a06200' },
-  system:        { bg: '#e3e7ec', fg: '#557' },
-};
-
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'active',               label: 'Active (pre-terminal)' },
   { key: 'all',                  label: 'All' },
@@ -171,6 +165,7 @@ const FILTERS: Array<{ key: string; label: string }> = [
 
 const TIERS = new Set<string>(['routine', 'standard', 'significant', 'critical', 'safety_critical']);
 
+// ── format helpers ────────────────────────────────────────────────────────
 function fmtZar(n: number): string {
   return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(n);
 }
@@ -182,14 +177,278 @@ function fmtMin(min: number | null | undefined): string {
   return `${min}m`;
 }
 
+// ── action helpers ────────────────────────────────────────────────────────
+function getActions(row: PmRow): ChainAction[] {
+  const cs = row.chain_status;
+  const actions: ChainAction[] = [];
+
+  // pm_scheduled → work_assigned
+  if (cs === 'pm_scheduled') {
+    actions.push({
+      key: 'assign-work',
+      label: 'Assign work (owner)',
+      fields: [
+        { key: 'assignment_ref',   label: 'Assignment reference', type: 'text',     required: false, placeholder: row.assignment_ref ?? '' },
+        { key: 'assignment_basis', label: 'Assignment basis',     type: 'textarea', required: false, placeholder: row.assignment_basis ?? '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // work_assigned | on_hold | rework_required → in_progress
+  if (cs === 'work_assigned' || cs === 'on_hold' || cs === 'rework_required') {
+    actions.push({
+      key: 'start-work',
+      label: 'Start work (contractor)',
+      fields: [
+        { key: 'labour_hours', label: 'Labour hours so far', type: 'number', required: false, placeholder: String(row.labour_hours ?? '') },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // in_progress → on_hold
+  if (cs === 'in_progress') {
+    actions.push({
+      key: 'place-on-hold',
+      label: 'Place on hold (contractor)',
+      fields: [
+        { key: 'hold_basis',   label: 'Hold basis (e.g. awaiting spares / access)', type: 'textarea', required: false, placeholder: row.hold_basis ?? '' },
+        { key: 'reason_code',  label: 'Reason code',                                type: 'text',     required: false, placeholder: row.reason_code ?? '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // in_progress → completed
+  if (cs === 'in_progress') {
+    actions.push({
+      key: 'complete-work',
+      label: 'Complete work (contractor)',
+      fields: [
+        { key: 'checklist_total_items',  label: 'Checklist total items',  type: 'number',   required: false, placeholder: String(row.checklist_total_items ?? '') },
+        { key: 'checklist_passed_items', label: 'Checklist passed items', type: 'number',   required: false, placeholder: String(row.checklist_passed_items ?? '') },
+        { key: 'actual_cost_zar',        label: 'Actual cost (ZAR)',      type: 'number',   required: false, placeholder: String(row.actual_cost_zar ?? '') },
+        { key: 'completion_basis',       label: 'Completion basis',       type: 'textarea', required: false, placeholder: row.completion_basis ?? '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // completed → verification_pending
+  if (cs === 'completed') {
+    actions.push({
+      key: 'open-verification',
+      label: 'Open verification (owner)',
+      fields: [
+        { key: 'verification_ref',   label: 'Verification reference', type: 'text',     required: false, placeholder: row.verification_ref ?? '' },
+        { key: 'verification_basis', label: 'Verification basis',     type: 'textarea', required: false, placeholder: row.verification_basis ?? '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // verification_pending → closed
+  if (cs === 'verification_pending') {
+    actions.push({
+      key: 'close-pm',
+      label: 'Close PM (owner)',
+      fields: [
+        { key: 'verification_ref',   label: 'Verification reference', type: 'text',     required: false, placeholder: row.verification_ref ?? '' },
+        { key: 'verification_basis', label: 'Verification basis',     type: 'textarea', required: false, placeholder: row.verification_basis ?? '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // verification_pending → rework_required
+  if (cs === 'verification_pending') {
+    actions.push({
+      key: 'require-rework',
+      label: 'Require rework (owner)',
+      fields: [
+        { key: 'rework_basis', label: 'Rework basis (deficiencies found)', type: 'textarea', required: false, placeholder: row.rework_basis ?? '' },
+        { key: 'reason_code',  label: 'Reason code',                       type: 'text',     required: false, placeholder: row.reason_code ?? '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // pm_scheduled | work_assigned | on_hold → deferral_requested
+  if (cs === 'pm_scheduled' || cs === 'work_assigned' || cs === 'on_hold') {
+    actions.push({
+      key: 'request-deferral',
+      label: 'Request deferral (contractor)',
+      fields: [
+        { key: 'deferred_to_date', label: 'Deferred-to date (YYYY-MM-DD)', type: 'date',     required: false, placeholder: row.deferred_to_date ?? '' },
+        { key: 'deferral_basis',   label: 'Deferral basis',                type: 'textarea', required: false, placeholder: row.deferral_basis ?? '' },
+        { key: 'reason_code',      label: 'Reason code',                   type: 'text',     required: false, placeholder: row.reason_code ?? '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // deferral_requested → deferred (approve) — skip_pm crosses regulator critical+safety
+  if (cs === 'deferral_requested') {
+    actions.push({
+      key: 'approve-deferral',
+      label: 'Approve deferral (owner)',
+      fields: [
+        { key: 'deferred_to_date', label: 'Deferred-to date (YYYY-MM-DD)',                          type: 'date',     required: false, placeholder: row.deferred_to_date ?? '' },
+        { key: 'deferral_basis',   label: 'Deferral basis',                                         type: 'textarea', required: false, placeholder: row.deferral_basis ?? '' },
+        { key: 'regulator_ref',    label: 'Regulator reference (safety-critical only, optional)',   type: 'text',     required: false, placeholder: row.regulator_ref ?? '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // deferral_requested → work_assigned (reject)
+  if (cs === 'deferral_requested') {
+    actions.push({
+      key: 'reject-deferral',
+      label: 'Reject deferral (owner)',
+      fields: [
+        { key: 'deferral_basis', label: 'Rejection basis', type: 'textarea', required: false, placeholder: row.deferral_basis ?? '' },
+        { key: 'reason_code',    label: 'Reason code',     type: 'text',     required: false, placeholder: row.reason_code ?? '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // pm_scheduled | work_assigned | on_hold | deferral_requested → skipped
+  // skip_pm crosses regulator critical+safety
+  if (cs === 'pm_scheduled' || cs === 'work_assigned' || cs === 'on_hold' || cs === 'deferral_requested') {
+    const skipCascade = (row.criticality_tier === 'critical' || row.criticality_tier === 'safety_critical')
+      ? ['regulator'] as string[]
+      : [] as string[];
+    actions.push({
+      key: 'skip-pm',
+      label: 'Skip PM (owner)',
+      fields: [
+        { key: 'skip_basis',    label: 'Skip basis (window lapsed unexecuted)',        type: 'textarea', required: false, placeholder: row.skip_basis ?? '' },
+        { key: 'regulator_ref', label: 'Regulator reference (critical / safety only)', type: 'text',     required: false, placeholder: row.regulator_ref ?? '' },
+        { key: 'reason_code',   label: 'Reason code',                                 type: 'text',     required: false, placeholder: row.reason_code ?? '' },
+      ],
+      cascadeTo: skipCascade,
+    });
+  }
+
+  // pm_scheduled | work_assigned → cancelled
+  if (cs === 'pm_scheduled' || cs === 'work_assigned') {
+    actions.push({
+      key: 'cancel-pm',
+      label: 'Cancel PM (owner)',
+      fields: [
+        { key: 'reason_code', label: 'Reason code (no longer applicable)', type: 'text', required: false, placeholder: row.reason_code ?? '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: PmRow): React.ReactNode {
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+      <DetailPair label="Asset owner"    value={row.owner_party_name} />
+      <DetailPair label="O&M contractor" value={row.contractor_party_name} />
+      <DetailPair label="Technology"     value={row.technology} />
+      {row.site_province       && <DetailPair label="Province"    value={row.site_province} />}
+      {row.asset_class         && <DetailPair label="Asset class" value={row.asset_class} />}
+      {row.asset_tag           && <DetailPair label="Asset tag"   value={row.asset_tag} />}
+      {row.pm_code             && <DetailPair label="PM code"     value={row.pm_code} />}
+      {row.pm_frequency        && <DetailPair label="Frequency"   value={row.pm_frequency} />}
+      <DetailPair label="Criticality score" value={`${row.criticality_score} / 100`} />
+      {row.contract_ref        && <DetailPair label="O&M contract"   value={row.contract_ref} />}
+      {row.scheduled_date      && <DetailPair label="Scheduled"       value={row.scheduled_date} />}
+      {row.window_end          && <DetailPair label="Window closes"   value={row.window_end} />}
+      {row.deferred_to_date    && <DetailPair label="Deferred to"     value={row.deferred_to_date} />}
+      {row.checklist_total_items != null && (
+        <DetailPair label="Checklist" value={`${row.checklist_passed_items ?? 0} / ${row.checklist_total_items} passed`} />
+      )}
+      {row.labour_hours != null && <DetailPair label="Labour" value={`${row.labour_hours} h`} />}
+      {row.estimated_cost_zar != null && <DetailPair label="Estimated cost" value={fmtZar(row.estimated_cost_zar)} />}
+      {row.actual_cost_zar    != null && <DetailPair label="Actual cost"    value={fmtZar(row.actual_cost_zar)} />}
+      {row.rework_round   > 0 && <DetailPair label="Rework round"   value={String(row.rework_round)} />}
+      {row.deferral_round > 0 && <DetailPair label="Deferral round" value={String(row.deferral_round)} />}
+      {row.regulator_ref      && <DetailPair label="Regulator ref"  value={row.regulator_ref} />}
+      {row.source_wave && (
+        <div className="col-span-2">
+          <DetailPair label="Provenance" value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}${row.source_event ? ` (${row.source_event})` : ''}`} />
+        </div>
+      )}
+      {row.sla_deadline_at && !row.is_terminal && (
+        <div className="col-span-2">
+          <DetailPair label="Next SLA" value={`${new Date(row.sla_deadline_at).toLocaleString()} (${fmtMin(row.minutes_until_sla)})${row.escalation_level > 0 ? ` · ${row.escalation_level} breach(es)` : ''}`} />
+        </div>
+      )}
+
+      {row.assignment_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Assignment basis</div>
+          <div style={{ color: TX2 }}>{row.assignment_basis}</div>
+        </div>
+      )}
+      {row.hold_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Hold basis</div>
+          <div style={{ color: TX2 }}>{row.hold_basis}</div>
+        </div>
+      )}
+      {row.completion_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Completion basis</div>
+          <div style={{ color: TX2 }}>{row.completion_basis}</div>
+        </div>
+      )}
+      {row.verification_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Verification basis</div>
+          <div style={{ color: TX2 }}>{row.verification_basis}</div>
+        </div>
+      )}
+      {row.rework_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Rework basis</div>
+          <div style={{ color: TX2 }}>{row.rework_basis}</div>
+        </div>
+      )}
+      {row.deferral_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Deferral basis</div>
+          <div style={{ color: TX2 }}>{row.deferral_basis}</div>
+        </div>
+      )}
+      {row.skip_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Skip basis</div>
+          <div style={{ color: TX2 }}>{row.skip_basis}</div>
+        </div>
+      )}
+      {row.reason_code && (
+        <div className="col-span-2">
+          <DetailPair label="Reason code" value={row.reason_code} />
+        </div>
+      )}
+      {row.notes && (
+        <div className="col-span-2 rounded border px-2 py-1.5" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Notes</div>
+          <div style={{ color: TX2 }}>{row.notes}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function PmComplianceChainTab() {
   const [rows, setRows] = useState<PmRow[]>([]);
-  const [kpis, setKpis] = useState<KpiData | null>(null);
+  const [summary, setSummary] = useState<KpiData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<PmRow | null>(null);
-  const [events, setEvents] = useState<PmEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -200,7 +459,7 @@ export function PmComplianceChainTab() {
       setRows(d?.items || []);
       if (d) {
         const { items: _items, ...rest } = d;
-        setKpis(rest as KpiData);
+        setSummary(rest as KpiData);
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load PM compliance');
@@ -211,380 +470,142 @@ export function PmComplianceChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: PmRow; events: PmEvent[] } }>(`/pm-compliance/chain/${id}`);
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/pm-compliance/chain/${rowId}/${key}`, values);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { case: PmRow; events: ChainEvent[] } }>(`/pm-compliance/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load PM history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: PmRow; events: ChainEvent[] } }>(`/pm-compliance/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (filter === 'all')        return true;
       if (filter === 'active')     return !r.is_terminal;
-      if (filter === 'breached')   return r.sla_breached;
-      if (filter === 'reportable') return r.is_reportable;
+      if (filter === 'breached')   return !!r.sla_breached;
+      if (filter === 'reportable') return !!r.is_reportable;
       if (TIERS.has(filter))       return r.criticality_tier === filter;
       return r.chain_status === filter;
     });
   }, [rows, filter]);
 
-  const doAction = useCallback(async (path: string, body?: object) => {
-    if (!selected) return;
-    try {
-      await api.post(`/pm-compliance/chain/${selected.id}/${path}`, body ?? {});
-      await load();
-      await loadEvents(selected.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Action failed');
-    }
-  }, [selected, load, loadEvents]);
+  const kpis = summary ?? {
+    total: 0, open_count: 0, closed_count: 0, in_progress_count: 0,
+    on_hold_count: 0, verification_count: 0, rework_count: 0,
+    deferral_open_count: 0, deferred_count: 0, skipped_count: 0,
+    cancelled_count: 0, breached: 0, reportable_total: 0, critical_open: 0,
+    total_estimated_cost_zar: 0, total_actual_cost_zar: 0,
+  };
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-7 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? 0} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="In progress" value={kpis?.in_progress_count ?? 0} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Critical open" value={kpis?.critical_open ?? 0} tone={(kpis?.critical_open ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Skipped" value={kpis?.skipped_count ?? 0} tone={(kpis?.skipped_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Deferred" value={kpis?.deferred_count ?? 0} />
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>PM Schedule Compliance</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          IEC 62446 / 61724 preventive-maintenance compliance — proactive upstream of W51 availability guarantee and W24 PR underperformance.
+        </p>
+      </header>
+
+      {/* KPI strip */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <KpiTile label="Total"        value={kpis.total} />
+        <KpiTile label="Open"         value={kpis.open_count} />
+        <KpiTile label="In progress"  value={kpis.in_progress_count} />
+        <KpiTile label="SLA breached" value={kpis.breached}       tone={kpis.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Critical open" value={kpis.critical_open} tone={kpis.critical_open > 0 ? 'bad' : undefined} />
+        <KpiTile label="Skipped"      value={kpis.skipped_count}  tone={kpis.skipped_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="Deferred"     value={kpis.deferred_count} />
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
-                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
-            }`}>
+      {/* Filter pills */}
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
-      {err && <div className="px-3 py-2 bg-red-50 text-red-700 text-[12px] rounded-md">{err}</div>}
+      {err && (
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]"
+          style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+          {err}
+        </div>
+      )}
 
-      <div className="bg-white border border-[#e5ebf2] rounded-xl overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[#f7f9fb] text-[11px] uppercase tracking-wide text-[#6b7685]">
-            <tr>
-              <th className="px-3 py-2 text-left">Case #</th>
-              <th className="px-3 py-2 text-left">Site / PM task</th>
-              <th className="px-3 py-2 text-left">Contractor</th>
-              <th className="px-3 py-2 text-left">Asset</th>
-              <th className="px-3 py-2 text-left">Tier</th>
-              <th className="px-3 py-2 text-left">State</th>
-              <th className="px-3 py-2 text-right">Δ SLA</th>
-            </tr>
-          </thead>
-          <tbody className="text-[13px]">
-            {loading ? (
-              <tr><td colSpan={7} className="p-6 text-center text-[#6b7685]">Loading…</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={7} className="p-6 text-center text-[#6b7685]">No PM tasks match the current filter.</td></tr>
-            ) : filtered.map((r) => {
-              const stateTone = STATE_TONE[r.chain_status];
-              const tierTone  = TIER_TONE[r.criticality_tier];
-              return (
-                <tr
-                  key={r.id}
-                  onClick={() => loadEvents(r.id)}
-                  className={`cursor-pointer hover:bg-[#f7f9fb] border-t border-[#eef2f6] ${selected?.id === r.id ? 'bg-[#fffae6]' : ''}`}>
-                  <td className="px-3 py-2 font-mono text-[11px]">{r.case_number}</td>
-                  <td className="px-3 py-2 max-w-xs truncate" title={`${r.site_name} · ${r.pm_title}`}>
-                    {r.site_name}<span className="text-[#6b7685]"> · {r.pm_title}</span>
-                  </td>
-                  <td className="px-3 py-2 text-[#4a5568] max-w-[12rem] truncate" title={r.contractor_party_name}>{r.contractor_party_name}</td>
-                  <td className="px-3 py-2 text-[#4a5568] text-[12px] max-w-[10rem] truncate" title={`${r.asset_class ?? ''} ${r.asset_tag ?? ''}`.trim()}>
-                    {r.asset_class ?? '—'}{r.asset_tag ? ` · ${r.asset_tag}` : ''}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: tierTone.bg, color: tierTone.fg }}>
-                      {tierTone.label}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: stateTone.bg, color: stateTone.fg }}>
-                      {stateTone.label}
-                    </span>
-                  </td>
-                  <td className={`px-3 py-2 text-right text-[12px] tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                    {r.is_terminal ? '—' : fmtMin(r.minutes_until_sla)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {selected && (
-        <PmDrawer
-          row={selected}
-          events={events}
-          onClose={() => { setSelected(null); setEvents([]); }}
-          doAction={doAction}
-        />
+      {loading ? (
+        <div className="rounded border px-4 py-6 text-center text-[12px]"
+          style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+          Loading…
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(row => (
+            <ChainCard
+              key={row.id}
+              item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.site_name} · ${row.pm_title}`}
+              meta={`${row.case_number} · ${row.criticality_tier.replace('_', '-')} · ${row.contractor_party_name}`}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={[]}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]"
+              style={{ background: BG1, borderColor: BORDER, color: TX3 }}>
+              No PM tasks match the current filter.
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone = 'ok', small = false }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad'; small?: boolean }) {
-  const fg = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0f1c2e';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
   return (
-    <div className="bg-white border border-[#e5ebf2] rounded-lg p-3">
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className={small ? 'text-[15px] font-semibold tabular-nums mt-0.5' : 'text-[20px] font-semibold tabular-nums mt-0.5'} style={{ color: fg }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function PmDrawer({
-  row, events, onClose, doAction,
-}: {
-  row: PmRow;
-  events: PmEvent[];
-  onClose: () => void;
-  doAction: (path: string, body?: object) => Promise<void>;
-}) {
-  const cs = row.chain_status;
-  const transitionable = !row.is_terminal;
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/30 flex items-stretch justify-end oe-overlay-in" onClick={onClose}>
-      <div className="bg-white w-full max-w-2xl shadow-xl overflow-y-auto oe-drawer-in" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-start justify-between sticky top-0 bg-white z-10">
-          <div>
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">PM task {row.case_number}</div>
-            <h3 className="text-[16px] font-semibold text-[#0f1c2e] mt-0.5">
-              {row.site_name} · {row.pm_title}
-            </h3>
-            <div className="flex flex-wrap gap-2 mt-2 text-[12px]">
-              <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: TIER_TONE[row.criticality_tier].bg, color: TIER_TONE[row.criticality_tier].fg }}>
-                {TIER_TONE[row.criticality_tier].label}
-              </span>
-              <span className="px-2 py-0.5 rounded-full" style={{ background: STATE_TONE[cs].bg, color: STATE_TONE[cs].fg }}>
-                {STATE_TONE[cs].label}
-              </span>
-              {row.is_reportable && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">Regulator reportable</span>
-              )}
-            </div>
-          </div>
-          <button type="button" onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">✕</button>
-        </div>
-
-        <div className="p-5 space-y-4 text-[13px]">
-          <div className="grid grid-cols-2 gap-4">
-            <Pair label="Asset owner" value={row.owner_party_name} />
-            <Pair label="O&M contractor" value={row.contractor_party_name} />
-            <Pair label="Technology" value={row.technology} />
-            {row.site_province && <Pair label="Province" value={row.site_province} />}
-            {row.asset_class && <Pair label="Asset class" value={row.asset_class} />}
-            {row.asset_tag && <Pair label="Asset tag" value={row.asset_tag} />}
-            {row.pm_code && <Pair label="PM code" value={row.pm_code} />}
-            {row.pm_frequency && <Pair label="Frequency" value={row.pm_frequency} />}
-            <Pair label="Criticality" value={`${row.criticality_score} / 100`} />
-            {row.contract_ref && <Pair label="O&M contract" value={row.contract_ref} />}
-            {row.scheduled_date && <Pair label="Scheduled" value={row.scheduled_date} />}
-            {row.window_end && <Pair label="Window closes" value={row.window_end} />}
-            {row.deferred_to_date && <Pair label="Deferred to" value={row.deferred_to_date} />}
-            {row.checklist_total_items != null && (
-              <Pair label="Checklist" value={`${row.checklist_passed_items ?? 0} / ${row.checklist_total_items} passed`} />
-            )}
-            {row.labour_hours != null && <Pair label="Labour" value={`${row.labour_hours} h`} />}
-          </div>
-
-          {row.assignment_basis && <Pair label="Assignment basis" value={row.assignment_basis} />}
-          {row.hold_basis && <Pair label="Hold basis" value={row.hold_basis} />}
-          {row.completion_basis && <Pair label="Completion basis" value={row.completion_basis} />}
-          {row.verification_basis && <Pair label="Verification basis" value={row.verification_basis} />}
-          {row.rework_basis && <Pair label="Rework basis" value={row.rework_basis} />}
-          {row.deferral_basis && <Pair label="Deferral basis" value={row.deferral_basis} />}
-          {row.skip_basis && <Pair label="Skip basis" value={row.skip_basis} />}
-          {row.reason_code && <Pair label="Reason code" value={row.reason_code} />}
-          {row.notes && <Pair label="Notes" value={row.notes} />}
-
-          <div className="grid grid-cols-2 gap-4">
-            {row.estimated_cost_zar != null && <Pair label="Estimated cost" value={fmtZar(row.estimated_cost_zar)} />}
-            {row.actual_cost_zar != null && <Pair label="Actual cost" value={fmtZar(row.actual_cost_zar)} />}
-            {row.rework_round > 0 && <Pair label="Rework round" value={String(row.rework_round)} />}
-            {row.deferral_round > 0 && <Pair label="Deferral round" value={String(row.deferral_round)} />}
-            {row.regulator_ref && <Pair label="Regulator ref" value={row.regulator_ref} />}
-          </div>
-
-          {row.source_wave && (
-            <Pair label="Provenance" value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}${row.source_event ? ` (${row.source_event})` : ''}`} />
-          )}
-
-          {row.sla_deadline_at && !row.is_terminal && (
-            <Pair label="Next SLA" value={`${new Date(row.sla_deadline_at).toLocaleString()} (${fmtMin(row.minutes_until_sla)})${row.escalation_level > 0 ? ` · ${row.escalation_level} breach(es)` : ''}`} />
-          )}
-
-          {transitionable && (
-            <div className="border-t border-[#eef2f6] pt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Actions</div>
-              <div className="flex flex-wrap gap-2">
-                {cs === 'pm_scheduled' && (
-                  <ActionBtn label="Assign work (owner)" onClick={() => {
-                    const ref = window.prompt('Assignment reference (optional):') ?? undefined;
-                    const basis = window.prompt('Assignment basis (optional):') ?? undefined;
-                    void doAction('assign-work', { assignment_ref: ref, assignment_basis: basis });
-                  }} />
-                )}
-                {(cs === 'work_assigned' || cs === 'on_hold' || cs === 'rework_required') && (
-                  <ActionBtn label="Start work (contractor)" onClick={() => {
-                    const h = window.prompt('Labour hours so far (optional):') ?? undefined;
-                    void doAction('start-work', h ? { labour_hours: Number(h) } : {});
-                  }} />
-                )}
-                {cs === 'in_progress' && (
-                  <ActionBtn label="Place on hold (contractor)" onClick={() => {
-                    const basis = window.prompt('Hold basis (e.g. awaiting spares / access):') ?? undefined;
-                    const rc = window.prompt('Reason code (optional):') ?? undefined;
-                    void doAction('place-on-hold', { hold_basis: basis, reason_code: rc });
-                  }} />
-                )}
-                {cs === 'in_progress' && (
-                  <ActionBtn label="Complete work (contractor)" tone="good" onClick={() => {
-                    const total = window.prompt('Checklist total items (optional):') ?? undefined;
-                    const passed = window.prompt('Checklist passed items (optional):') ?? undefined;
-                    const cost = window.prompt('Actual cost (ZAR, optional):') ?? undefined;
-                    const basis = window.prompt('Completion basis (optional):') ?? undefined;
-                    void doAction('complete-work', {
-                      checklist_total_items: total ? Number(total) : undefined,
-                      checklist_passed_items: passed ? Number(passed) : undefined,
-                      actual_cost_zar: cost ? Number(cost) : undefined,
-                      completion_basis: basis,
-                    });
-                  }} />
-                )}
-                {cs === 'completed' && (
-                  <ActionBtn label="Open verification (owner)" onClick={() => {
-                    const ref = window.prompt('Verification reference (optional):') ?? undefined;
-                    const basis = window.prompt('Verification basis (optional):') ?? undefined;
-                    void doAction('open-verification', { verification_ref: ref, verification_basis: basis });
-                  }} />
-                )}
-                {cs === 'verification_pending' && (
-                  <ActionBtn label="Close PM (owner)" tone="good" onClick={() => {
-                    const ref = window.prompt('Verification reference (optional):') ?? undefined;
-                    const basis = window.prompt('Verification basis (optional):') ?? undefined;
-                    void doAction('close-pm', { verification_ref: ref, verification_basis: basis });
-                  }} />
-                )}
-                {cs === 'verification_pending' && (
-                  <ActionBtn label="Require rework (owner)" tone="bad" onClick={() => {
-                    const basis = window.prompt('Rework basis (deficiencies found):') ?? undefined;
-                    const rc = window.prompt('Reason code (optional):') ?? undefined;
-                    void doAction('require-rework', { rework_basis: basis, reason_code: rc });
-                  }} />
-                )}
-                {(cs === 'pm_scheduled' || cs === 'work_assigned' || cs === 'on_hold') && (
-                  <ActionBtn label="Request deferral (contractor)" onClick={() => {
-                    const to = window.prompt('Deferred-to date (YYYY-MM-DD):') ?? undefined;
-                    const basis = window.prompt('Deferral basis:') ?? undefined;
-                    const rc = window.prompt('Reason code (optional):') ?? undefined;
-                    void doAction('request-deferral', { deferred_to_date: to, deferral_basis: basis, reason_code: rc });
-                  }} />
-                )}
-                {cs === 'deferral_requested' && (
-                  <ActionBtn label="Approve deferral (owner)" onClick={() => {
-                    const to = window.prompt('Deferred-to date (YYYY-MM-DD):') ?? undefined;
-                    const basis = window.prompt('Deferral basis (optional):') ?? undefined;
-                    const reg = window.prompt('Regulator reference (safety-critical only, optional):') ?? undefined;
-                    void doAction('approve-deferral', { deferred_to_date: to, deferral_basis: basis, regulator_ref: reg });
-                  }} />
-                )}
-                {cs === 'deferral_requested' && (
-                  <ActionBtn label="Reject deferral (owner)" tone="bad" onClick={() => {
-                    const basis = window.prompt('Rejection basis:') ?? undefined;
-                    const rc = window.prompt('Reason code (optional):') ?? undefined;
-                    void doAction('reject-deferral', { deferral_basis: basis, reason_code: rc });
-                  }} />
-                )}
-                {(cs === 'pm_scheduled' || cs === 'work_assigned' || cs === 'on_hold' || cs === 'deferral_requested') && (
-                  <ActionBtn label="Skip PM (owner)" tone="bad" onClick={() => {
-                    const basis = window.prompt('Skip basis (window lapsed unexecuted):') ?? undefined;
-                    const reg = window.prompt('Regulator reference (critical / safety only, optional):') ?? undefined;
-                    const rc = window.prompt('Reason code (optional):') ?? undefined;
-                    void doAction('skip-pm', { skip_basis: basis, regulator_ref: reg, reason_code: rc });
-                  }} />
-                )}
-                {(cs === 'pm_scheduled' || cs === 'work_assigned') && (
-                  <ActionBtn label="Cancel PM (owner)" onClick={() => {
-                    const rc = window.prompt('Reason code (no longer applicable):') ?? undefined;
-                    void doAction('cancel-pm', rc ? { reason_code: rc } : {});
-                  }} />
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="border-t border-[#eef2f6] pt-4">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Timeline</div>
-            <div className="space-y-2">
-              {events.length === 0 ? (
-                <div className="text-[12px] text-[#6b7685]">No events yet.</div>
-              ) : events.map((e) => {
-                const partyTone = PARTY_TONE[e.actor_party ?? 'system'] ?? PARTY_TONE.system;
-                return (
-                  <div key={e.id} className="flex gap-3 text-[12px] border-l-2 border-[#e5ebf2] pl-3 py-1">
-                    <span className="font-mono text-[11px] text-[#6b7685] whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
-                    <div>
-                      <span className="font-semibold text-[#0f1c2e]">{e.event_type}</span>
-                      {e.actor_party && (
-                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-medium uppercase" style={{ background: partyTone.bg, color: partyTone.fg }}>
-                          {e.actor_party}
-                        </span>
-                      )}
-                      {e.from_status && e.to_status && e.from_status !== e.to_status && (
-                        <span className="text-[#6b7685]"> · {e.from_status} → {e.to_status}</span>
-                      )}
-                      {e.notes && <div className="text-[#4a5568] mt-0.5">{e.notes}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[#0f1c2e] mt-0.5">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1 }}>{value}</div>
     </div>
   );
 }
 
-function ActionBtn({ label, onClick, tone = 'neutral' }: { label: string; onClick: () => void; tone?: 'neutral' | 'good' | 'bad' }) {
-  const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#c2873a]';
-  return (
-    <button type="button" onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
-      {label}
-    </button>
-  );
-}
+export default PmComplianceChainTab;

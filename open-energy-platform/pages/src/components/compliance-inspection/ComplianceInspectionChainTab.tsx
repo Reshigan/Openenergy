@@ -20,6 +20,20 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'inspection_scheduled' | 'inspection_in_progress' | 'findings_drafted'
@@ -30,6 +44,7 @@ type ChainStatus =
 type Tier = 'critical' | 'serious' | 'minor';
 
 interface InspectionRow {
+  [key: string]: unknown;
   id: string;
   inspection_number: string;
   source_event: string | null;
@@ -89,19 +104,6 @@ interface InspectionRow {
   breach_crosses_regulator?: boolean;
 }
 
-interface InspectionEvent {
-  id: string;
-  inspection_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiSummary {
   total: number;
   open_count: number;
@@ -117,28 +119,25 @@ interface KpiSummary {
   total_remediation: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  inspection_scheduled:   { bg: '#e3e7ec', fg: '#557',    label: 'Scheduled' },
-  inspection_in_progress: { bg: '#dbecfb', fg: '#1a3a5c', label: 'In progress' },
-  findings_drafted:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Findings drafted' },
-  findings_issued:        { bg: '#fff4d6', fg: '#a06200', label: 'Findings issued' },
-  directive_issued:       { bg: '#fff4d6', fg: '#a06200', label: 'Directive issued' },
-  remediation_underway:   { bg: '#ffe9d6', fg: '#8a4a00', label: 'Remediation underway' },
-  remediation_verified:   { bg: '#daf5e2', fg: '#1f6b3a', label: 'Remediation verified' },
-  penalty_imposed:        { bg: '#fde0e0', fg: '#9b1f1f', label: 'Penalty imposed' },
-  appealed:               { bg: '#fde0e0', fg: '#9b1f1f', label: 'Appealed' },
-  compliant_closed:       { bg: '#d4edda', fg: '#155724', label: 'Compliant — closed' },
-  enforcement_closed:     { bg: '#f3e0e0', fg: '#6b1f1f', label: 'Enforcement — closed' },
-  withdrawn:              { bg: '#f3e0e0', fg: '#6b1f1f', label: 'Withdrawn' },
-};
+const ALL_STATES = [
+  'inspection_scheduled',
+  'inspection_in_progress',
+  'findings_drafted',
+  'findings_issued',
+  'directive_issued',
+  'remediation_underway',
+  'remediation_verified',
+  'compliant_closed',
+] as const;
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical' },
-  serious:  { bg: '#ffe4b5', fg: '#8a4a00', label: 'Serious' },
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-};
+const BRANCH_STATES = [
+  'penalty_imposed',
+  'appealed',
+  'enforcement_closed',
+  'withdrawn',
+] as const;
 
-const FILTERS: Array<{ key: string; label: string }> = [
+const FILTERS = [
   { key: 'active',                 label: 'Active' },
   { key: 'all',                    label: 'All' },
   { key: 'critical',               label: 'Critical' },
@@ -161,56 +160,11 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'withdrawn',              label: 'Withdrawn' },
 ];
 
-type ActionKind =
-  | 'begin-inspection' | 'draft-findings' | 'close-no-findings' | 'issue-findings'
-  | 'issue-directive' | 'begin-remediation' | 'verify-remediation' | 'close-compliant'
-  | 'impose-penalty' | 'lodge-appeal' | 'resolve-appeal' | 'close-enforcement' | 'withdraw';
-
-// Primary forward action per state.
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  inspection_scheduled:   'begin-inspection',
-  inspection_in_progress: 'draft-findings',
-  findings_drafted:       'issue-findings',
-  findings_issued:        'issue-directive',
-  directive_issued:       'begin-remediation',
-  remediation_underway:   'verify-remediation',
-  remediation_verified:   'close-compliant',
-  penalty_imposed:        'close-enforcement',
-  appealed:               'resolve-appeal',
-  compliant_closed:       null,
-  enforcement_closed:     null,
-  withdrawn:              null,
-};
-
-// Party annotation per action. The officer drives the machinery; the respondent
-// licensee begins remediation and lodges any appeal.
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'begin-inspection':   'Begin inspection (officer)',
-  'draft-findings':     'Draft findings (officer)',
-  'close-no-findings':  'Close — no findings (officer)',
-  'issue-findings':     'Issue findings (officer)',
-  'issue-directive':    'Issue directive (officer)',
-  'begin-remediation':  'Begin remediation (respondent)',
-  'verify-remediation': 'Verify remediation (officer)',
-  'close-compliant':    'Close — compliant (officer)',
-  'impose-penalty':     'Impose penalty (officer)',
-  'lodge-appeal':       'Lodge appeal (respondent)',
-  'resolve-appeal':     'Resolve appeal (officer)',
-  'close-enforcement':  'Close enforcement (officer)',
-  'withdraw':           'Withdraw (officer)',
-};
-
-function fmtMinutes(m: number | null | undefined): string {
-  if (m === null || m === undefined) return '—';
-  if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
-  if (Math.abs(m) >= 60) return `${Math.round(m / 60)}h`;
-  return `${m}m`;
-}
+const TERMINAL_STATES: ChainStatus[] = ['compliant_closed', 'enforcement_closed', 'withdrawn'];
 
 function fmtDate(s: string | null): string {
   if (!s) return '—';
-  const d = new Date(s);
-  return d.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+  return new Date(s).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function fmtZar(n: number | null | undefined): string {
@@ -220,16 +174,289 @@ function fmtZar(n: number | null | undefined): string {
   return `R${n.toFixed(0)}`;
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['compliant_closed', 'enforcement_closed', 'withdrawn'];
+function fmtMinutes(m: number | null | undefined): string {
+  if (m === null || m === undefined) return '—';
+  if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
+  if (Math.abs(m) >= 60) return `${Math.round(m / 60)}h`;
+  return `${m}m`;
+}
+
+function getActions(row: InspectionRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const s = row.chain_status;
+
+  const canCloseNoFindings = ['inspection_in_progress', 'findings_drafted'].includes(s);
+  const canPenalty = ['findings_issued', 'directive_issued', 'remediation_underway'].includes(s);
+  const canAppeal = ['penalty_imposed', 'directive_issued'].includes(s);
+  const canWithdraw = ['inspection_scheduled', 'inspection_in_progress', 'findings_drafted'].includes(s);
+
+  if (s === 'inspection_scheduled') {
+    actions.push({
+      key: 'begin-inspection',
+      label: 'Begin inspection (officer)',
+      tone: 'primary',
+      fields: [
+        { key: 'inspection_basis', label: 'Inspection scope / basis (what is being examined)', type: 'textarea', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'inspection_in_progress') {
+    actions.push({
+      key: 'draft-findings',
+      label: 'Draft findings (officer)',
+      tone: 'primary',
+      fields: [
+        { key: 'findings_ref', label: 'Findings reference (e.g. NERSA-FIND-2026-0042)', type: 'text', required: true },
+        { key: 'findings_basis', label: 'Findings basis — contraventions identified', type: 'textarea', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'findings_drafted') {
+    actions.push({
+      key: 'issue-findings',
+      label: 'Issue findings (officer)',
+      tone: 'primary',
+      fields: [
+        { key: 'findings_ref', label: 'Issued findings reference (served on respondent)', type: 'text', required: true },
+        { key: 'findings_basis', label: 'Findings basis / cover note', type: 'textarea', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'findings_issued') {
+    actions.push({
+      key: 'issue-directive',
+      label: 'Issue directive (officer)',
+      tone: 'primary',
+      fields: [
+        { key: 'directive_ref', label: 'Compliance directive reference (e.g. NERSA-DIR-2026-0017)', type: 'text', required: true },
+        { key: 'directive_basis', label: 'Directive basis — required remediation + deadline', type: 'textarea', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'directive_issued') {
+    actions.push({
+      key: 'begin-remediation',
+      label: 'Begin remediation (respondent)',
+      tone: 'primary',
+      fields: [
+        { key: 'remediation_basis', label: 'Remediation plan basis — what the respondent will do', type: 'textarea', required: false },
+        { key: 'remediation_cost_zar', label: 'Estimated remediation cost (ZAR), if known', type: 'text', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'remediation_underway') {
+    actions.push({
+      key: 'verify-remediation',
+      label: 'Verify remediation (officer)',
+      tone: 'primary',
+      fields: [
+        { key: 'remediation_basis', label: 'Verification basis — evidence the directive was satisfied', type: 'textarea', required: false },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'remediation_verified') {
+    actions.push({
+      key: 'close-compliant',
+      label: 'Close — compliant (officer)',
+      tone: 'primary',
+      fields: [
+        { key: 'rod_notes', label: 'Record-of-decision — remediation accepted, matter closed', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'penalty_imposed') {
+    actions.push({
+      key: 'close-enforcement',
+      label: 'Close enforcement (officer)',
+      tone: 'primary',
+      fields: [
+        { key: 'rod_notes', label: 'Record-of-decision — enforcement concluded', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (s === 'appealed') {
+    actions.push({
+      key: 'resolve-appeal',
+      label: 'Resolve appeal (officer)',
+      tone: 'primary',
+      fields: [
+        { key: 'tribunal_ref', label: 'Tribunal reference / outcome ref', type: 'text', required: false },
+        { key: 'rod_notes', label: 'Tribunal decision — outcome + any varied penalty', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (canCloseNoFindings) {
+    actions.push({
+      key: 'close-no-findings',
+      label: 'Close — no findings (officer)',
+      tone: 'ghost',
+      fields: [
+        { key: 'rod_notes', label: 'Record-of-decision — why the inspection closes clean', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (canPenalty) {
+    actions.push({
+      key: 'impose-penalty',
+      label: 'Impose penalty (officer)',
+      tone: 'danger',
+      fields: [
+        { key: 'penalty_ref', label: 'Penalty reference (e.g. NERSA-PEN-2026-0009)', type: 'text', required: true },
+        { key: 'penalty_amount_zar', label: 'Penalty amount (ZAR)', type: 'text', required: true },
+        { key: 'daily_penalty_zar', label: 'Daily penalty for continued non-compliance (ZAR), if any', type: 'text', required: false },
+        { key: 'penalty_basis', label: 'Penalty basis — statutory provision + reasoning', type: 'textarea', required: false },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (canAppeal) {
+    actions.push({
+      key: 'lodge-appeal',
+      label: 'Lodge appeal (respondent)',
+      tone: 'warn',
+      fields: [
+        { key: 'appeal_ref', label: 'Appeal reference (e.g. NERSA-TRIBUNAL-2026-0011)', type: 'text', required: true },
+        { key: 'appeal_basis', label: 'Grounds of appeal', type: 'textarea', required: true },
+      ],
+      cascadeTo: ['regulator'],
+    });
+  }
+
+  if (canWithdraw) {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw (officer)',
+      tone: 'ghost',
+      fields: [
+        { key: 'rod_notes', label: 'Withdrawal reason (e.g. duplicate, superseded, no jurisdiction)', type: 'textarea', required: true },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: InspectionRow): React.ReactNode {
+  return (
+    <div style={{ fontSize: 12 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '8px 16px',
+        }}
+      >
+        <DetailPair label="Tier"                value={row.contravention_tier} />
+        <DetailPair label="Trigger"             value={row.inspection_trigger ?? '—'} />
+        <DetailPair label="Licence ref"         value={row.licence_ref ?? '—'} />
+        <DetailPair label="Licence condition"   value={row.licence_condition_ref ?? '—'} />
+        <DetailPair label="Officer"             value={row.officer_party_name} />
+        <DetailPair label="Respondent"          value={row.respondent_party_name} />
+        <DetailPair label="Penalty"             value={fmtZar(row.penalty_amount_zar)} />
+        <DetailPair label="Daily penalty"       value={fmtZar(row.daily_penalty_zar)} />
+        <DetailPair label="Remediation cost"    value={fmtZar(row.remediation_cost_zar)} />
+        <DetailPair label="Findings ref"        value={row.findings_ref ?? '—'} />
+        <DetailPair label="Directive ref"       value={row.directive_ref ?? '—'} />
+        <DetailPair label="Penalty ref"         value={row.penalty_ref ?? '—'} />
+        <DetailPair label="Appeal ref"          value={row.appeal_ref ?? '—'} />
+        <DetailPair label="Tribunal ref"        value={row.tribunal_ref ?? '—'} />
+        <DetailPair label="Reason code"         value={row.reason_code ?? '—'} />
+        <DetailPair label="Reportable"          value={row.is_reportable ? 'Yes' : 'No'} />
+        <DetailPair label="Escalation level"    value={String(row.escalation_level)} />
+        <DetailPair label="SLA status"          value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+        <DetailPair label="Scheduled"           value={fmtDate(row.inspection_scheduled_at)} />
+        <DetailPair label="In progress"         value={fmtDate(row.inspection_in_progress_at)} />
+        <DetailPair label="Findings drafted"    value={fmtDate(row.findings_drafted_at)} />
+        <DetailPair label="Findings issued"     value={fmtDate(row.findings_issued_at)} />
+        <DetailPair label="Directive issued"    value={fmtDate(row.directive_issued_at)} />
+        <DetailPair label="Remediation underway" value={fmtDate(row.remediation_underway_at)} />
+        <DetailPair label="Remediation verified" value={fmtDate(row.remediation_verified_at)} />
+        <DetailPair label="Penalty imposed"     value={fmtDate(row.penalty_imposed_at)} />
+        <DetailPair label="Appealed"            value={fmtDate(row.appealed_at)} />
+        <DetailPair label="Compliant closed"    value={fmtDate(row.compliant_closed_at)} />
+        <DetailPair label="Enforcement closed"  value={fmtDate(row.enforcement_closed_at)} />
+        <DetailPair label="SLA deadline"        value={fmtDate(row.sla_deadline_at)} />
+      </div>
+      {row.source_wave && (
+        <div style={{ marginTop: 8, fontSize: 11, color: TX2 }}>
+          Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
+        </div>
+      )}
+      {row.inspection_basis && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: TX3 }}>Inspection basis</div>
+          <div style={{ color: TX2, whiteSpace: 'pre-wrap' }}>{row.inspection_basis}</div>
+        </div>
+      )}
+      {row.findings_basis && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: WARN }}>Findings basis</div>
+          <div style={{ color: TX1, whiteSpace: 'pre-wrap' }}>{row.findings_basis}</div>
+        </div>
+      )}
+      {row.directive_basis && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: WARN }}>Directive basis</div>
+          <div style={{ color: TX1, whiteSpace: 'pre-wrap' }}>{row.directive_basis}</div>
+        </div>
+      )}
+      {row.remediation_basis && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: GOOD }}>Remediation basis</div>
+          <div style={{ color: TX1, whiteSpace: 'pre-wrap' }}>{row.remediation_basis}</div>
+        </div>
+      )}
+      {row.penalty_basis && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: BAD }}>Penalty basis</div>
+          <div style={{ color: TX1, whiteSpace: 'pre-wrap' }}>{row.penalty_basis}</div>
+        </div>
+      )}
+      {row.appeal_basis && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: BAD }}>Appeal basis</div>
+          <div style={{ color: TX1, whiteSpace: 'pre-wrap' }}>{row.appeal_basis}</div>
+        </div>
+      )}
+      {row.rod_notes && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: GOOD }}>Record of decision</div>
+          <div style={{ color: TX1, whiteSpace: 'pre-wrap' }}>{row.rod_notes}</div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function ComplianceInspectionChainTab() {
   const [rows, setRows] = useState<InspectionRow[]>([]);
-  const [kpis, setKpis] = useState<KpiSummary | null>(null);
+  const [summary, setSummary] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<InspectionRow | null>(null);
-  const [events, setEvents] = useState<InspectionEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -239,7 +466,7 @@ export function ComplianceInspectionChainTab() {
       setRows(res.data?.data?.items || []);
       const d = res.data?.data;
       if (d) {
-        setKpis({
+        setSummary({
           total: d.total, open_count: d.open_count,
           compliant_closed_count: d.compliant_closed_count,
           enforcement_closed_count: d.enforcement_closed_count,
@@ -258,17 +485,38 @@ export function ComplianceInspectionChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: InspectionRow; events: InspectionEvent[] } }>(
+      const body: Record<string, string | number> = { ...values };
+      // Coerce numeric fields
+      if (values.penalty_amount_zar) body.penalty_amount_zar = Number(values.penalty_amount_zar);
+      if (values.daily_penalty_zar)  body.daily_penalty_zar  = Number(values.daily_penalty_zar);
+      if (values.remediation_cost_zar) body.remediation_cost_zar = Number(values.remediation_cost_zar);
+      // Inject fixed reason codes per action
+      if (key === 'close-no-findings')  body.reason_code = 'no_contravention_found';
+      if (key === 'close-compliant')    body.reason_code = 'remediation_verified';
+      if (key === 'impose-penalty')     body.reason_code = 'penalty_imposed';
+      if (key === 'resolve-appeal')     body.reason_code = 'appeal_resolved';
+      if (key === 'close-enforcement')  body.reason_code = 'enforcement_concluded';
+      if (key === 'withdraw')           body.reason_code = 'withdrawn';
+      await api.post(`/compliance-inspection/chain/${rowId}/${key}`, body);
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
+    }
+  }, [load]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: InspectionRow; events: ChainEvent[] } }>(
         `/compliance-inspection/chain/${id}`
       );
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load inspection history');
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events || [] }));
+    } catch {
+      // non-fatal
     }
-  }, []);
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -277,129 +525,61 @@ export function ComplianceInspectionChainTab() {
       if (filter === 'critical')    return r.contravention_tier === 'critical';
       if (filter === 'serious')     return r.contravention_tier === 'serious';
       if (filter === 'minor')       return r.contravention_tier === 'minor';
-      if (filter === 'enforcement') return r.in_enforcement && !r.is_terminal;
-      if (filter === 'breached')    return r.sla_breached;
+      if (filter === 'enforcement') return !!r.in_enforcement && !r.is_terminal;
+      if (filter === 'breached')    return !!r.sla_breached;
       if (filter === 'reportable')  return r.is_reportable;
       return r.chain_status === filter;
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: InspectionRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'begin-inspection') {
-        const basis = window.prompt('Inspection scope / basis (what is being examined):') || '';
-        body = { inspection_basis: basis };
-      } else if (action === 'draft-findings') {
-        const ref = window.prompt('Findings reference (e.g. NERSA-FIND-2026-0042):');
-        if (!ref) return;
-        const basis = window.prompt('Findings basis — contraventions identified:') || '';
-        body = { findings_ref: ref, findings_basis: basis };
-      } else if (action === 'close-no-findings') {
-        const rod = window.prompt('Record-of-decision — why the inspection closes clean:');
-        if (!rod) return;
-        body = { reason_code: 'no_contravention_found', rod_notes: rod };
-      } else if (action === 'issue-findings') {
-        const ref = window.prompt('Issued findings reference (served on respondent):', row.findings_ref || '');
-        if (!ref) return;
-        const basis = window.prompt('Findings basis / cover note:') || '';
-        body = { findings_ref: ref, findings_basis: basis };
-      } else if (action === 'issue-directive') {
-        const ref = window.prompt('Compliance directive reference (e.g. NERSA-DIR-2026-0017):');
-        if (!ref) return;
-        const basis = window.prompt('Directive basis — required remediation + deadline:') || '';
-        body = { directive_ref: ref, directive_basis: basis };
-      } else if (action === 'begin-remediation') {
-        const basis = window.prompt('Remediation plan basis — what the respondent will do:') || '';
-        const cost = window.prompt('Estimated remediation cost (ZAR), if known:');
-        body = { remediation_basis: basis };
-        if (cost) body.remediation_cost_zar = Number(cost);
-      } else if (action === 'verify-remediation') {
-        const basis = window.prompt('Verification basis — evidence the directive was satisfied:') || '';
-        body = { remediation_basis: basis };
-      } else if (action === 'close-compliant') {
-        const rod = window.prompt('Record-of-decision — remediation accepted, matter closed:');
-        if (!rod) return;
-        body = { reason_code: 'remediation_verified', rod_notes: rod };
-      } else if (action === 'impose-penalty') {
-        const ref = window.prompt('Penalty reference (e.g. NERSA-PEN-2026-0009):');
-        if (!ref) return;
-        const amount = window.prompt('Penalty amount (ZAR):');
-        if (!amount) return;
-        const daily = window.prompt('Daily penalty for continued non-compliance (ZAR), if any:');
-        const basis = window.prompt('Penalty basis — statutory provision + reasoning:') || '';
-        body = { penalty_ref: ref, penalty_amount_zar: Number(amount), penalty_basis: basis, reason_code: 'penalty_imposed' };
-        if (daily) body.daily_penalty_zar = Number(daily);
-      } else if (action === 'lodge-appeal') {
-        const ref = window.prompt('Appeal reference (e.g. NERSA-TRIBUNAL-2026-0011):');
-        if (!ref) return;
-        const basis = window.prompt('Grounds of appeal:');
-        if (!basis) return;
-        body = { appeal_ref: ref, appeal_basis: basis };
-      } else if (action === 'resolve-appeal') {
-        const ref = window.prompt('Tribunal reference / outcome ref:', row.tribunal_ref || row.appeal_ref || '');
-        const rod = window.prompt('Tribunal decision — outcome + any varied penalty:');
-        if (!rod) return;
-        body = { reason_code: 'appeal_resolved', rod_notes: rod };
-        if (ref) body.tribunal_ref = ref;
-      } else if (action === 'close-enforcement') {
-        const rod = window.prompt('Record-of-decision — enforcement concluded:');
-        if (!rod) return;
-        body = { reason_code: 'enforcement_concluded', rod_notes: rod };
-      } else if (action === 'withdraw') {
-        const reason = window.prompt('Withdrawal reason (e.g. duplicate, superseded, no jurisdiction):');
-        if (!reason) return;
-        body = { reason_code: 'withdrawn', rod_notes: reason };
-      }
-      await api.post(`/compliance-inspection/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
-
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Compliance inspection &amp; enforcement</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-stage P6 chain · scheduled → in progress → findings drafted → findings issued → directive issued →
-            remediation underway → remediation verified → compliant closed. The enforcement branch escalates to a
-            penalty (with a NERSA Tribunal appeal route); early inspections can close clean or withdraw. The regulator
-            officer drives the machinery; the respondent licensee begins remediation and lodges any appeal. URGENT SLA:
-            the more severe the contravention, the tighter every window. Appeals cross to the regulator inbox for every
-            tier; penalties + SLA breaches cross for critical + serious (NERSA ERA §10 + §34/§35).
-          </p>
-        </div>
+    <div style={{ padding: '20px', background: BG, minHeight: '100%' }}>
+      <header style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: TX1, margin: 0 }}>
+          Compliance inspection &amp; enforcement
+        </h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 4, lineHeight: 1.5 }}>
+          12-stage P6 chain · scheduled → in progress → findings drafted → findings issued → directive issued →
+          remediation underway → remediation verified → compliant closed. The enforcement branch escalates to a
+          penalty (with a NERSA Tribunal appeal route); early inspections can close clean or withdraw. The regulator
+          officer drives the machinery; the respondent licensee begins remediation and lodges any appeal. URGENT SLA:
+          the more severe the contravention, the tighter every window. Appeals cross to the regulator inbox for every
+          tier; penalties + SLA breaches cross for critical + serious (NERSA ERA §10 + §34/§35).
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} />
-        <Kpi label="Critical open" value={kpis?.critical_open ?? 0} tone={(kpis?.critical_open ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="In enforcement" value={kpis?.in_enforcement_count ?? 0} tone={(kpis?.in_enforcement_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Appealed" value={kpis?.appealed_count ?? 0} tone={(kpis?.appealed_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Compliant closed" value={kpis?.compliant_closed_count ?? 0} tone="ok" />
-        <Kpi label="Enforcement closed" value={kpis?.enforcement_closed_count ?? 0} />
-        <Kpi label="Withdrawn" value={kpis?.withdrawn_count ?? 0} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Penalties" value={fmtZar(kpis?.total_penalty)} tone={(kpis?.total_penalty ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Remediation" value={fmtZar(kpis?.total_remediation)} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 16 }}>
+        <KpiTile label="Total"              value={summary?.total ?? rows.length} />
+        <KpiTile label="Open"               value={summary?.open_count ?? 0} />
+        <KpiTile label="Critical open"      value={summary?.critical_open ?? 0}        tone={(summary?.critical_open ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="In enforcement"     value={summary?.in_enforcement_count ?? 0} tone={(summary?.in_enforcement_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Appealed"           value={summary?.appealed_count ?? 0}       tone={(summary?.appealed_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="SLA breached"       value={summary?.breached ?? 0}             tone={(summary?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Compliant closed"   value={summary?.compliant_closed_count ?? 0}   tone="ok" />
+        <KpiTile label="Enforcement closed" value={summary?.enforcement_closed_count ?? 0} />
+        <KpiTile label="Withdrawn"          value={summary?.withdrawn_count ?? 0} />
+        <KpiTile label="Reportable"         value={summary?.reportable_total ?? 0}    tone={(summary?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Penalties"          value={fmtZar(summary?.total_penalty)}    tone={(summary?.total_penalty ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Remediation"        value={fmtZar(summary?.total_remediation)} />
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
         {FILTERS.map((f) => (
-          <button type="button"
+          <button
             key={f.key}
+            type="button"
             onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
+            style={{
+              padding: '3px 10px',
+              fontSize: 11,
+              fontWeight: 500,
+              borderRadius: 4,
+              cursor: 'pointer',
+              border: filter === f.key ? 'none' : `1px solid ${BORDER}`,
+              background: filter === f.key ? ACC : BG1,
+              color: filter === f.key ? '#fff' : TX2,
+              transition: 'background 120ms',
+            }}
           >
             {f.label}
           </button>
@@ -407,272 +587,74 @@ export function ComplianceInspectionChainTab() {
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
-      )}
-      {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
-      ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Inspection #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Facility / respondent</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Trigger</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Penalty</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.contravention_tier];
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.inspection_number}
-                      {r.is_reportable && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[280px] truncate" title={`${r.facility_name} · ${r.respondent_party_name}`}>
-                      {r.facility_name}
-                      <span className="text-[#4a5568]"> · {r.respondent_party_name}</span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {tt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{r.inspection_trigger ?? '—'}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#1a3a5c]">{fmtZar(r.penalty_amount_zar)}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-[#4a5568]">No inspections match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 4, background: 'oklch(0.97 0.04 20)', border: `1px solid ${BAD}`, color: BAD, fontSize: 12 }}>
+          {err}
         </div>
       )}
 
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
+      {loading ? (
+        <div style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: TX3, background: BG1, borderRadius: 6, border: `1px solid ${BORDER}` }}>
+          Loading...
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ padding: '24px', textAlign: 'center', fontSize: 13, color: TX3, background: BG1, borderRadius: 6, border: `1px solid ${BORDER}` }}>
+          No inspections match.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {filtered.map((row) => (
+            <ChainCard
+              key={row.id}
+              item={{
+                ...row,
+                case_number: row.inspection_number,
+              }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={row.facility_name}
+              meta={
+                <span>
+                  <span style={{ fontFamily: MONO, fontSize: 10, color: TX3 }}>{row.inspection_number}</span>
+                  {' · '}
+                  <span style={{ textTransform: 'capitalize' }}>{row.contravention_tier}</span>
+                  {' · '}
+                  {row.respondent_party_name}
+                  {row.is_reportable && (
+                    <span style={{ marginLeft: 4, color: BAD, fontWeight: 700 }} title="Reportable to regulator">●</span>
+                  )}
+                </span>
+              }
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              onExpand={handleExpand}
+              events={expandedEvents[row.id]}
+              detail={renderDetail(row)}
+              cascadeTo={[]}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div style={{ borderRadius: 6, border: `1px solid ${BORDER}`, background: BG1, padding: '8px 12px' }}>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.07em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: InspectionRow;
-  events: InspectionEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: InspectionRow) => void;
-}) {
-  const nextAction = ACTION_FOR_STATE[row.chain_status];
-  const canCloseNoFindings = ['inspection_in_progress', 'findings_drafted'].includes(row.chain_status);
-  const canPenalty = ['findings_issued', 'directive_issued', 'remediation_underway'].includes(row.chain_status);
-  const canAppeal = ['penalty_imposed', 'directive_issued'].includes(row.chain_status);
-  const canWithdraw = ['inspection_scheduled', 'inspection_in_progress', 'findings_drafted'].includes(row.chain_status);
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[720px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.inspection_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.facility_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.contravention_tier].label} · respondent {row.respondent_party_name}
-                {row.licence_ref ? ` · licence ${row.licence_ref}` : ''} · officer {row.officer_party_name}
-              </div>
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"               value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Tier"                value={TIER_TONE[row.contravention_tier].label} />
-            <Pair label="Trigger"             value={row.inspection_trigger ?? '—'} />
-            <Pair label="Licence ref"         value={row.licence_ref ?? '—'} />
-            <Pair label="Licence condition"   value={row.licence_condition_ref ?? '—'} />
-            <Pair label="Penalty"             value={fmtZar(row.penalty_amount_zar)} />
-            <Pair label="Daily penalty"       value={fmtZar(row.daily_penalty_zar)} />
-            <Pair label="Remediation cost"    value={fmtZar(row.remediation_cost_zar)} />
-            <Pair label="Findings ref"        value={row.findings_ref ?? '—'} />
-            <Pair label="Directive ref"       value={row.directive_ref ?? '—'} />
-            <Pair label="Penalty ref"         value={row.penalty_ref ?? '—'} />
-            <Pair label="Appeal ref"          value={row.appeal_ref ?? '—'} />
-            <Pair label="Tribunal ref"        value={row.tribunal_ref ?? '—'} />
-            <Pair label="Reason code"         value={row.reason_code ?? '—'} />
-            <Pair label="Scheduled"           value={fmtDate(row.inspection_scheduled_at)} />
-            <Pair label="In progress"         value={fmtDate(row.inspection_in_progress_at)} />
-            <Pair label="Findings drafted"    value={fmtDate(row.findings_drafted_at)} />
-            <Pair label="Findings issued"     value={fmtDate(row.findings_issued_at)} />
-            <Pair label="Directive issued"    value={fmtDate(row.directive_issued_at)} />
-            <Pair label="Remediation underway" value={fmtDate(row.remediation_underway_at)} />
-            <Pair label="Remediation verified" value={fmtDate(row.remediation_verified_at)} />
-            <Pair label="Penalty imposed"     value={fmtDate(row.penalty_imposed_at)} />
-            <Pair label="Appealed"            value={fmtDate(row.appealed_at)} />
-            <Pair label="Compliant closed"    value={fmtDate(row.compliant_closed_at)} />
-            <Pair label="Enforcement closed"  value={fmtDate(row.enforcement_closed_at)} />
-            <Pair label="SLA deadline"        value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"          value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"      value={String(row.escalation_level)} />
-            <Pair label="Reportable"          value={row.is_reportable ? 'Yes' : 'No'} />
-          </div>
-          {row.inspection_basis && (
-            <BasisBlock label="Inspection basis" tone="#1a3a5c" text={row.inspection_basis} />
-          )}
-          {row.findings_basis && (
-            <BasisBlock label="Findings basis" tone="#a06200" text={row.findings_basis} />
-          )}
-          {row.directive_basis && (
-            <BasisBlock label="Directive basis" tone="#8a4a00" text={row.directive_basis} />
-          )}
-          {row.remediation_basis && (
-            <BasisBlock label="Remediation basis" tone="#1f6b3a" text={row.remediation_basis} />
-          )}
-          {row.penalty_basis && (
-            <BasisBlock label="Penalty basis" tone="#9b1f1f" text={row.penalty_basis} />
-          )}
-          {row.appeal_basis && (
-            <BasisBlock label="Appeal basis" tone="#9b1f1f" text={row.appeal_basis} />
-          )}
-          {row.rod_notes && (
-            <BasisBlock label="Record of decision" tone="#155724" text={row.rod_notes} />
-          )}
-        </section>
-
-        {(nextAction || canCloseNoFindings || canPenalty || canAppeal || canWithdraw) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {nextAction && (
-                <button type="button"
-                  onClick={() => onAct(nextAction, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[nextAction]}
-                </button>
-              )}
-              {canCloseNoFindings && (
-                <button type="button"
-                  onClick={() => onAct('close-no-findings', row)}
-                  className="rounded border border-green-300 bg-white px-3 py-1.5 text-[12px] font-medium text-green-700 hover:bg-green-50"
-                >
-                  {ACTION_LABEL['close-no-findings']}
-                </button>
-              )}
-              {canPenalty && (
-                <button type="button"
-                  onClick={() => onAct('impose-penalty', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
-                >
-                  {ACTION_LABEL['impose-penalty']}
-                </button>
-              )}
-              {canAppeal && (
-                <button type="button"
-                  onClick={() => onAct('lodge-appeal', row)}
-                  className="rounded border border-amber-300 bg-white px-3 py-1.5 text-[12px] font-medium text-amber-700 hover:bg-amber-50"
-                >
-                  {ACTION_LABEL['lodge-appeal']}
-                </button>
-              )}
-              {canWithdraw && (
-                <button type="button"
-                  onClick={() => onAct('withdraw', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6b1f1f] hover:bg-[#f3e0e0]"
-                >
-                  {ACTION_LABEL.withdraw}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: TX3 }}>{label}</div>
+      <div style={{ fontSize: 12, color: TX1 }}>{value}</div>
     </div>
   );
 }
+
+export default ComplianceInspectionChainTab;

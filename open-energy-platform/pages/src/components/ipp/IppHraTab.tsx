@@ -34,9 +34,9 @@ interface HraAssessment {
 
 const STATUS_COLORS: Record<string, string> = {
   hra_triggered:              'bg-[#eef2f7] text-[#6b7685]',
-  desktop_study:              'bg-blue-100 text-blue-700',
+  desktop_study:              'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   field_survey:               'bg-sky-100 text-sky-700',
-  hra_report_preparation:     'bg-indigo-100 text-indigo-700',
+  hra_report_preparation:     'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   hra_submitted:              'bg-yellow-100 text-yellow-800',
   sahra_review:               'bg-teal-100 text-teal-700',
   public_participation:       'bg-cyan-100 text-cyan-700',

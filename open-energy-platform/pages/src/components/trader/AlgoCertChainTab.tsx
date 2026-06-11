@@ -32,6 +32,7 @@ type AlgoTier = 'limited' | 'standard' | 'significant' | 'high_impact' | 'system
 type Party = 'trading_firm' | 'exchange_authority' | 'system';
 
 interface AlgoCertRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   source_event: string | null;
@@ -128,8 +129,8 @@ interface AlgoCertEvent {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   registration_submitted:   { bg: '#e3e7ec', fg: '#445',    label: 'Registration submitted' },
-  documentation_review:     { bg: '#dbecfb', fg: '#1a3a5c', label: 'Documentation review' },
-  conformance_testing:      { bg: '#dbecfb', fg: '#1a3a5c', label: 'Conformance testing' },
+  documentation_review:     { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Documentation review' },
+  conformance_testing:      { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Conformance testing' },
   risk_controls_validation: { bg: '#fff4d6', fg: '#a06200', label: 'Risk-controls validation' },
   certification_review:     { bg: '#fff4d6', fg: '#a06200', label: 'Certification review' },
   certified:                { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Certified' },
@@ -151,7 +152,7 @@ const TIER_TONE: Record<AlgoTier, { bg: string; fg: string; label: string }> = {
 
 const PARTY_TONE: Record<Party, { bg: string; fg: string }> = {
   trading_firm:      { bg: '#fbe7d0', fg: '#7a4500' },
-  exchange_authority:{ bg: '#dbecfb', fg: '#1a3a5c' },
+  exchange_authority:{ bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)' },
   system:            { bg: '#eef1f5', fg: '#445' },
 };
 
@@ -450,7 +451,7 @@ export function AlgoCertChainTab() {
 
       <div className="mb-3 flex flex-wrap items-center gap-4 text-[11px] text-[#4a5568]">
         <span>Reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
-        <span>Authorised notional: <span className="font-semibold text-[#1a3a5c]">{fmtZarM(kpis.total_authorised_notional_zar_m)}</span></span>
+        <span>Authorised notional: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtZarM(kpis.total_authorised_notional_zar_m)}</span></span>
         <span>Deployed notional: <span className="font-semibold text-[#1f5b3a]">{fmtZarM(kpis.deployed_notional_zar_m)}</span></span>
       </div>
 
@@ -480,13 +481,13 @@ export function AlgoCertChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">System</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Firm</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Auth notional</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Case #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>System</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Firm</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Auth notional</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -503,7 +504,7 @@ export function AlgoCertChainTab() {
                       {r.case_number}
                       {r.is_reportable_tier && <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">REG</span>}
                     </td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">
+                    <td className="px-3 py-2" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       <div className="text-[11px] font-medium">{r.system_name}</div>
                       <div className="text-[10px] text-[#6b7685]">{r.system_type} · {r.strategy_class ?? '—'} · {r.asset_classes ?? '—'}</div>
                     </td>
@@ -625,25 +626,25 @@ function Drawer({
             {row.source_wave && <Pair label="Provenance" value={`${row.source_wave} · ${row.source_entity_id ?? ''}`} />}
           </div>
           {row.documentation_basis && (
-            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Documentation basis</div>
               {row.documentation_basis}
             </div>
           )}
           {row.conformance_basis && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Conformance basis</div>
               {row.conformance_basis}
             </div>
           )}
           {row.controls_basis && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Controls basis</div>
               {row.controls_basis}
             </div>
           )}
           {row.certification_basis && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Certification basis</div>
               {row.certification_basis}
             </div>
@@ -673,7 +674,7 @@ function Drawer({
             </div>
           )}
           {row.notes && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Notes</div>
               {row.notes}
             </div>
@@ -751,7 +752,7 @@ function Drawer({
                         <span className="inline-block rounded px-1.5 py-0.5 text-[10px] font-medium" style={{ background: pt.bg, color: pt.fg }}>{e.actor_party}</span>
                       )}
                     </div>
-                    {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                    {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                   </li>
                 );
               })}

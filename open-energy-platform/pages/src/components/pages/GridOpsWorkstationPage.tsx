@@ -9,6 +9,8 @@ import { RezCapacityChainTab } from '../grid/RezCapacityChainTab';
 import { WheelingChargesTab } from '../grid/WheelingChargesTab';
 import { ImbalanceSettlementChainTab } from '../grid/ImbalanceSettlementChainTab';
 import { TransmissionOutageChainTab } from '../grid/TransmissionOutageChainTab';
+import { GridCodeComplianceChainTab } from '../grid-code-compliance/GridCodeComplianceChainTab';
+import { ConnectionEnergizationChainTab } from '../connection-energization/ConnectionEnergizationChainTab';
 import { ScadaConnectorTab } from '../scadaConnector/ScadaConnectorTab';
 import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
 import { ReportPanel, type ReportConfig } from '../launch/ReportPanel';
@@ -182,7 +184,7 @@ const GRID_WIZARDS: WizardSpec[] = [
     submitLabel: 'Schedule outage',
     onSubmit: async (values) => {
       const token = localStorage.getItem('token') || '';
-      const res = await fetch('/api/planned-outage', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      const res = await fetch('/api/grid/planned-outages', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || 'Outage scheduling failed'); }
     },
   },
@@ -465,7 +467,7 @@ const GRID_TOUR: TourDef = {
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
     <div className="flex justify-end mb-3">
-      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
+      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
         + {label}
       </button>
     </div>
@@ -559,45 +561,21 @@ export function GridOpsWorkstationPage() {
           label: 'Grid code compliance (W67)',
           group: 'Compliance',
           chainKey: 'grid_code_compliance',
-          body: () => (
-            <ListingTable
-              endpoint="/grid-code-compliance/chain"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No compliance cases', description: 'NERSA Grid Code/NRS 097 conformance cases will appear here.' }}
-              columns={[
-                { key: 'voltage_level_kv', label: 'Voltage (kV)', render: (r) => r.voltage_level_kv != null ? `${r.voltage_level_kv} kV` : '—' },
-                { key: 'facility_type', label: 'Facility type' },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['compliant','closed_compliant'].includes(r.chain_status) ? 'good' : ['non_compliant','escalated_disconnection'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
-                { key: 'created_at', label: 'Opened', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
+          body: () => <GridCodeComplianceChainTab />,
         },
         {
           key: 'connection_energization',
           label: 'Connection energization (W75)',
           group: 'Connections',
           chainKey: 'connection_energization',
-          body: () => (
-            <ListingTable
-              endpoint="/connection-energization/chain"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No energization cases', description: 'SA Grid Code/NTCSA connection energization and commissioning cases will appear here.' }}
-              columns={[
-                { key: 'connection_voltage_kv', label: 'Voltage (kV)', render: (r) => r.connection_voltage_kv != null ? `${r.connection_voltage_kv} kV` : '—' },
-                { key: 'connection_type', label: 'Type' },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['commercial_operation'].includes(r.chain_status) ? 'good' : ['withdrawn','suspended'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
-                { key: 'created_at', label: 'Initiated', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
+          body: () => <ConnectionEnergizationChainTab />,
         },
         { key: 'reports', label: 'Reports & Exports', group: 'Compliance',
           body: () => (
             <div className="space-y-8">
               {GRID_REPORTS.map(cfg => (
                 <div key={cfg.endpoint} className="space-y-2">
-                  <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">{cfg.title}</p>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{cfg.title}</p>
                   <ReportPanel config={cfg} />
                 </div>
               ))}
@@ -840,7 +818,7 @@ function SmartMeterAssetsTab({ onRefresh }: { onRefresh: () => void }) {
           { key: 'sla_breached', label: 'Breach', render: (r) => r.sla_breached ? <Pill tone="bad">BREACH</Pill> : <Pill tone="good">OK</Pill> },
           { key: 'data_quality_score', label: 'DQ score', render: (r) => r.data_quality_score != null ? String(r.data_quality_score) : '—' },
           { key: 'actions', label: '', render: (r) => (
-            <button type="button" onClick={() => setActionRow(r)} className="text-[11px] text-[#1a3a5c] underline">Action</button>
+            <button type="button" onClick={() => setActionRow(r)} className="text-[11px] text-[oklch(0.46_0.16_55)] underline">Action</button>
           )},
         ]}
       />
@@ -868,7 +846,7 @@ function DemandResponseTab({ onRefresh }: { onRefresh?: () => void }) {
     <div>
       <div className="flex justify-end mb-3">
         <button type="button"
-          className="px-3 py-1.5 rounded bg-[#c2873a] text-white text-sm font-medium hover:bg-[#a3702f]"
+          className="px-3 py-1.5 rounded bg-[oklch(0.46_0.16_55)] text-white text-sm font-medium hover:bg-[#1f4a78]"
           onClick={() => setModal('create')}
         >
           + Register DR event
@@ -1004,7 +982,7 @@ function SubstationAssetsTab({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setModal({ type: 'create' })} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
           + Register asset
         </button>
       </div>

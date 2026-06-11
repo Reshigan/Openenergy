@@ -52,7 +52,7 @@ export default function IncomingPanel({ onAct, className }: IncomingPanelProps) 
     <section className={`rounded-xl bg-white border border-[#dde4ec] ${className ?? ''}`}>
       <header className="flex items-center justify-between px-4 py-2.5 border-b border-[#eef2f7]">
         <div className="flex items-center gap-2 text-[#0f1c2e]">
-          <Inbox className="h-4 w-4 text-[#1a3a5c]" aria-hidden />
+          <Inbox className="h-4 w-4 text-[oklch(0.46_0.16_55)]" aria-hidden />
           <h2 className="text-[13px] font-display font-semibold">Incoming</h2>
           {items.length > 0 && (
             <span className="text-[11px] rounded-full bg-[#eef2f7] px-2 py-0.5 text-[#3d4756]">{items.length}</span>

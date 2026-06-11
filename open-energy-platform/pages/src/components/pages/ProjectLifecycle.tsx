@@ -56,7 +56,7 @@ type LifecyclePayload = {
 
 const statusStyle: Record<StageStatus, { label: string; bg: string; fg: string; icon: typeof Circle }> = {
   not_started: { label: 'Not started', bg: '#eef1f4', fg: '#6b7685', icon: Circle },
-  in_progress: { label: 'In progress', bg: '#dbecfb', fg: '#3b82c4', icon: Clock },
+  in_progress: { label: 'In progress', bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', icon: Clock },
   completed: { label: 'Completed', bg: '#cdf0dd', fg: '#1f7a4a', icon: CheckCircle2 },
   blocked: { label: 'Blocked', bg: '#fde7e9', fg: '#c0392b', icon: AlertCircle },
 };

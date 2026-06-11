@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 
 interface DlpDefect {
+  [key: string]: unknown;
   id: string;
   defect_ref: string | null;
   project_id: string;
@@ -45,7 +46,7 @@ interface SummaryData {
 
 const STATUS_COLORS: Record<string, string> = {
   identified:                  'bg-[#eef2f7] text-[#2d3748]',
-  notified:                    'bg-blue-100 text-blue-700',
+  notified:                    'bg-[#eef2f7] text-[#3d4756]',
   acknowledged:                'bg-cyan-100 text-cyan-700',
   in_rectification:            'bg-yellow-100 text-yellow-800',
   rectified_pending_inspection:'bg-orange-100 text-orange-700',
@@ -185,7 +186,7 @@ export function IppDlpDefectTab() {
       <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
         {[
           { label: 'Total', value: summary?.total ?? 0, color: 'text-[#1e2a38]' },
-          { label: 'Open', value: summary?.open_count ?? 0, color: 'text-blue-700' },
+          { label: 'Open', value: summary?.open_count ?? 0, color: 'text-[oklch(0.46_0.16_55)]' },
           { label: 'Critical', value: summary?.critical_count ?? 0, color: 'text-red-700' },
           { label: 'Escalated', value: summary?.escalated_count ?? 0, color: 'text-red-800' },
           { label: 'Disputed', value: summary?.disputed_count ?? 0, color: 'text-orange-700' },
@@ -207,7 +208,7 @@ export function IppDlpDefectTab() {
             <button type="button" key={f.key}
               onClick={() => setFilter(f.key)}
               className={`px-3 py-1 rounded text-xs font-medium border transition-colors ${
-                filter === f.key ? 'bg-[#c2873a] text-white border-indigo-600' : 'bg-white text-[#2d3748] border-[#dde4ec] hover:border-indigo-400'
+                filter === f.key ? 'bg-[#c2873a] text-white border-[#c2873a]' : 'bg-white text-[#2d3748] border-[#dde4ec] hover:border-[#c2873a]'
               }`}
             >{f.label}</button>
           ))}
@@ -267,7 +268,7 @@ export function IppDlpDefectTab() {
                     {d.is_safety_related === 1 && <span title="Safety related" className="text-red-500 text-xs font-bold">⚠</span>}
                     {d.is_structural === 1 && <span title="Structural" className="text-orange-500 text-xs font-bold">S</span>}
                     {d.is_hold_point === 1 && <span title="Hold point" className="text-purple-500 text-xs font-bold">H</span>}
-                    {d.is_reportable === 1 && <span title="Reportable" className="text-blue-500 text-xs font-bold">R</span>}
+                    {d.is_reportable === 1 && <span title="Reportable" className="text-xs font-bold" style={{ color: 'oklch(0.46 0.16 55)' }}>R</span>}
                   </div>
                 </td>
               </tr>
@@ -303,7 +304,7 @@ export function IppDlpDefectTab() {
                 {selected.is_safety_related === 1 && <span className="px-2 py-0.5 rounded text-xs bg-red-100 text-red-700">Safety related</span>}
                 {selected.is_structural === 1 && <span className="px-2 py-0.5 rounded text-xs bg-orange-100 text-orange-700">Structural</span>}
                 {selected.is_hold_point === 1 && <span className="px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-700">Hold point</span>}
-                {selected.is_reportable === 1 && <span className="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-700">Reportable</span>}
+                {selected.is_reportable === 1 && <span className="px-2 py-0.5 rounded text-xs" style={{ background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' }}>Reportable</span>}
               </div>
 
               <div>
@@ -349,7 +350,7 @@ export function IppDlpDefectTab() {
                         className={`px-3 py-1 rounded text-xs font-medium border transition-colors ${
                           action === 'ie_reject' || action === 'cancel_defect'
                             ? 'border-red-300 text-red-700 hover:bg-red-50'
-                            : 'border-indigo-300 text-indigo-700 hover:bg-indigo-50'
+                            : 'border-[#dde4ec] hover:bg-[#eef2f7]'
                         } disabled:opacity-50`}
                       >
                         {ACTION_MAP[action]?.label ?? action}

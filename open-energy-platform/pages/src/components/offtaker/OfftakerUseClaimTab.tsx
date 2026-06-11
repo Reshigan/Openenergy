@@ -32,8 +32,8 @@ interface UseClaimKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   claim_submitted:       'bg-[#eef2f7] text-[#3d4756]',
-  metering_data_verified:'bg-blue-100 text-blue-700',
-  liability_assessed:    'bg-indigo-100 text-indigo-700',
+  metering_data_verified:'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
+  liability_assessed:    'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   preliminary_quantum:   'bg-cyan-100 text-cyan-700',
   grid_operator_response:'bg-amber-100 text-amber-700',
   negotiation:           'bg-purple-100 text-purple-700',
@@ -65,7 +65,7 @@ const STATUS_LABELS: Record<string, string> = {
 const CATEGORY_COLORS: Record<string, string> = {
   industrial:  'bg-red-100 text-red-700',
   commercial:  'bg-amber-100 text-amber-700',
-  municipal:   'bg-blue-100 text-blue-700',
+  municipal:   'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   residential: 'bg-green-100 text-green-700',
   scheduled:   'bg-[#eef2f7] text-[#6b7685]',
 };
@@ -479,7 +479,7 @@ export function OfftakerUseClaimTab() {
                       {actions.length > 0 && (
                         <button type="button"
                           onClick={() => openActionPicker(item)}
-                          className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                          className="px-2 py-0.5 text-xs rounded border" style={{ background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.87 0.010 250)' }}
                         >
                           Actions
                         </button>

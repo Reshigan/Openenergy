@@ -31,6 +31,7 @@ type AbuseTier = 'info_alert' | 'low_risk' | 'medium_risk' | 'high_risk' | 'crit
 type Party = 'surveillance' | 'regulator' | 'subject' | 'system';
 
 interface MarketAbuseRow {
+  [key: string]: unknown;
   id: string;
   case_number: string;
   source_event: string | null;
@@ -117,8 +118,8 @@ interface MarketAbuseEvent {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   alert_raised:        { bg: '#e3e7ec', fg: '#445',    label: 'Alert raised' },
-  triaged:             { bg: '#dbecfb', fg: '#1a3a5c', label: 'Triaged' },
-  under_investigation: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Under investigation' },
+  triaged:             { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Triaged' },
+  under_investigation: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Under investigation' },
   evidence_review:     { bg: '#fff4d6', fg: '#a06200', label: 'Evidence review' },
   analysis_complete:   { bg: '#fff4d6', fg: '#a06200', label: 'Analysis complete' },
   cleared:             { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Cleared' },
@@ -139,7 +140,7 @@ const TIER_TONE: Record<AbuseTier, { bg: string; fg: string; label: string }> = 
 };
 
 const PARTY_TONE: Record<Party, { bg: string; fg: string }> = {
-  surveillance: { bg: '#dbecfb', fg: '#1a3a5c' },
+  surveillance: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)' },
   regulator:    { bg: '#ede0fb', fg: '#5b2a8a' },
   subject:      { bg: '#fbe7d0', fg: '#7a4500' },
   system:       { bg: '#eef1f5', fg: '#445' },
@@ -444,7 +445,7 @@ export function MarketAbuseChainTab() {
       <div className="mb-3 flex flex-wrap items-center gap-4 text-[11px] text-[#4a5568]">
         <span>Cleared: <span className="font-semibold text-[#1f5b3a]">{kpis.cleared_count}</span></span>
         <span>Disputed open: <span className="font-semibold text-[#7a4500]">{kpis.disputed_open}</span></span>
-        <span>Suspect value: <span className="font-semibold text-[#1a3a5c]">{fmtZarM(kpis.total_suspect_value_zar_m)}</span></span>
+        <span>Suspect value: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtZarM(kpis.total_suspect_value_zar_m)}</span></span>
         <span>Penalties: <span className="font-semibold text-[#7a0e0e]">{fmtZar(kpis.total_penalty_zar)}</span></span>
         <span>Est. benefit: <span className="font-semibold text-[#9b1f1f]">{fmtZar(kpis.total_estimated_benefit_zar)}</span></span>
       </div>
@@ -475,14 +476,14 @@ export function MarketAbuseChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Case #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Subject</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Typology</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Risk</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Suspect value</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Case #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Subject</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Typology</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Risk</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Suspect value</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -499,7 +500,7 @@ export function MarketAbuseChainTab() {
                       {r.case_number}
                       {r.is_reportable_tier && <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">FSCA</span>}
                     </td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">{r.subject_party_name}</td>
+                    <td className="px-3 py-2" style={{ color: 'oklch(0.46 0.16 55)' }}>{r.subject_party_name}</td>
                     <td className="px-3 py-2 text-[#4a5568]">
                       <div className="text-[11px]">{r.typology}</div>
                       <div className="text-[10px] text-[#6b7685]">{r.instrument ?? r.product ?? '—'} · {r.energy_type ?? '—'}</div>
@@ -617,25 +618,25 @@ function Drawer({
             {row.source_wave && <Pair label="Provenance" value={`${row.source_wave} · ${row.source_entity_id ?? ''}`} />}
           </div>
           {row.triage_basis && (
-            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Triage basis</div>
               {row.triage_basis}
             </div>
           )}
           {row.investigation_basis && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Investigation basis</div>
               {row.investigation_basis}
             </div>
           )}
           {row.evidence_basis && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Evidence basis</div>
               {row.evidence_basis}
             </div>
           )}
           {row.analysis_basis && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Analysis basis</div>
               {row.analysis_basis}
             </div>
@@ -659,7 +660,7 @@ function Drawer({
             </div>
           )}
           {row.resolution_notes && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Resolution notes</div>
               {row.resolution_notes}
             </div>
@@ -729,7 +730,7 @@ function Drawer({
                         <span className="inline-block rounded px-1.5 py-0.5 text-[10px] font-medium" style={{ background: pt.bg, color: pt.fg }}>{e.actor_party}</span>
                       )}
                     </div>
-                    {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                    {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                   </li>
                 );
               })}

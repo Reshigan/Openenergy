@@ -180,7 +180,7 @@ export function EpcWorkstationPage() {
       role="epc_contractor"
       eyebrow="EPC Contractor · Workstation"
       title="Construction workstation"
-      subtitle="Submittals · RFIs · ITPs · NCRs · Change orders. Full construction document control — all submissions tracked."
+      subtitle="Site setup → Document control → Quality management → Safety & HSE → Handover"
       backHref="/epc"
       backLabel="EPC console"
       wizards={EPC_WIZARDS}
@@ -189,7 +189,7 @@ export function EpcWorkstationPage() {
         {
           key: 'submittals',
           label: 'Submittals',
-          group: 'Document Control',
+          group: 'Document control',
           body: ({ onRefresh }) => (
             <div className="space-y-3">
               <div className="flex justify-end">
@@ -233,7 +233,7 @@ export function EpcWorkstationPage() {
         {
           key: 'rfis',
           label: 'RFIs',
-          group: 'Document Control',
+          group: 'Document control',
           body: ({ onRefresh }) => (
             <div className="space-y-3">
               <div className="flex justify-end">
@@ -275,7 +275,7 @@ export function EpcWorkstationPage() {
         {
           key: 'change-orders',
           label: 'Change orders',
-          group: 'Document Control',
+          group: 'Document control',
           body: () => (
             <ListingTable
               endpoint="/ipp/change-orders"
@@ -294,7 +294,7 @@ export function EpcWorkstationPage() {
         {
           key: 'technical-queries',
           label: 'Technical queries',
-          group: 'Document Control',
+          group: 'Document control',
           body: () => (
             <ListingTable
               endpoint="/ipp/technical-queries"
@@ -313,7 +313,7 @@ export function EpcWorkstationPage() {
         {
           key: 'itps',
           label: 'Inspection test plans',
-          group: 'Quality',
+          group: 'Quality management',
           body: () => (
             <ListingTable
               endpoint="/ipp/itp"
@@ -332,7 +332,7 @@ export function EpcWorkstationPage() {
         {
           key: 'ncrs',
           label: 'Non-conformance reports',
-          group: 'Quality',
+          group: 'Quality management',
           body: () => (
             <ListingTable
               endpoint="/ipp/ncr"
@@ -351,7 +351,7 @@ export function EpcWorkstationPage() {
         {
           key: 'punch-list',
           label: 'Punch list',
-          group: 'Quality',
+          group: 'Quality management',
           body: () => (
             <ListingTable
               endpoint="/ipp/punch-list"
@@ -370,7 +370,7 @@ export function EpcWorkstationPage() {
         {
           key: 'method-statements',
           label: 'Method statements',
-          group: 'Quality',
+          group: 'Quality management',
           body: () => (
             <ListingTable
               endpoint="/ipp/method-statements"
@@ -389,7 +389,7 @@ export function EpcWorkstationPage() {
         {
           key: 'site-diary',
           label: 'Site diary',
-          group: 'Site',
+          group: 'Site setup',
           body: () => (
             <ListingTable
               endpoint="/ipp/site-diary"
@@ -405,11 +405,11 @@ export function EpcWorkstationPage() {
             />
           ),
         },
-        { key: 'hse', label: 'HSE incidents (W25)', group: 'Safety', chainKey: 'hse_incident', body: () => <HseIncidentChainTab /> },
+        { key: 'hse', label: 'HSE incidents (W25)', group: 'Safety & HSE', chainKey: 'hse_incident', body: () => <HseIncidentChainTab /> },
         {
           key: 'audit',
           label: 'Audit trail',
-          group: 'Compliance',
+          group: 'Handover & compliance',
           body: () => <AuditPanel prefix="/ipp" reconHint="event_id, entity_type, actor_id, timestamp" />,
         },
       ]}

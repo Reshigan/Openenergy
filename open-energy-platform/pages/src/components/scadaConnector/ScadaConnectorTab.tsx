@@ -65,6 +65,7 @@ type ScadaProtocol =
   | 'ieee_c37_118' | 'opc_ua';
 
 interface SccRow {
+  [key: string]: unknown;
   id: string;
   connector_number: string;
   peer_id: string;
@@ -175,9 +176,9 @@ interface SccEvent {
 
 const STATE_TONE: Record<SccStatus, { bg: string; fg: string; label: string }> = {
   connector_proposed:           { bg: '#e3e7ec', fg: '#445',    label: 'Proposed' },
-  endpoints_discovered:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Endpoints discovered' },
-  tls_configured:               { bg: '#dbecfb', fg: '#1a3a5c', label: 'TLS configured' },
-  handshake_completed:          { bg: '#dbecfb', fg: '#1a3a5c', label: 'Handshake' },
+  endpoints_discovered:         { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Endpoints discovered' },
+  tls_configured:               { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'TLS configured' },
+  handshake_completed:          { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Handshake' },
   telemetry_streaming:          { bg: '#fff4d6', fg: '#a06200', label: 'Streaming' },
   quality_validated:            { bg: '#fff4d6', fg: '#a06200', label: 'Quality validated' },
   alarms_subscribed:            { bg: '#fff4d6', fg: '#a06200', label: 'Alarms subscribed' },
@@ -193,7 +194,7 @@ const STATE_TONE: Record<SccStatus, { bg: string; fg: string; label: string }> =
 
 const TIER_TONE: Record<SccTier, { bg: string; fg: string; label: string }> = {
   pilot:                    { bg: '#e3e7ec', fg: '#557',    label: 'Pilot' },
-  small_substation:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Small substation' },
+  small_substation:         { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Small substation' },
   medium_substation:        { bg: '#daf5e2', fg: '#1f6b3a', label: 'Medium substation' },
   large_substation:         { bg: '#fff4d6', fg: '#a06200', label: 'Large substation' },
   national_grid_backbone:   { bg: '#7a0e0e', fg: '#fff',    label: 'National grid backbone' },
@@ -542,7 +543,7 @@ export function ScadaConnectorTab({ regulatorView }: Props = {}) {
   }, [load]);
 
   return (
-    <div className="text-[12px] text-[#1a3a5c]">
+    <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-base font-semibold text-[#0c2a4d]">SCADA / IEC 61850 connector (W122)</h2>
@@ -579,10 +580,10 @@ export function ScadaConnectorTab({ regulatorView }: Props = {}) {
 
       {/* Drill rail */}
       <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[#d8dde6] bg-white px-3 py-2 text-[11px] text-[#4a5568]">
-        <span>Proposed: <span className="font-semibold text-[#1a3a5c]">{kpis.proposed_count}</span></span>
-        <span>Discovered: <span className="font-semibold text-[#1a3a5c]">{kpis.discovered_count}</span></span>
-        <span>TLS: <span className="font-semibold text-[#1a3a5c]">{kpis.tls_count}</span></span>
-        <span>Handshake: <span className="font-semibold text-[#1a3a5c]">{kpis.handshake_count}</span></span>
+        <span>Proposed: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.proposed_count}</span></span>
+        <span>Discovered: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.discovered_count}</span></span>
+        <span>TLS: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.tls_count}</span></span>
+        <span>Handshake: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.handshake_count}</span></span>
         <span>Streaming: <span className="font-semibold text-[#a06200]">{kpis.streaming_count}</span></span>
         <span>Validated: <span className="font-semibold text-[#a06200]">{kpis.validated_count}</span></span>
         <span>Alarms: <span className="font-semibold text-[#a06200]">{kpis.alarms_count}</span></span>
@@ -594,11 +595,11 @@ export function ScadaConnectorTab({ regulatorView }: Props = {}) {
         <span>Floor flags: <span className="font-semibold text-[#a06200]">{kpis.floor_flag_total}</span></span>
         <span>Cert {'<'}60d: <span className="font-semibold text-[#a06200]">{kpis.certs_expiring_within_60d}</span></span>
         <span>Cert {'<'}14d: <span className="font-semibold text-[#9b1f1f]">{kpis.certs_expiring_within_14d}</span></span>
-        <span>W118: <span className="font-semibold text-[#1a3a5c]">{kpis.w118_bridged_count}</span></span>
-        <span>W110: <span className="font-semibold text-[#1a3a5c]">{kpis.w110_bridged_count}</span></span>
-        <span>W50: <span className="font-semibold text-[#1a3a5c]">{kpis.w50_bridged_count}</span></span>
-        <span>W67: <span className="font-semibold text-[#1a3a5c]">{kpis.w67_bridged_count}</span></span>
-        <span>W26: <span className="font-semibold text-[#1a3a5c]">{kpis.w26_bridged_count}</span></span>
+        <span>W118: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
+        <span>W110: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w110_bridged_count}</span></span>
+        <span>W50: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w50_bridged_count}</span></span>
+        <span>W67: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w67_bridged_count}</span></span>
+        <span>W26: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w26_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / priority pills */}
@@ -679,16 +680,16 @@ export function ScadaConnectorTab({ regulatorView }: Props = {}) {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Connector #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Substation</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Protocol</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Health</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Telemetry</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Cert</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-center">Flags</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Connector #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Substation</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Protocol</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Tier</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Health</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.46 0.16 55)' }}>Telemetry</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.46 0.16 55)' }}>Cert</th>
+                <th className="px-3 py-2 font-semibold text-center" style={{ color: 'oklch(0.46 0.16 55)' }}>Flags</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -712,11 +713,11 @@ export function ScadaConnectorTab({ regulatorView }: Props = {}) {
                       {r.regulator_ref ? <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">FILED</span> : null}
                       {r.floor_at_national_grid_backbone_live ? <span className="ml-1 text-[9px] font-semibold text-[#7a0e0e]">NAT</span> : null}
                     </td>
-                    <td className="px-3 py-2 text-[11px] text-[#1a3a5c]">
+                    <td className="px-3 py-2 text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.substation_name ?? '-'}
                       {r.substation_capacity_mva != null ? <div className="text-[10px] text-[#6b7685] font-mono">{r.substation_capacity_mva} MVA</div> : null}
                     </td>
-                    <td className="px-3 py-2 text-[11px] font-mono text-[#1a3a5c]">
+                    <td className="px-3 py-2 text-[11px] font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {fmtProto(r.protocol)}
                     </td>
                     <td className="px-3 py-2">
@@ -820,12 +821,13 @@ function Drawer({
         ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
         : tone === 'amber'
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
-          : 'bg-white border border-[#d8dde6] text-[#1a3a5c] hover:bg-[#f3f5f9]';
+          : 'bg-white border border-[#d8dde6] hover:bg-[#f3f5f9]';
     return (
       <button type="button"
         key={action}
         onClick={() => onAct(action, row)}
         className={`rounded px-3 py-1.5 text-[11px] font-semibold ${cls}`}
+        style={tone === 'plain' ? { color: 'oklch(0.46 0.16 55)' } : undefined}
         title={ACTION_LABEL[action]}
       >
         {label}
@@ -849,7 +851,7 @@ function Drawer({
               {row.endpoint_url ? <> {'•'} <span className="font-mono text-[10px]">{row.endpoint_url}</span></> : null}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         {/* 4 scoring indexes */}
@@ -971,13 +973,13 @@ function Drawer({
             )}
             {events.map((e) => (
               <li key={e.id} className="px-3 py-2 text-[11px]">
-                <div className="font-semibold text-[#1a3a5c]">{e.event_type}</div>
+                <div className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.event_type}</div>
                 <div className="text-[10px] text-[#4a5568]">
                   {e.from_status || '-'} {'→'} {e.to_status || '-'}
                   {e.actor_party ? <> {'•'} {e.actor_party}</> : null}
                   {' '}{'•'} {fmtDate(e.created_at)}
                 </div>
-                {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                {e.notes && <div className="mt-1 text-[oklch(0.46_0.16_55)]">{e.notes}</div>}
               </li>
             ))}
           </ol>
@@ -1070,7 +1072,7 @@ function ProposeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px] text-[#1a3a5c]">
+      <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px] text-[oklch(0.46_0.16_55)]">
         <div className="mb-3 flex items-start justify-between">
           <div>
             <h3 className="text-base font-semibold text-[#0c2a4d]">Propose SCADA connector (W122)</h3>
@@ -1078,7 +1080,7 @@ function ProposeModal({
               W118 audit-chain bridge mandatory. Tier auto-derived from substation_capacity_mva with FLOOR-AT-LARGE {'≥'}1 flag and FLOOR-AT-NATIONAL {'≥'}3 flags.
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[oklch(0.46_0.16_55)] hover:bg-[#f3f5f9]">Close</button>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -1132,7 +1134,7 @@ function ProposeModal({
         </div>
 
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[#1a3a5c] hover:bg-[#f3f5f9]">Cancel</button>
+          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[oklch(0.46_0.16_55)] hover:bg-[#f3f5f9]">Cancel</button>
           <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose connector</button>
         </div>
       </div>
@@ -1155,7 +1157,7 @@ function Checkbox({
   checked: boolean; onChange: (v: boolean) => void; label: string;
 }) {
   return (
-    <label className="flex items-center gap-2 text-[11px] text-[#1a3a5c]">
+    <label className="flex items-center gap-2 text-[11px] text-[oklch(0.46_0.16_55)]">
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       {label}
     </label>

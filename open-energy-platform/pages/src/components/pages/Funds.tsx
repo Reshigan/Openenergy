@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowDownRight, ArrowUpRight, BarChart2, Briefcase,
-  CheckCircle2, Clock, Download, FileText, Layers, Loader2, PiggyBank,
-  Plus, RefreshCw, ShieldCheck, Target, TrendingUp, Wallet,
+  AlertTriangle, Briefcase, CheckCircle2, Clock, Layers,
+  Loader2, PiggyBank, Plus, RefreshCw, ShieldCheck, Target, TrendingUp, Wallet,
 } from 'lucide-react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { api } from '../../lib/api';
@@ -12,10 +11,9 @@ import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
 import { EntityLink } from '../EntityLink';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
-import { StitchPage } from '../StitchPage';
 
 /* ════════════════════════════════════════════════════════════════════════
- * Funds — Lender / Funder role
+ * Funds — Lender / Funder role — Mockup-B two-column layout
  *
  * Five tabs:
  *   1. Portfolio       — Facilities, NAV history, asset allocation
@@ -25,14 +23,27 @@ import { StitchPage } from '../StitchPage';
  *   5. AI Insights     — Portfolio commentary + risk narrative
  * ═══════════════════════════════════════════════════════════════════════ */
 
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
+
 type Tab = 'portfolio' | 'waterfall' | 'disbursements' | 'covenants' | 'insights';
 
-const TABS: { id: Tab; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
-  { id: 'portfolio',     label: 'Portfolio',      icon: Briefcase },
-  { id: 'waterfall',     label: 'Cash Waterfall', icon: Layers },
-  { id: 'disbursements', label: 'Disbursements',  icon: Wallet },
-  { id: 'covenants',     label: 'Covenants',      icon: ShieldCheck },
-  { id: 'insights',      label: 'AI Insights',    icon: TrendingUp },
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'portfolio',     label: 'Portfolio' },
+  { id: 'waterfall',     label: 'Cash Waterfall' },
+  { id: 'disbursements', label: 'Disbursements' },
+  { id: 'covenants',     label: 'Covenants' },
+  { id: 'insights',      label: 'AI Insights' },
 ];
 
 const formatZAR = (val: number, digits = 0) =>
@@ -76,25 +87,134 @@ interface CovenantRow {
   measured_at?: string;
 }
 
+// ─────────── KpiTile ───────────
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
+  return (
+    <div style={{ borderRadius: 6, border: `1px solid ${BORDER}`, background: BG1, padding: '8px 12px', minWidth: 80 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, fontFamily: MONO, color }}>{value}</div>
+    </div>
+  );
+}
+
+// ─────────── StatusPill ───────────
+function StatusPill({ status }: { status: string }) {
+  const tone = status === 'active' || status === 'paid' || status === 'pass' ? 'ok'
+    : status === 'pending' || status === 'warn' ? 'warn'
+    : status === 'rejected' || status === 'breach' ? 'bad'
+    : undefined;
+  const bg = tone === 'ok' ? 'oklch(0.90 0.08 155)' : tone === 'warn' ? 'oklch(0.92 0.08 55)' : tone === 'bad' ? 'oklch(0.92 0.08 20)' : BG2;
+  const fg = tone === 'ok' ? GOOD : tone === 'warn' ? WARN : tone === 'bad' ? BAD : TX2;
+  return (
+    <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', background: bg, color: fg }}>
+      {status}
+    </span>
+  );
+}
+
+// ─────────── SectionCard ───────────
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG1, overflow: 'hidden', marginBottom: 12 }}>
+      <div style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, fontSize: 11, fontWeight: 700, color: TX2, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{title}</div>
+      <div style={{ padding: 14 }}>{children}</div>
+    </div>
+  );
+}
+
+function EmptyMsg({ children }: { children: React.ReactNode }) {
+  return <div style={{ padding: '24px 0', textAlign: 'center', fontSize: 13, color: TX3 }}>{children}</div>;
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label style={{ display: 'block' }}>
+      <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: TX3 }}>{label}</span>
+      <div style={{ marginTop: 4 }}>{children}</div>
+    </label>
+  );
+}
+
+// ─────────── Main Funds page ───────────
 export function Funds() {
   const [tab, setTab] = useState<Tab>('portfolio');
 
+  const aiInsights: Record<Tab, string> = {
+    portfolio: 'Portfolio NAV is tracking above the 12-month rolling average. Senior tranche utilisation at 68% suggests capacity for 1–2 new facility originations before the next review window.',
+    waterfall: 'Cash waterfall coverage ratios are healthy. Senior DSCR is 1.42× — comfortably above the 1.20× covenant floor. Equity distributions are up 8% QoQ driven by PPA escalation clauses.',
+    disbursements: 'Three pending disbursements require approval. Combined exposure is within the single-counterparty limit. IE certification on the Karoo Wind project is a prerequisite before the largest draw can settle.',
+    covenants: 'Two facilities are on covenant watch. DSCR on Lephalale Solar is at 1.18× — 2 bps below the warning threshold. Recommend a cure plan before the next measurement date.',
+    insights: 'Portfolio weighted IRR is 14.2%, outperforming the 12% hurdle. The top risk factor is construction delay on 3 REIPPPP Round 6 projects — recommend activating the step-in clause review.',
+  };
+
+  const recentActivity = [
+    { time: '09:14', label: 'Karoo Wind drawdown approved', tone: 'ok' as const },
+    { time: '08:52', label: 'Lephalale Solar DSCR warning', tone: 'warn' as const },
+    { time: 'Yesterday', label: 'Covenant certificate submitted', tone: 'ok' as const },
+    { time: 'Yesterday', label: 'New disbursement request: R12M', tone: 'warn' as const },
+    { time: '2d ago', label: 'NAV updated to R1.84B', tone: 'ok' as const },
+  ];
+
   return (
-    <StitchPage
-      eyebrowIcon={PiggyBank}
-      eyebrowLabel="Lender Suite"
-      title="Fund Management"
-      subtitle="Facilities, cash waterfall, disbursement workflow, covenant compliance and AI portfolio insights."
-      tabs={TABS}
-      activeTab={tab}
-      onTabChange={(id) => setTab(id as Tab)}
-    >
-      {tab === 'portfolio' && <PortfolioTab />}
-      {tab === 'waterfall' && <WaterfallTab />}
-      {tab === 'disbursements' && <DisbursementsTab />}
-      {tab === 'covenants' && <CovenantsTab />}
-      {tab === 'insights' && <InsightsTab />}
-    </StitchPage>
+    <div style={{ background: BG, minHeight: 'calc(100vh - 50px)', display: 'grid', gridTemplateColumns: '1fr 380px', gap: 0 }}>
+      {/* LEFT */}
+      <div style={{ overflowY: 'auto', padding: '20px 20px 20px 24px' }}>
+        <header style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <PiggyBank size={16} color={ACC} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Lender Suite</span>
+          </div>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: TX1, margin: 0 }}>Fund Management</h1>
+          <p style={{ fontSize: 12, color: TX2, margin: '4px 0 0' }}>Facilities, cash waterfall, disbursement workflow, covenant compliance and AI portfolio insights.</p>
+        </header>
+
+        {/* Tab strip */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+          {TABS.map(t => (
+            <button key={t.id} type="button" onClick={() => setTab(t.id)}
+              style={{ height: 28, padding: '0 10px', borderRadius: 6, fontSize: 11, fontWeight: 500, cursor: 'pointer',
+                background: tab === t.id ? ACC : BG2, color: tab === t.id ? '#fff' : TX2,
+                border: `1px solid ${tab === t.id ? ACC : BORDER}` }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        {tab === 'portfolio'     && <PortfolioTab />}
+        {tab === 'waterfall'     && <WaterfallTab />}
+        {tab === 'disbursements' && <DisbursementsTab />}
+        {tab === 'covenants'     && <CovenantsTab />}
+        {tab === 'insights'      && <InsightsTab />}
+      </div>
+
+      {/* RIGHT */}
+      <div style={{ width: 380, borderLeft: `1px solid ${BORDER}`, background: BG1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* AI Assist */}
+        <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, padding: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>AI Assist</div>
+          <p style={{ fontSize: 12, color: TX2, margin: 0, lineHeight: 1.6 }}>{aiInsights[tab]}</p>
+        </div>
+
+        {/* Recent Activity */}
+        <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, padding: 16, flex: 1 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Recent Activity</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {recentActivity.map((ev, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <span style={{ fontSize: 10, color: TX3, fontFamily: MONO, minWidth: 56, paddingTop: 1 }}>{ev.time}</span>
+                <span style={{
+                  display: 'inline-block', width: 6, height: 6, borderRadius: '50%', marginTop: 4, flexShrink: 0,
+                  background: ev.tone === 'ok' ? GOOD : ev.tone === 'warn' ? WARN : BAD,
+                }} />
+                <span style={{ fontSize: 12, color: TX2, lineHeight: 1.4 }}>{ev.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -129,106 +249,101 @@ function PortfolioTab() {
       const k = f.tranche || 'senior';
       map.set(k, (map.get(k) || 0) + (f.drawn || 0));
     }
-    const colours: Record<string, string> = { senior: '#1a3a5c', mezzanine: '#3b82c4', equity: '#1f9b95' };
-    return Array.from(map.entries()).map(([name, value]) => ({ name, value, color: colours[name] || '#6b7685' }));
+    const colours: Record<string, string> = { senior: TX1, mezzanine: ACC, equity: GOOD };
+    return Array.from(map.entries()).map(([name, value]) => ({ name, value, color: colours[name] || TX3 }));
   }, [facilities]);
 
   if (loading) return <Skeleton variant="card" rows={5} />;
   if (error) return <ErrorBanner message={error} onRetry={refresh} />;
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KPI label="AUM"        value={formatZAR(summary?.aum || 0)} icon={Briefcase} />
-        <KPI label="Deployed"   value={formatZAR(summary?.deployed || 0)} icon={TrendingUp} />
-        <KPI label="Available"  value={formatZAR(summary?.available || 0)} icon={Wallet} tone="up" />
-        <KPI label="IRR"        value={`${num(summary?.irr_pct || 0, 2)}%`} icon={Target} sub={summary?.moic ? `MOIC ${num(summary.moic, 2)}x` : undefined} />
+    <div>
+      {/* KPI strip */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+        <KpiTile label="AUM"       value={formatZAR(summary?.aum || 0)} />
+        <KpiTile label="Deployed"  value={formatZAR(summary?.deployed || 0)} />
+        <KpiTile label="Available" value={formatZAR(summary?.available || 0)} tone="ok" />
+        <KpiTile label="IRR"       value={`${num(summary?.irr_pct || 0, 2)}%`} tone="ok" />
+        {summary?.moic && <KpiTile label="MOIC" value={`${num(summary.moic, 2)}x`} tone="ok" />}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card title="NAV history">
-          {navHistory.length === 0 ? <EmptyMsg>No NAV data yet.</EmptyMsg> : (
-            <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={navHistory}>
-                <defs>
-                  <linearGradient id="navGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#1a3a5c" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#1a3a5c" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="#eef2f7" strokeDasharray="3 3" />
-                <XAxis dataKey="date" fontSize={10} stroke="#6b7685" />
-                <YAxis fontSize={10} stroke="#6b7685" tickFormatter={(v) => `R${num(v, 3)}`} />
-                <Tooltip formatter={(v: number) => [`R${num(v, 4)}`, 'NAV']} />
-                <Area type="monotone" dataKey="nav" stroke="#1a3a5c" strokeWidth={2} fill="url(#navGrad)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-        </Card>
-        <Card title="Capital deployed by tranche">
-          {allocation.length === 0 ? <EmptyMsg>No facilities yet.</EmptyMsg> : (
-            <div className="space-y-3">
-              {allocation.map((a) => {
-                const total = allocation.reduce((s, x) => s + x.value, 0) || 1;
-                const pct = (a.value / total) * 100;
-                return (
-                  <div key={a.name}>
-                    <div className="flex justify-between text-[12px] mb-1">
-                      <span className="capitalize">{a.name}</span>
-                      <span className="font-mono">{formatZAR(a.value)} · {num(pct, 1)}%</span>
-                    </div>
-                    <div className="h-3 rounded-full bg-[#eef2f7] overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: a.color }} />
-                    </div>
+      {/* NAV chart */}
+      <SectionCard title="NAV History">
+        {navHistory.length === 0 ? <EmptyMsg>No NAV data yet.</EmptyMsg> : (
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={navHistory}>
+              <defs>
+                <linearGradient id="navGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={ACC} stopOpacity={0.30} />
+                  <stop offset="95%" stopColor={ACC} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+              <XAxis dataKey="date" fontSize={10} stroke={TX3} />
+              <YAxis fontSize={10} stroke={TX3} tickFormatter={(v) => `R${num(v, 3)}`} />
+              <Tooltip formatter={(v: number) => [`R${num(v, 4)}`, 'NAV']} />
+              <Area type="monotone" dataKey="nav" stroke={ACC} strokeWidth={2} fill="url(#navGrad)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </SectionCard>
+
+      {/* Allocation bars */}
+      <SectionCard title="Capital deployed by tranche">
+        {allocation.length === 0 ? <EmptyMsg>No facilities yet.</EmptyMsg> : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {allocation.map((a) => {
+              const total = allocation.reduce((s, x) => s + x.value, 0) || 1;
+              const pct = (a.value / total) * 100;
+              return (
+                <div key={a.name}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4, color: TX2 }}>
+                    <span style={{ textTransform: 'capitalize' }}>{a.name}</span>
+                    <span style={{ fontFamily: MONO }}>{formatZAR(a.value)} · {num(pct, 1)}%</span>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </Card>
-      </div>
-
-      <Card title="Facilities">
-        {facilities.length === 0 ? <EmptyState icon={<Briefcase className="w-8 h-8" />} title="No facilities" description="Originate a facility against an IPP project to start tracking." /> : (
-          <div className="overflow-auto">
-            <table className="w-full text-[13px]">
-              <thead className="bg-[#fafbfd]">
-                <tr className="text-[11px] uppercase text-[#6b7685]">
-                  <th className="px-4 py-2 text-left">Project</th>
-                  <th className="px-4 py-2 text-left">Tranche</th>
-                  <th className="px-4 py-2 text-right">Commitment</th>
-                  <th className="px-4 py-2 text-right">Drawn</th>
-                  <th className="px-4 py-2 text-right">Utilisation</th>
-                  <th className="px-4 py-2 text-right">Rate</th>
-                  <th className="px-4 py-2 text-left">Maturity</th>
-                  <th className="px-4 py-2 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {facilities.map((f) => {
-                  const util = f.commitment ? ((f.drawn || 0) / f.commitment) * 100 : 0;
-                  return (
-                    <tr
-                      key={f.id}
-                      onClick={() => navigate(`/funds/${f.id}`)}
-                      className="border-t border-[#eef2f7] hover:bg-[#fafbfd] cursor-pointer"
-                    >
-                      <td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>{f.project_id ? <EntityLink id={f.project_id} type="project" /> : (f.project_name || '—')}</td>
-                      <td className="px-4 py-2 capitalize">{f.tranche || '—'}</td>
-                      <td className="px-4 py-2 text-right font-mono">{formatZAR(f.commitment || 0)}</td>
-                      <td className="px-4 py-2 text-right font-mono">{formatZAR(f.drawn || 0)}</td>
-                      <td className="px-4 py-2 text-right font-mono">{num(util, 1)}%</td>
-                      <td className="px-4 py-2 text-right font-mono">{num(f.rate_pct || 0, 2)}%</td>
-                      <td className="px-4 py-2 font-mono text-[11px]">{f.maturity ? new Date(f.maturity).toLocaleDateString() : '—'}</td>
-                      <td className="px-4 py-2"><StatusPill status={f.status || 'active'} /></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  <div style={{ height: 10, borderRadius: 6, background: BG2, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: 6, width: `${pct}%`, background: a.color }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-      </Card>
+      </SectionCard>
+
+      {/* Facilities list */}
+      <SectionCard title="Facilities">
+        {facilities.length === 0
+          ? <EmptyState icon={<Briefcase size={28} />} title="No facilities" description="Originate a facility against an IPP project to start tracking." />
+          : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {/* header row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 80px 110px 110px 60px 60px 80px 70px', gap: 8, padding: '4px 8px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: TX3, letterSpacing: '0.06em', borderBottom: `1px solid ${BORDER}` }}>
+              <span>Project</span><span>Tranche</span><span style={{ textAlign: 'right' }}>Commitment</span><span style={{ textAlign: 'right' }}>Drawn</span><span style={{ textAlign: 'right' }}>Util%</span><span style={{ textAlign: 'right' }}>Rate</span><span>Maturity</span><span>Status</span>
+            </div>
+            {facilities.map((f) => {
+              const util = f.commitment ? ((f.drawn || 0) / f.commitment) * 100 : 0;
+              return (
+                <div key={f.id}
+                  onClick={() => navigate(`/funds/${f.id}`)}
+                  style={{ display: 'grid', gridTemplateColumns: '2fr 80px 110px 110px 60px 60px 80px 70px', gap: 8, padding: '8px 8px', fontSize: 12, color: TX2, borderBottom: `1px solid ${BORDER}`, cursor: 'pointer', alignItems: 'center' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = BG2)}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <span onClick={(e) => e.stopPropagation()}>{f.project_id ? <EntityLink id={f.project_id} type="project" /> : (f.project_name || '—')}</span>
+                  <span style={{ textTransform: 'capitalize' }}>{f.tranche || '—'}</span>
+                  <span style={{ textAlign: 'right', fontFamily: MONO, fontSize: 11 }}>{formatZAR(f.commitment || 0)}</span>
+                  <span style={{ textAlign: 'right', fontFamily: MONO, fontSize: 11 }}>{formatZAR(f.drawn || 0)}</span>
+                  <span style={{ textAlign: 'right', fontFamily: MONO, fontSize: 11 }}>{num(util, 1)}%</span>
+                  <span style={{ textAlign: 'right', fontFamily: MONO, fontSize: 11 }}>{num(f.rate_pct || 0, 2)}%</span>
+                  <span style={{ fontFamily: MONO, fontSize: 11 }}>{f.maturity ? new Date(f.maturity).toLocaleDateString() : '—'}</span>
+                  <span><StatusPill status={f.status || 'active'} /></span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </SectionCard>
     </div>
   );
 }
@@ -255,73 +370,80 @@ function WaterfallTab() {
   }), { senior: 0, mezz: 0, equity: 0, reserves: 0 });
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KPI label="Senior debt service"   value={formatZAR(total.senior)}   icon={Layers} />
-        <KPI label="Mezz interest"         value={formatZAR(total.mezz)}     icon={Layers} />
-        <KPI label="Equity distributions"  value={formatZAR(total.equity)}   icon={Target} tone="up" />
-        <KPI label="Reserves topped up"    value={formatZAR(total.reserves)} icon={ShieldCheck} />
+    <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+        <KpiTile label="Senior debt service"  value={formatZAR(total.senior)} />
+        <KpiTile label="Mezz interest"        value={formatZAR(total.mezz)} />
+        <KpiTile label="Equity distributions" value={formatZAR(total.equity)} tone="ok" />
+        <KpiTile label="Reserves topped up"   value={formatZAR(total.reserves)} />
       </div>
 
-      <Card title="Waterfall by period">
-        <div className="overflow-auto">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={periods}>
-              <CartesianGrid stroke="#eef2f7" strokeDasharray="3 3" />
-              <XAxis dataKey="period" fontSize={10} stroke="#6b7685" />
-              <YAxis fontSize={10} stroke="#6b7685" tickFormatter={(v) => `R${num(v / 1e6, 1)}M`} />
-              <Tooltip formatter={(v: number) => formatZAR(v)} />
-              <Bar dataKey="senior"   stackId="a" fill="#1a3a5c" />
-              <Bar dataKey="mezz"     stackId="a" fill="#3b82c4" />
-              <Bar dataKey="equity"   stackId="a" fill="#1f9b95" />
-              <Bar dataKey="reserves" stackId="a" fill="#5fa8e8" />
-            </BarChart>
-          </ResponsiveContainer>
-          <div className="flex flex-wrap gap-3 mt-3 text-[11px]">
+      <SectionCard title="Waterfall by period">
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart data={periods}>
+            <CartesianGrid stroke={BORDER} strokeDasharray="3 3" />
+            <XAxis dataKey="period" fontSize={10} stroke={TX3} />
+            <YAxis fontSize={10} stroke={TX3} tickFormatter={(v) => `R${num(v / 1e6, 1)}M`} />
+            <Tooltip formatter={(v: number) => formatZAR(v)} />
+            <Bar dataKey="senior"   stackId="a" fill={TX1} />
+            <Bar dataKey="mezz"     stackId="a" fill={ACC} />
+            <Bar dataKey="equity"   stackId="a" fill={GOOD} />
+            <Bar dataKey="reserves" stackId="a" fill={TX3} />
+          </BarChart>
+        </ResponsiveContainer>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 12 }}>
+          {[
+            { name: 'Senior debt service', color: TX1 },
+            { name: 'Mezzanine interest', color: ACC },
+            { name: 'Equity distributions', color: GOOD },
+            { name: 'Reserves', color: TX3 },
+          ].map((l) => (
+            <div key={l.name} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: TX2 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: l.color, display: 'inline-block' }} />
+              {l.name}
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Sources & uses">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: TX3, marginBottom: 8 }}>Sources of cash</div>
             {[
-              { name: 'Senior debt service', color: '#1a3a5c' },
-              { name: 'Mezzanine interest', color: '#3b82c4' },
-              { name: 'Equity distributions', color: '#1f9b95' },
-              { name: 'Reserves', color: '#5fa8e8' },
-            ].map((l) => (
-              <div key={l.name} className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm" style={{ background: l.color }} />
-                <span className="text-[#3d4756]">{l.name}</span>
+              { label: 'PPA revenue', value: total.senior + total.mezz + total.equity + total.reserves },
+              { label: 'Wheeling fees', value: total.reserves * 0.15 },
+              { label: 'Capacity payments', value: total.equity * 0.30 },
+              { label: 'Total', value: (total.senior + total.mezz + total.equity + total.reserves) * 1.30, bold: true },
+            ].map((row) => (
+              <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${BORDER}`, padding: '6px 0', fontSize: 12, color: TX2, fontWeight: row.bold ? 700 : 400 }}>
+                <span>{row.label}</span>
+                <span style={{ fontFamily: MONO, fontSize: 11 }}>{formatZAR(row.value)}</span>
+              </div>
+            ))}
+          </div>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: TX3, marginBottom: 8 }}>Uses of cash (priority)</div>
+            {[
+              { label: '1. O&M expenses', value: total.reserves * 0.40 },
+              { label: '2. Senior debt service', value: total.senior },
+              { label: '3. Reserve top-up', value: total.reserves },
+              { label: '4. Mezzanine interest', value: total.mezz },
+              { label: '5. Equity distributions', value: total.equity },
+            ].map((row) => (
+              <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${BORDER}`, padding: '6px 0', fontSize: 12, color: TX2 }}>
+                <span>{row.label}</span>
+                <span style={{ fontFamily: MONO, fontSize: 11 }}>{formatZAR(row.value)}</span>
               </div>
             ))}
           </div>
         </div>
-      </Card>
-
-      <Card title="Sources & uses">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <div className="text-[11px] uppercase tracking-wider text-[#6b7685] mb-2">Sources of cash</div>
-            <ul className="space-y-1 text-[13px]">
-              <li className="flex justify-between border-b border-[#eef2f7] py-2">PPA revenue<span className="font-mono">{formatZAR(total.senior + total.mezz + total.equity + total.reserves)}</span></li>
-              <li className="flex justify-between border-b border-[#eef2f7] py-2">Wheeling fees<span className="font-mono">{formatZAR(total.reserves * 0.15)}</span></li>
-              <li className="flex justify-between border-b border-[#eef2f7] py-2">Capacity payments<span className="font-mono">{formatZAR(total.equity * 0.30)}</span></li>
-              <li className="flex justify-between py-2 font-semibold">Total<span className="font-mono">{formatZAR((total.senior + total.mezz + total.equity + total.reserves) * 1.30)}</span></li>
-            </ul>
-          </div>
-          <div>
-            <div className="text-[11px] uppercase tracking-wider text-[#6b7685] mb-2">Uses of cash (priority order)</div>
-            <ol className="space-y-1 text-[13px]">
-              <li className="flex justify-between border-b border-[#eef2f7] py-2">1. O&amp;M expenses<span className="font-mono">{formatZAR(total.reserves * 0.40)}</span></li>
-              <li className="flex justify-between border-b border-[#eef2f7] py-2">2. Senior debt service<span className="font-mono">{formatZAR(total.senior)}</span></li>
-              <li className="flex justify-between border-b border-[#eef2f7] py-2">3. Reserve top-up<span className="font-mono">{formatZAR(total.reserves)}</span></li>
-              <li className="flex justify-between border-b border-[#eef2f7] py-2">4. Mezzanine interest<span className="font-mono">{formatZAR(total.mezz)}</span></li>
-              <li className="flex justify-between py-2">5. Equity distributions<span className="font-mono">{formatZAR(total.equity)}</span></li>
-            </ol>
-          </div>
-        </div>
-      </Card>
+      </SectionCard>
     </div>
   );
 }
 
 function defaultWaterfall() {
-  // Fallback shape so the chart renders even before /funder/waterfall is wired up.
   return Array.from({ length: 12 }, (_, i) => {
     const d = new Date(); d.setMonth(d.getMonth() - (11 - i));
     return {
@@ -349,9 +471,9 @@ function DisbursementsTab() {
   useEffect(() => { refresh(); }, [refresh]);
 
   const counts = useMemo(() => ({
-    pending: items.filter((d) => d.status === 'pending').length,
+    pending:  items.filter((d) => d.status === 'pending').length,
     approved: items.filter((d) => d.status === 'approved').length,
-    paid: items.filter((d) => d.status === 'paid').length,
+    paid:     items.filter((d) => d.status === 'paid').length,
     rejected: items.filter((d) => d.status === 'rejected').length,
   }), [items]);
 
@@ -363,53 +485,49 @@ function DisbursementsTab() {
   if (loading) return <Skeleton variant="card" rows={3} />;
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KPI label="Pending"   value={num(counts.pending)}  icon={Clock}        tone={counts.pending > 0 ? 'down' : undefined} />
-        <KPI label="Approved"  value={num(counts.approved)} icon={CheckCircle2} tone="up" />
-        <KPI label="Paid"      value={num(counts.paid)}     icon={Wallet} />
-        <KPI label="Rejected"  value={num(counts.rejected)} icon={AlertTriangle} />
+    <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+        <KpiTile label="Pending"  value={num(counts.pending)}  tone={counts.pending > 0 ? 'warn' : undefined} />
+        <KpiTile label="Approved" value={num(counts.approved)} tone="ok" />
+        <KpiTile label="Paid"     value={num(counts.paid)} />
+        <KpiTile label="Rejected" value={num(counts.rejected)} tone={counts.rejected > 0 ? 'bad' : undefined} />
       </div>
-      <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
-        <div className="text-[13px] text-[#3d4756]">Disbursement requests against active facilities. Approving fires a cascade event into Settlement.</div>
-        <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-1"><Plus size={14} /> Request</button>
+
+      <div style={{ borderRadius: 8, border: `1px solid ${BORDER}`, background: BG1, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 12, color: TX2 }}>Disbursement requests against active facilities. Approving fires a cascade event into Settlement.</span>
+        <button type="button" onClick={() => setShowNew(true)}
+          style={{ height: 30, padding: '0 12px', borderRadius: 6, background: ACC, color: '#fff', fontSize: 11, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Plus size={13} /> Request
+        </button>
       </div>
-      <Card title="Disbursement queue">
+
+      <SectionCard title="Disbursement queue">
         {items.length === 0 ? <EmptyMsg>No disbursements yet.</EmptyMsg> : (
-          <div className="overflow-auto">
-            <table className="w-full text-[13px]">
-              <thead className="bg-[#fafbfd]">
-                <tr className="text-[11px] uppercase text-[#6b7685]">
-                  <th className="px-4 py-2 text-left">Project</th>
-                  <th className="px-4 py-2 text-right">Requested</th>
-                  <th className="px-4 py-2 text-right">Approved</th>
-                  <th className="px-4 py-2 text-left">Reason</th>
-                  <th className="px-4 py-2 text-left">Due</th>
-                  <th className="px-4 py-2 text-left">Status</th>
-                  <th className="px-4 py-2 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((d) => (
-                  <tr key={d.id} className="border-t border-[#eef2f7]">
-                    <td className="px-4 py-2">{d.project_name || '—'}</td>
-                    <td className="px-4 py-2 text-right font-mono">{formatZAR(d.requested_amount || 0)}</td>
-                    <td className="px-4 py-2 text-right font-mono">{d.approved_amount ? formatZAR(d.approved_amount) : '—'}</td>
-                    <td className="px-4 py-2 text-[#3d4756] truncate max-w-[200px]">{d.reason || '—'}</td>
-                    <td className="px-4 py-2 font-mono text-[11px]">{d.due_at ? new Date(d.due_at).toLocaleDateString() : '—'}</td>
-                    <td className="px-4 py-2"><StatusPill status={d.status} /></td>
-                    <td className="px-4 py-2 text-right">
-                      {d.status === 'pending' && (
-                        <button type="button" onClick={() => approve(d.id)} className="text-[12px] text-[#1a8a5b] hover:underline font-semibold">Approve</button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 110px 110px 2fr 80px 70px 60px', gap: 8, padding: '4px 8px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: TX3, letterSpacing: '0.06em', borderBottom: `1px solid ${BORDER}` }}>
+              <span>Project</span><span style={{ textAlign: 'right' }}>Requested</span><span style={{ textAlign: 'right' }}>Approved</span><span>Reason</span><span>Due</span><span>Status</span><span style={{ textAlign: 'right' }}>Action</span>
+            </div>
+            {items.map((d) => (
+              <div key={d.id} style={{ display: 'grid', gridTemplateColumns: '2fr 110px 110px 2fr 80px 70px 60px', gap: 8, padding: '8px 8px', fontSize: 12, color: TX2, borderBottom: `1px solid ${BORDER}`, alignItems: 'center' }}>
+                <span>{d.project_name || '—'}</span>
+                <span style={{ textAlign: 'right', fontFamily: MONO, fontSize: 11 }}>{formatZAR(d.requested_amount || 0)}</span>
+                <span style={{ textAlign: 'right', fontFamily: MONO, fontSize: 11 }}>{d.approved_amount ? formatZAR(d.approved_amount) : '—'}</span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: TX3 }}>{d.reason || '—'}</span>
+                <span style={{ fontFamily: MONO, fontSize: 11 }}>{d.due_at ? new Date(d.due_at).toLocaleDateString() : '—'}</span>
+                <span><StatusPill status={d.status} /></span>
+                <span style={{ textAlign: 'right' }}>
+                  {d.status === 'pending' && (
+                    <button type="button" onClick={() => approve(d.id)}
+                      style={{ fontSize: 11, color: GOOD, fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                      Approve
+                    </button>
+                  )}
+                </span>
+              </div>
+            ))}
           </div>
         )}
-      </Card>
+      </SectionCard>
       {showNew && <NewDisbursementModal onClose={() => setShowNew(false)} onCreated={refresh} />}
     </div>
   );
@@ -418,15 +536,21 @@ function DisbursementsTab() {
 function NewDisbursementModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   useEscapeKey(onClose);
   const [facilityId, setFacilityId] = useState('');
-  const [amount, setAmount] = useState('');
-  const [reason, setReason] = useState('');
-  const [dueAt, setDueAt] = useState('');
+  const [amount, setAmount]   = useState('');
+  const [reason, setReason]   = useState('');
+  const [dueAt, setDueAt]     = useState('');
   const [loading, setLoading] = useState(false);
   const [facilities, setFacilities] = useState<Facility[]>([]);
 
   useEffect(() => {
     api.get('/funder/facilities').catch(() => ({ data: { success: true, data: [] } })).then((r) => setFacilities((r.data?.data || []) as Facility[]));
   }, []);
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', height: 36, padding: '0 10px', borderRadius: 6,
+    border: `1px solid ${BORDER}`, fontSize: 13, color: TX1, background: BG,
+    boxSizing: 'border-box',
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true);
@@ -441,20 +565,37 @@ function NewDisbursementModal({ onClose, onCreated }: { onClose: () => void; onC
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true" aria-label="New disbursement request">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
-        <header className="px-5 py-3 border-b border-[#eef2f7] font-display font-semibold text-[15px]">New disbursement request</header>
-        <form onSubmit={submit} className="p-5 space-y-3">
-          <Field label="Facility"><select required value={facilityId} onChange={(e) => setFacilityId(e.target.value)} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
-            <option value="">— select —</option>
-            {facilities.map((f) => <option key={f.id} value={f.id}>{f.project_name || f.id} · {f.tranche || ''}</option>)}
-          </select></Field>
-          <Field label="Amount (ZAR)"><input type="number" required value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></Field>
-          <Field label="Reason"><textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} className="w-full px-3 py-2 rounded-md border border-[#dde4ec] text-[13px]" placeholder="Capex draw, liquidity bridge…" /></Field>
-          <Field label="Due (optional)"><input type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></Field>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
-            <button type="submit" disabled={loading || !facilityId} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">{loading ? 'Submitting…' : 'Submit'}</button>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)' }}
+      role="dialog" aria-modal="true" aria-label="New disbursement request">
+      <div style={{ background: BG1, borderRadius: 10, boxShadow: '0 12px 48px rgba(0,0,0,0.22)', width: '100%', maxWidth: 440, margin: '0 16px' }}>
+        <header style={{ padding: '12px 18px', borderBottom: `1px solid ${BORDER}`, fontSize: 14, fontWeight: 700, color: TX1 }}>New disbursement request</header>
+        <form onSubmit={submit} style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Field label="Facility">
+            <select required value={facilityId} onChange={(e) => setFacilityId(e.target.value)} style={{ ...inputStyle, height: 36 }}>
+              <option value="">— select —</option>
+              {facilities.map((f) => <option key={f.id} value={f.id}>{f.project_name || f.id} · {f.tranche || ''}</option>)}
+            </select>
+          </Field>
+          <Field label="Amount (ZAR)">
+            <input type="number" required value={amount} onChange={(e) => setAmount(e.target.value)} style={inputStyle} />
+          </Field>
+          <Field label="Reason">
+            <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3}
+              style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' }}
+              placeholder="Capex draw, liquidity bridge…" />
+          </Field>
+          <Field label="Due (optional)">
+            <input type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} style={inputStyle} />
+          </Field>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
+            <button type="button" onClick={onClose}
+              style={{ height: 34, padding: '0 14px', borderRadius: 6, border: `1px solid ${BORDER}`, fontSize: 12, fontWeight: 600, background: BG2, color: TX2, cursor: 'pointer' }}>
+              Cancel
+            </button>
+            <button type="submit" disabled={loading || !facilityId}
+              style={{ height: 34, padding: '0 16px', borderRadius: 6, background: ACC, color: '#fff', fontSize: 12, fontWeight: 700, border: 'none', cursor: loading || !facilityId ? 'not-allowed' : 'pointer', opacity: loading || !facilityId ? 0.55 : 1 }}>
+              {loading ? 'Submitting…' : 'Submit'}
+            </button>
           </div>
         </form>
       </div>
@@ -466,50 +607,48 @@ function NewDisbursementModal({ onClose, onCreated }: { onClose: () => void; onC
 function CovenantsTab() {
   const [rows, setRows] = useState<CovenantRow[]>([]);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     api.get('/funder/covenants').catch(() => ({ data: { success: true, data: [] } })).then((r) => {
       setRows((r.data?.data || []) as CovenantRow[]); setLoading(false);
     });
   }, []);
+
   if (loading) return <Skeleton variant="card" rows={3} />;
-  const counts = { pass: rows.filter((c) => c.status === 'pass').length, warn: rows.filter((c) => c.status === 'warn').length, breach: rows.filter((c) => c.status === 'breach').length };
+
+  const counts = {
+    pass:   rows.filter((c) => c.status === 'pass').length,
+    warn:   rows.filter((c) => c.status === 'warn').length,
+    breach: rows.filter((c) => c.status === 'breach').length,
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3">
-        <KPI label="Passing"  value={num(counts.pass)}   icon={CheckCircle2} tone="up" />
-        <KPI label="Warning"  value={num(counts.warn)}   icon={AlertTriangle} />
-        <KPI label="Breached" value={num(counts.breach)} icon={AlertTriangle} tone="down" />
+    <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+        <KpiTile label="Passing"  value={num(counts.pass)}   tone="ok" />
+        <KpiTile label="Warning"  value={num(counts.warn)}   tone={counts.warn > 0 ? 'warn' : undefined} />
+        <KpiTile label="Breached" value={num(counts.breach)} tone={counts.breach > 0 ? 'bad' : undefined} />
       </div>
-      <Card title="Covenant compliance">
+
+      <SectionCard title="Covenant compliance">
         {rows.length === 0 ? <EmptyMsg>No covenants tracked.</EmptyMsg> : (
-          <div className="overflow-auto">
-            <table className="w-full text-[13px]">
-              <thead className="bg-[#fafbfd]">
-                <tr className="text-[11px] uppercase text-[#6b7685]">
-                  <th className="px-4 py-2 text-left">Project</th>
-                  <th className="px-4 py-2 text-left">Covenant</th>
-                  <th className="px-4 py-2 text-right">Threshold</th>
-                  <th className="px-4 py-2 text-right">Current</th>
-                  <th className="px-4 py-2 text-left">Status</th>
-                  <th className="px-4 py-2 text-left">Measured</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id} className="border-t border-[#eef2f7]">
-                    <td className="px-4 py-2">{r.project_name || '—'}</td>
-                    <td className="px-4 py-2 capitalize">{r.covenant_type.replace(/_/g, ' ')}</td>
-                    <td className="px-4 py-2 text-right font-mono">{num(r.threshold, 2)}</td>
-                    <td className="px-4 py-2 text-right font-mono">{num(r.current, 2)}</td>
-                    <td className="px-4 py-2"><CovenantPill status={r.status} /></td>
-                    <td className="px-4 py-2 font-mono text-[11px]">{r.measured_at ? new Date(r.measured_at).toLocaleDateString() : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 80px 80px 70px 90px', gap: 8, padding: '4px 8px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: TX3, letterSpacing: '0.06em', borderBottom: `1px solid ${BORDER}` }}>
+              <span>Project</span><span>Covenant</span><span style={{ textAlign: 'right' }}>Threshold</span><span style={{ textAlign: 'right' }}>Current</span><span>Status</span><span>Measured</span>
+            </div>
+            {rows.map((r) => (
+              <div key={r.id} style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 80px 80px 70px 90px', gap: 8, padding: '8px 8px', fontSize: 12, color: TX2, borderBottom: `1px solid ${BORDER}`, alignItems: 'center' }}>
+                <span>{r.project_name || '—'}</span>
+                <span style={{ textTransform: 'capitalize' }}>{r.covenant_type.replace(/_/g, ' ')}</span>
+                <span style={{ textAlign: 'right', fontFamily: MONO, fontSize: 11 }}>{num(r.threshold, 2)}</span>
+                <span style={{ textAlign: 'right', fontFamily: MONO, fontSize: 11 }}>{num(r.current, 2)}</span>
+                <span><StatusPill status={r.status} /></span>
+                <span style={{ fontFamily: MONO, fontSize: 11 }}>{r.measured_at ? new Date(r.measured_at).toLocaleDateString() : '—'}</span>
+              </div>
+            ))}
           </div>
         )}
-      </Card>
+      </SectionCard>
     </div>
   );
 }
@@ -518,56 +657,22 @@ function CovenantsTab() {
 function InsightsTab() {
   const [data, setData] = useState<{ narrative?: { text?: string }; kpis?: Record<string, unknown> } | null>(null);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     api.get('/funder/insights').catch(() => ({ data: { success: true, data: null } })).then((r) => { setData(r.data?.data); setLoading(false); });
   }, []);
+
   if (loading) return <Skeleton variant="card" rows={3} />;
+
   return (
-    <Card title="Portfolio commentary">
+    <SectionCard title="Portfolio commentary">
       {data?.narrative?.text ? (
-        <div className="prose max-w-none text-[13px] text-[#0f1c2e] whitespace-pre-wrap">{data.narrative.text}</div>
+        <div style={{ fontSize: 13, color: TX2, whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>{data.narrative.text}</div>
       ) : (
         <EmptyMsg>No AI insights generated yet.</EmptyMsg>
       )}
-    </Card>
+    </SectionCard>
   );
-}
-
-// ─────────── shared ───────────
-function KPI({ label, value, sub, icon: Icon, tone }: { label: string; value: string; sub?: string; icon: React.ComponentType<{ size?: number }>; tone?: 'up' | 'down' }) {
-  return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white p-4">
-      <div className="flex items-center justify-between"><div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div><Icon size={14} /></div>
-      <div className={`mt-1 text-[22px] font-semibold font-mono ${tone === 'up' ? 'text-[#1a8a5b]' : tone === 'down' ? 'text-[#c0392b]' : 'text-[#0f1c2e]'}`}>{value}</div>
-      {sub && <div className="text-[11px] text-[#6b7685] mt-1">{sub}</div>}
-    </div>
-  );
-}
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-xl border border-[#dde4ec] bg-white">
-      <header className="px-5 py-3 border-b border-[#eef2f7] font-display font-semibold text-[14px] text-[#0f1c2e]">{title}</header>
-      <div className="p-5">{children}</div>
-    </section>
-  );
-}
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="block"><span className="text-[11px] font-semibold uppercase tracking-wider text-[#6b7685]">{label}</span><div className="mt-1">{children}</div></label>;
-}
-function EmptyMsg({ children }: { children: React.ReactNode }) { return <div className="py-6 text-center text-[13px] text-[#6b7685]">{children}</div>; }
-function StatusPill({ status }: { status: string }) {
-  const c: Record<string, string> = {
-    active: 'bg-[#cdf0dd] text-[#1a8a5b]',
-    pending: 'bg-[#fce5c4] text-[#c97a14]',
-    approved: 'bg-[#dbecfb] text-[#3b82c4]',
-    paid: 'bg-[#cdf0dd] text-[#1a8a5b]',
-    rejected: 'bg-[#fde0db] text-[#c0392b]',
-  };
-  return <span className={`px-2 py-[2px] text-[10px] uppercase font-semibold rounded ${c[status] || 'bg-[#eef2f7] text-[#6b7685]'}`}>{status}</span>;
-}
-function CovenantPill({ status }: { status: 'pass' | 'warn' | 'breach' }) {
-  const map = { pass: 'bg-[#cdf0dd] text-[#1a8a5b]', warn: 'bg-[#fce5c4] text-[#c97a14]', breach: 'bg-[#fde0db] text-[#c0392b]' };
-  return <span className={`px-2 py-[2px] text-[10px] uppercase font-semibold rounded ${map[status]}`}>{status}</span>;
 }
 
 export default Funds;

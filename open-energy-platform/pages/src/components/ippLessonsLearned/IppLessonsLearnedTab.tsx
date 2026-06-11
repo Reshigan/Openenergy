@@ -108,9 +108,9 @@ const TYPE_COLOR: Record<string, string> = {
 
 const STATUS_COLOR: Record<LessonStatus, string> = {
   captured:              'bg-[#eef2f7] text-[#2d3748]',
-  categorized:           'bg-blue-50 text-blue-700',
-  root_cause_analyzed:   'bg-blue-100 text-blue-800',
-  impact_assessed:       'bg-indigo-100 text-indigo-700',
+  categorized:           'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
+  root_cause_analyzed:   'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
+  impact_assessed:       'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   recommendation_drafted:'bg-violet-100 text-violet-700',
   peer_reviewed:         'bg-cyan-100 text-cyan-700',
   approved:              'bg-teal-100 text-teal-700',
@@ -426,9 +426,9 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
                   <td className="px-3 py-2">
                     <div className="flex gap-1 flex-wrap">
                       {!!row.floor_safety_critical && <Flag label="S" title="Safety critical" cls="bg-red-100 text-red-700" />}
-                      {!!row.floor_regulatory_change && <Flag label="R" title="Regulatory change required" cls="bg-blue-100 text-blue-700" />}
+                      {!!row.floor_regulatory_change && <Flag label="R" title="Regulatory change required" cls="bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]" />}
                       {!!row.floor_contractual_impact && <Flag label="C" title="Contractual impact" cls="bg-orange-100 text-orange-700" />}
-                      {!!row.floor_design_change && <Flag label="D" title="Design change required" cls="bg-indigo-100 text-indigo-700" />}
+                      {!!row.floor_design_change && <Flag label="D" title="Design change required" cls="bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]" />}
                       {!!row.floor_portfolio_impact && <Flag label="P" title="Portfolio impact" cls="bg-purple-100 text-purple-700" />}
                       {!!row.prevents_fatality && <Flag label="F" title="Prevents fatality (SIGNATURE)" cls="bg-red-200 text-red-900" />}
                       {!!row.is_reportable && <Flag label="⚑" title="Regulator crossed" cls="bg-red-200 text-red-800" />}
@@ -436,7 +436,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
                   </td>
                   {!readOnly && (
                     <td className="px-3 py-2">
-                      <button type="button" className="text-xs text-blue-600 hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>Manage</button>
+                      <button type="button" className="text-xs text-[oklch(0.46_0.16_55)] hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>Manage</button>
                     </td>
                   )}
                 </tr>
@@ -518,9 +518,9 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
                   </div>
                 )}
                 {selected.schedule_impact_days !== null && (
-                  <div className={`flex-1 rounded-lg border px-3 py-2 text-center ${selected.schedule_impact_days >= 0 ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'}`}>
-                    <p className={`text-[10px] uppercase tracking-wide ${selected.schedule_impact_days >= 0 ? 'text-blue-600' : 'text-red-600'}`}>Schedule impact</p>
-                    <p className={`text-lg font-bold ${selected.schedule_impact_days >= 0 ? 'text-blue-700' : 'text-red-700'}`}>{selected.schedule_impact_days > 0 ? `+${selected.schedule_impact_days}d` : `${selected.schedule_impact_days}d`}</p>
+                  <div className={`flex-1 rounded-lg border px-3 py-2 text-center ${selected.schedule_impact_days >= 0 ? 'bg-[oklch(0.97_0.003_250)] border-[oklch(0.87_0.012_250)]' : 'bg-red-50 border-red-200'}`}>
+                    <p className={`text-[10px] uppercase tracking-wide ${selected.schedule_impact_days >= 0 ? 'text-[oklch(0.46_0.16_55)]' : 'text-red-600'}`}>Schedule impact</p>
+                    <p className={`text-lg font-bold ${selected.schedule_impact_days >= 0 ? 'text-[oklch(0.46_0.16_55)]' : 'text-red-700'}`}>{selected.schedule_impact_days > 0 ? `+${selected.schedule_impact_days}d` : `${selected.schedule_impact_days}d`}</p>
                   </div>
                 )}
               </div>
@@ -530,7 +530,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
             {selected.rca_method && selected.rca_method !== 'none' && (
               <div className="mb-3 flex items-center gap-2">
                 <span className="text-[10px] text-[#9aa5b4] uppercase">RCA method:</span>
-                <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-xs font-medium">{RCA_LABEL[selected.rca_method] ?? selected.rca_method}</span>
+                <span className="px-2 py-0.5 rounded bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)] text-xs font-medium">{RCA_LABEL[selected.rca_method] ?? selected.rca_method}</span>
               </div>
             )}
 
@@ -726,7 +726,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
 }
 
 function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
-  const cls = color === 'red' ? 'text-red-600' : color === 'green' ? 'text-green-600' : color === 'blue' ? 'text-blue-600' : color === 'purple' ? 'text-purple-700' : 'text-[#2d3748]';
+  const cls = color === 'red' ? 'text-red-600' : color === 'green' ? 'text-green-600' : color === 'blue' ? 'text-[oklch(0.46_0.16_55)]' : color === 'purple' ? 'text-purple-700' : 'text-[#2d3748]';
   return (
     <div className="bg-white rounded-lg border border-[#dde4ec] p-3">
       <p className="text-[10px] text-[#6b7685] uppercase tracking-wide">{label}</p>

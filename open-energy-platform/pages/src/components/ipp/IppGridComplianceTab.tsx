@@ -23,9 +23,9 @@ interface GridComplianceRecord {
 
 const STATUS_COLORS: Record<string, string> = {
   assessment_due:        'bg-[#eef2f7] text-[#6b7685]',
-  test_preparation:      'bg-blue-100 text-blue-700',
+  test_preparation:      'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   testing_in_progress:   'bg-sky-100 text-sky-700',
-  test_completed:        'bg-indigo-100 text-indigo-700',
+  test_completed:        'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   report_drafted:        'bg-yellow-100 text-yellow-800',
   submitted_to_nersa:    'bg-amber-100 text-amber-700',
   nersa_review:          'bg-orange-100 text-orange-700',

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface ChangeOfControl {
   id: string;
@@ -27,9 +27,9 @@ interface Kpis {
 
 const STATUS_COLORS: Record<string, string> = {
   notification_submitted:   'bg-[#eef2f7] text-[#6b7685]',
-  completeness_check:       'bg-blue-100 text-blue-700',
+  completeness_check:       'bg-[#eef2f7]',
   foreign_ownership_screen: 'bg-purple-100 text-purple-700',
-  competition_screen:       'bg-indigo-100 text-indigo-700',
+  competition_screen:       'bg-[#eef2f7]',
   technical_assessment:     'bg-cyan-100 text-cyan-700',
   public_participation:     'bg-orange-100 text-orange-800',
   nersa_evaluation:         'bg-yellow-100 text-yellow-800',
@@ -41,12 +41,22 @@ const STATUS_COLORS: Record<string, string> = {
   appeal_determined:        'bg-[#e8ecf0] text-[#3d4756]',
 };
 
+const STATUS_STYLE: Record<string, React.CSSProperties> = {
+  completeness_check: { color: 'oklch(0.46 0.16 55)' },
+  competition_screen: { color: 'oklch(0.46 0.16 55)' },
+};
+
 const TIER_COLORS: Record<string, string> = {
   minor:       'bg-[#eef2f7] text-[#3d4756]',
-  moderate:    'bg-blue-100 text-blue-700',
-  significant: 'bg-indigo-100 text-indigo-700',
+  moderate:    'bg-[#eef2f7]',
+  significant: 'bg-[#eef2f7]',
   major:       'bg-orange-100 text-orange-800',
   material:    'bg-red-100 text-red-700',
+};
+
+const TIER_STYLE: Record<string, React.CSSProperties> = {
+  moderate:    { color: 'oklch(0.46 0.16 55)', background: 'oklch(0.94 0.006 250)' },
+  significant: { color: 'oklch(0.46 0.16 55)', background: 'oklch(0.94 0.006 250)' },
 };
 
 const TX_TYPE_LABELS: Record<string, string> = {
@@ -196,7 +206,8 @@ export function IppChangeOfControlTab() {
           <button type="button"
             key={t}
             onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt, filterForeign); }}
-            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white border-indigo-700' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
+            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'text-white border-transparent' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
+            style={filterTier === t ? { background: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.46 0.16 55)' } : {}}
           >
             {t}
           </button>
@@ -263,7 +274,7 @@ export function IppChangeOfControlTab() {
                     </td>
                     <td className="py-2 pr-4 text-xs font-medium">{item.capacity_mw ?? '—'}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.ownership_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.ownership_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={TIER_STYLE[item.ownership_tier] ?? {}}>
                         {item.ownership_tier}
                       </span>
                     </td>
@@ -271,7 +282,7 @@ export function IppChangeOfControlTab() {
                       {isForeign ? <span title={item.foreign_ownership_flag}>🌍</span> : <span className="text-[#9aa5b4]">—</span>}
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_STYLE[item.chain_status] ?? {}}>
                         {item.chain_status.replace(/_/g, ' ')}
                       </span>
                       {hasRegulator && (
@@ -307,7 +318,7 @@ export function IppChangeOfControlTab() {
                 <div className="text-xs text-[#6b7685] mt-1">
                   {TX_TYPE_LABELS[selected.transaction_type] ?? selected.transaction_type}
                   {' · '}
-                  <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[selected.ownership_tier] ?? ''}`}>{selected.ownership_tier}</span>
+                  <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[selected.ownership_tier] ?? ''}`} style={TIER_STYLE[selected.ownership_tier] ?? {}}>{selected.ownership_tier}</span>
                   {selected.foreign_ownership_flag !== 'domestic' && <span className="ml-1">🌍 {selected.foreign_ownership_flag}</span>}
                 </div>
               </div>
@@ -320,7 +331,7 @@ export function IppChangeOfControlTab() {
               <div>
                 <span className="text-[#6b7685] text-xs">Status</span>
                 <div className="mt-0.5 flex flex-wrap gap-1">
-                  <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status] ?? ''}`}>
+                  <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status] ?? ''}`} style={STATUS_STYLE[selected.chain_status] ?? {}}>
                     {selected.chain_status.replace(/_/g, ' ')}
                   </span>
                   {selected.approval_granted_at && (

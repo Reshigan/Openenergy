@@ -54,8 +54,8 @@ interface NomEvent {
 }
 
 const TONE: Record<NominationStatus, { bg: string; fg: string; label: string }> = {
-  nominated:            { bg: '#dbecfb', fg: '#1a3a5c', label: 'Nominated' },
-  accepted:             { bg: '#dbecfb', fg: '#1a3a5c', label: 'Accepted' },
+  nominated:            { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Nominated' },
+  accepted:             { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Accepted' },
   activated:            { bg: '#fff4d6', fg: '#a06200', label: 'Activated' },
   performance_recorded: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Performance recorded' },
   settled:              { bg: '#daf5e2', fg: '#1f6b3a', label: 'Settled' },

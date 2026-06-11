@@ -37,8 +37,8 @@ interface Kpis {
 
 const STATUS_COLORS: Record<string, string> = {
   draft:                    'bg-[#eef2f7] text-[#6b7685]',
-  submitted:                'bg-blue-100 text-blue-800',
-  assessed:                 'bg-indigo-100 text-indigo-800',
+  submitted:                'bg-[oklch(0.94_0.006_250)] text-[oklch(0.17_0.010_250)]',
+  assessed:                 'bg-[oklch(0.94_0.006_250)] text-[oklch(0.17_0.010_250)]',
   certified:                'bg-green-100 text-green-800',
   disputed:                 'bg-red-100 text-red-800',
   revised:                  'bg-yellow-100 text-yellow-800',
@@ -52,7 +52,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   minor:        'bg-[#eef2f7] text-[#3d4756]',
-  moderate:     'bg-blue-100 text-blue-700',
+  moderate:     'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   significant:  'bg-yellow-100 text-yellow-800',
   major:        'bg-orange-100 text-orange-800',
   material:     'bg-red-100 text-red-800',
@@ -190,7 +190,7 @@ export function IppPaymentCertTab() {
         ))}
         <span className="ml-2 text-[#9aa5b4]">|</span>
         {['minor','moderate','significant','major','material'].map(t => (
-          <button type="button" key={t} onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>{t}</button>
+          <button type="button" key={t} onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }} className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-[#1e2a38] text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}>{t}</button>
         ))}
         <button type="button" onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]">+ New Cert</button>
         <button type="button" onClick={() => load(filterStatus, filterTier)} className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border">Refresh</button>
@@ -232,7 +232,7 @@ export function IppPaymentCertTab() {
                   <td className={`py-2 pr-4 text-xs ${pc.sla_breached || pc.chain_status === 'lapsed' ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                     {pc.chain_status === 'lapsed' ? '⚠ LAPSED' : pc.sla_breached ? '⚠ SLA BREACHED' : fmtDate(pc.payment_due_at ?? pc.sla_due_at)}
                   </td>
-                  <td className="py-2 text-xs text-indigo-600">View →</td>
+                  <td className="py-2 text-xs" style={{ color: 'oklch(0.46 0.16 55)' }}>View →</td>
                 </tr>
               ))}
               {items.length === 0 && (
@@ -277,9 +277,9 @@ export function IppPaymentCertTab() {
                 {ACTION_MAP[selected.chain_status].map(a => (
                   <button type="button" key={a.action} disabled={actionPending}
                     onClick={() => doAction(selected.id, a.action)}
-                    className={`w-full text-left px-3 py-2 rounded border text-sm hover:bg-indigo-50 hover:border-indigo-300 ${a.danger ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-[#dde4ec] text-[#2d3748]'}`}>
+                    className={`w-full text-left px-3 py-2 rounded border text-sm ${a.danger ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-[#dde4ec] text-[#2d3748] hover:bg-[#eef2f7]'}`}>
                     {a.label}
-                    {a.tag && <span className={`ml-2 text-xs px-1 rounded ${a.tag.includes('REGULATOR') ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{a.tag}</span>}
+                    {a.tag && <span className={`ml-2 text-xs px-1 rounded ${a.tag.includes('REGULATOR') ? 'bg-red-100 text-red-700' : 'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]'}`}>{a.tag}</span>}
                   </button>
                 ))}
               </div>

@@ -54,7 +54,7 @@ export function OnboardingTour({ scope, steps }: Props) {
     <div className="fixed bottom-4 right-4 z-50 max-w-sm widget-card shadow-lg border border-[#dde4ec] bg-white p-4">
       <div className="flex items-start gap-2">
         <div className="flex-none w-7 h-7 rounded-full bg-[#eaf3fb] flex items-center justify-center">
-          <Sparkles size={14} className="text-[#1a3a5c]"/>
+          <Sparkles size={14} style={{ color: 'oklch(0.46 0.16 55)' }}/>
         </div>
         <div className="flex-1">
           <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">Quick tour · {cursor + 1} of {remaining.length}</div>

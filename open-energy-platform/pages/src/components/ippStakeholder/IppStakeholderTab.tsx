@@ -94,7 +94,7 @@ const TIER_LABEL: Record<StakeholderTier, string> = {
 
 const TIER_COLOR: Record<StakeholderTier, string> = {
   strategic_ally: 'bg-purple-100 text-purple-800',
-  key_player:     'bg-blue-100 text-blue-800',
+  key_player:     'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
   keep_satisfied: 'bg-amber-100 text-amber-700',
   keep_informed:  'bg-[#eef2f7] text-[#2d3748]',
   monitor:        'bg-[#eef2f7] text-[#6b7685]',
@@ -102,9 +102,9 @@ const TIER_COLOR: Record<StakeholderTier, string> = {
 
 const STATUS_COLOR: Record<StakeholderStatus, string> = {
   identified:        'bg-[#eef2f7] text-[#2d3748]',
-  analyzed:          'bg-blue-50 text-blue-700',
-  classified:        'bg-blue-100 text-blue-800',
-  engagement_planned:'bg-indigo-100 text-indigo-700',
+  analyzed:          'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
+  classified:        'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
+  engagement_planned:'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   active_engagement: 'bg-violet-100 text-violet-700',
   responsive:        'bg-cyan-100 text-cyan-700',
   supportive:        'bg-emerald-100 text-emerald-800',
@@ -408,7 +408,7 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
                   <td className="px-3 py-2">
                     <div className="flex gap-1 flex-wrap">
                       {!!row.floor_ep4_required && <Flag label="EP4" title="REIPPPP S4 required" cls="bg-orange-100 text-orange-700" />}
-                      {!!row.floor_nersa_required && <Flag label="NERSA" title="NERSA required" cls="bg-blue-100 text-blue-700" />}
+                      {!!row.floor_nersa_required && <Flag label="NERSA" title="NERSA required" cls="bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]" />}
                       {!!row.floor_lender_required && <Flag label="L" title="Lender required" cls="bg-purple-100 text-purple-700" />}
                       {!!row.floor_legal_risk && <Flag label="⚖" title="Legal risk" cls="bg-red-100 text-red-700" />}
                       {!!row.floor_board_notify && <Flag label="B" title="Board notify" cls="bg-violet-100 text-violet-700" />}
@@ -417,7 +417,7 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
                   </td>
                   {!readOnly && (
                     <td className="px-3 py-2">
-                      <button type="button" className="text-xs text-blue-600 hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>Manage</button>
+                      <button type="button" className="text-xs text-[oklch(0.46_0.16_55)] hover:underline" onClick={e => { e.stopPropagation(); setSelected(row); }}>Manage</button>
                     </td>
                   )}
                 </tr>
@@ -489,33 +489,33 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
             </div>
 
             {/* Engagement level: current → desired */}
-            <div className="flex items-center gap-3 mb-4 bg-blue-50 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-3 mb-4 bg-[oklch(0.97_0.003_250)] rounded-lg px-3 py-2">
               <div className="text-center">
-                <p className="text-[10px] text-blue-400 uppercase mb-0.5">Current</p>
+                <p className="text-[10px] text-[oklch(0.60_0.08_250)] uppercase mb-0.5">Current</p>
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${ENGAGEMENT_LEVEL_COLOR[selected.current_engagement_level ?? 'neutral'] ?? ''}`}>
                   {selected.current_engagement_level ?? '—'}
                 </span>
               </div>
-              <span className="text-blue-400 text-sm">→</span>
+              <span className="text-[oklch(0.60_0.08_250)] text-sm">→</span>
               <div className="text-center">
-                <p className="text-[10px] text-blue-400 uppercase mb-0.5">Target</p>
+                <p className="text-[10px] text-[oklch(0.60_0.08_250)] uppercase mb-0.5">Target</p>
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${ENGAGEMENT_LEVEL_COLOR[selected.desired_engagement_level ?? 'supportive'] ?? ''}`}>
                   {selected.desired_engagement_level ?? '—'}
                 </span>
               </div>
               {selected.communication_frequency && (
                 <div className="ml-auto text-right">
-                  <p className="text-[10px] text-blue-400 uppercase mb-0.5">Frequency</p>
-                  <p className="text-xs text-blue-700 font-medium capitalize">{selected.communication_frequency}</p>
+                  <p className="text-[10px] text-[oklch(0.60_0.08_250)] uppercase mb-0.5">Frequency</p>
+                  <p className="text-xs text-[oklch(0.46_0.16_55)] font-medium capitalize">{selected.communication_frequency}</p>
                 </div>
               )}
             </div>
 
             {/* Communication plan */}
             {selected.communication_plan && (
-              <div className="bg-indigo-50 rounded-lg p-3 mb-4">
-                <p className="text-xs font-medium text-indigo-800 mb-1">Communication plan</p>
-                <p className="text-xs text-indigo-700">{selected.communication_plan}</p>
+              <div className="bg-[oklch(0.97_0.003_250)] rounded-lg p-3 mb-4">
+                <p className="text-xs font-medium text-[oklch(0.40_0.009_250)] mb-1">Communication plan</p>
+                <p className="text-xs text-[oklch(0.46_0.16_55)]">{selected.communication_plan}</p>
               </div>
             )}
 
@@ -677,7 +677,7 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
 }
 
 function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
-  const cls = color === 'red' ? 'text-red-600' : color === 'green' ? 'text-green-600' : color === 'blue' ? 'text-blue-600' : 'text-[#2d3748]';
+  const cls = color === 'red' ? 'text-red-600' : color === 'green' ? 'text-green-600' : color === 'blue' ? 'text-[oklch(0.46_0.16_55)]' : 'text-[#2d3748]';
   return (
     <div className="bg-white rounded-lg border border-[#dde4ec] p-3">
       <p className="text-[10px] text-[#6b7685] uppercase tracking-wide">{label}</p>
@@ -700,8 +700,8 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 function ScoreBadge({ label, value, color }: { label: string; value: number | null; color: string }) {
-  const bg = color === 'purple' ? 'bg-purple-50 border-purple-200' : color === 'blue' ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200';
-  const text = color === 'purple' ? 'text-purple-700' : color === 'blue' ? 'text-blue-700' : 'text-amber-700';
+  const bg = color === 'purple' ? 'bg-purple-50 border-purple-200' : color === 'blue' ? 'bg-[oklch(0.97_0.003_250)] border-[oklch(0.87_0.012_250)]' : 'bg-amber-50 border-amber-200';
+  const text = color === 'purple' ? 'text-purple-700' : color === 'blue' ? 'text-[oklch(0.46_0.16_55)]' : 'text-amber-700';
   return (
     <div className={`flex-1 rounded-lg border px-3 py-2 text-center ${bg}`}>
       <p className={`text-[10px] uppercase tracking-wide ${text}`}>{label}</p>

@@ -1,13 +1,12 @@
 // ════════════════════════════════════════════════════════════════════════
-// WorkstationShell — shared primitive for each role's L4 workstation page
+// WorkstationShell — mockup-b two-column fixed-height layout
 //
-// Single-file pattern reused by Carbon / Grid / Regulator / Admin / Support
-// workstations. Each role wraps the shell with its own list of tabs.
-// Tab body either is custom JSX (when the workflow needs file/transition
-// actions) or a generic listing table over a server endpoint.
+// grid: 1fr 380px, height: calc(100vh - var(--shell-height))
+// Left : compact header + pill tab-nav (sticky) + scrollable tab content
+// Right: role context panel — KPI 2×2 + panels + IncomingPanel + Insights
 // ════════════════════════════════════════════════════════════════════════
 
-import React, { useCallback, useEffect, useState, ReactNode } from 'react';
+import React, { useCallback, useEffect, useState, ReactNode, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import IncomingPanel from './IncomingPanel';
 import InsightsPanel from './InsightsPanel';
@@ -28,11 +27,34 @@ import { WizardModal, WizardPicker, type WizardSpec } from './WizardModal';
 import { ProductTour, type TourDef } from './ProductTour';
 import { useTour } from '../../lib/useTour';
 
+// ─── Design tokens (mockup-b light) ──────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const BORDERS= 'oklch(0.78 0.008 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const ACC_BG = 'oklch(0.96 0.05 55)';
+const ACC_BDR= 'oklch(0.80 0.12 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const GOOD_BG= 'oklch(0.95 0.04 155)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const BAD_BG = 'oklch(0.97 0.04 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const WARN_BG= 'oklch(0.96 0.05 55)';
+const INFO   = 'oklch(0.42 0.16 240)';
+const INFO_BG= 'oklch(0.95 0.04 240)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
+const EASE   = 'cubic-bezier(0.23, 1, 0.32, 1)';
+
+// ─── Types ────────────────────────────────────────────────────────────
 export type WorkstationTab = {
   key: string;
   label: string;
   group?: string;
-  /** Layer-D chain_key — when set, this tab shows a per-chain InsightsPanel rail. */
   chainKey?: string;
   body: (props: { onRefresh: () => void }) => ReactNode;
 };
@@ -51,21 +73,31 @@ export type WorkstationPanel = {
   emptyLabel?: string;
 };
 
-// Tab labels carry a trailing build-tracking code by team convention
-// (e.g. "FSCA conduct reports (W216)"). That code is engineering bookkeeping
-// with no meaning to the operator at the desk. Strip it at render time so the
-// convention can stay in source while the workstation stays in the operator's
-// language. Only a trailing "(W<digit>…)" is removed — "(VaR)", "(WACC)" etc.
-// are left intact.
-function cleanTabLabel(label: string): string {
+// Role display metadata
+const ROLE_META: Record<string, { label: string; sub: string }> = {
+  trader:        { label: 'Trading Desk',     sub: 'Orders · Risk · Settlement' },
+  ipp_developer: { label: 'IPP Developer',    sub: 'Projects · Bonds · Milestones' },
+  ipp:           { label: 'IPP Developer',    sub: 'Projects · Bonds · Milestones' },
+  lender:        { label: 'Lender Portfolio', sub: 'Facilities · Drawdowns · Covenants' },
+  offtaker:      { label: 'Offtaker',         sub: 'PPAs · Delivery · Billing' },
+  carbon_fund:   { label: 'Carbon Fund',      sub: 'Credits · MRV · ERPA' },
+  carbon:        { label: 'Carbon Fund',      sub: 'Credits · MRV · ERPA' },
+  grid_operator: { label: 'Grid Operations',  sub: 'Dispatch · Curtailment · Wheeling' },
+  grid:          { label: 'Grid Operations',  sub: 'Dispatch · Curtailment · Wheeling' },
+  regulator:     { label: 'NERSA Regulator',  sub: 'Cases · Licences · Enforcement' },
+  admin:         { label: 'Platform Admin',   sub: 'Users · System · Revenue' },
+  support:       { label: 'Support Desk',     sub: 'Tickets · SLA · Escalations' },
+  esco:          { label: 'ESCO / O&M',       sub: 'Sites · Alerts · Work Orders' },
+  epc:           { label: 'EPC Contractor',   sub: 'Projects · Punch-lists · Handover' },
+};
+
+// Tab labels carry trailing "(W123)" build-tracking codes. Strip for display.
+export function cleanTabLabel(label: string): string {
   return label.replace(/\s*\(W\d[^)]*\)\s*$/, '').trim() || label;
 }
 
-// Shared tab navigation. Extracted from the two render branches below so the
-// group filter, the quick-jump search, and label cleaning live in one place.
-// A workstation can accumulate dozens of tabs; once it passes the recognition
-// threshold a search box lets the operator jump straight to a tab by name
-// across every group instead of scanning four rows of pills.
+// ─── TabNav ───────────────────────────────────────────────────────────
+// Horizontal pill-strip with group filter row and optional search.
 function TabNav({
   tabs,
   activeTab,
@@ -86,9 +118,8 @@ function TabNav({
   const [q, setQ] = useState('');
   const query = q.trim().toLowerCase();
   const showSearch = tabs.length > 8;
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // While searching, span every group so the operator finds the tab wherever
-  // it lives; otherwise honour the active group filter.
   const grouped = hasGroups && activeGroup != null ? tabs.filter(t => t.group === activeGroup) : tabs;
   const visible = query
     ? tabs.filter(t => cleanTabLabel(t.label).toLowerCase().includes(query))
@@ -97,83 +128,234 @@ function TabNav({
   const pick = (key: string) => { onSelect(key); if (query) setQ(''); };
 
   return (
-    <nav className="bg-white border border-[var(--oe-surface-container-high)] rounded-lg p-1.5 w-full">
-      {showSearch && (
-        <div className="flex items-center gap-2 px-1.5 pb-2 mb-2 border-b border-[var(--oe-surface-container-low)]">
-          <Search size={13} className="text-[#9aa6b5] shrink-0" />
-          <input
-            value={q}
-            onChange={e => setQ(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Escape') setQ('');
-              if (e.key === 'Enter' && visible.length > 0) pick(visible[0].key);
-            }}
-            placeholder={`Jump to any of ${tabs.length} tabs…`}
-            aria-label="Filter workstation tabs"
-            className="flex-1 h-7 bg-transparent text-[12px] text-[var(--oe-on-surface)] placeholder:text-[#9aa6b5] rounded px-1 outline-none focus-visible:ring-1 focus-visible:ring-[var(--oe-primary)]"
-          />
-          {q && (
-            <button type="button"
-              onClick={() => setQ('')}
-              aria-label="Clear tab filter"
-              className="text-[11px] font-medium text-[var(--oe-outline)] hover:text-[var(--oe-on-surface)] shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)] focus-visible:rounded"
-            >
-              clear
-            </button>
-          )}
-        </div>
-      )}
+    <div
+      className="flex-shrink-0 border-b"
+      style={{ background: BG1, borderColor: BORDER }}
+    >
+      {/* Group filter row */}
       {hasGroups && !query && (
-        <div className="flex flex-wrap items-center gap-1 pb-2 border-b border-[var(--oe-surface-container-low)] mb-2">
-          <button type="button"
+        <div
+          className="flex items-center gap-1 px-4 pt-2 pb-0 overflow-x-auto"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          <button
+            type="button"
             onClick={() => setActiveGroup(null)}
-            className={`h-7 px-2 rounded text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
-              activeGroup === null ? 'bg-[var(--oe-primary)] text-white focus-visible:ring-white/80' : 'text-[var(--oe-outline)] hover:bg-[#eef2f7] focus-visible:ring-[var(--oe-primary)]'
-            }`}
+            className="px-3 h-7 rounded text-[11px] font-semibold whitespace-nowrap flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+            style={{
+              background: activeGroup === null ? ACC_BG : 'transparent',
+              color: activeGroup === null ? ACC : TX3,
+              border: `1px solid ${activeGroup === null ? ACC_BDR : 'transparent'}`,
+            }}
           >
             All
           </button>
           {allGroups.map(g => (
-            <button type="button"
+            <button
               key={g}
+              type="button"
               onClick={() => setActiveGroup(g)}
-              className={`h-7 px-2 rounded text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
-                activeGroup === g ? 'bg-[var(--oe-primary)] text-white focus-visible:ring-white/80' : 'text-[var(--oe-outline)] hover:bg-[#eef2f7] focus-visible:ring-[var(--oe-primary)]'
-              }`}
+              className="px-3 h-7 rounded text-[11px] font-semibold whitespace-nowrap flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+              style={{
+                background: activeGroup === g ? ACC_BG : 'transparent',
+                color: activeGroup === g ? ACC : TX3,
+                border: `1px solid ${activeGroup === g ? ACC_BDR : 'transparent'}`,
+              }}
             >
               {g}
             </button>
           ))}
         </div>
       )}
-      <div role="tablist" className="flex flex-wrap items-center gap-1">
-        {visible.length === 0 ? (
-          <span className="px-2 py-1.5 text-[12px] text-[var(--oe-outline)] italic">No tabs match “{q}”.</span>
-        ) : (
-          visible.map(t => {
+
+      {/* Tab pills + search */}
+      <div className="flex items-center gap-0 px-3 py-1.5">
+        {showSearch && (
+          <div
+            className="flex items-center gap-1.5 mr-3 flex-shrink-0 h-8 px-2 rounded"
+            style={{ background: BG2, border: `1px solid ${BORDER}` }}
+          >
+            <Search size={11} style={{ color: TX3, flexShrink: 0 }} />
+            <input
+              ref={inputRef}
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Escape') setQ('');
+                if (e.key === 'Enter' && visible.length > 0) pick(visible[0].key);
+              }}
+              placeholder={`${tabs.length} tabs…`}
+              aria-label="Filter tabs"
+              className="w-20 bg-transparent text-[11px] outline-none"
+              style={{ color: TX1, fontFamily: MONO }}
+            />
+          </div>
+        )}
+        <div
+          role="tablist"
+          className="flex items-center gap-1 overflow-x-auto"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          {visible.length === 0 ? (
+            <span className="text-[11px] italic px-2" style={{ color: TX3 }}>No tabs match.</span>
+          ) : visible.map(t => {
             const isActive = activeTab === t.key;
             return (
-              <button type="button"
+              <button
                 key={t.key}
+                type="button"
                 id={`tab-${t.key}`}
                 role="tab"
                 aria-selected={isActive}
                 aria-controls={`panel-${t.key}`}
                 onClick={() => pick(t.key)}
-                className={`h-9 px-3 rounded-md text-[13px] font-semibold inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
-                  isActive ? 'bg-[var(--oe-primary)] text-white focus-visible:ring-white/80' : 'text-[var(--oe-on-surface-variant)] hover:bg-[var(--oe-surface-container-low)] focus-visible:ring-[var(--oe-primary)]'
-                }`}
+                className="h-8 px-3 rounded text-[12px] font-semibold whitespace-nowrap flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+                style={{
+                  background:   isActive ? ACC_BG  : 'transparent',
+                  color:        isActive ? ACC     : TX2,
+                  border:       `1px solid ${isActive ? ACC_BDR : 'transparent'}`,
+                  transition:   `background-color 120ms ${EASE}, color 120ms ${EASE}, border-color 120ms ${EASE}`,
+                }}
+                onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = BG2; (e.currentTarget as HTMLButtonElement).style.color = TX1; } }}
+                onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = TX2; } }}
               >
                 {cleanTabLabel(t.label)}
               </button>
             );
-          })
-        )}
+          })}
+        </div>
       </div>
-    </nav>
+    </div>
   );
 }
 
+// ─── Context Panel (right 380px) ─────────────────────────────────────
+function CtxPanel({
+  role,
+  title,
+  subtitle,
+  kpis,
+  panels,
+  children,
+}: {
+  role?: string;
+  title: string;
+  subtitle?: string;
+  kpis?: WorkstationKpi[];
+  panels?: WorkstationPanel[];
+  children?: ReactNode;
+}) {
+  const meta = role ? (ROLE_META[role] ?? { label: title, sub: subtitle ?? '' }) : { label: title, sub: subtitle ?? '' };
+  const toneColor: Record<string, string> = { up: GOOD, down: BAD, warn: WARN };
+  const toneBg:    Record<string, string> = { up: GOOD_BG, down: BAD_BG, warn: WARN_BG };
+
+  const kpi4  = (kpis ?? []).slice(0, 4);
+  const kpiBar= (kpis ?? []).slice(4, 8);
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden" style={{ background: BG1 }}>
+      {/* Role header */}
+      <div
+        className="flex-shrink-0 px-4 py-3 border-b"
+        style={{ borderColor: BORDER }}
+      >
+        <div className="text-[14px] font-bold" style={{ color: TX1 }}>{meta.label}</div>
+        <div className="text-[11px] mt-0.5" style={{ color: TX3 }}>{meta.sub}</div>
+      </div>
+
+      {/* Scrollable body */}
+      <div className="flex-1 overflow-y-auto px-4 py-3" style={{ scrollbarWidth: 'thin', scrollbarColor: `${BORDERS} transparent` }}>
+
+        {/* KPI 2×2 grid */}
+        {kpi4.length > 0 && (
+          <>
+            <div className="text-[9px] font-extrabold uppercase tracking-[0.10em] mb-2" style={{ color: TX3 }}>
+              Key Metrics
+            </div>
+            <div className="grid grid-cols-2 gap-1.5 mb-3">
+              {kpi4.map((k, i) => (
+                <div
+                  key={i}
+                  className="rounded p-2 border"
+                  style={{ background: BG2, borderColor: BORDER }}
+                >
+                  <div className="text-[9px] font-bold uppercase tracking-wide truncate" style={{ color: TX3 }}>{k.label}</div>
+                  <div
+                    className="mt-1 text-[18px] font-bold leading-none"
+                    style={{ fontFamily: MONO, fontVariantNumeric: 'tabular-nums', color: k.tone ? toneColor[k.tone] : TX1 }}
+                  >
+                    {k.value}
+                  </div>
+                  {k.caption && <div className="mt-0.5 text-[9px]" style={{ color: TX3 }}>{k.caption}</div>}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Progress bar rows for kpis 5-8 */}
+        {kpiBar.length > 0 && (
+          <>
+            <div className="text-[9px] font-extrabold uppercase tracking-[0.10em] mb-2" style={{ color: TX3 }}>
+              Utilisation
+            </div>
+            <div className="space-y-2 mb-3">
+              {kpiBar.map((k, i) => {
+                const numVal = typeof k.value === 'number' ? k.value : parseFloat(String(k.value));
+                const pct = isNaN(numVal) ? 0 : Math.min(100, Math.max(0, numVal));
+                const barColor = k.tone ? toneColor[k.tone] : ACC;
+                return (
+                  <div key={i}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[10px] font-medium" style={{ color: TX2 }}>{k.label}</span>
+                      <span className="text-[10px] font-bold" style={{ fontFamily: MONO, color: TX1 }}>{k.value}{typeof k.value === 'number' ? '%' : ''}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full" style={{ background: BG2, border: `1px solid ${BORDER}` }}>
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${pct}%`, background: barColor, transition: `width 400ms ${EASE}` }}
+                      />
+                    </div>
+                    {k.caption && <div className="mt-0.5 text-[9px]" style={{ color: TX3 }}>{k.caption}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Panels (open items) */}
+        {panels && panels.length > 0 && panels.map((panel, i) => (
+          <div key={i} className="mb-3">
+            <div className="text-[9px] font-extrabold uppercase tracking-[0.10em] mb-1.5" style={{ color: TX3 }}>
+              {panel.title}{panel.countLabel ? ` (${panel.countLabel})` : ''}
+            </div>
+            <div className="rounded border overflow-hidden" style={{ borderColor: BORDER }}>
+              {panel.rows.length === 0 ? (
+                <div className="px-3 py-2 text-[11px] italic" style={{ color: TX3 }}>{panel.emptyLabel || 'Nothing open.'}</div>
+              ) : panel.rows.slice(0, 5).map(row => (
+                <div
+                  key={row.id}
+                  className="flex items-center gap-2 px-3 py-1.5 border-b last:border-0 text-[11px]"
+                  style={{ borderColor: BORDER, color: TX2 }}
+                >
+                  {row.lead}
+                  <span className="flex-1 truncate">{row.text}</span>
+                  {row.meta}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* IncomingPanel + InsightsPanel from children */}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─── WorkstationShell ─────────────────────────────────────────────────
 export function WorkstationShell({
   eyebrow,
   title,
@@ -194,19 +376,11 @@ export function WorkstationShell({
   backHref?: string;
   backLabel?: string;
   tabs: WorkstationTab[];
-  /** Role key from role-themes. When provided, the workstation is wrapped in
-   *  RoleShell at the role's workstationDensity (bloomberg for ops, cinematic
-   *  for others) and chrome adopts signature tokens. */
   role?: RoleKey | string;
-  /** Optional hotkey-driven command rail. Only rendered when role is given. */
   commands?: CommandItem[];
-  /** Top KPI row, Esums-detail style. Renders above the tabs on every tab. */
   kpis?: WorkstationKpi[];
-  /** Optional summary panels (open items, exceptions). Render above tabs. */
   panels?: WorkstationPanel[];
-  /** Guided multi-step wizards surfaced via the "Quick start" header button. */
   wizards?: WizardSpec[];
-  /** Product tour shown on first visit to this workstation. */
   tour?: TourDef;
 }) {
   const [params, setParams] = useSearchParams();
@@ -215,16 +389,13 @@ export function WorkstationShell({
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [bump, setBump] = useState(0);
 
-  // Layer-C cross-role inbox: the action the operator chose to act on (drives CrossOptionModal).
   const [active, setActive] = useState<RoleAction | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [wizardPickerOpen, setWizardPickerOpen] = useState(false);
   const [activeWizard, setActiveWizard] = useState<WizardSpec | null>(null);
 
-  // Product tour
   const { active: tourActive, stepIndex: tourStep, setStepIndex: setTourStep, start: startTour, startForced: startTourForced, finish: finishTour } = useTour(tour?.id ?? '');
 
-  // Auto-trigger tour on first visit
   useEffect(() => {
     if (tour) {
       const forceParam = new URLSearchParams(window.location.search).get('__tour');
@@ -243,7 +414,6 @@ export function WorkstationShell({
   const refresh = () => setBump(n => n + 1);
   const current = tabs.find(t => t.key === activeTab) || tabs[0];
 
-  // Group-aware tab navigation
   const hasGroups = tabs.some(t => t.group);
   const allGroups: string[] = hasGroups
     ? Array.from(new Set(tabs.map(t => t.group).filter(Boolean) as string[]))
@@ -256,34 +426,24 @@ export function WorkstationShell({
     setActiveGroup(g);
   }, [activeTab, hasGroups, tabs]);
 
-  // KPI tone helpers
-  const toneArrow: Record<string, string> = { up: '↑', down: '↓', warn: '⚠' };
-  const toneColor: Record<string, string> = { up: '#22c55e', down: '#ef4444', warn: '#f59e0b' };
-
-  // Density preference hook MUST be called unconditionally; for non-role
-  // workstations we just don't read it. We pass the fallback 'trader' theme
-  // in that case — it's discarded.
   const roleTheme = themeFor(role ?? 'trader');
   const densityState = useDensityPreference(roleTheme);
 
-  const incomingRail = (
-    <IncomingPanel className="hidden xl:block xl:w-80 shrink-0" onAct={setActive} />
+  const activeChainKey = current?.chainKey;
+
+  const rightChildren = (
+    <>
+      <IncomingPanel onAct={setActive} />
+      {activeChainKey && (
+        <InsightsPanel
+          key={activeChainKey}
+          chainKey={activeChainKey}
+          label={current?.label}
+        />
+      )}
+    </>
   );
 
-  // Layer-D per-feature insight rail — only when the active tab is chain-backed.
-  // `current` (the active tab) is resolved above; remount on chainKey change so
-  // the panel re-fetches cleanly for the newly selected chain.
-  const activeChainKey = current?.chainKey;
-  const insightsRail = activeChainKey ? (
-    <InsightsPanel
-      key={activeChainKey}
-      chainKey={activeChainKey}
-      label={current?.label}
-      className="hidden xl:block xl:w-80 shrink-0"
-    />
-  ) : null;
-
-  // Layer-C cross-role next-step sheet (self-guards to null when there's nothing to suggest).
   const crossOption = (
     <CrossOptionModal
       action={active}
@@ -292,305 +452,236 @@ export function WorkstationShell({
     />
   );
 
-  if (role) {
-    const effectiveDensity = densityState.density;
-    return (
-      <RoleShell role={role} density={effectiveDensity} chrome="light">
-        {commands && commands.length > 0 ? <CommandRail items={commands} /> : null}
-        <div className="space-y-0 min-h-screen" style={{ background: 'oklch(0.96 0.003 250)' }}>
-          {/* ── Workstation header bar (mockup-b light style) ── */}
-          <section
-            data-tour="ws-header"
-            className="border-b px-6 lg:px-10 py-4"
-            style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="text-[10px] uppercase tracking-[0.10em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>{eyebrow}</div>
-                <h1
-                  className="font-display font-bold tracking-tight mt-0.5"
-                  style={{
-                    fontFamily: 'var(--oe-display-font)',
-                    fontSize: 20,
-                    letterSpacing: '-0.02em',
-                    color: 'oklch(0.15 0.025 250)',
-                  }}
-                >
-                  {title}
-                </h1>
-                {subtitle && <p className="text-[12px] mt-0.5 max-w-2xl" style={{ color: 'oklch(0.45 0.015 250)' }}>{subtitle}</p>}
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {densityState.canToggle ? (
-                  <DensityToggle
-                    density={densityState.density}
-                    onChange={densityState.setDensity}
-                  />
-                ) : null}
-                {backHref && (
-                  <button type="button"
-                    onClick={() => navigate(backHref)}
-                    className="h-8 px-3 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors focus-visible:outline-none"
-                    style={{ border: '1px solid oklch(0.85 0.006 250)', background: 'transparent', color: 'oklch(0.35 0.025 250)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.95 0.003 250)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    <ArrowLeft size={12} /> {backLabel || 'Back'}
-                  </button>
-                )}
-                <button type="button"
-                  onClick={refresh}
-                  className="h-8 px-3 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors focus-visible:outline-none"
-                  style={{ border: '1px solid oklch(0.85 0.006 250)', background: 'transparent', color: 'oklch(0.35 0.025 250)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.95 0.003 250)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <RefreshCw size={12} /> Refresh
-                </button>
-                {wizards && wizards.length > 0 && (
-                  <button type="button"
-                    data-tour="quick-start"
-                    onClick={() => setWizardPickerOpen(true)}
-                    className="h-8 px-3 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors focus-visible:outline-none"
-                    style={{ background: 'oklch(0.46 0.16 55)', color: '#fff', border: 'none' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.38 0.18 55)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'oklch(0.46 0.16 55)')}
-                    aria-label="Open guided wizards"
-                  >
-                    <Wand2 size={12} /> Quick start
-                  </button>
-                )}
-                {tour && (
-                  <button type="button"
-                    onClick={startTourForced}
-                    className="h-8 px-3 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors focus-visible:outline-none"
-                    style={{ border: '1px solid oklch(0.85 0.006 250)', background: 'transparent', color: 'oklch(0.35 0.025 250)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.95 0.003 250)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    aria-label="Take the workstation tour"
-                  >
-                    <Map size={12} /> Tour
-                  </button>
-                )}
-                {role && (
-                  <button type="button"
-                    data-tour="capability-palette"
-                    onClick={() => setPaletteOpen(true)}
-                    className="h-8 px-3 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors focus-visible:outline-none"
-                    style={{ border: '1px solid oklch(0.85 0.006 250)', background: 'transparent', color: 'oklch(0.35 0.025 250)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'oklch(0.95 0.003 250)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    aria-label="What can I do here"
-                  >
-                    <HelpCircle size={12} /> What can I do?
-                  </button>
-                )}
-              </div>
+  // ── Two-column grid layout ─────────────────────────────────────────
+  const pageGrid = (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 380px',
+        height: 'calc(100vh - var(--shell-height, 50px))',
+        overflow: 'hidden',
+        background: BG,
+      }}
+    >
+      {/* ── LEFT: header + tab nav + content ── */}
+      <div
+        className="flex flex-col overflow-hidden"
+        style={{ borderRight: `1px solid ${BORDER}` }}
+      >
+        {/* Header strip */}
+        <div
+          data-tour="ws-header"
+          className="flex-shrink-0 flex items-center justify-between gap-3 px-5 py-3 border-b"
+          style={{ background: BG1, borderColor: BORDER, minHeight: 52 }}
+        >
+          <div className="min-w-0">
+            <div
+              className="text-[10px] uppercase tracking-[0.10em] font-bold"
+              style={{ fontFamily: MONO, color: TX3 }}
+            >
+              {eyebrow}
             </div>
-            {kpis && kpis.length > 0 && (
-              <div data-tour="kpi-row" className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
-                {kpis.map((k, i) => (
-                  <div key={i} className="rounded-lg p-3 border" style={{ background: 'oklch(0.96 0.003 250)', borderColor: 'oklch(0.88 0.006 250)' }}>
-                    <div className="text-[10px] uppercase tracking-wider font-mono" style={{ color: 'oklch(0.55 0.008 250)' }}>{k.label}</div>
-                    <div
-                      className="mt-1 font-mono text-[20px] font-bold leading-tight"
-                      style={{ fontVariantNumeric: 'tabular-nums', color: 'oklch(0.15 0.025 250)' }}
-                    >
-                      {k.value}
-                      {k.tone && (
-                        <span style={{ fontSize: 13, marginLeft: 4, color: toneColor[k.tone] }}>
-                          {toneArrow[k.tone]}
-                        </span>
-                      )}
-                    </div>
-                    {k.caption && <div className="text-[10px] mt-0.5" style={{ color: 'oklch(0.50 0.008 250)' }}>{k.caption}</div>}
-                  </div>
-                ))}
-              </div>
+            <h1
+              className="text-[18px] font-bold leading-tight mt-0.5 truncate"
+              style={{ color: TX1, letterSpacing: '-0.01em' }}
+            >
+              {title}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
+            {densityState.canToggle && (
+              <DensityToggle density={densityState.density} onChange={densityState.setDensity} />
             )}
-          </section>
-
-          <div className="px-6 lg:px-10 py-5 space-y-5">
-          {panels && panels.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-              {panels.map((panel, i) => (
-                <section key={i} className="rounded-xl border border-[var(--oe-surface-container-high)] bg-white">
-                  <header className="px-4 py-2.5 border-b border-[var(--oe-surface-container-low)]">
-                    <div className="font-display font-semibold text-[14px] text-[var(--oe-on-surface)]">
-                      {panel.title}{panel.countLabel ? ` (${panel.countLabel})` : ''}
-                    </div>
-                  </header>
-                  <ul className="divide-y divide-[var(--oe-surface-container-low)] text-[12px]">
-                    {panel.rows.length === 0 ? (
-                      <li className="px-4 py-3 text-[12px] text-[var(--oe-outline)] italic">{panel.emptyLabel || 'Nothing open.'}</li>
-                    ) : panel.rows.slice(0, 6).map((row) => (
-                      <li key={row.id} className="px-4 py-2 flex items-center gap-3 text-[var(--oe-on-surface)]">
-                        {row.lead}
-                        <span className="flex-1 truncate">{row.text}</span>
-                        {row.meta}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
-          )}
-
-          <div className="flex gap-5 items-start">
-            <div className="min-w-0 flex-1 space-y-5">
-              <div data-tour="tab-nav">
-                <TabNav
-                  tabs={tabs}
-                  activeTab={activeTab}
-                  onSelect={setTab}
-                  hasGroups={hasGroups}
-                  allGroups={allGroups}
-                  activeGroup={activeGroup}
-                  setActiveGroup={setActiveGroup}
-                />
-              </div>
-
-              <div
-                key={`${activeTab}-${bump}`}
-                id={current ? `panel-${current.key}` : undefined}
-                role="tabpanel"
-                aria-labelledby={current ? `tab-${current.key}` : undefined}
+            {backHref && (
+              <button
+                type="button"
+                onClick={() => navigate(backHref)}
+                className="h-8 px-3 rounded text-[11px] font-semibold inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2"
+                style={{ border: `1px solid ${BORDER}`, background: 'transparent', color: TX2 }}
+                onMouseEnter={e => (e.currentTarget.style.background = BG2)}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
-                {!current ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-[13px] text-[var(--oe-outline)]">
-                    <p>Select a tab to get started.</p>
-                  </div>
-                ) : current.body({ onRefresh: refresh })}
-              </div>
-            </div>
-            <div data-tour="incoming-panel" className="hidden lg:flex lg:flex-col gap-5 shrink-0" style={{ width: 380, borderLeft: '1px solid oklch(0.88 0.006 250)', paddingLeft: 20 }}>
-              {incomingRail}
-              {insightsRail}
-            </div>
+                <ArrowLeft size={11} /> {backLabel || 'Back'}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={refresh}
+              className="h-8 px-3 rounded text-[11px] font-semibold inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2"
+              style={{ border: `1px solid ${BORDER}`, background: 'transparent', color: TX2 }}
+              onMouseEnter={e => (e.currentTarget.style.background = BG2)}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <RefreshCw size={11} /> Refresh
+            </button>
+            {wizards && wizards.length > 0 && (
+              <button
+                type="button"
+                data-tour="quick-start"
+                onClick={() => setWizardPickerOpen(true)}
+                className="h-8 px-3 rounded text-[11px] font-bold inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2"
+                style={{ background: ACC, color: '#fff', border: 'none' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'oklch(0.38 0.18 55)')}
+                onMouseLeave={e => (e.currentTarget.style.background = ACC)}
+              >
+                <Wand2 size={11} /> Quick start
+              </button>
+            )}
+            {tour && (
+              <button
+                type="button"
+                onClick={startTourForced}
+                className="h-8 px-3 rounded text-[11px] font-semibold inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2"
+                style={{ border: `1px solid ${BORDER}`, background: 'transparent', color: TX2 }}
+                onMouseEnter={e => (e.currentTarget.style.background = BG2)}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <Map size={11} /> Tour
+              </button>
+            )}
+            {role && (
+              <button
+                type="button"
+                data-tour="capability-palette"
+                onClick={() => setPaletteOpen(true)}
+                className="h-8 px-3 rounded text-[11px] font-semibold inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2"
+                style={{ border: `1px solid ${BORDER}`, background: 'transparent', color: TX2 }}
+                onMouseEnter={e => (e.currentTarget.style.background = BG2)}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <HelpCircle size={11} /> Help
+              </button>
+            )}
           </div>
-          </div>
-          {crossOption}
-          {role && (
-            <CapabilityPalette
-              role={role}
-              open={paletteOpen}
-              onClose={() => setPaletteOpen(false)}
-            />
-          )}
-          {wizards && wizards.length > 0 && wizardPickerOpen && (
-            <WizardPicker
-              wizards={wizards}
-              onSelect={w => { setWizardPickerOpen(false); setActiveWizard(w); }}
-              onClose={() => setWizardPickerOpen(false)}
-            />
-          )}
-          {activeWizard && (
-            <WizardModal
-              spec={activeWizard}
-              onClose={() => setActiveWizard(null)}
-            />
-          )}
-          {tour && tourActive && (
-            <ProductTour
-              def={tour}
-              stepIndex={tourStep}
-              onNext={() => {
-                if (tourStep < tour.steps.length - 1) { setTourStep(tourStep + 1); }
-                else { finishTour(); }
-              }}
-              onPrev={() => { if (tourStep > 0) setTourStep(tourStep - 1); }}
-              onClose={finishTour}
-            />
-          )}
         </div>
+
+        {/* KPI strip (if kpis provided) */}
+        {kpis && kpis.length > 0 && (
+          <div
+            data-tour="kpi-row"
+            className="flex-shrink-0 flex items-center gap-3 px-5 py-2 border-b overflow-x-auto"
+            style={{ background: BG2, borderColor: BORDER, scrollbarWidth: 'none' }}
+          >
+            {kpis.slice(0, 8).map((k, i) => {
+              const toneColor: Record<string, string> = { up: GOOD, down: BAD, warn: WARN };
+              return (
+                <div key={i} className="flex-shrink-0 min-w-[90px]">
+                  <div className="text-[9px] font-bold uppercase tracking-wide" style={{ color: TX3, fontFamily: MONO }}>{k.label}</div>
+                  <div
+                    className="mt-0.5 text-[16px] font-bold leading-none"
+                    style={{ fontFamily: MONO, fontVariantNumeric: 'tabular-nums', color: k.tone ? toneColor[k.tone] : TX1 }}
+                  >
+                    {k.value}
+                  </div>
+                  {k.caption && <div className="text-[9px] mt-0.5" style={{ color: TX3 }}>{k.caption}</div>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Tab nav */}
+        <div data-tour="tab-nav">
+          <TabNav
+            tabs={tabs}
+            activeTab={activeTab}
+            onSelect={setTab}
+            hasGroups={hasGroups}
+            allGroups={allGroups}
+            activeGroup={activeGroup}
+            setActiveGroup={setActiveGroup}
+          />
+        </div>
+
+        {/* Scrollable tab content */}
+        <div
+          className="flex-1 overflow-y-auto"
+          style={{ background: BG, scrollbarWidth: 'thin', scrollbarColor: `${BORDERS} transparent` }}
+        >
+          <div
+            key={`${activeTab}-${bump}`}
+            id={current ? `panel-${current.key}` : undefined}
+            role="tabpanel"
+            aria-labelledby={current ? `tab-${current.key}` : undefined}
+            className="px-5 py-4"
+          >
+            {!current ? (
+              <div className="flex items-center justify-center py-20 text-[13px]" style={{ color: TX3 }}>
+                Select a tab to get started.
+              </div>
+            ) : current.body({ onRefresh: refresh })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── RIGHT: context panel ── */}
+      <CtxPanel
+        role={role}
+        title={title}
+        subtitle={subtitle}
+        kpis={kpis}
+        panels={panels}
+      >
+        {rightChildren}
+      </CtxPanel>
+    </div>
+  );
+
+  // ── Modals / overlays ─────────────────────────────────────────────
+  const modals = (
+    <>
+      {crossOption}
+      {role && (
+        <CapabilityPalette
+          role={role}
+          open={paletteOpen}
+          onClose={() => setPaletteOpen(false)}
+        />
+      )}
+      {wizards && wizards.length > 0 && wizardPickerOpen && (
+        <WizardPicker
+          wizards={wizards}
+          onSelect={w => { setWizardPickerOpen(false); setActiveWizard(w); }}
+          onClose={() => setWizardPickerOpen(false)}
+        />
+      )}
+      {activeWizard && (
+        <WizardModal
+          spec={activeWizard}
+          onClose={() => setActiveWizard(null)}
+        />
+      )}
+      {tour && tourActive && (
+        <ProductTour
+          def={tour}
+          stepIndex={tourStep}
+          onNext={() => {
+            if (tourStep < tour.steps.length - 1) { setTourStep(tourStep + 1); }
+            else { finishTour(); }
+          }}
+          onPrev={() => { if (tourStep > 0) setTourStep(tourStep - 1); }}
+          onClose={finishTour}
+        />
+      )}
+    </>
+  );
+
+  if (role) {
+    return (
+      <RoleShell role={role} density={densityState.density} chrome="light">
+        {commands && commands.length > 0 ? <CommandRail items={commands} /> : null}
+        {pageGrid}
+        {modals}
       </RoleShell>
     );
   }
 
   return (
-    <div className="space-y-0 min-h-screen" style={{ background: 'oklch(0.96 0.003 250)' }}>
-      <section
-        data-tour="ws-header"
-        className="border-b px-6 lg:px-10 py-4"
-        style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}
-      >
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            {eyebrow && (
-              <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>{eyebrow}</div>
-            )}
-            <h1 className="mt-0.5 font-display font-bold tracking-tight" style={{ fontSize: 20, color: 'oklch(0.15 0.025 250)' }}>{title}</h1>
-            {subtitle && <p className="text-[12px] mt-0.5 max-w-2xl" style={{ color: 'oklch(0.45 0.015 250)' }}>{subtitle}</p>}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {backHref && (
-              <button type="button" onClick={() => navigate(backHref)}
-                className="h-8 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-1 transition-colors"
-                style={{ border: '1px solid oklch(0.85 0.006 250)', color: 'oklch(0.35 0.025 250)', background: 'transparent' }}>
-                <ArrowLeft size={12} /> {backLabel || 'Back'}
-              </button>
-            )}
-            <button type="button" onClick={refresh}
-              className="h-8 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-1 transition-colors"
-              style={{ border: '1px solid oklch(0.85 0.006 250)', color: 'oklch(0.35 0.025 250)', background: 'transparent' }}>
-              <RefreshCw size={12} /> Refresh
-            </button>
-          </div>
-        </div>
-        {kpis && kpis.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 mt-3">
-            {kpis.map((k, i) => (
-              <div key={i} className="rounded-lg p-3" style={{ background: 'oklch(0.96 0.003 250)', border: '1px solid oklch(0.90 0.004 250)' }}>
-                <div className="text-[10px] uppercase tracking-wider" style={{ color: 'oklch(0.55 0.008 250)' }}>{k.label}</div>
-                <div className="mt-1 font-mono text-[18px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums', color: 'oklch(0.15 0.025 250)' }}>
-                  {k.value}
-                  {k.tone && (
-                    <span style={{ fontSize: 12, marginLeft: 4, color: toneColor[k.tone] }}>
-                      {toneArrow[k.tone]}
-                    </span>
-                  )}
-                </div>
-                {k.caption && <div className="text-[10px] mt-0.5" style={{ color: 'oklch(0.55 0.008 250)' }}>{k.caption}</div>}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <div className="px-6 lg:px-10 py-5 space-y-5">
-        <div className="flex gap-5 items-start">
-          <div className="min-w-0 flex-1 space-y-4">
-            <TabNav
-              tabs={tabs}
-              activeTab={activeTab}
-              onSelect={setTab}
-              hasGroups={hasGroups}
-              allGroups={allGroups}
-              activeGroup={activeGroup}
-              setActiveGroup={setActiveGroup}
-            />
-
-            <div
-              key={`${activeTab}-${bump}`}
-              id={current ? `panel-${current.key}` : undefined}
-              role="tabpanel"
-              aria-labelledby={current ? `tab-${current.key}` : undefined}
-            >
-              {!current ? (
-                <div className="flex flex-col items-center justify-center py-16 text-[13px] text-[var(--oe-outline)]">
-                  <p>Select a tab to get started.</p>
-                </div>
-              ) : current.body({ onRefresh: refresh })}
-            </div>
-          </div>
-          <div className="hidden lg:flex lg:flex-col gap-5 shrink-0" style={{ width: 380, borderLeft: '1px solid oklch(0.88 0.006 250)', paddingLeft: 20 }}>
-            {incomingRail}
-            {insightsRail}
-          </div>
-        </div>
-      </div>
-      {crossOption}
-    </div>
+    <>
+      {pageGrid}
+      {modals}
+    </>
   );
 }
 
@@ -616,8 +707,6 @@ export function ListingTable({
   empty?: { title: string; description: string };
   rowKey: (row: any) => string;
   rowHref?: (row: any) => string;
-  /** Alternative to rowHref: fire a callback (e.g. open a modal). The
-   *  click handler still ignores clicks on buttons/inputs inside the row. */
   rowOnClick?: (row: any) => void;
   pageSize?: number;
 }) {
@@ -631,8 +720,6 @@ export function ListingTable({
     setLoading(true); setErr(null);
     try {
       const res = await api.get(endpoint);
-      // Some endpoints return { allocations, unallocated } shape — flatten
-      // to a single array for rendering when that pattern is detected.
       const raw = res.data?.data;
       if (raw && typeof raw === 'object' && !Array.isArray(raw) && Array.isArray(raw.allocations)) {
         setRows(raw.allocations as any[]);
@@ -660,17 +747,29 @@ export function ListingTable({
 
   return (
     <div className="space-y-2">
-      <div className="rounded-xl border border-[var(--oe-surface-container-high)] bg-white overflow-x-auto text-[var(--oe-on-surface)]">
-        <table className="w-full text-[13px] min-w-[640px]">
-          <thead className="bg-[var(--oe-surface-container-lowest)] text-left text-[10px] uppercase tracking-wide text-[var(--oe-outline)]">
-            <tr>{columns.map(col => <th key={col.key} scope="col" className="px-4 py-2">{col.label}</th>)}</tr>
+      <div
+        className="rounded border overflow-x-auto"
+        style={{ background: BG1, borderColor: BORDER }}
+      >
+        <table className="w-full text-[12px] min-w-[640px]">
+          <thead style={{ background: BG2 }}>
+            <tr>
+              {columns.map(col => (
+                <th
+                  key={col.key}
+                  scope="col"
+                  className="px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide"
+                  style={{ color: TX3, fontFamily: MONO, borderBottom: `1px solid ${BORDER}` }}
+                >
+                  {col.label}
+                </th>
+              ))}
+            </tr>
           </thead>
           <tbody>
             {pageRows.map(r => {
               const href = rowHref ? rowHref(r) : null;
               const clickHandler = (e: React.MouseEvent) => {
-                // Only navigate when the click was on the row chrome — let
-                // buttons / links inside the row keep their own handlers.
                 if ((e.target as HTMLElement).closest('button, a, input, select, textarea')) return;
                 if (href) nav(href);
                 else if (rowOnClick) rowOnClick(r);
@@ -682,10 +781,17 @@ export function ListingTable({
                   onClick={clickHandler}
                   onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); clickHandler(e as unknown as React.MouseEvent); } } : undefined}
                   tabIndex={clickable ? 0 : undefined}
-                  className={`border-t border-[var(--oe-surface-container)] hover:bg-[var(--oe-surface-container-lowest)] ${clickable ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--oe-primary)]' : ''}`}
+                  className={`border-t ${clickable ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset' : ''}`}
+                  style={{ borderColor: BORDER }}
+                  onMouseEnter={e => { if (clickable) (e.currentTarget as HTMLTableRowElement).style.background = BG2; }}
+                  onMouseLeave={e => { if (clickable) (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'; }}
                 >
                   {columns.map(col => (
-                    <td key={col.key} className={`px-4 py-2 ${col.align === 'right' ? 'text-right' : ''}`}>
+                    <td
+                      key={col.key}
+                      className={`px-4 py-2.5 ${col.align === 'right' ? 'text-right' : ''}`}
+                      style={{ color: TX1 }}
+                    >
                       {col.render ? col.render(r) : (r[col.key] ?? '—')}
                     </td>
                   ))}
@@ -696,26 +802,28 @@ export function ListingTable({
         </table>
       </div>
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-1 text-[12px] text-[var(--oe-outline)]">
-          <span>{rows.length} records · page {page + 1} of {totalPages}</span>
+        <div className="flex items-center justify-between px-1" style={{ color: TX3, fontSize: 11 }}>
+          <span style={{ fontFamily: MONO }}>{rows.length} records · page {page + 1}/{totalPages}</span>
           <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => setPage(p => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="p-1 rounded hover:bg-[var(--oe-surface-container-lowest)] disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-1 rounded disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none"
+              style={{ border: `1px solid ${BORDER}`, background: 'transparent' }}
               aria-label="Previous page"
             >
-              <ChevronLeft size={14} />
+              <ChevronLeft size={12} />
             </button>
             <button
               type="button"
               onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               disabled={page === totalPages - 1}
-              className="p-1 rounded hover:bg-[var(--oe-surface-container-lowest)] disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-1 rounded disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none"
+              style={{ border: `1px solid ${BORDER}`, background: 'transparent' }}
               aria-label="Next page"
             >
-              <ChevronRight size={14} />
+              <ChevronRight size={12} />
             </button>
           </div>
         </div>
@@ -725,41 +833,35 @@ export function ListingTable({
 }
 
 export const Pill = ({ tone, children }: { tone: 'good' | 'warn' | 'bad' | 'neutral' | 'info'; children: ReactNode }) => {
-  const bg: Record<string, string> = {
-    good: 'bg-green-100 text-green-700',
-    warn: 'bg-amber-100 text-amber-800',
-    bad: 'bg-red-100 text-red-700',
-    neutral: 'bg-[#eef2f7] text-[#2d3748]',
-    info: 'bg-blue-100 text-blue-700',
+  const styles: Record<string, { bg: string; color: string }> = {
+    good:    { bg: GOOD_BG, color: GOOD },
+    warn:    { bg: WARN_BG, color: WARN },
+    bad:     { bg: BAD_BG,  color: BAD  },
+    neutral: { bg: BG2,     color: TX2  },
+    info:    { bg: INFO_BG, color: INFO },
   };
-  return <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase ${bg[tone]}`}>{children}</span>;
+  const s = styles[tone] ?? styles.neutral;
+  return (
+    <span
+      className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide"
+      style={{ background: s.bg, color: s.color }}
+    >
+      {children}
+    </span>
+  );
 };
 
 // ─── Generic form modal for workflow transitions ────────────────────
-//
-// Every workstation needs to POST to a transition / create endpoint
-// with a small handful of fields. Rather than building a bespoke modal
-// per action, this generic component accepts a field schema and a
-// submit handler.
-
 export type FieldSpec = {
   key: string;
   label: string;
-  /** 'lookup' fetches options from lookupEndpoint at modal open time. */
   type?: 'text' | 'textarea' | 'select' | 'number' | 'date' | 'lookup';
   required?: boolean;
-  /** Static options for type: 'select'. */
   options?: { value: string; label: string }[];
   placeholder?: string;
   defaultValue?: string;
   helperText?: string;
-  /** For type: 'lookup' — relative API path, e.g. '/api/lookup/sites' */
   lookupEndpoint?: string;
-  /**
-   * Auto-fill sibling fields when a lookup value is chosen.
-   * Keys are target field keys; values are property names on the selected
-   * lookup row (beyond value/label). E.g. { technology: 'technology', capacity: 'capacity_kwp' }
-   */
   lookupAutoFill?: Record<string, string>;
 };
 
@@ -788,7 +890,6 @@ export function ActionModal({
   const [err, setErr] = useState<string | null>(null);
   const dialogRef = React.useRef<HTMLDivElement>(null);
 
-  // Lookup options — keyed by field.key → full row objects for auto-fill
   type LookupOption = { value: string; label: string; [k: string]: unknown };
   const [lookupOpts, setLookupOpts] = useState<Record<string, LookupOption[]>>({});
   const [lookupLoading, setLookupLoading] = useState(false);
@@ -817,7 +918,6 @@ export function ActionModal({
   const update = (k: string, v: string) => {
     setValues(prev => {
       const next = { ...prev, [k]: v };
-      // Auto-fill sibling fields from lookup row metadata
       const field = fields.find(f => f.key === k);
       if (field?.type === 'lookup' && field.lookupAutoFill && v) {
         const selected = (lookupOpts[k] || []).find(o => o.value === v);
@@ -831,13 +931,11 @@ export function ActionModal({
     });
   };
 
-  // Focus management: trap Tab inside the modal; Esc closes
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return () => {};
     const focusable = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
     const els = () => Array.from(dialog.querySelectorAll<HTMLElement>(focusable)).filter(el => !el.hasAttribute('disabled'));
-    // Move initial focus to first element
     els()[0]?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { onClose(); return; }
@@ -867,74 +965,138 @@ export function ActionModal({
       setTimeout(() => onClose(), 600);
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : 'Failed'); setSaving(false); }
   };
-  const btnCls = cta === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-[var(--oe-primary)] hover:bg-[var(--oe-on-surface)]';
+
   return (
     <AnimatePresence>
-    <motion.div
-      key="modal-backdrop"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={motionTransition('snap')}
-      className="fixed inset-0 z-50 bg-[var(--oe-on-surface)]/60 backdrop-blur-[2px] flex items-end sm:items-center justify-center sm:p-4"
-      onClick={onClose}
-    >
       <motion.div
-        initial={{ opacity: 0, y: 12, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+        key="modal-backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         transition={motionTransition('snap')}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="action-modal-title"
-        ref={dialogRef}
-        className="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
+        style={{ background: 'oklch(0.17 0.010 250 / 0.6)', backdropFilter: 'blur(2px)' }}
+        onClick={onClose}
       >
-        <div className="p-5 border-b border-[var(--oe-surface-container)] flex items-center justify-between">
-          <h3 id="action-modal-title" className="text-[16px] font-semibold text-[var(--oe-on-surface)]">{title}</h3>
-          <button type="button" onClick={onClose} aria-label="Close" className="text-[var(--oe-outline)] hover:text-[var(--oe-on-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)] focus-visible:rounded">×</button>
-        </div>
-        <div className="p-5 space-y-3">
-          {cta === 'danger' && (
-            <div role="alert" className="flex gap-2 items-start px-3 py-2.5 rounded-lg bg-red-50 border border-red-200 text-[12px] text-red-800">
-              <span className="shrink-0 mt-0.5" aria-hidden="true">⚠</span>
-              <span>This action is irreversible. Review carefully before confirming.</span>
-            </div>
-          )}
-          <div role="alert" aria-live="assertive" className="text-[12px] text-red-700 min-h-[1em]">
-            {err ?? ''}
-          </div>
-          {fields.map(f => (
-            <label key={f.key} className="block text-[13px]">
-              <span className="text-[var(--oe-outline)]">{cleanTabLabel(f.label)}{f.required && ' *'}</span>
-              {f.type === 'textarea' ? (
-                <textarea value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} rows={4} placeholder={f.placeholder} className="mt-1 w-full px-3 py-2 border border-[var(--oe-surface-container-high)] rounded-lg resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]" />
-              ) : f.type === 'select' ? (
-                <select value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} className="mt-1 w-full px-3 py-2 border border-[var(--oe-surface-container-high)] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]">
-                  <option value="">— select —</option>
-                  {(f.options || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              ) : f.type === 'lookup' ? (
-                <select value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} className="mt-1 w-full px-3 py-2 border border-[var(--oe-surface-container-high)] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]">
-                  <option value="">{lookupLoading ? 'Loading…' : '— select —'}</option>
-                  {(lookupOpts[f.key] || []).map(o => <option key={String(o.value)} value={String(o.value)}>{String(o.label)}</option>)}
-                </select>
-              ) : (
-                <input type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'} value={values[f.key]} onChange={(e) => update(f.key, e.target.value)} placeholder={f.placeholder} className="mt-1 w-full px-3 py-2 border border-[var(--oe-surface-container-high)] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]" />
-              )}
-              {f.helperText && <span className="block mt-1 text-[10px] text-[var(--oe-outline)]">{f.helperText}</span>}
-            </label>
-          ))}
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-[var(--oe-surface-container-high)] rounded-lg hover:bg-[#eef2f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]">Cancel</button>
-            <button type="button" onClick={submit} disabled={saving || saved} className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--oe-primary)] transition-colors ${saved ? 'bg-green-600' : btnCls}`}>
-              {saved ? '✓ Done' : saving ? 'Saving…' : submitLabel}
+        <motion.div
+          initial={{ opacity: 0, y: 12, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 8, scale: 0.98 }}
+          transition={motionTransition('snap')}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="action-modal-title"
+          ref={dialogRef}
+          className="rounded-t-2xl sm:rounded-xl shadow-xl w-full sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-y-auto"
+          style={{ background: BG1 }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div
+            className="p-5 border-b flex items-center justify-between"
+            style={{ borderColor: BORDER }}
+          >
+            <h3
+              id="action-modal-title"
+              className="text-[15px] font-bold"
+              style={{ color: TX1 }}
+            >
+              {title}
+            </h3>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="w-7 h-7 flex items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2"
+              style={{ color: TX3 }}
+              onMouseEnter={e => (e.currentTarget.style.background = BG2)}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              ×
             </button>
           </div>
-        </div>
+          <div className="p-5 space-y-3">
+            {cta === 'danger' && (
+              <div
+                role="alert"
+                className="flex gap-2 items-start px-3 py-2.5 rounded border text-[12px]"
+                style={{ background: BAD_BG, borderColor: BAD, color: BAD }}
+              >
+                <span className="shrink-0 mt-0.5" aria-hidden="true">⚠</span>
+                <span>This action is irreversible. Review carefully before confirming.</span>
+              </div>
+            )}
+            <div role="alert" aria-live="assertive" className="text-[12px] min-h-[1em]" style={{ color: BAD }}>
+              {err ?? ''}
+            </div>
+            {fields.map(f => (
+              <label key={f.key} className="block text-[13px]">
+                <span style={{ color: TX2 }}>{cleanTabLabel(f.label)}{f.required && ' *'}</span>
+                {f.type === 'textarea' ? (
+                  <textarea
+                    value={values[f.key]}
+                    onChange={e => update(f.key, e.target.value)}
+                    rows={4}
+                    placeholder={f.placeholder}
+                    className="mt-1 w-full px-3 py-2 rounded resize-none focus-visible:outline-none focus-visible:ring-2"
+                    style={{ border: `1px solid ${BORDER}`, background: BG, color: TX1, fontSize: 13 }}
+                  />
+                ) : f.type === 'select' || f.type === 'lookup' ? (
+                  <select
+                    value={values[f.key]}
+                    onChange={e => update(f.key, e.target.value)}
+                    className="mt-1 w-full px-3 py-2 rounded focus-visible:outline-none focus-visible:ring-2"
+                    style={{ border: `1px solid ${BORDER}`, background: BG, color: TX1, fontSize: 13 }}
+                  >
+                    <option value="">{f.type === 'lookup' && lookupLoading ? 'Loading…' : '— select —'}</option>
+                    {(f.type === 'lookup'
+                      ? (lookupOpts[f.key] || [])
+                      : (f.options || [])
+                    ).map(o => <option key={String(o.value)} value={String(o.value)}>{String(o.label)}</option>)}
+                  </select>
+                ) : (
+                  <input
+                    type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
+                    value={values[f.key]}
+                    onChange={e => update(f.key, e.target.value)}
+                    placeholder={f.placeholder}
+                    className="mt-1 w-full px-3 py-2 rounded focus-visible:outline-none focus-visible:ring-2"
+                    style={{ border: `1px solid ${BORDER}`, background: BG, color: TX1, fontSize: 13 }}
+                  />
+                )}
+                {f.helperText && <span className="block mt-1 text-[10px]" style={{ color: TX3 }}>{f.helperText}</span>}
+              </label>
+            ))}
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded text-[13px] font-semibold focus-visible:outline-none focus-visible:ring-2"
+                style={{ border: `1px solid ${BORDER}`, background: 'transparent', color: TX2 }}
+                onMouseEnter={e => (e.currentTarget.style.background = BG2)}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={submit}
+                disabled={saving || saved}
+                className="px-4 py-2 rounded text-[13px] font-bold focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
+                style={{
+                  background: saved ? GOOD : cta === 'danger' ? BAD : ACC,
+                  color: '#fff',
+                  border: 'none',
+                  transition: `background-color 150ms ${EASE}`,
+                }}
+                onMouseEnter={e => { if (!saving && !saved) (e.currentTarget.style.background = cta === 'danger' ? 'oklch(0.40 0.20 20)' : 'oklch(0.38 0.18 55)'); }}
+                onMouseLeave={e => { if (!saving && !saved) (e.currentTarget.style.background = saved ? GOOD : cta === 'danger' ? BAD : ACC); }}
+              >
+                {saved ? '✓ Done' : saving ? 'Saving…' : submitLabel}
+              </button>
+            </div>
+          </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
     </AnimatePresence>
   );
 }

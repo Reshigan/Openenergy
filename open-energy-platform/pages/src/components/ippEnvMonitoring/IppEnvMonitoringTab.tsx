@@ -133,8 +133,8 @@ const MONITORING_CATEGORY_LABEL: Record<MonitoringCategory, string> = {
 
 const STATUS_COLOR: Record<EnvMonitoringStatus, string> = {
   scheduled: 'bg-[#eef2f7] text-[#2d3748]',
-  sampling: 'bg-blue-50 text-blue-700',
-  sample_submitted: 'bg-indigo-100 text-indigo-700',
+  sampling: 'rounded',
+  sample_submitted: 'rounded',
   results_received: 'bg-violet-100 text-violet-700',
   compliance_assessed: 'bg-cyan-100 text-cyan-700',
   report_drafted: 'bg-teal-100 text-teal-700',
@@ -144,6 +144,11 @@ const STATUS_COLOR: Record<EnvMonitoringStatus, string> = {
   corrective_action: 'bg-orange-100 text-orange-800',
   under_investigation: 'bg-yellow-100 text-yellow-800',
   cancelled: 'bg-[#e8ecf0] text-[#9aa5b4]',
+};
+
+const STATUS_STYLE: Partial<Record<EnvMonitoringStatus, React.CSSProperties>> = {
+  sampling:         { background: 'oklch(0.96 0.006 250)', color: 'oklch(0.40 0.12 250)' },
+  sample_submitted: { background: 'oklch(0.94 0.01 270)',  color: 'oklch(0.40 0.09 270)' },
 };
 
 const ACTIONS: Record<EnvMonitoringStatus, Array<{ action: string; label: string; danger?: boolean }>> = {
@@ -195,15 +200,17 @@ function Flag({ label, title, cls }: { label: string; title: string; cls: string
 
 function KpiCard({ label, value, color }: { label: string; value: number; color: string }) {
   const colors: Record<string, string> = {
-    blue: 'bg-blue-50 text-blue-900 border-blue-200',
     red: 'bg-red-50 text-red-900 border-red-200',
     orange: 'bg-orange-50 text-orange-900 border-orange-200',
     green: 'bg-green-50 text-green-900 border-green-200',
     amber: 'bg-amber-50 text-amber-900 border-amber-200',
     gray: 'bg-[#f8fafc] text-[#2d3748] border-[#dde4ec]',
   };
+  const blueStyle: React.CSSProperties | undefined = color === 'blue'
+    ? { background: 'oklch(0.96 0.006 250)', color: 'oklch(0.17 0.010 250)', borderColor: 'oklch(0.87 0.006 250)' }
+    : undefined;
   return (
-    <div className={`rounded-lg border px-3 py-2 ${colors[color] ?? colors.gray}`}>
+    <div className={`rounded-lg border px-3 py-2 ${colors[color] ?? colors.gray}`} style={blueStyle}>
       <div className="text-xs text-current opacity-70">{label}</div>
       <div className="text-xl font-bold">{value}</div>
     </div>
@@ -502,7 +509,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                       )}
                     </td>
                     <td className="px-3 py-2">
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_COLOR[row.chain_status]}`}>
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_COLOR[row.chain_status]}`} style={STATUS_STYLE[row.chain_status]}>
                         {row.chain_status.replace(/_/g, ' ')}
                       </span>
                     </td>
@@ -522,14 +529,21 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                         {!!row.floor_eia_condition_breach && <Flag label="EIA" title="EIA condition breach" cls="bg-red-100 text-red-800" />}
                         {!!row.floor_nema_s30_notification && <Flag label="NEMA" title="NEMA s30 notification required" cls="bg-orange-200 text-orange-900" />}
                         {!!row.floor_dffe_report_required && <Flag label="DFFE" title="DFFE report required" cls="bg-amber-100 text-amber-800" />}
-                        {!!row.floor_lender_report_required && <Flag label="LDR" title="Lender report required" cls="bg-indigo-100 text-indigo-800" />}
+                        {!!row.floor_lender_report_required && (
+                          <span
+                            className="px-1 py-0.5 rounded text-[9px] font-bold"
+                            style={{ background: 'oklch(0.94 0.01 270)', color: 'oklch(0.35 0.09 270)' }}
+                            title="Lender report required"
+                          >LDR</span>
+                        )}
                         {!!row.is_reportable && <Flag label="⚑" title="Regulator crossed (W138 SIGNATURE)" cls="bg-red-200 text-red-800" />}
                       </div>
                     </td>
                     {!readOnly && (
                       <td className="px-3 py-2">
                         <button type="button"
-                          className="text-xs text-blue-600 hover:underline"
+                          className="text-xs hover:underline"
+                          style={{ color: 'oklch(0.46 0.16 55)' }}
                           onClick={e => { e.stopPropagation(); setSelected(row); }}
                         >
                           Manage
@@ -567,7 +581,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                       {MONITORING_CATEGORY_LABEL[selected.monitoring_category]}
                     </span>
                   )}
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_COLOR[selected.chain_status]}`}>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_COLOR[selected.chain_status]}`} style={STATUS_STYLE[selected.chain_status]}>
                     {selected.chain_status.replace(/_/g, ' ')}
                   </span>
                   {!!selected.is_reportable && (
@@ -744,7 +758,12 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                   {!!selected.floor_eia_condition_breach && <span className="px-2 py-0.5 rounded text-[10px] bg-red-100 text-red-800">EIA condition breach</span>}
                   {!!selected.floor_dffe_report_required && <span className="px-2 py-0.5 rounded text-[10px] bg-amber-100 text-amber-800">DFFE report required</span>}
                   {!!selected.floor_public_notice_required && <span className="px-2 py-0.5 rounded text-[10px] bg-orange-100 text-orange-800">Public notice required</span>}
-                  {!!selected.floor_lender_report_required && <span className="px-2 py-0.5 rounded text-[10px] bg-indigo-100 text-indigo-700">Lender report required</span>}
+                  {!!selected.floor_lender_report_required && (
+                    <span
+                      className="px-2 py-0.5 rounded text-[10px]"
+                      style={{ background: 'oklch(0.94 0.01 270)', color: 'oklch(0.40 0.09 270)' }}
+                    >Lender report required</span>
+                  )}
                   {!!selected.is_near_sensitive_receptor && <span className="px-2 py-0.5 rounded text-[10px] bg-red-200 text-red-900">Near sensitive receptor</span>}
                 </div>
               </div>
@@ -755,10 +774,10 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
               <div className="mb-4">
                 <p className="text-xs text-[#6b7685] mb-1">Cross-references</p>
                 <div className="flex flex-wrap gap-2">
-                  {selected.ncr_ref && <span className="text-xs text-blue-600">NCR: {selected.ncr_ref}</span>}
-                  {selected.hse_incident_ref && <span className="text-xs text-blue-600">HSE: {selected.hse_incident_ref}</span>}
-                  {selected.ms_ref && <span className="text-xs text-blue-600">MS: {selected.ms_ref}</span>}
-                  {selected.stage_gate_ref && <span className="text-xs text-blue-600">Stage gate: {selected.stage_gate_ref}</span>}
+                  {selected.ncr_ref && <span className="text-xs" style={{ color: 'oklch(0.46 0.16 55)' }}>NCR: {selected.ncr_ref}</span>}
+                  {selected.hse_incident_ref && <span className="text-xs" style={{ color: 'oklch(0.46 0.16 55)' }}>HSE: {selected.hse_incident_ref}</span>}
+                  {selected.ms_ref && <span className="text-xs" style={{ color: 'oklch(0.46 0.16 55)' }}>MS: {selected.ms_ref}</span>}
+                  {selected.stage_gate_ref && <span className="text-xs" style={{ color: 'oklch(0.46 0.16 55)' }}>Stage gate: {selected.stage_gate_ref}</span>}
                 </div>
               </div>
             )}

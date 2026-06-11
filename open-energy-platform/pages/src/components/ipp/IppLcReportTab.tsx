@@ -29,8 +29,8 @@ interface LcReportKpis {
 
 const STATUS_COLORS: Record<string, string> = {
   period_open:              'bg-[#eef2f7] text-[#6b7685]',
-  data_collection:          'bg-blue-100 text-blue-700',
-  internal_verification:    'bg-indigo-100 text-indigo-700',
+  data_collection:          'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
+  internal_verification:    'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   report_preparation:       'bg-cyan-100 text-cyan-700',
   report_submitted:         'bg-sky-100 text-sky-700',
   completeness_check:       'bg-purple-100 text-purple-700',
@@ -361,9 +361,10 @@ export function IppLcReportTab() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3"
+          className="rounded-lg border p-4 space-y-3"
+          style={{ borderColor: 'oklch(0.87 0.010 250)', background: 'oklch(0.94 0.006 250)' }}
         >
-          <div className="text-sm font-semibold text-blue-800">New LC/SED Report</div>
+          <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New LC/SED Report</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
@@ -549,7 +550,7 @@ export function IppLcReportTab() {
                                 ? 'px-2 py-0.5 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200 border border-red-200'
                                 : a.variant === 'warn'
                                 ? 'px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border border-yellow-200'
-                                : 'px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                                : 'px-2 py-0.5 text-xs rounded border hover:opacity-80'
                             }
                           >
                             {a.label}

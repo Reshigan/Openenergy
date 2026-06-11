@@ -59,7 +59,8 @@ export function PaiaAdminPage() {
       </div>
       <div className="flex items-center gap-2 mb-3">
         <select value={filter} onChange={(e) => setFilter(e.target.value)}
-                className="h-8 px-2 rounded border border-[#dde4ec] text-[11px]">
+                className="h-8 px-2 rounded text-[11px]"
+                style={{ border: '1px solid oklch(0.87 0.006 250)' }}>
           <option value="">All statuses</option>
           <option value="open">Open</option>
           <option value="acknowledged">Acknowledged</option>
@@ -68,13 +69,14 @@ export function PaiaAdminPage() {
           <option value="fulfilled">Fulfilled</option>
           <option value="rejected">Rejected</option>
         </select>
-        <button type="button" onClick={load} className="h-8 px-2 rounded border border-[#dde4ec] text-[11px] inline-flex items-center gap-1"><RefreshCw size={11}/>Refresh</button>
+        <button type="button" onClick={load} className="h-8 px-2 rounded text-[11px] inline-flex items-center gap-1"
+                style={{ border: '1px solid oklch(0.87 0.006 250)' }}><RefreshCw size={11}/>Refresh</button>
       </div>
-      {err && <div className="text-[12px] text-[#c0392b] mb-2"><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
+      {err && <div className="text-[12px] mb-2" style={{ color: 'oklch(0.48 0.20 20)' }}><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
       <div className="overflow-x-auto">
         <table className="w-full text-[11px]">
           <thead>
-            <tr className="text-left text-[#6b7685] border-b border-[#dde4ec]">
+            <tr className="text-left" style={{ color: 'oklch(0.40 0.009 250)', borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
               <th className="py-1.5">Received</th>
               <th className="py-1.5">Due</th>
               <th className="py-1.5">Requester</th>
@@ -88,18 +90,27 @@ export function PaiaAdminPage() {
             {rows.map((r) => {
               const overdue = !['fulfilled', 'rejected'].includes(r.status) && new Date(r.due_at).getTime() < Date.now();
               return (
-                <tr key={r.id} className={`border-b border-[#eef2f7] ${overdue ? 'bg-[#fbe9e6]' : ''}`}>
+                <tr key={r.id} style={{
+                  borderBottom: '1px solid oklch(0.87 0.006 250)',
+                  background: overdue ? 'oklch(0.97 0.04 20)' : undefined,
+                }}>
                   <td className="py-1.5 font-mono">{new Date(r.received_at).toLocaleDateString('en-ZA')}</td>
-                  <td className={`py-1.5 font-mono ${overdue ? 'text-[#c0392b] font-semibold' : ''}`}>{new Date(r.due_at).toLocaleDateString('en-ZA')}</td>
-                  <td className="py-1.5">{r.subject_name || r.subject_email}<div className="text-[10px] text-[#6b7685]">{r.subject_email}</div></td>
+                  <td className="py-1.5 font-mono" style={overdue ? { color: 'oklch(0.48 0.20 20)', fontWeight: 600 } : undefined}>{new Date(r.due_at).toLocaleDateString('en-ZA')}</td>
+                  <td className="py-1.5">{r.subject_name || r.subject_email}<div className="text-[10px]" style={{ color: 'oklch(0.40 0.009 250)' }}>{r.subject_email}</div></td>
                   <td className="py-1.5">{r.request_type}</td>
                   <td className="py-1.5 font-mono">{r.assigned_to || '—'}</td>
-                  <td className="py-1.5"><span className="px-2 py-0.5 rounded bg-[#eef2f7] text-[10px] uppercase font-bold">{r.status}</span></td>
-                  <td className="py-1.5 text-right"><button type="button" onClick={() => setSelected(r)} className="text-[11px] text-[#1a3a5c] underline">Open</button></td>
+                  <td className="py-1.5">
+                    <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold"
+                          style={{ background: 'oklch(0.96 0.003 250)', color: 'oklch(0.17 0.010 250)' }}>{r.status}</span>
+                  </td>
+                  <td className="py-1.5 text-right">
+                    <button type="button" onClick={() => setSelected(r)} className="text-[11px] underline"
+                            style={{ color: 'oklch(0.46 0.16 55)' }}>Open</button>
+                  </td>
                 </tr>
               );
             })}
-            {rows.length === 0 && <tr><td colSpan={7} className="py-2 italic text-[#6b7685]">No requests in queue.</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={7} className="py-2 italic" style={{ color: 'oklch(0.40 0.009 250)' }}>No requests in queue.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -112,8 +123,8 @@ function Kpi({ label, value, tone }: { label: string; value: number; tone?: 'ok'
   const cls = tone === 'bad' ? 'widget-tone-bad' : tone === 'ok' ? '' : '';
   return (
     <div className={`widget-card p-4 ${cls}`}>
-      <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">{label}</div>
-      <div className="text-[24px] font-bold text-[#0f1c2e]">{value}</div>
+      <div className="text-[11px] uppercase tracking-wider" style={{ color: 'oklch(0.40 0.009 250)' }}>{label}</div>
+      <div className="text-[24px] font-bold" style={{ color: 'oklch(0.17 0.010 250)' }}>{value}</div>
     </div>
   );
 }
@@ -151,56 +162,70 @@ function SarDetail({ sar, onClose, onChanged }: { sar: Sar; onClose: () => void;
 
   return (
     <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-4 border-b border-[#dde4ec] flex items-center justify-between">
+      <div className="rounded-lg max-w-xl w-full max-h-[90vh] overflow-y-auto"
+           style={{ background: 'oklch(0.99 0.002 80)' }}>
+        <div className="p-4 flex items-center justify-between"
+             style={{ borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
           <div>
             <div className="font-mono text-[12px]">{sar.id}</div>
-            <div className="text-[11px] text-[#6b7685]">{sar.subject_email} · {sar.request_type}</div>
-            <div className="mt-1"><span className="px-2 py-0.5 rounded bg-[#eef2f7] text-[10px] uppercase font-bold">{sar.status}</span></div>
+            <div className="text-[11px]" style={{ color: 'oklch(0.40 0.009 250)' }}>{sar.subject_email} · {sar.request_type}</div>
+            <div className="mt-1">
+              <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold"
+                    style={{ background: 'oklch(0.96 0.003 250)', color: 'oklch(0.17 0.010 250)' }}>{sar.status}</span>
+            </div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close dialog"><X size={16}/></button>
         </div>
         <div className="p-4 space-y-3 text-[12px]">
-          <div><span className="text-[#6b7685]">Received:</span> {new Date(sar.received_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</div>
-          <div><span className="text-[#6b7685]">Due:</span> {new Date(sar.due_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</div>
+          <div><span style={{ color: 'oklch(0.40 0.009 250)' }}>Received:</span> {new Date(sar.received_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</div>
+          <div><span style={{ color: 'oklch(0.40 0.009 250)' }}>Due:</span> {new Date(sar.due_at).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}</div>
           {sar.request_body && (
             <div>
-              <div className="text-[11px] uppercase text-[#6b7685]">Request</div>
-              <pre className="bg-[#f8fafc] border border-[#eef2f7] rounded p-2 mt-1 whitespace-pre-wrap">{sar.request_body}</pre>
+              <div className="text-[11px] uppercase" style={{ color: 'oklch(0.40 0.009 250)' }}>Request</div>
+              <pre className="rounded p-2 mt-1 whitespace-pre-wrap"
+                   style={{ background: 'oklch(0.96 0.003 250)', border: '1px solid oklch(0.87 0.006 250)' }}>{sar.request_body}</pre>
             </div>
           )}
           {!sar.assigned_to && (
-            <div className="border-t pt-3 border-[#eef2f7]">
-              <button type="button" disabled={busy} onClick={assign} className="h-8 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold disabled:opacity-50">
+            <div className="pt-3" style={{ borderTop: '1px solid oklch(0.87 0.006 250)' }}>
+              <button type="button" disabled={busy} onClick={assign}
+                      className="h-8 px-3 rounded text-white text-[12px] font-semibold disabled:opacity-50"
+                      style={{ background: 'oklch(0.46 0.16 55)' }}>
                 Assign to me
               </button>
             </div>
           )}
           {!['fulfilled', 'rejected'].includes(sar.status) && (
             <>
-              <div className="border-t pt-3 border-[#eef2f7]">
-                <div className="text-[12px] font-semibold text-[#0f1c2e] mb-1">Respond</div>
-                <label className="block text-[11px] font-semibold text-[#3a4658]">Response summary
-                  <textarea rows={3} className="mt-1 w-full p-2 rounded border border-[#dde4ec] text-[12px]"
+              <div className="pt-3" style={{ borderTop: '1px solid oklch(0.87 0.006 250)' }}>
+                <div className="text-[12px] font-semibold mb-1" style={{ color: 'oklch(0.17 0.010 250)' }}>Respond</div>
+                <label className="block text-[11px] font-semibold" style={{ color: 'oklch(0.40 0.009 250)' }}>Response summary
+                  <textarea rows={3} className="mt-1 w-full p-2 rounded text-[12px]"
+                         style={{ border: '1px solid oklch(0.87 0.006 250)' }}
                          value={respSummary} onChange={(e) => setRespSummary(e.target.value)}/>
                 </label>
-                <label className="block text-[11px] font-semibold text-[#3a4658] mt-2">Rejection reason (if rejecting)
-                  <input className="mt-1 w-full h-8 px-2 rounded border border-[#dde4ec] text-[12px]"
+                <label className="block text-[11px] font-semibold mt-2" style={{ color: 'oklch(0.40 0.009 250)' }}>Rejection reason (if rejecting)
+                  <input className="mt-1 w-full h-8 px-2 rounded text-[12px]"
+                         style={{ border: '1px solid oklch(0.87 0.006 250)' }}
                          value={rejReason} onChange={(e) => setRejReason(e.target.value)}/>
                 </label>
               </div>
             </>
           )}
-          {err && <div className="text-[12px] text-[#c0392b]"><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
-          {ack && <div className="text-[12px] text-[#1a8a5b]"><CheckCircle2 size={13} className="inline mr-1"/>{ack}</div>}
+          {err && <div className="text-[12px]" style={{ color: 'oklch(0.48 0.20 20)' }}><AlertCircle size={13} className="inline mr-1"/>{err}</div>}
+          {ack && <div className="text-[12px]" style={{ color: 'oklch(0.45 0.15 150)' }}><CheckCircle2 size={13} className="inline mr-1"/>{ack}</div>}
         </div>
-        <div className="p-4 border-t border-[#dde4ec] flex justify-end gap-2">
+        <div className="p-4 flex justify-end gap-2" style={{ borderTop: '1px solid oklch(0.87 0.006 250)' }}>
           {!['fulfilled', 'rejected'].includes(sar.status) && (
             <>
-              <button type="button" disabled={busy || !rejReason} onClick={() => respond('rejected')} className="h-8 px-3 rounded border border-[#c0392b] text-[#c0392b] text-[12px] font-semibold disabled:opacity-40">
+              <button type="button" disabled={busy || !rejReason} onClick={() => respond('rejected')}
+                      className="h-8 px-3 rounded text-[12px] font-semibold disabled:opacity-40"
+                      style={{ border: '1px solid oklch(0.48 0.20 20)', color: 'oklch(0.48 0.20 20)' }}>
                 Reject
               </button>
-              <button type="button" disabled={busy || !respSummary} onClick={() => respond('fulfilled')} className="h-8 px-3 rounded bg-[#1a8a5b] text-white text-[12px] font-semibold disabled:opacity-40">
+              <button type="button" disabled={busy || !respSummary} onClick={() => respond('fulfilled')}
+                      className="h-8 px-3 rounded text-white text-[12px] font-semibold disabled:opacity-40"
+                      style={{ background: 'oklch(0.45 0.15 150)' }}>
                 Fulfil
               </button>
             </>

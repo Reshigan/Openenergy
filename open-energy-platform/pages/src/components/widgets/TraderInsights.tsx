@@ -38,7 +38,7 @@ const formatZAR = (v: number) =>
 const formatZARm = (v: number) => `R${(v / 1_000_000).toFixed(2)}m`;
 
 const ENERGY_COLOUR: Record<string, string> = {
-  solar: '#f6c44a', wind: '#3b82c4', battery: '#6b3a82', power: '#1a3a5c',
+  solar: '#f6c44a', wind: 'oklch(0.46 0.16 55)', battery: '#6b3a82', power: 'oklch(0.46 0.16 55)',
   coal: '#3d3d3d', gas: '#e63946', carbon: '#1a8a5b',
 };
 
@@ -135,7 +135,7 @@ function MarkTermStructure({ marks }: { marks: Mark[] }) {
             <Tooltip formatter={(v: any) => `R${Number(v).toFixed(0)}/MWh`} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             {data.energies.map((e) => (
-              <Line key={e} type="monotone" dataKey={e} stroke={ENERGY_COLOUR[e] || '#3b82c4'} strokeWidth={2} dot={false} name={e} />
+              <Line key={e} type="monotone" dataKey={e} stroke={ENERGY_COLOUR[e] || 'oklch(0.46 0.16 55)'} strokeWidth={2} dot={false} name={e} />
             ))}
           </LineChart>
         </ResponsiveContainer>
@@ -225,7 +225,7 @@ function OrderBookDepth() {
               <XAxis type="number" tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `${Math.abs(Number(v))}`} />
               <YAxis type="category" dataKey="price" tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${v}`} />
               <Tooltip formatter={(v: any) => `${Math.abs(Number(v)).toFixed(1)} MWh`} />
-              <ReferenceLine x={0} stroke="#1a3a5c" />
+              <ReferenceLine x={0} stroke="oklch(0.46 0.16 55)" />
               <Bar dataKey="bid" name="Bid" stackId="x" fill="#1a8a5b" />
               <Bar dataKey="ask" name="Ask" stackId="x" fill="#c0392b" />
             </BarChart>

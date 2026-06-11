@@ -8,7 +8,7 @@
 //
 // Roles:
 //   READ:  admin, om, esums, ipp, support, regulator
-//   WRITE: admin, om, esums
+//   WRITE: admin, support, om, esums, esco
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { Hono, Context } from 'hono';
@@ -28,8 +28,8 @@ import {
   type WoPriority,
 } from '../utils/wo-chain-spec';
 
-const READ_ROLES  = new Set(['admin', 'om', 'esums', 'ipp', 'ipp_developer', 'support', 'regulator', 'esco']);
-const WRITE_ROLES = new Set(['admin', 'om', 'esums', 'esco']);
+const READ_ROLES  = new Set(['admin', 'om', 'esums', 'ipp', 'ipp_developer', 'support', 'regulator']);
+const WRITE_ROLES = new Set(['admin', 'support', 'om', 'esums', 'esco']);
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);

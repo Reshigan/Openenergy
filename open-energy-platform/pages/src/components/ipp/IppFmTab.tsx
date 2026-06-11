@@ -34,8 +34,8 @@ const STATUS_COLORS: Record<string, string> = {
   fm_event_occurred:          'bg-[#eef2f7] text-[#6b7685]',
   fm_notice_issued:           'bg-orange-100 text-orange-700',
   fm_notice_verified:         'bg-yellow-100 text-yellow-800',
-  fm_relief_in_progress:      'bg-blue-100 text-blue-700',
-  fm_monitoring:              'bg-indigo-100 text-indigo-700',
+  fm_relief_in_progress:      'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
+  fm_monitoring:              'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   fm_resolved:                'bg-green-100 text-green-800',
   fm_disputed:                'bg-red-100 text-red-700',
   fm_arbitration:             'bg-red-200 text-red-900',
@@ -46,8 +46,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TIER_COLORS: Record<string, string> = {
   minor:       'bg-[#eef2f7] text-[#3d4756]',
-  moderate:    'bg-blue-100 text-blue-700',
-  significant: 'bg-indigo-100 text-indigo-700',
+  moderate:    'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
+  significant: 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   major:       'bg-orange-100 text-orange-800',
   material:    'bg-red-100 text-red-700',
 };
@@ -225,7 +225,8 @@ export function IppFmTab() {
           <button type="button"
             key={t}
             onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt, filterCategory); }}
-            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-indigo-700 text-white border-indigo-700' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
+            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
+            style={filterTier === t ? { background: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.46 0.16 55)' } : undefined}
           >
             {t}
           </button>

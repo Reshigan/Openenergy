@@ -40,6 +40,20 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'period_open' | 'meter_data_received' | 'nominations_reconciled'
@@ -53,11 +67,8 @@ type UrgencyBand = 'critical' | 'high' | 'medium' | 'low';
 
 type Authority = 'BRP_back_office' | 'BRP_finance_manager' | 'BRP_treasurer' | 'MO_settlement_admin';
 
-type Party =
-  | 'system_operator' | 'settlement_admin' | 'brp'
-  | 'reviewer' | 'archiver' | 'system';
-
 interface ImbRow {
+  [key: string]: unknown;
   id: string;
   settlement_number: string;
   brp_id: string;
@@ -166,19 +177,6 @@ interface ImbRow {
   bridges_to_reserve_activation_chain_live?: boolean;
 }
 
-interface ImbEvent {
-  id: string;
-  settlement_id: string;
-  event_type: string;
-  from_status: string | null;
-  to_status: string | null;
-  actor_id: string | null;
-  actor_party: string | null;
-  notes: string | null;
-  payload: string | null;
-  created_at: string;
-}
-
 interface KpiData {
   total: number;
   active_count: number;
@@ -194,76 +192,42 @@ interface KpiData {
   avg_settlement_hours: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  period_open:            { bg: '#dbecfb', fg: '#1a3a5c', label: 'Period open' },
-  meter_data_received:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Meter data' },
-  nominations_reconciled: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Reconciled' },
-  imbalance_computed:     { bg: '#fff4d6', fg: '#a06200', label: 'Computed' },
-  priced:                 { bg: '#fff4d6', fg: '#a06200', label: 'Priced' },
-  invoice_issued:         { bg: '#fff4d6', fg: '#a06200', label: 'Invoiced' },
-  invoice_acknowledged:   { bg: '#fff4d6', fg: '#a06200', label: 'Acknowledged' },
-  dispute_window_open:    { bg: '#fde0e0', fg: '#9b1f1f', label: 'Window open' },
-  disputed:               { bg: '#fbd0d0', fg: '#7a1414', label: 'Disputed' },
-  resolved_dispute:       { bg: '#daf5e2', fg: '#1f6b3a', label: 'Dispute resolved' },
-  invoice_revised:        { bg: '#fff4d6', fg: '#a06200', label: 'Revised' },
-  payment_pending:        { bg: '#fde0e0', fg: '#9b1f1f', label: 'Payment pending' },
-  aged_arrears:           { bg: '#fbd0d0', fg: '#7a1414', label: 'Aged arrears' },
-  settled:                { bg: '#daf5e2', fg: '#1f6b3a', label: 'Settled' },
-  archived:               { bg: '#e3e7ec', fg: '#557',    label: 'Archived' },
-  cancelled:              { bg: '#e3e7ec', fg: '#557',    label: 'Cancelled' },
-};
+const ALL_STATES = [
+  'period_open',
+  'meter_data_received',
+  'nominations_reconciled',
+  'imbalance_computed',
+  'priced',
+  'invoice_issued',
+  'invoice_acknowledged',
+  'dispute_window_open',
+  'payment_pending',
+  'settled',
+  'archived',
+] as const;
 
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-  standard: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Standard' },
-  material: { bg: '#fff4d6', fg: '#a06200', label: 'Material' },
-  systemic: { bg: '#fbd0d0', fg: '#7a1414', label: 'Systemic' },
-};
+const BRANCH_STATES = [
+  'disputed',
+  'resolved_dispute',
+  'invoice_revised',
+  'aged_arrears',
+  'cancelled',
+] as const;
 
-const URGENCY_TONE: Record<UrgencyBand, { bg: string; fg: string; label: string }> = {
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-  medium:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Medium' },
-  high:     { bg: '#fff4d6', fg: '#a06200', label: 'High' },
-  critical: { bg: '#fbd0d0', fg: '#7a1414', label: 'Critical' },
-};
-
-const AUTH_LABEL: Record<Authority, string> = {
-  BRP_back_office:    'BRP back office',
-  BRP_finance_manager:'BRP finance manager',
-  BRP_treasurer:      'BRP treasurer',
-  MO_settlement_admin:'MO settlement admin',
-};
-
-const PARTY_TONE: Record<string, { bg: string; fg: string }> = {
-  system_operator:  { bg: '#dbecfb', fg: '#1a3a5c' },
-  settlement_admin: { bg: '#e8defc', fg: '#5320a3' },
-  brp:              { bg: '#fff4d6', fg: '#a06200' },
-  reviewer:         { bg: '#daf5e2', fg: '#1f6b3a' },
-  archiver:         { bg: '#e3e7ec', fg: '#557' },
-  system:           { bg: '#e3e7ec', fg: '#557' },
-};
-
-// UX revisit 2026-05-30 - pills grouped action-first then state. The
-// settlement admin opens for SLA breach, disputes, aged arrears, and
-// systemic-tier exposure first. Action row carries those plus tier slicers
-// and bridge filters to W13/W50; state row enumerates the lifecycle.
-const FILTER_ROW_ACTION: Array<{ key: string; label: string }> = [
-  { key: 'active',           label: 'Active (pre-terminal)' },
+const FILTERS = [
+  { key: 'active',           label: 'Active' },
   { key: 'all',              label: 'All' },
   { key: 'breached',         label: 'SLA breached' },
   { key: 'reportable',       label: 'Reportable' },
   { key: 'critical_urgency', label: 'Critical urgency' },
   { key: 'dispute_open',     label: 'Dispute open' },
   { key: 'arrears',          label: 'Aged arrears' },
-  { key: 'dispatch_bridged', label: 'Bridged to W13' },
-  { key: 'reserve_bridged',  label: 'Bridged to W50' },
+  { key: 'dispatch_bridged', label: 'Bridged W13' },
+  { key: 'reserve_bridged',  label: 'Bridged W50' },
   { key: 'systemic',         label: 'Systemic' },
   { key: 'material',         label: 'Material' },
   { key: 'standard',         label: 'Standard' },
   { key: 'minor',            label: 'Minor' },
-];
-
-const FILTER_ROW_STATE: Array<{ key: string; label: string }> = [
   { key: 'period_open',            label: 'Period open' },
   { key: 'meter_data_received',    label: 'Meter data' },
   { key: 'nominations_reconciled', label: 'Reconciled' },
@@ -276,7 +240,7 @@ const FILTER_ROW_STATE: Array<{ key: string; label: string }> = [
   { key: 'resolved_dispute',       label: 'Resolved' },
   { key: 'invoice_revised',        label: 'Revised' },
   { key: 'payment_pending',        label: 'Payment pending' },
-  { key: 'aged_arrears',           label: 'Aged arrears' },
+  { key: 'aged_arrears',           label: 'Aged arrears (state)' },
   { key: 'settled',                label: 'Settled' },
 ];
 
@@ -312,14 +276,293 @@ function fmtHours(v: number | null | undefined, digits = 1): string {
   return `${v.toFixed(digits)}h`;
 }
 
+const AUTH_LABEL: Record<Authority, string> = {
+  BRP_back_office:    'BRP back office',
+  BRP_finance_manager:'BRP finance manager',
+  BRP_treasurer:      'BRP treasurer',
+  MO_settlement_admin:'MO settlement admin',
+};
+
+function getActions(row: ImbRow): ChainAction[] {
+  const cs = row.chain_status;
+  const cancellable = !row.is_hard_terminal && cs !== 'settled' && cs !== 'archived';
+  const actions: ChainAction[] = [];
+
+  if (cs === 'period_open') {
+    actions.push({
+      key: 'receive-meter-data',
+      label: 'Receive meter data (SO)',
+      tone: 'primary',
+      fields: [
+        { key: 'metered_mwh', label: 'Metered MWh for the period', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'meter_data_received') {
+    actions.push({
+      key: 'reconcile-nominations',
+      label: 'Reconcile nominations (SO)',
+      tone: 'primary',
+    });
+  }
+
+  if (cs === 'nominations_reconciled') {
+    actions.push({
+      key: 'compute-imbalance',
+      label: 'Compute imbalance (SO)',
+      tone: 'primary',
+      fields: [
+        { key: 'imbalance_quantum_zar', label: 'Imbalance quantum ZAR (optional, sets tier)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'imbalance_computed') {
+    actions.push({
+      key: 'price-imbalance',
+      label: 'Price imbalance (SO)',
+      tone: 'primary',
+      fields: [
+        { key: 'long_price_zar_per_mwh',  label: 'Long price ZAR/MWh',      type: 'text', required: false },
+        { key: 'short_price_zar_per_mwh', label: 'Short price ZAR/MWh',     type: 'text', required: false },
+        { key: 'penalty_multiplier',      label: 'Penalty multiplier (>=1)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'priced' || cs === 'invoice_revised') {
+    actions.push({
+      key: 'issue-invoice',
+      label: 'Issue invoice (settlement admin)',
+      tone: 'primary',
+      fields: [
+        { key: 'invoice_number',  label: 'Invoice number (optional)',                    type: 'text', required: false },
+        { key: 'invoice_due_at',  label: 'Invoice due ISO (optional, default +14d)',     type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'invoice_issued') {
+    actions.push({
+      key: 'acknowledge-invoice',
+      label: 'Acknowledge invoice (BRP)',
+      tone: 'primary',
+    });
+  }
+
+  if (cs === 'invoice_acknowledged') {
+    actions.push({
+      key: 'open-dispute-window',
+      label: 'Open dispute window (settlement admin)',
+      tone: 'primary',
+      fields: [
+        { key: 'dispute_window_close_at', label: 'Dispute window close ISO (optional, default +7d)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'dispute_window_open') {
+    actions.push({
+      key: 'raise-dispute',
+      label: 'Raise dispute (BRP)',
+      tone: 'danger',
+      cascadeTo: ['regulator'],
+      fields: [
+        { key: 'dispute_reason_code', label: 'Dispute reason code',          type: 'text',     required: false },
+        { key: 'dispute_narrative',   label: 'Dispute narrative (optional)', type: 'textarea', required: false },
+      ],
+    });
+    actions.push({
+      key: 'record-payment',
+      label: 'Record payment (BRP)',
+      tone: 'primary',
+      fields: [
+        { key: 'payment_method',    label: 'Payment method (eft/wire/cheque)', type: 'text', required: false },
+        { key: 'payment_reference', label: 'Payment reference',                type: 'text', required: false },
+        { key: 'amount_paid_zar',   label: 'Amount paid (ZAR)',                type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'disputed') {
+    actions.push({
+      key: 'resolve-dispute',
+      label: 'Resolve dispute (reviewer)',
+      tone: 'primary',
+      fields: [
+        { key: 'dispute_resolution_text', label: 'Dispute resolution text', type: 'textarea', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'resolved_dispute') {
+    actions.push({
+      key: 'revise-invoice',
+      label: 'Revise invoice (settlement admin)',
+      tone: 'primary',
+      fields: [
+        { key: 'long_price_zar_per_mwh',  label: 'Revised long price ZAR/MWh (optional)',    type: 'text', required: false },
+        { key: 'short_price_zar_per_mwh', label: 'Revised short price ZAR/MWh (optional)',   type: 'text', required: false },
+        { key: 'imbalance_quantum_zar',   label: 'Revised quantum ZAR (optional, sets tier)', type: 'text', required: false },
+      ],
+    });
+  }
+
+  if (cs === 'payment_pending' || cs === 'aged_arrears') {
+    actions.push({
+      key: 'record-payment',
+      label: 'Record payment (BRP)',
+      tone: 'primary',
+      fields: [
+        { key: 'payment_method',    label: 'Payment method (eft/wire/cheque)', type: 'text', required: false },
+        { key: 'payment_reference', label: 'Payment reference',                type: 'text', required: false },
+        { key: 'amount_paid_zar',   label: 'Amount paid (ZAR)',                type: 'text', required: false },
+      ],
+    });
+    if (cs === 'payment_pending') {
+      actions.push({
+        key: 'mark-settled',
+        label: 'Mark settled (settlement admin)',
+        tone: 'primary',
+        cascadeTo: ['regulator'],
+      });
+    }
+  }
+
+  if (cs === 'settled') {
+    actions.push({
+      key: 'archive-period',
+      label: 'Archive period (archiver)',
+      tone: 'ghost',
+    });
+  }
+
+  if (cancellable) {
+    actions.push({
+      key: 'cancel-period',
+      label: 'Cancel period',
+      tone: 'danger',
+      cascadeTo: ['regulator'],
+      fields: [
+        { key: 'cancel_reason', label: 'Cancel reason', type: 'textarea', required: false },
+      ],
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: ImbRow): React.ReactNode {
+  const floored = !!(row.imbalance_floor_flag_high_voltage_brp
+    || row.imbalance_floor_flag_system_critical_period
+    || row.imbalance_floor_flag_regulator_audit_period
+    || row.imbalance_floor_flag_market_suspension_active
+    || row.imbalance_floor_flag_repeated_breach_5plus);
+
+  return (
+    <div className="space-y-3 text-[12px]">
+      <div>
+        <div style={{ fontSize: 10, color: TX3, fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Imbalance position</div>
+        <div className="grid grid-cols-3 gap-x-4 gap-y-2">
+          <DetailPair label="Nominated"     value={fmtMwh(row.nominated_mwh)} />
+          <DetailPair label="Metered"       value={fmtMwh(row.metered_mwh)} />
+          <DetailPair label="Imbalance MWh" value={`${row.imbalance_mwh.toFixed(2)} (${row.imbalance_direction_live ?? row.imbalance_direction ?? '-'})`} />
+          <DetailPair label="Long price"    value={fmtZar(row.long_price_zar_per_mwh) + ' / MWh'} />
+          <DetailPair label="Short price"   value={fmtZar(row.short_price_zar_per_mwh) + ' / MWh'} />
+          <DetailPair label="Applied price" value={fmtZar(row.price_applied_zar_per_mwh_live ?? row.price_applied_zar_per_mwh) + ' / MWh'} />
+          <DetailPair label="Charge"        value={fmtZar(row.imbalance_charge_zar_live ?? row.imbalance_charge_zar)} />
+          <DetailPair label="Penalty"       value={fmtZar(row.penalty_zar_live ?? row.penalty_zar) + ` (x${row.penalty_multiplier.toFixed(2)})`} />
+          <DetailPair label="Total owed"    value={fmtZar(row.total_owed_zar_live ?? row.total_owed_zar)} />
+          <DetailPair label="Paid"          value={fmtZar(row.amount_paid_zar)} />
+          <DetailPair label="Outstanding"   value={fmtZar(row.amount_outstanding_zar)} />
+          <DetailPair label="Quantum (tier)" value={fmtZar(row.imbalance_quantum_zar)} />
+        </div>
+      </div>
+
+      <div>
+        <div style={{ fontSize: 10, color: TX3, fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Settlement battery</div>
+        <div className="grid grid-cols-4 gap-x-4 gap-y-2">
+          <DetailPair label="Completeness"     value={`${(row.settlement_completeness_index_live ?? 0).toFixed(0)} / 130`} />
+          <DetailPair label="SLA days left"    value={row.sla_days_remaining_live != null ? fmtDays(row.sla_days_remaining_live) : '-'} />
+          <DetailPair label="Dispute window"   value={row.days_to_dispute_window_close_live != null ? fmtDays(row.days_to_dispute_window_close_live) : '-'} />
+          <DetailPair label="Reg filing"       value={row.regulator_filing_window_hours_live != null ? `${row.regulator_filing_window_hours_live}h` : '-'} />
+          <DetailPair label="Arrears days"     value={`${row.arrears_days_live ?? row.arrears_days}`} />
+          <DetailPair label="Arrears bucket"   value={row.arrears_bucket_live ?? row.arrears_bucket ?? '-'} />
+          <DetailPair label="Revisions"        value={`${row.invoice_revised_count}`} />
+          <DetailPair label="Escalations"      value={`${row.escalation_level}`} />
+          <DetailPair label="Invoice #"        value={row.invoice_number ?? '-'} />
+          <DetailPair label="Invoice due"      value={row.invoice_due_at ? new Date(row.invoice_due_at).toLocaleDateString() : '-'} />
+          <DetailPair label="Payment ref"      value={row.payment_reference ?? '-'} />
+          <DetailPair label="Tier"             value={row.current_tier} />
+        </div>
+      </div>
+
+      <div>
+        <div style={{ fontSize: 10, color: TX3, fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Floor flags</div>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { on: !!row.imbalance_floor_flag_high_voltage_brp,          label: 'HV BRP (SYSTEMIC)' },
+            { on: !!row.imbalance_floor_flag_system_critical_period,     label: 'System-critical period (SYSTEMIC)' },
+            { on: !!row.imbalance_floor_flag_regulator_audit_period,     label: 'Regulator audit period (MATERIAL)' },
+            { on: !!row.imbalance_floor_flag_market_suspension_active,   label: 'Market suspension (MATERIAL)' },
+            { on: !!row.imbalance_floor_flag_repeated_breach_5plus,      label: 'Repeated breach 5+ (MATERIAL)' },
+            { on: !!row.regulator_relevant,                              label: 'Regulator relevant' },
+          ].map(({ on, label }) => (
+            <div
+              key={label}
+              className="flex items-center gap-2 px-2 py-1 rounded"
+              style={{
+                background: on ? 'oklch(0.97 0.04 55)' : BG2,
+                border: `1px solid ${on ? 'oklch(0.80 0.12 55)' : BORDER}`,
+                color: on ? WARN : TX3,
+              }}
+            >
+              <span
+                className="rounded-full flex-shrink-0"
+                style={{ width: 6, height: 6, background: on ? WARN : TX3 }}
+              />
+              <span style={{ fontSize: 11 }}>{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {(row.dispatch_nomination_ref || row.reserve_activation_ref || row.regulator_inbox_ref
+        || row.regulator_ref || row.dispute_reason_code || row.dispute_resolution_text
+        || row.cancel_reason || row.reason_code) && (
+        <div>
+          <div style={{ fontSize: 10, color: TX3, fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>References</div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+            {row.dispatch_nomination_ref   && <DetailPair label="W13 dispatch ref"   value={row.dispatch_nomination_ref} />}
+            {row.reserve_activation_ref    && <DetailPair label="W50 reserve ref"    value={row.reserve_activation_ref} />}
+            {row.regulator_inbox_ref       && <DetailPair label="Regulator inbox"    value={row.regulator_inbox_ref} />}
+            {row.regulator_ref             && <DetailPair label="Regulator ref"      value={row.regulator_ref} />}
+            {row.dispute_reason_code       && <DetailPair label="Dispute reason"     value={row.dispute_reason_code} />}
+            {row.dispute_resolution_text   && <DetailPair label="Dispute resolution" value={row.dispute_resolution_text} />}
+            {row.cancel_reason             && <DetailPair label="Cancel reason"      value={row.cancel_reason} />}
+            {row.reason_code               && <DetailPair label="Reason code"        value={row.reason_code} />}
+          </div>
+        </div>
+      )}
+
+      {row.authority_required_live || row.authority_required ? (
+        <DetailPair
+          label="Authority required"
+          value={AUTH_LABEL[row.authority_required_live ?? row.authority_required!]}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 export function ImbalanceSettlementChainTab() {
   const [rows, setRows] = useState<ImbRow[]>([]);
-  const [kpis, setKpis] = useState<KpiData | null>(null);
+  const [summary, setSummary] = useState<KpiData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('active');
-  const [selected, setSelected] = useState<ImbRow | null>(null);
-  const [events, setEvents] = useState<ImbEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -330,7 +573,7 @@ export function ImbalanceSettlementChainTab() {
       setRows(d?.items || []);
       if (d) {
         const { items: _items, ...rest } = d as any;
-        setKpis(rest as KpiData);
+        setSummary(rest as KpiData);
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to load imbalance settlements');
@@ -341,15 +584,34 @@ export function ImbalanceSettlementChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
     try {
-      const res = await api.get<{ data: { case: ImbRow; events: ImbEvent[] } }>(`/grid/imbalance-settlement/chain/${id}`);
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      const body: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(values)) {
+        if (v !== '' && v !== undefined) {
+          const numericKeys = [
+            'metered_mwh', 'imbalance_quantum_zar', 'long_price_zar_per_mwh',
+            'short_price_zar_per_mwh', 'penalty_multiplier', 'amount_paid_zar',
+          ];
+          body[k] = numericKeys.includes(k) ? Number(v) : v;
+        }
+      }
+      await api.post(`/grid/imbalance-settlement/chain/${rowId}/${key}`, body);
+      await load();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load settlement history');
+      setErr(e instanceof Error ? e.message : 'Action failed');
     }
-  }, []);
+  }, [load]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: ImbRow; events: ChainEvent[] } }>(`/grid/imbalance-settlement/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events || [] }));
+    } catch {
+      // silently ignore
+    }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -367,469 +629,132 @@ export function ImbalanceSettlementChainTab() {
     });
   }, [rows, filter]);
 
-  const doAction = useCallback(async (path: string, body?: object) => {
-    if (!selected) return;
-    try {
-      await api.post(`/grid/imbalance-settlement/chain/${selected.id}/${path}`, body ?? {});
-      await load();
-      await loadEvents(selected.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Action failed');
-    }
-  }, [selected, load, loadEvents]);
-
   return (
-    <div className="space-y-3">
-      {/* UX revisit 2026-05-30 - KPI strip ordered so the four numbers the
-          settlement admin opens for (SLA breach, dispute open, aged
-          arrears, systemic tier) sit left. Total owed + total
-          outstanding ZAR and avg settlement hours anchor right because
-          those are the brag numbers vs PJM iMM / ERCOT QSE / CAISO. */}
-      <div className="grid grid-cols-8 gap-3">
-        <Kpi label="SLA breached"      value={kpis?.breached ?? 0}              tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Dispute open"      value={kpis?.dispute_open_count ?? 0}    tone={(kpis?.dispute_open_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Aged arrears"      value={kpis?.aged_arrears_count ?? 0}    tone={(kpis?.aged_arrears_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Systemic tier"     value={kpis?.systemic_count ?? 0}        tone={(kpis?.systemic_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Active"            value={kpis?.active_count ?? 0} />
-        <Kpi label="Total"             value={kpis?.total ?? 0} />
-        <Kpi label="Total owed"        value={fmtZar(kpis?.total_owed_zar ?? 0)} />
-        <Kpi label="Avg settlement"    value={fmtHours(kpis?.avg_settlement_hours ?? 0)} />
+    <div style={{ background: BG, minHeight: '100%', padding: '16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Header */}
+      <div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: TX1 }}>Imbalance Settlement</div>
+        <div style={{ fontSize: 12, color: TX2, marginTop: 2 }}>
+          MTU wholesale imbalance settlement · URGENT SLA · W13 dispatch + W50 reserve bridges
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {FILTER_ROW_ACTION.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
-                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
-            }`}>
-            {f.label}
-          </button>
-        ))}
+      {/* KPI strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 10 }}>
+        <KpiTile label="SLA breached"   value={summary?.breached ?? 0}            tone={(summary?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Dispute open"   value={summary?.dispute_open_count ?? 0}  tone={(summary?.dispute_open_count ?? 0) > 0 ? 'warn' : 'ok'} />
+        <KpiTile label="Aged arrears"   value={summary?.aged_arrears_count ?? 0}  tone={(summary?.aged_arrears_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Systemic tier"  value={summary?.systemic_count ?? 0}      tone={(summary?.systemic_count ?? 0) > 0 ? 'bad' : 'ok'} />
+        <KpiTile label="Active"         value={summary?.active_count ?? 0} />
+        <KpiTile label="Total"          value={summary?.total ?? 0} />
+        <KpiTile label="Total owed"     value={fmtZar(summary?.total_owed_zar ?? 0)} />
+        <KpiTile label="Avg settlement" value={fmtHours(summary?.avg_settlement_hours ?? 0)} />
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {FILTER_ROW_STATE.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white border-[#1a3a5c]'
-                : 'bg-white text-[#6b7685] border-[#eef2f6] hover:bg-[#eef2f7]'
-            }`}>
-            {f.label}
-          </button>
-        ))}
+      {/* Filter pills */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {FILTERS.map((f) => {
+          const active = filter === f.key;
+          return (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setFilter(f.key)}
+              style={{
+                padding: '3px 10px',
+                borderRadius: 999,
+                fontSize: 11,
+                fontWeight: 500,
+                border: `1px solid ${active ? ACC : BORDER}`,
+                background: active ? ACC : BG1,
+                color: active ? '#fff' : TX2,
+                cursor: 'pointer',
+                transition: 'background 120ms',
+              }}
+            >
+              {f.label}
+            </button>
+          );
+        })}
       </div>
 
-      {err && <div className="px-3 py-2 bg-red-50 text-red-700 text-[12px] rounded-md">{err}</div>}
-
-      <div className="bg-white border border-[#e5ebf2] rounded-xl overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[#f7f9fb] text-[11px] uppercase tracking-wide text-[#6b7685]">
-            <tr>
-              <th className="px-3 py-2 text-left">Settlement #</th>
-              <th className="px-3 py-2 text-left">BRP / zone</th>
-              <th className="px-3 py-2 text-right">Imbalance</th>
-              <th className="px-3 py-2 text-right">Owed</th>
-              <th className="px-3 py-2 text-right">Completeness</th>
-              <th className="px-3 py-2 text-left">Tier</th>
-              <th className="px-3 py-2 text-left">State</th>
-              <th className="px-3 py-2 text-right">{'Δ'} SLA</th>
-            </tr>
-          </thead>
-          <tbody className="text-[13px]">
-            {loading ? (
-              <tr><td colSpan={8} className="p-6 text-center text-[#6b7685]">Loading...</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={8} className="p-6 text-center text-[#6b7685]">No settlement periods match the current filter.</td></tr>
-            ) : filtered.map((r) => {
-              const stateTone = STATE_TONE[r.chain_status];
-              const tierTone  = TIER_TONE[r.current_tier];
-              const floored = !!(r.imbalance_floor_flag_high_voltage_brp
-                || r.imbalance_floor_flag_system_critical_period
-                || r.imbalance_floor_flag_regulator_audit_period
-                || r.imbalance_floor_flag_market_suspension_active
-                || r.imbalance_floor_flag_repeated_breach_5plus);
-              return (
-                <tr
-                  key={r.id}
-                  onClick={() => loadEvents(r.id)}
-                  className={`cursor-pointer hover:bg-[#f7f9fb] border-t border-[#eef2f6] ${selected?.id === r.id ? 'bg-[#fffae6]' : ''}`}>
-                  <td className="px-3 py-2 font-mono text-[11px]">{r.settlement_number}</td>
-                  <td className="px-3 py-2 max-w-xs truncate" title={`${r.brp_label ?? r.brp_id} - ${r.market_zone ?? '-'}`}>
-                    {r.brp_label ?? r.brp_id}
-                    <span className="text-[#6b7685]"> - {r.market_zone ?? '-'} / {r.brp_voltage_class ?? '-'}</span>
-                    {floored && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fff4d6] text-[#a06200]">FLOOR</span>}
-                    {r.bridges_to_dispatch_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#dbecfb] text-[#1a3a5c]">W13</span>}
-                    {r.bridges_to_reserve_activation_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#e8defc] text-[#5320a3]">W50</span>}
-                    {(r.arrears_days_live ?? 0) >= 30 && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fde0e0] text-[#9b1f1f]">ARREARS {r.arrears_days_live}d</span>}
-                  </td>
-                  <td className="px-3 py-2 text-right text-[12px] tabular-nums">
-                    {fmtMwh(r.imbalance_mwh)}
-                    <div className="text-[10px] text-[#6b7685] uppercase">{r.imbalance_direction_live ?? r.imbalance_direction ?? '-'}</div>
-                  </td>
-                  <td className="px-3 py-2 text-right text-[12px] tabular-nums">{fmtZar(r.total_owed_zar_live ?? r.total_owed_zar)}</td>
-                  <td className="px-3 py-2 text-right text-[12px] tabular-nums">{(r.settlement_completeness_index_live ?? 0).toFixed(0)}</td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: tierTone.bg, color: tierTone.fg }}>
-                      {tierTone.label}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: stateTone.bg, color: stateTone.fg }}>
-                      {stateTone.label}
-                    </span>
-                  </td>
-                  <td className={`px-3 py-2 text-right text-[12px] tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                    {r.is_terminal ? '-' : fmtMin(r.minutes_until_sla)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {selected && (
-        <ImbDrawer
-          row={selected}
-          events={events}
-          onClose={() => { setSelected(null); setEvents([]); }}
-          doAction={doAction}
-        />
+      {err && (
+        <div style={{ padding: '8px 12px', background: 'oklch(0.97 0.04 20)', border: `1px solid ${BAD}30`, borderRadius: 8, color: BAD, fontSize: 12 }}>
+          {err}
+        </div>
       )}
-    </div>
-  );
-}
 
-function Kpi({ label, value, tone = 'ok' }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const fg = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0f1c2e';
-  return (
-    <div className="bg-white border border-[#e5ebf2] rounded-lg p-3">
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[20px] font-semibold tabular-nums mt-0.5" style={{ color: fg }}>{value}</div>
-    </div>
-  );
-}
+      {/* ChainCard list */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {loading ? (
+          <div style={{ padding: 24, textAlign: 'center', color: TX3, fontSize: 13 }}>Loading…</div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: 24, textAlign: 'center', color: TX3, fontSize: 13 }}>No settlement periods match the current filter.</div>
+        ) : filtered.map((row) => {
+          const floored = !!(row.imbalance_floor_flag_high_voltage_brp
+            || row.imbalance_floor_flag_system_critical_period
+            || row.imbalance_floor_flag_regulator_audit_period
+            || row.imbalance_floor_flag_market_suspension_active
+            || row.imbalance_floor_flag_repeated_breach_5plus);
 
-function ImbDrawer({
-  row, events, onClose, doAction,
-}: {
-  row: ImbRow;
-  events: ImbEvent[];
-  onClose: () => void;
-  doAction: (path: string, body?: object) => Promise<void>;
-}) {
-  const cs = row.chain_status;
-  const transitionable = !row.is_hard_terminal;
-  const cancellable = !row.is_hard_terminal && cs !== 'settled' && cs !== 'archived';
-  const urgencyTone = row.urgency_band_live ? URGENCY_TONE[row.urgency_band_live] : null;
-  const authorityNow = row.authority_required_live ?? row.authority_required ?? null;
-  const floored = !!(row.imbalance_floor_flag_high_voltage_brp
-    || row.imbalance_floor_flag_system_critical_period
-    || row.imbalance_floor_flag_regulator_audit_period
-    || row.imbalance_floor_flag_market_suspension_active
-    || row.imbalance_floor_flag_repeated_breach_5plus);
+          const metaParts: string[] = [
+            row.market_zone ?? '-',
+            row.brp_voltage_class ?? '-',
+            row.current_tier.toUpperCase(),
+            fmtMwh(row.imbalance_mwh),
+            fmtZar(row.total_owed_zar_live ?? row.total_owed_zar),
+          ];
+          if (floored) metaParts.push('FLOOR');
+          if (row.bridges_to_dispatch_chain_live) metaParts.push('W13');
+          if (row.bridges_to_reserve_activation_chain_live) metaParts.push('W50');
+          if ((row.arrears_days_live ?? 0) >= 30) metaParts.push(`ARREARS ${row.arrears_days_live}d`);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
+          const cascadeTo: string[] = [];
+          if (row.is_reportable_flag) cascadeTo.push('regulator');
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/30 flex items-stretch justify-end oe-overlay-in" onClick={onClose}>
-      <div className="bg-white w-full max-w-2xl shadow-xl overflow-y-auto oe-drawer-in" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-start justify-between sticky top-0 bg-white z-10">
-          <div>
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">Imbalance settlement {row.settlement_number}</div>
-            <h3 className="text-[16px] font-semibold text-[#0f1c2e] mt-0.5">
-              {row.brp_label ?? row.brp_id} - {row.market_zone ?? '-'} {' · '} {new Date(row.settlement_period_start_at).toLocaleString()}
-            </h3>
-            <div className="flex flex-wrap gap-2 mt-2 text-[12px]">
-              <span className="px-2 py-0.5 rounded-full font-semibold" style={{ background: TIER_TONE[row.current_tier].bg, color: TIER_TONE[row.current_tier].fg }}>
-                {TIER_TONE[row.current_tier].label}
-              </span>
-              <span className="px-2 py-0.5 rounded-full" style={{ background: STATE_TONE[cs].bg, color: STATE_TONE[cs].fg }}>
-                {STATE_TONE[cs].label}
-              </span>
-              {urgencyTone && (
-                <span className="px-2 py-0.5 rounded-full font-medium" style={{ background: urgencyTone.bg, color: urgencyTone.fg }}>
-                  {urgencyTone.label} urgency
-                </span>
-              )}
-              {floored && (
-                <span className="px-2 py-0.5 rounded-full font-bold bg-[#fff4d6] text-[#a06200]">FLOOR</span>
-              )}
-              {row.is_reportable_flag && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">Regulator reportable</span>
-              )}
-              {authorityNow && (
-                <span className="px-2 py-0.5 rounded-full bg-[#dbecfb] text-[#1a3a5c] font-medium">Auth: {AUTH_LABEL[authorityNow]}</span>
-              )}
-              {row.bridges_to_dispatch_chain_live && (
-                <span className="px-2 py-0.5 rounded-full bg-[#dbecfb] text-[#1a3a5c] font-medium">W13 dispatch bridge</span>
-              )}
-              {row.bridges_to_reserve_activation_chain_live && (
-                <span className="px-2 py-0.5 rounded-full bg-[#e8defc] text-[#5320a3] font-medium">W50 reserve bridge</span>
-              )}
-            </div>
-          </div>
-          <button type="button" onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">X</button>
-        </div>
-
-        <div className="p-5 space-y-4 text-[13px]">
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Imbalance position</div>
-            <div className="grid grid-cols-3 gap-3">
-              <Pair label="Nominated" value={fmtMwh(row.nominated_mwh)} />
-              <Pair label="Metered" value={fmtMwh(row.metered_mwh)} />
-              <Pair label="Imbalance MWh" value={`${row.imbalance_mwh.toFixed(2)} (${row.imbalance_direction_live ?? row.imbalance_direction ?? '-'})`} />
-            </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="Long price" value={fmtZar(row.long_price_zar_per_mwh) + ' / MWh'} />
-              <Pair label="Short price" value={fmtZar(row.short_price_zar_per_mwh) + ' / MWh'} />
-              <Pair label="Applied price" value={fmtZar(row.price_applied_zar_per_mwh_live ?? row.price_applied_zar_per_mwh) + ' / MWh'} />
-            </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="Charge" value={fmtZar(row.imbalance_charge_zar_live ?? row.imbalance_charge_zar)} />
-              <Pair label="Penalty" value={fmtZar(row.penalty_zar_live ?? row.penalty_zar) + ` (x${row.penalty_multiplier.toFixed(2)})`} />
-              <Pair label="Total owed" value={fmtZar(row.total_owed_zar_live ?? row.total_owed_zar)} />
-            </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="Paid" value={fmtZar(row.amount_paid_zar)} />
-              <Pair label="Outstanding" value={fmtZar(row.amount_outstanding_zar)} />
-              <Pair label="Quantum (tier)" value={fmtZar(row.imbalance_quantum_zar)} />
-            </div>
-          </div>
-
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Settlement battery</div>
-            <div className="grid grid-cols-4 gap-3">
-              <Pair label="Completeness" value={`${(row.settlement_completeness_index_live ?? 0).toFixed(0)} / 130`} />
-              <Pair label="SLA days left" value={row.sla_days_remaining_live != null ? fmtDays(row.sla_days_remaining_live) : '-'} />
-              <Pair label="Dispute window" value={row.days_to_dispute_window_close_live != null ? fmtDays(row.days_to_dispute_window_close_live) : '-'} />
-              <Pair label="Reg filing window" value={row.regulator_filing_window_hours_live != null ? `${row.regulator_filing_window_hours_live}h` : '-'} />
-            </div>
-            <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="Arrears days" value={`${row.arrears_days_live ?? row.arrears_days}`} />
-              <Pair label="Arrears bucket" value={row.arrears_bucket_live ?? row.arrears_bucket ?? '-'} />
-              <Pair label="Revisions" value={`${row.invoice_revised_count}`} />
-              <Pair label="Escalations" value={`${row.escalation_level}`} />
-            </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
-              <Pair label="Invoice #" value={row.invoice_number ?? '-'} />
-              <Pair label="Invoice due" value={row.invoice_due_at ? new Date(row.invoice_due_at).toLocaleDateString() : '-'} />
-              <Pair label="Payment ref" value={row.payment_reference ?? '-'} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <FlagPill on={!!row.imbalance_floor_flag_high_voltage_brp} label="HV BRP (SYSTEMIC)" />
-            <FlagPill on={!!row.imbalance_floor_flag_system_critical_period} label="System-critical period (SYSTEMIC)" />
-            <FlagPill on={!!row.imbalance_floor_flag_regulator_audit_period} label="Regulator audit period (MATERIAL)" />
-            <FlagPill on={!!row.imbalance_floor_flag_market_suspension_active} label="Market suspension (MATERIAL)" />
-            <FlagPill on={!!row.imbalance_floor_flag_repeated_breach_5plus} label="Repeated breach 5+ (MATERIAL)" />
-            <FlagPill on={!!row.regulator_relevant} label="Regulator relevant" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {row.dispatch_nomination_ref && <Pair label="W13 dispatch ref" value={row.dispatch_nomination_ref} />}
-            {row.reserve_activation_ref && <Pair label="W50 reserve ref" value={row.reserve_activation_ref} />}
-            {row.regulator_inbox_ref && <Pair label="Regulator inbox" value={row.regulator_inbox_ref} />}
-            {row.regulator_ref && <Pair label="Regulator ref" value={row.regulator_ref} />}
-            {row.dispute_reason_code && <Pair label="Dispute reason" value={row.dispute_reason_code} />}
-            {row.dispute_resolution_text && <Pair label="Dispute resolution" value={row.dispute_resolution_text} />}
-            {row.cancel_reason && <Pair label="Cancel reason" value={row.cancel_reason} />}
-            {row.reason_code && <Pair label="Reason code" value={row.reason_code} />}
-          </div>
-
-          {row.sla_deadline_at && !row.is_terminal && (
-            <Pair label="Next SLA" value={`${new Date(row.sla_deadline_at).toLocaleString()} (${fmtMin(row.minutes_until_sla)})${row.escalation_level > 0 ? ` - ${row.escalation_level} breach(es)` : ''}`} />
-          )}
-
-          {transitionable && (
-            <div className="border-t border-[#eef2f6] pt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Actions</div>
-              <div className="flex flex-wrap gap-2">
-                {cs === 'period_open' && (
-                  <ActionBtn label="Receive meter data (SO)" onClick={() => {
-                    const mw = window.prompt('Metered MWh for the period:') ?? undefined;
-                    void doAction('receive-meter-data', {
-                      metered_mwh: mw ? Number(mw) : undefined,
-                    });
-                  }} />
-                )}
-                {cs === 'meter_data_received' && (
-                  <ActionBtn label="Reconcile nominations (SO)" onClick={() => { void doAction('reconcile-nominations', {}); }} />
-                )}
-                {cs === 'nominations_reconciled' && (
-                  <ActionBtn label="Compute imbalance (SO)" onClick={() => {
-                    const q = window.prompt('Imbalance quantum ZAR (optional, sets tier):') ?? undefined;
-                    void doAction('compute-imbalance', { imbalance_quantum_zar: q ? Number(q) : undefined });
-                  }} />
-                )}
-                {cs === 'imbalance_computed' && (
-                  <ActionBtn label="Price imbalance (SO)" onClick={() => {
-                    const long = window.prompt('Long price ZAR/MWh:') ?? undefined;
-                    const short = window.prompt('Short price ZAR/MWh:') ?? undefined;
-                    const mult = window.prompt('Penalty multiplier (>=1):') ?? undefined;
-                    void doAction('price-imbalance', {
-                      long_price_zar_per_mwh: long ? Number(long) : undefined,
-                      short_price_zar_per_mwh: short ? Number(short) : undefined,
-                      penalty_multiplier: mult ? Number(mult) : undefined,
-                    });
-                  }} />
-                )}
-                {(cs === 'priced' || cs === 'invoice_revised') && (
-                  <ActionBtn label="Issue invoice (settlement admin)" tone="good" onClick={() => {
-                    const num = window.prompt('Invoice number (optional):') ?? undefined;
-                    const due = window.prompt('Invoice due ISO (optional, default +14d):') ?? undefined;
-                    void doAction('issue-invoice', {
-                      invoice_number: num,
-                      invoice_due_at: due,
-                    });
-                  }} />
-                )}
-                {cs === 'invoice_issued' && (
-                  <ActionBtn label="Acknowledge invoice (BRP)" onClick={() => { void doAction('acknowledge-invoice', {}); }} />
-                )}
-                {cs === 'invoice_acknowledged' && (
-                  <ActionBtn label="Open dispute window (settlement admin)" onClick={() => {
-                    const close = window.prompt('Dispute window close ISO (optional, default +7d):') ?? undefined;
-                    void doAction('open-dispute-window', { dispute_window_close_at: close });
-                  }} />
-                )}
-                {cs === 'dispute_window_open' && (
-                  <>
-                    <ActionBtn label="Raise dispute (BRP)" tone="bad" onClick={() => {
-                      const code = window.prompt('Dispute reason code:') ?? undefined;
-                      const narrative = window.prompt('Dispute narrative (optional):') ?? undefined;
-                      void doAction('raise-dispute', { dispute_reason_code: code, dispute_narrative: narrative });
-                    }} />
-                    <ActionBtn label="Record payment (BRP)" tone="good" onClick={() => {
-                      const method = window.prompt('Payment method (eft/wire/cheque):') ?? undefined;
-                      const ref = window.prompt('Payment reference:') ?? undefined;
-                      const amt = window.prompt('Amount paid (ZAR):') ?? undefined;
-                      void doAction('record-payment', {
-                        payment_method: method,
-                        payment_reference: ref,
-                        amount_paid_zar: amt ? Number(amt) : undefined,
-                      });
-                    }} />
-                  </>
-                )}
-                {cs === 'disputed' && (
-                  <ActionBtn label="Resolve dispute (reviewer)" tone="good" onClick={() => {
-                    const text = window.prompt('Dispute resolution text:') ?? undefined;
-                    void doAction('resolve-dispute', { dispute_resolution_text: text });
-                  }} />
-                )}
-                {cs === 'resolved_dispute' && (
-                  <ActionBtn label="Revise invoice (settlement admin)" onClick={() => {
-                    const long = window.prompt('Revised long price ZAR/MWh (optional):') ?? undefined;
-                    const short = window.prompt('Revised short price ZAR/MWh (optional):') ?? undefined;
-                    const q = window.prompt('Revised quantum ZAR (optional, sets tier):') ?? undefined;
-                    void doAction('revise-invoice', {
-                      long_price_zar_per_mwh: long ? Number(long) : undefined,
-                      short_price_zar_per_mwh: short ? Number(short) : undefined,
-                      imbalance_quantum_zar: q ? Number(q) : undefined,
-                    });
-                  }} />
-                )}
-                {(cs === 'payment_pending' || cs === 'aged_arrears') && (
-                  <>
-                    <ActionBtn label="Record payment (BRP)" tone="good" onClick={() => {
-                      const method = window.prompt('Payment method (eft/wire/cheque):') ?? undefined;
-                      const ref = window.prompt('Payment reference:') ?? undefined;
-                      const amt = window.prompt('Amount paid (ZAR):') ?? undefined;
-                      void doAction('record-payment', {
-                        payment_method: method,
-                        payment_reference: ref,
-                        amount_paid_zar: amt ? Number(amt) : undefined,
-                      });
-                    }} />
-                    {cs === 'payment_pending' && (
-                      <ActionBtn label="Mark settled (settlement admin)" tone="good" onClick={() => { void doAction('mark-settled', {}); }} />
-                    )}
-                  </>
-                )}
-                {cs === 'settled' && (
-                  <ActionBtn label="Archive period (archiver)" onClick={() => { void doAction('archive-period', {}); }} />
-                )}
-                {cancellable && (
-                  <ActionBtn label="Cancel period" onClick={() => {
-                    const reason = window.prompt('Cancel reason:') ?? undefined;
-                    void doAction('cancel-period', { cancel_reason: reason });
-                  }} />
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="border-t border-[#eef2f6] pt-4">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Timeline</div>
-            <div className="space-y-2">
-              {events.length === 0 ? (
-                <div className="text-[12px] text-[#6b7685]">No events yet.</div>
-              ) : events.map((e) => {
-                const partyTone = PARTY_TONE[e.actor_party ?? 'system'] ?? PARTY_TONE.system;
-                return (
-                  <div key={e.id} className="flex gap-3 text-[12px] border-l-2 border-[#e5ebf2] pl-3 py-1">
-                    <span className="font-mono text-[11px] text-[#6b7685] whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
-                    <div>
-                      <span className="font-semibold text-[#0f1c2e]">{e.event_type}</span>
-                      {e.actor_party && (
-                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-medium uppercase" style={{ background: partyTone.bg, color: partyTone.fg }}>
-                          {e.actor_party}
-                        </span>
-                      )}
-                      {e.from_status && e.to_status && e.from_status !== e.to_status && (
-                        <span className="text-[#6b7685]"> {'· '}{e.from_status} {'→'} {e.to_status}</span>
-                      )}
-                      {e.notes && <div className="text-[#4a5568] mt-0.5">{e.notes}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+          return (
+            <ChainCard
+              key={row.id}
+              item={{
+                ...row,
+                case_number: row.settlement_number,
+                sla_breached: row.sla_breached_live ?? !!row.sla_breached,
+              }}
+              allStates={ALL_STATES}
+              branchStates={BRANCH_STATES}
+              title={`${row.brp_label ?? row.brp_id} · ${new Date(row.settlement_period_start_at).toLocaleString()}`}
+              meta={metaParts.join(' · ')}
+              actions={getActions(row)}
+              onAction={(key, values) => handleAction(row.id, key, values)}
+              cascadeTo={cascadeTo}
+              detail={renderDetail(row)}
+              events={expandedEvents[row.id]}
+              onExpand={handleExpand}
+            />
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function Pair({ label, value }: { label: string; value: string }) {
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : TX1;
+  return (
+    <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px' }}>
+      <div style={{ fontSize: 10, color: TX3, fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</div>
+      <div style={{ fontSize: 20, fontWeight: 700, color, fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>{value}</div>
+    </div>
+  );
+}
+
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[#0f1c2e] mt-0.5">{value}</div>
+      <div style={{ fontSize: 10, color: TX3, fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</div>
+      <div style={{ fontSize: 12, color: TX1, marginTop: 2 }}>{value}</div>
     </div>
   );
 }
 
-function FlagPill({ on, label }: { on: boolean; label: string }) {
-  return (
-    <div className={`flex items-center gap-2 px-2 py-1 rounded-md text-[12px] ${on ? 'bg-[#fff4d6] text-[#a06200] border border-[#f4d68f]' : 'bg-[#f7f9fb] text-[#6b7685] border border-[#e5ebf2]'}`}>
-      <span className={`inline-block w-2 h-2 rounded-full ${on ? 'bg-[#a06200]' : 'bg-[#cbd5e0]'}`} />
-      <span>{label}</span>
-    </div>
-  );
-}
-
-function ActionBtn({ label, onClick, tone = 'neutral' }: { label: string; onClick: () => void; tone?: 'neutral' | 'good' | 'bad' }) {
-  const bg = tone === 'good' ? 'bg-emerald-700' : tone === 'bad' ? 'bg-red-700' : 'bg-[#c2873a]';
-  return (
-    <button type="button" onClick={onClick} className={`px-3 py-1.5 ${bg} text-white text-[12px] rounded-md hover:opacity-90`}>
-      {label}
-    </button>
-  );
-}
+export default ImbalanceSettlementChainTab;

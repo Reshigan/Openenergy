@@ -30,6 +30,7 @@ type ChainStatus =
 type ReportClass = 'otc_derivative' | 'physical_forward' | 'spot_physical';
 
 interface TradeReportRow {
+  [key: string]: unknown;
   id: string;
   report_number: string;
   source_event: string | null;
@@ -99,8 +100,8 @@ interface TradeReportEvent {
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
   report_due:         { bg: '#e3e7ec', fg: '#445',    label: 'Report due' },
-  report_generated:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Report generated' },
-  submitted_to_tr:    { bg: '#dbecfb', fg: '#1a3a5c', label: 'Submitted to TR' },
+  report_generated:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Report generated' },
+  submitted_to_tr:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Submitted to TR' },
   tr_acknowledged:    { bg: '#fff4d6', fg: '#a06200', label: 'TR acknowledged' },
   reconciled:         { bg: '#daf5e2', fg: '#1f6b3a', label: 'Reconciled' },
   break_identified:   { bg: '#fcc3c3', fg: '#7a0e0e', label: 'Break identified' },
@@ -410,7 +411,7 @@ export function TradeReportingChainTab() {
         <span>Reconciled: <span className="font-semibold text-[#1f6b3a]">{kpis.reconciled_count}</span></span>
         <span>Exempted: <span className="font-semibold text-[#557]">{kpis.exempted_count}</span></span>
         <span>Cancelled: <span className="font-semibold text-[#557]">{kpis.cancelled_count}</span></span>
-        <span>Collateral: <span className="font-semibold text-[#1a3a5c]">{fmtZarM(kpis.total_collateral_zar_m)}</span></span>
+        <span>Collateral: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtZarM(kpis.total_collateral_zar_m)}</span></span>
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -439,14 +440,14 @@ export function TradeReportingChainTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-[#f3f5f9]">
               <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Report #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Counterparty</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Class</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Product</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Notional</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">TR</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Report #</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Counterparty</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Class</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Product</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>Notional</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>State</th>
+                <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>TR</th>
+                <th className="px-3 py-2 font-semibold text-right" style={{ color: 'oklch(0.46 0.16 55)' }}>SLA</th>
               </tr>
             </thead>
             <tbody>
@@ -463,7 +464,7 @@ export function TradeReportingChainTab() {
                       {r.report_number}
                       {r.source_wave && <span className="ml-1 text-[9px] text-[#8a93a0]">{r.source_wave}</span>}
                     </td>
-                    <td className="px-3 py-2 text-[#1a3a5c]">{r.counterparty_name ?? '—'}</td>
+                    <td className="px-3 py-2" style={{ color: 'oklch(0.46 0.16 55)' }}>{r.counterparty_name ?? '—'}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: klass.bg, color: klass.fg }}>
                         {klass.label}
@@ -583,19 +584,19 @@ function Drawer({
             {row.source_wave && <Pair label="Provenance" value={`${row.source_wave} · ${row.source_entity_id ?? ''}`} />}
           </div>
           {row.generation_basis && (
-            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-3 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Generation basis</div>
               {row.generation_basis}
             </div>
           )}
           {row.submission_basis && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Submission basis</div>
               {row.submission_basis}
             </div>
           )}
           {row.reconciliation_basis && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Reconciliation basis</div>
               {row.reconciliation_basis}
             </div>
@@ -619,13 +620,13 @@ function Drawer({
             </div>
           )}
           {row.exemption_basis && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Exemption basis</div>
               {row.exemption_basis}
             </div>
           )}
           {row.resolution_notes && (
-            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px] text-[#1a3a5c]">
+            <div className="mt-2 rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
               <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Resolution notes</div>
               {row.resolution_notes}
             </div>
@@ -708,7 +709,7 @@ function Drawer({
                       <span className="inline-block rounded bg-[#eef1f5] px-1.5 py-0.5 text-[10px] font-medium text-[#445]">{e.actor_party}</span>
                     )}
                   </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
+                  {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
                 </li>
               ))}
             </ol>

@@ -22,10 +22,10 @@ interface TimelineEvent { id: string; event_type: string; created_at: string; ac
 
 const TONE: Record<SmaStatus, { bg: string; fg: string; label: string }> = {
   ordered:              { bg: '#f0f3f7', fg: '#445566', label: 'Ordered' },
-  factory_acceptance:   { bg: '#dbecfb', fg: '#1a3a5c', label: 'Factory acceptance' },
-  site_delivery:        { bg: '#dbecfb', fg: '#1a3a5c', label: 'Delivered' },
+  factory_acceptance:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Factory acceptance' },
+  site_delivery:        { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Delivered' },
   installation_pending: { bg: '#fff4d6', fg: '#a06200', label: 'Install pending' },
-  installed:            { bg: '#dbecfb', fg: '#1a3a5c', label: 'Installed' },
+  installed:            { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Installed' },
   commissioning:        { bg: '#fff4d6', fg: '#a06200', label: 'Commissioning' },
   communication_test:   { bg: '#fff4d6', fg: '#a06200', label: 'Comms test' },
   data_quality_pass:    { bg: '#daf5e2', fg: '#1f6b3a', label: 'Data quality OK' },

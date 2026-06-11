@@ -14,6 +14,25 @@ import { api } from '../lib/api';
 import { AiBriefPanel, BriefRole } from './AiBriefPanel';
 import { SuiteHero } from './SuiteHero';
 
+// ─── OKLCH design tokens ───────────────────────────────────────────────────
+const BG      = 'oklch(0.96 0.003 250)';
+const BG1     = 'oklch(0.99 0.002 80)';
+const BORDER  = 'oklch(0.87 0.006 250)';
+const TX1     = 'oklch(0.17 0.010 250)';
+const TX2     = 'oklch(0.40 0.009 250)';
+const TX3     = 'oklch(0.60 0.007 250)';
+const ACC     = 'oklch(0.46 0.16 55)';
+const ACC_HVR = 'oklch(0.40 0.15 55)';
+const BAD     = 'oklch(0.48 0.20 20)';
+const BAD_BG  = 'oklch(0.97 0.04 20)';
+const BAD_BDR = 'oklch(0.85 0.08 20)';
+const OK      = 'oklch(0.45 0.15 150)';
+const OK_BG   = 'oklch(0.97 0.04 150)';
+const OK_BDR  = 'oklch(0.85 0.08 150)';
+const ROW_HOVER  = 'oklch(0.975 0.002 250)';
+const HEADER_BG  = 'oklch(0.94 0.004 250)';
+const ROW_BORDER = 'oklch(0.91 0.004 250)';
+
 // ─── Field & form specs ────────────────────────────────────────────────────
 // `datetime-local` mirrors the native HTML input type; FormField renders
 // both `datetime` and `datetime-local` as a `type="datetime-local"` field.
@@ -146,7 +165,7 @@ export function SuitePage(props: SuitePageProps) {
   );
 
   return (
-    <div className="p-6 lg:p-10 space-y-6 min-h-screen" style={{ background: 'var(--oe-surface)' }}>
+    <div className="p-6 lg:p-10 space-y-6 min-h-screen" style={{ background: BG }}>
       <SuiteHero
         role={props.heroRole}
         eyebrow={props.heroEyebrow || props.eyebrow || props.title}
@@ -170,8 +189,8 @@ export function SuitePage(props: SuitePageProps) {
         <select
           value={active?.key || ''}
           onChange={(e) => selectTab(e.target.value)}
-          className="w-full h-10 px-3 rounded-md border text-[13px] bg-white"
-          style={{ borderColor: '#d0d5dd', color: '#0f1c2e' }}
+          className="w-full h-10 px-3 rounded-md border text-[13px]"
+          style={{ borderColor: BORDER, color: TX1, background: BG1 }}
           aria-label="Select tab"
         >
           {props.tabs.map((tab) => (
@@ -179,18 +198,22 @@ export function SuitePage(props: SuitePageProps) {
           ))}
         </select>
       </div>
-      <div className="hidden sm:flex items-center gap-1.5 border-b border-[#dde4ec] overflow-x-auto">
+      <div
+        className="hidden sm:flex items-center gap-1.5 border-b overflow-x-auto"
+        style={{ borderColor: BORDER }}
+      >
         {props.tabs.map((tab) => {
           const isActive = tab.key === active?.key;
           return (
             <button type="button"
               key={tab.key}
               onClick={() => selectTab(tab.key)}
-              className={`h-11 px-4 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                isActive
-                  ? 'border-[#3b82c4] text-[#3b82c4]'
-                  : 'border-transparent text-[#6b7685] hover:text-[#0f1c2e]'
-              }`}
+              className="h-11 px-4 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors"
+              style={isActive
+                ? { borderColor: ACC, color: ACC }
+                : { borderColor: 'transparent', color: TX2 }}
+              onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.color = TX1; }}
+              onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.color = TX2; }}
             >
               {tab.label}
             </button>
@@ -284,16 +307,22 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
           aria-labelledby="confirm-dialog-title"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
         >
-          <div className="bg-white rounded-xl border border-[#dde4ec] shadow-xl p-6 max-w-sm w-full mx-4">
-            <h2 id="confirm-dialog-title" className="text-[15px] font-display font-semibold text-[#0f1c2e] mb-2">
+          <div
+            className="rounded-xl shadow-xl p-6 max-w-sm w-full mx-4"
+            style={{ background: BG1, borderWidth: 1, borderStyle: 'solid', borderColor: BORDER }}
+          >
+            <h2 id="confirm-dialog-title" className="text-[15px] font-display font-semibold mb-2" style={{ color: TX1 }}>
               Confirm action
             </h2>
-            <p className="text-[13px] text-[#6b7685] mb-5">{confirmPending.message}</p>
+            <p className="text-[13px] mb-5" style={{ color: TX2 }}>{confirmPending.message}</p>
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setConfirmPending(null)}
-                className="rounded-md border border-[#dde4ec] bg-white px-4 py-2 text-[13px] font-medium text-[#0f1c2e] hover:bg-[#eef3f8]"
+                className="rounded-md px-4 py-2 text-[13px] font-medium"
+                style={{ borderWidth: 1, borderStyle: 'solid', borderColor: BORDER, background: BG1, color: TX1 }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = ROW_HOVER; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = BG1; }}
               >
                 Cancel
               </button>
@@ -311,21 +340,27 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
       {(tab.description || tab.create) && (
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           {tab.description && (
-            <p className="text-[12px] text-[#6b7685] max-w-3xl">
+            <p className="text-[12px] max-w-3xl" style={{ color: TX2 }}>
               {tab.description.length > 140 ? tab.description.slice(0, 137) + '…' : tab.description}
             </p>
           )}
           <div className="flex items-center gap-2">
             <button type="button"
               onClick={() => void load()}
-              className="h-9 px-3 rounded-md text-[12px] font-semibold border border-[#d0d5dd] bg-white text-[#6b7685] hover:bg-[#f5f6fa] inline-flex items-center gap-1.5"
+              className="h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-1.5"
+              style={{ borderWidth: 1, borderStyle: 'solid', borderColor: BORDER, background: BG1, color: TX2 }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = ROW_HOVER; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = BG1; }}
             >
               <RefreshCw size={12} /> Refresh
             </button>
             {tab.create && (
               <button type="button"
                 onClick={() => setModalForm({ form: tab.create!, title: tab.create!.title })}
-                className="h-9 px-3 rounded-md text-[12px] font-semibold bg-[#3b82c4] text-white hover:bg-[#0956a3] inline-flex items-center gap-1"
+                className="h-9 px-3 rounded-md text-[12px] font-semibold text-white inline-flex items-center gap-1"
+                style={{ background: ACC }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = ACC_HVR; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = ACC; }}
               >
                 <Plus size={12} /> {tab.create.submitLabel || 'New'}
               </button>
@@ -335,24 +370,33 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
       )}
 
       {error && (
-        <div className="rounded-lg border border-[#ffcdd2] bg-[#ffebee] px-4 py-2 text-[13px] text-[#c0392b] inline-flex items-center gap-2">
+        <div
+          className="rounded-lg px-4 py-2 text-[13px] inline-flex items-center gap-2"
+          style={{ borderWidth: 1, borderStyle: 'solid', borderColor: BAD_BDR, background: BAD_BG, color: BAD }}
+        >
           <AlertTriangle size={14} /> {error}
         </div>
       )}
       {success && (
-        <div className="rounded-lg border border-[#c8e6c9] bg-[#e7f4ea] px-4 py-2 text-[13px] text-[#1a8a5b]">
+        <div
+          className="rounded-lg px-4 py-2 text-[13px]"
+          style={{ borderWidth: 1, borderStyle: 'solid', borderColor: OK_BDR, background: OK_BG, color: OK }}
+        >
           {success}
         </div>
       )}
 
-      <div className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+      <div
+        className="rounded-xl overflow-hidden"
+        style={{ borderWidth: 1, borderStyle: 'solid', borderColor: BORDER, background: BG1 }}
+      >
         {loading ? (
-          <div className="p-6 text-[13px] text-[#6b7685] flex items-center gap-2">
+          <div className="p-6 text-[13px] flex items-center gap-2" style={{ color: TX2 }}>
             <Loader2 size={14} className="animate-spin" /> Loading…
           </div>
         ) : rows.length === 0 ? (
-          <div className="p-10 text-center text-[#6b7685]">
-            <p className="text-[14px] font-semibold text-[#0f1c2e]">No records yet</p>
+          <div className="p-10 text-center" style={{ color: TX2 }}>
+            <p className="text-[14px] font-semibold" style={{ color: TX1 }}>No records yet</p>
             {tab.emptyHint && <p className="text-[12px] mt-1 max-w-lg mx-auto">{tab.emptyHint}</p>}
           </div>
         ) : (
@@ -361,8 +405,8 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
                 10-column table is unreadable even with overflow scroll. */}
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-[13px]">
-                <thead className="bg-[#eef2f7] text-[#6b7685]">
-                  <tr className="border-b border-[#f0f0f0]">
+                <thead style={{ background: HEADER_BG, color: TX2 }}>
+                  <tr style={{ borderBottom: `1px solid ${ROW_BORDER}` }}>
                     {tab.columns.map((col) => (
                       <th
                         key={col.key}
@@ -378,46 +422,13 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
                 </thead>
                 <tbody>
                   {rows.map((row, i) => (
-                    <tr
+                    <HoverRow
                       key={String(row.id ?? i)}
-                      className={`border-b border-[#f0f0f0] hover:bg-[#fafbfd] ${tab.detail ? 'cursor-pointer' : ''}`}
-                      onClick={(e) => {
-                        if ((e.target as HTMLElement).closest('button')) return;
-                        if (tab.detail) setDetailRow(row);
-                      }}
-                    >
-                      {tab.columns.map((col) => (
-                        <td
-                          key={col.key}
-                          className={`px-4 py-2.5 text-[#0f1c2e] ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''}`}
-                        >
-                          {renderCell(row, col)}
-                        </td>
-                      ))}
-                      {tab.rowActions && tab.rowActions.length > 0 && (
-                        <td className="px-4 py-2.5 text-right">
-                          <div className="inline-flex items-center gap-1.5">
-                            {tab.rowActions
-                              .filter((a) => (a.show ? a.show(row) : true))
-                              .map((a, idx) => (
-                                <button type="button"
-                                  key={idx}
-                                  onClick={(e) => { e.stopPropagation(); void handleRowAction(a, row); }}
-                                  className={`h-8 px-2.5 rounded-md text-[11px] font-semibold border transition-colors ${
-                                    a.tone === 'danger'
-                                      ? 'border-[#e8a59b] bg-white text-[#c0392b] hover:bg-[#ffebee]'
-                                      : a.tone === 'primary'
-                                        ? 'border-[#3b82c4] bg-[#3b82c4] text-white hover:bg-[#0956a3]'
-                                        : 'border-[#d0d5dd] bg-white text-[#6b7685] hover:bg-[#f5f6fa]'
-                                  }`}
-                                >
-                                  {a.label}
-                                </button>
-                              ))}
-                          </div>
-                        </td>
-                      )}
-                    </tr>
+                      row={row}
+                      tab={tab}
+                      onDetailOpen={() => setDetailRow(row)}
+                      onRowAction={handleRowAction}
+                    />
                   ))}
                 </tbody>
               </table>
@@ -426,11 +437,12 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
             {/* Mobile: card list — each row becomes a stacked card with
                 label/value pairs. Tap the card to drill in (if detail is
                 configured). Actions flow as full-width buttons at the bottom. */}
-            <ul className="sm:hidden divide-y divide-[#f0f0f0]">
+            <ul className="sm:hidden" style={{ borderTop: `1px solid ${ROW_BORDER}` }}>
               {rows.map((row, i) => (
                 <li
                   key={String(row.id ?? i)}
-                  className={`p-4 ${tab.detail ? 'active:bg-[#fafbfd]' : ''}`}
+                  className="p-4"
+                  style={{ borderBottom: `1px solid ${ROW_BORDER}` }}
                   onClick={(e) => {
                     if ((e.target as HTMLElement).closest('button')) return;
                     if (tab.detail) setDetailRow(row);
@@ -445,8 +457,8 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
                       if (isEmpty) return null;
                       return (
                         <React.Fragment key={col.key}>
-                          <dt className="text-[11px] text-[#6b7685] uppercase tracking-wider col-span-1">{col.label}</dt>
-                          <dd className="text-[13px] text-[#0f1c2e] col-span-1 break-words">{cell}</dd>
+                          <dt className="text-[11px] uppercase tracking-wider col-span-1" style={{ color: TX2 }}>{col.label}</dt>
+                          <dd className="text-[13px] col-span-1 break-words" style={{ color: TX1 }}>{cell}</dd>
                         </React.Fragment>
                       );
                     })}
@@ -456,19 +468,12 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
                       {tab.rowActions
                         .filter((a) => (a.show ? a.show(row) : true))
                         .map((a, idx) => (
-                          <button type="button"
+                          <MobileActionButton
                             key={idx}
-                            onClick={(e) => { e.stopPropagation(); void handleRowAction(a, row); }}
-                            className={`flex-1 min-w-[calc(50%-4px)] h-9 px-3 rounded-md text-[12px] font-semibold border transition-colors ${
-                              a.tone === 'danger'
-                                ? 'border-[#e8a59b] bg-white text-[#c0392b]'
-                                : a.tone === 'primary'
-                                  ? 'border-[#3b82c4] bg-[#3b82c4] text-white'
-                                  : 'border-[#d0d5dd] bg-white text-[#6b7685]'
-                            }`}
-                          >
-                            {a.label}
-                          </button>
+                            action={a}
+                            row={row}
+                            onAction={handleRowAction}
+                          />
                         ))}
                     </div>
                   )}
@@ -506,11 +511,158 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
   );
 }
 
+// ─── HoverRow — desktop table row with hover state ─────────────────────────
+function HoverRow({
+  row, tab, onDetailOpen, onRowAction,
+}: {
+  row: Record<string, unknown>;
+  tab: TabSpec;
+  onDetailOpen: () => void;
+  onRowAction: (action: RowAction, row: Record<string, unknown>) => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <tr
+      style={{
+        borderBottom: `1px solid ${ROW_BORDER}`,
+        background: hovered ? ROW_HOVER : 'transparent',
+        cursor: tab.detail ? 'pointer' : 'default',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest('button')) return;
+        if (tab.detail) onDetailOpen();
+      }}
+    >
+      {tab.columns.map((col) => (
+        <td
+          key={col.key}
+          className={`px-4 py-2.5 ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : ''}`}
+          style={{ color: TX1 }}
+        >
+          {renderCell(row, col)}
+        </td>
+      ))}
+      {tab.rowActions && tab.rowActions.length > 0 && (
+        <td className="px-4 py-2.5 text-right">
+          <div className="inline-flex items-center gap-1.5">
+            {tab.rowActions
+              .filter((a) => (a.show ? a.show(row) : true))
+              .map((a, idx) => (
+                <ActionButton
+                  key={idx}
+                  action={a}
+                  row={row}
+                  onAction={onRowAction}
+                />
+              ))}
+          </div>
+        </td>
+      )}
+    </tr>
+  );
+}
+
+// ─── ActionButton — desktop row action with hover state ────────────────────
+function ActionButton({
+  action, row, onAction,
+}: {
+  action: RowAction;
+  row: Record<string, unknown>;
+  onAction: (action: RowAction, row: Record<string, unknown>) => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  const baseStyle: React.CSSProperties = (() => {
+    if (action.tone === 'danger') {
+      return {
+        borderWidth: 1, borderStyle: 'solid',
+        borderColor: BAD_BDR,
+        background: hovered ? BAD_BG : BG1,
+        color: BAD,
+      };
+    }
+    if (action.tone === 'primary') {
+      return {
+        borderWidth: 1, borderStyle: 'solid',
+        borderColor: ACC,
+        background: hovered ? ACC_HVR : ACC,
+        color: 'white',
+      };
+    }
+    return {
+      borderWidth: 1, borderStyle: 'solid',
+      borderColor: BORDER,
+      background: hovered ? ROW_HOVER : BG1,
+      color: TX2,
+    };
+  })();
+
+  return (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); onAction(action, row); }}
+      className="h-8 px-2.5 rounded-md text-[11px] font-semibold transition-colors"
+      style={baseStyle}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {action.label}
+    </button>
+  );
+}
+
+// ─── MobileActionButton — card list action button ──────────────────────────
+function MobileActionButton({
+  action, row, onAction,
+}: {
+  action: RowAction;
+  row: Record<string, unknown>;
+  onAction: (action: RowAction, row: Record<string, unknown>) => void;
+}) {
+  const style: React.CSSProperties = (() => {
+    if (action.tone === 'danger') {
+      return {
+        borderWidth: 1, borderStyle: 'solid',
+        borderColor: BAD_BDR,
+        background: BG1,
+        color: BAD,
+      };
+    }
+    if (action.tone === 'primary') {
+      return {
+        borderWidth: 1, borderStyle: 'solid',
+        borderColor: ACC,
+        background: ACC,
+        color: 'white',
+      };
+    }
+    return {
+      borderWidth: 1, borderStyle: 'solid',
+      borderColor: BORDER,
+      background: BG1,
+      color: TX2,
+    };
+  })();
+
+  return (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); onAction(action, row); }}
+      className="flex-1 min-w-[calc(50%-4px)] h-9 px-3 rounded-md text-[12px] font-semibold transition-colors"
+      style={style}
+    >
+      {action.label}
+    </button>
+  );
+}
+
 // ─── Renderers ─────────────────────────────────────────────────────────────
 function renderCell(row: Record<string, unknown>, col: Column): React.ReactNode {
   if (col.render) return col.render(row);
   const raw = row[col.key];
-  if (raw == null || raw === '') return <span className="text-[#b0b5bb]">—</span>;
+  if (raw == null || raw === '') return <span style={{ color: TX3 }}>—</span>;
   if (col.currency) {
     const n = Number(raw);
     if (!Number.isFinite(n)) return String(raw);
@@ -605,14 +757,25 @@ function FormModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
-        className="bg-white shadow-xl w-full flex flex-col overflow-hidden
+        className="shadow-xl w-full flex flex-col overflow-hidden
                    sm:rounded-2xl sm:max-w-xl sm:max-h-[90vh]
                    h-full sm:h-auto"
+        style={{ background: BG1 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-5 py-3.5 border-b border-[#dde4ec] flex items-center justify-between">
-          <h2 className="text-[15px] font-semibold text-[#0f1c2e]">{title}</h2>
-          <button type="button" onClick={onClose} className="p-1.5 rounded hover:bg-[#f5f6fa]">
+        <div
+          className="px-5 py-3.5 flex items-center justify-between"
+          style={{ borderBottom: `1px solid ${BORDER}` }}
+        >
+          <h2 className="text-[15px] font-semibold" style={{ color: TX1 }}>{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded"
+            style={{ color: TX2 }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = ROW_HOVER; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+          >
             <X size={16} />
           </button>
         </div>
@@ -629,17 +792,26 @@ function FormModal({
           ))}
         </div>
 
-        <div className="px-5 py-3 border-t border-[#dde4ec] flex items-center justify-end gap-2">
+        <div
+          className="px-5 py-3 flex items-center justify-end gap-2"
+          style={{ borderTop: `1px solid ${BORDER}` }}
+        >
           <button type="button"
             onClick={onClose}
-            className="h-9 px-4 rounded-md text-[13px] font-semibold border border-[#d0d5dd] bg-white text-[#6b7685] hover:bg-[#f5f6fa]"
+            className="h-9 px-4 rounded-md text-[13px] font-semibold"
+            style={{ borderWidth: 1, borderStyle: 'solid', borderColor: BORDER, background: BG1, color: TX2 }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = ROW_HOVER; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = BG1; }}
           >
             Cancel
           </button>
           <button type="button"
             onClick={submit}
             disabled={submitting}
-            className="h-9 px-4 rounded-md text-[13px] font-semibold bg-[#3b82c4] text-white hover:bg-[#0956a3] disabled:opacity-50 inline-flex items-center gap-1.5"
+            className="h-9 px-4 rounded-md text-[13px] font-semibold text-white disabled:opacity-50 inline-flex items-center gap-1.5"
+            style={{ background: ACC }}
+            onMouseEnter={(e) => { if (!submitting) (e.currentTarget as HTMLButtonElement).style.background = ACC_HVR; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = ACC; }}
           >
             {submitting && <Loader2 size={14} className="animate-spin" />}
             {form.submitLabel || 'Save'}
@@ -657,16 +829,21 @@ function FormField({ field, value, error, onChange }: {
   onChange: (v: unknown) => void;
 }) {
   const labelRow = (
-    <label className="text-[12px] font-semibold text-[#0f1c2e] flex items-center gap-1">
+    <label className="text-[12px] font-semibold flex items-center gap-1" style={{ color: TX1 }}>
       {field.label}
-      {field.required && <span className="text-[#c0392b]">*</span>}
+      {field.required && <span style={{ color: BAD }}>*</span>}
     </label>
   );
-  const help = field.help && <p className="text-[11px] text-[#6b7685] mt-1">{field.help}</p>;
-  const errNode = error && <p className="text-[11px] text-[#c0392b] mt-1">{error}</p>;
-  const inputClass = `w-full h-11 sm:h-10 px-3 rounded-md border text-[14px] sm:text-[13px] bg-white ${
-    error ? 'border-[#e8a59b]' : 'border-[#d0d5dd]'
-  } focus:outline-none focus:border-[#3b82c4]`;
+  const help = field.help && <p className="text-[11px] mt-1" style={{ color: TX2 }}>{field.help}</p>;
+  const errNode = error && <p className="text-[11px] mt-1" style={{ color: BAD }}>{error}</p>;
+  const inputStyle: React.CSSProperties = {
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: error ? BAD_BDR : BORDER,
+    background: BG1,
+    color: TX1,
+  };
+  const inputClass = 'w-full h-11 sm:h-10 px-3 rounded-md text-[14px] sm:text-[13px] focus:outline-none';
 
   switch (field.type) {
     case 'textarea':
@@ -679,6 +856,7 @@ function FormField({ field, value, error, onChange }: {
             placeholder={field.placeholder}
             rows={3}
             className={`${inputClass} h-auto py-2`}
+            style={inputStyle}
           />
           {help}{errNode}
         </div>
@@ -691,6 +869,7 @@ function FormField({ field, value, error, onChange }: {
             value={String(value ?? '')}
             onChange={(e) => onChange(e.target.value)}
             className={inputClass}
+            style={inputStyle}
           >
             <option value="">— Select —</option>
             {(field.options || []).map((o) => (
@@ -726,6 +905,7 @@ function FormField({ field, value, error, onChange }: {
             placeholder={field.placeholder}
             step="any"
             className={inputClass}
+            style={inputStyle}
           />
           {help}{errNode}
         </div>
@@ -739,6 +919,7 @@ function FormField({ field, value, error, onChange }: {
             value={String(value ?? '')}
             onChange={(e) => onChange(e.target.value)}
             className={inputClass}
+            style={inputStyle}
           />
           {help}{errNode}
         </div>
@@ -753,6 +934,7 @@ function FormField({ field, value, error, onChange }: {
             value={String(value ?? '')}
             onChange={(e) => onChange(e.target.value)}
             className={inputClass}
+            style={inputStyle}
           />
           {help}{errNode}
         </div>
@@ -767,6 +949,7 @@ function FormField({ field, value, error, onChange }: {
             rows={5}
             placeholder='{"key":"value"}'
             className={`${inputClass} h-auto py-2 font-mono`}
+            style={inputStyle}
           />
           {help}{errNode}
         </div>
@@ -781,6 +964,7 @@ function FormField({ field, value, error, onChange }: {
             onChange={(e) => onChange(e.target.value)}
             placeholder={field.placeholder}
             className={inputClass}
+            style={inputStyle}
           />
           {help}{errNode}
         </div>
@@ -823,33 +1007,44 @@ function DetailDrawer({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
       <div
-        className="bg-white w-full sm:max-w-2xl h-full overflow-y-auto shadow-xl"
+        className="w-full sm:max-w-2xl h-full overflow-y-auto shadow-xl"
+        style={{ background: BG1 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-5 py-3.5 border-b border-[#dde4ec] flex items-center justify-between sticky top-0 bg-white z-10">
-          <h2 className="text-[15px] font-semibold text-[#0f1c2e]">Record detail</h2>
-          <button type="button" onClick={onClose} className="p-1.5 rounded hover:bg-[#f5f6fa]">
+        <div
+          className="px-5 py-3.5 flex items-center justify-between sticky top-0 z-10"
+          style={{ borderBottom: `1px solid ${BORDER}`, background: BG1 }}
+        >
+          <h2 className="text-[15px] font-semibold" style={{ color: TX1 }}>Record detail</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded"
+            style={{ color: TX2 }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = ROW_HOVER; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+          >
             <X size={16} />
           </button>
         </div>
 
         <div className="p-5 space-y-5">
           {loading ? (
-            <div className="text-[13px] text-[#6b7685] inline-flex items-center gap-2">
+            <div className="text-[13px] inline-flex items-center gap-2" style={{ color: TX2 }}>
               <Loader2 size={14} className="animate-spin" /> Loading…
             </div>
           ) : (
             <>
               <section>
-                <h3 className="text-[12px] uppercase tracking-wider text-[#6b7685] mb-2">Summary</h3>
+                <h3 className="text-[12px] uppercase tracking-wider mb-2" style={{ color: TX2 }}>Summary</h3>
                 <dl className="grid grid-cols-2 gap-3 text-[13px]">
                   {summaryFields.map((k) => {
                     const v = detail?.[k];
                     if (v == null || v === '') return null;
                     return (
                       <div key={k}>
-                        <dt className="text-[11px] text-[#6b7685]">{k}</dt>
-                        <dd className="text-[#0f1c2e] break-all">
+                        <dt className="text-[11px]" style={{ color: TX2 }}>{k}</dt>
+                        <dd className="break-all" style={{ color: TX1 }}>
                           {typeof v === 'object' ? JSON.stringify(v) : String(v)}
                         </dd>
                       </div>
@@ -862,15 +1057,18 @@ function DetailDrawer({
                 const items = (detail?.[child.dataKey] as Record<string, unknown>[]) || [];
                 return (
                   <section key={child.dataKey}>
-                    <h3 className="text-[12px] uppercase tracking-wider text-[#6b7685] mb-2">
+                    <h3 className="text-[12px] uppercase tracking-wider mb-2" style={{ color: TX2 }}>
                       {child.label} ({items.length})
                     </h3>
                     {items.length === 0 ? (
-                      <p className="text-[13px] text-[#6b7685]">—</p>
+                      <p className="text-[13px]" style={{ color: TX2 }}>—</p>
                     ) : (
-                      <div className="rounded-lg border border-[#dde4ec] overflow-hidden">
+                      <div
+                        className="rounded-lg overflow-hidden"
+                        style={{ borderWidth: 1, borderStyle: 'solid', borderColor: BORDER }}
+                      >
                         <table className="w-full text-[12px]">
-                          <thead className="bg-[#eef2f7] text-[#6b7685]">
+                          <thead style={{ background: HEADER_BG, color: TX2 }}>
                             <tr>
                               {child.columns.map((col) => (
                                 <th key={col.key} className={`px-3 py-2 font-semibold ${col.align === 'right' ? 'text-right' : 'text-left'}`}>
@@ -881,7 +1079,10 @@ function DetailDrawer({
                           </thead>
                           <tbody>
                             {items.map((r, i) => (
-                              <tr key={String(r.id ?? i)} className="border-t border-[#f0f0f0]">
+                              <tr
+                                key={String(r.id ?? i)}
+                                style={{ borderTop: `1px solid ${ROW_BORDER}` }}
+                              >
                                 {child.columns.map((col) => (
                                   <td key={col.key} className={`px-3 py-2 ${col.align === 'right' ? 'text-right' : ''}`}>
                                     {renderCell(r, col)}
@@ -912,12 +1113,12 @@ export type StatusPillTone = 'good' | 'warn' | 'bad' | 'critical' | 'info' | 'ne
 export function StatusPill({ status, label, tone }: { status?: string; label?: string; tone?: StatusPillTone }) {
   const text = label ?? status ?? '';
   const palette: Record<string, { bg: string; text: string }> = {
-    good:     { bg: '#e7f4ea', text: '#1a8a5b' },
-    warn:     { bg: '#fef3e6', text: '#b04e0f' },
-    bad:      { bg: '#fde7e9', text: '#c0392b' },
-    critical: { bg: '#fde7e9', text: '#c0392b' },
-    info:     { bg: '#d4e7f6', text: '#3b82c4' },
-    neutral:  { bg: '#eef1f4', text: '#6b7685' },
+    good:     { bg: OK_BG,                        text: OK },
+    warn:     { bg: 'oklch(0.97 0.04 55)',         text: 'oklch(0.45 0.15 55)' },
+    bad:      { bg: BAD_BG,                        text: BAD },
+    critical: { bg: BAD_BG,                        text: BAD },
+    info:     { bg: 'oklch(0.96 0.04 250)',         text: ACC },
+    neutral:  { bg: HEADER_BG,                     text: TX2 },
   };
   const inferTone = (): keyof typeof palette => {
     const s = text.toLowerCase();

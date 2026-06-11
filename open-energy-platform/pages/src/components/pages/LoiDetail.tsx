@@ -17,6 +17,18 @@ import { loiFileTabs, loiHero, type LoiFileData } from '../file/loiFileConfig';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
 
+const BAD     = 'oklch(0.48 0.20 20)';
+const BAD_BG  = 'oklch(0.97 0.04 20)';
+const BORDER  = 'oklch(0.87 0.006 250)';
+const TX1     = 'oklch(0.17 0.010 250)';
+const TX2     = 'oklch(0.40 0.009 250)';
+const TX3     = 'oklch(0.60 0.007 250)';
+const BG1     = 'oklch(0.99 0.002 80)';
+const BG2     = 'oklch(0.93 0.004 250)';
+const GOOD    = 'oklch(0.40 0.16 155)';
+const GOOD_BG = 'oklch(0.95 0.04 155)';
+const ACC     = 'oklch(0.46 0.16 55)';
+
 export function LoiDetail() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -69,7 +81,16 @@ export function LoiDetail() {
   return (
     <>
       {error && (
-        <div className="mx-auto mt-4 max-w-[1400px] rounded-lg border border-[#ffcdd2] bg-[#ffebee] px-4 py-2 text-[13px] text-[#c0392b]">
+        <div style={{
+          maxWidth: 1400,
+          margin: '16px auto 0',
+          borderRadius: 8,
+          border: `1px solid ${BAD}`,
+          background: BAD_BG,
+          padding: '8px 16px',
+          fontSize: 13,
+          color: BAD,
+        }}>
           {error}
         </div>
       )}
@@ -92,7 +113,20 @@ export function LoiDetail() {
                 <button
                   type="button"
                   onClick={() => navigate('/lois')}
-                  className="h-9 px-3 rounded-md bg-white/15 border border-white/20 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/25"
+                  style={{
+                    height: 36,
+                    padding: '0 12px',
+                    borderRadius: 6,
+                    background: 'rgba(255,255,255,0.15)',
+                    border: '1px solid rgba(255,255,255,0.20)',
+                    color: '#fff',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    cursor: 'pointer',
+                  }}
                 >
                   <OEIcon name="chevron-left" size={14} /> LOIs
                 </button>
@@ -100,7 +134,20 @@ export function LoiDetail() {
                   <button
                     type="button"
                     onClick={() => navigate(`/contracts/${data.contract!.record.id}`)}
-                    className="h-9 px-3 rounded-md bg-white text-[#3a1f5d] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/90"
+                    style={{
+                      height: 36,
+                      padding: '0 12px',
+                      borderRadius: 6,
+                      background: '#fff',
+                      border: 'none',
+                      color: '#3a1f5d',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      cursor: 'pointer',
+                    }}
                   >
                     <OEIcon name="doc" size={14} /> Open contract file
                   </button>
@@ -109,7 +156,20 @@ export function LoiDetail() {
                   <button
                     type="button"
                     onClick={() => navigate(`/projects/${data.project.id}`)}
-                    className="h-9 px-3 rounded-md bg-white text-[#3a1f5d] text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/90"
+                    style={{
+                      height: 36,
+                      padding: '0 12px',
+                      borderRadius: 6,
+                      background: '#fff',
+                      border: 'none',
+                      color: '#3a1f5d',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      cursor: 'pointer',
+                    }}
                   >
                     <OEIcon name="workflow" size={14} /> Open project file
                   </button>
@@ -120,7 +180,21 @@ export function LoiDetail() {
                       type="button"
                       onClick={accept}
                       disabled={busy !== null}
-                      className="h-9 px-3 rounded-md bg-[#1a8a5b] text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#0b6430] disabled:opacity-60"
+                      style={{
+                        height: 36,
+                        padding: '0 12px',
+                        borderRadius: 6,
+                        background: GOOD,
+                        border: 'none',
+                        color: '#fff',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        cursor: busy !== null ? 'not-allowed' : 'pointer',
+                        opacity: busy !== null ? 0.6 : 1,
+                      }}
                     >
                       <OEIcon name="check" size={14} /> {busy === 'accept' ? 'Accepting…' : 'Accept & sign'}
                     </button>
@@ -128,7 +202,21 @@ export function LoiDetail() {
                       type="button"
                       onClick={() => setShowDecline(true)}
                       disabled={busy !== null}
-                      className="h-9 px-3 rounded-md bg-white/15 border border-white/30 text-white text-[12px] font-semibold inline-flex items-center gap-1 hover:bg-[#f8fafc]/25 disabled:opacity-60"
+                      style={{
+                        height: 36,
+                        padding: '0 12px',
+                        borderRadius: 6,
+                        background: 'rgba(255,255,255,0.15)',
+                        border: '1px solid rgba(255,255,255,0.30)',
+                        color: '#fff',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        cursor: busy !== null ? 'not-allowed' : 'pointer',
+                        opacity: busy !== null ? 0.6 : 1,
+                      }}
                     >
                       <OEIcon name="close" size={14} /> Decline
                     </button>
@@ -144,28 +232,73 @@ export function LoiDetail() {
       />
 
       {showDecline && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
-          <div className="w-full max-w-md rounded-xl bg-white border border-[#dde4ec] shadow-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#eef2f7]">
-              <h3 className="text-[15px] font-semibold text-[#0f1c2e]">Decline LOI</h3>
-              <p className="text-[12px] text-[#6b7685] mt-1">
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 50,
+          background: 'rgba(0,0,0,0.40)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 16px',
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: 440,
+            borderRadius: 12,
+            background: BG1,
+            border: `1px solid ${BORDER}`,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+            overflow: 'hidden',
+          }}>
+            {/* Modal header */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: `1px solid ${BORDER}`,
+            }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Decline LOI</div>
+              <div style={{ fontSize: 12, color: TX3, marginTop: 4 }}>
                 The sender will be notified. Provide a clear reason so they can counter-offer.
-              </p>
+              </div>
             </div>
-            <div className="p-5 space-y-3">
-              <label className="text-[12px] font-semibold text-[#6b7685]">Reason</label>
+
+            {/* Modal body */}
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: TX2 }}>Reason</label>
               <textarea
                 value={declineReason}
                 onChange={(e) => setDeclineReason(e.target.value)}
                 rows={4}
                 placeholder="e.g. Volume exceeds our current offtake envelope; revisit in Q3 post-budget."
-                className="w-full rounded-lg border border-[#d0d5dd] px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#3b82c4]"
+                style={{
+                  width: '100%',
+                  borderRadius: 6,
+                  border: `1px solid ${BORDER}`,
+                  padding: '8px 12px',
+                  fontSize: 13,
+                  color: TX1,
+                  background: BG2,
+                  resize: 'vertical',
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                }}
               />
-              <div className="flex items-center justify-end gap-2 pt-1">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
                 <button
                   type="button"
                   onClick={() => { setShowDecline(false); setDeclineReason(''); }}
-                  className="h-9 px-3 rounded-md border border-[#d0d5dd] text-[12px] text-[#6b7685] hover:bg-[#f5f6fa]"
+                  style={{
+                    height: 36,
+                    padding: '0 14px',
+                    borderRadius: 6,
+                    background: 'transparent',
+                    border: `1px solid ${BORDER}`,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: TX2,
+                    cursor: 'pointer',
+                  }}
                 >
                   Cancel
                 </button>
@@ -173,7 +306,18 @@ export function LoiDetail() {
                   type="button"
                   onClick={decline}
                   disabled={busy !== null || !declineReason.trim()}
-                  className="h-9 px-3 rounded-md bg-[#c0392b] text-white text-[12px] font-semibold hover:bg-[#9a0000] disabled:opacity-60"
+                  style={{
+                    height: 36,
+                    padding: '0 14px',
+                    borderRadius: 6,
+                    background: BAD,
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: (busy !== null || !declineReason.trim()) ? 'not-allowed' : 'pointer',
+                    opacity: (busy !== null || !declineReason.trim()) ? 0.6 : 1,
+                  }}
                 >
                   {busy === 'decline' ? 'Declining…' : 'Confirm decline'}
                 </button>

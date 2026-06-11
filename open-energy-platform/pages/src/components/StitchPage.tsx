@@ -91,7 +91,7 @@ export function StitchPage<TId extends string = string>({
           >
             {TIcon ? <TIcon size={14} /> : null} {t.label}
             {t.badge && (
-              <span className={`ml-1 px-1.5 py-[1px] text-[10px] rounded ${active ? 'bg-white/20' : 'bg-[#dbecfb] text-[#3b82c4]'}`}>{t.badge}</span>
+              <span className={`ml-1 px-1.5 py-[1px] text-[10px] rounded ${active ? 'bg-white/20' : ''}`} style={active ? {} : { background: 'oklch(0.94 0.02 250)', color: 'oklch(0.46 0.16 55)' }}>{t.badge}</span>
             )}
           </button>
         );
@@ -233,11 +233,12 @@ export function StitchPill({ status, label, tone }: {
     good: 'bg-[#cdf0dd] text-[#1a8a5b]',
     warn: 'bg-[#fce5c4] text-[#c97a14]',
     critical: 'bg-[#fde0db] text-[#c0392b]',
-    info: 'bg-[#dbecfb] text-[#3b82c4]',
+    info: '',
     neutral: 'bg-[#eef2f7] text-[#6b7685]',
   };
+  const infoStyle = t === 'info' ? { background: 'oklch(0.94 0.02 250)', color: 'oklch(0.46 0.16 55)' } : {};
   return (
-    <span className={`px-2 py-[2px] text-[10px] uppercase font-semibold rounded ${palette[t]}`}>{text}</span>
+    <span className={`px-2 py-[2px] text-[10px] uppercase font-semibold rounded ${palette[t]}`} style={infoStyle}>{text}</span>
   );
 }
 

@@ -14,6 +14,21 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+
+// ── design tokens (mockup-b) ─────────────────────────────────────────────
+const BG     = 'oklch(0.96 0.003 250)';
+const BG1    = 'oklch(0.99 0.002 80)';
+const BG2    = 'oklch(0.93 0.004 250)';
+const BORDER = 'oklch(0.87 0.006 250)';
+const TX1    = 'oklch(0.17 0.010 250)';
+const TX2    = 'oklch(0.40 0.009 250)';
+const TX3    = 'oklch(0.60 0.007 250)';
+const ACC    = 'oklch(0.46 0.16 55)';
+const BAD    = 'oklch(0.48 0.20 20)';
+const WARN   = 'oklch(0.50 0.18 55)';
+const GOOD   = 'oklch(0.40 0.16 155)';
+const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
   | 'identified' | 'assessed' | 'quantified' | 'response_planned' | 'response_active'
@@ -23,6 +38,7 @@ type ChainStatus =
 type Tier = 'low' | 'moderate' | 'high' | 'critical';
 
 interface RiskRow {
+  [key: string]: unknown;
   id: string;
   risk_number: string;
   source_event: string | null;
@@ -157,28 +173,6 @@ interface KpiSummary {
   total_realized_cost_zar: number;
 }
 
-const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  identified:       { bg: '#e3e7ec', fg: '#557',    label: 'Identified' },
-  assessed:         { bg: '#dbecfb', fg: '#1a3a5c', label: 'Assessed (qualitative)' },
-  quantified:       { bg: '#dbecfb', fg: '#1a3a5c', label: 'Quantified (SRA)' },
-  response_planned: { bg: '#fff4d6', fg: '#a06200', label: 'Response planned' },
-  response_active:  { bg: '#fff4d6', fg: '#a06200', label: 'Response active' },
-  monitoring:       { bg: '#daf5e2', fg: '#1f6b3a', label: 'Monitoring' },
-  realized:         { bg: '#fde0e0', fg: '#9b1f1f', label: 'Realized' },
-  closed:           { bg: '#d4edda', fg: '#155724', label: 'Closed' },
-  accepted:         { bg: '#e3e7ec', fg: '#557',    label: 'Accepted as-is' },
-  escalated:        { bg: '#ffe4b5', fg: '#8a4a00', label: 'Escalated' },
-  withdrawn:        { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
-  cancelled:        { bg: '#e3e7ec', fg: '#557',    label: 'Cancelled' },
-};
-
-const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  critical: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Critical (≥R50m EMV)' },
-  high:     { bg: '#ffe4b5', fg: '#8a4a00', label: 'High (R5–50m EMV)' },
-  moderate: { bg: '#dbecfb', fg: '#1a3a5c', label: 'Moderate (R500k–5m EMV)' },
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low (<R500k EMV)' },
-};
-
 const AUTHORITY_LABEL: Record<string, string> = {
   project_manager: 'Project manager',
   risk_owner:      'Risk owner',
@@ -187,6 +181,25 @@ const AUTHORITY_LABEL: Record<string, string> = {
   dmre_notify:     'Board + DMRE notification',
 };
 
+// ── state machine ─────────────────────────────────────────────────────────
+const ALL_STATES: readonly string[] = [
+  'identified',
+  'assessed',
+  'quantified',
+  'response_planned',
+  'response_active',
+  'monitoring',
+  'realized',
+  'closed',
+];
+const BRANCH_STATES: readonly string[] = [
+  'accepted',
+  'escalated',
+  'withdrawn',
+  'cancelled',
+];
+
+// ── filters ───────────────────────────────────────────────────────────────
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'open',             label: 'Open' },
   { key: 'all',              label: 'All' },
@@ -206,58 +219,9 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'reportable',       label: 'Reportable' },
 ];
 
-type ActionKind =
-  | 'assess' | 'quantify' | 'plan-response' | 'execute-response' | 'begin-monitoring'
-  | 'realize-risk' | 'close-risk' | 'accept-risk' | 'escalate' | 'reanalyze'
-  | 'withdraw' | 'cancel';
+const TERMINAL_STATES: ChainStatus[] = ['closed', 'accepted', 'withdrawn', 'cancelled'];
 
-const ACTION_FOR_STATE: Record<ChainStatus, ActionKind | null> = {
-  identified:       'assess',
-  assessed:         'quantify',
-  quantified:       'plan-response',
-  response_planned: 'execute-response',
-  response_active:  'begin-monitoring',
-  monitoring:       'close-risk',
-  escalated:        'reanalyze',
-  realized:         'close-risk',
-  closed:           null,
-  accepted:         null,
-  withdrawn:        null,
-  cancelled:        null,
-};
-
-const ACTION_LABEL: Record<ActionKind, string> = {
-  'assess':            'Assess (risk owner)',
-  'quantify':          'Quantify / SRA (project controls)',
-  'plan-response':     'Plan response (risk owner)',
-  'execute-response':  'Execute response (project manager)',
-  'begin-monitoring':  'Begin monitoring (project controls)',
-  'realize-risk':      'Realize risk (project manager)',
-  'close-risk':        'Close (sponsor)',
-  'accept-risk':       'Accept as-is (sponsor)',
-  'escalate':          'Escalate (project manager)',
-  'reanalyze':         'Re-analyze (project controls)',
-  'withdraw':          'Withdraw (raiser)',
-  'cancel':            'Cancel',
-};
-
-const SECONDARY_ACTIONS: Record<ChainStatus, ActionKind[]> = {
-  identified:       ['accept-risk', 'withdraw', 'cancel'],
-  assessed:         ['accept-risk', 'withdraw', 'cancel'],
-  quantified:       ['accept-risk', 'escalate', 'withdraw', 'cancel'],
-  response_planned: ['escalate', 'realize-risk', 'cancel'],
-  response_active:  ['escalate', 'realize-risk', 'cancel'],
-  monitoring:       ['escalate', 'realize-risk', 'cancel'],
-  realized:         ['escalate', 'cancel'],
-  escalated:        ['accept-risk', 'cancel'],
-  closed:           [],
-  accepted:         [],
-  withdrawn:        [],
-  cancelled:        [],
-};
-
-const DESTRUCTIVE: ActionKind[] = ['realize-risk', 'escalate', 'withdraw', 'cancel', 'accept-risk'];
-
+// ── helpers ───────────────────────────────────────────────────────────────
 function fmtMinutes(m: number | null | undefined): string {
   if (m === null || m === undefined) return '—';
   if (Math.abs(m) >= 1440) return `${Math.round(m / 1440)}d`;
@@ -289,16 +253,325 @@ function fmtDate(s: string | null): string {
   return new Date(s).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
 }
 
-const TERMINAL_STATES: ChainStatus[] = ['closed', 'accepted', 'withdrawn', 'cancelled'];
+// ── action builder ────────────────────────────────────────────────────────
+function getActions(row: RiskRow): ChainAction[] {
+  const actions: ChainAction[] = [];
+  const status = row.chain_status;
 
+  // Primary forward action
+  if (status === 'identified') {
+    actions.push({
+      key: 'assess',
+      label: 'Assess (risk owner)',
+      fields: [
+        { key: 'probability_pct', label: 'Probability % (0–100)', type: 'number', required: false, placeholder: String(row.probability_pct ?? '') },
+        { key: 'worst_case_cost_impact_zar', label: 'Worst-case cost impact (ZAR) — tier is derived from probability × worst', type: 'number', required: false, placeholder: String(row.worst_case_cost_impact_zar ?? '') },
+        { key: 'worst_case_schedule_impact_days', label: 'Worst-case schedule impact (days)', type: 'number', required: false, placeholder: String(row.worst_case_schedule_impact_days ?? '') },
+        { key: 'assess_basis', label: 'Assessment basis — qualitative scoring rationale', type: 'textarea', required: false, placeholder: '' },
+        { key: 'assess_ref', label: 'Assessment reference', type: 'text', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'assessed') {
+    actions.push({
+      key: 'quantify',
+      label: 'Quantify / SRA (project controls)',
+      fields: [
+        { key: 'cost_optimistic_zar', label: 'Cost optimistic (ZAR)', type: 'number', required: false, placeholder: row.cost_optimistic_zar != null ? String(row.cost_optimistic_zar) : '' },
+        { key: 'cost_most_likely_zar', label: 'Cost most-likely (ZAR)', type: 'number', required: false, placeholder: row.cost_most_likely_zar != null ? String(row.cost_most_likely_zar) : '' },
+        { key: 'cost_pessimistic_zar', label: 'Cost pessimistic (ZAR)', type: 'number', required: false, placeholder: row.cost_pessimistic_zar != null ? String(row.cost_pessimistic_zar) : '' },
+        { key: 'schedule_optimistic_days', label: 'Schedule optimistic (days)', type: 'number', required: false, placeholder: row.schedule_optimistic_days != null ? String(row.schedule_optimistic_days) : '' },
+        { key: 'schedule_most_likely_days', label: 'Schedule most-likely (days)', type: 'number', required: false, placeholder: row.schedule_most_likely_days != null ? String(row.schedule_most_likely_days) : '' },
+        { key: 'schedule_pessimistic_days', label: 'Schedule pessimistic (days)', type: 'number', required: false, placeholder: row.schedule_pessimistic_days != null ? String(row.schedule_pessimistic_days) : '' },
+        { key: 'quantify_basis', label: 'Quantify basis — triangular distribution + Monte-Carlo rationale', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'quantified') {
+    actions.push({
+      key: 'plan-response',
+      label: 'Plan response (risk owner)',
+      fields: [
+        { key: 'response_strategy', label: 'Response strategy (avoid / transfer / mitigate / accept / exploit / share / enhance)', type: 'text', required: false, placeholder: row.response_strategy ?? '' },
+        { key: 'response_action', label: 'Response action — concrete mitigation', type: 'textarea', required: false, placeholder: '' },
+        { key: 'response_effectiveness_pct', label: 'Response effectiveness % (0–100)', type: 'number', required: false, placeholder: row.response_effectiveness_pct != null ? String(row.response_effectiveness_pct) : '' },
+        { key: 'response_owner', label: 'Response owner', type: 'text', required: false, placeholder: '' },
+        { key: 'total_contingency_zar', label: 'Total project contingency (ZAR)', type: 'number', required: false, placeholder: row.total_contingency_zar != null ? String(row.total_contingency_zar) : '' },
+        { key: 'bid_envelope_zar', label: 'REIPPPP bid envelope (ZAR)', type: 'number', required: false, placeholder: row.bid_envelope_zar != null ? String(row.bid_envelope_zar) : '' },
+        { key: 'response_plan_basis', label: 'Plan basis — response strategy rationale', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'response_planned') {
+    actions.push({
+      key: 'execute-response',
+      label: 'Execute response (project manager)',
+      fields: [
+        { key: 'contingency_drawn_zar', label: 'Contingency drawn so far (ZAR)', type: 'number', required: false, placeholder: String(row.contingency_drawn_zar ?? 0) },
+        { key: 'response_active_basis', label: 'Execution basis — response now under way', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'response_active') {
+    actions.push({
+      key: 'begin-monitoring',
+      label: 'Begin monitoring (project controls)',
+      fields: [
+        { key: 'monitor_ref', label: 'Monitoring reference', type: 'text', required: false, placeholder: '' },
+        { key: 'notes', label: 'Monitoring note — what is being watched', type: 'textarea', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  if (status === 'monitoring' || status === 'realized') {
+    actions.push({
+      key: 'close-risk',
+      label: 'Close (sponsor)',
+      fields: [
+        { key: 'close_basis', label: 'Close basis — outcome + lessons learned', type: 'textarea', required: true, placeholder: '' },
+        { key: 'close_ref', label: 'Close reference', type: 'text', required: false, placeholder: '' },
+        { key: 'regulator_ref', label: 'Regulator reference (closing a critical realized risk is reportable)', type: 'text', required: false, placeholder: '' },
+      ],
+      // close_risk crosses critical + realized only (post-event close-out)
+      cascadeTo: row.risk_tier === 'critical' || row.realized_flag === 1 ? ['regulator'] : [],
+    });
+  }
+
+  if (status === 'escalated') {
+    actions.push({
+      key: 'reanalyze',
+      label: 'Re-analyze (project controls)',
+      fields: [
+        { key: 'quantify_basis', label: 'Re-analysis basis — revised quantification', type: 'textarea', required: true, placeholder: '' },
+        { key: 'reanalyze_ref', label: 'Re-analysis reference', type: 'text', required: false, placeholder: '' },
+      ],
+      cascadeTo: [],
+    });
+  }
+
+  // Secondary actions per state
+  if (['identified', 'assessed', 'quantified', 'escalated'].includes(status)) {
+    actions.push({
+      key: 'accept-risk',
+      label: 'Accept as-is (sponsor)',
+      fields: [
+        { key: 'notes', label: 'Acceptance basis — sponsor accepts risk as-is (critical tier crosses regulator)', type: 'textarea', required: true, placeholder: '' },
+        { key: 'accept_ref', label: 'Acceptance reference', type: 'text', required: false, placeholder: '' },
+        { key: 'regulator_ref', label: 'Regulator reference (accepting a critical risk is a governance event)', type: 'text', required: false, placeholder: '' },
+      ],
+      // accept_risk crosses critical only (governance event)
+      cascadeTo: row.risk_tier === 'critical' ? ['regulator'] : [],
+      tone: 'danger' as const,
+    });
+  }
+
+  if (['quantified', 'response_planned', 'response_active', 'monitoring', 'realized'].includes(status)) {
+    actions.push({
+      key: 'escalate',
+      label: 'Escalate (project manager)',
+      fields: [
+        { key: 'escalate_basis', label: 'Escalation basis — material residual EMV; re-analyze required', type: 'textarea', required: true, placeholder: '' },
+        { key: 'escalate_ref', label: 'Escalation reference', type: 'text', required: false, placeholder: '' },
+        { key: 'regulator_ref', label: 'Regulator reference (escalation crosses for high+critical tiers)', type: 'text', required: false, placeholder: '' },
+      ],
+      // escalate crosses high+critical
+      cascadeTo: (row.risk_tier === 'high' || row.risk_tier === 'critical') ? ['regulator'] : [],
+      tone: 'warn' as const,
+    });
+  }
+
+  if (['response_planned', 'response_active', 'monitoring'].includes(status)) {
+    actions.push({
+      key: 'realize-risk',
+      label: 'Realize risk (project manager)',
+      fields: [
+        { key: 'realized_cost_zar', label: 'Realized cost impact (ZAR)', type: 'number', required: false, placeholder: '' },
+        { key: 'realized_schedule_days', label: 'Realized schedule impact (days)', type: 'number', required: false, placeholder: '' },
+        { key: 'contingency_drawn_zar', label: 'Updated contingency drawn (ZAR)', type: 'number', required: false, placeholder: String(row.contingency_drawn_zar ?? 0) },
+        { key: 'realized_basis', label: 'Realization basis — risk event description', type: 'textarea', required: true, placeholder: '' },
+        { key: 'regulator_ref', label: 'Regulator reference (force_majeure / regulatory_change crosses to DMRE / NERSA for EVERY tier)', type: 'text', required: false, placeholder: '' },
+      ],
+      // realize_risk for force_majeure / regulatory_change crosses regulator EVERY tier (W92 SIGNATURE)
+      // other realize_risk crosses high+critical
+      cascadeTo: (row.risk_class === 'force_majeure' || row.risk_class === 'regulatory_change')
+        ? ['regulator']
+        : (row.risk_tier === 'high' || row.risk_tier === 'critical') ? ['regulator'] : [],
+      tone: 'danger' as const,
+    });
+  }
+
+  if (['identified', 'assessed', 'quantified'].includes(status)) {
+    actions.push({
+      key: 'withdraw',
+      label: 'Withdraw (raiser)',
+      fields: [
+        { key: 'notes', label: 'Withdrawal note — raiser pulls the risk', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+      tone: 'danger' as const,
+    });
+  }
+
+  if (!TERMINAL_STATES.includes(status)) {
+    actions.push({
+      key: 'cancel',
+      label: 'Cancel',
+      fields: [
+        { key: 'notes', label: 'Cancellation note', type: 'textarea', required: true, placeholder: '' },
+      ],
+      cascadeTo: [],
+      tone: 'danger' as const,
+    });
+  }
+
+  return actions;
+}
+
+function renderDetail(row: RiskRow): React.ReactNode {
+  const authority = AUTHORITY_LABEL[row.authority_required_live ?? row.authority_required ?? ''] ?? (row.authority_required ?? '—');
+  const envPct = row.bid_envelope_risk_pct_live ?? null;
+
+  return (
+    <div style={{ fontSize: 11, color: TX2 }}>
+      {/* Live SRA Monte-Carlo battery */}
+      <div className="rounded border mb-3 px-3 py-2" style={{ background: BG, borderColor: BORDER }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: TX3 }}>Live SRA Monte-Carlo battery</div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+          <DetailPair label="EMV" value={fmtZar(row.emv_zar_live)} />
+          <DetailPair label="Residual EMV" value={fmtZar(row.residual_emv_zar_live)} />
+          <DetailPair label="Tier (live)" value={(row.tier_live ?? row.risk_tier).toString()} />
+          <DetailPair label="Floor applied" value={row.floor_at_high_class_flag ? 'Yes (high)' : 'No'} />
+          <DetailPair label="P50 cost" value={fmtZar(row.p50_cost_zar_live)} />
+          <DetailPair label="P80 cost" value={fmtZar(row.p80_cost_zar_live)} />
+          <DetailPair label="P50 schedule" value={row.p50_schedule_days_live != null ? `${fmtNum(row.p50_schedule_days_live, 0)}d` : '—'} />
+          <DetailPair label="P80 schedule" value={row.p80_schedule_days_live != null ? `${fmtNum(row.p80_schedule_days_live, 0)}d` : '—'} />
+        </div>
+      </div>
+
+      {/* Contingency & bid envelope */}
+      <div className="rounded border mb-3 px-3 py-2" style={{ background: BG, borderColor: BORDER }}>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: TX3 }}>Contingency &amp; bid envelope</div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+          <DetailPair label="Contingency drawn" value={fmtZar(row.contingency_drawn_zar)} />
+          <DetailPair label="Total contingency" value={fmtZar(row.total_contingency_zar)} />
+          <DetailPair label="Drawdown ratio" value={row.contingency_drawdown_ratio_live != null ? fmtPct(row.contingency_drawdown_ratio_live * 100, 1) : '—'} />
+          <DetailPair label="Contingency over" value={row.contingency_exceeded_flag ? 'YES' : 'No'} />
+          <DetailPair label="Bid envelope" value={fmtZar(row.bid_envelope_zar)} />
+          <DetailPair label="Envelope risk %" value={envPct != null ? fmtPct(envPct, 1) : '—'} />
+          <DetailPair label="Envelope breach" value={row.bid_envelope_breach_flag ? 'BREACHED' : 'Within'} />
+          <DetailPair label="Authority" value={authority} />
+        </div>
+      </div>
+
+      {/* Core risk fields */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-3">
+        <DetailPair label="Risk class" value={row.risk_class} />
+        <DetailPair label="Category" value={row.risk_category ?? '—'} />
+        <DetailPair label="Probability" value={fmtPct(row.probability_pct, 0)} />
+        <DetailPair label="Worst-case cost" value={fmtZar(row.worst_case_cost_impact_zar)} />
+        <DetailPair label="Worst-case sched" value={`${row.worst_case_schedule_impact_days}d`} />
+        <DetailPair label="Response strategy" value={row.response_strategy ?? '—'} />
+        <DetailPair label="Response action" value={row.response_action ?? '—'} />
+        <DetailPair label="Response effectiveness" value={row.response_effectiveness_pct != null ? fmtPct(row.response_effectiveness_pct, 0) : '—'} />
+        <DetailPair label="Response owner" value={row.response_owner ?? '—'} />
+        <DetailPair label="Response due" value={fmtDate(row.response_due_at)} />
+        <DetailPair label="Risk owner" value={row.risk_owner_party_name ?? '—'} />
+        <DetailPair label="Raised by" value={row.raised_by_party_name ?? '—'} />
+        <DetailPair label="REIPPPP window" value={row.reipppp_bid_window ?? '—'} />
+        <DetailPair label="Realized?" value={row.realized_flag === 1 ? 'Yes' : 'No'} />
+        <DetailPair label="Realized cost" value={fmtZar(row.realized_cost_zar)} />
+        <DetailPair label="Realized sched" value={row.realized_schedule_days != null ? `${row.realized_schedule_days}d` : '—'} />
+        <DetailPair label="Reason code" value={row.reason_code ?? '—'} />
+        <DetailPair label="Identified" value={fmtDate(row.identified_at)} />
+        <DetailPair label="Assessed" value={fmtDate(row.assessed_at)} />
+        <DetailPair label="Quantified" value={fmtDate(row.quantified_at)} />
+        <DetailPair label="Response planned" value={fmtDate(row.response_planned_at)} />
+        <DetailPair label="Response active" value={fmtDate(row.response_active_at)} />
+        <DetailPair label="Monitoring" value={fmtDate(row.monitoring_at)} />
+        <DetailPair label="Realized at" value={fmtDate(row.realized_at)} />
+        <DetailPair label="Closed" value={fmtDate(row.closed_at)} />
+        <DetailPair label="SLA deadline" value={fmtDate(row.sla_deadline_at)} />
+        <DetailPair label="SLA status" value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
+        <DetailPair label="Escalation lvl" value={String(row.escalation_level)} />
+        <DetailPair label="Reportable" value={row.is_reportable_flag ? 'Yes' : 'No'} />
+        {row.source_wave && <DetailPair label="Source wave" value={`${row.source_wave}${row.source_entity_id ? ` · ${row.source_entity_id}` : ''}`} />}
+      </div>
+
+      {row.risk_description && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Risk description</div>
+          <div style={{ color: TX2 }}>{row.risk_description}</div>
+        </div>
+      )}
+      {row.assess_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Assessment basis</div>
+          <div style={{ color: TX2 }}>{row.assess_basis}</div>
+        </div>
+      )}
+      {row.quantify_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Quantify basis (SRA)</div>
+          <div style={{ color: TX2 }}>{row.quantify_basis}</div>
+        </div>
+      )}
+      {row.response_plan_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Response plan basis</div>
+          <div style={{ color: TX2 }}>{row.response_plan_basis}</div>
+        </div>
+      )}
+      {row.response_active_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Response active basis</div>
+          <div style={{ color: TX2 }}>{row.response_active_basis}</div>
+        </div>
+      )}
+      {row.realized_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Realization basis</div>
+          <div style={{ color: TX2 }}>{row.realized_basis}</div>
+        </div>
+      )}
+      {row.escalate_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Escalation basis</div>
+          <div style={{ color: TX2 }}>{row.escalate_basis}</div>
+        </div>
+      )}
+      {row.close_basis && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Close basis</div>
+          <div style={{ color: TX2 }}>{row.close_basis}</div>
+        </div>
+      )}
+      {row.response_summary && (
+        <div className="col-span-2 rounded border px-2 py-1.5 mb-2" style={{ background: BG1, borderColor: BORDER }}>
+          <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>Response summary</div>
+          <div style={{ color: TX2 }}>{row.response_summary}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── component ─────────────────────────────────────────────────────────────
 export function ProjectRiskChainTab() {
   const [rows, setRows] = useState<RiskRow[]>([]);
   const [kpis, setKpis] = useState<KpiSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('open');
-  const [selected, setSelected] = useState<RiskRow | null>(null);
-  const [events, setEvents] = useState<RiskEvent[]>([]);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, ChainEvent[]>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -330,25 +603,47 @@ export function ProjectRiskChainTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const loadEvents = useCallback(async (id: string) => {
+  const handleAction = useCallback(async (rowId: string, key: string, values: Record<string, string>) => {
+    // Inject fixed reason_code fields for certain actions
+    const body: Record<string, string> = { ...values };
+    if (key === 'realize-risk') body.reason_code = 'realized';
+    if (key === 'close-risk') body.reason_code = 'closed';
+    if (key === 'accept-risk') body.reason_code = 'accepted';
+    if (key === 'withdraw') body.reason_code = 'withdrawn';
+    if (key === 'cancel') body.reason_code = 'cancelled';
+    if (key === 'escalate') body.reason_code = 'escalated';
+
     try {
-      const res = await api.get<{ data: { case: RiskRow; events: RiskEvent[] } }>(`/ipp/project-risk/chain/${id}`);
-      if (res.data?.data?.case) setSelected(res.data.data.case);
-      setEvents(res.data?.data?.events || []);
+      await api.post(`/ipp/project-risk/chain/${rowId}/${key}`, body);
+      await load();
+      if (expandedEvents[rowId]) {
+        try {
+          const res = await api.get<{ data: { events: ChainEvent[] } }>(`/ipp/project-risk/chain/${rowId}`);
+          setExpandedEvents(prev => ({ ...prev, [rowId]: res.data?.data?.events ?? [] }));
+        } catch { /* silent */ }
+      }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Failed to load risk history');
+      setErr(e instanceof Error ? e.message : `Failed to ${key}`);
     }
-  }, []);
+  }, [load, expandedEvents]);
+
+  const handleExpand = useCallback(async (id: string) => {
+    if (expandedEvents[id]) return;
+    try {
+      const res = await api.get<{ data: { case: RiskRow; events: ChainEvent[] } }>(`/ipp/project-risk/chain/${id}`);
+      setExpandedEvents(prev => ({ ...prev, [id]: res.data?.data?.events ?? [] }));
+    } catch { /* silent */ }
+  }, [expandedEvents]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
       if (filter === 'all')              return true;
       if (filter === 'open')             return !TERMINAL_STATES.includes(r.chain_status);
-      if (filter === 'breached')         return r.sla_breached;
-      if (filter === 'reportable')       return r.is_reportable_flag;
-      if (filter === 'envelope_breach')  return r.bid_envelope_breach_flag;
-      if (filter === 'contingency_over') return r.contingency_exceeded_flag;
-      if (filter === 'signature')        return r.signature_class_flag;
+      if (filter === 'breached')         return !!r.sla_breached;
+      if (filter === 'reportable')       return !!r.is_reportable_flag;
+      if (filter === 'envelope_breach')  return !!r.bid_envelope_breach_flag;
+      if (filter === 'contingency_over') return !!r.contingency_exceeded_flag;
+      if (filter === 'signature')        return !!r.signature_class_flag;
       if (['low', 'moderate', 'high', 'critical'].includes(filter)) {
         return r.risk_tier === filter;
       }
@@ -356,463 +651,124 @@ export function ProjectRiskChainTab() {
     });
   }, [rows, filter]);
 
-  const act = useCallback(async (action: ActionKind, row: RiskRow) => {
-    try {
-      let body: Record<string, string | number> = {};
-      if (action === 'assess') {
-        const prob = window.prompt('Probability % (0–100):', String(row.probability_pct ?? '')) || '';
-        const worst = window.prompt('Worst-case cost impact (ZAR) — tier is derived from probability × worst:', String(row.worst_case_cost_impact_zar ?? '')) || '';
-        const days = window.prompt('Worst-case schedule impact (days):', String(row.worst_case_schedule_impact_days ?? '')) || '';
-        const basis = window.prompt('Assessment basis — qualitative scoring rationale:') || '';
-        const ref = window.prompt('Assessment reference:') || '';
-        body = { assess_basis: basis };
-        if (ref) body.assess_ref = ref;
-        if (prob && !Number.isNaN(Number(prob))) body.probability_pct = Number(prob);
-        if (worst && !Number.isNaN(Number(worst))) body.worst_case_cost_impact_zar = Number(worst);
-        if (days && !Number.isNaN(Number(days))) body.worst_case_schedule_impact_days = Number(days);
-      } else if (action === 'quantify') {
-        const optC = window.prompt('Cost optimistic (ZAR):', row.cost_optimistic_zar != null ? String(row.cost_optimistic_zar) : '') || '';
-        const mlC = window.prompt('Cost most-likely (ZAR):', row.cost_most_likely_zar != null ? String(row.cost_most_likely_zar) : '') || '';
-        const pesC = window.prompt('Cost pessimistic (ZAR):', row.cost_pessimistic_zar != null ? String(row.cost_pessimistic_zar) : '') || '';
-        const optS = window.prompt('Schedule optimistic (days):', row.schedule_optimistic_days != null ? String(row.schedule_optimistic_days) : '') || '';
-        const mlS = window.prompt('Schedule most-likely (days):', row.schedule_most_likely_days != null ? String(row.schedule_most_likely_days) : '') || '';
-        const pesS = window.prompt('Schedule pessimistic (days):', row.schedule_pessimistic_days != null ? String(row.schedule_pessimistic_days) : '') || '';
-        const basis = window.prompt('Quantify basis — triangular distribution + Monte-Carlo rationale:') || '';
-        body = { quantify_basis: basis };
-        if (optC && !Number.isNaN(Number(optC))) body.cost_optimistic_zar = Number(optC);
-        if (mlC && !Number.isNaN(Number(mlC))) body.cost_most_likely_zar = Number(mlC);
-        if (pesC && !Number.isNaN(Number(pesC))) body.cost_pessimistic_zar = Number(pesC);
-        if (optS && !Number.isNaN(Number(optS))) body.schedule_optimistic_days = Number(optS);
-        if (mlS && !Number.isNaN(Number(mlS))) body.schedule_most_likely_days = Number(mlS);
-        if (pesS && !Number.isNaN(Number(pesS))) body.schedule_pessimistic_days = Number(pesS);
-      } else if (action === 'plan-response') {
-        const strat = window.prompt('Response strategy (avoid / transfer / mitigate / accept / exploit / share / enhance):', row.response_strategy ?? '') || '';
-        const act = window.prompt('Response action — concrete mitigation:') || '';
-        const eff = window.prompt('Response effectiveness % (0–100):', row.response_effectiveness_pct != null ? String(row.response_effectiveness_pct) : '') || '';
-        const owner = window.prompt('Response owner:') || '';
-        const contingency = window.prompt('Total project contingency (ZAR):', row.total_contingency_zar != null ? String(row.total_contingency_zar) : '') || '';
-        const envelope = window.prompt('REIPPPP bid envelope (ZAR):', row.bid_envelope_zar != null ? String(row.bid_envelope_zar) : '') || '';
-        const basis = window.prompt('Plan basis — response strategy rationale:') || '';
-        body = { response_plan_basis: basis };
-        if (strat) body.response_strategy = strat;
-        if (act) body.response_action = act;
-        if (eff && !Number.isNaN(Number(eff))) body.response_effectiveness_pct = Number(eff);
-        if (owner) body.response_owner = owner;
-        if (contingency && !Number.isNaN(Number(contingency))) body.total_contingency_zar = Number(contingency);
-        if (envelope && !Number.isNaN(Number(envelope))) body.bid_envelope_zar = Number(envelope);
-      } else if (action === 'execute-response') {
-        const drawn = window.prompt('Contingency drawn so far (ZAR):', String(row.contingency_drawn_zar ?? 0)) || '';
-        const basis = window.prompt('Execution basis — response now under way:') || '';
-        body = { response_active_basis: basis };
-        if (drawn && !Number.isNaN(Number(drawn))) body.contingency_drawn_zar = Number(drawn);
-      } else if (action === 'begin-monitoring') {
-        const ref = window.prompt('Monitoring reference:') || '';
-        const notes = window.prompt('Monitoring note — what is being watched:') || '';
-        body = {};
-        if (ref) body.monitor_ref = ref;
-        if (notes) body.notes = notes;
-      } else if (action === 'realize-risk') {
-        const cost = window.prompt('Realized cost impact (ZAR):') || '';
-        const days = window.prompt('Realized schedule impact (days):') || '';
-        const drawn = window.prompt('Updated contingency drawn (ZAR):', String(row.contingency_drawn_zar ?? 0)) || '';
-        const basis = window.prompt('Realization basis — risk event description:');
-        if (!basis) return;
-        const reg = window.prompt('Regulator reference (force_majeure / regulatory_change crosses to DMRE / NERSA for EVERY tier):') || '';
-        body = { realized_basis: basis, reason_code: 'realized' };
-        if (cost && !Number.isNaN(Number(cost))) body.realized_cost_zar = Number(cost);
-        if (days && !Number.isNaN(Number(days))) body.realized_schedule_days = Number(days);
-        if (drawn && !Number.isNaN(Number(drawn))) body.contingency_drawn_zar = Number(drawn);
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'close-risk') {
-        const basis = window.prompt('Close basis — outcome + lessons learned:');
-        if (!basis) return;
-        const ref = window.prompt('Close reference:') || '';
-        const reg = window.prompt('Regulator reference (closing a critical realized risk is reportable):') || '';
-        body = { close_basis: basis, reason_code: 'closed' };
-        if (ref) body.close_ref = ref;
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'accept-risk') {
-        const basis = window.prompt('Acceptance basis — sponsor accepts risk as-is (critical tier crosses regulator):');
-        if (!basis) return;
-        const ref = window.prompt('Acceptance reference:') || '';
-        const reg = window.prompt('Regulator reference (accepting a critical risk is a governance event):') || '';
-        body = { reason_code: 'accepted', notes: basis };
-        if (ref) body.accept_ref = ref;
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'escalate') {
-        const basis = window.prompt('Escalation basis — material residual EMV; re-analyze required:');
-        if (!basis) return;
-        const ref = window.prompt('Escalation reference:') || '';
-        const reg = window.prompt('Regulator reference (escalation crosses for high+critical tiers):') || '';
-        body = { escalate_basis: basis, reason_code: 'escalated' };
-        if (ref) body.escalate_ref = ref;
-        if (reg) body.regulator_ref = reg;
-      } else if (action === 'reanalyze') {
-        const basis = window.prompt('Re-analysis basis — revised quantification:');
-        if (!basis) return;
-        const ref = window.prompt('Re-analysis reference:') || '';
-        body = { quantify_basis: basis };
-        if (ref) body.reanalyze_ref = ref;
-      } else if (action === 'withdraw') {
-        const basis = window.prompt('Withdrawal note — raiser pulls the risk:');
-        if (!basis) return;
-        body = { reason_code: 'withdrawn', notes: basis };
-      } else if (action === 'cancel') {
-        const basis = window.prompt('Cancellation note:');
-        if (!basis) return;
-        body = { reason_code: 'cancelled', notes: basis };
-      }
-      await api.post(`/ipp/project-risk/chain/${row.id}/${action}`, body);
-      await load();
-      if (selected?.id === row.id) await loadEvents(row.id);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : `Failed to ${action}`);
-    }
-  }, [load, loadEvents, selected]);
+  const k = kpis ?? {
+    total: 0, open_count: 0, realized_count: 0, escalated_count: 0,
+    accepted_count: 0, closed_count: 0, withdrawn_count: 0, cancelled_count: 0,
+    breached: 0, reportable_total: 0, signature_count: 0, floor_applied_count: 0,
+    envelope_breach_count: 0, contingency_exceeded_count: 0,
+    total_emv_zar: 0, total_residual_emv_zar: 0, total_worst_case_zar: 0, total_realized_cost_zar: 0,
+  };
 
   return (
-    <div className="p-5">
-      <header className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Project risk register &amp; quantitative SRA</h2>
-          <p className="text-xs text-[#4a5568]">
-            12-stage integrated risk-management chain · identified → assessed → quantified → response_planned →
-            response_active → monitoring → closed, with realized (event occurred), escalated (re-analyze),
-            accepted (sponsor as-is), and withdrawn/cancelled terminals. The PROJECT-RISK-MANAGEMENT core under
-            the IPP schedule (W1), procurement (W19), construction-to-COD (W20) and change-control (W81). The
-            DIFFERENTIATOR over Acumen Fuse Risk / Primavera Risk Analysis (PRA) / Safran Risk / @Risk / Crystal
-            Ball / Deltek Acumen Risk / Riskonnect / Predict! / Synergi Life / Active Risk Manager: every risk
-            is LIVE-scored every fetch against a P50/P80 EMV battery (triangular Monte-Carlo cost &amp; schedule),
-            residual EMV after planned response, contingency drawdown vs project_reserve, and a
-            bid-envelope-breach % vs the REIPPPP commitment. Tier is EMV-DERIVED on every transition
-            (probability_pct × |worst_case_zar|) — low &lt;R500k / moderate &lt;R5m / high &lt;R50m / critical
-            ≥R50m — with a floor-at-high for force_majeure, regulatory_change and strategic classes.
-            INVERTED SLA — a larger EMV gets MORE time (deeper Monte-Carlo, board review, external-advisor
-            consultation). Reportable is REALIZATION-driven: realize_risk for force_majeure / regulatory_change
-            crosses regulator EVERY tier (W92 SIGNATURE hard line), other realize_risk crosses high+critical,
-            escalate crosses high+critical, accept_risk crosses critical only (governance event), close_risk
-            crosses critical + realized only (post-event close-out), SLA breach crosses high+critical.
-          </p>
-        </div>
+    <div className="p-5" style={{ background: BG }}>
+      <header className="mb-4">
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Project risk register &amp; quantitative SRA</h2>
+        <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
+          12-stage integrated risk-management chain · identified → assessed → quantified → response_planned →
+          response_active → monitoring → closed, with realized (event occurred), escalated (re-analyze),
+          accepted (sponsor as-is), and withdrawn/cancelled terminals. LIVE-scored P50/P80 EMV battery
+          (triangular Monte-Carlo cost &amp; schedule), residual EMV after planned response, contingency drawdown
+          vs project_reserve, and bid-envelope-breach % vs the REIPPPP commitment.
+        </p>
       </header>
 
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Kpi label="Total risks" value={kpis?.total ?? rows.length} />
-        <Kpi label="Open" value={kpis?.open_count ?? 0} tone={(kpis?.open_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Realized" value={kpis?.realized_count ?? 0} tone={(kpis?.realized_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Escalated" value={kpis?.escalated_count ?? 0} tone={(kpis?.escalated_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Accepted" value={kpis?.accepted_count ?? 0} />
-        <Kpi label="Closed" value={kpis?.closed_count ?? 0} tone="ok" />
-        <Kpi label="Envelope breach" value={kpis?.envelope_breach_count ?? 0} tone={(kpis?.envelope_breach_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Contingency over" value={kpis?.contingency_exceeded_count ?? 0} tone={(kpis?.contingency_exceeded_count ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Signature class" value={kpis?.signature_count ?? 0} tone={(kpis?.signature_count ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="SLA breached" value={kpis?.breached ?? 0} tone={(kpis?.breached ?? 0) > 0 ? 'bad' : 'ok'} />
-        <Kpi label="Reportable" value={kpis?.reportable_total ?? 0} tone={(kpis?.reportable_total ?? 0) > 0 ? 'warn' : 'ok'} />
-        <Kpi label="Total EMV" value={fmtZar(kpis?.total_emv_zar)} />
+      {/* KPI strip */}
+      <div className="mb-4 grid grid-cols-2 md:grid-cols-6 gap-2">
+        <KpiTile label="Total risks" value={k.total} />
+        <KpiTile label="Open" value={k.open_count} tone={k.open_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="Realized" value={k.realized_count} tone={k.realized_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="Escalated" value={k.escalated_count} tone={k.escalated_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="Accepted" value={k.accepted_count} />
+        <KpiTile label="Closed" value={k.closed_count} tone="ok" />
+        <KpiTile label="Envelope breach" value={k.envelope_breach_count} tone={k.envelope_breach_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="Contingency over" value={k.contingency_exceeded_count} tone={k.contingency_exceeded_count > 0 ? 'bad' : undefined} />
+        <KpiTile label="Signature class" value={k.signature_count} tone={k.signature_count > 0 ? 'warn' : undefined} />
+        <KpiTile label="SLA breached" value={k.breached} tone={k.breached > 0 ? 'bad' : undefined} />
+        <KpiTile label="Reportable" value={k.reportable_total} tone={k.reportable_total > 0 ? 'warn' : undefined} />
+        <KpiTile label="Total EMV" value={fmtZar(k.total_emv_zar)} />
       </div>
 
+      {/* Filter pills */}
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {FILTERS.map((f) => (
-          <button type="button"
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`rounded px-2 py-1 text-[11px] font-medium ${
-              filter === f.key
-                ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
-            }`}
-          >
+        {FILTERS.map(f => (
+          <button key={f.key} type="button" onClick={() => setFilter(f.key)}
+            className="h-6 px-2.5 rounded-full text-[11px] font-medium transition-colors"
+            style={{
+              background: filter === f.key ? ACC : BG2,
+              color: filter === f.key ? '#fff' : TX2,
+              border: `1px solid ${filter === f.key ? ACC : BORDER}`,
+            }}>
             {f.label}
           </button>
         ))}
       </div>
 
       {err && (
-        <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>{err}</div>
       )}
+
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
-          <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
-              <tr className="text-left">
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Risk #</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Project / title</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Class</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">Tier</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">EMV</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">P80 cost</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">Envelope</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c]">State</th>
-                <th className="px-3 py-2 font-semibold text-[#1a3a5c] text-right">SLA</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const cs = STATE_TONE[r.chain_status];
-                const tt = TIER_TONE[r.risk_tier];
-                const envPct = r.bid_envelope_risk_pct_live ?? null;
-                return (
-                  <tr
-                    key={r.id}
-                    onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
-                  >
-                    <td className="px-3 py-2 font-mono text-[11px] text-[#1a3a5c]">
-                      {r.risk_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
-                      {r.signature_class_flag && <span className="ml-1 text-[#9b1f1f]" title="Force majeure / regulatory_change (W92 SIGNATURE)">★</span>}
-                      {r.bid_envelope_breach_flag && <span className="ml-1 text-[#9b1f1f]" title="Past REIPPPP bid envelope">▲</span>}
-                      {r.contingency_exceeded_flag && <span className="ml-1 text-[#9b1f1f]" title="Contingency exceeded">◆</span>}
-                    </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[260px] truncate" title={`${r.project_name ?? ''} · ${r.risk_title ?? ''}`}>
-                      {r.project_name ?? '—'}
-                      <span className="text-[#4a5568]"> · {r.risk_title ?? ''}</span>
-                    </td>
-                    <td className="px-3 py-2 text-[11px] text-[#4a5568]">{r.risk_class}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
-                        {r.risk_tier}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#0c2a4d]">{fmtZar(r.emv_zar_live)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#4a5568]">{fmtZar(r.p80_cost_zar_live)}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${envPct != null && envPct >= 100 ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {envPct != null ? fmtPct(envPct, 0) : '—'}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
-                        {cs.label}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
-                      {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-3 py-6 text-center text-[#4a5568]">No risks match.</td></tr>
-              )}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {filtered.map(row => {
+            const tierLabel = row.risk_tier.charAt(0).toUpperCase() + row.risk_tier.slice(1);
+            const flags = [
+              row.is_reportable_flag ? 'Reportable' : null,
+              row.signature_class_flag ? 'Force majeure/regulatory' : null,
+              row.bid_envelope_breach_flag ? 'Bid-envelope breach' : null,
+              row.contingency_exceeded_flag ? 'Contingency exceeded' : null,
+            ].filter(Boolean).join(' · ');
+            const metaParts = [
+              tierLabel,
+              row.risk_class,
+              row.facility_name ?? row.project_name ?? null,
+              flags || null,
+            ].filter(Boolean).join(' · ');
+
+            return (
+              <ChainCard
+                key={row.id}
+                item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
+                allStates={ALL_STATES}
+                branchStates={BRANCH_STATES}
+                title={`${row.risk_number} · ${row.risk_title ?? row.project_name ?? '—'}`}
+                meta={metaParts}
+                actions={getActions(row)}
+                onAction={(key, values) => handleAction(row.id, key, values)}
+                cascadeTo={[]}
+                detail={renderDetail(row)}
+                events={expandedEvents[row.id]}
+                onExpand={handleExpand}
+              />
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="rounded border px-4 py-6 text-center text-[12px]" style={{ background: BG1, borderColor: BORDER, color: TX3 }}>No risks match.</div>
+          )}
         </div>
       )}
-
-      {selected && (
-        <Drawer row={selected} events={events} onClose={() => setSelected(null)} onAct={act} />
-      )}
     </div>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : TX1;
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
+    <div className="rounded border px-3 py-2 min-w-[80px]" style={{ background: BG1, borderColor: BORDER }}>
+      <div className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: TX3 }}>{label}</div>
+      <div className="text-[18px] font-bold tabular-nums" style={{ color, fontFamily: MONO }}>{value}</div>
     </div>
   );
 }
 
-function Drawer({
-  row, events, onClose, onAct,
-}: {
-  row: RiskRow;
-  events: RiskEvent[];
-  onClose: () => void;
-  onAct: (action: ActionKind, row: RiskRow) => void;
-}) {
-  const primary = ACTION_FOR_STATE[row.chain_status];
-  const secondary = SECONDARY_ACTIONS[row.chain_status];
-  const authority = AUTHORITY_LABEL[row.authority_required_live ?? row.authority_required ?? ''] ?? (row.authority_required ?? '—');
-
-  return (
-    <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 h-full w-full md:w-[760px] overflow-y-auto bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.risk_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.project_name ?? '—'} · {row.risk_title ?? ''}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.risk_tier].label}
-                {row.risk_class ? ` · ${row.risk_class}` : ''}
-                {row.facility_name ? ` · ${row.facility_name}` : ''}
-              </div>
-              {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
-                  Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
-                </div>
-              )}
-            </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
-          </div>
-        </header>
-
-        {/* The distinctive layer — live SRA Monte-Carlo battery + contingency + bid envelope. */}
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Live SRA Monte-Carlo battery</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
-              <Metric label="EMV" value={fmtZar(row.emv_zar_live)} bad={(row.emv_zar_live ?? 0) >= 50_000_000} hint="Expected monetary value" />
-              <Metric label="Residual EMV" value={fmtZar(row.residual_emv_zar_live)} bad={(row.residual_emv_zar_live ?? 0) >= 25_000_000} hint="After planned response" />
-              <Metric label="Tier (live)" value={(row.tier_live ?? row.risk_tier).toString()} hint="EMV-derived, re-derived every fetch" />
-              <Metric label="Floor applied" value={row.floor_at_high_class_flag ? 'Yes (high)' : 'No'} bad={!!row.floor_at_high_class_flag} hint="force_majeure / regulatory_change / strategic" />
-              <Metric label="P50 cost" value={fmtZar(row.p50_cost_zar_live)} hint="Triangular median" />
-              <Metric label="P80 cost" value={fmtZar(row.p80_cost_zar_live)} bad={(row.p80_cost_zar_live ?? 0) >= 25_000_000} hint="Triangular 80th percentile" />
-              <Metric label="P50 schedule" value={row.p50_schedule_days_live != null ? `${fmtNum(row.p50_schedule_days_live, 0)}d` : '—'} hint="Triangular median" />
-              <Metric label="P80 schedule" value={row.p80_schedule_days_live != null ? `${fmtNum(row.p80_schedule_days_live, 0)}d` : '—'} hint="Triangular 80th percentile" />
-            </div>
-          </div>
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Contingency &amp; bid envelope</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
-              <Metric label="Contingency drawn" value={fmtZar(row.contingency_drawn_zar)} />
-              <Metric label="Total contingency" value={fmtZar(row.total_contingency_zar)} />
-              <Metric label="Drawdown ratio" value={row.contingency_drawdown_ratio_live != null ? fmtPct(row.contingency_drawdown_ratio_live * 100, 1) : '—'} bad={!!row.contingency_exceeded_flag} />
-              <Metric label="Contingency over" value={row.contingency_exceeded_flag ? 'YES' : 'No'} bad={!!row.contingency_exceeded_flag} />
-              <Metric label="Bid envelope" value={fmtZar(row.bid_envelope_zar)} hint="REIPPPP commitment" />
-              <Metric label="Envelope risk %" value={row.bid_envelope_risk_pct_live != null ? fmtPct(row.bid_envelope_risk_pct_live, 1) : '—'} bad={!!row.bid_envelope_breach_flag} />
-              <Metric label="Envelope breach" value={row.bid_envelope_breach_flag ? 'BREACHED' : 'Within'} bad={!!row.bid_envelope_breach_flag} />
-              <Metric label="Authority" value={authority} hint="Derived from tier" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-[12px]">
-            <Pair label="State"                  value={STATE_TONE[row.chain_status].label} />
-            <Pair label="Risk tier"              value={TIER_TONE[row.risk_tier].label} />
-            <Pair label="Risk class"             value={row.risk_class} />
-            <Pair label="Category"               value={row.risk_category ?? '—'} />
-            <Pair label="Probability"            value={fmtPct(row.probability_pct, 0)} />
-            <Pair label="Worst-case cost"        value={fmtZar(row.worst_case_cost_impact_zar)} />
-            <Pair label="Worst-case sched"       value={`${row.worst_case_schedule_impact_days}d`} />
-            <Pair label="Response strategy"      value={row.response_strategy ?? '—'} />
-            <Pair label="Response action"        value={row.response_action ?? '—'} />
-            <Pair label="Response effectiveness" value={row.response_effectiveness_pct != null ? fmtPct(row.response_effectiveness_pct, 0) : '—'} />
-            <Pair label="Response owner"         value={row.response_owner ?? '—'} />
-            <Pair label="Response due"           value={fmtDate(row.response_due_at)} />
-            <Pair label="Risk owner"             value={row.risk_owner_party_name ?? '—'} />
-            <Pair label="Raised by"              value={row.raised_by_party_name ?? '—'} />
-            <Pair label="REIPPPP window"         value={row.reipppp_bid_window ?? '—'} />
-            <Pair label="Realized?"              value={row.realized_flag === 1 ? 'Yes' : 'No'} />
-            <Pair label="Realized cost"          value={fmtZar(row.realized_cost_zar)} />
-            <Pair label="Realized sched"         value={row.realized_schedule_days != null ? `${row.realized_schedule_days}d` : '—'} />
-            <Pair label="Reason code"            value={row.reason_code ?? '—'} />
-            <Pair label="Identified"             value={fmtDate(row.identified_at)} />
-            <Pair label="Assessed"               value={fmtDate(row.assessed_at)} />
-            <Pair label="Quantified"             value={fmtDate(row.quantified_at)} />
-            <Pair label="Response planned"       value={fmtDate(row.response_planned_at)} />
-            <Pair label="Response active"        value={fmtDate(row.response_active_at)} />
-            <Pair label="Monitoring"             value={fmtDate(row.monitoring_at)} />
-            <Pair label="Realized at"            value={fmtDate(row.realized_at)} />
-            <Pair label="Closed"                 value={fmtDate(row.closed_at)} />
-            <Pair label="SLA deadline"           value={fmtDate(row.sla_deadline_at)} />
-            <Pair label="SLA status"             value={row.is_terminal ? '—' : row.sla_breached ? 'BREACHED' : fmtMinutes(row.minutes_until_sla)} />
-            <Pair label="Escalation lvl"         value={String(row.escalation_level)} />
-            <Pair label="Reportable"             value={row.is_reportable_flag ? 'Yes' : 'No'} />
-          </div>
-          {row.risk_description && <BasisBlock label="Risk description" tone="#1a3a5c" text={row.risk_description} />}
-          {row.assess_basis && <BasisBlock label="Assessment basis" tone="#1a3a5c" text={row.assess_basis} />}
-          {row.quantify_basis && <BasisBlock label="Quantify basis (SRA)" tone="#1a3a5c" text={row.quantify_basis} />}
-          {row.response_plan_basis && <BasisBlock label="Response plan basis" tone="#a06200" text={row.response_plan_basis} />}
-          {row.response_active_basis && <BasisBlock label="Response active basis" tone="#a06200" text={row.response_active_basis} />}
-          {row.realized_basis && <BasisBlock label="Realization basis" tone="#9b1f1f" text={row.realized_basis} />}
-          {row.escalate_basis && <BasisBlock label="Escalation basis" tone="#8a4a00" text={row.escalate_basis} />}
-          {row.close_basis && <BasisBlock label="Close basis" tone="#155724" text={row.close_basis} />}
-          {row.response_summary && <BasisBlock label="Response summary" tone="#557" text={row.response_summary} />}
-        </section>
-
-        {(primary || secondary.length > 0) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
-            <div className="flex flex-wrap gap-2">
-              {primary && (
-                <button type="button"
-                  onClick={() => onAct(primary, row)}
-                  className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#c2873a]"
-                >
-                  {ACTION_LABEL[primary]}
-                </button>
-              )}
-              {secondary.map((a) => {
-                const danger = DESTRUCTIVE.includes(a);
-                return (
-                  <button type="button"
-                    key={a}
-                    onClick={() => onAct(a, row)}
-                    className={
-                      danger
-                        ? 'rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50'
-                        : 'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#557] hover:bg-[#f3f5f9]'
-                    }
-                  >
-                    {ACTION_LABEL[a]}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
-          {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
-          ) : (
-            <ol className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
-                    )}
-                    {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
-                    )}
-                  </div>
-                  {e.notes && <div className="mt-1 text-[#1a3a5c]">{e.notes}</div>}
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function Metric({ label, value, bad, hint }: { label: string; value: string; bad?: boolean; hint?: string }) {
-  return (
-    <div title={hint}>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className={`text-[13px] font-semibold tabular-nums ${bad ? 'text-[#9b1f1f]' : 'text-[#0c2a4d]'}`}>{value}</div>
-    </div>
-  );
-}
-
-function BasisBlock({ label, tone, text }: { label: string; tone: string; text: string }) {
-  return (
-    <div className="mt-3 text-[12px]">
-      <div className="text-[10px] uppercase tracking-wider" style={{ color: tone }}>{label}</div>
-      <div className="whitespace-pre-wrap" style={{ color: tone }}>{text}</div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
+function DetailPair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: TX3 }}>{label}</div>
+      <div style={{ color: TX1, fontSize: 11 }}>{value}</div>
     </div>
   );
 }
+
+export default ProjectRiskChainTab;
