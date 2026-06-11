@@ -21,5 +21,12 @@ export default defineConfig({
     viewport: { width: 1280, height: 800 },
     actionTimeout: 25_000,
     navigationTimeout: 20_000,
+    launchOptions: {
+      // Reduce headless-detection signals that trigger Cloudflare Bot Management
+      // on the production origin. Fake tokens also look like `test-token-*`
+      // (no dots) so CF may inspect the Authorization header format — all roles
+      // now get real JWT tokens from globalSetup to eliminate that signal.
+      args: ['--disable-blink-features=AutomationControlled'],
+    },
   },
 });
