@@ -43,6 +43,8 @@ const ActivityFeedShell     = React.lazy(() => import('./components/ActivityFeed
 // Meridian redesign — full-canvas pages with their own chrome (no Layout wrapper).
 const HorizonPage           = React.lazy(() => import('./meridian/HorizonPage'));
 const ThreadPage            = React.lazy(() => import('./meridian/ThreadPage'));
+const AtlasPage             = React.lazy(() => import('./meridian/AtlasPage'));
+const CommandPalette        = React.lazy(() => import('./meridian/CommandPalette'));
 
 // Core page components
 const NationalDashboard     = React.lazy(() => import('./components/pages/NationalDashboard').then(m => ({ default: m.NationalDashboard })));
@@ -609,6 +611,7 @@ function AppRoutes() {
       {/* Meridian Horizon board — supplies its own chrome, so no Layout/AppShell wrapper. */}
       <Route path="/horizon" element={<ProtectedRoute><HorizonPage /></ProtectedRoute>} />
       <Route path="/thread/:chainKey/:id" element={<ProtectedRoute><ThreadPage /></ProtectedRoute>} />
+      <Route path="/atlas" element={<ProtectedRoute><AtlasPage /></ProtectedRoute>} />
       <Route path="/launch/:role" element={<ProtectedRoute><AppShellLayout><LaunchpadHomePage /></AppShellLayout></ProtectedRoute>} />
       <Route path="/launch/:role/:domain" element={<ProtectedRoute><AppShellLayout><SubCockpitPage /></AppShellLayout></ProtectedRoute>} />
       {/* TODO: DELETE legacy listing pages — redirected to workstation equivalents */}
@@ -720,6 +723,9 @@ function AppRoutes() {
       <Route path="/" element={<Navigate to="/feed" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    {/* Meridian ⌘K palette — global on every authed page; renders null when
+        there's no signed-in role config. */}
+    <CommandPalette />
     </React.Suspense>
   );
 }

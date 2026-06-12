@@ -127,16 +127,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('mousedown', handler);
   }, [avatarOpen]);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        navigate('/search');
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [navigate]);
+  // ⌘K is owned by the global Meridian CommandPalette (mounted in AppRoutes);
+  // a second binding here would also fire and navigate away underneath it.
 
   const initials = (user?.email ?? 'U')[0].toUpperCase();
 

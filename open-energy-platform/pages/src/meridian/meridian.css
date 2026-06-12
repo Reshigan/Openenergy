@@ -221,3 +221,63 @@
 .mer .actbar { flex-shrink:0; border-top:1px solid var(--line); background:var(--raised); padding:14px 44px 16px; }
 .mer .cascade-preview { font-size:12px; color:var(--ink2); margin-bottom:11px; max-width:780px; }
 .mer .actbar-btns { display:flex; gap:10px; flex-wrap:wrap; }
+
+/* ════════ Atlas + Palette (ported from mockups/meridian/03-atlas.html) ════════ */
+/* Same body-flex note as .mer.horizon: the page wrapper supplies the column layout. */
+.mer.atlas { display:flex; flex-direction:column; min-height:100dvh; }
+.mer .mer-head .counts { font-size:12.5px; color:var(--ink3); margin-left:auto; }
+
+/* ── Function index ──────────────────────── */
+/* Mockup blurs .index behind the static palette; the live page shows it crisp. */
+.mer .domains { padding:34px 44px 60px; display:grid; grid-template-columns:repeat(3, 1fr); gap:0 52px; align-items:start; }
+.mer .domain { border-top:2px solid var(--petrol); padding-top:14px; margin-bottom:34px; break-inside:avoid; }
+.mer .domain h2 { font-variation-settings:'wdth' 115; font-size:11.5px; font-weight:800; letter-spacing:0.11em; color:var(--petrol-deep); margin-bottom:10px; }
+.mer .fn {
+  display:flex; align-items:baseline; gap:8px; padding:7.5px 0;
+  border-bottom:1px solid var(--line); font-size:13px;
+  /* rows render as react-router <Link>s — neutralise anchor defaults */
+  text-decoration:none; color:inherit; transition:background 120ms var(--ease);
+}
+.mer .fn:last-child { border-bottom:none; }
+.mer .fn:hover .name { color:var(--petrol-deep); }
+.mer .fn .name { flex:1; font-weight:500; }
+.mer .fn .live { font-size:11.5px; color:var(--ink2); }
+.mer .fn .breach { font-size:11.5px; color:var(--oxide); font-weight:700; }
+
+/* ── Command palette ─────────────────────── */
+/* The veil mounts globally (AppRoutes), so it must beat every page's stacking
+   context — and .mer's opaque paper background must give way to the scrim. */
+.mer.veil {
+  position:fixed; inset:0; z-index:1000; min-height:0;
+  background:oklch(0.21 0.012 85 / 0.18);
+  display:grid; place-items:start center; padding-top:14vh;
+}
+.mer .palette {
+  width:min(660px, 92vw); background:var(--raised); border:1px solid var(--line);
+  border-radius:14px; box-shadow:0 18px 60px oklch(0.21 0.012 85 / 0.18), 0 2px 8px oklch(0.21 0.012 85 / 0.08);
+  overflow:hidden;
+}
+/* Mockup's .pal-input span is a real <input> here — same padded search row. */
+.mer .palette input {
+  width:100%; padding:17px 20px; border:none; border-bottom:1px solid var(--line); outline:none;
+  background:transparent; color:var(--ink); font-family:'Archivo',sans-serif; font-size:17px; font-weight:500;
+}
+.mer .palette input::placeholder { color:var(--ink3); }
+.mer .pal-hits { padding:10px 8px; max-height:52vh; overflow-y:auto; }
+.mer .hit {
+  display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:8px; cursor:pointer;
+  transition:background 120ms var(--ease);
+  /* hits render as <button>s — neutralise button defaults */
+  width:100%; border:none; background:transparent; text-align:left;
+  font-family:'Archivo',sans-serif; color:var(--ink);
+}
+.mer .hit:hover, .mer .hit.sel { background:var(--petrol-tint); }
+.mer .hit .type {
+  font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700; letter-spacing:0.08em;
+  padding:3px 7px; border-radius:4px; flex-shrink:0; width:74px; text-align:center;
+}
+.mer .type.fn { background:var(--petrol-tint); color:var(--petrol-deep); border:1px solid oklch(0.40 0.075 200 / 0.3); }
+.mer .type.case { background:oklch(0.95 0.02 70); color:var(--amber-deep); border:1px solid oklch(0.55 0.12 70 / 0.35); }
+.mer .hit b { font-size:13.5px; font-weight:600; }
+.mer .hit .sub { font-size:11.5px; color:var(--ink3); }
+.mer .pal-empty { padding:18px 14px; font-size:12.5px; color:var(--ink3); }

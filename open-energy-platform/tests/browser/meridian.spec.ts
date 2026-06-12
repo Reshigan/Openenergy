@@ -152,4 +152,33 @@ test.describe('Meridian Horizon', () => {
     const real = errors.filter((e) => !isBenign(e));
     expect(real, real.join('\n')).toEqual([]);
   });
+
+  test('⌘K command palette opens, searches lender functions, navigates on Enter', async ({ page, baseURL }) => {
+    await seedToken(page);
+    await page.goto(`${baseURL}/horizon`, { waitUntil: 'load' });
+    await expect(page.locator('.mer.horizon')).toBeVisible({ timeout: 25_000 });
+
+    // CommandPalette listens for ctrl OR meta + k — Control+k works on every OS.
+    await page.keyboard.press('Control+k');
+    const palette = page.locator('.mer .palette');
+    await expect(palette).toBeVisible();
+
+    // Escape closes…
+    await page.keyboard.press('Escape');
+    await expect(palette).toHaveCount(0);
+
+    // …and reopening + typing surfaces function hits from the lender role
+    // config ("Covenant certificates" lives in the Monitoring domain).
+    await page.keyboard.press('Control+k');
+    await expect(palette).toBeVisible();
+    await palette.locator('input').fill('covenant');
+    const firstHit = page.locator('.mer .hit').first();
+    await expect(firstHit).toBeVisible();
+    await expect(firstHit).toContainText('Covenant');
+
+    // Enter runs the selected hit — a function hit navigates to the lender
+    // workstation tab (a case hit would go to /thread/).
+    await page.keyboard.press('Enter');
+    await page.waitForURL(/\?tab=|\/thread\//, { timeout: 15_000 });
+  });
 });
