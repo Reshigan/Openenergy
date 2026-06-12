@@ -1,0 +1,157 @@
+/* pages/src/meridian/meridian.css — scoped: every Meridian page wraps in <div className="mer"> */
+/* Archivo variable font (wdth+wght axes) — same @import pattern as index.css fonts. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&display=swap');
+
+.mer {
+  --paper: oklch(0.965 0.006 85);
+  --raised: oklch(0.985 0.004 85);
+  --ink: oklch(0.21 0.012 85);
+  --ink2: oklch(0.42 0.012 85);
+  --ink3: oklch(0.50 0.012 85);
+  --line: oklch(0.885 0.008 85);
+  --petrol: oklch(0.40 0.075 200);
+  --petrol-deep: oklch(0.30 0.06 205);
+  --petrol-tint: oklch(0.94 0.015 200);
+  --amber: oklch(0.70 0.13 70);
+  --amber-deep: oklch(0.55 0.12 70);
+  --oxide: oklch(0.50 0.18 30);
+  --oxide-tint: oklch(0.95 0.02 30);
+  --moss: oklch(0.55 0.09 150);
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  font-family: 'Archivo', 'IBM Plex Sans', sans-serif;
+  background: var(--paper); color: var(--ink);
+  min-height: 100dvh; font-size: 14px; line-height: 1.5;
+}
+.mer .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+/* ── Top bar ─────────────────────────────── */
+.mer header {
+  height:60px; display:flex; align-items:center; gap:28px; padding:0 28px;
+  border-bottom:1px solid var(--line); background:var(--raised); flex-shrink:0;
+}
+.mer .wordmark {
+  font-variation-settings:'wdth' 125; font-weight:800; font-size:17px;
+  letter-spacing:0.14em; color:var(--ink);
+  padding-bottom:2px; border-bottom:3px solid var(--petrol);
+}
+.mer .ctx { display:flex; flex-direction:column; line-height:1.25; }
+.mer .ctx b { font-size:13px; font-weight:600; }
+.mer .ctx span { font-size:11.5px; color:var(--ink3); }
+.mer .spacer { flex:1; }
+.mer .clock { font-size:13px; color:var(--ink2); }
+.mer .kbd-hint {
+  display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink2);
+  border:1px solid var(--line); border-radius:6px; padding:7px 14px; background:var(--paper);
+  cursor:pointer; transition:transform 140ms var(--ease), border-color 140ms;
+}
+.mer .kbd-hint:hover { border-color:var(--petrol); }
+.mer .kbd-hint:active { transform:scale(0.98); }
+.mer .kbd-hint kbd {
+  font-family:'JetBrains Mono',monospace; font-size:10.5px; border:1px solid var(--line);
+  border-radius:4px; padding:1px 5px; background:var(--raised); color:var(--ink2);
+}
+.mer .avatar {
+  width:32px; height:32px; border-radius:50%; background:var(--petrol); color:white;
+  display:grid; place-items:center; font-size:12px; font-weight:700;
+}
+
+/* ── Layout ──────────────────────────────── */
+.mer .main { flex:1; display:grid; grid-template-columns:1fr 348px; min-height:0; }
+
+/* ── Horizon board ───────────────────────── */
+.mer .board { padding:20px 0 8px 0; overflow-y:auto; }
+.mer .board-head, .mer .lane-row {
+  /* 1 label column + 6 bucket columns — must match BUCKETS in lib.ts */
+  display:grid; grid-template-columns:148px 1.15fr 1fr 1.2fr 1.1fr 1.1fr 0.9fr;
+}
+.mer .board-head { position:sticky; top:0; background:var(--paper); z-index:3; padding-bottom:8px; }
+.mer .bucket-h {
+  font-size:10.5px; font-weight:700; letter-spacing:0.12em; color:var(--ink3);
+  font-variation-settings:'wdth' 110; padding:0 10px 6px 10px;
+  border-left:1px solid var(--line);
+}
+.mer .bucket-h.breach { color:var(--oxide); }
+.mer .bucket-h .tick { font-family:'JetBrains Mono',monospace; font-weight:400; letter-spacing:0; display:block; font-size:10px; color:var(--ink3); margin-top:1px; }
+
+.mer .lane-row { border-top:1px solid var(--line); }
+.mer .lane-label {
+  padding:14px 14px 14px 28px; font-variation-settings:'wdth' 116; font-weight:700;
+  font-size:11px; letter-spacing:0.1em; color:var(--petrol-deep); line-height:1.4;
+}
+.mer .lane-label .n { display:block; font-family:'JetBrains Mono',monospace; font-weight:400; font-size:10.5px; color:var(--ink3); letter-spacing:0; margin-top:2px; }
+.mer .cell { border-left:1px solid var(--line); padding:10px; min-height:96px; display:flex; flex-direction:column; gap:8px; }
+
+/* ── Tiles ───────────────────────────────── */
+.mer .tile {
+  background:var(--raised); border:1px solid var(--line); border-radius:8px;
+  padding:9px 11px 10px; cursor:pointer; position:relative;
+  transition:transform 160ms var(--ease), border-color 160ms, box-shadow 160ms;
+  /* tiles render as react-router <Link>s — neutralise anchor defaults */
+  display:block; text-decoration:none; color:inherit;
+}
+.mer .tile:hover { border-color:var(--petrol); box-shadow:0 1px 4px oklch(0.40 0.075 200 / 0.10); }
+.mer .tile:active { transform:scale(0.98); }
+.mer .tile.breached { border:1.5px solid var(--oxide); background:var(--oxide-tint); }
+.mer .tile .ref { font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--ink3); }
+.mer .tile .title { font-size:12.5px; font-weight:600; line-height:1.35; margin:2px 0 4px; }
+.mer .tile .zar { font-family:'JetBrains Mono',monospace; font-weight:700; letter-spacing:-0.01em; }
+.mer .zar.m1 { font-size:13px; }   /* < R20m */
+.mer .zar.m2 { font-size:15.5px; } /* R20m – R500m */
+.mer .zar.m3 { font-size:20px; }   /* > R500m */
+.mer .tile .meta { display:flex; align-items:center; gap:8px; margin-top:5px; font-size:11px; color:var(--ink2); }
+.mer .chip {
+  font-family:'JetBrains Mono',monospace; font-size:9.5px; padding:2px 7px; border-radius:99px;
+  background:var(--petrol-tint); color:var(--petrol-deep); white-space:nowrap;
+}
+.mer .chip.ox { background:var(--oxide-tint); color:var(--oxide); border:1px solid var(--oxide); }
+.mer .fuse { height:3px; border-radius:2px; background:var(--line); margin-top:8px; overflow:hidden; }
+.mer .fuse > i { display:block; height:100%; border-radius:2px; background:var(--petrol); }
+.mer .fuse.warn > i { background:var(--amber-deep); }
+.mer .fuse.dead > i { background:var(--oxide); width:100% !important; }
+.mer .breach-note { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--oxide); font-weight:700; margin-top:6px; }
+
+/* ── Duty Stream ─────────────────────────── */
+.mer aside {
+  border-left:1px solid var(--line); background:var(--raised); display:flex;
+  flex-direction:column; min-height:0; box-shadow:-1px 0 0 oklch(0.21 0.012 85 / 0.04);
+}
+.mer .duty-head { padding:18px 22px 12px; border-bottom:1px solid var(--line); }
+.mer .duty-head h2 { font-variation-settings:'wdth' 118; font-size:12px; font-weight:800; letter-spacing:0.12em; color:var(--ink); }
+.mer .duty-head p { font-size:11.5px; color:var(--ink3); margin-top:2px; }
+.mer .duty-list { overflow-y:auto; flex:1; }
+.mer .duty { padding:15px 22px; border-bottom:1px solid var(--line); display:grid; grid-template-columns:30px 1fr; gap:12px; }
+.mer .duty .rank { font-family:'JetBrains Mono',monospace; font-size:19px; font-weight:700; color:var(--petrol); line-height:1.1; }
+.mer .duty.ox .rank { color:var(--oxide); }
+.mer .duty h3 { font-size:13px; font-weight:600; line-height:1.35; }
+.mer .duty .why { font-size:11.5px; color:var(--ink2); margin:3px 0 9px; }
+.mer .why .mono { font-weight:500; }
+.mer .why .due-ox { color:var(--oxide); font-weight:700; }
+.mer .why .due-am { color:var(--amber-deep); font-weight:700; }
+.mer .duty .acts { display:flex; gap:8px; }
+.mer .btn {
+  font-family:'Archivo',sans-serif; font-size:12px; font-weight:600; border-radius:6px;
+  padding:8px 13px; min-height:34px; cursor:pointer; border:1px solid transparent;
+  transition:transform 140ms var(--ease), background 140ms;
+}
+.mer .btn:active { transform:scale(0.97); }
+.mer .btn.pri { background:var(--petrol); color:white; }
+.mer .btn.pri:hover { background:var(--petrol-deep); }
+.mer .btn.ghost { background:transparent; border-color:var(--line); color:var(--ink2); }
+.mer .btn.ghost:hover { border-color:var(--ink3); color:var(--ink); }
+.mer .btn.ox { background:var(--oxide); color:white; }
+
+/* ── Wire ticker ─────────────────────────── */
+.mer .wire {
+  flex-shrink:0; border-top:1px solid var(--line); background:var(--raised);
+  display:flex; align-items:stretch; height:40px; overflow:hidden;
+}
+.mer .wire-label {
+  display:flex; align-items:center; padding:0 18px 0 28px; gap:8px;
+  font-variation-settings:'wdth' 118; font-size:10.5px; font-weight:800; letter-spacing:0.12em;
+  color:var(--petrol-deep); border-right:1px solid var(--line); flex-shrink:0;
+}
+.mer .pulse { width:7px; height:7px; border-radius:50%; background:var(--moss); }
+.mer .wire-feed { display:flex; align-items:center; gap:34px; padding:0 22px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink2); white-space:nowrap; overflow:hidden; }
+.mer .wire-feed b { color:var(--ink); font-weight:600; }
+.mer .dir-out { color:var(--petrol); font-weight:700; }
+.mer .dir-in { color:var(--moss); font-weight:700; }
