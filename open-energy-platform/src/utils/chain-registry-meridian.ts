@@ -990,6 +990,340 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     ],
   },
 
+  // ───────── GRID OPERATOR ─────────
+  // Two-party grid waves W18 (planned outage), W28 (GCA), W67 (grid code
+  // compliance) and W75 (connection energization) are registered above in the
+  // IPP DEVELOPER section with grid_operator lanes — not repeated here.
+  // Skipped: W8 wheeling charges (oe_grid_wheeling_charges has a plain `status`
+  // column + `dispute_deadline_at` — no chain_status/sla_deadline_at pair);
+  // W13 dispatch nominations (oe_dispatch_nominations uses `nomination_status`
+  // + `next_sla_due_at` — fails the registry shape contract).
+
+  // W34 — Load curtailment CSC-1 (NERSA §CSC-1; URGENT — higher load-shed stage
+  // = tighter SLA; TWO-PARTY split write — SO instructs, customer responds)
+  {
+    key: 'load_curtailment', wave: 34, table: 'oe_load_curtailment',
+    title: 'Load curtailment', refCol: 'case_number', titleCol: 'facility_name',
+    quantumCol: 'penalty_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['closed', 'refused', 'withdrawn'],
+    counterpartyCol: 'customer_party_name',
+    lanes: { grid_operator: 'operations_grid', ipp_developer: 'safety_grid' },
+    eventsTable: 'oe_load_curtailment_events', eventsFk: 'curtailment_id',
+    actions: [
+      { action: 'acknowledge', label: 'Acknowledge instruction', tone: 'primary',
+        path: '/api/load-curtailment/chain/:id/acknowledge',
+        roles: ['admin', 'support', 'ipp_developer', 'grid_operator', 'trader', 'carbon_fund', 'offtaker'],
+        cascadeHint: 'Customer acknowledges the curtailment instruction; the stage-tiered response SLA starts running.' },
+      { action: 'lift-instruction', label: 'Lift instruction',
+        path: '/api/load-curtailment/chain/:id/lift-instruction',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'SO lifts the curtailment as system conditions recover; arms reconciliation of curtailed MWh.' },
+      { action: 'refuse', label: 'Refuse instruction', tone: 'oxide',
+        path: '/api/load-curtailment/chain/:id/refuse',
+        roles: ['admin', 'support', 'ipp_developer', 'grid_operator', 'trader', 'carbon_fund', 'offtaker'],
+        cascadeHint: 'Customer refuses the lawful curtailment instruction; closes the case adversely and exposes the customer to CSC-1 penalties.' },
+    ],
+  },
+
+  // W50 — Ancillary services reserve activation & settlement (Grid Code/SOC;
+  // URGENT — faster reserve product = tighter SLA; TWO-PARTY SO ↔ provider)
+  {
+    key: 'reserve_activation', wave: 50, table: 'oe_reserve_activations',
+    title: 'Reserve activation', refCol: 'activation_number', titleCol: 'service_name',
+    quantumCol: 'utilisation_payment_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['settled', 'dispute_resolved', 'withdrawn'],
+    counterpartyCol: 'provider_party_name',
+    lanes: { grid_operator: 'operations_grid', ipp_developer: 'safety_grid' },
+    eventsTable: 'oe_reserve_activations_events', eventsFk: 'activation_id',
+    actions: [
+      { action: 'acknowledge', label: 'Acknowledge activation',
+        path: '/api/reserve-activation/chain/:id/acknowledge',
+        roles: ['admin', 'support', 'ipp_developer', 'offtaker', 'lender', 'trader', 'carbon_fund'],
+        cascadeHint: 'Provider acknowledges the dispatch instruction; the reserve-tier ramp clock starts.' },
+      { action: 'settle', label: 'Settle activation', tone: 'primary',
+        path: '/api/reserve-activation/chain/:id/settle',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'SO settles verified delivery — utilisation + availability payments to the provider; terminates the activation settled.' },
+      { action: 'flag-non-performance', label: 'Flag non-performance', tone: 'oxide',
+        path: '/api/reserve-activation/chain/:id/flag-non-performance',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'SO flags failed delivery against the activation; settlement proceeds on the penalty leg with non-performance charges and still closes the activation settled.' },
+    ],
+  },
+
+  // W58 — Grid connection capacity allocation & queue (NTCSA 2024 Capacity
+  // Rules; INVERTED SLA — bigger connection more study time; TWO-PARTY split
+  // write — operator/committee drive the queue, applicant files + accepts).
+  // quantumCol is R millions (estimated connection capex), not absolute ZAR.
+  {
+    key: 'rez_capacity', wave: 58, table: 'oe_grid_capacity_allocations',
+    title: 'Capacity allocation', refCol: 'allocation_number', titleCol: 'project_name',
+    quantumCol: 'estimated_capex_zar_m', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['capacity_allocated', 'rejected', 'lapsed', 'relinquished', 'withdrawn'],
+    counterpartyCol: 'applicant_party_name',
+    lanes: { grid_operator: 'connections', ipp_developer: 'safety_grid' },
+    eventsTable: 'oe_grid_capacity_allocations_events', eventsFk: 'allocation_id',
+    actions: [
+      { action: 'issue-offer', label: 'Issue capacity offer',
+        path: '/api/grid-capacity/chain/:id/issue-offer',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'Allocation committee issues the capacity offer off the queue position; the applicant acceptance window starts.' },
+      { action: 'accept-offer', label: 'Accept offer',
+        path: '/api/grid-capacity/chain/:id/accept-offer',
+        roles: ['admin', 'support', 'ipp_developer', 'offtaker', 'lender', 'trader', 'carbon_fund'],
+        cascadeHint: 'Applicant accepts the offer; capacity is reserved pending project milestones.' },
+      { action: 'allocate-capacity', label: 'Allocate capacity', tone: 'primary',
+        path: '/api/grid-capacity/chain/:id/allocate-capacity',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'Operator firms up the reserved capacity; feeds the W28 Grid Connection Agreement handoff (gca_ref).' },
+      { action: 'reject-application', label: 'Reject application', tone: 'oxide',
+        path: '/api/grid-capacity/chain/:id/reject-application',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'Committee denies grid access at assessment or queueing; crosses the regulator inbox for every tier (W58 signature).' },
+    ],
+  },
+
+  // ───────── REGULATOR ─────────
+  // Regulator lanes on cross-referred chains (W33/W38/W40/W43/W49/W57/W74 etc.)
+  // also appear on entries above/below via the lanes map.
+  // Skipped: W5 regulator inbox (oe_regulator_inbox is a triage inbox with
+  // `ack_status` + `sla_due_at` — not the chain_status/sla_deadline_at model;
+  // its matters land here via the W31 disposition chain instead).
+
+  // W31 — Regulatory disposition (NERSA §10; INVERTED SLA; fed by every prior
+  // wave's regulator crossings; single regulator-desk write)
+  {
+    key: 'disposition', wave: 31, table: 'oe_disposition_cases',
+    title: 'Disposition case', refCol: 'case_number', titleCol: 'notice_subject',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['closed', 'escalated', 'dismissed', 'referred'],
+    counterpartyCol: 'source_party',
+    lanes: { regulator: 'enforcement_regulator' },
+    eventsTable: 'oe_disposition_events', eventsFk: 'disposition_id',
+    actions: [
+      { action: 'triage', label: 'Triage case', tone: 'primary',
+        path: '/api/disposition/chain/:id/triage',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Triages the cross-referred matter and sets the severity tier; the tier SLA starts running.' },
+      { action: 'require-action', label: 'Require corrective action',
+        path: '/api/disposition/chain/:id/require-action',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Directs the licensee to take corrective action; opens the compliance window on the source party.' },
+      { action: 'escalate', label: 'Escalate', tone: 'oxide',
+        path: '/api/disposition/chain/:id/escalate',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Escalates the matter to formal enforcement; terminates the disposition escalated.' },
+    ],
+  },
+
+  // W33 — Licence renewal (NERSA ss.14-16; INVERTED SLA — bigger class more
+  // time; TWO-PARTY — officer drives, applicant files + withdraws)
+  {
+    key: 'licence_renewal', wave: 33, table: 'oe_licence_renewals',
+    title: 'Licence renewal', refCol: 'case_number', titleCol: 'facility_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['granted', 'amended', 'refused', 'withdrawn'],
+    counterpartyCol: 'applicant_party_name',
+    lanes: { regulator: 'licensing', ipp_developer: 'regulatory_risk' },
+    eventsTable: 'oe_licence_renewal_events', eventsFk: 'renewal_id',
+    actions: [
+      { action: 'file-application', label: 'File renewal application',
+        path: '/api/licence/renewal/chain/:id/file-application',
+        roles: ['admin', 'support', 'ipp_developer', 'grid_operator', 'trader', 'carbon_fund', 'offtaker'],
+        cascadeHint: 'Licensee files the renewal application against the expiry notice; the completeness-check clock starts.' },
+      { action: 'grant', label: 'Grant renewal', tone: 'primary',
+        path: '/api/licence/renewal/chain/:id/grant',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Council grants the renewed licence; the licensee continues operating under the renewed term.' },
+      { action: 'refuse', label: 'Refuse renewal', tone: 'oxide',
+        path: '/api/licence/renewal/chain/:id/refuse',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Council refuses the renewal; the licensee loses the right to operate at licence expiry.' },
+    ],
+  },
+
+  // W40 — Compliance inspection & enforcement (NERSA §10 + §34/§35; PROACTIVE;
+  // URGENT SLA; TWO-PARTY — officer drives, respondent remediates + appeals)
+  {
+    key: 'compliance_inspection', wave: 40, table: 'oe_compliance_inspections',
+    title: 'Compliance inspection', refCol: 'inspection_number', titleCol: 'facility_name',
+    quantumCol: 'penalty_amount_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['compliant_closed', 'enforcement_closed', 'withdrawn'],
+    counterpartyCol: 'respondent_party_name',
+    lanes: { regulator: 'enforcement_regulator', ipp_developer: 'regulatory_risk' },
+    eventsTable: 'oe_compliance_inspections_events', eventsFk: 'inspection_id',
+    actions: [
+      { action: 'issue-findings', label: 'Issue findings',
+        path: '/api/compliance-inspection/chain/:id/issue-findings',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Officer issues the inspection findings to the respondent; the remediation directive window opens.' },
+      { action: 'begin-remediation', label: 'Begin remediation',
+        path: '/api/compliance-inspection/chain/:id/begin-remediation',
+        roles: ['admin', 'support', 'ipp_developer', 'grid_operator', 'offtaker', 'lender', 'trader', 'carbon_fund'],
+        cascadeHint: 'Respondent licensee starts remediating the directive; the verification clock keeps running.' },
+      { action: 'close-compliant', label: 'Close compliant', tone: 'primary',
+        path: '/api/compliance-inspection/chain/:id/close-compliant',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Officer verifies remediation and closes the inspection clean — the no-enforcement terminal.' },
+      { action: 'impose-penalty', label: 'Impose penalty', tone: 'oxide',
+        path: '/api/compliance-inspection/chain/:id/impose-penalty',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Imposes the §34/§35 financial penalty for failed remediation; opens the respondent appeal window.' },
+    ],
+  },
+
+  // W43 — MYPD tariff determination (NERSA §15-16; INVERTED SLA; TWO-PARTY —
+  // regulator determines, applicant licensee files + seeks reconsideration).
+  // quantumCol is R millions (requested allowed revenue), not absolute ZAR.
+  {
+    key: 'tariff_determination', wave: 43, table: 'oe_tariff_determinations',
+    title: 'Tariff determination', refCol: 'determination_number', titleCol: 'tariff_entity',
+    quantumCol: 'requested_revenue_zar_m', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['implemented', 'remitted', 'rejected', 'withdrawn'],
+    counterpartyCol: 'applicant_party_name',
+    lanes: { regulator: 'tariff_determinations', grid_operator: 'compliance_grid' },
+    eventsTable: 'oe_tariff_determinations_events', eventsFk: 'determination_id',
+    actions: [
+      { action: 'open-consultation', label: 'Open public consultation',
+        path: '/api/tariff-determination/chain/:id/open-consultation',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Opens the statutory public-consultation window on the revenue application.' },
+      { action: 'issue-determination', label: 'Issue determination', tone: 'primary',
+        path: '/api/tariff-determination/chain/:id/issue-determination',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Council issues the allowed-revenue determination; gazetting and implementation follow.' },
+      { action: 'request-reconsideration', label: 'Request reconsideration',
+        path: '/api/tariff-determination/chain/:id/request-reconsideration',
+        roles: ['admin', 'support', 'ipp_developer', 'grid_operator', 'offtaker', 'lender', 'trader', 'carbon_fund'],
+        cascadeHint: 'Applicant licensee asks Council to reconsider the issued determination before implementation.' },
+      { action: 'reject', label: 'Reject application', tone: 'oxide',
+        path: '/api/tariff-determination/chain/:id/reject',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Council rejects the revenue application; the licensee remains on the prior tariff.' },
+    ],
+  },
+
+  // W49 — Initial licence application & adjudication (ERA ss.8-11; market-entry
+  // gate ahead of W33 renewal; INVERTED SLA; TWO-PARTY — regulator adjudicates,
+  // applicant files + supplies info). quantumCol is R millions (project capex).
+  {
+    key: 'licence_application', wave: 49, table: 'oe_licence_applications',
+    title: 'Licence application', refCol: 'application_number', titleCol: 'facility_name',
+    quantumCol: 'estimated_capex_zar_m', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['licence_issued', 'refused', 'withdrawn', 'lapsed'],
+    counterpartyCol: 'applicant_party_name',
+    lanes: { regulator: 'licensing', ipp_developer: 'regulatory_risk' },
+    eventsTable: 'oe_licence_applications_events', eventsFk: 'application_id',
+    actions: [
+      { action: 'submit-info', label: 'Submit information',
+        path: '/api/licence-application/chain/:id/submit-info',
+        roles: ['admin', 'support', 'ipp_developer', 'grid_operator', 'offtaker', 'lender', 'trader', 'carbon_fund'],
+        cascadeHint: 'Applicant answers the information request; the application returns to completeness review.' },
+      { action: 'open-participation', label: 'Open public participation',
+        path: '/api/licence-application/chain/:id/open-participation',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Opens the s.10 public-participation window on the accepted application.' },
+      { action: 'grant-licence', label: 'Grant licence', tone: 'primary',
+        path: '/api/licence-application/chain/:id/grant-licence',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Council grants the licence; crosses the regulator oversight queue for the major class only.' },
+      { action: 'refuse-licence', label: 'Refuse licence', tone: 'oxide',
+        path: '/api/licence-application/chain/:id/refuse-licence',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Council refuses market entry; crosses the regulator oversight queue for every class (W49 signature).' },
+    ],
+  },
+
+  // W57 — SSEG / Schedule 2 embedded-generation registration (ERA Sch 2;
+  // light-touch sibling of W49; INVERTED SLA; TWO-PARTY — registry drives,
+  // applicant files + satisfies conditions). quantumCol is R millions.
+  {
+    key: 'sseg_registration', wave: 57, table: 'oe_sseg_registrations',
+    title: 'SSEG registration', refCol: 'registration_number', titleCol: 'facility_name',
+    quantumCol: 'estimated_capex_zar_m', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['registered', 'referred_to_licensing', 'refused', 'withdrawn', 'lapsed'],
+    counterpartyCol: 'applicant_party_name',
+    lanes: { regulator: 'licensing', ipp_developer: 'regulatory_risk' },
+    eventsTable: 'oe_sseg_registrations_events', eventsFk: 'registration_id',
+    actions: [
+      { action: 'approve-registration', label: 'Approve registration', tone: 'primary',
+        path: '/api/sseg-registration/chain/:id/approve-registration',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Committee approves the Schedule 2 registration; certificate issuance follows.' },
+      { action: 'refer-to-licensing', label: 'Refer to licensing',
+        path: '/api/sseg-registration/chain/:id/refer-to-licensing',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Hands a non-Schedule-2 facility up to the full W49 licence-application chain.' },
+      { action: 'refuse-registration', label: 'Refuse registration', tone: 'oxide',
+        path: '/api/sseg-registration/chain/:id/refuse-registration',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Committee refuses the registration on failed verification; the facility may not lawfully operate.' },
+    ],
+  },
+
+  // W66 — Complaints & dispute resolution (ERA s30; REACTIVE external intake;
+  // URGENT SLA; single NERSA-desk write {admin, regulator} — no support)
+  {
+    key: 'complaint_resolution', wave: 66, table: 'oe_regulator_complaints',
+    title: 'Complaint resolution', refCol: 'complaint_number', titleCol: 'respondent_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['resolved', 'dismissed', 'appealed', 'withdrawn'],
+    counterpartyCol: 'complainant_name',
+    lanes: { regulator: 'enforcement_regulator' },
+    eventsTable: 'oe_regulator_complaints_events', eventsFk: 'complaint_id',
+    actions: [
+      { action: 'screen-admissibility', label: 'Screen admissibility',
+        path: '/api/complaints/chain/:id/screen-admissibility',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Screens jurisdiction and merit; admissible complaints are referred to the respondent licensee first.' },
+      { action: 'issue-ruling', label: 'Issue ruling', tone: 'primary',
+        path: '/api/complaints/chain/:id/issue-ruling',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Issues the binding adjudication ruling; crosses the Council oversight queue for major and systemic tiers.' },
+      { action: 'lodge-appeal', label: 'Record appeal', tone: 'oxide',
+        path: '/api/complaints/chain/:id/lodge-appeal',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Records a judicial-review appeal against the ruling; crosses the Council oversight queue for every tier (W66 signature).' },
+    ],
+  },
+
+  // W74 — NERSA levy assessment & collection (NERA Act §5B; URGENT SLA —
+  // bigger levy tighter; single NERSA levy-desk write {admin, regulator})
+  {
+    key: 'levy_assessment', wave: 74, table: 'oe_regulator_levies',
+    title: 'Levy assessment', refCol: 'levy_number', titleCol: 'licensee_name',
+    quantumCol: 'outstanding_amount', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['settled', 'written_off', 'withdrawn'],
+    counterpartyCol: null, // regulator-originated; the levied licensee is already the title
+    lanes: { regulator: 'levies', grid_operator: 'compliance_grid' },
+    eventsTable: 'oe_regulator_levies_events', eventsFk: 'levy_id',
+    actions: [
+      { action: 'issue-invoice', label: 'Issue levy invoice',
+        path: '/api/levy-assessment/chain/:id/issue-invoice',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Issues the levy notice to the licensee; the payment window and arrears aging start.' },
+      { action: 'record-settlement', label: 'Record settlement', tone: 'primary',
+        path: '/api/levy-assessment/chain/:id/record-settlement',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Records payment in full; terminates the assessment settled and restores licence good standing.' },
+      { action: 'escalate-enforcement', label: 'Escalate to enforcement', tone: 'oxide',
+        path: '/api/levy-assessment/chain/:id/escalate-enforcement',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Escalates the uncollected debt to enforcement — a licence good-standing matter; crosses the Council oversight queue for every tier (W74 signature).' },
+    ],
+  },
+
   // Other roles registered in later tasks.
 ];
 
