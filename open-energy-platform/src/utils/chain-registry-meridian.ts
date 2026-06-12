@@ -218,6 +218,171 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     ],
   },
 
+  // ───────── TRADER ─────────
+  // Skipped: W2 trading risk (VaR snapshot tables, no chain_status/sla_deadline_at);
+  // W9 MM compliance (breach_status lives on oe_mm_obligations, no sla_deadline_at —
+  // not a case-list model).
+
+  // W29 — Position limit chain (FSCA s41; forced liquidation crosses every tier)
+  {
+    key: 'poslimit_case', wave: 29, table: 'oe_poslimit_cases',
+    title: 'Position limit', refCol: 'case_number', titleCol: 'instrument',
+    quantumCol: 'cap_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['cured', 'escalated', 'false_alarm'],
+    counterpartyCol: 'trader_party',
+    lanes: { trader: 'risk_margin' },
+    eventsTable: 'oe_poslimit_events', eventsFk: 'poslimit_id',
+    actions: [
+      { action: 'begin-reduction', label: 'Begin reduction',
+        path: '/api/poslimit/chain/:id/begin-reduction',
+        roles: ['admin', 'support', 'compliance', 'trader', 'marketmaker'],
+        cascadeHint: 'Trader starts unwinding the breaching position toward the required reduction target.' },
+      { action: 'issue-margin-call', label: 'Issue margin call',
+        path: '/api/poslimit/chain/:id/issue-margin-call',
+        roles: ['admin', 'support', 'compliance'],
+        cascadeHint: 'Demands a ZAR collateral top-up from the trading member; crosses FSCA inbox for prop and market_maker tiers.' },
+      { action: 'force-liquidate', label: 'Force liquidate', tone: 'oxide',
+        path: '/api/poslimit/chain/:id/force-liquidate',
+        roles: ['admin', 'support', 'compliance'],
+        cascadeHint: 'Escalates to forced position liquidation; crosses regulator inbox for every tier (W29 universal hard line).' },
+    ],
+  },
+
+  // W36 — Best-execution / RFQ (FSCA Conduct Standard 1/2020; MIXED SLA)
+  {
+    key: 'best_execution', wave: 36, table: 'oe_best_execution',
+    title: 'Best execution', refCol: 'rfq_number', titleCol: 'instrument',
+    quantumCol: 'notional_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['closed', 'exception_escalated', 'rfq_expired'],
+    counterpartyCol: 'client_party_name',
+    lanes: { trader: 'post_trade' },
+    eventsTable: 'oe_best_execution_events', eventsFk: 'rfq_id',
+    actions: [
+      { action: 'approve', label: 'Approve execution',
+        path: '/api/best-execution/chain/:id/approve',
+        roles: ['admin', 'support', 'trader'],
+        cascadeHint: 'Compliance approves execution against the evaluated best quote; opens the hard market execution window.' },
+      { action: 'escalate-exception', label: 'Escalate exception', tone: 'oxide',
+        path: '/api/best-execution/chain/:id/escalate-exception',
+        roles: ['admin', 'support', 'trader'],
+        cascadeHint: 'Escalates a best-ex exception and closes the case adversely; crosses FSCA conduct inbox for every client tier.' },
+    ],
+  },
+
+  // W44 — OTC trade-repository reporting (FMA 2012; SLA breach IS the violation)
+  {
+    key: 'trade_report', wave: 44, table: 'oe_trade_reports',
+    title: 'Trade report', refCol: 'report_number', titleCol: 'product',
+    quantumCol: 'notional_zar_m', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['confirmed_complete', 'exempted', 'cancelled'],
+    counterpartyCol: 'counterparty_name',
+    lanes: { trader: 'post_trade' },
+    eventsTable: 'oe_trade_reports_events', eventsFk: 'report_id',
+    actions: [
+      { action: 'submit', label: 'Submit to repository',
+        path: '/api/trade-reporting/chain/:id/submit',
+        roles: ['admin', 'support', 'trader'],
+        cascadeHint: 'Submits the UTI-tagged report to the trade repository and starts the acknowledgement clock toward the T+1 FMA deadline.' },
+      { action: 'flag-break', label: 'Flag reconciliation break', tone: 'oxide',
+        path: '/api/trade-reporting/chain/:id/flag-break',
+        roles: ['admin', 'support', 'trader'],
+        cascadeHint: 'Flags a TR reconciliation break; crosses FSCA supervisory inbox for otc_derivative class (systemic-risk product).' },
+    ],
+  },
+
+  // W52 — Market abuse / STOR (FMA Ch.X; subject trader is read-only — WRITE {admin, regulator})
+  {
+    key: 'market_abuse_case', wave: 52, table: 'oe_market_abuse_cases',
+    title: 'Market abuse case', refCol: 'case_number', titleCol: 'typology',
+    quantumCol: 'suspect_value_zar_m', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['cleared', 'sanctioned', 'dispute_resolved'],
+    counterpartyCol: 'subject_party_name',
+    // trader lane is read-only visibility (route READ_ROLES include the subject trader);
+    // write access is per-action below — no action lists trader, so Thread shows no buttons.
+    lanes: { trader: 'compliance_reporting', regulator: 'enforcement_regulator' },
+    eventsTable: 'oe_market_abuse_cases_events', eventsFk: 'case_id',
+    actions: [
+      { action: 'clear', label: 'Clear case',
+        path: '/api/market-abuse/chain/:id/clear',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Closes the surveillance case as cleared after analysis; no enforcement, subject desk released from review.' },
+      { action: 'file-stor', label: 'File STOR', tone: 'oxide',
+        path: '/api/market-abuse/chain/:id/file-stor',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Files the suspicious-transaction report with the FSCA — the filing itself crosses the regulator inbox for every tier (W52 signature).' },
+    ],
+  },
+
+  // W60 — Algo certification & kill-switch (FMA/FSCA, MiFID RTS-6; pre-deployment gate)
+  {
+    key: 'algo_certification', wave: 60, table: 'oe_algo_certifications',
+    title: 'Algo certification', refCol: 'case_number', titleCol: 'system_name',
+    quantumCol: 'authorised_notional_zar_m', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['rejected', 'decommissioned'],
+    counterpartyCol: 'firm_party_name',
+    lanes: { trader: 'compliance_reporting', regulator: 'licensing' },
+    eventsTable: 'oe_algo_certifications_events', eventsFk: 'cert_id',
+    actions: [
+      { action: 'grant-certification', label: 'Grant certification',
+        path: '/api/algo-cert/chain/:id/grant-certification',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Authority certifies the system against RTS-6 pre-trade risk controls; unblocks the firm to deploy live.' },
+      { action: 'invoke-kill-switch', label: 'Invoke kill-switch', tone: 'oxide',
+        path: '/api/algo-cert/chain/:id/invoke-kill-switch',
+        roles: ['admin', 'trader', 'regulator'],
+        cascadeHint: 'Emergency-halts the live automated system; crosses regulator inbox for every tier (W60 signature — notifiable market event).' },
+    ],
+  },
+
+  // W68 — Counterparty margin & default management (CPMI-IOSCO PFMI waterfall)
+  {
+    key: 'counterparty_margin', wave: 68, table: 'oe_counterparty_margin',
+    title: 'Counterparty margin', refCol: 'case_number', titleCol: 'counterparty_name',
+    quantumCol: 'exposure_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['recovered', 'written_off', 'withdrawn'],
+    counterpartyCol: 'counterparty_name',
+    lanes: { trader: 'risk_margin' },
+    eventsTable: 'oe_counterparty_margin_events', eventsFk: 'margin_id',
+    actions: [
+      { action: 'issue-margin-call', label: 'Issue margin call',
+        path: '/api/counterparty-margin/chain/:id/issue-margin-call',
+        roles: ['admin', 'trader'],
+        cascadeHint: 'Issues the IM/VM margin call to the clearing member and arms the collateral-posting window.' },
+      { action: 'declare-default', label: 'Declare default', tone: 'oxide',
+        path: '/api/counterparty-margin/chain/:id/declare-default',
+        roles: ['admin', 'trader'],
+        cascadeHint: 'Declares counterparty default and opens the close-out waterfall; crosses regulator inbox for every tier (W68 signature).' },
+    ],
+  },
+
+  // W76 — Trade allocation / give-up / confirmation (DTCC-style post-execution; break-driven crossings)
+  {
+    key: 'trade_allocation', wave: 76, table: 'oe_trade_allocations',
+    title: 'Trade allocation', refCol: 'allocation_number', titleCol: 'instrument',
+    quantumCol: 'notional_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['settled', 'cancelled'],
+    counterpartyCol: 'counterparty_name',
+    lanes: { trader: 'post_trade' },
+    eventsTable: 'oe_trade_allocation_events', eventsFk: 'allocation_id',
+    actions: [
+      { action: 'affirm-confirmation', label: 'Affirm confirmation',
+        path: '/api/trade-allocation/chain/:id/affirm-confirmation',
+        roles: ['admin', 'trader'],
+        cascadeHint: 'Records counterparty affirmation; trade advances to matching and settlement instruction.' },
+      { action: 'flag-break', label: 'Flag break', tone: 'oxide',
+        path: '/api/trade-allocation/chain/:id/flag-break',
+        roles: ['admin', 'trader'],
+        cascadeHint: 'Flags an allocation/confirmation/settlement break for review; crosses regulator (FSCA/CSD) inbox for every notional tier (W76 signature).' },
+    ],
+  },
+
   // Other roles registered in later tasks.
 ];
 
