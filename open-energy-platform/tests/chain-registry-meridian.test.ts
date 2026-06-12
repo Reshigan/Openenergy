@@ -1,5 +1,7 @@
 // tests/chain-registry-meridian.test.ts
 import { describe, it, expect } from 'vitest';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   MERIDIAN_CHAINS, bucketFor, attentionScore, type HorizonBucket,
 } from '../src/utils/chain-registry-meridian';
@@ -52,5 +54,28 @@ describe('MERIDIAN_CHAINS registry shape', () => {
   it('keys are unique', () => {
     const keys = MERIDIAN_CHAINS.map(d => d.key);
     expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+describe('registry tables exist in migrations', () => {
+  const migDir = join(__dirname, '../migrations');
+  const allSql = readdirSync(migDir)
+    .filter(f => f.endsWith('.sql'))
+    .map(f => readFileSync(join(migDir, f), 'utf8'))
+    .join('\n');
+
+  it('every registry table has a CREATE TABLE migration', () => {
+    for (const d of MERIDIAN_CHAINS) {
+      expect(allSql, `missing table ${d.table} (chain ${d.key})`)
+        .toContain(`CREATE TABLE IF NOT EXISTS ${d.table}`);
+    }
+  });
+
+  it('every quantum/deadline column appears in that table DDL', () => {
+    for (const d of MERIDIAN_CHAINS) {
+      const m = allSql.split(`CREATE TABLE IF NOT EXISTS ${d.table}`)[1]?.split(');')[0] ?? '';
+      expect(m, `${d.table} missing ${d.deadlineCol}`).toContain(d.deadlineCol);
+      if (d.quantumCol) expect(m, `${d.table} missing ${d.quantumCol}`).toContain(d.quantumCol);
+    }
   });
 });
