@@ -22,9 +22,9 @@ test.beforeAll(() => {
   SHARED_LENDER_TOKEN = tok;
 });
 
-async function seedToken(page: import('@playwright/test').Page) {
-  if (!SHARED_LENDER_TOKEN) throw new Error('shared lender token not initialised');
-  const tokenValue = SHARED_LENDER_TOKEN;
+async function seedToken(page: import('@playwright/test').Page, token?: string) {
+  const tokenValue = token ?? SHARED_LENDER_TOKEN;
+  if (!tokenValue) throw new Error('shared lender token not initialised');
 
   // AuthContext bootstraps via httpOnly cookie refresh which isn't available
   // in headless Playwright. Intercept /auth/refresh to return a valid access
@@ -96,6 +96,58 @@ test.describe('Meridian Horizon', () => {
     const duty = page.getByRole('complementary', { name: 'Duty stream' });
     await expect(duty).toBeVisible();
     await expect(duty.locator('.duty-head h2')).toHaveText('DUTY STREAM');
+
+    const real = errors.filter((e) => !isBenign(e));
+    expect(real, real.join('\n')).toEqual([]);
+  });
+
+  test('thread is two-sided: lender sees actions, regulator counterparty sees read-only', async ({ page, browser, baseURL }) => {
+    const errors: string[] = [];
+    const captureErrors = (p: import('@playwright/test').Page) => {
+      p.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+      p.on('console', (msg) => { if (msg.type() === 'error') errors.push(`console.error: ${msg.text()}`); });
+      p.on('response', (resp) => {
+        const s = resp.status();
+        if (s >= 500 && resp.url().includes('/api/')) {
+          errors.push(`api.5xx: ${s} ${resp.url()}`);
+        }
+      });
+    };
+    captureErrors(page);
+
+    await seedToken(page);
+    await page.goto(`${baseURL}/horizon`, { waitUntil: 'load' });
+    await expect(page.locator('.mer.horizon')).toBeVisible({ timeout: 25_000 });
+
+    // covenant_certificate is the ONLY lender chain whose second lane is
+    // regulator (all others pair with ipp_developer, which has no lane-write
+    // mapping yet and 403s). CaseTile renders "{ref} · {chain}" in .ref, so
+    // filter tiles by the chain key text.
+    const covTile = page.locator('.tile').filter({ hasText: 'covenant_certificate' }).first();
+    await expect(covTile).toBeVisible({ timeout: 15_000 });
+    const href = await covTile.getAttribute('href');
+    expect(href, 'covenant tile must link to /thread/covenant_certificate/:id').toContain('/thread/covenant_certificate/');
+
+    // Lender side: full thread + action bar (covenant actions allow lender).
+    await page.goto(`${baseURL}${href}`, { waitUntil: 'load' });
+    await expect(page.locator('.mer.thread')).toBeVisible({ timeout: 25_000 });
+    await expect(page.locator('.case-head h1')).toBeVisible();
+    await expect(page.locator('.actbar')).toBeVisible();
+
+    // Regulator side: same thread URL, lane grants VIEW but the registry
+    // gives regulator zero actions on covenant_certificate (roles on both
+    // transitions are admin/support/lender) — so no .actbar renders at all.
+    const regToken = process.env.PLAYWRIGHT_REGULATOR_TOKEN;
+    if (!regToken) throw new Error('PLAYWRIGHT_REGULATOR_TOKEN not set — global-setup may have failed');
+    const regCtx = await browser.newContext();
+    const regPage = await regCtx.newPage();
+    captureErrors(regPage);
+    await seedToken(regPage, regToken);
+    await regPage.goto(`${baseURL}${href}`, { waitUntil: 'load' });
+    await expect(regPage.locator('.mer.thread')).toBeVisible({ timeout: 25_000 });
+    await expect(regPage.locator('.case-head')).toBeVisible();
+    await expect(regPage.locator('.actbar')).toHaveCount(0);
+    await regCtx.close();
 
     const real = errors.filter((e) => !isBenign(e));
     expect(real, real.join('\n')).toEqual([]);

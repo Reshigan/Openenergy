@@ -166,3 +166,58 @@
 .mer .wire-feed b { color:var(--ink); font-weight:600; }
 .mer .dir-out { color:var(--petrol); font-weight:700; }
 .mer .dir-in { color:var(--moss); font-weight:700; }
+
+/* ════════ Thread (ported from mockups/meridian/02-thread.html) ════════ */
+/* Same body-flex note as .mer.horizon: the page wrapper supplies the column layout. */
+.mer.thread { display:flex; flex-direction:column; min-height:100dvh; }
+
+/* ── Thread top bar ──────────────────────── */
+/* <header className="mer-head"> already inherits .mer header (60px bar). */
+.mer .mer-head .back { font-size:12.5px; color:var(--petrol-deep); text-decoration:none; font-weight:600; }
+.mer .mer-head .back:hover { color:var(--petrol); }
+.mer .mer-head .ref { font-size:12px; color:var(--ink3); }
+.mer .mer-head .zar { font-weight:700; letter-spacing:-0.02em; }
+
+/* ── Case body ───────────────────────────── */
+.mer .mer-main { flex:1; min-height:0; overflow-y:auto; }
+.mer .case-body { padding:30px 44px 40px; max-width:780px; }
+.mer .case-head { padding-bottom:22px; border-bottom:1px solid var(--line); }
+.mer .case-head h1 { font-size:23px; font-weight:700; letter-spacing:-0.01em; line-height:1.25; margin:4px 0 6px; }
+.mer .case-sub { display:flex; align-items:center; flex-wrap:wrap; gap:10px; font-size:12.5px; color:var(--ink2); margin-bottom:10px; }
+.mer .case-head .fuse { width:170px; }
+
+/* ── State rail ──────────────────────────── */
+.mer .state-rail { list-style:none; margin:28px 0 0; padding:0; }
+.mer .state { position:relative; padding:0 0 26px 34px; }
+.mer .state::before { /* dot */
+  content:''; position:absolute; left:9px; top:4px; width:14px; height:14px; box-sizing:border-box;
+  border-radius:50%; background:var(--paper); border:2px solid var(--line); z-index:1;
+}
+.mer .state::after { /* connector */
+  content:''; position:absolute; left:15px; top:22px; bottom:-4px; width:2px; background:var(--line);
+}
+.mer .state:last-child::after { display:none; }
+.mer .state.done::before { background:var(--moss); border-color:var(--moss); }
+.mer .state.done::after { background:var(--moss); }
+.mer .state.now::before { background:var(--petrol); border-color:var(--petrol); box-shadow:0 0 0 5px var(--petrol-tint); }
+.mer .state b { font-variation-settings:'wdth' 112; font-weight:700; font-size:13px; letter-spacing:0.06em; text-transform:uppercase; }
+.mer .state .mono { font-size:11px; color:var(--ink3); margin-right:10px; }
+.mer .state .actor { font-size:12px; color:var(--ink2); margin-left:10px; }
+
+/* ── Raw case record (evidence-card styling) ─ */
+.mer .raw-fields { margin-top:28px; border:1px solid var(--line); border-radius:8px; background:var(--raised); overflow:hidden; }
+.mer .raw-fields summary {
+  padding:10px 14px; cursor:pointer; font-variation-settings:'wdth' 116; font-weight:700;
+  font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink3);
+}
+.mer .raw-fields dl { display:grid; grid-template-columns:minmax(140px, max-content) 1fr; margin:0; border-top:1px solid var(--line); }
+.mer .raw-fields dt { padding:7px 0 7px 14px; font-size:11.5px; color:var(--ink3); border-top:1px solid var(--line); text-transform:capitalize; }
+.mer .raw-fields dd { padding:7px 14px; margin:0; font-size:12px; border-top:1px solid var(--line); word-break:break-word; }
+.mer .raw-fields dt:first-of-type, .mer .raw-fields dd:first-of-type { border-top:none; }
+
+/* ── Action footer with cascade preview ──── */
+/* Mockup pins this with position:fixed; in the flex-column React wrapper a
+   flex-shrink:0 footer gives the same always-visible bar without overlap. */
+.mer .actbar { flex-shrink:0; border-top:1px solid var(--line); background:var(--raised); padding:14px 44px 16px; }
+.mer .cascade-preview { font-size:12px; color:var(--ink2); margin-bottom:11px; max-width:780px; }
+.mer .actbar-btns { display:flex; gap:10px; flex-wrap:wrap; }
