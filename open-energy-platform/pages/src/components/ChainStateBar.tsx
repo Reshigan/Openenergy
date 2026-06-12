@@ -21,9 +21,9 @@ function formatState(state: string): string {
 }
 
 // mockup-b tokens
-const ACC      = 'oklch(0.46 0.16 55)';   // amber
-const ACC_BG   = 'oklch(0.96 0.05 55)';
-const ACC_BDR  = 'oklch(0.80 0.12 55)';
+const ACC      = 'oklch(0.46 0.12 230)';   // amber
+const ACC_BG   = 'oklch(0.96 0.02 230)';
+const ACC_BDR  = 'oklch(0.80 0.06 230)';
 const BAD      = 'oklch(0.48 0.20 20)';   // red for branch/terminal
 const TRACK_BG = 'oklch(0.93 0.004 250)';
 const TX3      = 'oklch(0.60 0.007 250)';

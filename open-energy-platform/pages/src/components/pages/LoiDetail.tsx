@@ -27,7 +27,7 @@ const BG1     = 'oklch(0.99 0.002 80)';
 const BG2     = 'oklch(0.93 0.004 250)';
 const GOOD    = 'oklch(0.40 0.16 155)';
 const GOOD_BG = 'oklch(0.95 0.04 155)';
-const ACC     = 'oklch(0.46 0.16 55)';
+const ACC     = 'oklch(0.46 0.12 230)';
 
 export function LoiDetail() {
   const { id = '' } = useParams<{ id: string }>();

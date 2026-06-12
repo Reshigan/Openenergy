@@ -11,7 +11,6 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LtmLogo } from '../LtmLogo';
 
 type Persona =
   | 'IPP' | 'Offtaker' | 'Lender' | 'Carbon Fund' | 'Grid Operator'
@@ -288,7 +287,6 @@ export function DesignGallery(): React.JSX.Element {
         </p>
       </div>
 
-      <LtmLogo />
     </div>
   );
 }

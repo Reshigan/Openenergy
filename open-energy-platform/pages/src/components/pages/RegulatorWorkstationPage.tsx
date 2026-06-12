@@ -8,6 +8,14 @@ import { NoticesTab } from '../regulator/NoticesTab';
 import { EnforcementActionChainTab } from '../regulator/EnforcementActionChainTab';
 import { EnforcementActionS35ChainTab } from '../regulator/EnforcementActionS35ChainTab';
 import { EsgDisclosureChainTab } from '../carbon/EsgDisclosureChainTab';
+import { DispositionChainTab } from '../disposition/DispositionChainTab';
+import { LicenceRenewalChainTab } from '../licence-renewal/LicenceRenewalChainTab';
+import { ComplianceInspectionChainTab } from '../compliance-inspection/ComplianceInspectionChainTab';
+import { TariffDeterminationChainTab } from '../tariff-determination/TariffDeterminationChainTab';
+import { LicenceApplicationChainTab } from '../licence-application/LicenceApplicationChainTab';
+import { SsegRegistrationChainTab } from '../sseg-registration/SsegRegistrationChainTab';
+import { ComplaintResolutionChainTab } from '../complaint-resolution/ComplaintResolutionChainTab';
+import { LevyAssessmentChainTab } from '../levy-assessment/LevyAssessmentChainTab';
 import { RegulatorExportPackTab } from '../regulatorExport/RegulatorExportPackTab';
 import { ReconciliationAttestationTab } from '../reconciliation/ReconciliationAttestationTab';
 import { ControlEnvironmentAuditTab } from '../controlEnvironment/ControlEnvironmentAuditTab';
@@ -410,145 +418,49 @@ export function RegulatorWorkstationPage() {
           key: 'licence_applications',
           label: 'Licence applications (W49)',
           chainKey: 'licence_application',
-          body: () => (
-            <ListingTable
-              endpoint="/licence-application/chain"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No licence applications', description: 'ERA s.8-11 licence applications will appear here.' }}
-              columns={[
-                { key: 'applicant_name', label: 'Applicant' },
-                { key: 'licence_class', label: 'Class' },
-                { key: 'capacity_mw', label: 'Capacity (MW)', render: (r) => r.capacity_mw != null ? `${r.capacity_mw} MW` : '—' },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['granted','licence_issued'].includes(r.chain_status) ? 'good' : ['refused','withdrawn'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
-                { key: 'created_at', label: 'Submitted', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
+          body: () => <LicenceApplicationChainTab />,
         },
         {
           key: 'licence_renewals',
           label: 'Licence renewals (W33)',
           chainKey: 'licence_renewal',
-          body: () => (
-            <ListingTable
-              endpoint="/licence/renewal/chain"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No licence renewals', description: 'NERSA s.14-16 licence renewal workflows will appear here.' }}
-              columns={[
-                { key: 'licence_class', label: 'Class' },
-                { key: 'renewal_due_date', label: 'Due', render: (r) => r.renewal_due_date ? new Date(r.renewal_due_date).toLocaleDateString() : '—' },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['renewed','licence_issued'].includes(r.chain_status) ? 'good' : ['refused','lapsed'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
-                { key: 'created_at', label: 'Created', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
+          body: () => <LicenceRenewalChainTab />,
         },
         {
           key: 'complaint_resolution',
           label: 'Complaint resolution (W66)',
           chainKey: 'complaint_resolution',
-          body: () => (
-            <ListingTable
-              endpoint="/complaints/chain"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No complaints', description: 'ERA s.30 external-party complaints will appear here.' }}
-              columns={[
-                { key: 'complainant_type', label: 'Complainant' },
-                { key: 'subject', label: 'Subject', render: (r) => <span className="truncate block max-w-xs" title={r.subject}>{r.subject}</span> },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['resolved','closed'].includes(r.chain_status) ? 'good' : ['escalated'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
-                { key: 'created_at', label: 'Filed', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
+          body: () => <ComplaintResolutionChainTab />,
         },
         {
           key: 'compliance_inspections',
           label: 'Compliance inspections (W40)',
           chainKey: 'compliance_inspection',
-          body: () => (
-            <ListingTable
-              endpoint="/compliance-inspection/chain"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No inspections', description: 'NERSA §10/§34 compliance inspections will appear here.' }}
-              columns={[
-                { key: 'exam_type', label: 'Type' },
-                { key: 'exam_tier', label: 'Tier' },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['closed_satisfactory'].includes(r.chain_status) ? 'good' : ['enforcement_action'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
-                { key: 'created_at', label: 'Scheduled', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
+          body: () => <ComplianceInspectionChainTab />,
         },
         {
           key: 'dispositions',
           label: 'Dispositions (W31)',
           chainKey: 'disposition',
-          body: () => (
-            <ListingTable
-              endpoint="/disposition/chain"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No dispositions', description: 'NERSA §10 regulatory disposition cases will appear here.' }}
-              columns={[
-                { key: 'subject', label: 'Subject', render: (r) => <span className="truncate block max-w-xs" title={r.subject || ''}>{r.subject || '—'}</span> },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['decided','closed'].includes(r.chain_status) ? 'good' : ['escalated','appealed'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
-                { key: 'created_at', label: 'Opened', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
+          body: () => <DispositionChainTab />,
         },
         {
           key: 'levy_assessments',
           label: 'Levy assessment (W74)',
           chainKey: 'levy_assessment',
-          body: () => (
-            <ListingTable
-              endpoint="/levy-assessment/chain"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No levy assessments', description: 'NERSA Nat. Energy Regulator Act §5B levy assessments will appear here.' }}
-              columns={[
-                { key: 'tax_class', label: 'Class' },
-                { key: 'assessment_amount', label: 'Amount', render: (r) => r.assessment_amount != null ? `R ${Number(r.assessment_amount).toLocaleString()}` : '—' },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['paid','closed'].includes(r.chain_status) ? 'good' : ['enforcement','written_off'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
-                { key: 'created_at', label: 'Assessed', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
+          body: () => <LevyAssessmentChainTab />,
         },
         {
           key: 'sseg_registrations',
           label: 'SSEG registrations (W57)',
           chainKey: 'sseg_registration',
-          body: () => (
-            <ListingTable
-              endpoint="/sseg-registration/chain"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No SSEG registrations', description: 'ERA Schedule 2 embedded-generation registrations will appear here.' }}
-              columns={[
-                { key: 'installation_type', label: 'Type' },
-                { key: 'capacity_mw', label: 'Capacity (MW)', render: (r) => r.capacity_mw != null ? `${r.capacity_mw} MW` : '—' },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['registered','exempted'].includes(r.chain_status) ? 'good' : ['refused','refer_to_licensing'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
-                { key: 'created_at', label: 'Submitted', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
+          body: () => <SsegRegistrationChainTab />,
         },
         {
           key: 'tariff_determinations',
           label: 'Tariff determination (W43)',
           chainKey: 'tariff_determination',
-          body: () => (
-            <ListingTable
-              endpoint="/tariff-determination/chain"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No tariff determinations', description: 'NERSA §15-16 MYPD tariff determination proceedings will appear here.' }}
-              columns={[
-                { key: 'tariff_name', label: 'Tariff' },
-                { key: 'tariff_rate_per_mwh', label: 'Rate (R/MWh)', render: (r) => r.tariff_rate_per_mwh != null ? `R ${Number(r.tariff_rate_per_mwh).toFixed(2)}` : '—' },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['determined','approved'].includes(r.chain_status) ? 'good' : ['rejected','challenged'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
-                { key: 'created_at', label: 'Filed', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
+          body: () => <TariffDeterminationChainTab />,
         },
         { key: 'reports', label: 'Reports & Exports',
           body: () => (

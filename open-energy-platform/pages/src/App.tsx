@@ -1,20 +1,19 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { Sparkles, ShieldCheck, Zap, Leaf, Activity, ArrowRight } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './lib/useAuth';
 import { api } from './lib/api';
-import { FioriShell } from './components/FioriShell';
-import { LogoMark, LogoBanner } from './components/Logo';
-import { OEIcon, type IconName } from './components/OEIcon';
-import { LtmLogo } from './components/LtmLogo';
+import { AppShell } from './components/AppShell';
+
 // Page components — all lazy so each route only pays for its chunk on first visit.
 const DesignGallery         = React.lazy(() => import('./components/pages/DesignGallery').then(m => ({ default: m.DesignGallery })));
 const NotFoundPage          = React.lazy(() => import('./components/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 const SearchPage            = React.lazy(() => import('./components/pages/SearchPage').then(m => ({ default: m.SearchPage })));
 const NotificationsPage     = React.lazy(() => import('./components/pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
 const SchedulePage          = React.lazy(() => import('./components/pages/SchedulePage').then(m => ({ default: m.SchedulePage })));
-const RoleLaunchBoard       = React.lazy(() => import('./components/launch/RoleLaunchBoard').then(m => ({ default: m.RoleLaunchBoard })));
+const LaunchpadHomePage     = React.lazy(() => import('./components/launch/LaunchpadHomePage'));
+const SubCockpitPage        = React.lazy(() => import('./components/launch/SubCockpitPage'));
+const LoginPageNew          = React.lazy(() => import('./components/pages/LoginPage'));
 const LenderWorkoutPage     = React.lazy(() => import('./components/pages/LenderWorkoutPage').then(m => ({ default: m.LenderWorkoutPage })));
 const LenderAuditPage       = React.lazy(() => import('./components/pages/LenderAuditPage').then(m => ({ default: m.LenderAuditPage })));
 const CarbonWorkstationPage = React.lazy(() => import('./components/pages/CarbonWorkstationPage').then(m => ({ default: m.CarbonWorkstationPage })));
@@ -43,28 +42,21 @@ const ActivityFeedShell     = React.lazy(() => import('./components/ActivityFeed
 
 // Core page components
 const NationalDashboard     = React.lazy(() => import('./components/pages/NationalDashboard').then(m => ({ default: m.NationalDashboard })));
-const Contracts             = React.lazy(() => import('./components/pages/Contracts').then(m => ({ default: m.Contracts })));
 const ContractDetail        = React.lazy(() => import('./components/pages/ContractDetail').then(m => ({ default: m.ContractDetail })));
-const Trading               = React.lazy(() => import('./components/pages/Trading').then(m => ({ default: m.Trading })));
-const Carbon                = React.lazy(() => import('./components/pages/Carbon').then(m => ({ default: m.Carbon })));
 const ProcurementHub        = React.lazy(() => import('./components/pages/ProcurementHub').then(m => ({ default: m.ProcurementHub })));
-const Projects              = React.lazy(() => import('./components/pages/Projects').then(m => ({ default: m.Projects })));
 const ProjectDetail         = React.lazy(() => import('./components/pages/ProjectDetail').then(m => ({ default: m.ProjectDetail })));
 const ProjectLifecycle      = React.lazy(() => import('./components/pages/ProjectLifecycle').then(m => ({ default: m.ProjectLifecycle })));
-const Grid                  = React.lazy(() => import('./components/pages/Grid').then(m => ({ default: m.Grid })));
 const ESG                   = React.lazy(() => import('./components/pages/ESG').then(m => ({ default: m.ESG })));
 const Funds                 = React.lazy(() => import('./components/pages/Funds').then(m => ({ default: m.Funds })));
 const FundDetail            = React.lazy(() => import('./components/pages/FundDetail').then(m => ({ default: m.FundDetail })));
 const Marketplace           = React.lazy(() => import('./components/pages/Marketplace').then(m => ({ default: m.Marketplace })));
 const ModulesPage           = React.lazy(() => import('./components/pages/ModulesPage').then(m => ({ default: m.ModulesPage })));
-const Admin                 = React.lazy(() => import('./components/pages/Admin').then(m => ({ default: m.Admin })));
 const Support               = React.lazy(() => import('./components/pages/Support').then(m => ({ default: m.Support })));
 const Pipeline              = React.lazy(() => import('./components/pages/Pipeline').then(m => ({ default: m.Pipeline })));
 const Reports               = React.lazy(() => import('./components/pages/Reports').then(m => ({ default: m.Reports })));
 const Lois                  = React.lazy(() => import('./components/pages/Lois').then(m => ({ default: m.Lois })));
 const LoiDetail             = React.lazy(() => import('./components/pages/LoiDetail').then(m => ({ default: m.LoiDetail })));
 const Intelligence          = React.lazy(() => import('./components/pages/Intelligence').then(m => ({ default: m.Intelligence })));
-const Settlement            = React.lazy(() => import('./components/pages/Settlement').then(m => ({ default: m.Settlement })));
 const Popia                 = React.lazy(() => import('./components/pages/Popia').then(m => ({ default: m.Popia })));
 const Briefing              = React.lazy(() => import('./components/pages/Briefing').then(m => ({ default: m.Briefing })));
 const Monitoring            = React.lazy(() => import('./components/pages/Monitoring').then(m => ({ default: m.Monitoring })));
@@ -116,6 +108,7 @@ const PulseLensPrototype  = React.lazy(() => import('./ux-alternatives/pulse-len
 const TimeAxisPrototype   = React.lazy(() => import('./ux-alternatives/time-axis/TimeAxis'));
 const CommandLensPrototype= React.lazy(() => import('./ux-alternatives/command-lens/CommandLens'));
 const CockpitGridPrototype= React.lazy(() => import('./ux-alternatives/cockpit-grid/CockpitGrid'));
+const LaunchpadNavPrototype = React.lazy(() => import('./ux-alternatives/launchpad-nav/LaunchpadNav'));
 
 const OnboardingWizard      = React.lazy(() => import('./components/onboarding/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
 import { CookieConsentBanner } from './components/CookieConsentBanner';
@@ -187,721 +180,30 @@ function ProtectedRoute({ children }: { children?: ReactNode }) {
   return <>{children ?? <Outlet />}</>;
 }
 
-// Layout — Fiori shell wrapper
-function Layout({ children }: { children: ReactNode }) {
-  return <FioriShell>{children}</FioriShell>;
-}
-
-// Navigation items by role — workstation-first; each role's primary nav goes to their L4 workstation
-function getNavigationForRole(role: string) {
-  const home = { path: '/', label: 'Home', icon: DashboardIcon };
-  const marketplace = { path: '/marketplace', label: 'Marketplace', icon: ShopIcon };
-  const trading = { path: '/trading', label: 'Order book', icon: ChartIcon };
-  const settlement = { path: '/settlement', label: 'Settlement', icon: DollarIcon };
-  const reports = { path: '/reports', label: 'Reports', icon: ChartIcon };
-  const esums = { path: '/esums', label: 'Asset Ops', icon: WrenchIcon };
-  const settings = { path: '/settings', label: 'Settings', icon: SettingsIcon };
-
-  switch (role) {
-    case 'admin':
-      return [
-        home,
-        { path: '/admin-platform/workstation', label: 'Platform Admin', icon: SettingsIcon },
-        { path: '/regulator-suite/workstation', label: 'Regulator', icon: ShieldIcon },
-        { path: '/trader-risk/workstation', label: 'Trader Risk', icon: ChartIcon },
-        { path: '/lender-suite/workstation', label: 'Lender', icon: DollarIcon },
-        { path: '/ipp-lifecycle/workstation', label: 'IPP Projects', icon: BuildingIcon },
-        { path: '/offtaker-suite/workstation', label: 'Offtaker', icon: LeafIcon },
-        { path: '/carbon-registry/workstation', label: 'Carbon', icon: LeafIcon },
-        { path: '/grid-operator/workstation', label: 'Grid Ops', icon: ZapIcon },
-        esums,
-        { path: '/admin', label: 'Admin', icon: SettingsIcon },
-        { path: '/admin/revenue', label: 'Revenue', icon: DollarIcon },
-        reports,
-      ];
-    case 'ipp_developer':
-      return [
-        home,
-        { path: '/ipp-lifecycle/workstation', label: 'Project workstation', icon: BuildingIcon },
-        { path: '/ipp-lifecycle/workstation?tab=projects', label: 'Projects', icon: BuildingIcon },
-        { path: '/ipp-lifecycle/workstation?tab=milestones', label: 'Milestones', icon: ChartIcon },
-        { path: '/ipp-lifecycle/workstation?tab=document-control', label: 'Documents', icon: DocumentIcon },
-        { path: '/ipp-lifecycle/workstation?tab=hse_chain', label: 'HSE', icon: ShieldIcon },
-        esums,
-        marketplace,
-        reports,
-        settings,
-      ];
-    case 'lender':
-      return [
-        home,
-        { path: '/lender-suite/workstation', label: 'Lender workstation', icon: DollarIcon },
-        { path: '/lender-suite/workstation?tab=credit_origination', label: 'Credit', icon: DollarIcon },
-        { path: '/lender-suite/workstation?tab=facilities', label: 'Facilities', icon: DocumentIcon },
-        { path: '/lender-suite/workstation?tab=covenant_cert', label: 'Covenants', icon: ShieldIcon },
-        { path: '/lender-suite/workstation?tab=loan_default', label: 'Default & step-in', icon: ShieldIcon },
-        esums,
-        reports,
-        settings,
-      ];
-    case 'trader':
-      return [
-        home,
-        { path: '/trader-risk/workstation', label: 'Trader workstation', icon: ChartIcon },
-        trading,
-        settlement,
-        { path: '/trader-risk/workstation?tab=risk', label: 'Risk', icon: ChartIcon },
-        { path: '/trader-risk/workstation?tab=market-abuse', label: 'Surveillance', icon: ShieldIcon },
-        { path: '/trader-risk/workstation?tab=algo-cert', label: 'Algo cert', icon: SettingsIcon },
-        reports,
-        settings,
-      ];
-    case 'carbon_fund':
-      return [
-        home,
-        { path: '/carbon-registry/workstation', label: 'Carbon workstation', icon: LeafIcon },
-        { path: '/carbon-registry/workstation?tab=vintages', label: 'Vintages', icon: LeafIcon },
-        { path: '/carbon-registry/workstation?tab=mrv_chain', label: 'MRV', icon: DocumentIcon },
-        { path: '/carbon-registry/workstation?tab=article6', label: 'Article 6', icon: ShieldIcon },
-        { path: '/carbon-registry/workstation?tab=retirement_chain', label: 'Retirements', icon: ChartIcon },
-        reports,
-        settings,
-      ];
-    case 'grid_operator':
-      return [
-        home,
-        { path: '/grid-operator/workstation', label: 'Grid workstation', icon: ZapIcon },
-        { path: '/grid-operator/workstation?tab=dispatch_nomination', label: 'Dispatch', icon: ZapIcon },
-        { path: '/grid-operator/workstation?tab=ancillary', label: 'Ancillary', icon: ChartIcon },
-        { path: '/grid-operator/workstation?tab=eop_activations', label: 'EOP', icon: ShieldIcon },
-        { path: '/grid-operator/workstation?tab=grid_code_compliance', label: 'Grid code', icon: ShieldIcon },
-        reports,
-        settings,
-      ];
-    case 'offtaker':
-      return [
-        home,
-        { path: '/offtaker-suite/workstation', label: 'Offtaker workstation', icon: LeafIcon },
-        { path: '/offtaker-suite/workstation?tab=ppa_contract', label: 'PPAs', icon: DocumentIcon },
-        { path: '/offtaker-suite/workstation?tab=bills', label: 'Bills', icon: DollarIcon },
-        { path: '/offtaker-suite/workstation?tab=recs', label: 'RECs', icon: LeafIcon },
-        { path: '/offtaker-suite/workstation?tab=scope2', label: 'Scope 2', icon: ChartIcon },
-        marketplace,
-        reports,
-        settings,
-      ];
-    case 'regulator':
-      return [
-        home,
-        { path: '/regulator-suite/workstation', label: 'Regulator workstation', icon: ShieldIcon },
-        { path: '/regulator-suite/workstation?tab=inbox', label: 'Inbox', icon: DocumentIcon },
-        { path: '/regulator-suite/workstation?tab=licence_applications', label: 'Licences', icon: DocumentIcon },
-        { path: '/regulator-suite/workstation?tab=compliance_inspections', label: 'Inspections', icon: ShieldIcon },
-        { path: '/regulator-suite/workstation?tab=levy_assessments', label: 'Levies', icon: DollarIcon },
-        reports,
-        settings,
-      ];
-    case 'support':
-      return [
-        home,
-        { path: '/support/workstation', label: 'Support workstation', icon: WrenchIcon },
-        { path: '/support/workstation?tab=tickets', label: 'Tickets', icon: DocumentIcon },
-        { path: '/support/workstation?tab=problem_chain', label: 'Problems', icon: ShieldIcon },
-        { path: '/support/workstation?tab=change_chain', label: 'Changes', icon: SettingsIcon },
-        reports,
-        settings,
-      ];
-    case 'esums_owner':
-      return [
-        home,
-        esums,
-        settings,
-      ];
-    case 'esco':
-      return [
-        home,
-        { path: '/esco/workstation', label: 'O&M workstation', icon: WrenchIcon },
-        { path: '/esco/workstation?tab=work-orders', label: 'Work orders', icon: WrenchIcon },
-        { path: '/esco/workstation?tab=pm-compliance', label: 'PM compliance', icon: DocumentIcon },
-        { path: '/esco/workstation?tab=permit-to-work', label: 'Permit-to-work', icon: ShieldIcon },
-        { path: '/esco/workstation?tab=prognostics', label: 'Asset health', icon: ChartIcon },
-        { path: '/esco/workstation?tab=availability', label: 'Availability', icon: ChartIcon },
-        { path: '/esco/workstation?tab=spare-parts', label: 'Spare parts', icon: WrenchIcon },
-        { path: '/esco/workstation?tab=hse', label: 'HSE', icon: ShieldIcon },
-        esums,
-        settings,
-      ];
-    case 'epc_contractor':
-      return [
-        home,
-        { path: '/epc/workstation', label: 'EPC workstation', icon: BuildingIcon },
-        { path: '/epc/workstation?tab=submittals', label: 'Submittals', icon: DocumentIcon },
-        { path: '/epc/workstation?tab=rfis', label: 'RFIs', icon: DocumentIcon },
-        { path: '/epc/workstation?tab=change-orders', label: 'Change orders', icon: DocumentIcon },
-        { path: '/epc/workstation?tab=itps', label: 'ITPs', icon: ShieldIcon },
-        { path: '/epc/workstation?tab=ncrs', label: 'NCRs', icon: ShieldIcon },
-        { path: '/epc/workstation?tab=hse', label: 'HSE', icon: ShieldIcon },
-        settings,
-      ];
-    default:
-      return [home, trading, settlement, marketplace, reports, settings];
+// PrototypeGate — ux-alternatives explorations are team-only surfaces.
+// Reachable for admins, or anyone who sets localStorage['oe_prototypes']='1'.
+// Everyone else lands on their launchpad.
+function PrototypeGate({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const optedIn = typeof localStorage !== 'undefined' && localStorage.getItem('oe_prototypes') === '1';
+  if (!optedIn && user?.role !== 'admin') {
+    return <Navigate to="/launch" replace />;
   }
+  return <>{children}</>;
 }
 
-function ShieldIcon({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M12 3l8 3v6a9 9 0 01-8 9 9 9 0 01-8-9V6l8-3z" />
-    </svg>
-  );
+// Layout — all authenticated pages use AppShell (FioriShell retired)
+function Layout({ children }: { children: ReactNode }) {
+  return <AppShell>{children}</AppShell>;
 }
 
-// Icons
-function DashboardIcon({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-    </svg>
-  );
-}
-
-function DocumentIcon({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-  );
-}
-
-function ChartIcon({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-    </svg>
-  );
-}
-
-function DollarIcon({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  );
-}
-
-function LeafIcon({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-    </svg>
-  );
-}
-
-function BuildingIcon({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-    </svg>
-  );
-}
-
-function ZapIcon({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-    </svg>
-  );
-}
-
-function FlowIcon({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
-    </svg>
-  );
-}
-
-function ShoppingIcon({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-    </svg>
-  );
-}
-
-function ShopIcon({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-    </svg>
-  );
-}
-
-function WrenchIcon({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437" />
-    </svg>
-  );
-}
-
-function SettingsIcon({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  );
+// AppShellLayout — alias kept so workstation routes compile without touching each line
+function AppShellLayout({ children }: { children: ReactNode }) {
+  return <Layout>{children}</Layout>;
 }
 
 // ─── PAGES ───
 
-// Login Page
-function LoginPage() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [mfaCode, setMfaCode] = useState('');
-  const [mfaRequired, setMfaRequired] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [ssoEnabled, setSsoEnabled] = useState(false);
-  const [ssoLoading, setSsoLoading] = useState(false);
-
-  useEffect(() => {
-    api.get('/auth/sso/config').then((r) => {
-      if (r.data?.success && r.data?.data?.enabled) setSsoEnabled(true);
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const ssoError = params.get('sso_error');
-    if (ssoError) {
-      const msgMap: Record<string, string> = {
-        missing_code: 'Microsoft sign-in was cancelled.',
-        expired_state: 'Microsoft sign-in session expired. Please try again.',
-        token_exchange: 'Could not exchange Microsoft authorization code.',
-        bad_issuer: 'Microsoft token failed issuer check.',
-        bad_audience: 'Microsoft token was issued for a different application.',
-        nonce_mismatch: 'Microsoft sign-in anti-replay check failed.',
-        bad_signature: 'Microsoft token signature invalid.',
-        expired_id_token: 'Microsoft token has expired.',
-        no_email: 'Microsoft account did not return an email.',
-        account_suspended: 'Your account is suspended. Contact support.',
-        account_rejected: 'Your account has been rejected. Contact support.',
-      };
-      setError(msgMap[ssoError] || `Microsoft sign-in failed (${ssoError}).`);
-    }
-  }, [location.search]);
-
-  const handleMicrosoftSso = async () => {
-    setError('');
-    setSsoLoading(true);
-    try {
-      const r = await api.post('/auth/sso/microsoft/start', { return_to: '/feed' });
-      if (r.data?.success && r.data?.data?.redirect_url) {
-        window.location.href = r.data.data.redirect_url;
-        return;
-      }
-      setError('Could not start Microsoft sign-in.');
-    } catch (err: unknown) {
-      const anyErr = err as { response?: { data?: { error?: string } }; message?: string };
-      setError(anyErr?.response?.data?.error || anyErr?.message || 'Microsoft sign-in unavailable');
-    } finally {
-      setSsoLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      await login(email, password, mfaRequired ? mfaCode : undefined);
-      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/feed';
-      navigate(from, { replace: true });
-    } catch (err: any) {
-      if (err?.name === 'MfaRequiredError') {
-        setMfaRequired(true);
-        setError('Enter the 6-digit code from your authenticator app.');
-      } else {
-        setError(err.message || 'Login failed');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fillDemo = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('Demo@2024!');
-  };
-
-  return (
-    <div className="min-h-screen grid lg:grid-cols-[1.1fr_0.9fr] relative" style={{ background: 'oklch(0.96 0.003 250)' }}>
-      <LtmLogo />
-      {/* Brand panel — Navy with Teal/Sky accents */}
-      <div
-        className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden text-white"
-        style={{
-          background:
-            'radial-gradient(circle at 15% 15%, rgba(95,168,232,0.30) 0%, transparent 45%),' +
-            'radial-gradient(circle at 85% 25%, rgba(31,155,149,0.32) 0%, transparent 50%),' +
-            'radial-gradient(circle at 70% 90%, rgba(59,130,196,0.32) 0%, transparent 50%),' +
-            'radial-gradient(circle at 95% 95%, rgba(95,168,232,0.25) 0%, transparent 45%),' +
-            'linear-gradient(135deg, oklch(0.12 0.010 250) 0%, oklch(0.16 0.011 250) 40%, oklch(0.22 0.013 250) 100%)',
-        }}
-      >
-        <div className="aurora" />
-        <div className="relative z-10">
-          <div
-            className="inline-flex items-center gap-3 rounded-md px-3 py-2"
-            style={{
-              background: 'rgba(255,255,255,0.96)',
-              boxShadow: '0 8px 24px rgba(15,28,46,0.40), 0 0 0 1px rgba(255,255,255,0.20)',
-            }}
-          >
-            <LogoMark size={40} variant="colour" />
-            <div className="leading-[0.95]">
-              <div className="text-[20px] font-display font-extrabold" style={{ color: '#1a3a5c' }}>OPEN</div>
-              <div className="text-[20px] font-display font-extrabold" style={{ color: '#3b82c4' }}>ENERGY</div>
-            </div>
-          </div>
-          <div className="text-[11px] uppercase tracking-[0.2em] text-white/65 font-mono mt-3">
-            Exchange · Vanta X
-          </div>
-        </div>
-
-        <div className="relative z-10 max-w-xl">
-          <h1 className="text-[42px] lg:text-[52px] font-bold leading-[1.05] tracking-tight font-display">
-            South Africa's{' '}
-            <span style={{ color: 'oklch(0.70 0.10 190)' }}>
-              unified energy exchange
-            </span>
-            .
-          </h1>
-          <p className="mt-5 text-white/85 text-[16px] max-w-lg leading-relaxed">
-            Trade power, carbon and RECs, originate IPP projects, run procurement,
-            and settle with confidence — all on one enterprise-grade platform.
-          </p>
-          <div className="mt-8 grid grid-cols-2 gap-3 max-w-lg">
-            <FeatureBadge icon={Activity} label="76 workflow chains" tint="#5fa8e8" />
-            <FeatureBadge icon={Leaf} label="Carbon Article 6" tint="#7fd5cf" />
-            <FeatureBadge icon={Zap} label="Real-time settlement" tint="#9bc8ee" />
-            <FeatureBadge icon={ShieldCheck} label="ERA · NERSA · POPIA" tint="#b8eae6" />
-          </div>
-
-          {/* Mini feed preview */}
-          <div className="mt-8 max-w-lg space-y-2">
-            {[
-              { label: 'COD gate — Karoo Wind 1', note: '2 sign-offs pending', tint: 'oklch(0.48 0.20 20)' },
-              { label: 'DSCR covenant breach', note: 'Lender notification sent', tint: '#c97a14' },
-              { label: 'W64 PTW live-electrical', note: '4h 20m remaining', tint: 'oklch(0.46 0.16 55)' },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}
-              >
-                <span
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{ background: item.tint }}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-semibold text-white/90 truncate">{item.label}</p>
-                  <p className="text-[10px] font-mono text-white/50">{item.note}</p>
-                </div>
-              </div>
-            ))}
-            <p className="text-[10px] text-white/35 font-mono pl-1">Activity feed · 11 roles · national scale</p>
-          </div>
-        </div>
-
-        <div className="relative z-10 text-[12px] text-white/55">
-          © {new Date().getFullYear()} Open Energy Platform · Vanta X Holdings
-        </div>
-      </div>
-
-      {/* Form panel */}
-      <div className="flex items-center justify-center p-6 sm:p-10">
-        <div className="w-full max-w-md">
-          {/* Mobile brand */}
-          <div className="flex lg:hidden items-center mb-8">
-            <LogoBanner height={42} variant="colour" />
-          </div>
-
-          <h2 className="text-[28px] font-bold tracking-tight font-display" style={{ color: 'oklch(0.17 0.010 250)' }}>
-            Sign in
-          </h2>
-          <p className="mt-1 text-[14px]" style={{ color: 'oklch(0.40 0.009 250)' }}>
-            Welcome back to the Open Energy Platform.
-          </p>
-
-          {error && (
-            <div
-              role="alert"
-              aria-live="polite"
-              className="mt-5 rounded border px-3 py-2 text-[13px]"
-              style={{
-                background: 'oklch(0.97 0.04 20)',
-                borderColor: 'oklch(0.48 0.20 20)',
-                color: 'oklch(0.48 0.20 20)',
-              }}
-            >
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
-            <div>
-              <label className="label" htmlFor="login-email">Email</label>
-              <input
-                id="login-email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                aria-invalid={Boolean(error)}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input"
-                placeholder="you@openenergy.co.za"
-                required
-                autoFocus
-              />
-            </div>
-            <div>
-              <div className="flex items-center justify-between">
-                <label className="label" htmlFor="login-password">Password</label>
-                <Link
-                  to="/forgot-password"
-                  className="text-[12px] font-semibold inline-flex items-center px-2 py-1 -mr-2 rounded-sm hover:bg-slate-100"
-                  style={{ color: 'oklch(0.46 0.16 55)', minHeight: 24 }}
-                >
-                  Forgot?
-                </Link>
-              </div>
-              <input
-                id="login-password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                aria-invalid={Boolean(error)}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-            {mfaRequired && (
-              <div>
-                <label className="label" htmlFor="login-mfa">Authenticator code</label>
-                <input
-                  id="login-mfa"
-                  name="mfa_code"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  pattern="[0-9]{6}"
-                  maxLength={6}
-                  value={mfaCode}
-                  onChange={(e) => setMfaCode(e.target.value.replace(/[^0-9]/g, ''))}
-                  className="input tracking-[0.4em] font-mono text-center"
-                  placeholder="123456"
-                  autoFocus
-                  required
-                />
-              </div>
-            )}
-            <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-              {loading ? (
-                <>
-                  <span className="spinner" style={{ borderTopColor: '#ffffff' }} />
-                  Signing in…
-                </>
-              ) : (
-                <>
-                  Sign in
-                  <ArrowRight size={14} />
-                </>
-              )}
-            </button>
-          </form>
-
-          {ssoEnabled && (
-            <>
-              <div className="mt-5 flex items-center gap-3">
-                <div className="flex-1 h-px" style={{ background: 'oklch(0.87 0.006 250)' }} />
-                <span className="text-[11px] uppercase tracking-widest font-mono" style={{ color: 'oklch(0.40 0.009 250)' }}>
-                  or
-                </span>
-                <div className="flex-1 h-px" style={{ background: 'oklch(0.87 0.006 250)' }} />
-              </div>
-              <button
-                type="button"
-                onClick={handleMicrosoftSso}
-                disabled={ssoLoading}
-                className="mt-4 flex items-center justify-center gap-2.5 w-full h-11 rounded border text-[14px] font-semibold transition-all hover:-translate-y-0.5"
-                style={{
-                  background: 'oklch(0.99 0.002 80)',
-                  borderColor: 'oklch(0.40 0.009 250)',
-                  color: 'oklch(0.17 0.010 250)',
-                  boxShadow: '0 1px 2px rgba(25,28,24,0.05)',
-                }}
-              >
-                {/* Microsoft 4-colour logo */}
-                <svg width="18" height="18" viewBox="0 0 21 21" aria-hidden="true">
-                  <rect x="1"  y="1"  width="9" height="9" fill="oklch(0.48 0.20 20)" />
-                  <rect x="11" y="1"  width="9" height="9" fill="#1a8a5b" />
-                  <rect x="1"  y="11" width="9" height="9" fill="oklch(0.46 0.16 55)" />
-                  <rect x="11" y="11" width="9" height="9" fill="#5fa8e8" />
-                </svg>
-                {ssoLoading ? 'Opening Microsoft…' : 'Sign in with Microsoft'}
-              </button>
-            </>
-          )}
-
-          <div className="mt-6 flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: 'oklch(0.87 0.006 250)' }} />
-            <span className="text-[11px] uppercase tracking-widest font-mono" style={{ color: 'oklch(0.40 0.009 250)' }}>
-              or sign in as a demo persona
-            </span>
-            <div className="flex-1 h-px" style={{ background: 'oklch(0.87 0.006 250)' }} />
-          </div>
-
-          <DemoPersonaGrid onPick={fillDemo} />
-
-          <p className="mt-4 text-center text-[11px]" style={{ color: 'oklch(0.40 0.009 250)' }}>
-            All demo accounts use the same password · <code className="font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>Demo@2024!</code>
-          </p>
-
-          <p className="mt-6 text-center text-[13px]" style={{ color: 'oklch(0.40 0.009 250)' }}>
-            Don't have an account?{' '}
-            <Link to="/register" className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>
-              Request access
-            </Link>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FeatureBadge({
-  icon: Icon,
-  label,
-  tint,
-}: {
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  label: string;
-  tint: string;
-}) {
-  return (
-    <div
-      className="flex items-center gap-2.5 px-3 py-2 rounded-lg"
-      style={{
-        background: 'rgba(255,255,255,0.08)',
-        border: '1px solid rgba(255,255,255,0.12)',
-        backdropFilter: 'blur(8px)',
-      }}
-    >
-      <div
-        className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
-        style={{ background: 'rgba(255,255,255,0.12)', color: tint }}
-      >
-        <Icon size={16} />
-      </div>
-      <span className="text-[13px] font-semibold text-white/90">{label}</span>
-    </div>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════════════════
- * DemoPersonaGrid — the row of one-click demo accounts on the login page
- *
- * Every seeded demo participant gets a tile here so reviewers can sign in
- * as any role without remembering the email. Tiles render with the custom
- * OE icon set; no stock library is used. The full set covers all 9 demo
- * personas from migration 003_seed.sql — including the two IPP variants
- * (solar generator + wind generator).
- * ═══════════════════════════════════════════════════════════════════════ */
-
-interface Persona {
-  email: string;
-  label: string;
-  subtitle: string;
-  icon: IconName;
-  accent: string;   // hex used for the icon background + border accent
-  group: 'Producers' | 'Markets' | 'Capital' | 'Network' | 'Oversight';
-}
-
-const PERSONAS: Persona[] = [
-  // Producers — solar + wind IPPs
-  { email: 'ipp@openenergy.co.za',       label: 'Solar Generator', subtitle: 'RenewCo Solar (Pty) Ltd',          icon: 'sun',      accent: '#c97a14', group: 'Producers' },
-  { email: 'wind@openenergy.co.za',      label: 'Wind Generator',  subtitle: 'WindCapital (Pty) Ltd',            icon: 'wind',     accent: '#1f9b95', group: 'Producers' },
-  // Markets — trader, carbon fund
-  { email: 'trader@openenergy.co.za',    label: 'Trader',          subtitle: 'Mkhize Energy Traders',            icon: 'trending-up', accent: 'oklch(0.46 0.16 55)', group: 'Markets' },
-  { email: 'carbon@openenergy.co.za',    label: 'Carbon Fund',     subtitle: 'GreenFunds Carbon Fund',           icon: 'leaf',     accent: '#1a8a5b', group: 'Markets' },
-  { email: 'offtaker@openenergy.co.za',  label: 'Offtaker',        subtitle: 'City Energy Municipality',         icon: 'building', accent: '#5d3a7e', group: 'Markets' },
-  // Capital
-  { email: 'lender@openenergy.co.za',    label: 'Lender',          subtitle: 'Infrastructure Capital Partners',  icon: 'piggy-bank', accent: '#a8385c', group: 'Capital' },
-  // Network
-  { email: 'grid@openenergy.co.za',      label: 'Grid Operator',   subtitle: 'Eskom Holdings',                   icon: 'gridmap',  accent: 'oklch(0.17 0.010 250)', group: 'Network' },
-  { email: 'esco@openenergy.co.za',      label: 'O&M Operator',    subtitle: 'SunServ O&M (Pty) Ltd',            icon: 'wrench',   accent: '#b45309', group: 'Network' },
-  // Oversight
-  { email: 'regulator@openenergy.co.za', label: 'Regulator',       subtitle: 'NERSA / Energy Research Institute', icon: 'shield',  accent: '#0e6d68', group: 'Oversight' },
-  { email: 'admin@openenergy.co.za',     label: 'Platform Admin',  subtitle: 'Open Energy Platform',            icon: 'settings', accent: 'oklch(0.17 0.010 250)', group: 'Oversight' },
-];
-
-const GROUP_ORDER: Persona['group'][] = ['Producers', 'Markets', 'Capital', 'Network', 'Oversight'];
-
-function DemoPersonaGrid({ onPick }: { onPick: (email: string) => void }) {
-  const groups = GROUP_ORDER
-    .map((g) => ({ name: g, items: PERSONAS.filter((p) => p.group === g) }))
-    .filter((g) => g.items.length > 0);
-
-  return (
-    <div className="mt-4 space-y-4">
-      {groups.map((g) => (
-        <div key={g.name}>
-          <div className="text-[10px] uppercase tracking-[0.1em] font-bold mb-1.5" style={{ color: 'oklch(0.40 0.009 250)' }}>
-            {g.name}
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {g.items.map((p) => (
-              <button
-                key={p.email}
-                type="button"
-                onClick={() => onPick(p.email)}
-                aria-label={`Use ${p.label} demo account`}
-                className="group flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left transition-all hover:-translate-y-0.5"
-                style={{
-                  background: 'oklch(0.99 0.002 80)',
-                  border: '1px solid oklch(0.87 0.006 250)',
-                  boxShadow: '0 1px 2px rgba(15,28,46,0.04)',
-                }}
-              >
-                <span
-                  className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform"
-                  style={{ background: `${p.accent}1a`, color: p.accent }}
-                >
-                  <OEIcon name={p.icon} size={16} />
-                </span>
-                <span className="min-w-0 flex-1 leading-tight">
-                  <span className="block text-[12px] font-semibold truncate" style={{ color: 'oklch(0.17 0.010 250)' }}>{p.label}</span>
-                  <span className="block text-[10px] font-mono truncate" style={{ color: 'oklch(0.40 0.009 250)' }}>{p.email.split('@')[0]}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 // SSO Landing Page — invoked by backend callback redirect. Reads the token
 // bundle from the URL fragment, stashes it via AuthContext, and navigates to
@@ -1257,11 +559,11 @@ function LaunchRedirect() {
         if (!completed) {
           navigate('/onboard', { replace: true });
         } else {
-          navigate(`/launch/${user.role}`, { replace: true });
+          navigate('/feed', { replace: true });
         }
       })
       .catch(() => {
-        navigate(`/launch/${user.role}`, { replace: true });
+        navigate('/feed', { replace: true });
       });
   }, [user, navigate, logout]);
 
@@ -1283,7 +585,7 @@ function AppRoutes() {
       }
     >
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<LoginPageNew />} />
       <Route path="/sso-landing" element={<SsoLanding />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/onboard" element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
@@ -1298,26 +600,28 @@ function AppRoutes() {
           bookmarks keep working — but the Launchpad nav now points to
           /launch. */}
       <Route path="/cockpit" element={<ProtectedRoute><LaunchRedirect /></ProtectedRoute>} />
-      <Route path="/feed" element={<ProtectedRoute><ActivityFeedShell /></ProtectedRoute>} />
+      <Route path="/feed" element={<ProtectedRoute><AppShellLayout><ActivityFeedShell /></AppShellLayout></ProtectedRoute>} />
       <Route path="/launch" element={<ProtectedRoute><LaunchRedirect /></ProtectedRoute>} />
-      <Route path="/launch/:role" element={<ProtectedRoute><Layout><RoleLaunchBoard /></Layout></ProtectedRoute>} />
-      <Route path="/contracts" element={<ProtectedRoute><Layout><Contracts /></Layout></ProtectedRoute>} />
+      <Route path="/launch/:role" element={<ProtectedRoute><AppShellLayout><LaunchpadHomePage /></AppShellLayout></ProtectedRoute>} />
+      <Route path="/launch/:role/:domain" element={<ProtectedRoute><AppShellLayout><SubCockpitPage /></AppShellLayout></ProtectedRoute>} />
+      {/* TODO: DELETE legacy listing pages — redirected to workstation equivalents */}
+      <Route path="/contracts" element={<Navigate to="/trader-risk/workstation" replace />} />
       <Route path="/contracts/:id" element={<ProtectedRoute><Layout><ContractDetail /></Layout></ProtectedRoute>} />
-      <Route path="/trading" element={<ProtectedRoute><Layout><Trading /></Layout></ProtectedRoute>} />
-      <Route path="/settlement" element={<ProtectedRoute><Layout><Settlement /></Layout></ProtectedRoute>} />
-      <Route path="/carbon" element={<ProtectedRoute><Layout><Carbon /></Layout></ProtectedRoute>} />
-      <Route path="/projects" element={<ProtectedRoute><Layout><Projects /></Layout></ProtectedRoute>} />
+      <Route path="/trading" element={<Navigate to="/trader-risk/workstation" replace />} />
+      <Route path="/settlement" element={<Navigate to="/trader-risk/workstation" replace />} />
+      <Route path="/carbon" element={<Navigate to="/carbon-registry/workstation" replace />} />
+      <Route path="/projects" element={<Navigate to="/ipp-lifecycle/workstation" replace />} />
       <Route path="/projects/:id" element={<ProtectedRoute><Layout><ProjectDetail /></Layout></ProtectedRoute>} />
       <Route path="/projects/:id/lifecycle" element={<ProtectedRoute><Layout><ProjectLifecycle /></Layout></ProtectedRoute>} />
       <Route path="/esg" element={<ProtectedRoute><Layout><ESG /></Layout></ProtectedRoute>} />
-      <Route path="/grid" element={<ProtectedRoute><Layout><Grid /></Layout></ProtectedRoute>} />
+      <Route path="/grid" element={<Navigate to="/grid-operator/workstation" replace />} />
       <Route path="/funds" element={<ProtectedRoute><Layout><Funds /></Layout></ProtectedRoute>} />
       <Route path="/funds/:id" element={<ProtectedRoute><Layout><FundDetail /></Layout></ProtectedRoute>} />
       <Route path="/pipeline" element={<ProtectedRoute><Layout><Pipeline /></Layout></ProtectedRoute>} />
       <Route path="/procurement" element={<ProtectedRoute><Layout><ProcurementHub /></Layout></ProtectedRoute>} />
       <Route path="/marketplace" element={<ProtectedRoute><Layout><Marketplace /></Layout></ProtectedRoute>} />
       <Route path="/modules" element={<ProtectedRoute><Layout><ModulesPage /></Layout></ProtectedRoute>} />
-      <Route path="/admin" element={<ProtectedRoute><Layout><Admin /></Layout></ProtectedRoute>} />
+      <Route path="/admin" element={<Navigate to="/admin-platform/workstation" replace />} />
       <Route path="/dashboard" element={<ProtectedRoute><Layout><NationalDashboard /></Layout></ProtectedRoute>} />
       <Route path="/support" element={<ProtectedRoute><Layout><Support /></Layout></ProtectedRoute>} />
       <Route path="/admin/monitoring" element={<ProtectedRoute><Layout><Monitoring /></Layout></ProtectedRoute>} />
@@ -1339,8 +643,8 @@ function AppRoutes() {
       <Route path="/lender-suite" element={<ProtectedRoute><Layout><LazyWorkbench><LenderSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/lender-suite/workout" element={<ProtectedRoute><Layout><LenderWorkoutPage /></Layout></ProtectedRoute>} />
       <Route path="/lender-suite/audit" element={<ProtectedRoute><Layout><LenderAuditPage /></Layout></ProtectedRoute>} />
-      <Route path="/carbon-registry/workstation" element={<ProtectedRoute><Layout><CarbonWorkstationPage /></Layout></ProtectedRoute>} />
-      <Route path="/grid-operator/workstation" element={<ProtectedRoute><Layout><GridOpsWorkstationPage /></Layout></ProtectedRoute>} />
+      <Route path="/carbon-registry/workstation" element={<ProtectedRoute><AppShellLayout><CarbonWorkstationPage /></AppShellLayout></ProtectedRoute>} />
+      <Route path="/grid-operator/workstation" element={<ProtectedRoute><AppShellLayout><GridOpsWorkstationPage /></AppShellLayout></ProtectedRoute>} />
       <Route path="/esums" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/settings/platform" element={<ProtectedRoute><Layout><LazyWorkbench><PlatformSettingsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       {/* Field-tech mobile WO flow — no app chrome by design (fullscreen PWA) */}
@@ -1367,15 +671,15 @@ function AppRoutes() {
       <Route path="/esums/workorders/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/esums/predictions/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/esums/sites/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsSiteDetailPage /></LazyWorkbench></Layout></ProtectedRoute>} />
-      <Route path="/regulator-suite/workstation" element={<ProtectedRoute><Layout><RegulatorWorkstationPage /></Layout></ProtectedRoute>} />
-      <Route path="/admin-platform/workstation" element={<ProtectedRoute><Layout><AdminWorkstationPage /></Layout></ProtectedRoute>} />
-      <Route path="/support/workstation" element={<ProtectedRoute><Layout><SupportWorkstationPage /></Layout></ProtectedRoute>} />
-      <Route path="/trader-risk/workstation" element={<ProtectedRoute><Layout><TraderWorkstationPage /></Layout></ProtectedRoute>} />
-      <Route path="/ipp-lifecycle/workstation" element={<ProtectedRoute><Layout><IppWorkstationPage /></Layout></ProtectedRoute>} />
-      <Route path="/offtaker-suite/workstation" element={<ProtectedRoute><Layout><OfftakerWorkstationPage /></Layout></ProtectedRoute>} />
-      <Route path="/lender-suite/workstation" element={<ProtectedRoute><Layout><LenderWorkstationPage /></Layout></ProtectedRoute>} />
-      <Route path="/esco/workstation" element={<ProtectedRoute><Layout><LazyWorkbench><EscoWorkstationPage /></LazyWorkbench></Layout></ProtectedRoute>} />
-      <Route path="/epc/workstation" element={<ProtectedRoute><Layout><LazyWorkbench><EpcWorkstationPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/regulator-suite/workstation" element={<ProtectedRoute><AppShellLayout><RegulatorWorkstationPage /></AppShellLayout></ProtectedRoute>} />
+      <Route path="/admin-platform/workstation" element={<ProtectedRoute><AppShellLayout><AdminWorkstationPage /></AppShellLayout></ProtectedRoute>} />
+      <Route path="/support/workstation" element={<ProtectedRoute><AppShellLayout><SupportWorkstationPage /></AppShellLayout></ProtectedRoute>} />
+      <Route path="/trader-risk/workstation" element={<ProtectedRoute><AppShellLayout><TraderWorkstationPage /></AppShellLayout></ProtectedRoute>} />
+      <Route path="/ipp-lifecycle/workstation" element={<ProtectedRoute><AppShellLayout><IppWorkstationPage /></AppShellLayout></ProtectedRoute>} />
+      <Route path="/offtaker-suite/workstation" element={<ProtectedRoute><AppShellLayout><OfftakerWorkstationPage /></AppShellLayout></ProtectedRoute>} />
+      <Route path="/lender-suite/workstation" element={<ProtectedRoute><AppShellLayout><LenderWorkstationPage /></AppShellLayout></ProtectedRoute>} />
+      <Route path="/esco/workstation" element={<ProtectedRoute><AppShellLayout><LazyWorkbench><EscoWorkstationPage /></LazyWorkbench></AppShellLayout></ProtectedRoute>} />
+      <Route path="/epc/workstation" element={<ProtectedRoute><AppShellLayout><LazyWorkbench><EpcWorkstationPage /></LazyWorkbench></AppShellLayout></ProtectedRoute>} />
       <Route path="/trading/orders/:id" element={<ProtectedRoute><Layout><OrderDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/settlement/invoices/:id" element={<ProtectedRoute><Layout><InvoiceDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/projects/:id/operations" element={<ProtectedRoute><Layout><ProjectOperationsPage /></Layout></ProtectedRoute>} />
@@ -1393,8 +697,9 @@ function AppRoutes() {
       {import.meta.env.DEV ? (
         <Route path="/dev/signature" element={<SignaturePreview />} />
       ) : null}
-      {/* UX exploration prototypes — auth-gated so API calls carry valid credentials */}
-      <Route element={<ProtectedRoute />}>
+      {/* UX exploration prototypes — auth-gated so API calls carry valid
+          credentials, and PrototypeGate keeps them team-only in prod */}
+      <Route element={<ProtectedRoute><PrototypeGate><Outlet /></PrototypeGate></ProtectedRoute>}>
         <Route path="/apex/register"                element={<LazyWorkbench><ApexRegisterPage /></LazyWorkbench>} />
         <Route path="/apex"                         element={<LazyWorkbench><ApexApp /></LazyWorkbench>} />
         <Route path="/apex/*"                       element={<LazyWorkbench><ApexApp /></LazyWorkbench>} />
@@ -1403,6 +708,7 @@ function AppRoutes() {
         <Route path="/ux-prototype/time-axis"     element={<LazyWorkbench><TimeAxisPrototype /></LazyWorkbench>} />
         <Route path="/ux-prototype/command-lens"  element={<LazyWorkbench><CommandLensPrototype /></LazyWorkbench>} />
         <Route path="/ux-prototype/cockpit-grid"  element={<LazyWorkbench><CockpitGridPrototype /></LazyWorkbench>} />
+        <Route path="/ux-prototype/launchpad-nav" element={<LazyWorkbench><LaunchpadNavPrototype /></LazyWorkbench>} />
       </Route>
       <Route path="/" element={<Navigate to="/feed" replace />} />
       <Route path="*" element={<NotFoundPage />} />

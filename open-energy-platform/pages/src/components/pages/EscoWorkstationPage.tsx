@@ -8,8 +8,10 @@ import { PredictiveAssetHealthChainTab } from '../esums/PredictiveAssetHealthCha
 import { AvailabilityGuaranteeChainTab } from '../esums/AvailabilityGuaranteeChainTab';
 import { VendorEscalationChainTab } from '../esums/VendorEscalationChainTab';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
+import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
 import { WarrantyClaimChainTab } from '../esums/WarrantyClaimChainTab';
 import { CommissioningTab } from '../esums/CommissioningTab';
+import { PrChainTab } from '../esums/PrChainTab';
 import { SparePartsProvisioningChainTab } from '../spare-parts-provisioning/SparePartsProvisioningChainTab';
 import { WarrantyRecoveryChainTab } from '../warranty-recovery/WarrantyRecoveryChainTab';
 import { ServiceContractChainTab } from '../service-contract/ServiceContractChainTab';
@@ -219,8 +221,6 @@ export function EscoWorkstationPage() {
       eyebrow="ESCO · Workstation"
       title="O&M operations workstation"
       subtitle="Site portfolio → Work orders & PM → Asset health → Safety & permits → Supply chain → Compliance"
-      backHref="/esco"
-      backLabel="ESCO console"
       wizards={ESCO_WIZARDS}
       tour={ESCO_TOUR}
       tabs={[
@@ -250,11 +250,13 @@ export function EscoWorkstationPage() {
         { key: 'commissioning', label: 'Site commissioning (W12)', group: 'Work orders', chainKey: 'commissioning', body: () => <CommissioningTab /> },
         { key: 'prognostics', label: 'Asset prognostics (W71)', group: 'Asset health & AI', chainKey: 'asset_prognostics', body: () => <PredictiveAssetHealthChainTab /> },
         { key: 'availability', label: 'Availability guarantees (W51)', group: 'Asset health & AI', chainKey: 'availability_guarantee', body: () => <AvailabilityGuaranteeChainTab /> },
+        { key: 'pr-underperformance', label: 'PR underperformance (W24)', group: 'Asset health & AI', chainKey: 'pr_underperformance', body: () => <PrChainTab /> },
         { key: 'spare-parts', label: 'Spare parts (W72)', group: 'Supply chain', chainKey: 'spare_parts_provisioning', body: () => <SparePartsProvisioningChainTab /> },
         { key: 'vendor-escalation', label: 'Vendor escalation (W35)', group: 'Supply chain', chainKey: 'vendor_escalation', body: () => <VendorEscalationChainTab /> },
         { key: 'warranty-claims', label: 'Warranty claims (W15)', group: 'Supply chain', chainKey: 'warranty_claim', body: () => <WarrantyClaimChainTab /> },
         { key: 'warranty-recovery', label: 'Warranty recovery (W63)', group: 'Supply chain', chainKey: 'warranty_recovery', body: () => <WarrantyRecoveryChainTab /> },
         { key: 'hse', label: 'HSE incidents (W25)', group: 'Safety & permits', chainKey: 'hse_incident', body: () => <HseIncidentChainTab /> },
+        { key: 'cyber', label: 'Cyber incidents (W26)', group: 'Safety & permits', chainKey: 'cyber_incident', body: () => <CyberIncidentChainTab /> },
         {
           key: 'audit',
           label: 'Audit trail',

@@ -96,6 +96,25 @@ export function cleanTabLabel(label: string): string {
   return label.replace(/\s*\(W\d[^)]*\)\s*$/, '').trim() || label;
 }
 
+const ROLE_ACCENT_MAP: Record<string, { acc: string; accBg: string; accBdr: string }> = {
+  ipp_developer:  { acc: 'oklch(0.46 0.16 55)',  accBg: 'oklch(0.96 0.05 55)',  accBdr: 'oklch(0.80 0.12 55)'  },
+  ipp:            { acc: 'oklch(0.46 0.16 55)',  accBg: 'oklch(0.96 0.05 55)',  accBdr: 'oklch(0.80 0.12 55)'  },
+  trader:         { acc: 'oklch(0.46 0.16 250)', accBg: 'oklch(0.96 0.04 250)', accBdr: 'oklch(0.80 0.10 250)' },
+  lender:         { acc: 'oklch(0.46 0.16 280)', accBg: 'oklch(0.96 0.04 280)', accBdr: 'oklch(0.80 0.10 280)' },
+  offtaker:       { acc: 'oklch(0.46 0.14 200)', accBg: 'oklch(0.96 0.04 200)', accBdr: 'oklch(0.80 0.09 200)' },
+  carbon_fund:    { acc: 'oklch(0.46 0.16 145)', accBg: 'oklch(0.96 0.04 145)', accBdr: 'oklch(0.80 0.10 145)' },
+  carbon:         { acc: 'oklch(0.46 0.16 145)', accBg: 'oklch(0.96 0.04 145)', accBdr: 'oklch(0.80 0.10 145)' },
+  grid_operator:  { acc: 'oklch(0.46 0.14 220)', accBg: 'oklch(0.96 0.04 220)', accBdr: 'oklch(0.80 0.09 220)' },
+  grid:           { acc: 'oklch(0.46 0.14 220)', accBg: 'oklch(0.96 0.04 220)', accBdr: 'oklch(0.80 0.09 220)' },
+  regulator:      { acc: 'oklch(0.40 0.12 5)',   accBg: 'oklch(0.96 0.03 5)',   accBdr: 'oklch(0.80 0.08 5)'   },
+  admin:          { acc: 'oklch(0.30 0.015 250)',accBg: 'oklch(0.95 0.004 250)',accBdr: 'oklch(0.78 0.006 250)' },
+  support:        { acc: 'oklch(0.46 0.14 100)', accBg: 'oklch(0.96 0.04 100)', accBdr: 'oklch(0.80 0.09 100)' },
+  esco:           { acc: 'oklch(0.46 0.14 30)',  accBg: 'oklch(0.96 0.04 30)',  accBdr: 'oklch(0.80 0.09 30)'  },
+  epc:            { acc: 'oklch(0.46 0.14 10)',  accBg: 'oklch(0.96 0.04 10)',  accBdr: 'oklch(0.80 0.09 10)'  },
+  epc_contractor: { acc: 'oklch(0.46 0.14 10)',  accBg: 'oklch(0.96 0.04 10)',  accBdr: 'oklch(0.80 0.09 10)'  },
+};
+const FALLBACK_ACCENT = { acc: ACC, accBg: ACC_BG, accBdr: ACC_BDR };
+
 // ─── TabNav ───────────────────────────────────────────────────────────
 // Horizontal pill-strip with group filter row and optional search.
 function TabNav({
@@ -106,6 +125,7 @@ function TabNav({
   allGroups,
   activeGroup,
   setActiveGroup,
+  accent,
 }: {
   tabs: WorkstationTab[];
   activeTab: string;
@@ -114,7 +134,9 @@ function TabNav({
   allGroups: string[];
   activeGroup: string | null;
   setActiveGroup: (g: string | null) => void;
+  accent?: { acc: string; accBg: string; accBdr: string };
 }) {
+  const A = accent ?? FALLBACK_ACCENT;
   const [q, setQ] = useState('');
   const query = q.trim().toLowerCase();
   const showSearch = tabs.length > 8;
@@ -143,9 +165,9 @@ function TabNav({
             onClick={() => setActiveGroup(null)}
             className="px-3 h-7 rounded text-[11px] font-semibold whitespace-nowrap flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
             style={{
-              background: activeGroup === null ? ACC_BG : 'transparent',
-              color: activeGroup === null ? ACC : TX3,
-              border: `1px solid ${activeGroup === null ? ACC_BDR : 'transparent'}`,
+              background: activeGroup === null ? A.accBg : 'transparent',
+              color: activeGroup === null ? A.acc : TX3,
+              border: `1px solid ${activeGroup === null ? A.accBdr : 'transparent'}`,
             }}
           >
             All
@@ -157,9 +179,9 @@ function TabNav({
               onClick={() => setActiveGroup(g)}
               className="px-3 h-7 rounded text-[11px] font-semibold whitespace-nowrap flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
               style={{
-                background: activeGroup === g ? ACC_BG : 'transparent',
-                color: activeGroup === g ? ACC : TX3,
-                border: `1px solid ${activeGroup === g ? ACC_BDR : 'transparent'}`,
+                background: activeGroup === g ? A.accBg : 'transparent',
+                color: activeGroup === g ? A.acc : TX3,
+                border: `1px solid ${activeGroup === g ? A.accBdr : 'transparent'}`,
               }}
             >
               {g}
@@ -211,9 +233,9 @@ function TabNav({
                 onClick={() => pick(t.key)}
                 className="h-8 px-3 rounded text-[12px] font-semibold whitespace-nowrap flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
                 style={{
-                  background:   isActive ? ACC_BG  : 'transparent',
-                  color:        isActive ? ACC     : TX2,
-                  border:       `1px solid ${isActive ? ACC_BDR : 'transparent'}`,
+                  background:   isActive ? A.accBg  : 'transparent',
+                  color:        isActive ? A.acc     : TX2,
+                  border:       `1px solid ${isActive ? A.accBdr : 'transparent'}`,
                   transition:   `background-color 120ms ${EASE}, color 120ms ${EASE}, border-color 120ms ${EASE}`,
                 }}
                 onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLButtonElement).style.background = BG2; (e.currentTarget as HTMLButtonElement).style.color = TX1; } }}
@@ -383,9 +405,22 @@ export function WorkstationShell({
   wizards?: WizardSpec[];
   tour?: TourDef;
 }) {
+  const resolvedBackHref  = backHref  ?? (role ? `/launch/${role}` : '/feed');
+  const resolvedBackLabel = backLabel ?? 'Launchpad';
+  const accent = ROLE_ACCENT_MAP[role ?? ''] ?? FALLBACK_ACCENT;
+
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const initialTab = params.get('tab') || tabs[0]?.key;
+  // Support deep-links from SubCockpitPage which may pass either the tab's key
+  // (kebab-case) or its chainKey (snake_case, e.g. 'poslimit_case'). Try key first,
+  // then chainKey fallback, then default to first tab.
+  const rawTabParam = params.get('tab') ?? '';
+  const resolvedTab = rawTabParam
+    ? (tabs.find(t => t.key === rawTabParam)?.key
+        ?? tabs.find(t => t.chainKey === rawTabParam)?.key
+        ?? tabs[0]?.key)
+    : tabs[0]?.key;
+  const initialTab = resolvedTab ?? '';
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [bump, setBump] = useState(0);
 
@@ -493,16 +528,16 @@ export function WorkstationShell({
             {densityState.canToggle && (
               <DensityToggle density={densityState.density} onChange={densityState.setDensity} />
             )}
-            {backHref && (
+            {resolvedBackHref && (
               <button
                 type="button"
-                onClick={() => navigate(backHref)}
+                onClick={() => navigate(resolvedBackHref!)}
                 className="h-8 px-3 rounded text-[11px] font-semibold inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2"
                 style={{ border: `1px solid ${BORDER}`, background: 'transparent', color: TX2 }}
                 onMouseEnter={e => (e.currentTarget.style.background = BG2)}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
-                <ArrowLeft size={11} /> {backLabel || 'Back'}
+                <ArrowLeft size={11} /> {resolvedBackLabel}
               </button>
             )}
             <button
@@ -521,9 +556,9 @@ export function WorkstationShell({
                 data-tour="quick-start"
                 onClick={() => setWizardPickerOpen(true)}
                 className="h-8 px-3 rounded text-[11px] font-bold inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2"
-                style={{ background: ACC, color: '#fff', border: 'none' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'oklch(0.38 0.18 55)')}
-                onMouseLeave={e => (e.currentTarget.style.background = ACC)}
+                style={{ background: accent.acc, color: '#fff', border: 'none' }}
+                onMouseEnter={e => (e.currentTarget.style.background = accent.acc)}
+                onMouseLeave={e => (e.currentTarget.style.background = accent.acc)}
               >
                 <Wand2 size={11} /> Quick start
               </button>
@@ -591,6 +626,7 @@ export function WorkstationShell({
             allGroups={allGroups}
             activeGroup={activeGroup}
             setActiveGroup={setActiveGroup}
+            accent={accent}
           />
         </div>
 

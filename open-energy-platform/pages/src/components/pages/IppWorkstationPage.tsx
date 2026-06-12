@@ -110,6 +110,8 @@ const IppPaymentCertTab = React.lazy(() => import('../ipp/IppPaymentCertTab').th
 const IppFinalCompletionTab = React.lazy(() => import('../ipp/IppFinalCompletionTab').then(m => ({ default: m.IppFinalCompletionTab })));
 const IppOmHandoverTab = React.lazy(() => import('../ipp/IppOmHandoverTab').then(m => ({ default: m.IppOmHandoverTab })));
 const IppLandRegisterTab = React.lazy(() => import('../ipp/IppLandRegisterTab').then(m => ({ default: m.IppLandRegisterTab })));
+const ProjectChangeOrderChainTab = React.lazy(() => import('../ipp/ProjectChangeOrderChainTab').then(m => ({ default: m.ProjectChangeOrderChainTab })));
+const SubmittalRfiChainTab = React.lazy(() => import('../ipp/SubmittalRfiChainTab').then(m => ({ default: m.SubmittalRfiChainTab })));
 const IppEnvClosureTab = React.lazy(() => import('../ipp/IppEnvClosureTab').then(m => ({ default: m.IppEnvClosureTab })));
 const IppCommissioningTestTab = React.lazy(() => import('../ipp/IppCommissioningTestTab').then(m => ({ default: m.IppCommissioningTestTab })));
 const IppIeCertTab = React.lazy(() => import('../ipp/IppIeCertTab').then(m => ({ default: m.IppIeCertTab })));
@@ -1237,6 +1239,8 @@ export function IppWorkstationPage() {
         { key: 'submittals', label: 'Submittals', group: 'Documents', chainKey: 'ipp_submittal', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppSubmittalChainTab /></React.Suspense> },
         { key: 'rfis', label: 'RFIs', group: 'Documents', chainKey: 'ipp_rfi', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppRfiChainTab /></React.Suspense> },
         { key: 'change-orders', label: 'Change orders', group: 'Documents', chainKey: 'project_change_order', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppChangeOrderChainTab /></React.Suspense> },
+        { key: 'project-change-order', label: 'Project change orders (W81)', group: 'Documents', chainKey: 'project_change_order', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><ProjectChangeOrderChainTab /></React.Suspense> },
+        { key: 'submittal-rfi', label: 'Submittal & RFI register (W96)', group: 'Documents', chainKey: 'submittal_rfi', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><SubmittalRfiChainTab /></React.Suspense> },
         { key: 'technical-queries', label: 'Technical queries', group: 'Documents', chainKey: 'ipp_tq', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppTqTab /></React.Suspense> },
         { key: 'site-instructions', label: 'Site instructions (W144)', group: 'Documents', chainKey: 'site_instruction', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppSiteInstructionTab /></React.Suspense> },
         { key: 'dlp-defects', label: 'DLP defects (W145)', group: 'Documents', chainKey: 'dlp_defect', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppDlpDefectTab /></React.Suspense> },

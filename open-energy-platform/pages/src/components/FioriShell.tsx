@@ -450,6 +450,15 @@ export function FioriShell({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  // Launchpad + workstation mode: suppress sidebar so these pages fill the full canvas.
+  // Workstation pages have their own tab nav and a back-to-launchpad breadcrumb.
+  const WORKSTATION_PREFIXES = [
+    '/launch/',
+    '/ipp-lifecycle/', '/trader-risk/', '/lender-suite/', '/offtaker-suite/',
+    '/carbon-registry/', '/grid-operator/', '/support/', '/regulator-suite/',
+    '/admin-platform/', '/esco/', '/epc/',
+  ];
+  const isLaunchpadPage = WORKSTATION_PREFIXES.some(p => location.pathname.startsWith(p));
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('oe_rail_collapsed') === 'true'; } catch { return false; }
   });
@@ -832,6 +841,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
         data-density={roleTheme.workstationDensity}
         data-chrome={roleTheme.chrome}
         style={{
+          display: isLaunchpadPage ? 'none' : undefined,
           position: 'fixed',
           left: 0,
           top: 'var(--shell-height)',
@@ -909,7 +919,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
         style={{
           background: 'oklch(0.97 0.003 250)',
           paddingTop: 'var(--shell-height)',
-          paddingLeft: isMobile ? 0 : sidebarWidth,
+          paddingLeft: (isMobile || isLaunchpadPage) ? 0 : sidebarWidth,
           paddingBottom: isMobile ? 'calc(64px + env(safe-area-inset-bottom))' : 0,
           transition: 'padding-left 200ms cubic-bezier(0.23,1,0.32,1)',
         }}
@@ -920,7 +930,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
       </main>
 
       {/* ════════════ Mobile bottom nav (sub-md only) ════════════ */}
-      <MobileBottomNav nav={nav} isActive={isActive} />
+      {!isLaunchpadPage && <MobileBottomNav nav={nav} isActive={isActive} />}
 
       {/* ════════════ Partner brand — LTM Energy Group, bottom-right ════════════ */}
       <LtmLogo />

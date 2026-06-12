@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
 import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
+import { SubmittalRfiChainTab } from '../ipp/SubmittalRfiChainTab';
+import { ProjectChangeOrderChainTab } from '../ipp/ProjectChangeOrderChainTab';
+import { ItpChainTab } from '../ipp/ItpChainTab';
+import { PunchListChainTab } from '../ipp/PunchListChainTab';
 import type { WizardSpec } from '../launch/WizardModal';
 import type { TourDef } from '../launch/ProductTour';
 
@@ -181,8 +185,6 @@ export function EpcWorkstationPage() {
       eyebrow="EPC Contractor · Workstation"
       title="Construction workstation"
       subtitle="Site setup → Document control → Quality management → Safety & HSE → Handover"
-      backHref="/epc"
-      backLabel="EPC console"
       wizards={EPC_WIZARDS}
       tour={EPC_TOUR}
       tabs={[
@@ -190,45 +192,7 @@ export function EpcWorkstationPage() {
           key: 'submittals',
           label: 'Submittals',
           group: 'Document control',
-          body: ({ onRefresh }) => (
-            <div className="space-y-3">
-              <div className="flex justify-end">
-                <button type="button" onClick={() => setCreatingSubmittal(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">+ New submittal</button>
-              </div>
-              <ListingTable
-                endpoint="/ipp/submittals"
-                rowKey={(r) => r.id}
-                empty={{ title: 'No submittals', description: 'Documents submitted for client review will appear here.' }}
-                columns={[
-                  { key: 'document_number', label: 'Document No.', render: (r) => <span className="font-mono text-[11px]">{r.document_number}</span> },
-                  { key: 'title', label: 'Title', render: (r) => <span className="block truncate max-w-xs">{r.title}</span> },
-                  { key: 'discipline', label: 'Discipline' },
-                  { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'approved' ? 'good' : r.status === 'rejected' ? 'bad' : 'warn'}>{r.status?.replace(/_/g, ' ')}</Pill> },
-                  { key: 'required_by', label: 'Required by', render: (r) => r.required_by ? new Date(r.required_by).toLocaleDateString() : '—' },
-                ]}
-              />
-              {creatingSubmittal && (
-                <ActionModal
-                  title="Register submittal"
-                  fields={[
-                    { key: 'document_number', label: 'Document number', type: 'text', required: true },
-                    { key: 'title', label: 'Title', type: 'text', required: true },
-                    { key: 'discipline', label: 'Discipline', type: 'select', options: [{ value: 'electrical', label: 'Electrical' }, { value: 'civil', label: 'Civil' }, { value: 'mechanical', label: 'Mechanical' }, { value: 'instrumentation', label: 'Instrumentation' }] },
-                    { key: 'submittal_type', label: 'Type', type: 'select', options: [{ value: 'hold_point', label: 'Hold point' }, { value: 'witness', label: 'Witness point' }, { value: 'approval', label: 'Approval' }, { value: 'for_information', label: 'For information' }] },
-                    { key: 'required_by', label: 'Required approval date', type: 'date' },
-                  ]}
-                  onClose={() => setCreatingSubmittal(false)}
-                  onSubmit={async (v) => {
-                    const token = localStorage.getItem('token') || '';
-                    const res = await fetch('/api/ipp/submittals', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(v) });
-                    if (!res.ok) throw new Error('Failed to create submittal');
-                    setCreatingSubmittal(false);
-                    onRefresh?.();
-                  }}
-                />
-              )}
-            </div>
-          ),
+          body: () => <SubmittalRfiChainTab />,
         },
         {
           key: 'rfis',
@@ -276,20 +240,7 @@ export function EpcWorkstationPage() {
           key: 'change-orders',
           label: 'Change orders',
           group: 'Document control',
-          body: () => (
-            <ListingTable
-              endpoint="/ipp/change-orders"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No change orders', description: 'Scope and cost change orders will appear here.' }}
-              columns={[
-                { key: 'co_number', label: 'CO No.', render: (r) => <span className="font-mono text-[11px]">{r.co_number}</span> },
-                { key: 'description', label: 'Description', render: (r) => <span className="block truncate max-w-xs">{r.description}</span> },
-                { key: 'cost_impact', label: 'Cost (ZAR)', render: (r) => r.cost_impact != null ? new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(r.cost_impact) : '—' },
-                { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'approved' ? 'good' : r.status === 'rejected' ? 'bad' : 'warn'}>{r.status?.replace(/_/g, ' ')}</Pill> },
-                { key: 'created_at', label: 'Submitted', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
+          body: () => <ProjectChangeOrderChainTab />,
         },
         {
           key: 'technical-queries',
@@ -314,20 +265,7 @@ export function EpcWorkstationPage() {
           key: 'itps',
           label: 'Inspection test plans',
           group: 'Quality management',
-          body: () => (
-            <ListingTable
-              endpoint="/ipp/itp"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No ITPs', description: 'Inspection and test plan records will appear here.' }}
-              columns={[
-                { key: 'itp_number', label: 'ITP No.', render: (r) => <span className="font-mono text-[11px]">{r.itp_number}</span> },
-                { key: 'activity', label: 'Activity', render: (r) => <span className="block truncate max-w-xs">{r.activity}</span> },
-                { key: 'point_type', label: 'Hold/Witness', render: (r) => <Pill tone={r.point_type === 'hold' ? 'bad' : 'warn'}>{r.point_type}</Pill> },
-                { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'passed' ? 'good' : r.status === 'failed' ? 'bad' : 'warn'}>{r.status?.replace(/_/g, ' ')}</Pill> },
-                { key: 'inspection_date', label: 'Inspected', render: (r) => r.inspection_date ? new Date(r.inspection_date).toLocaleDateString() : '—' },
-              ]}
-            />
-          ),
+          body: () => <ItpChainTab />,
         },
         {
           key: 'ncrs',
@@ -352,20 +290,7 @@ export function EpcWorkstationPage() {
           key: 'punch-list',
           label: 'Punch list',
           group: 'Quality management',
-          body: () => (
-            <ListingTable
-              endpoint="/ipp/punch-list"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No punch list items', description: 'Pre-commissioning defect punch list items will appear here.' }}
-              columns={[
-                { key: 'item_number', label: 'Item No.', render: (r) => <span className="font-mono text-[11px]">{r.item_number}</span> },
-                { key: 'description', label: 'Description', render: (r) => <span className="block truncate max-w-xs">{r.description}</span> },
-                { key: 'category', label: 'Category', render: (r) => <Pill tone={r.category === 'A' ? 'bad' : r.category === 'B' ? 'warn' : 'neutral'}>{`Cat ${r.category}`}</Pill> },
-                { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'closed' ? 'good' : 'warn'}>{r.status?.replace(/_/g, ' ')}</Pill> },
-                { key: 'responsible', label: 'Responsible' },
-              ]}
-            />
-          ),
+          body: () => <PunchListChainTab />,
         },
         {
           key: 'method-statements',

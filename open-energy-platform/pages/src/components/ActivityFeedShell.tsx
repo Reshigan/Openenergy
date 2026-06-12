@@ -6,7 +6,7 @@
 // Design: mockup-b selected by user 2026-06-06. IBM Plex Sans / Mono,
 // OKLCH color system, light mode, no side-stripe borders, tabular nums.
 // ═══════════════════════════════════════════════════════════════════════════
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth';
 import { api } from '../lib/api';
@@ -115,7 +115,6 @@ const C = {
   primary:     'oklch(0.38 0.08 250)',
   badge:       { urgent: 'oklch(0.55 0.22 25)', caution: 'oklch(0.65 0.16 75)', info: 'oklch(0.55 0.10 250)' },
   pill:        { active: { bg: 'oklch(0.20 0.025 250)', text: '#fff' }, inactive: { bg: 'transparent', text: 'oklch(0.45 0.015 250)' } },
-  nav:         { bg: 'oklch(0.99 0.002 80)', text: 'oklch(0.15 0.025 250)', muted: 'oklch(0.50 0.008 250)', active: 'oklch(0.46 0.16 55)' },
 } as const;
 
 // ── Utility ────────────────────────────────────────────────────────────────
@@ -503,11 +502,9 @@ export function ActivityFeedShell() {
 
   const [feedData, setFeedData]       = useState<FeedResponse | null>(null);
   const [launchData, setLaunchData]   = useState<LaunchData | null>(null);
-  const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
   const [loading, setLoading]         = useState(true);
   const [activeCategory, setActiveCategory] = useState<Category>('all');
-  const [searchOpen, setSearchOpen]   = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const currentRole = user?.role ?? 'ipp_developer';
 
@@ -530,33 +527,11 @@ export function ActivityFeedShell() {
     setLoading(false);
   }, [currentRole, activeCategory]);
 
-  const loadBadges = useCallback(async () => {
-    try {
-      const r = await api.get('/feed/badge-counts');
-      setBadgeCounts(r.data?.data ?? {});
-    } catch { /* silent */ }
-  }, []);
-
   useEffect(() => {
     loadFeed();
-    loadBadges();
-    // Poll every 30s for live badge updates
-    const t = setInterval(() => { loadBadges(); }, 30_000);
+    const t = setInterval(() => { loadFeed(); }, 30_000);
     return () => clearInterval(t);
-  }, [loadFeed, loadBadges]);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setSearchOpen((v) => !v);
-        setTimeout(() => searchRef.current?.focus(), 50);
-      }
-      if (e.key === 'Escape') setSearchOpen(false);
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [loadFeed]);
 
   const handleCategoryChange = (cat: Category) => {
     setActiveCategory(cat);
@@ -586,12 +561,14 @@ export function ActivityFeedShell() {
     setFeedData((prev) =>
       prev ? { ...prev, items: prev.items.filter((i) => i.id !== id) } : prev
     );
-    loadBadges();
   };
 
-  const urgentItems  = feedData?.items.filter((i) => i.urgency === 'urgent')  ?? [];
-  const cautionItems = feedData?.items.filter((i) => i.urgency === 'caution') ?? [];
-  const infoItems    = feedData?.items.filter((i) => i.urgency === 'info')    ?? [];
+  const q = searchQuery.trim().toLowerCase();
+  const matchesQ = (i: FeedItem) =>
+    !q || i.title.toLowerCase().includes(q) || String(i.body?.detail ?? '').toLowerCase().includes(q);
+  const urgentItems  = (feedData?.items.filter((i) => i.urgency === 'urgent')  ?? []).filter(matchesQ);
+  const cautionItems = (feedData?.items.filter((i) => i.urgency === 'caution') ?? []).filter(matchesQ);
+  const infoItems    = (feedData?.items.filter((i) => i.urgency === 'info')    ?? []).filter(matchesQ);
   const counts       = feedData?.counts;
 
   return (
@@ -605,117 +582,6 @@ export function ActivityFeedShell() {
         flexDirection: 'column',
       }}
     >
-      {/* ── Top nav ──────────────────────────────────────────────────────── */}
-      <nav
-        style={{
-          height: 52,
-          background: C.nav.bg,
-          display: 'flex',
-          alignItems: 'center',
-          paddingLeft: 20,
-          paddingRight: 20,
-          gap: 0,
-          position: 'sticky',
-          top: 56,
-          zIndex: 40,
-          borderBottom: '1px solid oklch(0.88 0.006 250)',
-        }}
-      >
-        {/* Wordmark */}
-        <div
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            marginRight: 24, flexShrink: 0,
-          }}
-        >
-          <div
-            style={{
-              width: 26, height: 26, borderRadius: 6,
-              background: 'oklch(0.50 0.12 250)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, fontWeight: 800, color: '#fff',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            OE
-          </div>
-          <span
-            style={{
-              fontSize: 12, fontWeight: 700, letterSpacing: '0.10em',
-              textTransform: 'uppercase', color: C.nav.muted,
-              fontFamily: '"IBM Plex Mono", monospace',
-            }}
-          >
-            Open Energy
-          </span>
-        </div>
-
-        {/* Role tabs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, overflow: 'auto hidden' }}>
-          {ROLES.map((role) => {
-            const isActive = role.key === currentRole;
-            const badge    = badgeCounts[role.key] ?? 0;
-            return (
-              <button
-                key={role.key}
-                onClick={() => navigate(ROLE_WORKSTATION_PATHS[role.key] ?? '/launch')}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                  padding: '5px 10px',
-                  borderRadius: 5,
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: isActive ? 'oklch(0.93 0.006 250)' : 'transparent',
-                  color: isActive ? C.nav.active : C.nav.muted,
-                  fontSize: 12,
-                  fontWeight: isActive ? 600 : 400,
-                  whiteSpace: 'nowrap',
-                  transition: 'background 120ms ease-out, color 120ms ease-out',
-                }}
-              >
-                {role.short}
-                {badge > 0 && (
-                  <span
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      minWidth: 16, height: 16,
-                      background: badge > 0 ? C.badge.urgent : 'transparent',
-                      borderRadius: 8,
-                      fontSize: 9, fontWeight: 700,
-                      fontFamily: '"IBM Plex Mono", monospace',
-                      fontVariantNumeric: 'tabular-nums',
-                      color: '#fff',
-                      padding: '0 4px',
-                    }}
-                  >
-                    {badge > 99 ? '99+' : badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Right actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 12 }}>
-          <button
-            onClick={() => navigate(`/launch/${currentRole}`)}
-            style={{
-              padding: '4px 12px',
-              borderRadius: 5,
-              border: '1px solid oklch(0.85 0.006 250)',
-              background: 'transparent',
-              color: C.nav.muted,
-              fontSize: 11,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            Launch Board
-          </button>
-        </div>
-      </nav>
-
       {/* ── Search bar ────────────────────────────────────────────────────── */}
       <div
         style={{
@@ -727,49 +593,22 @@ export function ActivityFeedShell() {
           gap: 12,
         }}
       >
-        <button
-          onClick={() => { setSearchOpen(true); setTimeout(() => searchRef.current?.focus(), 50); }}
+        <input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Filter feed…"
           style={{
             flex: 1, maxWidth: 480,
-            display: 'flex', alignItems: 'center', gap: 8,
             padding: '6px 12px',
             borderRadius: 6,
             border: `1px solid ${C.border}`,
             background: C.canvas,
-            cursor: 'text',
-            textAlign: 'left',
+            fontSize: 12,
+            color: C.text,
+            outline: 'none',
+            fontFamily: '"IBM Plex Sans", system-ui, sans-serif',
           }}
-        >
-          <span style={{ color: C.textFaint, flexShrink: 0, display: 'flex' }}>
-            <OEIcon name="search" size={13} />
-          </span>
-          {searchOpen ? (
-            <input
-              ref={searchRef}
-              placeholder={`Search across 76 functions…`}
-              style={{
-                background: 'transparent', border: 'none', outline: 'none',
-                fontSize: 12, color: C.text, flex: 1,
-                fontFamily: '"IBM Plex Sans", system-ui, sans-serif',
-              }}
-            />
-          ) : (
-            <span style={{ fontSize: 12, color: C.textFaint, flex: 1 }}>
-              Search across 76 functions…
-            </span>
-          )}
-          <span
-            style={{
-              fontSize: 10, fontFamily: '"IBM Plex Mono", monospace',
-              color: C.textFaint,
-              background: C.border,
-              padding: '1px 5px', borderRadius: 3,
-              letterSpacing: '0.02em',
-            }}
-          >
-            ⌘K
-          </span>
-        </button>
+        />
 
         {/* Count chips */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>

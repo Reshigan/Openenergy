@@ -17,7 +17,7 @@ const BORDER  = 'oklch(0.87 0.006 250)';
 const TX1     = 'oklch(0.17 0.010 250)';
 const TX2     = 'oklch(0.40 0.009 250)';
 const TX3     = 'oklch(0.60 0.007 250)';
-const ACC     = 'oklch(0.46 0.16 55)';
+const ACC     = 'oklch(0.46 0.12 230)';
 const BAD     = 'oklch(0.48 0.20 20)';
 
 type Manual = {

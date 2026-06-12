@@ -39,6 +39,13 @@ const DIRECTIONS = [
     affinity: 'Day-long workstation users, multi-asset operators.',
     accent: '#5d3a7e',
   },
+  {
+    slug: 'launchpad-nav',
+    name: 'Launchpad Nav',
+    pitch: 'Menuless 3-level spatial nav — Launchpad → Sub-cockpit → Feature. All 9 roles, all 76 chains, no sidebar.',
+    affinity: 'All roles; onboarding-friendly, mobile-first spatial orientation.',
+    accent: '#7e57c2',
+  },
 ];
 
 function PickerBody() {

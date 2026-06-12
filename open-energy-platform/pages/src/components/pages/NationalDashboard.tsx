@@ -13,7 +13,7 @@ const BORDER  = 'oklch(0.87 0.006 250)';
 const TX1     = 'oklch(0.17 0.010 250)';
 const TX2     = 'oklch(0.40 0.009 250)';
 const TX3     = 'oklch(0.60 0.007 250)';
-const ACC     = 'oklch(0.46 0.16 55)';
+const ACC     = 'oklch(0.46 0.12 230)';
 const BAD     = 'oklch(0.48 0.20 20)';
 const BAD_BG  = 'oklch(0.97 0.04 20)';
 const GOOD    = 'oklch(0.40 0.16 155)';
@@ -89,8 +89,8 @@ const pct = (v: number) => `${v.toFixed(1)}%`;
 const DOMAIN_DOT: Record<string, string> = {
   trading:   'oklch(0.30 0.14 250)',
   carbon:    'oklch(0.40 0.16 155)',
-  ipp:       'oklch(0.38 0.18 295)',
-  lender:    'oklch(0.46 0.16 55)',
+  ipp:       'oklch(0.46 0.16 55)',
+  lender:    'oklch(0.46 0.16 280)',
   offtaker:  'oklch(0.35 0.16 230)',
   grid:      'oklch(0.48 0.20 20)',
   regulator: 'oklch(0.36 0.14 185)',

@@ -11,6 +11,10 @@ import { ImbalanceSettlementChainTab } from '../grid/ImbalanceSettlementChainTab
 import { TransmissionOutageChainTab } from '../grid/TransmissionOutageChainTab';
 import { GridCodeComplianceChainTab } from '../grid-code-compliance/GridCodeComplianceChainTab';
 import { ConnectionEnergizationChainTab } from '../connection-energization/ConnectionEnergizationChainTab';
+import { LoadCurtailmentChainTab } from '../load-curtailment/LoadCurtailmentChainTab';
+import { GridCapacityChainTab } from '../grid-capacity/GridCapacityChainTab';
+import { GcaChainTab } from '../gca/GcaChainTab';
+import { BlackStartChainTab } from '../black-start/BlackStartChainTab';
 import { ScadaConnectorTab } from '../scadaConnector/ScadaConnectorTab';
 import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
 import { ReportPanel, type ReportConfig } from '../launch/ReportPanel';
@@ -523,39 +527,17 @@ export function GridOpsWorkstationPage() {
           label: 'Load curtailment (W34)',
           group: 'Operations',
           chainKey: 'load_curtailment',
-          body: () => (
-            <ListingTable
-              endpoint="/load-curtailment/chain"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No load curtailment cases', description: 'NERSA §CSC-1 load curtailment cases will appear here.' }}
-              columns={[
-                { key: 'load_shedding_stage', label: 'Stage' },
-                { key: 'affected_mw', label: 'Affected MW', render: (r) => r.affected_mw != null ? `${r.affected_mw} MW` : '—' },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['restored','completed'].includes(r.chain_status) ? 'good' : ['escalated','disputed'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
-                { key: 'created_at', label: 'Activated', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
+          body: () => <LoadCurtailmentChainTab />,
         },
         {
           key: 'grid_capacity_allocations',
           label: 'Capacity allocation (W58)',
           group: 'Connections',
           chainKey: 'grid_capacity_allocation',
-          body: () => (
-            <ListingTable
-              endpoint="/grid-capacity/chain"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No capacity allocations', description: 'NTCSA 2024 grid capacity allocation queue will appear here.' }}
-              columns={[
-                { key: 'requested_capacity_mw', label: 'Requested MW', render: (r) => r.requested_capacity_mw != null ? `${r.requested_capacity_mw} MW` : '—' },
-                { key: 'connection_type', label: 'Connection type' },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['allocated','confirmed'].includes(r.chain_status) ? 'good' : ['rejected_application','withdrawn'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
-                { key: 'created_at', label: 'Applied', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
+          body: () => <GridCapacityChainTab />,
         },
+        { key: 'gca_chain', label: 'Grid connection agreements (W28)', group: 'Connections', chainKey: 'gca_connection', body: () => <GcaChainTab /> },
+        { key: 'black_start', label: 'Black start activation', group: 'Operations', chainKey: 'black_start', body: () => <BlackStartChainTab /> },
         {
           key: 'grid_code_compliance',
           label: 'Grid code compliance (W67)',
