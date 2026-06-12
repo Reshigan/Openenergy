@@ -24,7 +24,7 @@ import {
 
 const READ_ROLES = new Set([
   'admin', 'trader', 'ipp_developer', 'offtaker', 'grid_operator',
-  'regulator', 'lender', 'support', 'carbon_fund',
+  'regulator', 'lender', 'support', 'carbon_fund', 'epc_contractor',
 ]);
 const WRITE_ROLES = new Set(['admin', 'ipp_developer', 'support']);
 

@@ -40,6 +40,7 @@ const READ_ROLES = new Set([
   'esums', 'esums_om', 'esco',
   'oem',
   'regulator',
+  'epc_contractor',
 ]);
 const WRITE_ROLES = new Set([
   'admin', 'support',

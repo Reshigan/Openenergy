@@ -55,6 +55,7 @@ const READ_ROLES = new Set([
   'admin', 'ipp', 'ipp_developer', 'wind',
   'lender', 'regulator', 'offtaker',
   'grid_operator', 'carbon_fund', 'trader', 'support',
+  'epc_contractor',
 ]);
 
 const WRITE_ROLES = new Set(['admin', 'ipp', 'ipp_developer', 'wind']);

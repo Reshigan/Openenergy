@@ -29,7 +29,7 @@ export interface ChainDescriptor {
   lanes: Record<string, string>; // role -> lane key (mirrors roleData domain keys)
   eventsTable: string | null;    // per-chain event table; null = Thread hides timeline (v1 ok)
   eventsFk: string | null;
-  actions: ChainActionHint[];    // v1: top 2-3 decisive transitions only
+  actions: ChainActionHint[];    // decisive transitions (typically 3-6 per chain)
 }
 
 const HOUR = 3600_000;
@@ -1556,7 +1556,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     terminal: ['closed'],
     counterpartyCol: null, // site-incident record; no contractual counterparty column
-    lanes: { esco: 'safety', ipp_developer: 'safety_grid' },
+    lanes: { esco: 'safety', ipp_developer: 'safety_grid', epc_contractor: 'safety' },
     eventsTable: 'oe_hse_incident_events', eventsFk: 'incident_id',
     actions: [
       { action: 'triage', label: 'Triage incident',
@@ -1720,6 +1720,207 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         path: '/api/permit-to-work/chain/:id/revoke-permit',
         roles: ['admin', 'support', 'ipp_developer', 'esco'],
         cascadeHint: 'Revokes a live permit on a safety breach; always crosses the regulator queue (W64 signature).' },
+    ],
+  },
+
+  // ───────── CONSTRUCTION QUALITY (EPC contractor surface) ─────────
+  //
+  // epc_contractor has a read-only grant on these chains (plus hse_incident
+  // above); lanes key to its roleData domains (quality / site_setup / safety).
+  // Write actions remain ipp/support-side.
+
+  // W99 — Inspection & test plan (NERSA §C-5 + OHSA s24 + IEC 61508 hold-point
+  // quality gate ahead of COD; URGENT SLA — safety/COD blockers tightest)
+  {
+    key: 'itp', wave: 99, table: 'oe_itp_inspection',
+    title: 'Inspection & test plan', refCol: 'itp_number', titleCol: 'title',
+    quantumCol: 'rework_cost_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['archived', 'rejected', 'withdrawn', 'voided'],
+    counterpartyCol: 'contractor_name',
+    lanes: { ipp_developer: 'risk_quality', epc_contractor: 'quality' },
+    eventsTable: 'oe_itp_inspection_events', eventsFk: 'itp_id',
+    actions: [
+      { action: 'submit', label: 'Submit ITP',
+        path: '/api/ipp/itp/chain/:id/submit',
+        roles: ['admin', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Submits the drafted ITP for review; safety-critical test plans also cross the regulator queue.' },
+      { action: 'approve', label: 'Approve ITP',
+        path: '/api/ipp/itp/chain/:id/approve',
+        roles: ['admin', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Approves the ITP for release to site; plans gating commercial operation cross the regulator queue.' },
+      { action: 'schedule-inspection', label: 'Schedule inspection',
+        path: '/api/ipp/itp/chain/:id/schedule-inspection',
+        roles: ['admin', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Books the hold-point inspection slot and notifies the witness parties.' },
+      { action: 'record-result', label: 'Record result', tone: 'primary',
+        path: '/api/ipp/itp/chain/:id/record-result',
+        roles: ['admin', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Records the inspection outcome; a failed safety-critical or COD-gating test crosses the regulator queue.' },
+      { action: 'reject', label: 'Reject ITP', tone: 'oxide',
+        path: '/api/ipp/itp/chain/:id/reject',
+        roles: ['admin', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Rejects the submitted plan back to the contractor; a fresh ITP must be drafted.' },
+    ],
+  },
+
+  // W98 — Punch list / COD snag handover (NERSA §C-5 + REIPPPP COD; URGENT SLA —
+  // COD-blocking items tightest)
+  {
+    key: 'punch_list', wave: 98, table: 'oe_punch_list',
+    title: 'Punch list item', refCol: 'punch_number', titleCol: 'title',
+    quantumCol: 'remediation_cost_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['closed', 'voided', 'withdrawn'],
+    counterpartyCol: 'contractor_name',
+    lanes: { ipp_developer: 'construction', epc_contractor: 'quality' },
+    eventsTable: 'oe_punch_list_events', eventsFk: 'punch_id',
+    actions: [
+      { action: 'assess', label: 'Assess item',
+        path: '/api/ipp/punch-list/chain/:id/assess',
+        roles: ['admin', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Assesses the identified deficiency and confirms its severity and ownership.' },
+      { action: 'assign', label: 'Assign remediation',
+        path: '/api/ipp/punch-list/chain/:id/assign',
+        roles: ['admin', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Assigns the item to the responsible contractor crew; the remediation window opens.' },
+      { action: 'request-reinspection', label: 'Request re-inspection',
+        path: '/api/ipp/punch-list/chain/:id/request-reinspection',
+        roles: ['admin', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Declares the remediation done and calls for re-inspection of the work.' },
+      { action: 'accept', label: 'Accept work',
+        path: '/api/ipp/punch-list/chain/:id/accept',
+        roles: ['admin', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Accepts the re-inspected work; life-safety items cross the regulator queue on acceptance.' },
+      { action: 'close', label: 'Close item', tone: 'primary',
+        path: '/api/ipp/punch-list/chain/:id/close',
+        roles: ['admin', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Closes the punch item; items blocking commercial operation or life-safety cross the regulator queue.' },
+      { action: 'void', label: 'Void item', tone: 'oxide',
+        path: '/api/ipp/punch-list/chain/:id/void',
+        roles: ['admin', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Voids the item as raised in error; handover-blocking and life-safety voids cross the regulator queue.' },
+    ],
+  },
+
+  // W136 — Non-conformance report (ISO 9001 §8.7 + REIPPPP quality; URGENT SLA —
+  // safety-critical tightest)
+  {
+    key: 'ncr', wave: 136, table: 'oe_ipp_ncrs',
+    title: 'Non-conformance report', refCol: 'ncr_number', titleCol: 'project_name',
+    quantumCol: 'rework_cost_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['closed', 'accepted_as_is', 'rejected_escalated', 'voided'],
+    counterpartyCol: null, // no contractual counterparty column in oe_ipp_ncrs DDL (mig 362)
+    // ipp_developer roleData has an 'ncr' feature in risk_quality (no chainKey
+    // wired yet); lane key mirrors that domain.
+    lanes: { ipp_developer: 'risk_quality', epc_contractor: 'quality' },
+    eventsTable: 'oe_ipp_ncr_events', eventsFk: 'ncr_id',
+    actions: [
+      { action: 'acknowledge_ncr', label: 'Acknowledge NCR',
+        path: '/api/ipp-ncr/:id/acknowledge_ncr',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Acknowledges the raised non-conformance; the investigation clock starts.' },
+      { action: 'start_investigation', label: 'Start investigation',
+        path: '/api/ipp-ncr/:id/start_investigation',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Opens the root-cause investigation into the defect.' },
+      { action: 'propose_disposition', label: 'Propose disposition',
+        path: '/api/ipp-ncr/:id/propose_disposition',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Proposes how the defect is dealt with — rework, repair, replace, scrap or accept as-is.' },
+      { action: 'review_disposition', label: 'Review disposition',
+        path: '/api/ipp-ncr/:id/review_disposition',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Reviews the proposed disposition; rework, acceptance as-is or escalation follows.' },
+      { action: 'close_ncr', label: 'Close NCR', tone: 'primary',
+        path: '/api/ipp-ncr/:id/close_ncr',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Closes the NCR once corrective and preventive actions are planned and verified.' },
+      { action: 'reject_escalate', label: 'Reject & escalate', tone: 'oxide',
+        path: '/api/ipp-ncr/:id/reject_escalate',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Rejects the disposition and escalates; every escalated NCR crosses the regulator queue.' },
+    ],
+  },
+
+  // W137 — Method statement / SWMS (OHSA Construction Regs 2014 Reg.7; planning
+  // companion to W64 permit-to-work; URGENT SLA — high-risk work tightest)
+  {
+    key: 'ipp_method_statement', wave: 137, table: 'oe_ipp_method_statements',
+    title: 'Method statement', refCol: 'ms_number', titleCol: 'ms_title',
+    quantumCol: null, // no ZAR-denominated column in oe_ipp_method_statements DDL (mig 364)
+    statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['rejected', 'superseded', 'archived'], // spec HARD_TERMINALS; 'closed' stays visible pending archive_ms
+    counterpartyCol: null, // planning document; no counterparty column in DDL (mig 364)
+    lanes: { ipp_developer: 'safety_grid', epc_contractor: 'quality' },
+    eventsTable: 'oe_ipp_ms_events', eventsFk: 'ms_id',
+    actions: [
+      { action: 'submit_for_review', label: 'Submit for review',
+        path: '/api/ipp-method-statement/:id/submit_for_review',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Submits the drafted method statement for safety review.' },
+      { action: 'complete_risk_assessment', label: 'Complete risk assessment',
+        path: '/api/ipp-method-statement/:id/complete_risk_assessment',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Completes the hazard and risk assessment ahead of approval.' },
+      { action: 'approve_ms', label: 'Approve', tone: 'primary',
+        path: '/api/ipp-method-statement/:id/approve_ms',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Approves the method statement for execution; critical-lift, confined-space and live-electrical work crosses the regulator queue.' },
+      { action: 'conduct_toolbox_talk', label: 'Record toolbox talk',
+        path: '/api/ipp-method-statement/:id/conduct_toolbox_talk',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Records the toolbox briefing of the work crew before work commences.' },
+      { action: 'suspend_work', label: 'Suspend work', tone: 'oxide',
+        path: '/api/ipp-method-statement/:id/suspend_work',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Suspends active work under this statement; cases needing statutory notification cross the regulator queue.' },
+      { action: 'reject_ms', label: 'Reject', tone: 'oxide',
+        path: '/api/ipp-method-statement/:id/reject_ms',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Rejects the method statement; a revised statement must be drafted as a new revision.' },
+    ],
+  },
+
+  // W143 — Daily construction diary (JBCC 6.2 cl.8.13 + NEC4 cl.25; URGENT SLA —
+  // critical-delay days tightest)
+  {
+    key: 'ipp_construction_diary', wave: 143, table: 'oe_ipp_construction_diary',
+    title: 'Site diary', refCol: 'diary_ref', titleCol: 'project_name',
+    quantumCol: null, // no ZAR-denominated column in oe_ipp_construction_diary DDL (mig 386)
+    statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['archived', 'missed', 'voided'],
+    counterpartyCol: 'contractor_signatory', // contractor side signs the diary; IPP/employer is the registry viewer
+    lanes: { ipp_developer: 'construction', epc_contractor: 'site_setup' },
+    eventsTable: null, eventsFk: null, // mig 386 defines no diary events table — Thread hides timeline
+    actions: [
+      { action: 'submit_diary', label: 'Submit diary',
+        path: '/api/ipp-diary/:id/submit_diary',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Submits the day\'s record for employer review; days with a safety incident cross the regulator queue.' },
+      { action: 'note_receipt', label: 'Note receipt',
+        path: '/api/ipp-diary/:id/note_receipt',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Employer notes receipt of the submitted diary.' },
+      { action: 'ie_review', label: 'Independent engineer review',
+        path: '/api/ipp-diary/:id/ie_review',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Independent engineer reviews the diary entries.' },
+      { action: 'countersign', label: 'Countersign', tone: 'primary',
+        path: '/api/ipp-diary/:id/countersign',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Employer countersigns the diary, locking it in as the contractual daily record.' },
+      { action: 'dispute_diary', label: 'Dispute entries', tone: 'oxide',
+        path: '/api/ipp-diary/:id/dispute_diary',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Disputes the diary\'s delay or record entries; critical-delay disputes cross the regulator queue.' },
+      { action: 'archive_diary', label: 'Archive diary',
+        path: '/api/ipp-diary/:id/archive_diary',
+        roles: ['admin', 'ipp_developer', 'support'],
+        cascadeHint: 'Archives the countersigned diary into the permanent project record.' },
     ],
   },
 ];
