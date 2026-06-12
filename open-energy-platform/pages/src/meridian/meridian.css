@@ -24,6 +24,17 @@
 }
 .mer .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
 
+/* React-app additions (not in the mockup):
+   The mockup styled <body> with display:flex;flex-direction:column — a scoped .mer
+   rule can't reach body, so the page's outer wrapper supplies that layout. */
+.mer.horizon { display: flex; flex-direction: column; min-height: 100dvh; }
+.mer.mer-loading, .mer.mer-error {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  text-align: center; color: var(--ink2); padding: 24px;
+}
+.mer .board-empty { padding: 48px 28px; color: var(--ink2); border-top: 1px solid var(--line); }
+.mer .board-empty a { color: var(--petrol-deep); font-weight: 600; }
+
 /* ── Top bar ─────────────────────────────── */
 .mer header {
   height:60px; display:flex; align-items:center; gap:28px; padding:0 28px;

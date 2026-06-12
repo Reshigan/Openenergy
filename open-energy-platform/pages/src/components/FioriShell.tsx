@@ -457,6 +457,8 @@ export function FioriShell({ children }: { children: ReactNode }) {
     '/ipp-lifecycle/', '/trader-risk/', '/lender-suite/', '/offtaker-suite/',
     '/carbon-registry/', '/grid-operator/', '/support/', '/regulator-suite/',
     '/admin-platform/', '/esco/', '/epc/',
+    // Meridian pages bring their own chrome — never show the Fiori sidebar.
+    '/horizon', '/thread/', '/atlas',
   ];
   const isLaunchpadPage = WORKSTATION_PREFIXES.some(p => location.pathname.startsWith(p));
   const [collapsed, setCollapsed] = useState(() => {

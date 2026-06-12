@@ -40,6 +40,9 @@ const BillingRunDetailPage  = React.lazy(() => import('./components/pages/Billin
 const SignaturePreview       = React.lazy(() => import('./components/signature/__preview__/SignaturePreview'));
 const ActivityFeedShell     = React.lazy(() => import('./components/ActivityFeedShell').then(m => ({ default: m.ActivityFeedShell })));
 
+// Meridian redesign — full-canvas pages with their own chrome (no Layout wrapper).
+const HorizonPage           = React.lazy(() => import('./meridian/HorizonPage'));
+
 // Core page components
 const NationalDashboard     = React.lazy(() => import('./components/pages/NationalDashboard').then(m => ({ default: m.NationalDashboard })));
 const ContractDetail        = React.lazy(() => import('./components/pages/ContractDetail').then(m => ({ default: m.ContractDetail })));
@@ -602,6 +605,8 @@ function AppRoutes() {
       <Route path="/cockpit" element={<ProtectedRoute><LaunchRedirect /></ProtectedRoute>} />
       <Route path="/feed" element={<ProtectedRoute><AppShellLayout><ActivityFeedShell /></AppShellLayout></ProtectedRoute>} />
       <Route path="/launch" element={<ProtectedRoute><LaunchRedirect /></ProtectedRoute>} />
+      {/* Meridian Horizon board — supplies its own chrome, so no Layout/AppShell wrapper. */}
+      <Route path="/horizon" element={<ProtectedRoute><HorizonPage /></ProtectedRoute>} />
       <Route path="/launch/:role" element={<ProtectedRoute><AppShellLayout><LaunchpadHomePage /></AppShellLayout></ProtectedRoute>} />
       <Route path="/launch/:role/:domain" element={<ProtectedRoute><AppShellLayout><SubCockpitPage /></AppShellLayout></ProtectedRoute>} />
       {/* TODO: DELETE legacy listing pages — redirected to workstation equivalents */}
