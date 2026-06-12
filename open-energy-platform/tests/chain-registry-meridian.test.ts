@@ -32,6 +32,12 @@ describe('attentionScore', () => {
   it('handles null quantum and null deadline without NaN', () => {
     expect(Number.isFinite(attentionScore(null, null, NOW))).toBe(true);
   });
+  it('clamps hours remaining to a 0.25h floor so near-deadline scores stay finite', () => {
+    const nearDeadline = attentionScore(1_000_000, h(0.1), NOW);
+    const atFloor = attentionScore(1_000_000, h(0.25), NOW);
+    expect(nearDeadline).toBe(atFloor);
+    expect(Number.isFinite(nearDeadline)).toBe(true);
+  });
 });
 
 describe('MERIDIAN_CHAINS registry shape', () => {

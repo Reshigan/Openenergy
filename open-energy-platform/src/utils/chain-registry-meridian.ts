@@ -58,6 +58,9 @@ export function attentionScore(zar: number | null, deadlineIso: string | null, n
   return money / Math.max(hrs, 0.25);
 }
 
+// SECURITY: table/column/status values below are interpolated into SQL identifiers
+// by the horizon/thread routes. They MUST be static literals in this file — never
+// derived from request input.
 export const MERIDIAN_CHAINS: ChainDescriptor[] = [
   // ───────── LENDER (Phase 2 scope) ─────────
   {
