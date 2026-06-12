@@ -18,14 +18,13 @@
 import { Hono } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
-import { getChain, type ChainDescriptor } from '../utils/chain-registry-meridian';
+import { getChain, quantumZar, type ChainDescriptor } from '../utils/chain-registry-meridian';
 
 export function shapeThread(
   chain: ChainDescriptor, row: Record<string, unknown>,
   events: Record<string, unknown>[], role: string,
 ) {
-  const rawZar = chain.quantumCol ? row[chain.quantumCol] : null;
-  const zar = rawZar == null || Number.isNaN(Number(rawZar)) ? null : Number(rawZar);
+  const zar = quantumZar(chain, row);
   return {
     chain: { key: chain.key, wave: chain.wave, title: chain.title },
     case: {

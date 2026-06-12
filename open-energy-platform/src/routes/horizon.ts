@@ -17,7 +17,7 @@ import { Hono } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import {
-  chainsForRole, bucketFor, attentionScore,
+  chainsForRole, bucketFor, attentionScore, quantumZar,
   type ChainDescriptor, type HorizonBucket,
 } from '../utils/chain-registry-meridian';
 
@@ -40,8 +40,7 @@ export function assembleHorizon(data: ChainRows[], role: string, now: number) {
     if (!laneKey) continue;
     for (const r of rows) {
       const deadline = (r[chain.deadlineCol] as string | null) ?? null;
-      const rawZar = chain.quantumCol ? r[chain.quantumCol] : null;
-      const zar = rawZar == null || Number.isNaN(Number(rawZar)) ? null : Number(rawZar);
+      const zar = quantumZar(chain, r);
       const c: HorizonCase = {
         chain: chain.key, wave: chain.wave,
         id: String(r.id ?? r[chain.refCol]),

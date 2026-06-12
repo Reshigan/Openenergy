@@ -63,6 +63,17 @@ export function attentionScore(zar: number | null, deadlineIso: string | null, n
   return money / Math.max(hrs, 0.25);
 }
 
+// Quantum columns are stored in mixed units: most are raw ZAR, but `*_zar_m`
+// columns hold ZAR-millions. Normalise to ZAR here so attentionScore weights
+// a R450m facility as 450_000_000, not 450.
+export function quantumZar(chain: ChainDescriptor, row: Record<string, unknown>): number | null {
+  if (!chain.quantumCol) return null;
+  const raw = row[chain.quantumCol];
+  const n = Number(raw);
+  if (raw == null || Number.isNaN(n)) return null;
+  return chain.quantumCol.endsWith('_zar_m') ? n * 1_000_000 : n;
+}
+
 // SECURITY: table/column/status values below are interpolated into SQL identifiers
 // by the horizon/thread routes. They MUST be static literals in this file — never
 // derived from request input.
@@ -398,6 +409,35 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
   // cycles but has no sla_deadline_at column — countdown lives on expiry_at, not a
   // Meridian-shaped SLA column).
 
+  // W131 — Stage gate DG0–DG4 (Phase-E Wave 1 IPP-PM completeness; INVERTED
+  // tier SLA; SIGNATURE reject_gate from any non-terminal state; gate_deferred
+  // and gate_conditional_pass are SOFT pauses that re-enter the forward chain).
+  // Actions hit the generic POST /:id/:action route — underscore segments.
+  {
+    key: 'stage_gate', wave: 131, table: 'oe_stage_gates',
+    title: 'Stage gate', refCol: 'id', titleCol: 'title',
+    quantumCol: 'capex_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['archived', 'gate_rejected', 'gate_withdrawn'],
+    counterpartyCol: null, // sponsor-side governance record; no contractual counterparty column
+    lanes: { ipp_developer: 'construction' },
+    eventsTable: 'oe_stage_gate_events', eventsFk: 'gate_id',
+    actions: [
+      { action: 'record_decision', label: 'Record decision',
+        path: '/api/stage-gate/:id/record_decision',
+        roles: ['admin', 'ipp_developer'],
+        cascadeHint: 'Records the gate decision; at DG3+ this sets the FID-committed floor and tightens the effective tier downstream.' },
+      { action: 'pass_gate', label: 'Pass gate', tone: 'primary',
+        path: '/api/stage-gate/:id/pass_gate',
+        roles: ['admin', 'ipp_developer'],
+        cascadeHint: 'Passes the gate; downstream notification to the linked W19/W20/W21 bridges follows.' },
+      { action: 'reject_gate', label: 'Reject gate', tone: 'oxide',
+        path: '/api/stage-gate/:id/reject_gate',
+        roles: ['admin', 'ipp_developer'],
+        cascadeHint: 'Kills the project at the gate from any non-terminal state — hard-terminal close, reportable per the tier floor rules.' },
+    ],
+  },
+
   // W19 — Procurement / RFP chain (REIPPPP transparency; tier by capex)
   {
     key: 'procurement_rfp', wave: 19, table: 'oe_procurement_rfps',
@@ -617,8 +657,31 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
   },
 
   // ───────── OFFTAKER ─────────
-  // Skipped: W7 PPA delivery obligations (oe_offtaker_ppa_obligations has a plain
-  // `status` column + `cure_deadline_at` — no chain_status/sla_deadline_at pair).
+
+  // W7 — Monthly PPA delivery obligation (contracted-vs-delivered per period;
+  // cure window on shortfall; take-or-pay computed at cure expiry feeds the
+  // regulator inbox). Non-standard columns: plain `status` + `cure_deadline_at`
+  // (mig 104) — absorbed by the per-entry statusCol/deadlineCol fields.
+  {
+    key: 'ppa_obligation', wave: 7, table: 'oe_offtaker_ppa_obligations',
+    title: 'PPA delivery obligation', refCol: 'id', titleCol: 'period_month',
+    quantumCol: 'take_or_pay_amount_zar', statusCol: 'status',
+    deadlineCol: 'cure_deadline_at',
+    terminal: ['delivered', 'cured', 'take_or_pay'],
+    counterpartyCol: 'counterparty_id',
+    lanes: { offtaker: 'operations_offtaker' },
+    // oe_offtaker_delivery_verification holds meter-reading verifications, not a
+    // transition log — Thread hides the timeline.
+    eventsTable: null, eventsFk: null,
+    // The only obligation-level POST on the route is /:id/cure (reading
+    // verify/reject act on reading ids, not the obligation id).
+    actions: [
+      { action: 'cure', label: 'Accept cure plan', tone: 'primary',
+        path: '/api/offtaker/obligations/:id/cure',
+        roles: ['admin', 'support', 'offtaker'],
+        cascadeHint: 'Accepts cure evidence on a shortfall month; fires the obligation-cured cascade and stands down take-or-pay escalation.' },
+    ],
+  },
 
   // W22 — PPA contract execution (NERSA Section 34; single-party offtaker write)
   {
@@ -1000,9 +1063,37 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
   // compliance) and W75 (connection energization) are registered above in the
   // IPP DEVELOPER section with grid_operator lanes — not repeated here.
   // Skipped: W8 wheeling charges (oe_grid_wheeling_charges has a plain `status`
-  // column + `dispute_deadline_at` — no chain_status/sla_deadline_at pair);
-  // W13 dispatch nominations (oe_dispatch_nominations uses `nomination_status`
-  // + `next_sla_due_at` — fails the registry shape contract).
+  // column + `dispute_deadline_at` — no chain_status/sla_deadline_at pair).
+
+  // W13 — Dispatch nomination (NERSA System Operations Code; BRP nominates,
+  // SO accepts/activates/settles; dispute branch; minute-grade per-stage SLAs).
+  // Non-standard columns: `nomination_status` + `next_sla_due_at` (mig 116) —
+  // absorbed by the per-entry statusCol/deadlineCol fields. No human ref
+  // column; trading_day identifies the case.
+  {
+    key: 'dispatch_nomination', wave: 13, table: 'oe_dispatch_nominations',
+    title: 'Dispatch nomination', refCol: 'id', titleCol: 'trading_day',
+    quantumCol: 'charge_zar', statusCol: 'nomination_status',
+    deadlineCol: 'next_sla_due_at',
+    terminal: ['closed', 'nomination_rejected', 'closed_disputed'],
+    counterpartyCol: 'participant_id',
+    lanes: { grid_operator: 'operations_grid' },
+    eventsTable: 'oe_dispatch_nomination_events', eventsFk: 'nomination_id',
+    actions: [
+      { action: 'accept', label: 'Accept nomination',
+        path: '/api/grid/dispatch-nominations/:id/accept',
+        roles: ['admin', 'support', 'grid', 'grid_operator'],
+        cascadeHint: 'SO accepts the BRP nomination inside the 15-minute ACK window; the pre-gate-closure activation clock starts.' },
+      { action: 'settle', label: 'Settle imbalance', tone: 'primary',
+        path: '/api/grid/dispatch-nominations/:id/settle',
+        roles: ['admin', 'support', 'grid', 'grid_operator'],
+        cascadeHint: 'Settles the imbalance charge against recorded performance; the 15-day dispute window toward close opens.' },
+      { action: 'raise-dispute', label: 'Raise dispute', tone: 'oxide',
+        path: '/api/grid/dispatch-nominations/:id/raise-dispute',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer', 'trader'],
+        cascadeHint: 'Participant disputes the settlement; the 10-day dispute-resolution SLA arms.' },
+    ],
+  },
 
   // W34 — Load curtailment CSC-1 (NERSA §CSC-1; URGENT — higher load-shed stage
   // = tighter SLA; TWO-PARTY split write — SO instructs, customer responds)
@@ -1094,9 +1185,65 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
   // ───────── REGULATOR ─────────
   // Regulator lanes on cross-referred chains (W33/W38/W40/W43/W49/W57/W74 etc.)
   // also appear on entries above/below via the lanes map.
-  // Skipped: W5 regulator inbox (oe_regulator_inbox is a triage inbox with
-  // `ack_status` + `sla_due_at` — not the chain_status/sla_deadline_at model;
-  // its matters land here via the W31 disposition chain instead).
+  // W5 — Regulator inbox triage (materialized crossings from every wave's
+  // fireCascade; ack / escalate / dismiss; escalate can open an enforcement
+  // case). Non-standard columns: `ack_status` + `sla_due_at` (mig 100) —
+  // absorbed by the per-entry statusCol/deadlineCol fields. No event table —
+  // the inbox row is itself the audit record of the crossing.
+  {
+    key: 'regulator_inbox', wave: 5, table: 'oe_regulator_inbox',
+    title: 'Regulator inbox item', refCol: 'id', titleCol: 'title',
+    quantumCol: null, statusCol: 'ack_status',
+    deadlineCol: 'sla_due_at',
+    // escalated stays LIVE: route allows ack from escalated (regulator-inbox.ts:159)
+    terminal: ['acknowledged', 'dismissed'],
+    counterpartyCol: null, // crossing record; the source entity carries the counterparty
+    lanes: { regulator: 'enforcement_regulator' },
+    eventsTable: null, eventsFk: null,
+    actions: [
+      { action: 'ack', label: 'Acknowledge', tone: 'primary',
+        path: '/api/regulator/inbox/:id/ack',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Marks the crossing triaged; fires the surveillance-alert-resolved cascade.' },
+      { action: 'escalate', label: 'Escalate', tone: 'oxide',
+        path: '/api/regulator/inbox/:id/escalate',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Escalates the alert out of triage — optionally opening an enforcement case — and fires the surveillance-escalated cascade.' },
+      { action: 'dismiss', label: 'Dismiss', tone: 'ghost',
+        path: '/api/regulator/inbox/:id/dismiss',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Dismisses a false-positive crossing; the item closes without enforcement follow-up.' },
+    ],
+  },
+
+  // W5 — Compliance notice (issued by the regulator desk against a licensee;
+  // remedy deadline; licensee acknowledges, regulator satisfies/withdraws).
+  // Non-standard columns: plain `status` + `remedy_deadline_at` (mig 100);
+  // no penalty ZAR column on the notice itself.
+  {
+    key: 'compliance_notice', wave: 5, table: 'oe_compliance_notices',
+    title: 'Compliance notice', refCol: 'id', titleCol: 'title',
+    quantumCol: null, statusCol: 'status',
+    deadlineCol: 'remedy_deadline_at',
+    terminal: ['satisfied', 'withdrawn'],
+    counterpartyCol: 'licensee_user_id',
+    lanes: { regulator: 'enforcement_regulator' },
+    eventsTable: null, eventsFk: null,
+    actions: [
+      { action: 'ack', label: 'Acknowledge notice',
+        path: '/api/regulator/inbox/compliance-notices/:id/ack',
+        roles: ['admin', 'support', 'regulator', 'carbon_fund', 'ipp_developer', 'offtaker', 'trader', 'lender'],
+        cascadeHint: 'Licensee acknowledges receipt of the notice; the remedy deadline keeps running.' },
+      { action: 'satisfy', label: 'Mark satisfied', tone: 'primary',
+        path: '/api/regulator/inbox/compliance-notices/:id/satisfy',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Regulator confirms the remedy evidence and closes the notice satisfied.' },
+      { action: 'withdraw', label: 'Withdraw notice', tone: 'oxide',
+        path: '/api/regulator/inbox/compliance-notices/:id/withdraw',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Withdraws a notice issued in error or superseded; closes without enforcement.' },
+    ],
+  },
 
   // W31 — Regulatory disposition (NERSA §10; INVERTED SLA; fed by every prior
   // wave's regulator crossings; single regulator-desk write)
@@ -1330,9 +1477,68 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
   },
 
   // ── SUPPORT (OEM-Support family) ────────────────────────────────────────────
-  // W14 support tickets skipped: support_tickets has no oe_ prefix and uses next_sla_due_at (mig 118)
-  // W15 warranty/RMA claim skipped: oe_warranty_claims uses next_sla_due_at (mig 120)
-  // W16 WO dispatch skipped: om_work_orders has no oe_ prefix (mig 058)
+  // W14 support tickets skipped: support_tickets has no oe_/om_ prefix (mig 118)
+
+  // W15 — OEM warranty / RMA claim (severity-tiered SLA windows per stage;
+  // safety severity crosses the regulator inbox on dispute/denial/breach;
+  // denied is NON-terminal — the claimant may dispute back to review).
+  // Non-standard deadline column: `next_sla_due_at` (mig 120).
+  {
+    key: 'warranty_claim', wave: 15, table: 'oe_warranty_claims',
+    title: 'Warranty claim', refCol: 'claim_number', titleCol: 'subject',
+    quantumCol: 'recovery_zar', statusCol: 'chain_status',
+    deadlineCol: 'next_sla_due_at',
+    // fulfilled stays LIVE: warranty-claim-spec TERMINAL=['closed'], close acts from fulfilled
+    terminal: ['closed'],
+    counterpartyCol: 'oem_name',
+    lanes: { support: 'oem_supply_chain' },
+    eventsTable: 'oe_warranty_claim_events', eventsFk: 'claim_id',
+    actions: [
+      { action: 'submit', label: 'Submit to OEM',
+        path: '/api/esums/warranty-claims/:id/submit',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer', 'om', 'esums'],
+        cascadeHint: 'Submits the triaged claim to the OEM; the severity-tiered acknowledgement SLA arms.' },
+      { action: 'approve', label: 'Approve claim', tone: 'primary',
+        path: '/api/esums/warranty-claims/:id/approve',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer', 'om', 'esums'],
+        cascadeHint: 'Records OEM approval; the fulfilment window toward parts/credit recovery arms.' },
+      { action: 'deny', label: 'Deny claim', tone: 'oxide',
+        path: '/api/esums/warranty-claims/:id/deny',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer', 'om', 'esums'],
+        cascadeHint: 'Records OEM denial; the claimant may dispute, and safety-severity denials cross the regulator inbox.' },
+    ],
+  },
+
+  // W16 — O&M work-order dispatch (12-state field workflow; critical-only
+  // regulator crossings; the one om_-prefixed chain table). Non-standard
+  // columns: `chain_status` (ALTER-added by mig 122; plain `status` is the
+  // legacy pre-chain column) + `sla_deadline` (mig 058). om_wo_events keys its
+  // timeline on occurred_at, not created_at — the Thread route orders by
+  // created_at, so eventsTable stays null until that's reconciled.
+  {
+    key: 'om_work_order', wave: 16, table: 'om_work_orders',
+    title: 'Work order', refCol: 'wo_number', titleCol: 'title',
+    quantumCol: 'total_cost_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline',
+    terminal: ['closed', 'cancelled'],
+    counterpartyCol: null, // assigned_to is a technician id, not a contractual counterparty
+    lanes: { support: 'field_operations' },
+    eventsTable: null, eventsFk: null,
+    actions: [
+      { action: 'assign', label: 'Assign technician',
+        path: '/api/esums/wo-chain/:id/assign',
+        roles: ['admin', 'support', 'om', 'esums', 'esco'],
+        cascadeHint: 'Assigns the work order to a technician; the response SLA clock starts.' },
+      { action: 'verify', label: 'Verify completion', tone: 'primary',
+        path: '/api/esums/wo-chain/:id/verify',
+        roles: ['admin', 'support', 'om', 'esums', 'esco'],
+        cascadeHint: 'Verifies completed work against the reported fault; closure follows.' },
+      { action: 'cancel', label: 'Cancel work order', tone: 'oxide',
+        path: '/api/esums/wo-chain/:id/cancel',
+        roles: ['admin', 'support', 'om', 'esums', 'esco'],
+        cascadeHint: 'Cancels the dispatch; the underlying fault stays open for re-dispatch.' },
+    ],
+  },
 
   // W41 — ITIL problem management (ITIL 4 + ISO 20000-1; SINGLE-PARTY — the
   // support problem-management function owns the whole record)
@@ -1511,8 +1717,65 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
   },
 
   // ── ESUMS / ESCO (O&M operator family) ──────────────────────────────────────
-  // W12 site commissioning skipped: om_sites uses commissioning_status / commissioning_due_at (mig 114)
-  // W71 asset prognostics skipped: oe_asset_prognostics uses status + sla_deadline (mig 232)
+
+  // W12 — Site commissioning onboarding (9-state planned → in_om on om_sites;
+  // participant drives the forward chain; mark-failed/decommission are
+  // regulator-desk writes; commissioning_failed crosses the regulator inbox).
+  // Non-standard columns: `commissioning_status` + `commissioning_due_at`,
+  // added by per-column ALTERs in mig 114.
+  {
+    key: 'site_commissioning', wave: 12, table: 'om_sites',
+    title: 'Site commissioning', refCol: 'id', titleCol: 'name',
+    quantumCol: null, statusCol: 'commissioning_status',
+    deadlineCol: 'commissioning_due_at',
+    terminal: ['in_om', 'commissioning_failed', 'decommissioned'],
+    counterpartyCol: null, // the operator's own site record; no contractual counterparty column
+    lanes: { support: 'field_operations' },
+    eventsTable: 'oe_site_commissioning_events', eventsFk: 'site_id',
+    actions: [
+      { action: 'energise', label: 'Energise site',
+        path: '/api/esums/commissioning/:id/energise',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer'],
+        cascadeHint: 'Records site energisation and flips construction sites operational; the O&M handover window arms.' },
+      { action: 'handover-om', label: 'Hand over to O&M', tone: 'primary',
+        path: '/api/esums/commissioning/:id/handover-om',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer'],
+        cascadeHint: 'Completes onboarding into steady-state O&M; the commissioning chain closes in_om.' },
+      { action: 'mark-failed', label: 'Mark failed', tone: 'oxide',
+        path: '/api/esums/commissioning/:id/mark-failed',
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Records commissioning failure; crosses the regulator inbox — owner and regulator both see the failed onboarding.' },
+    ],
+  },
+
+  // W71 — Predictive asset health & prognostics (anomaly ensemble + RUL +
+  // fault fingerprinting; POST /compute is the predictive brain; revenue-
+  // weighted tiers). Non-standard columns: plain `status` + `sla_deadline`
+  // (mig 232). No human ref column; asset_label identifies the prediction.
+  {
+    key: 'asset_prognostic', wave: 71, table: 'oe_asset_prognostics',
+    title: 'Asset prognostic', refCol: 'id', titleCol: 'asset_label',
+    quantumCol: 'revenue_at_risk_zar', statusCol: 'status',
+    deadlineCol: 'sla_deadline',
+    terminal: ['resolved', 'dismissed', 'auto_suppressed', 'expired', 'confirmed_failure'],
+    counterpartyCol: null, // operator-side prediction record; no contractual counterparty column
+    lanes: { support: 'field_operations' },
+    eventsTable: 'oe_asset_prognostics_events', eventsFk: 'prognostic_id',
+    actions: [
+      { action: 'triage-prediction', label: 'Triage prediction',
+        path: '/api/asset-prognostics/chain/:id/triage-prediction',
+        roles: ['admin', 'support', 'esco'],
+        cascadeHint: 'Confirms the prediction as actionable; the diagnosis SLA arms on the revenue-weighted tier.' },
+      { action: 'raise-work-order', label: 'Raise work order', tone: 'primary',
+        path: '/api/asset-prognostics/chain/:id/raise-work-order',
+        roles: ['admin', 'support', 'esco'],
+        cascadeHint: 'Hands the planned intervention to the W16 work-order dispatch chain as a linked WO.' },
+      { action: 'record-failure', label: 'Record failure', tone: 'oxide',
+        path: '/api/asset-prognostics/chain/:id/record-failure',
+        roles: ['admin', 'support', 'esco'],
+        cascadeHint: 'Records that the predicted failure occurred; crosses the regulator queue for safety/high tiers and closes confirmed_failure.' },
+    ],
+  },
 
   // W24 — Sustained PR underperformance (IEC 61724 performance-ratio chain;
   // MIXED tier SLA; operator-side O&M write). No launchpad feature carries this

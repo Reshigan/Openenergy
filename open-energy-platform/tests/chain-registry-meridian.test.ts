@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  MERIDIAN_CHAINS, bucketFor, attentionScore, type HorizonBucket,
+  MERIDIAN_CHAINS, bucketFor, attentionScore, quantumZar, type HorizonBucket,
 } from '../src/utils/chain-registry-meridian';
 
 const NOW = new Date('2026-06-12T09:40:00Z').getTime();
@@ -46,10 +46,32 @@ describe('attentionScore', () => {
   });
 });
 
+describe('quantumZar', () => {
+  const mk = (quantumCol: string | null) =>
+    ({ ...MERIDIAN_CHAINS[0], quantumCol }) as typeof MERIDIAN_CHAINS[0];
+
+  it('passes raw-ZAR columns through unchanged', () => {
+    expect(quantumZar(mk('notional_zar'), { notional_zar: 850_000 })).toBe(850_000);
+  });
+  it('scales *_zar_m columns to ZAR', () => {
+    expect(quantumZar(mk('facility_limit_zar_m'), { facility_limit_zar_m: 450 })).toBe(450_000_000);
+  });
+  it('returns null for missing column, null value, or non-numeric', () => {
+    expect(quantumZar(mk(null), {})).toBeNull();
+    expect(quantumZar(mk('amount_zar'), { amount_zar: null })).toBeNull();
+    expect(quantumZar(mk('amount_zar'), { amount_zar: 'n/a' })).toBeNull();
+  });
+  it('a R450m *_zar_m facility outranks a R850k raw-ZAR case at the same deadline', () => {
+    const big = attentionScore(quantumZar(mk('facility_limit_zar_m'), { facility_limit_zar_m: 450 }), h(8), NOW);
+    const small = attentionScore(quantumZar(mk('notional_zar'), { notional_zar: 850_000 }), h(8), NOW);
+    expect(big).toBeGreaterThan(small);
+  });
+});
+
 describe('MERIDIAN_CHAINS registry shape', () => {
   it('every entry has table, statusCol default, deadline col, ≥1 lane', () => {
     for (const d of MERIDIAN_CHAINS) {
-      expect(d.table).toMatch(/^oe_/);
+      expect(d.table).toMatch(/^(oe_|om_)/);
       expect(d.key).toMatch(/^[a-z_]+$/);
       expect(Object.keys(d.lanes).length).toBeGreaterThan(0);
       expect(d.terminal.length).toBeGreaterThan(0);
@@ -79,10 +101,17 @@ describe('registry tables exist in migrations', () => {
     // Strip `--` comments first: a comment containing `);` (e.g. "(pp); <=0 means met"
     // in migration 192) would otherwise truncate the CREATE TABLE block early.
     const sqlNoComments = allSql.replace(/--.*$/gm, '');
+    // A column counts as present if it is in the CREATE TABLE block OR added by a
+    // later `ALTER TABLE <table> ADD COLUMN` (e.g. om_sites' commissioning_status /
+    // commissioning_due_at arrive via per-column ALTERs in migration 114).
+    const hasColumn = (table: string, col: string): boolean => {
+      const block = sqlNoComments.split(`CREATE TABLE IF NOT EXISTS ${table}`)[1]?.split(');')[0] ?? '';
+      if (block.includes(col)) return true;
+      return new RegExp(`ALTER TABLE\\s+${table}\\s+ADD COLUMN\\s+${col}\\b`).test(sqlNoComments);
+    };
     for (const d of MERIDIAN_CHAINS) {
-      const m = sqlNoComments.split(`CREATE TABLE IF NOT EXISTS ${d.table}`)[1]?.split(');')[0] ?? '';
-      expect(m, `${d.table} missing ${d.deadlineCol}`).toContain(d.deadlineCol);
-      if (d.quantumCol) expect(m, `${d.table} missing ${d.quantumCol}`).toContain(d.quantumCol);
+      expect(hasColumn(d.table, d.deadlineCol), `${d.table} missing ${d.deadlineCol}`).toBe(true);
+      if (d.quantumCol) expect(hasColumn(d.table, d.quantumCol), `${d.table} missing ${d.quantumCol}`).toBe(true);
     }
   });
 });
