@@ -136,7 +136,7 @@ export function StepUpModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) close(false); }}>
       <div className="bg-white rounded-lg max-w-md w-full">
         <div className="p-4 border-b border-[#dde4ec] flex items-center justify-between">
           <div className="inline-flex items-center gap-2">

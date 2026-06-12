@@ -805,7 +805,7 @@ function Drawer({
           </Section>
 
           {pendingAction && ACTION_FIELDS[pendingAction] && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
               <div className="w-full max-w-md rounded-lg border border-[#d8dde6] bg-white p-5 shadow-2xl">
                 <h3 className="mb-4 text-[13px] font-semibold text-[#0c2a4d]">{ACTION_LABEL[pendingAction]}</h3>
                 <div className="space-y-3">

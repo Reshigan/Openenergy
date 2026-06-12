@@ -139,7 +139,7 @@ function RaiseModal({ onClose, onCreated }: { onClose: () => void; onCreated: ()
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
       <div className="max-w-xl w-full max-h-[90vh] overflow-y-auto" style={{ background: 'oklch(0.99 0.002 80)', borderRadius: '12px', border: '1px solid oklch(0.87 0.006 250)' }}>
         <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
           <div className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>Raise variation order</div>
@@ -230,7 +230,7 @@ function VoDetail({ vo, onClose, onChanged }: { vo: VO; onClose: () => void; onC
   const canDecideOfftaker = isOfftaker && !vo.offtaker_decision && !['rejected', 'approved', 'withdrawn'].includes(vo.status);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-40 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.4)' }}>
       <div className="max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{ background: 'oklch(0.99 0.002 80)', borderRadius: '12px', border: '1px solid oklch(0.87 0.006 250)' }}>
         <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
           <div>

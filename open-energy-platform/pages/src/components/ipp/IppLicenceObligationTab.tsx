@@ -673,7 +673,7 @@ export function IppLicenceObligationTab() {
 
       {/* ─── Detail drawer ─────────────────────────────────────────────────── */}
       {detailItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/30">
+        <div onMouseDown={(e) => { if (e.target === e.currentTarget) setDetailItem(null); }} className="fixed inset-0 z-50 flex items-center justify-end bg-black/30">
           <div className="bg-white h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <div>
@@ -806,7 +806,7 @@ export function IppLicenceObligationTab() {
 
       {/* ─── Action modal ──────────────────────────────────────────────────── */}
       {actionItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div onMouseDown={(e) => { if (e.target === e.currentTarget) setActionItem(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
             <div className="text-sm font-semibold text-[#1e2a38] mb-1">Licence Obligation Action</div>
             <div className="text-xs text-[#6b7685] mb-4">

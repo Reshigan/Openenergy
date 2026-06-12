@@ -128,7 +128,7 @@ function RaiseEnvelopeModal({ template, onClose, onCreated }: { template: Templa
   };
 
   return (
-    <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
       <div className="rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{ background: 'oklch(0.99 0.002 80)' }}>
         <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
           <div>
@@ -285,7 +285,7 @@ function EnvelopeDetail({ envelope, onClose, onChanged }: { envelope: Envelope; 
   try { signatoryList = JSON.parse(envelope.signatories_json); } catch { /* empty */ }
 
   return (
-    <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
       <div className="rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto" style={{ background: 'oklch(0.99 0.002 80)' }}>
         <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'oklch(0.87 0.006 250)' }}>
           <div>

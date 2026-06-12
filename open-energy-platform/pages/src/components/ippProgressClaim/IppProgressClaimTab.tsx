@@ -547,7 +547,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
 
       {/* Detail Modal */}
       {selected && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center overflow-y-auto py-8 px-4">
+        <div onMouseDown={(e) => { if (e.target === e.currentTarget) setSelected(null); }} className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center overflow-y-auto py-8 px-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-6 space-y-5">
             <div className="flex items-center justify-between">
               <div>
@@ -719,7 +719,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
 
       {/* Create Modal */}
       {showCreate && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center overflow-y-auto py-8 px-4">
+        <div onMouseDown={(e) => { if (e.target === e.currentTarget) setShowCreate(false); }} className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center overflow-y-auto py-8 px-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-[#0f1c2e]">New progress claim (PCN)</h2>

@@ -911,7 +911,7 @@ function Drawer({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-stretch justify-end bg-black/40">
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-stretch justify-end bg-black/40">
       <div className="w-full max-w-3xl overflow-y-auto bg-[#f3f5f9] p-4">
         <div className="mb-3 flex items-start justify-between">
           <div>
@@ -1166,7 +1166,7 @@ function ProposeModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px] text-[oklch(0.46_0.16_55)]">
         <div className="mb-3 flex items-start justify-between">
           <div>

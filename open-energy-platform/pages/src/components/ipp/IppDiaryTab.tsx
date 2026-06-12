@@ -734,7 +734,7 @@ function CreateModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-md rounded-lg shadow-2xl" style={{ background: BG1 }}>
         <header className="border-b px-5 py-3 flex items-center justify-between" style={{ borderColor: BORDER, background: BG2 }}>
           <span className="font-semibold text-[13px]" style={{ color: TX1 }}>New diary entry</span>

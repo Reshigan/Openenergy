@@ -161,7 +161,7 @@ function SarDetail({ sar, onClose, onChanged }: { sar: Sar; onClose: () => void;
   };
 
   return (
-    <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
       <div className="rounded-lg max-w-xl w-full max-h-[90vh] overflow-y-auto"
            style={{ background: 'oklch(0.99 0.002 80)' }}>
         <div className="p-4 flex items-center justify-between"

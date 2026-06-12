@@ -306,6 +306,7 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
           aria-modal="true"
           aria-labelledby="confirm-dialog-title"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setConfirmPending(null); }}
         >
           <div
             className="rounded-xl shadow-xl p-6 max-w-sm w-full mx-4"

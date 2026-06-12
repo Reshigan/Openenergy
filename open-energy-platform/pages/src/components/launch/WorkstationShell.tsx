@@ -1010,7 +1010,7 @@ export function ActionModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={motionTransition('snap')}
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
+        onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
         style={{ background: 'oklch(0.17 0.010 250 / 0.6)', backdropFilter: 'blur(2px)' }}
         onClick={onClose}
       >

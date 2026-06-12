@@ -45,7 +45,7 @@ export function ConfirmDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
         <div className={`p-4 rounded-t-xl border-b ${variantStyles[variant]}`}>
           <div className="flex items-center gap-3">

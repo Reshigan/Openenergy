@@ -665,7 +665,7 @@ export function IppReippppReportsTab() {
 
       {/* Action modal */}
       {actionItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div onMouseDown={(e) => { if (e.target === e.currentTarget) setActionItem(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
             <div className="text-sm font-semibold text-[#1e2a38] mb-1">REIPPPP Annual Progress Report Action</div>
             <div className="text-xs text-[#6b7685] mb-4">
