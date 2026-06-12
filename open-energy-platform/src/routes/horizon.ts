@@ -40,7 +40,8 @@ export function assembleHorizon(data: ChainRows[], role: string, now: number) {
     if (!laneKey) continue;
     for (const r of rows) {
       const deadline = (r[chain.deadlineCol] as string | null) ?? null;
-      const zar = chain.quantumCol ? Number(r[chain.quantumCol] ?? 0) || null : null;
+      const rawZar = chain.quantumCol ? r[chain.quantumCol] : null;
+      const zar = rawZar == null || Number.isNaN(Number(rawZar)) ? null : Number(rawZar);
       const c: HorizonCase = {
         chain: chain.key, wave: chain.wave,
         id: String(r.id ?? r[chain.refCol]),
