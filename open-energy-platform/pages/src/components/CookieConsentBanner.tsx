@@ -63,7 +63,7 @@ export function CookieConsentBanner() {
             <p className="text-[12px] text-[#3d4756] mt-1 leading-snug">
               We use necessary cookies for auth and session state, and optional
               cookies for analytics. POPIA gives you the right to refuse non-essential
-              cookies. See <a href="/legal/privacy" className="underline font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>privacy policy</a>.
+              cookies. See <a href="/legal" className="underline font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>privacy policy</a>.
             </p>
             <div className="mt-2 space-y-2 text-[12px]">
               <label className="flex items-center gap-2 text-[#3d4756] min-h-[24px]">

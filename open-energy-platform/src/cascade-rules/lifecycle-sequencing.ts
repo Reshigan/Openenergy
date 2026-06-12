@@ -112,7 +112,7 @@ const RULES: CascadeRule[] = [
           source_entity_type: 'cod_chain', source_entity_id: ctx.entity_id,
           title: `COD certified for ${projectName} — initiate drawdown`,
           body: { project_id: projectId, participant_id: participantId, capacity_mw: dnum(ctx, 'capacity_mw') },
-          cross_option: { action_label: 'Initiate drawdown', target_route: `/lender/workstation?tab=drawdown` },
+          cross_option: { action_label: 'Initiate drawdown', target_route: `/lender-suite/workstation?tab=drawdown` },
           priority: 'high',
         });
       }
@@ -236,7 +236,7 @@ const RULES: CascadeRule[] = [
           source_entity_type: 'covenant_certificate', source_entity_id: ctx.entity_id,
           title: `Covenant breach on ${facilityName} — fund reserve cure`,
           body: { borrower_party_name: borrowerName, breached_covenants: dstr(ctx, 'breached_covenants') },
-          cross_option: { action_label: 'Open reserve account', target_route: `/lender/workstation?tab=reserve_account` },
+          cross_option: { action_label: 'Open reserve account', target_route: `/lender-suite/workstation?tab=reserve_account` },
           priority: 'urgent',
         });
       }
@@ -256,7 +256,7 @@ const RULES: CascadeRule[] = [
         source_entity_type: 'mrv_submissions', source_entity_id: ctx.entity_id,
         title: `Credits verified${qty ? ` (${qty} tCO₂e)` : ''} — retire on behalf of beneficiary`,
         body: { project_id: dstr(ctx, 'project_id'), claimed_reductions_tco2e: qty },
-        cross_option: { action_label: 'Retire credits', target_route: `/carbon/workstation?tab=retirement_chain` },
+        cross_option: { action_label: 'Retire credits', target_route: `/carbon-registry/workstation?tab=retirement_chain` },
         priority: 'normal',
       });
     },
@@ -306,7 +306,7 @@ const RULES: CascadeRule[] = [
         source_entity_type: 'loan_default', source_entity_id: id,
         title: `Event of default — reserve breach on ${facilityName}`,
         body: { borrower_party_name: borrowerName, reserve_account_id: ctx.entity_id, default_id: id },
-        cross_option: { action_label: 'Manage default', target_route: `/lender/workstation?tab=loan_default&id=${id}` },
+        cross_option: { action_label: 'Manage default', target_route: `/lender-suite/workstation?tab=loan_default&id=${id}` },
         priority: 'urgent',
       });
     },

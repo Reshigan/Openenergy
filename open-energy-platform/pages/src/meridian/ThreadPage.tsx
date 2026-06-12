@@ -23,7 +23,8 @@ export default function ThreadPage() {
   const { chainKey = '', id = '' } = useParams();
   const [t, setT] = React.useState<ThreadData | null>(null);
   const [busy, setBusy] = React.useState<string | null>(null);
-  const [err, setErr] = React.useState<string | null>(null);
+  const [err, setErr] = React.useState<string | null>(null);          // load failure — replaces the page
+  const [actErr, setActErr] = React.useState<string | null>(null);    // action failure — thread stays rendered
 
   const load = React.useCallback(() =>
     api.get(`/thread/${chainKey}/${id}`).then(r => setT(r.data.data)).catch(e => setErr(String(e))),
@@ -33,9 +34,15 @@ export default function ThreadPage() {
   async function act(a: ThreadData['actions'][number]) {
     setBusy(a.action);
     // api has baseURL '/api', so strip the prefix the registry paths carry.
-    try { await api.post(a.path.replace('/api', '').replace(':id', id), {}); await load(); }
-    catch (e) { setErr(String(e)); }
-    finally { setBusy(null); }
+    try {
+      await api.post(a.path.replace('/api', '').replace(':id', id), {});
+      setActErr(null); // success clears any previous action error
+      await load();
+    } catch (e: any) {
+      // State machines return 409 with a reason for invalid transitions —
+      // surface the server's {error} text; keep the thread rendered.
+      setActErr(e?.response?.data?.error ?? e?.message ?? 'Action failed');
+    } finally { setBusy(null); }
   }
 
   if (err) {
@@ -99,6 +106,12 @@ export default function ThreadPage() {
 
       {t.actions.length > 0 && (
         <footer className="actbar">
+          {actErr && (
+            <div className="act-error" role="alert">
+              <span>{actErr}</span>
+              <button type="button" className="btn ghost" onClick={() => setActErr(null)}>Dismiss</button>
+            </div>
+          )}
           <div className="cascade-preview">{t.actions[0].cascadeHint}</div>
           <div className="actbar-btns">
             {t.actions.map(a => (

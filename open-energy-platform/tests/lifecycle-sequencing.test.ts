@@ -334,7 +334,7 @@ describe('cross-role prompt deep-link routes', () => {
   it('#1 COD → lender drawdown tab', async () => {
     await ruleById('lifecycle.cod_certified_to_ppa_and_drawdown')
       .run(ctxFor(env, 'cod.cod_certified', 'cod_chain', 'cod_r', { project_name: 'Aurora' }));
-    expect(routeFor('cod_r')).toBe('/lender/workstation?tab=drawdown');
+    expect(routeFor('cod_r')).toBe('/lender-suite/workstation?tab=drawdown');
   });
 
   it('#7 licence issued → regulator levy-assessment tab', async () => {
@@ -348,19 +348,19 @@ describe('cross-role prompt deep-link routes', () => {
     await ruleById('lifecycle.covenant_breach_to_reserve_cure')
       .run(ctxFor(env, 'covenant_certificate.breach_identified', 'covenant_certificate', 'cov_r',
         { borrower_party_name: 'Aurora', facility_name: 'F' }));
-    expect(routeFor('cov_r')).toBe('/lender/workstation?tab=reserve_account');
+    expect(routeFor('cov_r')).toBe('/lender-suite/workstation?tab=reserve_account');
   });
 
   it('#10 MRV issued → carbon retirement_chain tab', async () => {
     await ruleById('lifecycle.mrv_issued_to_retirement_prompt')
       .run(ctxFor(env, 'carbon.mrv_issued', 'mrv_submissions', 'mrv_r', { project_id: 'pr1' }));
-    expect(routeFor('mrv_r')).toBe('/carbon/workstation?tab=retirement_chain');
+    expect(routeFor('mrv_r')).toBe('/carbon-registry/workstation?tab=retirement_chain');
   });
 
   it('#4 reserve breach → lender loan_default tab', async () => {
     await ruleById('lifecycle.reserve_breach_to_loan_default')
       .run(ctxFor(env, 'reserve_account.breached', 'reserve_account', 'rsa_r', { borrower_name: 'Aurora' }));
     const ld = db.prepare(`SELECT id FROM oe_loan_defaults WHERE source_entity_id='rsa_r'`).get() as any;
-    expect(routeFor(ld.id)).toBe(`/lender/workstation?tab=loan_default&id=${ld.id}`);
+    expect(routeFor(ld.id)).toBe(`/lender-suite/workstation?tab=loan_default&id=${ld.id}`);
   });
 });

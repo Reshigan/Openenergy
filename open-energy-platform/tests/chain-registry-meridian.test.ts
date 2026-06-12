@@ -34,6 +34,10 @@ describe('attentionScore', () => {
   it('handles null quantum and null deadline without NaN', () => {
     expect(Number.isFinite(attentionScore(null, null, NOW))).toBe(true);
   });
+  it('a deadline-less case never ties or outranks a breached one, whatever its quantum', () => {
+    expect(attentionScore(1_000_000_000, null, NOW))
+      .toBeLessThan(attentionScore(12_000, h(-1), NOW));
+  });
   it('clamps hours remaining to a 0.25h floor so near-deadline scores stay finite', () => {
     const nearDeadline = attentionScore(1_000_000, h(0.1), NOW);
     const atFloor = attentionScore(1_000_000, h(0.25), NOW);

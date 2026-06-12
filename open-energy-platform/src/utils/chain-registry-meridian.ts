@@ -48,13 +48,18 @@ export function bucketFor(deadlineIso: string | null, now: number): HorizonBucke
 }
 
 // Law 2: log10(ZAR) × 1/hours-remaining. Breach gets an absolute floor above any live score.
+// Deadline-less rows score in a band strictly below BREACH_FLOOR so a dormant
+// case — however large its quantum — can never tie or outrank a real breach.
+const BREACH_FLOOR = 1_000_000;
+
 export function attentionScore(zar: number | null, deadlineIso: string | null, now: number): number {
   const money = Math.log10(Math.max(zar ?? 1, 1) + 1);
-  if (!deadlineIso) return money / 1000;
+  const dormant = Math.min(money / 1000, BREACH_FLOOR - 1); // no deadline: never reaches the breach floor
+  if (!deadlineIso) return dormant;
   const t = Date.parse(deadlineIso);
-  if (Number.isNaN(t)) return money / 1000;
+  if (Number.isNaN(t)) return dormant;
   const hrs = (t - now) / HOUR;
-  if (hrs < 0) return 1_000_000 + money;        // breached: always on top, money breaks ties
+  if (hrs < 0) return BREACH_FLOOR + money;     // breached: always on top, money breaks ties
   return money / Math.max(hrs, 0.25);
 }
 

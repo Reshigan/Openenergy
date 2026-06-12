@@ -546,6 +546,7 @@ function RegisterPage() {
 const VALID_LAUNCH_ROLES = new Set([
   'admin', 'trader', 'ipp_developer', 'ipp', 'grid_operator', 'grid',
   'offtaker', 'lender', 'carbon_fund', 'carbon', 'regulator', 'support',
+  'esco', 'epc_contractor',
 ]);
 
 function LaunchRedirect() {

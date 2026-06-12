@@ -53,9 +53,15 @@ thread.get('/:chainKey/:id', async (c) => {
   const chain = getChain(c.req.param('chainKey'));
   if (!chain) return c.json({ success: false, error: 'unknown chain' }, 404);
   const user = getCurrentUser(c);
-  // Two-sided access: any role with a lane on this chain may VIEW; actions
-  // are filtered by role in shapeThread.
-  if (!(user.role in chain.lanes) && user.role !== 'admin') {
+  // Two-sided access: any role with a lane on this chain may VIEW, and so may
+  // any role named in an action hint (respondent roles — e.g. an offtaker
+  // asked to request_reconsideration on tariff_determination — often hold an
+  // action without a lane and must still open the thread they act in).
+  // Actions are filtered by role in shapeThread.
+  const canView = user.role === 'admin'
+    || user.role in chain.lanes
+    || chain.actions.some(a => a.roles.includes(user.role));
+  if (!canView) {
     return c.json({ success: false, error: 'forbidden' }, 403);
   }
 

@@ -86,9 +86,11 @@ horizon.get('/:role', async (c) => {
   // MERIDIAN_CHAINS literal only; never from request input.
   const stmts = chains.map(d =>
     c.env.DB.prepare(
+      // NULLs-last: SQLite sorts NULLs first on ASC, which would let
+      // deadline-less rows crowd urgent ones out of the 60-row window.
       `SELECT * FROM ${d.table}
        WHERE ${d.statusCol} NOT IN (${d.terminal.map(() => '?').join(',')})
-       ORDER BY ${d.deadlineCol} ASC LIMIT 60`,
+       ORDER BY (${d.deadlineCol} IS NULL), ${d.deadlineCol} ASC LIMIT 60`,
     ).bind(...d.terminal),
   );
   const results = await c.env.DB.batch(stmts);

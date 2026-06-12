@@ -15,7 +15,7 @@ import { fireCascade } from '../utils/cascade';
 
 const L4_BRIDGE = {
   l4_chain: '/api/carbon/esg-disclosure/chain',
-  l4_workstation_tab: '/carbon/workstation#esg_disclosure_chain',
+  l4_workstation_tab: '/carbon-registry/workstation#esg_disclosure_chain',
   deprecation_notice: 'L2 endpoint preserved for backward compat. Use the L4 ESG Disclosure & Assurance chain for new integrations.',
 };
 

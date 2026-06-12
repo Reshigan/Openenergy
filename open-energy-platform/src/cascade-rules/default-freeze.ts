@@ -13,7 +13,7 @@ import { dstr } from '../utils/cascade-data';
 
 const CHAIN_KEY = 'default_freeze';
 const ADMIN_ROUTE = '/admin/platform?tab=trading-controls';
-const LENDER_ROUTE = '/lender/workstation?tab=loan_default_chain';
+const LENDER_ROUTE = '/lender-suite/workstation?tab=loan_default_chain';
 const MATCHED_EVENT = 'loan_default.default_notice_issued';
 
 async function alreadyPushed(ctx: CascadeContext, sourceEntityId: string): Promise<boolean> {

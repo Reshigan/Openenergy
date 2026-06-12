@@ -17,6 +17,15 @@ function useRole(): string {
   return user?.role ?? '';
 }
 
+// Lane-holding roles for the admin role-switcher: unique roles across all chain
+// lanes in src/utils/chain-registry-meridian.ts (backend), sorted. Admin has no
+// lanes of its own; the backend lets admin GET /api/horizon/<any role>.
+// Keep in sync with the registry (same convention as Bucket in ./lib.ts).
+const LANE_ROLES = [
+  'carbon_fund', 'epc_contractor', 'esco', 'grid_operator', 'ipp_developer',
+  'lender', 'offtaker', 'regulator', 'support', 'trader',
+];
+
 // Bucket sub-ticks, computed against "now" like the mockup's static examples.
 function bucketTick(key: Bucket, now: Date): string {
   const fmtT = (d: Date) => d.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
@@ -34,20 +43,26 @@ function bucketTick(key: Bucket, now: Date): string {
 export default function HorizonPage() {
   const role = useRole();
   const { user } = useAuth();
-  const cfg = getRoleConfig(role);
+  // Admin holds no Meridian lanes — it views any role's board via the backend
+  // passthrough. Non-admin roles always view their own board (boardRole === role).
+  const isAdmin = role === 'admin';
+  const [adminRole, setAdminRole] = React.useState(LANE_ROLES[0]);
+  const boardRole = isAdmin ? adminRole : role;
+  const cfg = getRoleConfig(boardRole);
   const [data, setData] = React.useState<HorizonData | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
+  const [actErr, setActErr] = React.useState<string | null>(null);
   const nav = useNavigate();
 
   React.useEffect(() => {
-    if (!role) return undefined;
+    if (!boardRole) return undefined;
     let live = true;
-    fetchHorizon(role).then(d => { if (live) setData(d); }).catch(e => { if (live) setErr(String(e)); });
+    fetchHorizon(boardRole).then(d => { if (live) setData(d); }).catch(e => { if (live) setErr(String(e)); });
     const t = setInterval(() => {
-      fetchHorizon(role).then(d => { if (live) setData(d); }).catch(() => { /* keep last good board */ });
+      fetchHorizon(boardRole).then(d => { if (live) setData(d); }).catch(() => { /* keep last good board */ });
     }, 60_000);
     return () => { live = false; clearInterval(t); };
-  }, [role]);
+  }, [boardRole]);
 
   const laneLabel = (key: string) =>
     cfg?.domains.find(d => d.key === key)?.label ?? key.replace(/_/g, ' ');
@@ -57,9 +72,28 @@ export default function HorizonPage() {
     // api has baseURL '/api', so strip the prefix the registry paths carry.
     try {
       await api.post(path.replace('/api', '').replace(':id', c.id), {});
-    } catch { /* server rejected the transition; the refresh below shows authoritative state */ }
-    try { setData(await fetchHorizon(role)); } catch { /* keep last good board */ }
+      setActErr(null);
+    } catch (e: any) {
+      // State machines return 409 with a reason for invalid transitions —
+      // surface it; the refresh below still shows authoritative state.
+      setActErr(e?.response?.data?.error ?? e?.message ?? 'Action failed');
+    }
+    try { setData(await fetchHorizon(boardRole)); } catch { /* keep last good board */ }
   }
+
+  // Admin-only: compact switcher across the lane-holding roles' boards.
+  const roleSwitcher = isAdmin && (
+    <div className="role-switch" role="group" aria-label="View board as role">
+      {LANE_ROLES.map(r => (
+        <button key={r} type="button"
+                className={r === adminRole ? 'btn pri' : 'btn ghost'}
+                aria-pressed={r === adminRole}
+                onClick={() => { if (r !== adminRole) { setAdminRole(r); setData(null); setActErr(null); } }}>
+          {getRoleConfig(r)?.label ?? r.replace(/_/g, ' ')}
+        </button>
+      ))}
+    </div>
+  );
 
   if (err) {
     return (
@@ -69,7 +103,14 @@ export default function HorizonPage() {
       </div>
     );
   }
-  if (!data) return <div className="mer mer-loading" aria-busy="true">Computing horizon…</div>;
+  if (!data) {
+    return (
+      <div className="mer horizon">
+        {roleSwitcher}
+        <div className="mer-loading" aria-busy="true">Computing horizon…</div>
+      </div>
+    );
+  }
 
   const now = new Date();
   const clock = `${now.toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'short' })} · ${now.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })} SAST`;
@@ -81,7 +122,7 @@ export default function HorizonPage() {
       <header>
         <div className="wordmark">MERIDIAN</div>
         <div className="ctx">
-          <b>{cfg?.label ?? role}</b>
+          <b>{cfg?.label ?? boardRole}</b>
           <span>{data.counts.total} live · {data.counts.breached} breached</span>
         </div>
         <div className="spacer" />
@@ -89,6 +130,8 @@ export default function HorizonPage() {
         <Link className="kbd-hint" to="/atlas">Atlas — search anything <kbd>⌘K</kbd></Link>
         <div className="avatar">{initials}</div>
       </header>
+
+      {roleSwitcher}
 
       <div className="main">
         <section className="board" aria-label="Live cases by time to consequence">
@@ -133,6 +176,12 @@ export default function HorizonPage() {
             <h2>DUTY STREAM</h2>
             <p>Computed {now.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })} — ranked by ZAR at risk × time remaining</p>
           </div>
+          {actErr && (
+            <div className="act-error" role="alert">
+              <span>{actErr}</span>
+              <button type="button" className="btn ghost" onClick={() => setActErr(null)}>Dismiss</button>
+            </div>
+          )}
           <div className="duty-list">
             {data.duty.map((c, i) => (
               <div key={c.id} className={c.bucket === 'breached' ? 'duty ox' : 'duty'}>

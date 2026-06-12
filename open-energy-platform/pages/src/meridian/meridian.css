@@ -28,9 +28,20 @@
    The mockup styled <body> with display:flex;flex-direction:column — a scoped .mer
    rule can't reach body, so the page's outer wrapper supplies that layout. */
 .mer.horizon { display: flex; flex-direction: column; min-height: 100dvh; }
-.mer.mer-loading, .mer.mer-error {
+.mer.mer-loading, .mer.mer-error, .mer .mer-loading {
   display: flex; align-items: center; justify-content: center; gap: 12px;
   text-align: center; color: var(--ink2); padding: 24px;
+}
+/* Admin-only compact role switcher (admin holds no lanes; views any role's board). */
+.mer .role-switch {
+  display:flex; flex-wrap:wrap; gap:8px; padding:10px 28px;
+  border-bottom:1px solid var(--line); background:var(--raised); flex-shrink:0;
+}
+/* Inline (non-fatal) action error — board/thread stays rendered behind it. */
+.mer .act-error {
+  display:flex; align-items:center; gap:10px; padding:8px 12px; font-size:12px;
+  color:var(--oxide); background:var(--oxide-tint); border:1px solid var(--oxide);
+  border-radius:6px; margin-bottom:8px;
 }
 .mer .board-empty { padding: 48px 28px; color: var(--ink2); border-top: 1px solid var(--line); }
 .mer .board-empty a { color: var(--petrol-deep); font-weight: 600; }
