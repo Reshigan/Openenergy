@@ -351,6 +351,7 @@ import isdaAgreementChainRoutes from './isda-agreement-chain';
 import dataSubjectRequestChainRoutes from './data-subject-request-chain';
 import interconnectorScheduleChainRoutes from './interconnector-schedule-chain';
 import nationalDashboardRoutes from './national-dashboard';
+import horizonRoutes from './horizon';
 
 // Hono's authMiddleware is applied per-module inside each route file using
 // r.use('*', authMiddleware). This function only mounts the paths.
@@ -725,6 +726,8 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   app.route('/api/grid/interconnector-schedule', interconnectorScheduleChainRoutes);
   // W7 National Dashboard — operator-only platform-wide aggregate view.
   app.route('/api/national-dashboard', nationalDashboardRoutes);
+  // Meridian — computed per-role workspace aggregator over chain registry.
+  app.route('/api/horizon', horizonRoutes);
   // platformFeaturesRoutes is the catch-all for /api — it must remain LAST.
   app.route('/api', platformFeaturesRoutes);
 }
