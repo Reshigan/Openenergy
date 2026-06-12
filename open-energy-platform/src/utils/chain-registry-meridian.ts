@@ -72,7 +72,9 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     terminal: ['compliant', 'waiver_granted', 'cured', 'accelerated'],
     counterpartyCol: 'borrower_party_name',
-    lanes: { lender: 'monitoring', regulator: 'enforcement_regulator' },
+    // ipp_developer lane: borrower is a write party on the route
+    // (BORROWER_WRITE_ROLES = {admin, support, ipp_developer} gates submit-certificate / request-waiver).
+    lanes: { lender: 'monitoring', ipp_developer: 'finance', regulator: 'enforcement_regulator' },
     eventsTable: 'oe_covenant_certificate_events', eventsFk: 'certificate_id',
     actions: [
       { action: 'begin-review', label: 'Begin review',
@@ -380,6 +382,232 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         path: '/api/trade-allocation/chain/:id/flag-break',
         roles: ['admin', 'trader'],
         cascadeHint: 'Flags an allocation/confirmation/settlement break for review; crosses regulator (FSCA/CSD) inbox for every notional tier (W76 signature).' },
+    ],
+  },
+
+  // ───────── IPP DEVELOPER ─────────
+  // Skipped: W1 IPP project management (project_activities/project_schedule_state are
+  // CPM scheduling tables, ipp_projects has no chain_status/sla_deadline_at — no single
+  // case-list table with a status + sla_deadline_at pair);
+  // W10 bond/insurance expiry (ipp_performance_bonds tracks status + expiry_status
+  // cycles but has no sla_deadline_at column — countdown lives on expiry_at, not a
+  // Meridian-shaped SLA column).
+
+  // W19 — Procurement / RFP chain (REIPPPP transparency; tier by capex)
+  {
+    key: 'procurement_rfp', wave: 19, table: 'oe_procurement_rfps',
+    title: 'Procurement RFP', refCol: 'rfp_number', titleCol: 'title',
+    quantumCol: 'capex_estimate_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['delivered', 'rejected', 'cancelled'],
+    counterpartyCol: 'award_name',
+    lanes: { ipp_developer: 'construction' },
+    eventsTable: 'oe_procurement_chain_events', eventsFk: 'rfp_id',
+    actions: [
+      { action: 'award', label: 'Award RFP', tone: 'primary',
+        path: '/api/ipp/procurement-chain/:id/award',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Awards the RFP to the selected bidder; fires award notification to vendor and (for high-capex tier) REIPPPP transparency crossing.' },
+      { action: 'sign-contract', label: 'Sign contract',
+        path: '/api/ipp/procurement-chain/:id/sign-contract',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Executes the contract with the awarded vendor and arms the delivery-due SLA window.' },
+      { action: 'cancel', label: 'Cancel RFP', tone: 'oxide',
+        path: '/api/ipp/procurement-chain/:id/cancel',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Cancels the procurement; notifies all bidders and closes the case adversely.' },
+    ],
+  },
+
+  // W20 — Construction → COD certification (NERSA §C-5 + DMRE; IE certification gate)
+  {
+    key: 'cod_chain', wave: 20, table: 'oe_cod_chain',
+    title: 'Construction / COD', refCol: 'cod_number', titleCol: 'project_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['cod_certified', 'cancelled'],
+    counterpartyCol: 'epc_contractor_name',
+    lanes: { ipp_developer: 'construction' },
+    eventsTable: 'oe_cod_chain_events', eventsFk: 'cod_id',
+    actions: [
+      { action: 'grid-synchronize', label: 'Grid synchronize',
+        path: '/api/ipp/cod-chain/:id/grid-synchronize',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Records first grid synchronisation; arms the reliability-run window toward COD certification.' },
+      { action: 'certify-cod', label: 'Certify COD', tone: 'primary',
+        path: '/api/ipp/cod-chain/:id/certify-cod',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'IE-certified commercial operation date; fires NERSA SCADA registration crossing and unlocks PPA billing start.' },
+      { action: 'cancel', label: 'Cancel project', tone: 'oxide',
+        path: '/api/ipp/cod-chain/:id/cancel',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Abandons the construction programme before COD; fires cancellation cascade to lenders and offtaker.' },
+    ],
+  },
+
+  // W23 — Insurance claim (FSCA Section 38; MIXED tier SLA)
+  {
+    key: 'insurance_claim', wave: 23, table: 'oe_insurance_claim_chain',
+    title: 'Insurance claim', refCol: 'claim_number', titleCol: 'asset_description',
+    quantumCol: 'claim_value_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['settled', 'declined', 'closed', 'withdrawn'],
+    counterpartyCol: 'insurer_name',
+    lanes: { ipp_developer: 'finance' },
+    eventsTable: 'oe_insurance_claim_chain_events', eventsFk: 'claim_id',
+    actions: [
+      { action: 'agree-quantum', label: 'Agree quantum', tone: 'primary',
+        path: '/api/insurance/claim-chain/:id/agree-quantum',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer', 'wind', 'oem'],
+        cascadeHint: 'Accepts the loss-adjuster quantum; opens the settlement payment window with the insurer.' },
+      { action: 'dispute', label: 'Dispute quantum', tone: 'oxide',
+        path: '/api/insurance/claim-chain/:id/dispute',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer', 'wind', 'oem'],
+        cascadeHint: 'Disputes the proposed quantum; for catastrophic tier the dispute crosses the FSCA Section 38 large-loss inbox.' },
+      { action: 'settle', label: 'Record settlement',
+        path: '/api/insurance/claim-chain/:id/settle',
+        roles: ['admin', 'support', 'ipp', 'ipp_developer', 'wind', 'oem'],
+        cascadeHint: 'Records the insurer payout against the agreed quantum and notifies lender security agents of proceeds.' },
+    ],
+  },
+
+  // W27 — REIPPPP ED commitment (IPPO/DMRE/DTI; cure plan + penalty branch)
+  {
+    key: 'ed_commitment', wave: 27, table: 'oe_ed_commitments',
+    title: 'ED commitment', refCol: 'case_number', titleCol: 'commitment_label',
+    quantumCol: 'penalty_amount_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['closed'],
+    counterpartyCol: 'regulator_authority',
+    lanes: { ipp_developer: 'regulatory_risk' },
+    eventsTable: 'oe_ed_commitment_events', eventsFk: 'commitment_id',
+    actions: [
+      { action: 'submit-cure-plan', label: 'Submit cure plan', tone: 'primary',
+        path: '/api/ed/commitment-chain/:id/submit-cure-plan',
+        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        cascadeHint: 'Files the IPPO cure plan for the under-performing commitment and starts the cure-execution clock.' },
+      { action: 'verify-compliance', label: 'Verify compliant',
+        path: '/api/ed/commitment-chain/:id/verify-compliance',
+        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        cascadeHint: 'Confirms the commitment is back within the variance threshold after cure execution.' },
+      { action: 'issue-penalty', label: 'Issue penalty', tone: 'oxide',
+        path: '/api/ed/commitment-chain/:id/issue-penalty',
+        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        cascadeHint: 'Records the DMRE penalty for the failed cure; crosses the regulator inbox and may escalate to DTI.' },
+    ],
+  },
+
+  // W28 — Grid Connection Agreement / UNGCA (NERSA Grid Code C-1; TWO-PARTY IPP ↔ SO)
+  {
+    key: 'gca_connection', wave: 28, table: 'oe_gca_connections',
+    title: 'Grid connection agreement', refCol: 'case_number', titleCol: 'project_name',
+    quantumCol: 'cost_estimate_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['in_service', 'rejected', 'withdrawn'],
+    counterpartyCol: 'network_party',
+    lanes: { ipp_developer: 'safety_grid', grid_operator: 'connections' },
+    eventsTable: 'oe_gca_events', eventsFk: 'gca_id',
+    actions: [
+      { action: 'accept-cost', label: 'Accept cost estimate', tone: 'primary',
+        path: '/api/gca/connection-chain/:id/accept-cost',
+        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        cascadeHint: 'IPP accepts the connection cost estimate; SO proceeds to draft the UNGCA.' },
+      { action: 'execute-agreement', label: 'Execute agreement',
+        path: '/api/gca/connection-chain/:id/execute-agreement',
+        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        cascadeHint: 'IPP executes the UNGCA; unlocks connection construction and feeds the W20 COD energisation gate.' },
+      { action: 'energise', label: 'Energise connection',
+        path: '/api/gca/connection-chain/:id/energise',
+        roles: ['admin', 'support', 'compliance', 'grid_operator'],
+        cascadeHint: 'SO energises the point of connection after construction; arms commissioning toward in-service.' },
+      { action: 'reject', label: 'Reject application', tone: 'oxide',
+        path: '/api/gca/connection-chain/:id/reject',
+        roles: ['admin', 'support', 'compliance', 'grid_operator'],
+        cascadeHint: 'SO denies the connection on grid-stability or load grounds; closes the case and notifies NERSA for transmission tier.' },
+    ],
+  },
+
+  // W18 — Planned outage (NERSA Grid Code; TWO-PARTY — IPP submits, grid approves/runs)
+  {
+    key: 'planned_outage', wave: 18, table: 'oe_planned_outages',
+    title: 'Planned outage', refCol: 'outage_number', titleCol: 'asset_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['rejected', 'closed', 'cancelled'],
+    counterpartyCol: 'participant_id',
+    lanes: { ipp_developer: 'safety_grid', grid_operator: 'operations_grid' },
+    eventsTable: 'oe_planned_outage_events', eventsFk: 'outage_id',
+    actions: [
+      { action: 'submit', label: 'Submit for review', tone: 'primary',
+        path: '/api/grid/planned-outages/:id/submit',
+        roles: ['admin', 'grid', 'grid_operator', 'ipp', 'ipp_developer', 'wind'],
+        cascadeHint: 'Submits the outage request to the System Operator and starts the severity-tiered review SLA.' },
+      { action: 'approve', label: 'Approve outage',
+        path: '/api/grid/planned-outages/:id/approve',
+        roles: ['admin', 'grid', 'grid_operator'],
+        cascadeHint: 'SO approves the maintenance window against the N-1 contingency assessment; arms the notification step.' },
+      { action: 'reject', label: 'Reject outage', tone: 'oxide',
+        path: '/api/grid/planned-outages/:id/reject',
+        roles: ['admin', 'grid', 'grid_operator'],
+        cascadeHint: 'SO rejects the outage window on system-security grounds; closes the request and notifies the submitting IPP.' },
+    ],
+  },
+
+  // W67 — Grid code compliance / non-conformance (NRS 048; TWO-PARTY split write —
+  // SO drives the machinery, facility submits CAP + remediates)
+  {
+    key: 'grid_code_compliance', wave: 67, table: 'oe_grid_code_compliance',
+    title: 'Grid code compliance', refCol: 'case_number', titleCol: 'facility_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['compliant_closed', 'disconnection_issued', 'withdrawn'],
+    counterpartyCol: 'facility_party_name',
+    lanes: { ipp_developer: 'safety_grid', grid_operator: 'operations_grid' },
+    eventsTable: 'oe_grid_code_compliance_events', eventsFk: 'compliance_id',
+    actions: [
+      { action: 'submit-cap', label: 'Submit corrective-action plan', tone: 'primary',
+        path: '/api/grid-code-compliance/chain/:id/submit-cap',
+        roles: ['admin', 'ipp_developer'],
+        cascadeHint: 'Facility files the corrective-action plan against the non-conformance; SO review clock starts.' },
+      { action: 'approve-cap', label: 'Approve CAP',
+        path: '/api/grid-code-compliance/chain/:id/approve-cap',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'SO approves the corrective-action plan; facility proceeds to remediation under the tier SLA.' },
+      { action: 'escalate-disconnection', label: 'Escalate to disconnection', tone: 'oxide',
+        path: '/api/grid-code-compliance/chain/:id/escalate-disconnection',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'Disconnects the non-conforming licensed facility; crosses regulator inbox for every tier (W67 signature).' },
+    ],
+  },
+
+  // W75 — Connection energization & commissioning (post-W28 physical go-live;
+  // TWO-PARTY split write — facility commissions, SO witnesses + authorizes)
+  {
+    key: 'connection_energization', wave: 75, table: 'oe_connection_energization',
+    title: 'Connection energization', refCol: 'energization_number', titleCol: 'facility_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['commercial_operation', 'connection_withdrawn'],
+    counterpartyCol: 'network_operator',
+    lanes: { ipp_developer: 'safety_grid', grid_operator: 'connections' },
+    eventsTable: 'oe_connection_energization_events', eventsFk: 'energization_id',
+    actions: [
+      { action: 'submit-program', label: 'Submit commissioning programme',
+        path: '/api/connection-energization/chain/:id/submit-program',
+        roles: ['admin', 'ipp_developer'],
+        cascadeHint: 'Facility files the witnessed hold-point commissioning programme for SO review.' },
+      { action: 'authorize-energization', label: 'Authorize energization',
+        path: '/api/connection-energization/chain/:id/authorize-energization',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'SO authorizes first energization after pre-energization inspection; crosses regulator inbox for transmission and bulk tiers.' },
+      { action: 'issue-cod', label: 'Issue COD', tone: 'primary',
+        path: '/api/connection-energization/chain/:id/issue-cod',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'SO issues the commercial-operation certificate; crosses regulator inbox for every tier (W75 signature — NERSA generation register).' },
+      { action: 'suspend-commissioning', label: 'Suspend commissioning', tone: 'oxide',
+        path: '/api/connection-energization/chain/:id/suspend-commissioning',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'SO suspends the commissioning programme on safety or protection grounds; crosses regulator inbox for transmission and bulk tiers.' },
     ],
   },
 
