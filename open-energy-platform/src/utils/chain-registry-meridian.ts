@@ -611,6 +611,385 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     ],
   },
 
+  // ───────── OFFTAKER ─────────
+  // Skipped: W7 PPA delivery obligations (oe_offtaker_ppa_obligations has a plain
+  // `status` column + `cure_deadline_at` — no chain_status/sla_deadline_at pair).
+
+  // W22 — PPA contract execution (NERSA Section 34; single-party offtaker write)
+  {
+    key: 'ppa_contract_chain', wave: 22, table: 'oe_ppa_contract_chain',
+    title: 'PPA contract', refCol: 'ppa_number', titleCol: 'project_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['terminated', 'expired', 'cancelled'],
+    // DDL has no seller-name column (participant_id is an id; offtaker_name is the
+    // viewing party itself) — project_name in titleCol already identifies the deal.
+    counterpartyCol: null,
+    lanes: { offtaker: 'contracts' },
+    eventsTable: 'oe_ppa_contract_chain_events', eventsFk: 'ppa_id',
+    actions: [
+      { action: 'execute', label: 'Execute PPA', tone: 'primary',
+        path: '/api/offtaker/ppa-contract-chain/:id/execute',
+        roles: ['admin', 'support', 'offtaker'],
+        cascadeHint: 'Executes the signed PPA into force; fires the NERSA Section 34 registration crossing and arms the commencement window.' },
+      { action: 'commence', label: 'Commence delivery',
+        path: '/api/offtaker/ppa-contract-chain/:id/commence',
+        roles: ['admin', 'support', 'offtaker'],
+        cascadeHint: 'Marks first contracted delivery under the executed PPA; opens monthly contracted-vs-delivered billing (feeds W32).' },
+      { action: 'terminate', label: 'Terminate PPA', tone: 'oxide',
+        path: '/api/offtaker/ppa-contract-chain/:id/terminate',
+        roles: ['admin', 'support', 'offtaker'],
+        cascadeHint: 'Terminates the PPA for unresolved breach; closes the contract adversely and notifies seller and lenders.' },
+    ],
+  },
+
+  // W32 — Take-or-pay annual true-up (IFRS 16 + NERSA s34; TWO-PARTY — offtaker
+  // drives statement/quantum/settle, IPP submits evidence + accepts/disputes)
+  {
+    key: 'ppa_take_or_pay', wave: 32, table: 'oe_top_cases',
+    title: 'Take-or-pay case', refCol: 'case_number', titleCol: 'ipp_party_name',
+    quantumCol: 'top_amount_proposed', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['settled', 'disputed', 'waived'],
+    counterpartyCol: 'ipp_party_name',
+    lanes: { offtaker: 'operations_offtaker', ipp_developer: 'finance' },
+    eventsTable: 'oe_top_events', eventsFk: 'top_id',
+    actions: [
+      { action: 'propose-quantum', label: 'Propose quantum',
+        path: '/api/take-or-pay/chain/:id/propose-quantum',
+        roles: ['admin', 'support', 'offtaker'],
+        cascadeHint: 'Offtaker proposes the take-or-pay quantum from the contracted-vs-delivered statement; IPP acceptance clock starts.' },
+      { action: 'accept-quantum', label: 'Accept quantum',
+        path: '/api/take-or-pay/chain/:id/accept-quantum',
+        roles: ['admin', 'support', 'ipp_developer'],
+        cascadeHint: 'IPP accepts the proposed take-or-pay quantum; opens the settlement payment window.' },
+      { action: 'settle', label: 'Settle', tone: 'primary',
+        path: '/api/take-or-pay/chain/:id/settle',
+        roles: ['admin', 'support', 'offtaker'],
+        cascadeHint: 'Records take-or-pay settlement against the agreed quantum and closes the contract-year true-up.' },
+      { action: 'dispute', label: 'Dispute', tone: 'oxide',
+        path: '/api/take-or-pay/chain/:id/dispute',
+        roles: ['admin', 'support', 'ipp_developer'],
+        cascadeHint: 'IPP disputes the proposed quantum; the case terminates disputed and crosses the regulator inbox.' },
+    ],
+  },
+
+  // W39 — PPA tariff indexation / CPI repricing (NERSA ERA §4 + IFRS 16; TWO-PARTY —
+  // seller publishes index + issues notice + applies, offtaker reviews/agrees/disputes)
+  {
+    key: 'tariff_indexation', wave: 39, table: 'oe_tariff_indexation',
+    title: 'Tariff indexation', refCol: 'indexation_number', titleCol: 'project_name',
+    quantumCol: 'annual_contract_value_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['applied', 'arbitrated', 'withdrawn'],
+    counterpartyCol: 'seller_party_name',
+    lanes: { offtaker: 'contracts', ipp_developer: 'finance' },
+    eventsTable: 'oe_tariff_indexation_events', eventsFk: 'indexation_id',
+    actions: [
+      { action: 'agree-tariff', label: 'Agree tariff', tone: 'primary',
+        path: '/api/tariff-indexation/chain/:id/agree-tariff',
+        roles: ['admin', 'support', 'offtaker'],
+        cascadeHint: 'Offtaker agrees the escalated tariff from the published index; seller proceeds to apply the new rate.' },
+      { action: 'apply-tariff', label: 'Apply tariff',
+        path: '/api/tariff-indexation/chain/:id/apply-tariff',
+        roles: ['admin', 'support', 'ipp_developer'],
+        cascadeHint: 'Seller applies the agreed tariff to billing from the effective date; closes the annual repricing cycle.' },
+      { action: 'raise-dispute', label: 'Raise dispute', tone: 'oxide',
+        path: '/api/tariff-indexation/chain/:id/raise-dispute',
+        roles: ['admin', 'support', 'offtaker'],
+        cascadeHint: 'Offtaker disputes the escalation calculation; opens the recalculation loop and may refer to arbitration.' },
+    ],
+  },
+
+  // W46 — Curtailment / deemed-energy compensation claim (TWO-PARTY — seller IPP
+  // submits + disputes, buyer offtaker classifies/validates/settles)
+  {
+    key: 'curtailment_claim', wave: 46, table: 'oe_curtailment_claims',
+    title: 'Curtailment claim', refCol: 'claim_number', titleCol: 'facility_name',
+    quantumCol: 'claimed_amount', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['compensation_settled', 'arbitrated', 'non_compensable', 'withdrawn'],
+    counterpartyCol: 'seller_party_name',
+    lanes: { offtaker: 'operations_offtaker', ipp_developer: 'finance' },
+    eventsTable: 'oe_curtailment_claims_events', eventsFk: 'claim_id',
+    actions: [
+      { action: 'submit-claim', label: 'Submit claim', tone: 'primary',
+        path: '/api/curtailment-claim/chain/:id/submit-claim',
+        roles: ['admin', 'support', 'ipp_developer'],
+        cascadeHint: 'Seller files the deemed-energy claim for the curtailment event; buyer classification clock starts.' },
+      { action: 'confirm-compensable', label: 'Confirm compensable',
+        path: '/api/curtailment-claim/chain/:id/confirm-compensable',
+        roles: ['admin', 'support', 'offtaker'],
+        cascadeHint: 'Buyer classifies the curtailment as compensable under the PPA; advances to quantum validation.' },
+      { action: 'settle-compensation', label: 'Settle compensation', tone: 'primary',
+        path: '/api/curtailment-claim/chain/:id/settle-compensation',
+        roles: ['admin', 'support', 'offtaker'],
+        cascadeHint: 'Pays the agreed deemed-energy quantum at the W39-indexed tariff and closes the claim.' },
+      { action: 'dispute', label: 'Dispute', tone: 'oxide',
+        path: '/api/curtailment-claim/chain/:id/dispute',
+        roles: ['admin', 'support', 'ipp_developer'],
+        cascadeHint: 'Seller disputes the classification or quantum; opens recalculation and may refer to arbitration (crosses regulator for every tier).' },
+    ],
+  },
+
+  // W54 — PPA payment security / credit-support instrument (TWO-PARTY — offtaker
+  // submits the instrument, seller verifies/activates/draws/forfeits/releases)
+  {
+    key: 'ppa_payment_security', wave: 54, table: 'oe_ppa_payment_securities',
+    title: 'Payment security', refCol: 'security_number', titleCol: 'instrument_name',
+    quantumCol: 'secured_amount_zar_m', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['released', 'forfeited', 'rejected'],
+    counterpartyCol: 'seller_party_name',
+    lanes: { offtaker: 'security_offtaker', ipp_developer: 'finance' },
+    eventsTable: 'oe_ppa_payment_securities_events', eventsFk: 'security_id',
+    actions: [
+      { action: 'submit-instrument', label: 'Submit instrument', tone: 'primary',
+        path: '/api/payment-security/chain/:id/submit-instrument',
+        roles: ['admin', 'support', 'offtaker'],
+        cascadeHint: 'Offtaker lodges the guarantee/LC/PCG/cash instrument; seller verification clock starts.' },
+      { action: 'activate', label: 'Activate security',
+        path: '/api/payment-security/chain/:id/activate',
+        roles: ['admin', 'support', 'ipp_developer'],
+        cascadeHint: 'Seller activates the verified instrument as live PPA credit support; arms adequacy-review and expiry monitoring.' },
+      { action: 'initiate-drawdown', label: 'Initiate drawdown',
+        path: '/api/payment-security/chain/:id/initiate-drawdown',
+        roles: ['admin', 'support', 'ipp_developer'],
+        cascadeHint: 'Seller draws on the security for unpaid invoices; opens the replenishment obligation against the offtaker.' },
+      { action: 'forfeit', label: 'Forfeit security', tone: 'oxide',
+        path: '/api/payment-security/chain/:id/forfeit',
+        roles: ['admin', 'support', 'ipp_developer'],
+        cascadeHint: 'Forfeits the instrument for unremedied default; crosses the regulator inbox for every tier (W54 signature).' },
+    ],
+  },
+
+  // W62 — PPA termination & early-termination amount (TWO-PARTY — offtaker drives
+  // notice/cure/ETA/settlement, IPP counterparty may dispute the ETA)
+  {
+    key: 'ppa_termination', wave: 62, table: 'oe_ppa_terminations',
+    title: 'PPA termination', refCol: 'case_number', titleCol: 'ppa_name',
+    quantumCol: 'buyout_zar_m', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['closed', 'reinstated', 'withdrawn'],
+    counterpartyCol: 'seller_party_name',
+    lanes: { offtaker: 'contracts', ipp_developer: 'finance' },
+    eventsTable: 'oe_ppa_terminations_events', eventsFk: 'termination_id',
+    actions: [
+      { action: 'serve-notice', label: 'Serve notice',
+        path: '/api/ppa-termination/chain/:id/serve-notice',
+        roles: ['admin', 'support', 'offtaker'],
+        cascadeHint: 'Serves the termination notice on the seller and opens the cause-dependent cure window.' },
+      { action: 'confirm-termination', label: 'Confirm termination', tone: 'oxide',
+        path: '/api/ppa-termination/chain/:id/confirm-termination',
+        roles: ['admin', 'support', 'offtaker'],
+        cascadeHint: 'Confirms termination after a failed cure; crosses the regulator inbox for every tier when involuntary (W62 signature).' },
+      { action: 'agree-eta', label: 'Agree ETA', tone: 'primary',
+        path: '/api/ppa-termination/chain/:id/agree-eta',
+        roles: ['admin', 'support', 'offtaker'],
+        cascadeHint: 'Agrees the early-termination amount on the cause-driven buy-out basis; opens settlement.' },
+      { action: 'dispute-eta', label: 'Dispute ETA', tone: 'oxide',
+        path: '/api/ppa-termination/chain/:id/dispute-eta',
+        roles: ['admin', 'support', 'ipp_developer'],
+        cascadeHint: 'Seller disputes the early-termination amount; opens the ETA dispute-resolution loop.' },
+    ],
+  },
+
+  // W70 — REC / guarantee-of-origin certificate lifecycle (TWO-PARTY — issuer
+  // {admin, ipp_developer} drives issuance/claw-back, holder {admin, offtaker}
+  // allocates + retires; note: 'support' is NOT a write role on this chain)
+  {
+    key: 'rec_lifecycle', wave: 70, table: 'oe_rec_lifecycle',
+    title: 'REC certificate', refCol: 'case_number', titleCol: 'project_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['retired', 'cancelled', 'rejected', 'clawed_back', 'expired'],
+    counterpartyCol: 'issuer_name',
+    lanes: { offtaker: 'contracts', ipp_developer: 'finance' },
+    eventsTable: 'oe_rec_lifecycle_events', eventsFk: 'rec_id',
+    actions: [
+      { action: 'approve-issuance', label: 'Approve issuance',
+        path: '/api/rec-lifecycle/chain/:id/approve-issuance',
+        roles: ['admin', 'ipp_developer'],
+        cascadeHint: 'Issuer approves certificate issuance after eligibility review; one MWh attribute enters the registry once.' },
+      { action: 'allocate-consumption', label: 'Allocate consumption',
+        path: '/api/rec-lifecycle/chain/:id/allocate-consumption',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Holder allocates the certificate to a consumption period ahead of the Scope-2 market-based claim.' },
+      { action: 'retire-certificate', label: 'Retire certificate', tone: 'primary',
+        path: '/api/rec-lifecycle/chain/:id/retire-certificate',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Retires the certificate to substantiate the renewable-consumption claim; the attribute can never be used again.' },
+      { action: 'claw-back', label: 'Claw back', tone: 'oxide',
+        path: '/api/rec-lifecycle/chain/:id/claw-back',
+        roles: ['admin', 'ipp_developer'],
+        cascadeHint: 'Revokes the certificate on an upheld integrity dispute; crosses the regulator inbox for every tier (W70 double-counting signature).' },
+    ],
+  },
+
+  // ───────── CARBON FUND ─────────
+  // Skipped: W4 Article 6 corresponding adjustments (oe_article6_adjustments uses
+  // `ca_status`, no sla_deadline_at); W11 carbon MRV chain (mrv_submissions has
+  // chain_status but no sla_deadline_at — deadlines live on doe_due_at/cra_due_at);
+  // W17 carbon retirement (carbon_retirements predates the oe_ table convention and
+  // its chain columns arrive via ALTER in migration 124, not the CREATE TABLE DDL —
+  // fails the registry shape contract on both counts).
+
+  // W37 — Carbon project registration / PDD (Gold Standard + Verra + Art 6.4 + DFFE DNA)
+  {
+    key: 'carbon_registration', wave: 37, table: 'oe_carbon_registration',
+    title: 'Project registration', refCol: 'project_number', titleCol: 'project_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['crediting_active', 'rejected', 'withdrawn'],
+    counterpartyCol: 'developer_party_name',
+    lanes: { carbon_fund: 'project_pipeline' },
+    eventsTable: 'oe_carbon_registration_events', eventsFk: 'project_id',
+    actions: [
+      { action: 'submit-validation', label: 'Submit for validation',
+        path: '/api/carbon-registration/chain/:id/submit-validation',
+        roles: ['admin', 'support', 'carbon_fund'],
+        cascadeHint: 'Submits the PDD to the VVB for validation; the standard-tiered validation SLA starts.' },
+      { action: 'register', label: 'Register project', tone: 'primary',
+        path: '/api/carbon-registration/chain/:id/register',
+        roles: ['admin', 'support', 'carbon_fund'],
+        cascadeHint: 'Registers the validated project with the standard registry; unlocks crediting activation and downstream MRV.' },
+      { action: 'reject', label: 'Reject', tone: 'oxide',
+        path: '/api/carbon-registration/chain/:id/reject',
+        roles: ['admin', 'support', 'carbon_fund'],
+        cascadeHint: 'Rejects the project at validation or registration review; closes the pipeline case adversely.' },
+    ],
+  },
+
+  // W42 — Carbon reversal / buffer-pool integrity (Verra + GS + Art 6.4; AFOLU only)
+  {
+    key: 'carbon_reversal', wave: 42, table: 'oe_carbon_reversals',
+    title: 'Carbon reversal', refCol: 'reversal_number', titleCol: 'project_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['closed', 'escalated', 'false_alarm'],
+    counterpartyCol: 'project_party_name',
+    lanes: { carbon_fund: 'retirement_offset' },
+    eventsTable: 'oe_carbon_reversals_events', eventsFk: 'reversal_id',
+    actions: [
+      { action: 'begin-assessment', label: 'Begin assessment',
+        path: '/api/carbon-reversal/chain/:id/begin-assessment',
+        roles: ['admin', 'support', 'carbon_fund'],
+        cascadeHint: 'Opens loss assessment of the reported reversal event; quantification clock starts.' },
+      { action: 'cancel-buffer', label: 'Cancel buffer credits', tone: 'primary',
+        path: '/api/carbon-reversal/chain/:id/cancel-buffer',
+        roles: ['admin', 'support', 'carbon_fund'],
+        cascadeHint: 'Cancels buffer-pool credits to cover the quantified reversal; preserves the integrity of issued units.' },
+      { action: 'escalate', label: 'Escalate', tone: 'oxide',
+        path: '/api/carbon-reversal/chain/:id/escalate',
+        roles: ['admin', 'support', 'carbon_fund'],
+        cascadeHint: 'Escalates an uncured or avoidable reversal to the registry/regulator; terminates the case escalated.' },
+    ],
+  },
+
+  // W48 — Carbon tax offset claim & allowance (Carbon Tax Act §13; SARS-facing)
+  {
+    key: 'carbon_offset_claim', wave: 48, table: 'oe_carbon_offset_claims',
+    title: 'Carbon offset claim', refCol: 'claim_number', titleCol: 'taxpayer_party_name',
+    quantumCol: 'offset_value_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['reconciled', 'rejected', 'clawed_back', 'withdrawn'],
+    counterpartyCol: 'sars_office_name',
+    lanes: { carbon_fund: 'retirement_offset' },
+    eventsTable: 'oe_carbon_offset_claims_events', eventsFk: 'claim_id',
+    actions: [
+      { action: 'submit-claim', label: 'Submit claim', tone: 'primary',
+        path: '/api/carbon-offset-claim/chain/:id/submit-claim',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Files the offset claim of retired credits against the carbon-tax liability; SARS review clock starts.' },
+      { action: 'grant-allowance', label: 'Grant allowance',
+        path: '/api/carbon-offset-claim/chain/:id/grant-allowance',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Records the granted offset allowance within the 10%/5% cap; advances to the tax-return application.' },
+      { action: 'claw-back', label: 'Claw back', tone: 'oxide',
+        path: '/api/carbon-offset-claim/chain/:id/claw-back',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Reverses a granted allowance on audit; crosses the regulator inbox for every tier (W48 signature).' },
+    ],
+  },
+
+  // W56 — Crediting-period renewal & baseline reassessment (Verra/GS/Art 6.4)
+  {
+    key: 'crediting_period_renewal', wave: 56, table: 'oe_crediting_period_renewals',
+    title: 'Crediting renewal', refCol: 'renewal_number', titleCol: 'project_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['renewed', 'refused', 'withdrawn', 'lapsed'],
+    counterpartyCol: 'vvb_name',
+    lanes: { carbon_fund: 'project_pipeline' },
+    eventsTable: 'oe_crediting_period_renewals_events', eventsFk: 'renewal_id',
+    actions: [
+      { action: 'submit-application', label: 'Submit application',
+        path: '/api/crediting-renewal/chain/:id/submit-application',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Files the renewal application ahead of crediting-period expiry; completeness-check clock starts.' },
+      { action: 'renew', label: 'Renew crediting period', tone: 'primary',
+        path: '/api/crediting-renewal/chain/:id/renew',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Renews the crediting period on the reassessed baseline; crosses the regulator inbox when the baseline cut is 30% or more.' },
+      { action: 'refuse', label: 'Refuse renewal', tone: 'oxide',
+        path: '/api/crediting-renewal/chain/:id/refuse',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Refuses renewal on failed re-validation; the project stops issuing at period end.' },
+    ],
+  },
+
+  // W65 — Carbon ERPA forward delivery & make-good
+  {
+    key: 'carbon_erpa', wave: 65, table: 'oe_carbon_erpas',
+    title: 'Carbon ERPA', refCol: 'erpa_number', titleCol: 'project_name',
+    quantumCol: 'contract_value', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['completed', 'terminated', 'withdrawn'],
+    counterpartyCol: 'buyer_party_name',
+    lanes: { carbon_fund: 'trading_markets' },
+    eventsTable: 'oe_carbon_erpas_events', eventsFk: 'erpa_id',
+    actions: [
+      { action: 'verify-delivery', label: 'Verify delivery', tone: 'primary',
+        path: '/api/carbon-erpa/chain/:id/verify-delivery',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Verifies the delivered vintage against the contracted schedule; crosses the regulator inbox for Article 6 or large contracts.' },
+      { action: 'flag-shortfall', label: 'Flag shortfall', tone: 'oxide',
+        path: '/api/carbon-erpa/chain/:id/flag-shortfall',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Flags an under-delivery against the schedule; opens the make-good obligation on the seller.' },
+      { action: 'settle', label: 'Settle delivery',
+        path: '/api/carbon-erpa/chain/:id/settle',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Settles payment for the verified delivery; advances the ERPA toward completion or the next scheduled vintage.' },
+    ],
+  },
+
+  // W73 — PoA / CPA inclusion & conformance (CDM PoA / GS4GG / Verra grouped)
+  {
+    key: 'poa_cpa_inclusion', wave: 73, table: 'oe_poa_cpa_inclusions',
+    title: 'CPA inclusion', refCol: 'cpa_number', titleCol: 'cpa_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['rejected', 'excluded', 'withdrawn', 'completed'],
+    counterpartyCol: 'coordinating_entity_name',
+    lanes: { carbon_fund: 'project_pipeline' },
+    eventsTable: 'oe_poa_cpa_inclusions_events', eventsFk: 'inclusion_id',
+    actions: [
+      { action: 'screen-eligibility', label: 'Screen eligibility',
+        path: '/api/poa-inclusion/chain/:id/screen-eligibility',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Runs the automated eligibility score, programme-cap headroom and geographic-overlap double-counting guard.' },
+      { action: 'approve-inclusion', label: 'Approve inclusion', tone: 'primary',
+        path: '/api/poa-inclusion/chain/:id/approve-inclusion',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Includes the CPA in the registered programme; crosses the regulator inbox when a corresponding adjustment is required (else large+mega).' },
+      { action: 'exclude-cpa', label: 'Exclude CPA', tone: 'oxide',
+        path: '/api/poa-inclusion/chain/:id/exclude-cpa',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Delists the CPA for non-conformance; crosses the regulator inbox for every tier (W73 signature).' },
+    ],
+  },
+
   // Other roles registered in later tasks.
 ];
 
