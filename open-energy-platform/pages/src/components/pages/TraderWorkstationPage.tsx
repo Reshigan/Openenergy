@@ -36,7 +36,7 @@ const TRADER_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'trade_date',
     pivotGroupBy: 'status',
-    mailSubject: 'Open Energy — Trade Settlement Report',
+    mailSubject: 'CEC — Trade Settlement Report',
   },
   {
     title: 'Best Execution Records',
@@ -50,7 +50,7 @@ const TRADER_REPORTS: ReportConfig[] = [
       { key: 'chain_status', label: 'Status' },
     ],
     pivotGroupBy: 'instrument',
-    mailSubject: 'Open Energy — Best Execution Report',
+    mailSubject: 'CEC — Best Execution Report',
   },
   {
     title: 'FSCA Trade Reports',
@@ -64,7 +64,7 @@ const TRADER_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'submitted_at',
     pivotGroupBy: 'chain_status',
-    mailSubject: 'Open Energy — FSCA Trade Reports',
+    mailSubject: 'CEC — FSCA Trade Reports',
   },
 ];
 
@@ -97,10 +97,10 @@ const TRADER_WIZARDS: WizardSpec[] = [
       {
         title: 'Post-trade & settlement',
         description: 'Configure Trade allocation, Settlement fails, Benchmark transition, and Settlement rails (STRATE/SWIFT) workflows.',
-        aiHint: 'STRATE settlement is T+3 for energy derivatives. If your firm has a direct STRATE member connection, link it here. Otherwise Open Energy acts as your settlement agent. CSDR penalties apply for fails beyond T+7.',
+        aiHint: 'STRATE settlement is T+3 for energy derivatives. If your firm has a direct STRATE member connection, link it here. Otherwise CEC acts as your settlement agent. CSDR penalties apply for fails beyond T+7.',
         fields: [
-          { key: 'settlement_agent', label: 'Settlement arrangement', type: 'select', options: [{ value: 'open_energy', label: 'Open Energy as settlement agent' }, { value: 'direct_strate', label: 'Direct STRATE member' }, { value: 'custodian', label: 'Custodian bank' }] },
-          { key: 'strate_lei', label: 'STRATE LEI code', type: 'text', placeholder: 'Leave blank if using Open Energy agent' },
+          { key: 'settlement_agent', label: 'Settlement arrangement', type: 'select', options: [{ value: 'open_energy', label: 'CEC as settlement agent' }, { value: 'direct_strate', label: 'Direct STRATE member' }, { value: 'custodian', label: 'Custodian bank' }] },
+          { key: 'strate_lei', label: 'STRATE LEI code', type: 'text', placeholder: 'Leave blank if using the CEC agent' },
         ],
       },
       {
@@ -132,7 +132,7 @@ const TRADER_WIZARDS: WizardSpec[] = [
   {
     id: 'trader-place-order',
     title: 'Place your first order',
-    subtitle: 'Submit a bid or offer into the Open Energy exchange',
+    subtitle: 'Submit a bid or offer into the CEC exchange',
     steps: [
       {
         title: 'Product',
@@ -200,7 +200,7 @@ const TRADER_WIZARDS: WizardSpec[] = [
         fields: [
           { key: 'testing_environment', label: 'Testing environment used', type: 'select', options: [{ value: 'uat', label: 'UAT / sandbox' }, { value: 'prod_mirror', label: 'Production mirror' }] },
           { key: 'certification_date', label: 'Testing completed date', type: 'date', required: true },
-          { key: 'operator_attestation', label: 'Operator attestation', type: 'textarea', required: true, placeholder: 'I confirm that the system has been tested against the Open Energy algo-certification checklist and meets all FSCA RTS-6 requirements…' },
+          { key: 'operator_attestation', label: 'Operator attestation', type: 'textarea', required: true, placeholder: 'I confirm that the system has been tested against the CEC algo-certification checklist and meets all FSCA RTS-6 requirements…' },
         ],
       },
     ],

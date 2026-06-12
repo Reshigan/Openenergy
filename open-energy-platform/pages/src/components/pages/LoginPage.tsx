@@ -11,7 +11,7 @@ const T = {
   brandBg2:    'oklch(0.14 0.015 250)',
   brandText:   'oklch(0.98 0.002 250)',
   brandSubtle: 'oklch(0.65 0.008 250)',
-  brandAccent: 'oklch(0.70 0.10 190)',  // teal-ish
+  brandAccent: 'oklch(0.75 0.13 55)',   // platform amber, lifted for dark bg
   brandAmber:  'oklch(0.72 0.14 55)',
   // Form panel
   panelBg:  'oklch(0.99 0.002 80)',
@@ -70,7 +70,7 @@ function BrandPanel() {
     <div
       style={{
         position: 'relative',
-        background: `radial-gradient(ellipse at 20% 20%, oklch(0.20 0.05 250) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, oklch(0.18 0.06 200) 0%, transparent 50%), ${T.brandBg}`,
+        background: `radial-gradient(ellipse at 20% 20%, oklch(0.20 0.05 250) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, oklch(0.18 0.04 55) 0%, transparent 50%), ${T.brandBg}`,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -128,11 +128,11 @@ function BrandPanel() {
             <LogoMark size={36} variant="colour" />
           </div>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: T.brandText, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-              OPEN<span style={{ color: T.brandAccent }}>ENERGY</span>
+            <div style={{ fontSize: 22, fontWeight: 700, color: T.brandText, letterSpacing: '0.06em', lineHeight: 1.1, fontFamily: '"IBM Plex Mono", ui-monospace, monospace' }}>
+              CEC<span style={{ color: T.brandAccent }}>/</span>
             </div>
-            <div style={{ fontSize: 10, letterSpacing: '0.22em', color: T.brandSubtle, textTransform: 'uppercase', fontFamily: 'ui-monospace, monospace' }}>
-              Exchange · Vanta X
+            <div style={{ fontSize: 10, letterSpacing: '0.18em', color: T.brandSubtle, textTransform: 'uppercase', fontFamily: 'ui-monospace, monospace' }}>
+              Consolidated Energy Cockpit · Vanta X
             </div>
           </div>
         </div>
@@ -211,7 +211,7 @@ function BrandPanel() {
 
       {/* Footer */}
       <div style={{ position: 'relative', zIndex: 1, fontSize: 11, color: 'oklch(0.38 0.006 250)' }}>
-        © {new Date().getFullYear()} Open Energy Platform · Vanta X Holdings
+        © {new Date().getFullYear()} Consolidated Energy Cockpit · Vanta X Holdings
       </div>
     </div>
   );
@@ -229,29 +229,29 @@ function PersonaChip({ persona, onPick }: { persona: Persona; onPick: (email: st
       aria-label={`Sign in as ${persona.label} demo`}
       style={{
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
-        gap: 5,
-        padding: '8px 6px',
-        borderRadius: 8,
+        gap: 10,
+        padding: '10px 12px',
+        borderRadius: 10,
         border: `1px solid ${hov ? persona.accent : T.border}`,
         background: hov ? `${persona.accent}12` : T.panelBg,
         cursor: 'pointer',
         transition: 'border-color 130ms, background 130ms',
+        flex: '1 1 150px',
         minWidth: 0,
       }}
     >
       <span
         style={{
-          width: 30,
-          height: 30,
-          borderRadius: 8,
+          width: 38,
+          height: 38,
+          borderRadius: 9,
           background: `${persona.accent}22`,
           color: persona.accent,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: 700,
           fontFamily: 'ui-monospace, monospace',
           flexShrink: 0,
@@ -259,7 +259,7 @@ function PersonaChip({ persona, onPick }: { persona: Persona; onPick: (email: st
       >
         {persona.short}
       </span>
-      <span style={{ fontSize: 10.5, fontWeight: 600, color: T.text1, textAlign: 'center', lineHeight: 1.2, maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <span style={{ fontSize: 12.5, fontWeight: 600, color: T.text1, textAlign: 'left', lineHeight: 1.25 }}>
         {persona.label}
       </span>
     </button>
@@ -416,7 +416,7 @@ export default function LoginPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
               <LogoMark size={32} variant="colour" />
               <div style={{ fontSize: 16, fontWeight: 800, color: T.text1, letterSpacing: '-0.02em' }}>
-                Open Energy
+                Consolidated Energy Cockpit
               </div>
             </div>
 
@@ -433,7 +433,7 @@ export default function LoginPage() {
               Sign in
             </h2>
             <p style={{ margin: '6px 0 0', fontSize: 14, color: T.text2, lineHeight: 1.5 }}>
-              Welcome back to the Open Energy Platform.
+              Welcome back to the Consolidated Energy Cockpit.
             </p>
 
             {/* Error */}
@@ -704,7 +704,7 @@ export default function LoginPage() {
                 {groups.map((g) => (
                   <div key={g.label}>
                     <div style={{ fontSize: 9.5, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>{g.label}</div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {g.items.map((p) => (
                         <PersonaChip key={p.email} persona={p} onPick={fillDemo} />
                       ))}

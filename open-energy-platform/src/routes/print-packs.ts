@@ -73,7 +73,7 @@ function shell(title: string, eyebrow: string, body: string, meta: string): stri
   </header>
   <main>${body}</main>
   <footer>
-    <div>Open Energy Platform · oe.vantax.co.za</div>
+    <div>Consolidated Energy Cockpit · oe.vantax.co.za</div>
     <div>Operated by GONXT Technology (Pty) Ltd · Reg 2019/123456/07</div>
   </footer>
 </body></html>`;

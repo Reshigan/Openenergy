@@ -60,7 +60,7 @@ export default function LaunchpadView({ config, allRoles, currentRole, onSelectD
         zIndex: 10,
       }}>
         <span style={{ fontWeight: 700, fontSize: 15, color: TEXT_PRIMARY, letterSpacing: '-0.02em' }}>
-          ◈ Open Energy
+          ◈ CEC
         </span>
         <div style={{ flex: 1 }} />
         <select

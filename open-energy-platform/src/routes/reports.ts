@@ -728,7 +728,7 @@ reports.post('/mail', async (c) => {
   if (!body?.to) return c.json({ success: false, error: 'to is required' }, 400);
 
   const to: string = String(body.to);
-  const subject: string = String(body.subject ?? 'Open Energy Platform Report');
+  const subject: string = String(body.subject ?? 'Consolidated Energy Cockpit Report');
   const textBody: string = String(body.body ?? '');
   const csvContent: string = body.csv_attachment ? String(body.csv_attachment) : '';
   const filename: string = String(body.filename ?? 'report.csv');

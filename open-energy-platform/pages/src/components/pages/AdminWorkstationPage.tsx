@@ -29,7 +29,7 @@ const ADMIN_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'occurred_at',
     pivotGroupBy: 'chain_key',
-    mailSubject: 'Open Energy — Platform Events Report',
+    mailSubject: 'CEC — Platform Events Report',
   },
   {
     title: 'Role Action Queue',
@@ -43,7 +43,7 @@ const ADMIN_REPORTS: ReportConfig[] = [
     ],
     filters: [{ key: 'status', label: 'Status', type: 'select', options: [{ value: 'pending', label: 'Pending' }, { value: 'actioned', label: 'Actioned' }, { value: 'dismissed', label: 'Dismissed' }] }],
     pivotGroupBy: 'target_role',
-    mailSubject: 'Open Energy — Role Action Queue Report',
+    mailSubject: 'CEC — Role Action Queue Report',
   },
 ];
 
@@ -63,7 +63,7 @@ function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
 const ADMIN_WIZARDS: WizardSpec[] = [
   {
     id: 'admin-complete-setup',
-    title: 'Set up the Open Energy platform',
+    title: 'Set up the Consolidated Energy Cockpit',
     subtitle: 'Configure tenant management, audit, compliance exports, and ML/AI workflows for the full platform',
     steps: [
       {

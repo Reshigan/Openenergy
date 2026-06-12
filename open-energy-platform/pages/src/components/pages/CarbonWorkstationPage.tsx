@@ -34,7 +34,7 @@ const CARBON_REPORTS: ReportConfig[] = [
     ],
     filters: [{ key: 'status', label: 'Status', type: 'select', options: [{ value: 'issued', label: 'Issued' }, { value: 'retired', label: 'Retired' }, { value: 'cancelled', label: 'Cancelled' }] }],
     pivotGroupBy: 'vintage_year',
-    mailSubject: 'Open Energy — Carbon Issuances Report',
+    mailSubject: 'CEC — Carbon Issuances Report',
   },
   {
     title: 'Retirement Statements',
@@ -47,7 +47,7 @@ const CARBON_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'retired_at',
     pivotGroupBy: 'beneficiary_name',
-    mailSubject: 'Open Energy — Carbon Retirements Report',
+    mailSubject: 'CEC — Carbon Retirements Report',
   },
   {
     title: 'Carbon Tax Offset Claims',
@@ -60,7 +60,7 @@ const CARBON_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'submitted_at',
     pivotGroupBy: 'chain_status',
-    mailSubject: 'Open Energy — Carbon Offset Claims Report',
+    mailSubject: 'CEC — Carbon Offset Claims Report',
   },
 ];
 

@@ -94,7 +94,7 @@ export function WelcomeStep({ data: _data, onChange: _onChange, role = 'admin', 
       />
       <div className="relative">
         <h2 className="text-[22px] font-semibold text-[#0f1c2e] leading-snug">
-          Welcome to Open Energy, {firstName}
+          Welcome to the Consolidated Energy Cockpit, {firstName}
         </h2>
         <p className="mt-3 text-[14px] text-[#6b7685] leading-relaxed max-w-sm mx-auto">{desc}</p>
         <p className="mt-4 text-[12px] text-[#6b7685] font-medium uppercase tracking-wider">

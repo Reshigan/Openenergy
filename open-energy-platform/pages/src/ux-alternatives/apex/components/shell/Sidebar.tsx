@@ -91,7 +91,7 @@ export function Sidebar({ role, userName, userEmail, navConfig, collapsed, onTog
                 whiteSpace: 'nowrap',
               }}
             >
-              Open Energy
+              Consolidated Energy Cockpit
             </div>
             <div style={{ fontSize: '10px', color: 'var(--oe-text-3)', marginTop: '-1px', whiteSpace: 'nowrap' }}>
               {ROLE_LABELS[role]}

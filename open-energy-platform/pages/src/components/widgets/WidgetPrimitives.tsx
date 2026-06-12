@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════════════════
 // WidgetPrimitives — shared chrome for all decision-support widgets.
 //
-// Aligned with the Stitch "Open Energy" design system:
+// Aligned with the Stitch "Consolidated Energy Cockpit" design system:
 //   • Card surface = #ffffff with 1px outline #e2e8f0 and 8px radius
 //   • Card header  = Metropolis 14/600 title + IBM Plex 11/400 subtitle,
 //     low-contrast bottom separator

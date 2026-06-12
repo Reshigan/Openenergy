@@ -350,7 +350,7 @@ export async function determineNotificationRecipients(ctx: NotifCtx, env: any): 
 
 export function buildNotificationContent(ctx: NotifCtx): { title: string; body: string } {
   const eventHandlers: Record<string, () => { title: string; body: string }> = {
-    'auth.registered': () => ({ title: 'Welcome to Open Energy', body: 'Your account has been created. Please verify your email.' }),
+    'auth.registered': () => ({ title: 'Welcome to the Consolidated Energy Cockpit', body: 'Your account has been created. Please verify your email.' }),
     'auth.login': () => ({ title: 'New Login Detected', body: 'A new login was recorded for your account.' }),
     'contract.phase_changed': () => ({
       title: `Contract Phase: ${ctx.data?.new_phase || 'updated'}`,

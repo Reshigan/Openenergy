@@ -25,7 +25,7 @@ r.use('*', authMiddleware);
 const genId = (p: string) => `${p}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 // ─── System prompt + tool catalog ───────────────────────────────────────
-const SYSTEM_PROMPT = `You are the Open Energy Platform assistant.
+const SYSTEM_PROMPT = `You are the Consolidated Energy Cockpit (CEC) platform assistant.
 You help SA energy traders, IPPs, lenders, offtakers, grid operators and
 regulators navigate the platform. Be concise, surface numbers, and only
 propose actions the user can take with their own role. When you suggest

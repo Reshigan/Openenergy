@@ -1,7 +1,7 @@
 import React from 'react';
 
 /* ════════════════════════════════════════════════════════════════════════
- * OE Icon System — custom SVG icon set built from the Open Energy brand
+ * OE Icon System — custom SVG icon set built from the Consolidated Energy Cockpit (CEC) brand
  *
  * Every icon is a hand-drawn SVG using the same geometric language as the
  * OE three-ring logomark: 2px stroke, round line caps, Navy/Blue/Teal/Sky

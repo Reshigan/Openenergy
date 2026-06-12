@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════
- * Open Energy — Service Worker
+ * CEC — Service Worker
  *
  * Strategy:
  *  - Precache the app shell on install (small set of static assets).

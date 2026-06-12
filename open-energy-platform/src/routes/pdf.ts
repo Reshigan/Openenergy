@@ -223,7 +223,7 @@ pdf.get('/covenant-report/:facility_id', async (c) => {
       notes:          r.test_notes,
     })),
     overall_result: overallResult as any,
-    prepared_by:    'Open Energy Platform',
+    prepared_by:    'Consolidated Energy Cockpit',
   };
 
   const bytes = await buildCovenantReportPdf(data);

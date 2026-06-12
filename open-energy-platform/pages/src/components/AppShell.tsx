@@ -155,16 +155,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 16, flexShrink: 0 }}>
           <div style={{
-            width: 26, height: 26, borderRadius: 6,
+            width: 32, height: 26, borderRadius: 6,
             background: 'oklch(0.50 0.12 250)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em',
-          }}>OE</div>
+            fontSize: 9.5, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em',
+          }}>CEC</div>
           <span style={{
             fontSize: 12, fontWeight: 700, letterSpacing: '0.10em',
             textTransform: 'uppercase', color: C.muted,
             fontFamily: '"IBM Plex Mono", monospace',
-          }}>Open Energy</span>
+          }}>Consolidated Energy Cockpit</span>
         </div>
 
         {/* Role chip */}

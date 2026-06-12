@@ -2,7 +2,7 @@
 //
 // Phase C opener. Closes the audit-namespace family at W121 and opens
 // the external-system connector family (W122-W126). Real-time
-// bidirectional protocol bridge between the Open Energy Platform and
+// bidirectional protocol bridge between the Consolidated Energy Cockpit and
 // IPP / grid SCADA systems.
 //
 // Mounted at /grid-ops/workstation?tab=scada-connectors for grid write,

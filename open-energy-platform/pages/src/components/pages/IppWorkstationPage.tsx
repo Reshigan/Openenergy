@@ -20,7 +20,7 @@ const IPP_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'submitted_at',
     pivotGroupBy: 'report_type',
-    mailSubject: 'Open Energy — REIPPPP Compliance Reports',
+    mailSubject: 'CEC — REIPPPP Compliance Reports',
   },
   {
     title: 'Milestone Variance Reports',
@@ -33,7 +33,7 @@ const IPP_REPORTS: ReportConfig[] = [
       { key: 'chain_status', label: 'Status' },
     ],
     pivotGroupBy: 'variance_tier',
-    mailSubject: 'Open Energy — IPP Milestone Variance Reports',
+    mailSubject: 'CEC — IPP Milestone Variance Reports',
   },
   {
     title: 'DSCR Reports',
@@ -45,7 +45,7 @@ const IPP_REPORTS: ReportConfig[] = [
       { key: 'chain_status', label: 'Status' },
     ],
     pivotGroupBy: 'chain_status',
-    mailSubject: 'Open Energy — IPP DSCR Reports',
+    mailSubject: 'CEC — IPP DSCR Reports',
   },
   {
     title: 'Annual Generation Reports',
@@ -58,7 +58,7 @@ const IPP_REPORTS: ReportConfig[] = [
       { key: 'chain_status', label: 'Status' },
     ],
     pivotGroupBy: 'period',
-    mailSubject: 'Open Energy — IPP Generation Reports',
+    mailSubject: 'CEC — IPP Generation Reports',
   },
 ];
 

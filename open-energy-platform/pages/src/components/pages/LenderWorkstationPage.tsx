@@ -37,7 +37,7 @@ const LENDER_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'submitted_at',
     pivotGroupBy: 'chain_status',
-    mailSubject: 'Open Energy — Lender Covenant Certificates Report',
+    mailSubject: 'CEC — Lender Covenant Certificates Report',
   },
   {
     title: 'DSCR Monitoring',
@@ -50,7 +50,7 @@ const LENDER_REPORTS: ReportConfig[] = [
       { key: 'breach_status', label: 'Breach' },
     ],
     pivotGroupBy: 'breach_status',
-    mailSubject: 'Open Energy — DSCR Monitoring Report',
+    mailSubject: 'CEC — DSCR Monitoring Report',
   },
   {
     title: 'Drawdown Records',
@@ -63,7 +63,7 @@ const LENDER_REPORTS: ReportConfig[] = [
       { key: 'disbursed_at', label: 'Disbursed' },
     ],
     pivotGroupBy: 'chain_status',
-    mailSubject: 'Open Energy — Lender Drawdown Report',
+    mailSubject: 'CEC — Lender Drawdown Report',
   },
   {
     title: 'EP IV ESAP Monitoring',
@@ -76,7 +76,7 @@ const LENDER_REPORTS: ReportConfig[] = [
       { key: 'review_due', label: 'Due' },
     ],
     pivotGroupBy: 'ep_category',
-    mailSubject: 'Open Energy — EP IV ESAP Report',
+    mailSubject: 'CEC — EP IV ESAP Report',
   },
 ];
 

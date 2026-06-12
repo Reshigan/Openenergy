@@ -7,7 +7,7 @@ import { LtmLogo } from './LtmLogo';
 import { themeFor } from '../lib/role-themes';
 
 /* ════════════════════════════════════════════════════════════════════════
- * Open Energy Platform — App Shell
+ * Consolidated Energy Cockpit — App Shell
  * Forest Green gradient header · IBM Plex Sans / Metropolis · Material Symbols
  * Industrial-Fintech aesthetic — sized for data-dense workflows
  *
@@ -531,7 +531,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
   }, [nav, location.pathname]);
   const isActive = (path: string) => path === activePath;
 
-  const currentLabel = nav.find((n) => n.path === activePath)?.label ?? 'Open Energy Platform';
+  const currentLabel = nav.find((n) => n.path === activePath)?.label ?? 'Consolidated Energy Cockpit';
 
   const handleLogout = () => {
     logout();
@@ -641,15 +641,15 @@ export function FioriShell({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        {/* Brand mark — mockup-b OE/ amber mono */}
+        {/* Brand mark — CEC/ amber mono */}
         <Link
           to="/feed"
           className="flex items-center select-none ml-1 mr-4"
-          aria-label="Open Energy Platform — Activity Feed"
+          aria-label="Consolidated Energy Cockpit — Activity Feed"
           style={{ textDecoration: 'none' }}
         >
           <span style={{ fontFamily: '"IBM Plex Mono","Fira Code",monospace', fontSize: 14, fontWeight: 800, color: 'oklch(0.46 0.16 55)', letterSpacing: '0.06em' }}>
-            OE/
+            CEC/
           </span>
         </Link>
 
@@ -692,7 +692,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
             <input
               ref={searchRef}
               type="search"
-              aria-label="Search across Open Energy Platform"
+              aria-label="Search across Consolidated Energy Cockpit"
               placeholder="Search projects, contracts, counterparties, settlements…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}

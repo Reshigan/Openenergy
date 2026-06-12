@@ -38,7 +38,7 @@ const OFFTAKER_REPORTS: ReportConfig[] = [
     filters: [{ key: 'chain_status', label: 'Status', type: 'select', options: [{ value: 'in_force', label: 'In Force' }, { value: 'negotiation', label: 'Negotiation' }, { value: 'expired', label: 'Expired' }] }],
     dateKey: 'created_at',
     pivotGroupBy: 'chain_status',
-    mailSubject: 'Open Energy — Offtaker PPA Contracts Report',
+    mailSubject: 'CEC — Offtaker PPA Contracts Report',
   },
   {
     title: 'Statutory Report Submissions',
@@ -51,7 +51,7 @@ const OFFTAKER_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'submitted_at',
     pivotGroupBy: 'report_type',
-    mailSubject: 'Open Energy — Offtaker Statutory Reports',
+    mailSubject: 'CEC — Offtaker Statutory Reports',
   },
   {
     title: 'Green Tariff Disclosures',
@@ -64,7 +64,7 @@ const OFFTAKER_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'created_at',
     pivotGroupBy: 'disclosure_type',
-    mailSubject: 'Open Energy — Green Tariff Disclosures',
+    mailSubject: 'CEC — Green Tariff Disclosures',
   },
   {
     title: 'Scope 2 Emissions',
@@ -77,7 +77,7 @@ const OFFTAKER_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'created_at',
     pivotGroupBy: 'reporting_standard',
-    mailSubject: 'Open Energy — Scope 2 Emissions Report',
+    mailSubject: 'CEC — Scope 2 Emissions Report',
   },
 ];
 

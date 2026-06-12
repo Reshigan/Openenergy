@@ -289,7 +289,7 @@ Completed initiatives: ${initiatives.length}
 
 function generateCombinedNarrative(participant: any, total: number, offsets: number, score: number): string {
   return `Integrated ESG Report
-Open Energy Platform — ${participant.name}
+Consolidated Energy Cockpit — ${participant.name}
 Period: ${new Date().getFullYear()}
 
 EXECUTIVE SUMMARY

@@ -1,7 +1,7 @@
 import React from 'react';
 
 /* ════════════════════════════════════════════════════════════════════════
- * Open Energy — Brand mark
+ * CEC — Brand mark
  *
  * Three interlocking rings:
  *   - Blue   (#3b82c4)  top-left  — energy
@@ -78,8 +78,8 @@ export function LogoBanner({
         className="font-display font-extrabold leading-[0.95] tracking-tight"
         style={{ fontSize: Math.round(height * 0.42) }}
       >
-        <div style={{ color: navy }}>OPEN</div>
-        <div style={{ color: blue }}>ENERGY</div>
+        <div style={{ color: navy }}>CEC</div>
+        <div style={{ color: blue, fontSize: '0.55em', letterSpacing: '0.04em' }}>CONSOLIDATED ENERGY COCKPIT</div>
       </div>
     </div>
   );

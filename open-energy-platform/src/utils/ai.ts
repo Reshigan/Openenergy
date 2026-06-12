@@ -56,11 +56,11 @@ export interface AiResult {
 // ──────────────────────────────────────────────────────────────────────────
 const SYSTEM_BY_INTENT: Record<AiIntent, string> = {
   'generic.ask':
-    `You are the Open Energy copilot operating in South Africa. Answer concisely,
+    `You are the Consolidated Energy Cockpit (CEC) copilot operating in South Africa. Answer concisely,
 use ZAR and SI units, cite the data you were given, and do not speculate.`,
 
   'offtaker.bill_analysis':
-    `You analyse electricity bills for an OFF-TAKER on the Open Energy platform.
+    `You analyse electricity bills for an OFF-TAKER on the Consolidated Energy Cockpit platform.
 Identify: (1) annual consumption kWh, (2) peak/standard/off-peak split,
 (3) current average tariff R/kWh, (4) demand charges, (5) TOU risk.
 Return a short structured JSON inside a \`\`\`json block.`,

@@ -280,7 +280,7 @@ r.post('/webauthn/register/begin', async (c) => {
     data: {
       // Standard PublicKeyCredentialCreationOptions in JSON-friendly form
       challenge,
-      rp: { name: 'Open Energy', id: new URL(c.req.url).hostname },
+      rp: { name: 'Consolidated Energy Cockpit', id: new URL(c.req.url).hostname },
       user: {
         id: btoa(user.id).replace(/=+$/, ''),
         name: user.email || user.id,

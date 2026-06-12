@@ -34,7 +34,7 @@ const GRID_REPORTS: ReportConfig[] = [
     ],
     filters: [{ key: 'chain_status', label: 'Status', type: 'select', options: [{ value: 'invoiced', label: 'Invoiced' }, { value: 'disputed', label: 'Disputed' }, { value: 'settled', label: 'Settled' }] }],
     pivotGroupBy: 'chain_status',
-    mailSubject: 'Open Energy — Grid Wheeling Charges Report',
+    mailSubject: 'CEC — Grid Wheeling Charges Report',
   },
   {
     title: 'Dispatch Nominations',
@@ -48,7 +48,7 @@ const GRID_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'trading_day',
     pivotGroupBy: 'nomination_status',
-    mailSubject: 'Open Energy — Dispatch Nominations Report',
+    mailSubject: 'CEC — Dispatch Nominations Report',
   },
   {
     title: 'Grid Code Compliance',
@@ -60,7 +60,7 @@ const GRID_REPORTS: ReportConfig[] = [
       { key: 'created_at', label: 'Filed' },
     ],
     pivotGroupBy: 'requirement_code',
-    mailSubject: 'Open Energy — Grid Code Compliance Report',
+    mailSubject: 'CEC — Grid Code Compliance Report',
   },
 ];
 
@@ -126,7 +126,7 @@ const GRID_WIZARDS: WizardSpec[] = [
         description: 'Identify the balancing responsible party and nomination window.',
         aiHint: 'Day-ahead nominations must be submitted by 12:00 the day before the delivery date. Late submissions are accepted but incur a penalty under the Grid Code.',
         fields: [
-          { key: 'brp_name', label: 'BRP entity name', type: 'text', required: true, placeholder: 'e.g. Open Energy BRP001' },
+          { key: 'brp_name', label: 'BRP entity name', type: 'text', required: true, placeholder: 'e.g. CEC BRP001' },
           { key: 'delivery_date', label: 'Delivery date', type: 'date', required: true },
           { key: 'delivery_period', label: 'Delivery period', type: 'select', required: true, options: [{ value: 'full_day', label: 'Full day (48 x 30-min intervals)' }, { value: 'peak', label: 'Peak (07:00–21:00)' }, { value: 'offpeak', label: 'Off-peak' }, { value: 'custom', label: 'Custom intervals' }] },
         ],

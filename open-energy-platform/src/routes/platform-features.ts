@@ -536,7 +536,7 @@ async function composeDigestBody(env: HonoEnv['Bindings'], _sub: any): Promise<s
   `).first<any>();
   const today = new Date().toLocaleDateString('en-ZA', { timeZone: 'Africa/Johannesburg', day: 'numeric', month: 'long' });
   return [
-    `Open Energy Ops · morning briefing · ${today}`,
+    `CEC Ops · morning briefing · ${today}`,
     `${stats?.open_faults || 0} open faults bleeding R${Math.round(Number(stats?.bleed || 0))}/h`,
     `${stats?.open_wos || 0} active work orders`,
     `Full dashboard: https://oe.vantax.co.za/esums`,

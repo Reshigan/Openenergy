@@ -35,7 +35,7 @@ const SUPPORT_REPORTS: ReportConfig[] = [
       { key: 'chain_status', label: 'Status' },
     ],
     pivotGroupBy: 'chain_status',
-    mailSubject: 'Open Energy — SLA Performance Report',
+    mailSubject: 'CEC — SLA Performance Report',
   },
   {
     title: 'CSAT Records',
@@ -49,7 +49,7 @@ const SUPPORT_REPORTS: ReportConfig[] = [
     ],
     filters: [{ key: 'priority', label: 'Priority', type: 'select', options: [{ value: 'P1', label: 'P1 Critical' }, { value: 'P2', label: 'P2 High' }, { value: 'P3', label: 'P3 Medium' }, { value: 'P4', label: 'P4 Low' }] }],
     pivotGroupBy: 'priority',
-    mailSubject: 'Open Energy — CSAT Records Report',
+    mailSubject: 'CEC — CSAT Records Report',
   },
   {
     title: 'Problem Records',
@@ -62,7 +62,7 @@ const SUPPORT_REPORTS: ReportConfig[] = [
       { key: 'created_at', label: 'Opened' },
     ],
     pivotGroupBy: 'impact_tier',
-    mailSubject: 'Open Energy — Problem Records Report',
+    mailSubject: 'CEC — Problem Records Report',
   },
 ];
 

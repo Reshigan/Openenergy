@@ -95,7 +95,7 @@ export function PwaInstallBanner() {
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--oe-text-1)' }}>
-            Open Energy
+            Consolidated Energy Cockpit
           </div>
           <div style={{ fontSize: '12px', color: 'var(--oe-text-2)', marginTop: '2px', lineHeight: '1.4' }}>
             {isIOS

@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 import { ArrowUpRight, ArrowDownRight, ArrowRight } from 'lucide-react';
 
 /**
- * Tile accent palette — Open Energy semantic.
+ * Tile accent palette — CEC semantic.
  * Legacy names ('blue', 'indigo', 'pink') still accepted; they alias onto
  * Forest/Teal/Plum tokens via CSS so existing call sites keep working.
  */

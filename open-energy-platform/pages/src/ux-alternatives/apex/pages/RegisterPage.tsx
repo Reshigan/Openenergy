@@ -125,7 +125,7 @@ export function RegisterPage() {
             <span style={{ color: '#F59E0B', fontWeight: 900, fontSize: '15px', letterSpacing: '-0.05em' }}>OE</span>
           </div>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--oe-text-1)', letterSpacing: '-0.02em' }}>Open Energy</div>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--oe-text-1)', letterSpacing: '-0.02em' }}>Consolidated Energy Cockpit</div>
             <div style={{ fontSize: '11px', color: 'var(--oe-text-4)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>South Africa</div>
           </div>
         </div>
@@ -135,7 +135,7 @@ export function RegisterPage() {
           <div style={{ padding: '12px 16px', background: 'rgba(79,156,249,0.1)', border: '1px solid rgba(79,156,249,0.3)', borderRadius: '10px', marginBottom: '20px' }}>
             <div style={{ fontSize: '12px', fontWeight: 700, color: '#4f9cf9', marginBottom: '4px' }}>You have been invited</div>
             <div style={{ fontSize: '12px', color: 'var(--oe-text-2)' }}>
-              {invitation.invited_by_name ?? 'Someone'} from {invitation.invited_by_company ?? 'Open Energy'} has invited you to join as <strong>{invitation.role.replace('_', ' ')}</strong>.
+              {invitation.invited_by_name ?? 'Someone'} from {invitation.invited_by_company ?? 'Consolidated Energy Cockpit'} has invited you to join as <strong>{invitation.role.replace('_', ' ')}</strong>.
               {invitation.note && <em> "{invitation.note}"</em>}
             </div>
           </div>
@@ -178,7 +178,7 @@ export function RegisterPage() {
             <p style={{ margin: '0 0 24px', fontSize: '13px', color: 'var(--oe-text-3)' }}>
               {isViaInvitation
                 ? 'Fill in your details to activate your invitation.'
-                : 'Join the Open Energy Platform. Your account will be reviewed before activation.'}
+                : 'Join the Consolidated Energy Cockpit. Your account will be reviewed before activation.'}
             </p>
 
             <Section title="Account details">

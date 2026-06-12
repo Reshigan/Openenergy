@@ -129,8 +129,8 @@ mfa.post('/enroll', async (c) => {
     VALUES (?,?,0,datetime('now'))
   `).bind(user.id, secret).run();
   // Compose otpauth:// URI for QR code rendering on the SPA
-  const label = encodeURIComponent(`Open Energy:${user.email || user.id}`);
-  const issuer = encodeURIComponent('Open Energy');
+  const label = encodeURIComponent(`CEC:${user.email || user.id}`);
+  const issuer = encodeURIComponent('CEC');
   const otpauth = `otpauth://totp/${label}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
   return c.json({ success: true, data: { secret_b32: secret, otpauth_uri: otpauth } });
 });
