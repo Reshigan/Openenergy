@@ -453,7 +453,7 @@ export function FioriShell({ children }: { children: ReactNode }) {
   // Launchpad + workstation mode: suppress sidebar so these pages fill the full canvas.
   // Workstation pages have their own tab nav and a back-to-launchpad breadcrumb.
   const WORKSTATION_PREFIXES = [
-    '/launch/',
+    '/launch/', '/launch-legacy/',
     '/ipp-lifecycle/', '/trader-risk/', '/lender-suite/', '/offtaker-suite/',
     '/carbon-registry/', '/grid-operator/', '/support/', '/regulator-suite/',
     '/admin-platform/', '/esco/', '/epc/',

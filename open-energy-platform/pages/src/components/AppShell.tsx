@@ -4,7 +4,7 @@ import { useAuth } from '../lib/useAuth';
 import { api } from '../lib/api';
 
 const WORKSTATION_PREFIXES = [
-  '/launch/',
+  '/launch/', '/launch-legacy/',
   '/ipp-lifecycle/', '/trader-risk/', '/lender-suite/', '/offtaker-suite/',
   '/carbon-registry/', '/grid-operator/', '/support/', '/regulator-suite/',
   '/admin-platform/', '/esco/', '/epc/',

@@ -1,6 +1,7 @@
 node_modules
 dist
 .wrangler
+dist-check
 test-results
 playwright-report
 Marketing-High-Resolution-LTM-Logo-Group-01-2048x1312-2.png

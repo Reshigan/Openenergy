@@ -541,8 +541,8 @@ function RegisterPage() {
 
 // LaunchRedirect — when a signed-in user hits /launch (no role) or the legacy
 // /cockpit URL, check onboarding state then route to either /onboard (first
-// visit) or /launch/:role (returning user). Anonymous users were already
-// kicked to /login by the wrapping ProtectedRoute.
+// visit) or /horizon (returning user — Meridian cutover). Anonymous users were
+// already kicked to /login by the wrapping ProtectedRoute.
 const VALID_LAUNCH_ROLES = new Set([
   'admin', 'trader', 'ipp_developer', 'ipp', 'grid_operator', 'grid',
   'offtaker', 'lender', 'carbon_fund', 'carbon', 'regulator', 'support',
@@ -565,11 +565,11 @@ function LaunchRedirect() {
         if (!completed) {
           navigate('/onboard', { replace: true });
         } else {
-          navigate('/feed', { replace: true });
+          navigate('/horizon', { replace: true });
         }
       })
       .catch(() => {
-        navigate('/feed', { replace: true });
+        navigate('/horizon', { replace: true });
       });
   }, [user, navigate, logout]);
 
@@ -612,8 +612,14 @@ function AppRoutes() {
       <Route path="/horizon" element={<ProtectedRoute><HorizonPage /></ProtectedRoute>} />
       <Route path="/thread/:chainKey/:id" element={<ProtectedRoute><ThreadPage /></ProtectedRoute>} />
       <Route path="/atlas" element={<ProtectedRoute><AtlasPage /></ProtectedRoute>} />
-      <Route path="/launch/:role" element={<ProtectedRoute><AppShellLayout><LaunchpadHomePage /></AppShellLayout></ProtectedRoute>} />
-      <Route path="/launch/:role/:domain" element={<ProtectedRoute><AppShellLayout><SubCockpitPage /></AppShellLayout></ProtectedRoute>} />
+      {/* Meridian cutover — legacy role launchpads redirect to Horizon. The
+          launchpad components stay routable at /launch-legacy/:role for
+          reference, but their internal nav still targets /launch/* and so
+          exits to Horizon on first click; workstation routes are untouched. */}
+      <Route path="/launch/:role" element={<Navigate to="/horizon" replace />} />
+      <Route path="/launch/:role/:domain" element={<Navigate to="/horizon" replace />} />
+      <Route path="/launch-legacy/:role" element={<ProtectedRoute><AppShellLayout><LaunchpadHomePage /></AppShellLayout></ProtectedRoute>} />
+      <Route path="/launch-legacy/:role/:domain" element={<ProtectedRoute><AppShellLayout><SubCockpitPage /></AppShellLayout></ProtectedRoute>} />
       {/* TODO: DELETE legacy listing pages — redirected to workstation equivalents */}
       <Route path="/contracts" element={<Navigate to="/trader-risk/workstation" replace />} />
       <Route path="/contracts/:id" element={<ProtectedRoute><Layout><ContractDetail /></Layout></ProtectedRoute>} />
