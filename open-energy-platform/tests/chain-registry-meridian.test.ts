@@ -72,8 +72,11 @@ describe('registry tables exist in migrations', () => {
   });
 
   it('every quantum/deadline column appears in that table DDL', () => {
+    // Strip `--` comments first: a comment containing `);` (e.g. "(pp); <=0 means met"
+    // in migration 192) would otherwise truncate the CREATE TABLE block early.
+    const sqlNoComments = allSql.replace(/--.*$/gm, '');
     for (const d of MERIDIAN_CHAINS) {
-      const m = allSql.split(`CREATE TABLE IF NOT EXISTS ${d.table}`)[1]?.split(');')[0] ?? '';
+      const m = sqlNoComments.split(`CREATE TABLE IF NOT EXISTS ${d.table}`)[1]?.split(');')[0] ?? '';
       expect(m, `${d.table} missing ${d.deadlineCol}`).toContain(d.deadlineCol);
       if (d.quantumCol) expect(m, `${d.table} missing ${d.quantumCol}`).toContain(d.quantumCol);
     }
