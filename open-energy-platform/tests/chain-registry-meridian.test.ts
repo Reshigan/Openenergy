@@ -113,6 +113,19 @@ describe('registry schema extensions', () => {
   });
 });
 
+describe('covenant_certificate schema extensions', () => {
+  it('covenant_certificate has filters, kpis, and breach action fields', () => {
+    const d = getChain('covenant_certificate')!;
+    expect(d.filters?.map(f => f.key)).toContain('active_breach');
+    expect(d.kpis?.some(k => k.compute === 'sum_quantum')).toBe(true);
+    const flag = d.actions.find(a => a.action === 'flag-breach')!;
+    expect(flag.fields?.find(f => f.key === 'reason_code')?.type).toBe('enum');
+    const KNOWN = new Set(['certificate_due','certificate_submitted','under_review','ratios_verified',
+      'compliant','breach_identified','waiver_requested','waiver_granted','cure_period','cured','accelerated']);
+    for (const f of d.filters ?? []) for (const s of f.statuses) expect(KNOWN.has(s)).toBe(true);
+  });
+});
+
 describe('registry tables exist in migrations', () => {
   const migDir = join(__dirname, '../migrations');
   const allSql = readdirSync(migDir)

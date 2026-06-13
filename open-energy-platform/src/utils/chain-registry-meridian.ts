@@ -124,8 +124,28 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { action: 'flag-breach', label: 'Declare breach',
         path: '/api/covenant-certificate/chain/:id/flag-breach',
         roles: ['admin', 'support', 'lender'], tone: 'oxide',
-        cascadeHint: 'Notifies borrower (IPP), opens cure window, adds facility to watchlist (W6).' },
+        cascadeHint: 'Notifies borrower (IPP), opens cure window, adds facility to watchlist (W6).',
+        fields: [
+          { key: 'reason_code', label: 'Breach type', type: 'enum', required: true,
+            options: ['dscr_breach', 'llcr_breach', 'gearing_breach', 'reporting_failure'] },
+          { key: 'breached_covenants', label: 'Breached covenants', type: 'string', required: true,
+            placeholder: 'e.g. DSCR < 1.20x for Q2' },
+          { key: 'breach_basis', label: 'Evidence / basis', type: 'evidence', required: true },
+        ],
+      },
     ],
+    filters: [
+      { key: 'active_breach', label: 'Active breach', statuses: ['breach_identified', 'waiver_requested', 'cure_period'] },
+      { key: 'under_review', label: 'Under review', statuses: ['under_review', 'ratios_verified'] },
+      { key: 'awaiting', label: 'Awaiting submission', statuses: ['certificate_due', 'certificate_submitted'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['compliant', 'waiver_granted', 'cured', 'accelerated'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Certificates', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+      { key: 'exposure', label: 'Outstanding', compute: 'sum_quantum' },
+    ],
+    initiation: null,
   },
 
   // W21 — Drawdown chain (IE + CP gated; INVERTED SLA — bigger tranche more time)
