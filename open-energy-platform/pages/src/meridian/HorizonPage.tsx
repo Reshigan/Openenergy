@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import './meridian.css';
 import { fetchHorizon, BUCKETS, fmtZar, type Bucket, type HorizonData, type MerCase } from './lib';
 import { CaseTile } from './components';
+import { MeridianHeader } from './MeridianHeader';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/useAuth';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
@@ -42,7 +43,6 @@ function bucketTick(key: Bucket, now: Date): string {
 
 export default function HorizonPage() {
   const role = useRole();
-  const { user } = useAuth();
   // Admin holds no Meridian lanes — it views any role's board via the backend
   // passthrough. Non-admin roles always view their own board (boardRole === role).
   const isAdmin = role === 'admin';
@@ -113,30 +113,10 @@ export default function HorizonPage() {
   }
 
   const now = new Date();
-  const clock = `${now.toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'short' })} · ${now.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })} SAST`;
-  const initials = (user?.name ?? '')
-    .split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '·';
 
   return (
     <div className="mer horizon">
-      <header>
-        <div className="wordmark">MERIDIAN</div>
-        <div className="ctx">
-          <b>{cfg?.label ?? boardRole}</b>
-          <span>{data.counts.total} live · {data.counts.breached} breached</span>
-        </div>
-        <div className="spacer" />
-        <nav className="quicklinks" aria-label="Platform sections">
-          <Link to="/deals">Deals</Link>
-          <Link to="/esg">ESG</Link>
-          <Link to="/reports">Reports</Link>
-          <Link to="/intelligence">Intelligence</Link>
-          <Link to="/dashboard">National</Link>
-        </nav>
-        <div className="clock mono">{clock}</div>
-        <Link className="kbd-hint" to="/atlas">Atlas — search anything <kbd>⌘K</kbd></Link>
-        <div className="avatar">{initials}</div>
-      </header>
+      <MeridianHeader ctx={<><b>{cfg?.label ?? boardRole}</b><span>{data.counts.total} live · {data.counts.breached} breached</span></>} />
 
       {roleSwitcher}
 
