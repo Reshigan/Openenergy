@@ -29,6 +29,32 @@ export async function fetchHorizon(role: string): Promise<HorizonData> {
   return r.data.data;
 }
 
+export interface LedgerActionField {
+  key: string; label: string;
+  type: 'number' | 'string' | 'date' | 'enum' | 'boolean' | 'evidence';
+  required?: boolean; unit?: string; options?: string[]; placeholder?: string; defaultFrom?: string;
+}
+export interface LedgerRow {
+  id: string; ref: string; title: string; status: string;
+  deadline_at: string | null; bucket: string; quantum_zar: number | null;
+  counterparty: string | null; score: number;
+  actions: (MerAction & { fields?: LedgerActionField[] })[];
+}
+export interface LedgerData {
+  chain: { key: string; wave: number; title: string };
+  filters: { key: string; label: string; statuses: string[] }[];
+  initiation: { label: string; path: string; fields: LedgerActionField[] } | null;
+  kpis: { key: string; label: string; value: number }[];
+  rows: LedgerRow[];
+}
+
+export async function fetchLedger(chainKey: string, status?: string): Promise<LedgerData> {
+  const q = status ? `?status=${encodeURIComponent(status)}` : '';
+  const r = await api.get(`/ledger/${chainKey}${q}`);
+  if (!r.data?.success) throw new Error(r.data?.error || 'ledger fetch failed');
+  return r.data.data;
+}
+
 export function fmtZar(v: number | null): string {
   if (v == null) return '';
   if (v >= 1e9) return `R ${(v / 1e9).toFixed(2)}bn`;
