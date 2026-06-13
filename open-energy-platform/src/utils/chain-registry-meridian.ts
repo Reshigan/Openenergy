@@ -5,6 +5,26 @@
 
 export type HorizonBucket = 'breached' | 'h2' | 'today' | 'h48' | 'week' | 'later';
 
+export interface ActionFieldSpec {
+  key: string;
+  label: string;
+  type: 'number' | 'string' | 'date' | 'enum' | 'boolean' | 'evidence';
+  required?: boolean;
+  unit?: string;
+  options?: string[];      // type 'enum'
+  placeholder?: string;
+  defaultFrom?: string;    // prefill from a case raw-record column
+}
+
+export interface ChainInitiation {
+  label: string;
+  path: string;            // POST endpoint, must start with /api/
+  fields: ActionFieldSpec[];
+}
+
+export interface ChainFilterSpec { key: string; label: string; statuses: string[]; }
+export interface ChainKpiSpec { key: string; label: string; compute: 'count' | 'count_breached' | 'sum_quantum'; }
+
 export interface ChainActionHint {
   action: string;            // POST action segment on the existing chain route
   label: string;             // button label
@@ -12,6 +32,7 @@ export interface ChainActionHint {
   roles: string[];           // JWT roles allowed (suffixed forms: ipp_developer, grid_operator, carbon_fund)
   cascadeHint: string;       // Law 3 preview, e.g. 'Notifies borrower (IPP) and arms 14d cure window'
   tone?: 'primary' | 'ghost' | 'oxide';
+  fields?: ActionFieldSpec[];
 }
 
 export interface ChainDescriptor {
@@ -30,6 +51,9 @@ export interface ChainDescriptor {
   eventsTable: string | null;    // per-chain event table; null = Thread hides timeline (v1 ok)
   eventsFk: string | null;
   actions: ChainActionHint[];    // decisive transitions (typically 3-6 per chain)
+  initiation?: ChainInitiation | null;
+  filters?: ChainFilterSpec[];
+  kpis?: ChainKpiSpec[];
 }
 
 const HOUR = 3600_000;

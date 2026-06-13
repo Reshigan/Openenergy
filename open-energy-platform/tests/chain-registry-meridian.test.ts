@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  MERIDIAN_CHAINS, bucketFor, attentionScore, quantumZar, type HorizonBucket,
+  MERIDIAN_CHAINS, bucketFor, attentionScore, quantumZar, getChain, type HorizonBucket,
 } from '../src/utils/chain-registry-meridian';
 
 const NOW = new Date('2026-06-12T09:40:00Z').getTime();
@@ -80,6 +80,36 @@ describe('MERIDIAN_CHAINS registry shape', () => {
   it('keys are unique', () => {
     const keys = MERIDIAN_CHAINS.map(d => d.key);
     expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+describe('registry schema extensions', () => {
+  it('getChain resolves a known key and returns undefined for unknown', () => {
+    expect(getChain('covenant_certificate')?.wave).toBe(38);
+    expect(getChain('__nope__')).toBeUndefined();
+  });
+
+  it('any filters/kpis/initiation present are well-formed', () => {
+    for (const d of MERIDIAN_CHAINS) {
+      for (const f of d.filters ?? []) {
+        expect(typeof f.key).toBe('string');
+        expect(Array.isArray(f.statuses)).toBe(true);
+        expect(f.statuses.length).toBeGreaterThan(0);
+      }
+      for (const k of d.kpis ?? []) {
+        expect(['count', 'count_breached', 'sum_quantum']).toContain(k.compute);
+      }
+      if (d.initiation) {
+        expect(d.initiation.path.startsWith('/api/')).toBe(true);
+        expect(Array.isArray(d.initiation.fields)).toBe(true);
+      }
+      for (const a of d.actions) {
+        for (const fld of a.fields ?? []) {
+          expect(['number','string','date','enum','boolean','evidence']).toContain(fld.type);
+          if (fld.type === 'enum') expect((fld.options ?? []).length).toBeGreaterThan(0);
+        }
+      }
+    }
   });
 });
 
