@@ -89,7 +89,6 @@ export function FieldForm({ fields, prefill, submitLabel, cascadeHint, ariaLabel
             {f.type === 'date' && (
               <input id={id} type="date"
                      value={(values[f.key] as string) ?? ''}
-                     placeholder={f.placeholder}
                      onChange={e => set(f.key, e.target.value)} {...errProps} />
             )}
             {f.type === 'enum' && (
