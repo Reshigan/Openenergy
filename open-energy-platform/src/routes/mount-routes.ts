@@ -732,9 +732,11 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   app.route('/api/horizon', horizonRoutes);
   // Meridian — generic two-sided case view over chain registry.
   app.route('/api/thread', threadRoutes);
+  // Generalized cross-role deal engine (offer→match→evaluate→accept→track).
+  // A specific prefix must be registered BEFORE the broad /api catch-all so
+  // Hono (which matches in registration order) routes it correctly.
+  app.route('/api/deals', dealsRoutes);
+
   // platformFeaturesRoutes is the catch-all for /api — it must remain LAST.
   app.route('/api', platformFeaturesRoutes);
-
-  // Generalized cross-role deal engine (offer→match→evaluate→accept→track).
-  app.route('/api/deals', dealsRoutes);
 }
