@@ -440,3 +440,54 @@
   .mer .ocard, .mer .ocard:active { transform:none; transition:opacity 160ms var(--ease), border-color 160ms; }
   .mer .sweet-reveal { transition:opacity 220ms var(--ease); }
 }
+
+/* ════════ Ledger — scan one chain (KPI strip + filter pills + card list) ════════ */
+/* Same body-flex note as .mer.horizon: the page wrapper supplies the column layout so
+   the MeridianHeader stays pinned and the body scrolls. Reuses the Atlas/Deal Desk
+   paper aesthetic (petrol accent, JetBrains Mono numerics) and shared .btn/.chip. */
+.mer.ledger { display:flex; flex-direction:column; min-height:100dvh; }
+.mer.ledger .ledger-body { flex:1; min-height:0; overflow-y:auto; padding:28px 44px 60px; max-width:920px; }
+
+/* ── KPI strip ── */
+.mer.ledger .kpis { display:flex; flex-wrap:wrap; gap:14px 36px; margin-bottom:22px; }
+.mer.ledger .kpi { display:flex; flex-direction:column; gap:2px; }
+.mer.ledger .kpi-val { font-weight:700; font-size:21px; letter-spacing:-0.01em; color:var(--petrol-deep); line-height:1.1; }
+.mer.ledger .kpi-label {
+  font-variation-settings:'wdth' 112; font-size:10px; font-weight:700; letter-spacing:0.1em;
+  text-transform:uppercase; color:var(--ink3);
+}
+
+/* ── Filter pills (+ right-aligned initiation button) ── */
+.mer.ledger .pills { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:20px; }
+.mer.ledger .pills .spacer { flex:1; }
+.mer.ledger .pill {
+  font-family:'Archivo',sans-serif; font-size:12px; font-weight:600; color:var(--ink2);
+  background:var(--raised); border:1px solid var(--line); border-radius:99px; padding:6px 14px;
+  cursor:pointer; transition:transform 140ms var(--ease), border-color 140ms, background 140ms, color 140ms;
+}
+.mer.ledger .pill:hover { border-color:var(--ink3); color:var(--ink); }
+.mer.ledger .pill:active { transform:scale(0.97); }
+.mer.ledger .pill.on { background:var(--petrol); border-color:var(--petrol); color:white; }
+.mer.ledger .pill.on:hover { background:var(--petrol-deep); border-color:var(--petrol-deep); color:white; }
+
+/* ── Case cards (full-width button rows; hover lifts, cf. .dcard) ── */
+.mer.ledger .lcard {
+  display:block; width:100%; text-align:left; background:var(--raised);
+  border:1px solid var(--line); border-radius:8px; padding:13px 15px 14px; margin-bottom:12px;
+  cursor:pointer; color:inherit; font-family:'Archivo',sans-serif;
+  transition:transform 160ms var(--ease), border-color 160ms, box-shadow 160ms;
+}
+.mer.ledger .lcard:hover { border-color:var(--petrol); box-shadow:0 1px 4px oklch(0.40 0.075 200 / 0.10); transform:translateY(-1px); }
+.mer.ledger .lcard:active { transform:scale(0.99); }
+.mer.ledger .lcard-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.mer.ledger .lcard .ref { font-size:10.5px; color:var(--ink3); }
+.mer.ledger .lcard-title { display:block; font-size:13.5px; font-weight:600; line-height:1.35; margin:5px 0 8px; }
+.mer.ledger .lcard .fuse { width:170px; }
+.mer.ledger .lcard-meta { font-size:11.5px; color:var(--ink2); margin-top:8px; }
+.mer.ledger .lcard-empty { padding:48px 0; text-align:center; color:var(--ink2); font-size:12.5px; }
+
+/* Emil motion: reduced-motion users get opacity-only — no transforms. */
+@media (prefers-reduced-motion:reduce) {
+  .mer.ledger .lcard, .mer.ledger .lcard:hover, .mer.ledger .lcard:active,
+  .mer.ledger .pill:active { transform:none; transition:opacity 160ms var(--ease), border-color 160ms; }
+}
