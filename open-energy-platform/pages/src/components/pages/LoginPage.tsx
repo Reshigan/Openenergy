@@ -26,7 +26,7 @@ const T = {
   errorBd:  'oklch(0.75 0.12 20)',
 } as const;
 
-// ─── Persona data (compact, all 9 roles + 2 IPP variants) ────────────────────
+// ─── Persona data (compact, 11 roles + IPP variant) ──────────────────────────
 interface Persona {
   email: string;
   label: string;
@@ -38,6 +38,8 @@ interface Persona {
 const PERSONAS: Persona[] = [
   { email: 'ipp@openenergy.co.za',       label: 'Solar IPP',      short: 'SI', accent: 'oklch(0.46 0.16 55)',  group: 'Producers' },
   { email: 'wind@openenergy.co.za',      label: 'Wind IPP',       short: 'WI', accent: 'oklch(0.46 0.16 55)',  group: 'Producers' },
+  { email: 'esco@openenergy.co.za',      label: 'ESCO / O&M',     short: 'OM', accent: 'oklch(0.46 0.14 160)', group: 'Producers' },
+  { email: 'epc@openenergy.co.za',       label: 'EPC Contractor', short: 'EP', accent: 'oklch(0.48 0.14 40)',  group: 'Producers' },
   { email: 'trader@openenergy.co.za',    label: 'Trader',         short: 'TR', accent: 'oklch(0.46 0.16 250)', group: 'Markets' },
   { email: 'carbon@openenergy.co.za',    label: 'Carbon',         short: 'CF', accent: 'oklch(0.46 0.16 145)', group: 'Markets' },
   { email: 'offtaker@openenergy.co.za',  label: 'Offtaker',       short: 'OT', accent: 'oklch(0.46 0.14 200)', group: 'Markets' },

@@ -17,7 +17,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { EmptyState } from '../EmptyState';
-import { RoleShell, CommandRail, DensityToggle, type CommandItem } from '../signature';
+import { RoleShell, CommandRail, type CommandItem } from '../signature';
 import { themeFor, type RoleKey } from '../../lib/role-themes';
 import { useDensityPreference } from '../../lib/density';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -525,9 +525,6 @@ export function WorkstationShell({
           </div>
 
           <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
-            {densityState.canToggle && (
-              <DensityToggle density={densityState.density} onChange={densityState.setDensity} />
-            )}
             {resolvedBackHref && (
               <button
                 type="button"

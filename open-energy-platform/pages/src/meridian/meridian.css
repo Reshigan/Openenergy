@@ -72,6 +72,12 @@
   font-family:'JetBrains Mono',monospace; font-size:10.5px; border:1px solid var(--line);
   border-radius:4px; padding:1px 5px; background:var(--raised); color:var(--ink2);
 }
+.mer .quicklinks { display:flex; align-items:center; gap:2px; }
+.mer .quicklinks a {
+  font-size:12.5px; font-weight:600; color:var(--ink2); text-decoration:none;
+  padding:6px 11px; border-radius:6px; transition:background 140ms var(--ease), color 140ms;
+}
+.mer .quicklinks a:hover { background:var(--paper); color:var(--petrol); }
 .mer .avatar {
   width:32px; height:32px; border-radius:50%; background:var(--petrol); color:white;
   display:grid; place-items:center; font-size:12px; font-weight:700;

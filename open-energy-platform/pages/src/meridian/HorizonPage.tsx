@@ -126,6 +126,12 @@ export default function HorizonPage() {
           <span>{data.counts.total} live · {data.counts.breached} breached</span>
         </div>
         <div className="spacer" />
+        <nav className="quicklinks" aria-label="Platform sections">
+          <Link to="/esg">ESG</Link>
+          <Link to="/reports">Reports</Link>
+          <Link to="/intelligence">Intelligence</Link>
+          <Link to="/dashboard">National</Link>
+        </nav>
         <div className="clock mono">{clock}</div>
         <Link className="kbd-hint" to="/atlas">Atlas — search anything <kbd>⌘K</kbd></Link>
         <div className="avatar">{initials}</div>
