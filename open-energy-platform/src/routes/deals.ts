@@ -480,7 +480,7 @@ deals.post('/:type/accept', async (c) => {
       if (!requestId) return c.json({ error: 'request_id required' }, 400);
       return await withLock(c.env, `deal:request:${requestId}`, user.id, async () => {
         const reqRow = await c.env.DB.prepare('SELECT * FROM oe_deal_requests WHERE id = ?')
-          .bind(requestId).first<any>();
+          .bind(requestId).first<{ target_amount_zar: number | null }>();
         if (!reqRow) return c.json({ error: 'request_not_found' }, 404);
         const bidsRes = await c.env.DB.prepare(
           `SELECT * FROM oe_deal_offers WHERE request_id = ? AND status IN ('published','open') ORDER BY bid_amount_zar ASC`,
@@ -514,7 +514,7 @@ deals.post('/:type/accept', async (c) => {
       if (!requestId || !offerId) return c.json({ error: 'request_id and offer_id required' }, 400);
       return await withLock(c.env, `deal:request:${requestId}`, user.id, async () => {
         const reqRow = await c.env.DB.prepare('SELECT * FROM oe_deal_requests WHERE id = ?')
-          .bind(requestId).first<any>();
+          .bind(requestId).first<{ target_amount_zar: number | null; filled_amount_zar: number | null }>();
         if (!reqRow) return c.json({ error: 'request_not_found' }, 404);
         const offer = await c.env.DB.prepare('SELECT * FROM oe_deal_offers WHERE id = ?')
           .bind(offerId).first<OfferRow>();
@@ -625,10 +625,10 @@ deals.post('/objective/:oid/leg', async (c) => {
 deals.get('/objective/:oid', async (c) => {
   const user = getCurrentUser(c);
   const oid = c.req.param('oid');
-  const obj = await c.env.DB.prepare('SELECT * FROM oe_deal_objectives WHERE id = ?').bind(oid).first<any>();
+  const obj = await c.env.DB.prepare('SELECT * FROM oe_deal_objectives WHERE id = ?').bind(oid).first<Record<string, unknown> & { tenant_id: string }>();
   if (!obj) return c.json({ error: 'objective_not_found' }, 404);
   if (user.role !== 'admin' && obj.tenant_id !== getTenantId(c)) return c.json({ error: 'forbidden' }, 403);
-  const legs = await c.env.DB.prepare('SELECT * FROM oe_deal_requests WHERE objective_id = ?').bind(oid).all<any>();
+  const legs = await c.env.DB.prepare('SELECT * FROM oe_deal_requests WHERE objective_id = ?').bind(oid).all<Record<string, unknown>>();
   return c.json({ objective: obj, legs: legs.results ?? [] });
 });
 
