@@ -338,6 +338,7 @@ async function advanceObjective(
       entity_type: 'deal_objective',
       entity_id: objRow.id,
       data: { committed_zar: newCommitted, funding_target_zar: objRow.funding_target_zar },
+      commercial: { entity_value: newCommitted, participant_id: actorId },
       env,
     });
   }
@@ -394,10 +395,10 @@ deals.post('/:type/accept', async (c) => {
         }
 
         const ts = parseTermSheet(offer);
+        const dealValue = termSheetNumber(ts, 'offered_annual_mwh') * termSheetNumber(ts, 'blended_price_zar_per_mwh');
 
         // Pre-trade gate when the accept IS a trade.
         if (d.dispatch_is_trade) {
-          const notional = termSheetNumber(ts, 'offered_annual_mwh') * termSheetNumber(ts, 'blended_price_zar_per_mwh');
           const status = await participantStatus(c.env, user.id);
           const guard = evaluateOrder(
             {
@@ -407,7 +408,7 @@ deals.post('/:type/accept', async (c) => {
               price_zar_mwh: termSheetNumber(ts, 'blended_price_zar_per_mwh') || null,
               delivery_date: null,
             },
-            snapshotForAccept(status, notional),
+            snapshotForAccept(status, dealValue),
           );
           if (!guard.ok) {
             return c.json({ error: 'guard_rejected', reason_code: guard.reason_code, detail: guard.detail }, 409);
@@ -433,6 +434,7 @@ deals.post('/:type/accept', async (c) => {
             entity_id: offerId,
             chain_key: chainKey,
             data: { deal_type: d.deal_type, request_id: requestId ?? null, chain_key: chainKey, dispatched_case_id: caseId },
+            commercial: { entity_value: dealValue, participant_id: user.id },
             env: c.env,
           });
           return c.json({ status: 'dispatched', dispatched_chain_key: chainKey, dispatched_case_id: caseId });
@@ -470,7 +472,8 @@ deals.post('/:type/accept', async (c) => {
         });
         await fireCascade({
           event: 'deal.accepted', actor_id: user.id, entity_type: 'deal_offer', entity_id: offerId,
-          data: { deal_type: d.deal_type, request_id: requestId ?? null, loi_id: loiId }, env: c.env,
+          data: { deal_type: d.deal_type, request_id: requestId ?? null, loi_id: loiId },
+          commercial: { entity_value: dealValue, participant_id: user.id }, env: c.env,
         });
         return c.json({ status: 'loi_drafted', loi_id: loiId });
       });
@@ -504,7 +507,8 @@ deals.post('/:type/accept', async (c) => {
         ).bind(spent, requestId).run();
         await fireCascade({
           event: 'deal.cleared', actor_id: user.id, entity_type: 'deal_request', entity_id: requestId,
-          data: { deal_type: d.deal_type, cleared_count: clearedCount, clearing_rule: d.clearing?.rule ?? 'pay_as_bid' }, env: c.env,
+          data: { deal_type: d.deal_type, cleared_count: clearedCount, clearing_rule: d.clearing?.rule ?? 'pay_as_bid' },
+          commercial: { entity_value: spent, participant_id: user.id }, env: c.env,
         });
         return c.json({ status: 'cleared', cleared_count: clearedCount, clearing_total_zar: spent });
       });
@@ -536,7 +540,8 @@ deals.post('/:type/accept', async (c) => {
         ).bind(newFilled, filledStatus, requestId).run();
         await fireCascade({
           event: 'deal.subscribed', actor_id: user.id, entity_type: 'deal_request', entity_id: requestId,
-          data: { deal_type: d.deal_type, offer_id: offerId, filled_amount_zar: newFilled, target_amount_zar: target === Infinity ? null : target }, env: c.env,
+          data: { deal_type: d.deal_type, offer_id: offerId, filled_amount_zar: newFilled, target_amount_zar: target === Infinity ? null : target },
+          commercial: { entity_value: commit, participant_id: user.id }, env: c.env,
         });
         await advanceObjective(c.env, d, requestId, offerId, user.id);
         return c.json({ status: filledStatus === 'filled' ? 'filled' : 'subscribed', filled_amount_zar: newFilled });
