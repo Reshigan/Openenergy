@@ -53,7 +53,7 @@ export interface BillProfileInput {
   avg_tariff_zar_per_kwh: number;
 }
 
-interface OptionBase {
+export interface OptionBase {
   option_id: string;
   kind: 'project' | 'listing';
   title: string;
@@ -66,7 +66,9 @@ interface OptionBase {
   blended_price: number | null;
 }
 
-function scoreOption(base: OptionBase, bill: BillProfileInput): OfftakerOption {
+// Exported as scoreEnergyOption for the deal registry's energy_supply descriptor,
+// which delegates its scoring to this exact function (no behaviour divergence).
+export function scoreEnergyOption(base: OptionBase, bill: BillProfileInput): OfftakerOption {
   const demandMwh = bill.annual_kwh / 1000;
   const coveredMwh = Math.min(base.offered_annual_mwh, demandMwh);
   const co2 = coveredMwh * SA_GRID_EF;
@@ -154,7 +156,7 @@ export async function buildOfftakerOptions(
     // Operating project ⇒ the PPA is contracted/confidential: withhold price.
     // Otherwise the price is modelled ⇒ expose only a banded indicative figure,
     // never the raw cross-tenant ppa_price_per_mwh.
-    upcoming_projects.push(scoreOption({
+    upcoming_projects.push(scoreEnergyOption({
       option_id: String(row.id),
       kind: 'project',
       title: String(row.project_name ?? 'Unnamed project'),
@@ -172,7 +174,7 @@ export async function buildOfftakerOptions(
     const offered = Number(row.volume_available ?? 0) || demandMwh;
     const price = Number(row.price ?? 0) || FALLBACK_PRICE_ZAR_PER_MWH;
     // A marketplace listing is a public offer — its price is shown verbatim.
-    available_now.push(scoreOption({
+    available_now.push(scoreEnergyOption({
       option_id: String(row.id),
       kind: 'listing',
       title: String(row.title ?? 'Marketplace listing'),
