@@ -344,6 +344,81 @@ async function advanceObjective(
   }
 }
 
+// Clear an auction request pay_as_bid: cheapest bids first up to the request
+// target, then fire deal.cleared. Shared by POST /accept (manual close) and the
+// timer sweep (window-close auto-clear) so both paths behave identically.
+// Caller is responsible for holding the `deal:request:<id>` lock.
+async function clearAuction(
+  env: HonoEnv['Bindings'],
+  d: DealDescriptor,
+  requestId: string,
+  actorId: string,
+): Promise<{ clearedCount: number; spent: number }> {
+  const reqRow = await env.DB.prepare('SELECT target_amount_zar FROM oe_deal_requests WHERE id = ?')
+    .bind(requestId).first<{ target_amount_zar: number | null }>();
+  if (!reqRow) return { clearedCount: 0, spent: 0 }; // unreachable: callers pre-check existence
+  const bidsRes = await env.DB.prepare(
+    `SELECT * FROM oe_deal_offers WHERE request_id = ? AND status IN ('published','open') ORDER BY bid_amount_zar ASC`,
+  ).bind(requestId).all<OfferRow>();
+  const bids = bidsRes.results ?? [];
+  const target = reqRow.target_amount_zar ?? Infinity;
+  let spent = 0;
+  let clearedCount = 0;
+  for (const bid of bids) {
+    const cost = bid.bid_amount_zar ?? 0;
+    if (spent + cost > target) break;
+    spent += cost;
+    clearedCount++;
+    await env.DB.prepare(
+      `UPDATE oe_deal_offers SET clearing_status = 'cleared', cleared_quantity = ?, cleared_price_zar = ?, status = 'accepted', updated_at = datetime('now') WHERE id = ?`,
+    ).bind(bid.bid_quantity ?? null, bid.bid_amount_zar ?? null, bid.id).run();
+  }
+  await env.DB.prepare(
+    `UPDATE oe_deal_requests SET status = 'cleared', clearing_price_zar = ?, updated_at = datetime('now') WHERE id = ?`,
+  ).bind(spent, requestId).run();
+  await fireCascade({
+    event: 'deal.cleared', actor_id: actorId, entity_type: 'deal_request', entity_id: requestId,
+    data: { deal_type: d.deal_type, cleared_count: clearedCount, clearing_rule: d.clearing?.rule ?? 'pay_as_bid' },
+    commercial: { entity_value: spent, participant_id: actorId }, env,
+  });
+  return { clearedCount, spent };
+}
+
+// Timer-driven housekeeping run by the */15 cron (scheduled() in index.ts):
+//   1. Expire stale offers (status published/open, expiry passed → 'expired').
+//   2. Auto-clear timer auctions whose bid window has closed. Only descriptors
+//      with kind='auction' AND clearing.window_close='timer' are swept — the
+//      descriptor (static, never request-derived) is the authority, so a
+//      marketplace / manual-close / unknown deal_type request is skipped even
+//      with a past window. Per-request lock; a busy lock skips, not fails.
+export async function runDealSweep(
+  env: HonoEnv['Bindings'],
+): Promise<{ offersExpired: number; auctionsCleared: number }> {
+  const expired = await env.DB.prepare(
+    `UPDATE oe_deal_offers SET status = 'expired', updated_at = datetime('now')
+       WHERE status IN ('published','open') AND expiry IS NOT NULL AND expiry <= datetime('now')`,
+  ).run();
+  const offersExpired = expired.meta?.changes ?? 0;
+
+  const dueRes = await env.DB.prepare(
+    `SELECT id, deal_type FROM oe_deal_requests
+       WHERE status = 'open' AND bid_window_close IS NOT NULL AND bid_window_close <= datetime('now')`,
+  ).all<{ id: string; deal_type: string }>();
+  let auctionsCleared = 0;
+  for (const row of dueRes.results ?? []) {
+    const d = getDealDescriptor(row.deal_type);
+    if (!d || d.kind !== 'auction' || d.clearing?.window_close !== 'timer') continue;
+    try {
+      await withLock(env, `deal:request:${row.id}`, 'deal_sweep', () => clearAuction(env, d, row.id, 'deal_sweep'));
+      auctionsCleared++;
+    } catch (e) {
+      if (e instanceof LockBusyError) continue; // another writer holds it — next sweep retries
+      throw e;
+    }
+  }
+  return { offersExpired, auctionsCleared };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 4. POST /:type/accept — branches on descriptor.kind.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -482,34 +557,10 @@ deals.post('/:type/accept', async (c) => {
     if (d.kind === 'auction') {
       if (!requestId) return c.json({ error: 'request_id required' }, 400);
       return await withLock(c.env, `deal:request:${requestId}`, user.id, async () => {
-        const reqRow = await c.env.DB.prepare('SELECT * FROM oe_deal_requests WHERE id = ?')
-          .bind(requestId).first<{ target_amount_zar: number | null }>();
-        if (!reqRow) return c.json({ error: 'request_not_found' }, 404);
-        const bidsRes = await c.env.DB.prepare(
-          `SELECT * FROM oe_deal_offers WHERE request_id = ? AND status IN ('published','open') ORDER BY bid_amount_zar ASC`,
-        ).bind(requestId).all<OfferRow>();
-        const bids = bidsRes.results ?? [];
-        // pay_as_bid: clear each bid up to the target/quantity, best (lowest cost) first.
-        const target = reqRow.target_amount_zar ?? Infinity;
-        let spent = 0;
-        let clearedCount = 0;
-        for (const bid of bids) {
-          const cost = bid.bid_amount_zar ?? 0;
-          if (spent + cost > target) break;
-          spent += cost;
-          clearedCount++;
-          await c.env.DB.prepare(
-            `UPDATE oe_deal_offers SET clearing_status = 'cleared', cleared_quantity = ?, cleared_price_zar = ?, status = 'accepted', updated_at = datetime('now') WHERE id = ?`,
-          ).bind(bid.bid_quantity ?? null, bid.bid_amount_zar ?? null, bid.id).run();
-        }
-        await c.env.DB.prepare(
-          `UPDATE oe_deal_requests SET status = 'cleared', clearing_price_zar = ?, updated_at = datetime('now') WHERE id = ?`,
-        ).bind(spent, requestId).run();
-        await fireCascade({
-          event: 'deal.cleared', actor_id: user.id, entity_type: 'deal_request', entity_id: requestId,
-          data: { deal_type: d.deal_type, cleared_count: clearedCount, clearing_rule: d.clearing?.rule ?? 'pay_as_bid' },
-          commercial: { entity_value: spent, participant_id: user.id }, env: c.env,
-        });
+        const exists = await c.env.DB.prepare('SELECT 1 FROM oe_deal_requests WHERE id = ?')
+          .bind(requestId).first();
+        if (!exists) return c.json({ error: 'request_not_found' }, 404);
+        const { clearedCount, spent } = await clearAuction(c.env, d, requestId, user.id);
         return c.json({ status: 'cleared', cleared_count: clearedCount, clearing_total_zar: spent });
       });
     }

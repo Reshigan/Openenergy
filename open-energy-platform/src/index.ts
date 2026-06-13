@@ -10,6 +10,7 @@ import './cascade-rules'; // Layer A — registers all cascade rules at boot
 import { logger } from './utils/logger';
 import { mountRoutes } from './routes/mount-routes';
 import { runAllSweeps } from './utils/sweep-runner';
+import { runDealSweep } from './routes/deals';
 import { processCascadeQueueBatch } from './utils/cascade';
 
 // Cron-utility functions (not route default exports)
@@ -197,6 +198,8 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('siem_dispatch', () => dispatchAllForwarders(env));
       // All 145+ SLA sweep functions run in parallel with Promise.allSettled isolation.
       await safe('all_sla_sweeps', () => runAllSweeps(env));
+      // Cross-role deal engine: expire stale offers + auto-clear timer auctions whose window closed.
+      await safe('deal_sweep', () => runDealSweep(env));
       break;
 
     case '0 * * * *':
