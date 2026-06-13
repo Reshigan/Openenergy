@@ -153,4 +153,9 @@ label, never color alone.
 3. **Thread v1** = generalization of the existing DetailDrawer against the
    uniform chain anatomy. One component, 76 chains.
 4. **Atlas v1** = the existing tab registry re-rendered as index + palette.
-5. Workstations stay until Horizon proves itself in use, then demote to Atlas.
+5. ✅ **Done.** Horizon is the post-login home and `/launch/:role` redirects to
+   it; the legacy launchpads stay reachable at `/launch-legacy/:role` for
+   reference only. Workstations are demoted to function containers reached
+   solely through Atlas function rows (`workstationPath?tab=<feature>`), no
+   longer a top-level surface. Onboarding now orients users to Horizon + Atlas
+   (⌘K) instead of workstations.

@@ -768,9 +768,9 @@ function GlobalOnboardingTourWrapper() {
   const { user } = useAuth();
   if (!user) return null;
   const baseSteps = [
-    { key: 'welcome', title: `Welcome, ${user.email.split('@')[0]}.`, body: 'A couple of things to try first: your setup checklist on the home board, and the "What can I do?" search in any workstation.' },
+    { key: 'welcome', title: `Welcome, ${user.email.split('@')[0]}.`, body: 'Your Horizon board is home — live cases laid out by time to consequence, ranked by money at risk. The most urgent work is already in front of you.' },
+    { key: 'atlas', title: 'Find any function with ⌘K', body: 'Atlas is the full index of everything your role can do. Press ⌘K anywhere to search functions and open one straight to the right tab.' },
     { key: 'ai-dock', title: 'Ask the assistant anything', body: 'The blue dock in the corner answers questions about any surface and can propose one-click actions you confirm before they run.' },
-    { key: 'workstation', title: 'Workstations are role-specific', body: `Your default workstation lives at /${user.role}/workstation — listings, KPIs and one-click actions are tailored to your role.` },
   ];
   return <OnboardingTour scope={`platform.${user.role}`} steps={baseSteps}/>;
 }
