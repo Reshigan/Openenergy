@@ -1,52 +1,56 @@
 import React from 'react';
 
 /* ════════════════════════════════════════════════════════════════════════
- * CEC — Brand mark
+ * CEC — Brand mark · "Cockpit Dial"
  *
- * Three interlocking rings:
- *   - Blue   (#3b82c4)  top-left  — energy
- *   - Teal   (#1f9b95)  top-right — sustainability
- *   - Navy   (#1a3a5c)  bottom    — institutional trust
- *   - Sky    (#5fa8e8)  centre dot — kinetic / live
+ * An open gauge ring (the "C" of CEC, and a cockpit instrument) with a gold
+ * needle swung to peak through the ring's mouth — energy read at a glance.
  *
- * Inline SVG so it scales crisply, picks up `currentColor` where useful,
- * and doesn't require an extra HTTP fetch. The `Banner` variant adds the
- * wordmark to the right.
+ *   - Field : deep navy   (#16365A → #0B2034)  institutional / grid
+ *   - Mark  : warm gold   (#F8C152 → #DC8417)  energy / the live reading
+ *
+ * Inline SVG so it scales crisply and needs no extra HTTP fetch. The Banner
+ * variant adds the CEC wordmark to the right.
  * ═══════════════════════════════════════════════════════════════════════ */
 
 export interface LogoProps {
   size?: number;            // mark height in px
   className?: string;
   title?: string;
-  /** Light variant inverts the mark for dark headers (rings → white tints) */
+  /** Light variant only affects the Banner wordmark colour on dark chrome */
   variant?: 'colour' | 'light';
 }
 
-export function LogoMark({ size = 32, className = '', title = 'Consolidated Energy Cockpit', variant = 'colour' }: LogoProps) {
-  const blue = variant === 'light' ? '#9bc8ee' : '#3b82c4';
-  const teal = variant === 'light' ? '#7fd5cf' : '#1f9b95';
-  const navy = variant === 'light' ? '#ffffff' : '#1a3a5c';
-  const dotOuter = variant === 'light' ? '#ffffff' : '#1a3a5c';
-  const dotInner = variant === 'light' ? '#5fa8e8' : '#5fa8e8';
-
+export function LogoMark({ size = 32, className = '', title = 'Consolidated Energy Cockpit' }: LogoProps) {
+  const uid = React.useId().replace(/:/g, '');
+  const field = `cecF-${uid}`;
+  const gold = `cecG-${uid}`;
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 400 400"
+      viewBox="0 0 100 100"
       className={className}
       role="img"
       aria-label={title}
       xmlns="http://www.w3.org/2000/svg"
     >
       <title>{title}</title>
-      <g fill="none" strokeLinecap="round">
-        <circle cx="142" cy="148" r="92" stroke={blue} strokeWidth="22" strokeDasharray="430 200" strokeDashoffset="-50" />
-        <circle cx="258" cy="148" r="92" stroke={teal} strokeWidth="22" strokeDasharray="430 200" strokeDashoffset="80" />
-        <circle cx="200" cy="252" r="92" stroke={navy} strokeWidth="22" strokeDasharray="430 200" strokeDashoffset="200" />
-      </g>
-      <circle cx="200" cy="200" r="22" fill={dotOuter} />
-      <circle cx="200" cy="200" r="9"  fill={dotInner} />
+      <defs>
+        <linearGradient id={field} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#16365A" />
+          <stop offset="1" stopColor="#0B2034" />
+        </linearGradient>
+        <linearGradient id={gold} x1="0.15" y1="0.1" x2="0.85" y2="0.95">
+          <stop offset="0" stopColor="#F8C152" />
+          <stop offset="1" stopColor="#DC8417" />
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="100" height="100" rx="23" fill={`url(#${field})`} />
+      <path d="M83.66 45.27 A34 34 0 1 1 60.5 17.66" fill="none" stroke={`url(#${gold})`} strokeWidth="9.5" strokeLinecap="round" />
+      <polygon points="45.5,49.8 69,26 54.5,56.2" fill={`url(#${gold})`} />
+      <circle cx="50" cy="53" r="6.6" fill={`url(#${gold})`} />
+      <circle cx="50" cy="53" r="2.7" fill="#0B2034" />
     </svg>
   );
 }
@@ -65,21 +69,21 @@ export function LogoBanner({
   variant = 'colour',
   wordmarkOnly = false,
 }: BannerProps) {
-  const navy = variant === 'light' ? '#ffffff' : '#1a3a5c';
-  const blue = variant === 'light' ? '#9bc8ee' : '#3b82c4';
+  const navy = variant === 'light' ? '#ffffff' : '#102E4D';
+  const sub = variant === 'light' ? 'rgba(255,255,255,0.72)' : '#5C6B7C';
 
   return (
     <div
       className={`inline-flex items-center gap-2.5 select-none ${className}`}
       style={{ height }}
     >
-      {!wordmarkOnly && <LogoMark size={height} variant={variant} />}
+      {!wordmarkOnly && <LogoMark size={height} />}
       <div
         className="font-display font-extrabold leading-[0.95] tracking-tight"
         style={{ fontSize: Math.round(height * 0.42) }}
       >
-        <div style={{ color: navy }}>CEC</div>
-        <div style={{ color: blue, fontSize: '0.55em', letterSpacing: '0.04em' }}>CONSOLIDATED ENERGY COCKPIT</div>
+        <div style={{ color: navy, letterSpacing: '0.06em' }}>CEC</div>
+        <div style={{ color: sub, fontSize: '0.5em', letterSpacing: '0.08em', fontWeight: 600 }}>CONSOLIDATED ENERGY COCKPIT</div>
       </div>
     </div>
   );

@@ -557,16 +557,24 @@ export function OEIcon({ name, size = 20, className = '', tone, filled, ariaLabe
       </svg>
     );
 
-    // ──────────── OE brand mark ────────────
+    // ──────────── CEC brand mark · Cockpit Dial ────────────
     case 'oe-mark': return (
-      <svg width={size} height={size} viewBox="0 0 400 400" role={ariaLabel ? 'img' : 'presentation'} aria-label={ariaLabel} className={className}>
-        <g fill="none" strokeLinecap="round">
-          <circle cx="142" cy="148" r="92" stroke="#3b82c4" strokeWidth="22" strokeDasharray="430 200" strokeDashoffset="-50" />
-          <circle cx="258" cy="148" r="92" stroke="#1f9b95" strokeWidth="22" strokeDasharray="430 200" strokeDashoffset="80" />
-          <circle cx="200" cy="252" r="92" stroke="#1a3a5c" strokeWidth="22" strokeDasharray="430 200" strokeDashoffset="200" />
-        </g>
-        <circle cx="200" cy="200" r="22" fill="#1a3a5c" />
-        <circle cx="200" cy="200" r="9"  fill="#5fa8e8" />
+      <svg width={size} height={size} viewBox="0 0 100 100" role={ariaLabel ? 'img' : 'presentation'} aria-label={ariaLabel} className={className}>
+        <defs>
+          <linearGradient id="oeMarkField" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#16365A" />
+            <stop offset="1" stopColor="#0B2034" />
+          </linearGradient>
+          <linearGradient id="oeMarkGold" x1="0.15" y1="0.1" x2="0.85" y2="0.95">
+            <stop offset="0" stopColor="#F8C152" />
+            <stop offset="1" stopColor="#DC8417" />
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="100" height="100" rx="23" fill="url(#oeMarkField)" />
+        <path d="M83.66 45.27 A34 34 0 1 1 60.5 17.66" fill="none" stroke="url(#oeMarkGold)" strokeWidth="9.5" strokeLinecap="round" />
+        <polygon points="45.5,49.8 69,26 54.5,56.2" fill="url(#oeMarkGold)" />
+        <circle cx="50" cy="53" r="6.6" fill="url(#oeMarkGold)" />
+        <circle cx="50" cy="53" r="2.7" fill="#0B2034" />
       </svg>
     );
 

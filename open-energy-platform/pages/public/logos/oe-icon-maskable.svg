@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Consolidated Energy Cockpit">
+  <title>Consolidated Energy Cockpit</title>
+  <defs>
+    <linearGradient id="cecFieldM" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16365A"/>
+      <stop offset="1" stop-color="#0B2034"/>
+    </linearGradient>
+    <linearGradient id="cecGoldM" x1="0.15" y1="0.1" x2="0.85" y2="0.95">
+      <stop offset="0" stop-color="#F8C152"/>
+      <stop offset="1" stop-color="#DC8417"/>
+    </linearGradient>
+  </defs>
+  <!-- Full-bleed navy field for platform masking -->
+  <rect x="0" y="0" width="100" height="100" fill="url(#cecFieldM)"/>
+  <!-- Mark scaled into the maskable safe zone (~62%, centered) -->
+  <g transform="translate(50 50) scale(0.62) translate(-50 -50)">
+    <path d="M83.66 45.27 A34 34 0 1 1 60.5 17.66" fill="none" stroke="url(#cecGoldM)"
+          stroke-width="9.5" stroke-linecap="round"/>
+    <polygon points="45.5,49.8 69,26 54.5,56.2" fill="url(#cecGoldM)"/>
+    <circle cx="50" cy="53" r="6.6" fill="url(#cecGoldM)"/>
+    <circle cx="50" cy="53" r="2.7" fill="#0B2034"/>
+  </g>
+</svg>

@@ -1,20 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Consolidated Energy Cockpit">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Consolidated Energy Cockpit">
   <title>Consolidated Energy Cockpit</title>
-  <!-- Three interlocking rings: blue (top-left), teal (top-right), navy (bottom),
-       plus a small navy disc + sky-blue centre dot. Stroke widths and overlapping
-       order reproduce the OE brand mark. -->
-  <g fill="none" stroke-linecap="round">
-    <!-- Top-left ring — blue -->
-    <circle cx="142" cy="148" r="92" stroke="#3b82c4" stroke-width="22"
-            stroke-dasharray="430 200" stroke-dashoffset="-50" />
-    <!-- Top-right ring — teal -->
-    <circle cx="258" cy="148" r="92" stroke="#1f9b95" stroke-width="22"
-            stroke-dasharray="430 200" stroke-dashoffset="80" />
-    <!-- Bottom ring — navy -->
-    <circle cx="200" cy="252" r="92" stroke="#1a3a5c" stroke-width="22"
-            stroke-dasharray="430 200" stroke-dashoffset="200" />
-  </g>
-  <!-- Centre cluster -->
-  <circle cx="200" cy="200" r="22" fill="#1a3a5c" />
-  <circle cx="200" cy="200" r="9"  fill="#5fa8e8" />
+  <defs>
+    <linearGradient id="cecField" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16365A"/>
+      <stop offset="1" stop-color="#0B2034"/>
+    </linearGradient>
+    <linearGradient id="cecGold" x1="0.15" y1="0.1" x2="0.85" y2="0.95">
+      <stop offset="0" stop-color="#F8C152"/>
+      <stop offset="1" stop-color="#DC8417"/>
+    </linearGradient>
+  </defs>
+  <!-- Navy squircle field -->
+  <rect x="0" y="0" width="100" height="100" rx="23" fill="url(#cecField)"/>
+  <!-- Cockpit dial: open gauge ring (the "C"), gold -->
+  <path d="M83.66 45.27 A34 34 0 1 1 60.5 17.66" fill="none" stroke="url(#cecGold)"
+        stroke-width="9.5" stroke-linecap="round"/>
+  <!-- Instrument needle swung to peak, pointing through the ring's mouth -->
+  <polygon points="45.5,49.8 69,26 54.5,56.2" fill="url(#cecGold)"/>
+  <!-- Pivot hub -->
+  <circle cx="50" cy="53" r="6.6" fill="url(#cecGold)"/>
+  <circle cx="50" cy="53" r="2.7" fill="#0B2034"/>
 </svg>
