@@ -127,6 +127,7 @@ export default function HorizonPage() {
         </div>
         <div className="spacer" />
         <nav className="quicklinks" aria-label="Platform sections">
+          <Link to="/deals">Deals</Link>
           <Link to="/esg">ESG</Link>
           <Link to="/reports">Reports</Link>
           <Link to="/intelligence">Intelligence</Link>

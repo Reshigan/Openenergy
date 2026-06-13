@@ -48,3 +48,71 @@ export function fuseFraction(deadline: string | null, windowHrs = 72): number {
   const hrs = (Date.parse(deadline) - Date.now()) / 3600_000;
   return Math.max(0, Math.min(1, hrs / windowHrs));
 }
+
+// ── Deal engine ──────────────────────────────
+// NB: deal endpoints return RAW bodies (no {success,data} envelope) — read r.data.<field> directly.
+export type DealKind = 'marketplace' | 'auction' | 'syndication' | 'negotiation' | 'obligation' | 'submission';
+export interface DealFieldSpec { key: string; label: string; type: 'number' | 'string' | 'date' | 'enum' | 'boolean'; required?: boolean; unit?: string; options?: string[] }
+export interface DealRequestSummary {
+  id: string; deal_type: string; status: string; need: Record<string, unknown>;
+  target_amount_zar: number | null; bid_window_close: string | null; clearing_rule: string | null;
+  selected_offer_id: string | null; dispatched_chain_key: string | null; dispatched_case_id: string | null;
+  created_at: string; offer_count: number;
+}
+export interface DealOfferSummary {
+  id: string; deal_type: string; title: string; status: string; request_id: string | null;
+  bid_amount_zar: number | null; committed_amount_zar: number | null; term_sheet: Record<string, unknown>;
+  expiry: string | null; created_at: string;
+}
+export interface MyDeals { requests: DealRequestSummary[]; offers: DealOfferSummary[] }
+export interface DealTypeInfo {
+  deal_type: string; kind: DealKind; initiator: 'provider' | 'demand'; event_prefix: string;
+  can_offer: boolean; can_request: boolean; term_sheet_schema: DealFieldSpec[]; need_schema: DealFieldSpec[];
+  provider_roles: string[]; demand_roles: string[];
+}
+export interface ScoredOption {
+  option_id: string; title: string; primary_metric: number | null; est_value_zar: number | null;
+  sweetener_value_zar: number; secondary: Record<string, unknown>; price_basis: string; rationale: string;
+}
+
+export async function fetchMyDeals(): Promise<MyDeals> {
+  const r = await api.get('/deals/mine');
+  return { requests: r.data?.requests ?? [], offers: r.data?.offers ?? [] };
+}
+export async function fetchDealTypes(): Promise<DealTypeInfo[]> {
+  const r = await api.get('/deals/types');
+  return r.data?.types ?? [];
+}
+export async function fetchDealOptions(dealType: string, requestId: string): Promise<ScoredOption[]> {
+  const r = await api.get(`/deals/${dealType}/options`, { params: { request_id: requestId } });
+  return r.data?.options ?? [];
+}
+export async function publishDealRequest(dealType: string, need: Record<string, unknown>, meta: Record<string, unknown> = {}): Promise<string> {
+  const r = await api.post(`/deals/${dealType}/request`, { need, ...meta });
+  return r.data?.request_id;
+}
+export async function publishDealOffer(dealType: string, termSheet: Record<string, unknown>, meta: Record<string, unknown> = {}): Promise<string> {
+  const r = await api.post(`/deals/${dealType}/offer`, { term_sheet: termSheet, ...meta });
+  return r.data?.offer_id;
+}
+export async function acceptDealOffer(dealType: string, body: Record<string, unknown>): Promise<any> {
+  const r = await api.post(`/deals/${dealType}/accept`, body);
+  return r.data;
+}
+export async function declineDealOffer(dealType: string, offerId: string): Promise<void> {
+  await api.post(`/deals/${dealType}/decline`, { offer_id: offerId });
+}
+
+// 'energy_supply' -> 'Energy Supply'
+export function dealLabel(t: string): string {
+  return t.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+// pipeline stage of a request, for DealProcessRail
+export type DealStage = 'offer' | 'match' | 'evaluate' | 'accept' | 'track';
+export function dealStage(r: DealRequestSummary): DealStage {
+  if (r.dispatched_chain_key) return 'track';
+  if (r.selected_offer_id) return 'accept';
+  if (r.offer_count > 0) return 'evaluate';
+  return 'match';
+}

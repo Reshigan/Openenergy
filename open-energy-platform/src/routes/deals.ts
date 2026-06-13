@@ -24,6 +24,7 @@ import { fireCascade } from '../utils/cascade';
 import { evaluateOrder, type RiskSnapshot } from '../utils/pre-trade-guards';
 import {
   getDealDescriptor,
+  listDealDescriptors,
   validateFields,
   parseTermSheet,
   valueSweeteners,
@@ -110,6 +111,78 @@ function termSheetNumber(ts: Json, key: string): number {
   const v = ts[key];
   return typeof v === 'number' && Number.isFinite(v) ? v : 0;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 0a. GET /mine — Deal Desk: requests I authored + offers I published.
+//
+// Registered BEFORE the /:type/* param routes so the literal /mine segment can
+// never be shadowed by :type matching (a /:type miss would 404 unknown_deal_type).
+// Identity- AND tenant-fenced (demand_id+tenant for requests, provider_id+tenant
+// for offers) — this is NOT the cross-tenant marketplace seam. RAW envelope.
+// ─────────────────────────────────────────────────────────────────────────────
+deals.get('/mine', async (c) => {
+  const user = getCurrentUser(c);
+  const tenant = getTenantId(c);
+
+  const reqRes = await c.env.DB.prepare(
+    `SELECT r.id, r.deal_type, r.need, r.status, r.target_amount_zar, r.bid_window_close, r.clearing_rule,
+            r.selected_offer_id, r.dispatched_chain_key, r.dispatched_case_id, r.created_at,
+            (SELECT COUNT(*) FROM oe_deal_offers o WHERE o.request_id = r.id) AS offer_count
+       FROM oe_deal_requests r
+      WHERE r.demand_id = ? AND r.tenant_id = ?
+      ORDER BY r.created_at DESC`,
+  ).bind(user.id, tenant).all<Record<string, unknown> & { need: string }>();
+  const requests = (reqRes.results ?? []).map((r) => {
+    let need: Json = {};
+    try { need = JSON.parse(r.need) as Json; } catch { need = {}; }
+    return { ...r, need };
+  });
+
+  const offRes = await c.env.DB.prepare(
+    `SELECT id, deal_type, title, status, request_id, bid_amount_zar, committed_amount_zar,
+            term_sheet, expiry, created_at
+       FROM oe_deal_offers
+      WHERE provider_id = ? AND tenant_id = ?
+      ORDER BY created_at DESC`,
+  ).bind(user.id, tenant).all<Record<string, unknown> & { term_sheet: string }>();
+  const offers = (offRes.results ?? []).map((o) => {
+    let term_sheet: Json = {};
+    try { term_sheet = JSON.parse(o.term_sheet) as Json; } catch { term_sheet = {}; }
+    return { ...o, term_sheet };
+  });
+
+  return c.json({ requests, offers });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 0b. GET /types — Deal Desk: deal types the caller's role can transact.
+//
+// Registered BEFORE the /:type/* param routes (same shadowing concern as /mine).
+// Pure registry read (static descriptors); no SQL. admin can do everything. RAW.
+// ─────────────────────────────────────────────────────────────────────────────
+deals.get('/types', async (c) => {
+  const user = getCurrentUser(c);
+  const role = user.role;
+  const types: Record<string, unknown>[] = [];
+  for (const d of listDealDescriptors()) {
+    const can_offer = d.provider_roles.includes(role) || role === 'admin';
+    const can_request = d.demand_roles.includes(role) || role === 'admin';
+    if (!(can_offer || can_request)) continue;
+    types.push({
+      deal_type: d.deal_type,
+      kind: d.kind,
+      initiator: d.initiator,
+      event_prefix: d.event_prefix,
+      can_offer,
+      can_request,
+      term_sheet_schema: d.term_sheet_schema,
+      need_schema: d.need_schema,
+      provider_roles: d.provider_roles,
+      demand_roles: d.demand_roles,
+    });
+  }
+  return c.json({ types });
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. POST /:type/offer — provider publishes an offer (or a bid).

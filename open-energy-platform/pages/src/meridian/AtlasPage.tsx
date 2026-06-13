@@ -8,7 +8,7 @@ import './meridian.css';
 import { Link } from 'react-router-dom';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { useAuth } from '../lib/useAuth';
-import { fetchHorizon, type HorizonData } from './lib';
+import { fetchHorizon, fetchDealTypes, dealLabel, type HorizonData, type DealTypeInfo } from './lib';
 
 export default function AtlasPage() {
   // Same source LaunchRedirect uses (App.tsx) — the signed-in user from AuthContext.
@@ -17,7 +17,24 @@ export default function AtlasPage() {
   const role = user?.role ?? '';
   const cfg = getRoleConfig(role);
   const [h, setH] = React.useState<HorizonData | null>(null);
-  React.useEffect(() => { if (role) fetchHorizon(role).then(setH).catch(() => setH(null)); }, [role]);
+  // Liveness guard (HorizonPage idiom): a late resolve after unmount — or after the
+  // role changes — must not setState with the previous request's result.
+  React.useEffect(() => {
+    if (!role) return undefined;
+    let live = true;
+    fetchHorizon(role).then(d => { if (live) setH(d); }).catch(() => { if (live) setH(null); });
+    return () => { live = false; };
+  }, [role]);
+  // Deal Desk discoverability — the deal types this role can transact (empty/fail = section hidden).
+  const [dealTypes, setDealTypes] = React.useState<DealTypeInfo[]>([]);
+  React.useEffect(() => {
+    let live = true;
+    fetchDealTypes().then(t => { if (live) setDealTypes(t); }).catch(() => { if (live) setDealTypes([]); });
+    return () => { live = false; };
+  }, []);
+  const transactable = dealTypes.filter(t => t.can_offer || t.can_request);
+  const dealCap = (t: DealTypeInfo) =>
+    t.can_offer && t.can_request ? 'offer · request' : t.can_offer ? 'offer' : 'request';
 
   const liveByChain = new Map<string, { live: number; breached: number }>();
   for (const lane of h?.lanes ?? []) for (const c of lane.cases) {
@@ -37,6 +54,17 @@ export default function AtlasPage() {
         <span className="counts mono">{fnCount} functions · {h?.counts.total ?? 0} live · {h?.counts.breached ?? 0} breached</span>
       </header>
       <main className="domains">
+        {transactable.length > 0 && (
+          <section className="domain">
+            <h2>DEAL DESK</h2>
+            {transactable.map(t => (
+              <Link key={t.deal_type} className="fn" to="/deals">
+                <span className="name">{dealLabel(t.deal_type)}</span>
+                <span className="live mono">{dealCap(t)}</span>
+              </Link>
+            ))}
+          </section>
+        )}
         {cfg.domains.map(d => (
           <section className="domain" key={d.key}>
             <h2>{d.label.toUpperCase()}</h2>

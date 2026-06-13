@@ -298,3 +298,145 @@
 .mer .hit b { font-size:13.5px; font-weight:600; }
 .mer .hit .sub { font-size:11.5px; color:var(--ink3); }
 .mer .pal-empty { padding:18px 14px; font-size:12.5px; color:var(--ink3); }
+
+/* ── Veil entrance motion ─────────────────── */
+/* Emil motion: the scrim fades, the panel rises+settles on var(--ease). Shared by
+   the palette and the Deal Desk veils so every dialog enters the same way. */
+@keyframes mer-veil-in { from { opacity:0; } to { opacity:1; } }
+@keyframes mer-panel-in { from { opacity:0; transform:translateY(12px) scale(0.98); } to { opacity:1; transform:none; } }
+.mer.veil { animation:mer-veil-in 160ms var(--ease); }
+.mer .palette, .mer .veil-body { animation:mer-panel-in 220ms var(--ease); }
+
+/* Deal Desk veil panel — a scroll-capped surface inside the scrim (cf. .palette).
+   Without max-height + overflow-y a long compare grid would overflow the viewport. */
+.mer .veil-body {
+  width:min(720px, 92vw); max-height:82vh; overflow-y:auto;
+  background:var(--raised); border:1px solid var(--line); border-radius:14px;
+  box-shadow:0 18px 60px oklch(0.21 0.012 85 / 0.18), 0 2px 8px oklch(0.21 0.012 85 / 0.08);
+}
+/* Offer-compare list inside the veil; the .veil-body cap above gives it its scroll. */
+.mer .ocard-grid { display:flex; flex-direction:column; }
+
+@media (prefers-reduced-motion:reduce) {
+  .mer.veil, .mer .palette, .mer .veil-body { animation-name:mer-veil-in; }
+}
+
+/* ── Deal Desk ───────────────────────────── */
+/* Provider/demand deal engine: a requests lane + an offers lane, with a 5-step
+   process rail, scored offer-compare cards, and a publish composer. Mirrors the
+   Atlas paper aesthetic (petrol/amber/oxide accents, JetBrains Mono numerics). */
+.mer .deal-desk { padding:34px 44px 60px; }
+
+/* Two lanes side-by-side; collapses to a single column on narrow viewports. */
+.mer .deal-cols { display:grid; grid-template-columns:1fr 1fr; gap:0 52px; align-items:start; }
+@media (max-width:900px) { .mer .deal-cols { grid-template-columns:1fr; gap:34px 0; } }
+
+/* Lane heading — same wdth/letter-spacing treatment as .domain h2. */
+.mer .deal-lane h2 {
+  font-variation-settings:'wdth' 115; font-size:11.5px; font-weight:800; letter-spacing:0.11em;
+  color:var(--petrol-deep); border-top:2px solid var(--petrol); padding-top:14px; margin-bottom:14px;
+}
+
+/* Request/offer card — tile-like border + radius; hover lifts. */
+.mer .dcard {
+  background:var(--raised); border:1px solid var(--line); border-radius:8px;
+  padding:13px 15px 14px; margin-bottom:14px; cursor:pointer; display:block;
+  text-decoration:none; color:inherit;
+  transition:transform 160ms var(--ease), border-color 160ms, box-shadow 160ms;
+}
+.mer .dcard:hover { border-color:var(--petrol); box-shadow:0 1px 4px oklch(0.40 0.075 200 / 0.10); transform:translateY(-2px); }
+.mer .dcard:active { transform:scale(0.98); }
+.mer .dcard .top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.mer .dcard .title { font-size:13.5px; font-weight:600; line-height:1.35; margin:5px 0 3px; }
+.mer .dcard .sub { font-size:11.5px; color:var(--ink2); line-height:1.4; }
+.mer .dcard .foot { display:flex; align-items:center; gap:10px; margin-top:9px; font-size:11px; color:var(--ink3); }
+
+/* ── Process rail (5 steps: offer · match · evaluate · accept · track) ── */
+.mer .drail { display:flex; align-items:center; gap:0; margin:10px 0 2px; }
+.mer .drail .step {
+  position:relative; flex:1; text-align:center; font-variation-settings:'wdth' 110;
+  font-size:9px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+  color:var(--ink3); padding-top:16px;
+}
+.mer .drail .step::before { /* node dot */
+  content:''; position:absolute; top:0; left:50%; transform:translateX(-50%);
+  width:11px; height:11px; box-sizing:border-box; border-radius:50%;
+  background:var(--paper); border:2px solid var(--line); z-index:1;
+}
+.mer .drail .step::after { /* connector to next step */
+  content:''; position:absolute; top:5px; left:50%; width:100%; height:2px; background:var(--line);
+}
+.mer .drail .step:last-child::after { display:none; }
+.mer .drail .step.done { color:var(--petrol-deep); }
+.mer .drail .step.done::before { background:var(--petrol); border-color:var(--petrol); }
+.mer .drail .step.done::after { background:var(--petrol); }
+.mer .drail .step.now { color:var(--amber-deep); }
+.mer .drail .step.now::before { background:var(--amber); border-color:var(--amber-deep); box-shadow:0 0 0 4px oklch(0.95 0.02 70); }
+.mer .drail .step.ahead { color:var(--ink3); }
+
+/* ── Offer-compare card; .best gets a petrol spine on the left edge. ── */
+.mer .ocard {
+  background:var(--raised); border:1px solid var(--line); border-radius:8px;
+  padding:13px 15px 14px; margin-bottom:12px; cursor:pointer;
+  transition:transform 160ms var(--ease), border-color 160ms, box-shadow 160ms;
+}
+.mer .ocard:hover { border-color:var(--petrol); box-shadow:0 1px 4px oklch(0.40 0.075 200 / 0.10); }
+.mer .ocard:active { transform:scale(0.97); }
+.mer .ocard.best { border-left:3px solid var(--petrol); }
+.mer .ocard .metric { font-family:'JetBrains Mono',monospace; font-weight:700; font-size:18px; letter-spacing:-0.01em; color:var(--petrol-deep); }
+.mer .ocard .est { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink2); }
+.mer .ocard .sweet { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--moss); font-weight:600; }
+.mer .ocard .why { font-size:11.5px; color:var(--ink2); margin-top:7px; line-height:1.45; }
+.mer .ocard-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.mer .ocard-top b { font-size:13.5px; font-weight:600; line-height:1.35; }
+.mer .ocard .btn.pri { margin-top:11px; }
+.mer .ocard-empty { padding:24px 0; color:var(--ink2); font-size:12.5px; }
+/* "▸ sweeteners" collapsible — grid-rows/opacity ease, eased with var(--ease); never JS. */
+.mer .sweet-toggle {
+  margin-top:8px; padding:0; border:none; background:transparent; cursor:pointer;
+  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; color:var(--moss);
+}
+.mer .sweet-reveal {
+  display:grid; grid-template-rows:0fr; opacity:0; overflow:hidden;
+  transition:grid-template-rows 220ms var(--ease), opacity 220ms var(--ease);
+}
+.mer .sweet-reveal.open { grid-template-rows:1fr; opacity:1; }
+.mer .sweet-reveal > .sweet { min-height:0; padding-top:5px; }
+
+/* ── Publish composer ── */
+.mer .composer {
+  background:var(--raised); border:1px solid var(--line); border-radius:10px; padding:20px 22px 22px;
+}
+.mer .composer .field { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+.mer .composer label {
+  font-variation-settings:'wdth' 112; font-size:11px; font-weight:700; letter-spacing:0.06em;
+  text-transform:uppercase; color:var(--ink3);
+}
+.mer .composer input, .mer .composer select {
+  width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:6px; outline:none;
+  background:var(--paper); color:var(--ink); font-family:'Archivo',sans-serif; font-size:13px;
+  transition:border-color 140ms var(--ease);
+}
+.mer .composer input:focus, .mer .composer select:focus { border-color:var(--petrol); }
+.mer .composer .preview {
+  font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--ink2);
+  background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:11px 13px;
+  margin:6px 0 14px; line-height:1.5; word-break:break-word;
+}
+.mer .composer .cascade-hint {
+  display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--petrol-deep);
+  background:var(--petrol-tint); border-radius:6px; padding:9px 12px; margin-bottom:14px;
+}
+/* Checkboxes opt out of the full-width input rule — intrinsic size, left-aligned. */
+.mer .composer input[type=checkbox] { width:auto; align-self:flex-start; }
+/* Required-field error idiom (oxide border + inline 'required' hint), keyed off aria-invalid. */
+.mer .composer .field.flag input, .mer .composer .field.flag select,
+.mer .composer input[aria-invalid=true], .mer .composer select[aria-invalid=true] { border-color:var(--oxide); }
+.mer .composer .field-required { font-size:11px; color:var(--oxide); }
+
+/* Emil motion: reduced-motion users get opacity-only — no transforms. */
+@media (prefers-reduced-motion:reduce) {
+  .mer .dcard, .mer .dcard:hover, .mer .dcard:active,
+  .mer .ocard, .mer .ocard:active { transform:none; transition:opacity 160ms var(--ease), border-color 160ms; }
+  .mer .sweet-reveal { transition:opacity 220ms var(--ease); }
+}
