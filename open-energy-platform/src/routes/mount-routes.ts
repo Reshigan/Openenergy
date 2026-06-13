@@ -353,6 +353,7 @@ import interconnectorScheduleChainRoutes from './interconnector-schedule-chain';
 import nationalDashboardRoutes from './national-dashboard';
 import horizonRoutes from './horizon';
 import threadRoutes from './thread';
+import dealsRoutes from './deals';
 
 // Hono's authMiddleware is applied per-module inside each route file using
 // r.use('*', authMiddleware). This function only mounts the paths.
@@ -733,4 +734,7 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   app.route('/api/thread', threadRoutes);
   // platformFeaturesRoutes is the catch-all for /api — it must remain LAST.
   app.route('/api', platformFeaturesRoutes);
+
+  // Generalized cross-role deal engine (offer→match→evaluate→accept→track).
+  app.route('/api/deals', dealsRoutes);
 }
