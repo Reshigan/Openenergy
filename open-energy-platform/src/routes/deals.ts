@@ -610,8 +610,13 @@ deals.post('/:type/accept', async (c) => {
         await c.env.DB.prepare("UPDATE oe_deal_offers SET status = 'accepted', updated_at = datetime('now') WHERE id = ?")
           .bind(offerId).run();
         if (requestId) {
-          await c.env.DB.prepare("UPDATE oe_deal_requests SET selected_offer_id = ?, status = 'dispatched', updated_at = datetime('now') WHERE id = ?")
-            .bind(offerId, requestId).run();
+          // Advance the request to the 'track' stage: an LOI is a chain-less
+          // case, so we key the track link off the synthetic 'loi' chain and
+          // point dispatched_case_id at the LOI id (the Deal Desk renders this
+          // as "Open LOI" → /lois/:id; dealStage() needs dispatched_chain_key).
+          await c.env.DB.prepare(
+            `UPDATE oe_deal_requests SET selected_offer_id = ?, dispatched_chain_key = 'loi', dispatched_case_id = ?, status = 'dispatched', updated_at = datetime('now') WHERE id = ?`,
+          ).bind(offerId, loiId, requestId).run();
           await advanceObjective(c.env, d, requestId, offerId, user.id);
         }
         await fireCascade({

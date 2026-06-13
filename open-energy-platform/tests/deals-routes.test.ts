@@ -276,6 +276,14 @@ describe('deals — accept (marketplace)', () => {
     expect(loi).toBeTruthy();
     expect(loi.from_participant_id).toBe('par_offtaker');
     expect(loi.to_participant_id).toBe('par_ipp');
+    // The request advances to the 'track' stage: dispatched_chain_key='loi' +
+    // dispatched_case_id=loi_id so the Deal Desk surfaces an "Open LOI" link
+    // (dealStage() keys off dispatched_chain_key — see pages/src/meridian/lib.ts).
+    const reqRow = db.prepare('SELECT * FROM oe_deal_requests WHERE id = ?').get(requestId) as any;
+    expect(reqRow.status).toBe('dispatched');
+    expect(reqRow.selected_offer_id).toBe(offerId);
+    expect(reqRow.dispatched_chain_key).toBe('loi');
+    expect(reqRow.dispatched_case_id).toBe(body.loi_id);
   });
 
   it('double-accept the same offer → second is 409 offer_unavailable', async () => {

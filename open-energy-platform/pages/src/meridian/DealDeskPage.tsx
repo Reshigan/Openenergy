@@ -161,9 +161,15 @@ export default function DealDeskPage() {
                   </button>
                 )}
                 {r.dispatched_chain_key && r.dispatched_case_id && (
-                  <Link className="btn ghost" to={`/thread/${r.dispatched_chain_key}/${r.dispatched_case_id}`}>
-                    Open thread
-                  </Link>
+                  r.dispatched_chain_key === 'loi' ? (
+                    <Link className="btn ghost" to={`/lois/${r.dispatched_case_id}`}>
+                      Open LOI
+                    </Link>
+                  ) : (
+                    <Link className="btn ghost" to={`/thread/${r.dispatched_chain_key}/${r.dispatched_case_id}`}>
+                      Open thread
+                    </Link>
+                  )
                 )}
               </div>
             </div>
