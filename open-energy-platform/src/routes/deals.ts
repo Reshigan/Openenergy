@@ -222,9 +222,13 @@ deals.get('/:type/options', async (c) => {
   const requestId = c.req.query('request_id');
   if (!requestId) return c.json({ error: 'request_id required' }, 400);
 
+  // Tenant-fence the request: the buyer's need profile belongs to the demand
+  // party's tenant. A caller in another tenant must not read it or enumerate
+  // request IDs — same 404 contract as a genuine miss. (The OFFERS read below
+  // is the DELIBERATE cross-tenant marketplace seam and stays unfenced.)
   const reqRow = await c.env.DB.prepare(
-    `SELECT id, need, tenant_id FROM oe_deal_requests WHERE id = ? AND deal_type = ?`,
-  ).bind(requestId, d.deal_type).first<{ id: string; need: string; tenant_id: string }>();
+    `SELECT id, need, tenant_id FROM oe_deal_requests WHERE id = ? AND deal_type = ? AND tenant_id = ?`,
+  ).bind(requestId, d.deal_type, callerTenant).first<{ id: string; need: string; tenant_id: string }>();
   if (!reqRow) return c.json({ error: 'request_not_found' }, 404);
 
   let need: Json = {};
@@ -344,6 +348,31 @@ deals.post('/:type/accept', async (c) => {
   const body = await c.req.json<Record<string, unknown>>().catch(() => ({} as Record<string, unknown>));
   const requestId = body.request_id as string | undefined;
   const offerId = body.offer_id as string | undefined;
+
+  // ── Authorization gate (before the kind-branch lock/dispatch logic) ──────
+  // The platform JWT roles are suffixed and the registry stores the suffixed
+  // forms, so match user.role directly against the registry lists.
+  if (d.kind === 'marketplace' || d.kind === 'negotiation') {
+    // The acceptor is the DEMAND party.
+    if (!d.demand_roles.includes(user.role)) {
+      return c.json({ error: 'forbidden' }, 403);
+    }
+    // When a request is supplied, it must belong to the demand party's own
+    // tenant — this establishes the fence the rest of accept relies on.
+    if (requestId) {
+      const owner = await c.env.DB.prepare(
+        'SELECT tenant_id FROM oe_deal_requests WHERE id = ? AND deal_type = ?',
+      ).bind(requestId, d.deal_type).first<{ tenant_id: string }>();
+      if (!owner || owner.tenant_id !== getTenantId(c)) {
+        return c.json({ error: 'forbidden' }, 403);
+      }
+    }
+  } else if (d.kind === 'auction' || d.kind === 'syndication') {
+    // The caller must be a participant on either side.
+    if (!d.provider_roles.includes(user.role) && !d.demand_roles.includes(user.role)) {
+      return c.json({ error: 'forbidden' }, 403);
+    }
+  }
 
   try {
     if (d.kind === 'marketplace' || d.kind === 'negotiation') {

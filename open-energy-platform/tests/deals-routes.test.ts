@@ -177,6 +177,62 @@ describe('deals — options (marketplace seam + POPIA banding)', () => {
   });
 });
 
+describe('deals — options cross-tenant request fence', () => {
+  it('a caller in tenant A cannot read a request owned by tenant B → 404 request_not_found', async () => {
+    // request seeded in tenant T_DEMAND (offtaker). The trader is in T_DEMAND too,
+    // so use the ipp (T_PROVIDER) as the cross-tenant caller. But ipp is not a
+    // demand role for options — options has no role gate, only the tenant fence
+    // on the request. So a T_PROVIDER caller reading a T_DEMAND request → 404.
+    const requestId = await makeRequest(offtakerToken);  // T_DEMAND
+    const res = await call(dealsRoutes, env, 'GET', `/energy_supply/options?request_id=${requestId}`, { token: ippToken });
+    expect(res.status).toBe(404);
+    expect((res.json as any).error).toBe('request_not_found');
+
+    // own-tenant caller still gets 200
+    const ok = await call(dealsRoutes, env, 'GET', `/energy_supply/options?request_id=${requestId}`, { token: offtakerToken });
+    expect(ok.status).toBe(200);
+  });
+});
+
+describe('deals — accept authorization', () => {
+  it('a non-demand-role caller (trader) → 403 forbidden; valid offtaker succeeds', async () => {
+    const offer = await call(dealsRoutes, env, 'POST', '/energy_supply/offer', { token: ippToken, body: energyOffer({ availability: 'now' }) });
+    const offerId = (offer.json as any).offer_id;
+    const requestId = await makeRequest();
+
+    // trader is not in energy_supply demand_roles (['offtaker'])
+    const bad = await call(dealsRoutes, env, 'POST', '/energy_supply/accept', {
+      token: traderToken, body: { request_id: requestId, offer_id: offerId },
+    });
+    expect(bad.status).toBe(403);
+    expect((bad.json as any).error).toBe('forbidden');
+
+    // valid offtaker demand party succeeds
+    const ok = await call(dealsRoutes, env, 'POST', '/energy_supply/accept', {
+      token: offtakerToken, body: { request_id: requestId, offer_id: offerId },
+    });
+    expect(ok.status).toBe(200);
+    expect((ok.json as any).status).toBe('dispatched');
+  });
+
+  it('a demand-role caller passing a request_id owned by another tenant → 403 forbidden', async () => {
+    // Seed a request owned by a DIFFERENT tenant's offtaker.
+    const otherOfftaker = await testJwtFor(db, 'par_offtaker2', { role: 'offtaker' });
+    setTenant('par_offtaker2', 'T_OTHER');
+    const requestId = await makeRequest(otherOfftaker);  // owned by T_OTHER
+
+    const offer = await call(dealsRoutes, env, 'POST', '/energy_supply/offer', { token: ippToken, body: energyOffer({ availability: 'now' }) });
+    const offerId = (offer.json as any).offer_id;
+
+    // par_offtaker (T_DEMAND) is a valid demand role but the request is T_OTHER's
+    const res = await call(dealsRoutes, env, 'POST', '/energy_supply/accept', {
+      token: offtakerToken, body: { request_id: requestId, offer_id: offerId },
+    });
+    expect(res.status).toBe(403);
+    expect((res.json as any).error).toBe('forbidden');
+  });
+});
+
 describe('deals — accept (marketplace)', () => {
   it('live availability → dispatched with ppa_contract chain key', async () => {
     const offer = await call(dealsRoutes, env, 'POST', '/energy_supply/offer', { token: ippToken, body: energyOffer({ availability: 'now' }) });
