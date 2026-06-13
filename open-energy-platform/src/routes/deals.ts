@@ -318,7 +318,11 @@ async function advanceObjective(
   let quantum = offRow?.committed_amount_zar ?? 0;
   if (!quantum && offRow) {
     let ts: Json = {};
-    try { ts = JSON.parse(offRow.term_sheet) as Json; } catch { /* {} */ }
+    // A malformed term_sheet here means this leg contributes 0 to the
+    // objective until corrected — keep the {} fallback (must not break accept),
+    // but surface the skip so the funding stall is observable, not silent.
+    try { ts = JSON.parse(offRow.term_sheet) as Json; }
+    catch (e) { console.warn('deal_term_sheet_parse_failed', offerId, (e as Error).message); }
     quantum = termSheetNumber(ts, d.funds_objective.quantum_field);
   }
   if (!quantum) return;

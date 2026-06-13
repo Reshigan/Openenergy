@@ -172,6 +172,8 @@ describe('deals — options (marketplace seam + POPIA banding)', () => {
     }
     const own = byProvider.get('par_trader');
     const cross = byProvider.get('par_ipp');
+    expect(own).toBeDefined();                       // guard against vacuous pass
+    expect(cross).toBeDefined();
     expect(own.primary_metric).toBe(900);            // verbatim
     expect(cross.primary_metric).not.toBe(900);      // banded → differs
   });
