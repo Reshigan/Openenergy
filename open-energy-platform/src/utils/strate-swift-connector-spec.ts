@@ -732,23 +732,23 @@ export function isValidMtlsFingerprint(s: string | null | undefined): boolean {
 // Stub allow-list of trusted bank-counterparty fingerprints. Real
 // rollout pulls from KV. 8 entries cover the SA + global majors.
 const PEER_FINGERPRINT_ALLOWLIST = new Set<string>([
-  // SA majors.
-  '0000000000000000000000000000000000000000000000000000fnb_root_ca1',
-  '00000000000000000000000000000000000000000000000absa_root_ca_001',
-  '000000000000000000000000000000000000000000000nedbank_root_ca_01',
-  '0000000000000000000000000000000000000000000000000standard_ca_01',
+  // SA majors (FNB / ABSA / Nedbank / Standard Bank).
+  '000000000000000000000000000000000000000000000000000000005774a001',
+  '000000000000000000000000000000000000000000000000000000005774a002',
+  '000000000000000000000000000000000000000000000000000000005774a003',
+  '000000000000000000000000000000000000000000000000000000005774a004',
   // STRATE + SARB.
-  '00000000000000000000000000000000000000000000strate_root_ca_0001',
-  '00000000000000000000000000000000000000000000sarb_samos_root_ca0',
-  // Global correspondents.
-  '0000000000000000000000000000000000000000000jpmorgan_chase_ca_01',
-  '00000000000000000000000000000000000000000000000hsbc_global_ca_1',
+  '000000000000000000000000000000000000000000000000000000005774a005',
+  '000000000000000000000000000000000000000000000000000000005774a006',
+  // Global correspondents (JPMorgan Chase / HSBC).
+  '000000000000000000000000000000000000000000000000000000005774a007',
+  '000000000000000000000000000000000000000000000000000000005774a008',
 ]);
 
 export function isAllowedPeerFingerprint(fp: string): boolean {
   if (!isValidMtlsFingerprint(fp)) return false;
   const norm = fp.replace(/[:\s-]/g, '').toLowerCase();
-  // Real production: KV lookup. Stub: any well-formed hex passes,
-  // allow-list match returns extra trust signal.
-  return PEER_FINGERPRINT_ALLOWLIST.has(norm) || norm.length === 64;
+  // Production resolves trusted peer roots from KV; this allow-list is the
+  // seed set. A well-formed fingerprint is trusted only if it is enrolled.
+  return PEER_FINGERPRINT_ALLOWLIST.has(norm);
 }

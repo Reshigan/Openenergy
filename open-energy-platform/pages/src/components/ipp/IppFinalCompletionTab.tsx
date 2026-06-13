@@ -131,7 +131,7 @@ export function IppFinalCompletionTab() {
     const params = new URLSearchParams();
     if (status) params.set('status', status);
     if (tier) params.set('tier', tier);
-    const res = await api.get(`/api/ipp-final-completion?${params}`);
+    const res = await api.get(`/ipp-final-completion?${params}`);
     const j = res.data;
     setItems(j.data?.items ?? []);
     setKpis(j.data?.kpis ?? null);
@@ -141,14 +141,14 @@ export function IppFinalCompletionTab() {
 
   async function doAction(id: string, action: string, extra?: Record<string, unknown>) {
     setActionPending(true);
-    await api.put(`/api/ipp-final-completion/${id}/action`, { action, ...extra });
+    await api.put(`/ipp-final-completion/${id}/action`, { action, ...extra });
     setActionPending(false);
     setSelected(null);
     load(filterStatus, filterTier);
   }
 
   async function createFcc() {
-    await api.post('/api/ipp-final-completion', {
+    await api.post('/ipp-final-completion', {
       project_id: 'proj_nxt_solar_001',
       contract_value_zar: parseFloat(form.contract_value_zar),
       retention_amount_zar: parseFloat(form.retention_amount_zar),

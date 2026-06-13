@@ -1386,7 +1386,7 @@ function useWatershed<T>(path: string, initial: T): { data: T; loading: boolean;
   const refresh = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const r = await api.get(`/api/watershed${path}`);
+      const r = await api.get(`/watershed${path}`);
       setData((r && (r.data ?? r)) as T);
     } catch (e: any) {
       setError(e?.message || 'Failed to load');
@@ -1502,10 +1502,10 @@ function ExposureModal({ year, onClose }: { year: number; onClose: () => void })
   const [f, setF] = useState<any>({ reporting_year: year, asset_class: 'business_loans', attribution_method: 'evic' });
   const [classes, setClasses] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { api.get('/api/watershed/pcaf/asset-classes').then(r => setClasses((r?.data || r) ?? [])); }, []);
+  useEffect(() => { api.get('/watershed/pcaf/asset-classes').then(r => setClasses((r?.data || r) ?? [])); }, []);
   const save = async () => {
     setBusy(true);
-    try { await api.post('/api/watershed/pcaf/financed', f); onClose(); }
+    try { await api.post('/watershed/pcaf/financed', f); onClose(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
     finally { setBusy(false); }
   };
@@ -1554,7 +1554,7 @@ function PcafTargetModal({ onClose }: { onClose: () => void }) {
   useEscapeKey(onClose);
   const [f, setF] = useState<any>({ framework: 'NZBA', scope: 'sector', base_year: 2020, target_year: 2030 });
   const save = async () => {
-    try { await api.post('/api/watershed/pcaf/targets', f); onClose(); }
+    try { await api.post('/watershed/pcaf/targets', f); onClose(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
   };
   return (
@@ -1656,7 +1656,7 @@ function OfftakeModal({ projectId, onClose }: { projectId: string; onClose: () =
   useEscapeKey(onClose);
   const [f, setF] = useState<any>({ project_id: projectId, total_tco2e: 1000, price_zar_per_tco2e: 1500, start_vintage_year: new Date().getFullYear() });
   const save = async () => {
-    try { await api.post('/api/watershed/removals/offtakes', f); onClose(); }
+    try { await api.post('/watershed/removals/offtakes', f); onClose(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
   };
   return (
@@ -1677,7 +1677,7 @@ function RetireModal({ offtakeId, onClose }: { offtakeId: string; onClose: () =>
   useEscapeKey(onClose);
   const [f, setF] = useState<any>({ tco2e_retired: 100, reporting_year: new Date().getFullYear(), beneficiary: '', reason: '' });
   const save = async () => {
-    try { await api.post(`/api/watershed/removals/offtakes/${offtakeId}/retire`, f); onClose(); }
+    try { await api.post(`/watershed/removals/offtakes/${offtakeId}/retire`, f); onClose(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
   };
   return (
@@ -1735,7 +1735,7 @@ function CFEScoreModal({ onClose }: { onClose: () => void }) {
   const [result, setResult] = useState<any>(null);
   const save = async () => {
     try {
-      const r = await api.post('/api/watershed/cfe/score', f);
+      const r = await api.post('/watershed/cfe/score', f);
       setResult(r?.data || r);
     } catch (e: any) { alert(e?.message || 'Failed'); }
   };
@@ -1792,7 +1792,7 @@ function PCFModal({ onClose }: { onClose: () => void }) {
   useEscapeKey(onClose);
   const [f, setF] = useState<any>({ reporting_year: new Date().getFullYear(), methodology: 'ISO 14067', functional_unit: '1 unit' });
   const save = async () => {
-    try { await api.post('/api/watershed/pcf', f); onClose(); }
+    try { await api.post('/watershed/pcf', f); onClose(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
   };
   return (
@@ -1853,7 +1853,7 @@ function EngagementModal({ onClose }: { onClose: () => void }) {
   useEscapeKey(onClose);
   const [f, setF] = useState<any>({ reporting_year: new Date().getFullYear(), assurance_standard: 'ISAE_3000', assurance_level: 'limited', scope: 'scope1' });
   const save = async () => {
-    try { await api.post('/api/watershed/assurance/engagements', f); onClose(); }
+    try { await api.post('/watershed/assurance/engagements', f); onClose(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
   };
   return (
@@ -1877,12 +1877,12 @@ function FindingsModal({ engagementId, onClose }: { engagementId: string; onClos
   const [adding, setAdding] = useState(false);
   const [f, setF] = useState<any>({ severity: 'observation', category: 'data_quality' });
   const refresh = useCallback(async () => {
-    const r = await api.get(`/api/watershed/assurance/engagements/${engagementId}/findings`);
+    const r = await api.get(`/watershed/assurance/engagements/${engagementId}/findings`);
     setFindings((r?.data || r) ?? []);
   }, [engagementId]);
   useEffect(() => { refresh(); }, [refresh]);
   const add = async () => {
-    try { await api.post(`/api/watershed/assurance/engagements/${engagementId}/findings`, f); setAdding(false); refresh(); }
+    try { await api.post(`/watershed/assurance/engagements/${engagementId}/findings`, f); setAdding(false); refresh(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
   };
   return (
@@ -1924,7 +1924,7 @@ function MaturityTab() {
   const [busy, setBusy] = useState(false);
   const score = async () => {
     setBusy(true);
-    try { await api.post('/api/watershed/maturity/score', { reporting_year: new Date().getFullYear() }); assessments.refresh(); }
+    try { await api.post('/watershed/maturity/score', { reporting_year: new Date().getFullYear() }); assessments.refresh(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
     finally { setBusy(false); }
   };
@@ -2044,7 +2044,7 @@ function SubmissionModal({ jurisdictions, onClose }: { jurisdictions: any[]; onC
   useEscapeKey(onClose);
   const [f, setF] = useState<any>({ reporting_year: new Date().getFullYear(), jurisdiction: jurisdictions[0]?.code || 'CDP' });
   const save = async () => {
-    try { await api.post('/api/watershed/jurisdictions/submissions', f); onClose(); }
+    try { await api.post('/watershed/jurisdictions/submissions', f); onClose(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
   };
   return (
@@ -2065,12 +2065,12 @@ function AnomaliesTab() {
   const [busy, setBusy] = useState(false);
   const scan = async () => {
     setBusy(true);
-    try { await api.post('/api/watershed/anomalies/scan', {}); rows.refresh(); }
+    try { await api.post('/watershed/anomalies/scan', {}); rows.refresh(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
     finally { setBusy(false); }
   };
   const update = async (id: string, status: string) => {
-    try { await api.patch(`/api/watershed/anomalies/${id}`, { status }); rows.refresh(); }
+    try { await api.patch(`/watershed/anomalies/${id}`, { status }); rows.refresh(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
   };
   return (
@@ -2170,7 +2170,7 @@ function RunScenarioModal({ scenarios, onClose }: { scenarios: any[]; onClose: (
   const [busy, setBusy] = useState(false);
   const go = async () => {
     setBusy(true);
-    try { await api.post('/api/watershed/scenarios/run', f); onClose(); }
+    try { await api.post('/watershed/scenarios/run', f); onClose(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
     finally { setBusy(false); }
   };
@@ -2257,7 +2257,7 @@ function RequestDataModal({ onClose }: { onClose: () => void }) {
   const [f, setF] = useState<any>({ reporting_year: new Date().getFullYear(), scope_requested: 'all_scopes' });
   const save = async () => {
     try {
-      const r = await api.post('/api/watershed/counterparties/requests', f);
+      const r = await api.post('/watershed/counterparties/requests', f);
       const data = r?.data || r;
       alert(`Share link created:\n${window.location.origin}${data.share_url}`);
       onClose();
@@ -2365,14 +2365,14 @@ function AIClassifierTab() {
     if (!desc) return;
     setBusy(true);
     try {
-      const r = await api.post('/api/watershed/ai/classify', { description: desc, amount: amount ? Number(amount) : undefined, unit });
+      const r = await api.post('/watershed/ai/classify', { description: desc, amount: amount ? Number(amount) : undefined, unit });
       setResult(r?.data || r);
       logs.refresh();
     } catch (e: any) { alert(e?.message || 'Failed'); }
     finally { setBusy(false); }
   };
   const accept = async (id: string, override?: string) => {
-    try { await api.patch(`/api/watershed/ai/classify/${id}`, { accepted: true, override_code: override }); logs.refresh(); }
+    try { await api.patch(`/watershed/ai/classify/${id}`, { accepted: true, override_code: override }); logs.refresh(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
   };
   return (
@@ -2484,7 +2484,7 @@ function ListRecModal({ onClose }: { onClose: () => void }) {
   useEscapeKey(onClose);
   const [f, setF] = useState<any>({ technology: 'solar', grid_zone: 'ZA-NPC', hour_utc: '', available_kwh: 100, price_zar_per_kwh: 0.85 });
   const save = async () => {
-    try { await api.post('/api/watershed/rec-market/listings', f); onClose(); }
+    try { await api.post('/watershed/rec-market/listings', f); onClose(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
   };
   return (
@@ -2508,7 +2508,7 @@ function BuyRecModal({ listing, onClose }: { listing: any; onClose: () => void }
   const [retire, setRetire] = useState(true);
   const total = kwh * listing.price_zar_per_kwh;
   const save = async () => {
-    try { await api.post('/api/watershed/rec-market/buy', { listing_id: listing.id, kwh, retire, retirement_purpose: '24/7 CFE matching' }); onClose(); }
+    try { await api.post('/watershed/rec-market/buy', { listing_id: listing.id, kwh, retire, retirement_purpose: '24/7 CFE matching' }); onClose(); }
     catch (e: any) { alert(e?.message || 'Failed'); }
   };
   return (
@@ -2530,7 +2530,7 @@ function AuditChainTab() {
   const [busy, setBusy] = useState(false);
   const doVerify = async () => {
     setBusy(true);
-    try { const r = await api.get('/api/watershed/audit-chain/verify'); setVerify(r?.data || r); }
+    try { const r = await api.get('/watershed/audit-chain/verify'); setVerify(r?.data || r); }
     catch (e: any) { alert(e?.message || 'Failed'); }
     finally { setBusy(false); }
   };

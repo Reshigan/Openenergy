@@ -355,7 +355,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/cp-clearances', values); },
+    onSubmit: async (values) => { await api.post('/cp-clearances', values); },
   },
   {
     id: 'lender-covenant-cert',
@@ -386,7 +386,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/covenant-certificate/chain', values); },
+    onSubmit: async (values) => { await api.post('/covenant-certificate/chain', values); },
   },
   {
     id: 'lender-dscr-monitor',
@@ -419,7 +419,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/dscr-monitoring', values); },
+    onSubmit: async (values) => { await api.post('/dscr-monitoring', values); },
   },
   {
     id: 'lender-slb-kpi',
@@ -450,7 +450,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/slb-kpi', values); },
+    onSubmit: async (values) => { await api.post('/slb-kpi', values); },
   },
   {
     id: 'lender-loan-transfer',
@@ -481,7 +481,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/loan-transfer/chain', values); },
+    onSubmit: async (values) => { await api.post('/loan-transfer/chain', values); },
   },
   {
     id: 'lender-security',
@@ -512,7 +512,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/security-perfection/chain', values); },
+    onSubmit: async (values) => { await api.post('/security-perfection/chain', values); },
   },
   {
     id: 'lender-restructure',
@@ -543,7 +543,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/lender/loan-restructure/chain', values); },
+    onSubmit: async (values) => { await api.post('/lender/loan-restructure/chain', values); },
   },
   {
     id: 'lender-esap-monitor',
@@ -576,7 +576,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/esap-monitoring', values); },
+    onSubmit: async (values) => { await api.post('/esap-monitoring', values); },
   },
   {
     id: 'lender-capital-adequacy',
@@ -607,7 +607,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/capital-adequacy', values); },
+    onSubmit: async (values) => { await api.post('/capital-adequacy', values); },
   },
   {
     id: 'lender-reserve-account',
@@ -628,7 +628,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/reserve-accounts', values); },
+    onSubmit: async (values) => { await api.post('/reserve-accounts', values); },
   },
   {
     id: 'lender-facility-amendment',
@@ -657,7 +657,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/facility-amendments', values); },
+    onSubmit: async (values) => { await api.post('/facility-amendments', values); },
   },
   {
     id: 'lender-construction-cost',
@@ -688,7 +688,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/construction-cost-reports', values); },
+    onSubmit: async (values) => { await api.post('/construction-cost-reports', values); },
   },
   {
     id: 'lender-esap-compliance',
@@ -718,7 +718,7 @@ const LENDER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/esap-compliance', values); },
+    onSubmit: async (values) => { await api.post('/esap-compliance', values); },
   },
   {
     id: 'lender-default',

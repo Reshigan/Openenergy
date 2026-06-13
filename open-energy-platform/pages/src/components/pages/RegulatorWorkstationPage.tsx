@@ -282,7 +282,7 @@ const REGULATOR_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/enforcement-actions', values); },
+    onSubmit: async (values) => { await api.post('/enforcement-actions', values); },
   },
   {
     id: 'regulator-enforcement-s35',
@@ -310,7 +310,7 @@ const REGULATOR_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/enforcement-s35', values); },
+    onSubmit: async (values) => { await api.post('/enforcement-s35', values); },
   },
   {
     id: 'regulator-esg',
@@ -339,7 +339,7 @@ const REGULATOR_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/esg-disclosures', values); },
+    onSubmit: async (values) => { await api.post('/esg-disclosures', values); },
   },
 ];
 

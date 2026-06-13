@@ -789,9 +789,12 @@ describe('W122 - mTLS fingerprint validation', () => {
     expect(isValidMtlsFingerprint('a'.repeat(65))).toBe(false);
   });
 
-  it('isAllowedPeerFingerprint passes any well-formed hex (stub)', () => {
-    expect(isAllowedPeerFingerprint('0'.repeat(64))).toBe(true);
-    expect(isAllowedPeerFingerprint('abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789')).toBe(true);
+  it('isAllowedPeerFingerprint trusts only enrolled peer roots', () => {
+    // Enrolled NTCSA seed root → trusted.
+    expect(isAllowedPeerFingerprint('0000000000000000000000000000000000000000000000000000000000ca0001')).toBe(true);
+    // Well-formed but un-enrolled fingerprints → rejected.
+    expect(isAllowedPeerFingerprint('0'.repeat(64))).toBe(false);
+    expect(isAllowedPeerFingerprint('abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789')).toBe(false);
   });
 
   it('isAllowedPeerFingerprint rejects malformed inputs', () => {

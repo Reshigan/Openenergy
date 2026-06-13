@@ -250,7 +250,7 @@ const GRID_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/demand-response', values); },
+    onSubmit: async (values) => { await api.post('/demand-response-events', values); },
   },
   {
     id: 'grid-imbalance-settlement',
@@ -279,7 +279,7 @@ const GRID_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/imbalance-settlement', values); },
+    onSubmit: async (values) => { await api.post('/imbalance-settlement', values); },
   },
   {
     id: 'grid-interconnector',
@@ -308,7 +308,7 @@ const GRID_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/interconnector-schedules', values); },
+    onSubmit: async (values) => { await api.post('/interconnector-schedules', values); },
   },
   {
     id: 'grid-rez-capacity',
@@ -337,7 +337,7 @@ const GRID_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/grid-capacity-allocations', values); },
+    onSubmit: async (values) => { await api.post('/grid-capacity-allocations', values); },
   },
   {
     id: 'grid-transmission-outage',
@@ -366,7 +366,7 @@ const GRID_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/transmission-outages', values); },
+    onSubmit: async (values) => { await api.post('/transmission-outages', values); },
   },
   {
     id: 'grid-smart-meter',
@@ -395,7 +395,7 @@ const GRID_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/smart-meter-assets', values); },
+    onSubmit: async (values) => { await api.post('/smart-meter-assets', values); },
   },
   {
     id: 'grid-substation',
@@ -424,7 +424,7 @@ const GRID_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/substation-assets', values); },
+    onSubmit: async (values) => { await api.post('/substation-assets', values); },
   },
   {
     id: 'grid-eop',
@@ -452,7 +452,7 @@ const GRID_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/eop-activations', values); },
+    onSubmit: async (values) => { await api.post('/eop-activations', values); },
   },
 ];
 

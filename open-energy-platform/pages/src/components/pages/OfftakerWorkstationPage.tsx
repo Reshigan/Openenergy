@@ -381,7 +381,7 @@ const OFFTAKER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/ppa-change-in-law', values); },
+    onSubmit: async (values) => { await api.post('/ppa-change-in-law/chain', values); },
   },
   {
     id: 'offtaker-ppa-nomination',
@@ -399,7 +399,7 @@ const OFFTAKER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/ppa-nominations', values); },
+    onSubmit: async (values) => { await api.post('/ppa-nominations', values); },
   },
   {
     id: 'offtaker-ppa-annual-recon',
@@ -426,7 +426,7 @@ const OFFTAKER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/ppa-annual-recon', values); },
+    onSubmit: async (values) => { await api.post('/ppa-annual-recon', values); },
   },
   {
     id: 'offtaker-wheeling',
@@ -453,7 +453,7 @@ const OFFTAKER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/wheeling-access', values); },
+    onSubmit: async (values) => { await api.post('/wheeling-access', values); },
   },
   {
     id: 'offtaker-vppa',
@@ -479,7 +479,7 @@ const OFFTAKER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/vppa-settlements', values); },
+    onSubmit: async (values) => { await api.post('/vppa-settlements', values); },
   },
   {
     id: 'offtaker-payment-security',
@@ -506,7 +506,7 @@ const OFFTAKER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/ppa-payment-securities', values); },
+    onSubmit: async (values) => { await api.post('/ppa-payment-securities', values); },
   },
   {
     id: 'offtaker-slb-kpi',
@@ -534,7 +534,7 @@ const OFFTAKER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/slb-kpi', values); },
+    onSubmit: async (values) => { await api.post('/slb-kpi', values); },
   },
   {
     id: 'offtaker-green-tariff',
@@ -562,7 +562,7 @@ const OFFTAKER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/green-tariff-disclosures', values); },
+    onSubmit: async (values) => { await api.post('/green-tariff-disclosures', values); },
   },
   {
     id: 'offtaker-ppa-termination',
@@ -588,7 +588,7 @@ const OFFTAKER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/ppa-terminations', values); },
+    onSubmit: async (values) => { await api.post('/ppa-terminations', values); },
   },
   {
     id: 'offtaker-unserved-energy',
@@ -615,7 +615,7 @@ const OFFTAKER_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/unserved-energy-claims', values); },
+    onSubmit: async (values) => { await api.post('/unserved-energy-claims', values); },
   },
 ];
 

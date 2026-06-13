@@ -422,7 +422,7 @@ const TRADER_WIZARDS: WizardSpec[] = [
       },
     ],
     onSubmit: async (values) => {
-      await api.post('/api/counterparty-margin', values);
+      await api.post('/counterparty-margin', values);
     },
   },
   {
@@ -452,7 +452,7 @@ const TRADER_WIZARDS: WizardSpec[] = [
       },
     ],
     onSubmit: async (values) => {
-      await api.post('/api/trade-allocations', values);
+      await api.post('/trade-allocations', values);
     },
   },
   {
@@ -484,7 +484,7 @@ const TRADER_WIZARDS: WizardSpec[] = [
       },
     ],
     onSubmit: async (values) => {
-      await api.post('/api/settlement-fails', values);
+      await api.post('/settlement-fails', values);
     },
   },
   {
@@ -515,7 +515,7 @@ const TRADER_WIZARDS: WizardSpec[] = [
       },
     ],
     onSubmit: async (values) => {
-      await api.post('/api/benchmark-transitions', values);
+      await api.post('/benchmark-transitions', values);
     },
   },
   {
@@ -547,7 +547,7 @@ const TRADER_WIZARDS: WizardSpec[] = [
       },
     ],
     onSubmit: async (values) => {
-      await api.post('/api/fsca-compliance-reports', values);
+      await api.post('/fsca-compliance-reports', values);
     },
   },
   {
@@ -580,7 +580,7 @@ const TRADER_WIZARDS: WizardSpec[] = [
       },
     ],
     onSubmit: async (values) => {
-      await api.post('/api/fsca-conduct-reports', values);
+      await api.post('/fsca-conduct-reports', values);
     },
   },
   {
@@ -613,7 +613,7 @@ const TRADER_WIZARDS: WizardSpec[] = [
       },
     ],
     onSubmit: async (values) => {
-      await api.post('/api/cross-border-trades', values);
+      await api.post('/cross-border-trades', values);
     },
   },
   {
@@ -645,7 +645,7 @@ const TRADER_WIZARDS: WizardSpec[] = [
       },
     ],
     onSubmit: async (values) => {
-      await api.post('/api/isda-agreements', values);
+      await api.post('/isda-agreements', values);
     },
   },
   {
@@ -677,7 +677,7 @@ const TRADER_WIZARDS: WizardSpec[] = [
       },
     ],
     onSubmit: async (values) => {
-      await api.post('/api/mm-obligations', values);
+      await api.post('/mm-obligations', values);
     },
   },
   {
@@ -698,7 +698,7 @@ const TRADER_WIZARDS: WizardSpec[] = [
       },
     ],
     onSubmit: async (values) => {
-      await api.post('/api/pretrade-credit-check', values);
+      await api.post('/pretrade-credit-check', values);
     },
   },
   {
@@ -723,7 +723,7 @@ const TRADER_WIZARDS: WizardSpec[] = [
       },
     ],
     onSubmit: async (values) => {
-      await api.post('/api/pnl-attribution', values);
+      await api.post('/pnl-attribution', values);
     },
   },
 ];

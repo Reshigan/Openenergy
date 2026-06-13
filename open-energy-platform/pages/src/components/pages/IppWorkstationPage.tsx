@@ -214,7 +214,8 @@ const IPP_WIZARDS: WizardSpec[] = [
     submitLabel: 'Save IPP setup',
     onSubmit: async (values) => {
       const token = localStorage.getItem('token') || '';
-      await fetch('/api/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ role: 'ipp_developer', ...values }) }).catch(() => {});
+      const res = await fetch('/api/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ role: 'ipp_developer', ...values }) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || `Save failed (HTTP ${res.status})`); }
     },
   },
   {
@@ -368,7 +369,8 @@ const IPP_WIZARDS: WizardSpec[] = [
     submitLabel: 'Register instrument',
     onSubmit: async (values) => {
       const token = localStorage.getItem('token') || '';
-      await fetch('/api/ipp/bonds', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
+      const res = await fetch('/api/ipp/bonds', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || `Bond registration failed (HTTP ${res.status})`); }
     },
   },
   {
@@ -396,7 +398,8 @@ const IPP_WIZARDS: WizardSpec[] = [
     submitLabel: 'File claim',
     onSubmit: async (values) => {
       const token = localStorage.getItem('token') || '';
-      await fetch('/api/ipp/insurance-claims', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
+      const res = await fetch('/api/insurance/claim-chain', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || `Insurance claim filing failed (HTTP ${res.status})`); }
     },
   },
   {
@@ -424,7 +427,8 @@ const IPP_WIZARDS: WizardSpec[] = [
     submitLabel: 'Log event',
     onSubmit: async (values) => {
       const token = localStorage.getItem('token') || '';
-      await fetch('/api/ipp/force-majeure', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
+      const res = await fetch('/api/ipp-force-majeure', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || `Force majeure logging failed (HTTP ${res.status})`); }
     },
   },
   {
@@ -453,7 +457,8 @@ const IPP_WIZARDS: WizardSpec[] = [
     submitLabel: 'Submit GCA application',
     onSubmit: async (values) => {
       const token = localStorage.getItem('token') || '';
-      await fetch('/api/ipp/gca', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
+      const res = await fetch('/api/gca/connection-chain', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || `GCA application failed (HTTP ${res.status})`); }
     },
   },
   {
@@ -481,7 +486,8 @@ const IPP_WIZARDS: WizardSpec[] = [
     submitLabel: 'Request energization',
     onSubmit: async (values) => {
       const token = localStorage.getItem('token') || '';
-      await fetch('/api/ipp/connection-energization', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
+      const res = await fetch('/api/connection-energization/chain', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || `Energization request failed (HTTP ${res.status})`); }
     },
   },
   {
@@ -509,7 +515,8 @@ const IPP_WIZARDS: WizardSpec[] = [
     submitLabel: 'Submit GTIA',
     onSubmit: async (values) => {
       const token = localStorage.getItem('token') || '';
-      await fetch('/api/ipp/gtia', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
+      const res = await fetch('/api/gtia', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || `GTIA submission failed (HTTP ${res.status})`); }
     },
   },
   {
@@ -536,7 +543,8 @@ const IPP_WIZARDS: WizardSpec[] = [
     submitLabel: 'File commitment',
     onSubmit: async (values) => {
       const token = localStorage.getItem('token') || '';
-      await fetch('/api/ipp/ed-commitments', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) }).catch(() => {});
+      const res = await fetch('/api/ed/commitment-chain', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(values) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error((e as any).error || `ED commitment submission failed (HTTP ${res.status})`); }
     },
   },
   {
@@ -563,7 +571,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/ipp-documents', values); },
+    onSubmit: async (values) => { await api.post('/ipp-documents', values); },
   },
   {
     id: 'ipp-payment-cert',
@@ -589,7 +597,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/payment-certificates', values); },
+    onSubmit: async (values) => { await api.post('/payment-certificates', values); },
   },
   {
     id: 'ipp-variation-order',
@@ -614,7 +622,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/variation-orders', values); },
+    onSubmit: async (values) => { await api.post('/variation-orders', values); },
   },
   {
     id: 'ipp-commissioning',
@@ -641,7 +649,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/itp-inspections', values); },
+    onSubmit: async (values) => { await api.post('/itp-inspections', values); },
   },
   {
     id: 'ipp-punch-list',
@@ -660,7 +668,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/punch-list', values); },
+    onSubmit: async (values) => { await api.post('/punch-list', values); },
   },
   {
     id: 'ipp-handover',
@@ -687,7 +695,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/cod-handover', values); },
+    onSubmit: async (values) => { await api.post('/cod-handover', values); },
   },
   {
     id: 'ipp-change-of-control',
@@ -714,7 +722,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/change-of-control', values); },
+    onSubmit: async (values) => { await api.post('/change-of-control', values); },
   },
   {
     id: 'ipp-land-register',
@@ -741,7 +749,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/land-register', values); },
+    onSubmit: async (values) => { await api.post('/land-register', values); },
   },
   {
     id: 'ipp-env-report',
@@ -766,7 +774,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/env-compliance-reports', values); },
+    onSubmit: async (values) => { await api.post('/env-compliance-reports', values); },
   },
   {
     id: 'ipp-licence-return',
@@ -792,7 +800,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/licence-returns', values); },
+    onSubmit: async (values) => { await api.post('/licence-returns', values); },
   },
   {
     id: 'ipp-cyber-incident',
@@ -819,7 +827,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/cyber-incidents', values); },
+    onSubmit: async (values) => { await api.post('/cyber-incidents', values); },
   },
   {
     id: 'ipp-export-curtailment',
@@ -846,7 +854,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/export-curtailments', values); },
+    onSubmit: async (values) => { await api.post('/export-curtailments', values); },
   },
   {
     id: 'ipp-take-or-pay-claim',
@@ -873,7 +881,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/take-or-pay-claims', values); },
+    onSubmit: async (values) => { await api.post('/take-or-pay-claims', values); },
   },
   {
     id: 'ipp-milestone-variance',
@@ -900,7 +908,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/milestone-variance-reports', values); },
+    onSubmit: async (values) => { await api.post('/milestone-variance-reports', values); },
   },
   {
     id: 'ipp-credit-insurance',
@@ -926,7 +934,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/credit-insurance', values); },
+    onSubmit: async (values) => { await api.post('/credit-insurance', values); },
   },
   {
     id: 'ipp-perf-security',
@@ -952,7 +960,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/performance-securities', values); },
+    onSubmit: async (values) => { await api.post('/performance-securities', values); },
   },
   {
     id: 'ipp-cp-tracker',
@@ -978,7 +986,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/cp-tracker', values); },
+    onSubmit: async (values) => { await api.post('/cp-tracker', values); },
   },
   {
     id: 'ipp-green-bond',
@@ -1004,7 +1012,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/green-bond-reports', values); },
+    onSubmit: async (values) => { await api.post('/green-bond-reports', values); },
   },
   {
     id: 'ipp-ppa-variation',
@@ -1029,7 +1037,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/ppa-variations', values); },
+    onSubmit: async (values) => { await api.post('/ppa-variations', values); },
   },
   {
     id: 'ipp-contractor-default',
@@ -1056,7 +1064,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/contractor-default', values); },
+    onSubmit: async (values) => { await api.post('/contractor-default', values); },
   },
   {
     id: 'ipp-bbbee',
@@ -1083,7 +1091,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/bbbee-verification', values); },
+    onSubmit: async (values) => { await api.post('/ipp-bbbee-verification', values); },
   },
   {
     id: 'ipp-dscr-report',
@@ -1111,7 +1119,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/dscr-reports', values); },
+    onSubmit: async (values) => { await api.post('/dscr-reports', values); },
   },
   {
     id: 'ipp-ncr',
@@ -1138,7 +1146,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/ncr', values); },
+    onSubmit: async (values) => { await api.post('/ncr', values); },
   },
   {
     id: 'ipp-planned-outage',
@@ -1165,7 +1173,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/planned-outages', values); },
+    onSubmit: async (values) => { await api.post('/planned-outages', values); },
   },
   {
     id: 'ipp-annual-compliance',
@@ -1192,7 +1200,7 @@ const IPP_WIZARDS: WizardSpec[] = [
         ],
       },
     ],
-    onSubmit: async (values) => { await api.post('/api/annual-compliance', values); },
+    onSubmit: async (values) => { await api.post('/annual-compliance', values); },
   },
 ];
 

@@ -103,7 +103,7 @@ export function IppVariationOrderTab() {
     const params = new URLSearchParams();
     if (status) params.set('status', status);
     if (tier) params.set('tier', tier);
-    const res = await api.get(`/api/ipp-variation-order?${params}`);
+    const res = await api.get(`/ipp-variation-order?${params}`);
     const j = res.data;
     setItems(j.data?.items ?? []);
     setKpis(j.data?.kpis ?? null);
@@ -123,14 +123,14 @@ export function IppVariationOrderTab() {
 
   async function doAction(id: string, action: string, extras?: Record<string, unknown>) {
     setActionPending(true);
-    await api.put(`/api/ipp-variation-order/${id}/action`, { action, ...extras });
+    await api.put(`/ipp-variation-order/${id}/action`, { action, ...extras });
     setActionPending(false);
     setSelected(null);
     load(filterStatus, filterTier);
   }
 
   async function createVO() {
-    await api.post('/api/ipp-variation-order', {
+    await api.post('/ipp-variation-order', {
       project_id: 'proj_nxt_solar_001',
       title: form.title,
       description: form.description,

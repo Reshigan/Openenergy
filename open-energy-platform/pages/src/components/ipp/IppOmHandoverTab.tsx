@@ -102,7 +102,7 @@ export function IppOmHandoverTab() {
     const params = new URLSearchParams();
     if (status) params.set('status', status);
     if (tier) params.set('tier', tier);
-    const res = await api.get(`/api/ipp-om-handover?${params}`);
+    const res = await api.get(`/ipp-om-handover?${params}`);
     setItems(res.data?.data?.items ?? []);
     setKpis(res.data?.data?.kpis ?? null);
     setLoaded(true);
@@ -111,14 +111,14 @@ export function IppOmHandoverTab() {
 
   async function doAction(id: string, action: string) {
     setActionPending(true);
-    await api.put(`/api/ipp-om-handover/${id}/action`, { action });
+    await api.put(`/ipp-om-handover/${id}/action`, { action });
     setActionPending(false);
     setSelected(null);
     load(filterStatus, filterTier);
   }
 
   async function createHandover() {
-    await api.post('/api/ipp-om-handover', {
+    await api.post('/ipp-om-handover', {
       project_id: 'proj_nxt_solar_001',
       capacity_mw: parseFloat(form.capacity_mw),
       category: form.category,
