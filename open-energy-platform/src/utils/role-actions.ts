@@ -52,7 +52,7 @@ export async function pushRoleAction(env: HonoBindings, input: RoleActionInput):
     try {
       const actor = await env.DB.prepare(
         `SELECT tenant_id FROM participants WHERE id = ? LIMIT 1`,
-      ).bind(id).first<{ tenant_id: string | null }>();
+      ).bind(input.target_participant_id ?? null).first<{ tenant_id: string | null }>();
       if (actor?.tenant_id) tenantId = actor.tenant_id;
     } catch { /* best-effort; falls back to default */ }
   }

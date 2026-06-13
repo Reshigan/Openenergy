@@ -193,6 +193,19 @@ describe('deal_engine.leg_to_objective (progress)', () => {
     expect(body.objective_id).toBe('obj1');
   });
 
+  it('pushes a progress action to the objective owner on deal.subscribed (entity_id IS the request)', async () => {
+    seedObjective({ id: 'obj1', owner_id: 'par_owner', owner_role: 'ipp_developer', funding_target_zar: 1000, committed_zar: 600 });
+    seedRequest({ id: 'req_sub', objective_id: 'obj1' });
+    await rule().run(ctx({ event: 'deal.subscribed', entity_type: 'deal_request', entity_id: 'req_sub', data: {} }));
+    const rows = queueRows();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].target_participant_id).toBe('par_owner');
+    expect(rows[0].title).toBe('Capital-stack leg committed');
+    expect(rows[0].source_event).toBe('deal.subscribed');
+    const body = JSON.parse(rows[0].body_json);
+    expect(body.objective_id).toBe('obj1');
+  });
+
   it('does nothing when the request has no objective_id', async () => {
     seedRequest({ id: 'req2', objective_id: null });
     seedOffer({ id: 'off2', request_id: 'req2' });
@@ -228,6 +241,36 @@ describe('deal_engine.link_resolver', () => {
     const link = db.prepare('SELECT * FROM oe_deal_links WHERE id = ?').get('lnk1') as any;
     expect(link.status).toBe('met');
     expect(link.condition_state).toBe('met');
+  });
+
+  it('prompts the dependent deal owner once ALL its CP links are met', async () => {
+    seedOffer({ id: 'off1', request_id: 'req1' });
+    // off2 is the dependent deal; its provider is the owner who gets prompted.
+    seedOffer({ id: 'off2', provider_id: 'par_dep', provider_role: 'ipp_developer', tenant_id: 'T_DEP' });
+    seedLink({ id: 'lnk1', link_kind: 'condition_precedent', from_kind: 'offer', from_id: 'off1', to_kind: 'offer', to_id: 'off2', status: 'pending' });
+    await rule().run(ctx({ event: 'deal.accepted', entity_id: 'off1', data: { deal_type: 'energy_supply', request_id: 'req1' } }));
+    const link = db.prepare('SELECT * FROM oe_deal_links WHERE id = ?').get('lnk1') as any;
+    expect(link.status).toBe('met');
+    const rows = queueRows();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].target_participant_id).toBe('par_dep');
+    expect(rows[0].tenant_id).toBe('T_DEP');
+    expect(rows[0].source_entity_id).toBe('off2');
+    const co = JSON.parse(rows[0].cross_option_json);
+    expect(co.target_route).toBe('/deals/energy_supply/off2');
+  });
+
+  it('does NOT prompt the dependent owner while it still has an unmet CP link', async () => {
+    seedOffer({ id: 'off1', request_id: 'req1' });
+    seedOffer({ id: 'off2', provider_id: 'par_dep', provider_role: 'ipp_developer' });
+    seedOffer({ id: 'off3' });
+    // off2 depends on BOTH off1 (now accepted) and off3 (still pending).
+    seedLink({ id: 'lnk1', from_id: 'off1', to_id: 'off2', status: 'pending' });
+    seedLink({ id: 'lnk2', from_id: 'off3', to_id: 'off2', status: 'pending' });
+    await rule().run(ctx({ event: 'deal.accepted', entity_id: 'off1', data: { deal_type: 'energy_supply', request_id: 'req1' } }));
+    expect((db.prepare('SELECT status FROM oe_deal_links WHERE id = ?').get('lnk1') as any).status).toBe('met');
+    expect((db.prepare('SELECT status FROM oe_deal_links WHERE id = ?').get('lnk2') as any).status).toBe('pending');
+    expect(queueRows()).toHaveLength(0);
   });
 
   it('is a no-op when no links exist (common case)', async () => {

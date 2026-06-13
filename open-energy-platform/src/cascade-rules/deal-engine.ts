@@ -264,21 +264,23 @@ const RULES: CascadeRule[] = [
         // request (demand). Best-effort: skip if we can't resolve a role.
         let role: string | null = null;
         let owner: string | null = null;
+        let tenant: string | null = null;
         let dealType = 'energy_supply';
         const off = (await ctx.env.DB.prepare(
-          `SELECT provider_id, provider_role, deal_type FROM oe_deal_offers WHERE id = ?`,
-        ).bind(toId).first()) as { provider_id: string | null; provider_role: string | null; deal_type: string | null } | null;
+          `SELECT provider_id, provider_role, tenant_id, deal_type FROM oe_deal_offers WHERE id = ?`,
+        ).bind(toId).first()) as { provider_id: string | null; provider_role: string | null; tenant_id: string | null; deal_type: string | null } | null;
         if (off?.provider_role && off.provider_id) {
-          role = off.provider_role; owner = off.provider_id; dealType = off.deal_type ?? dealType;
+          role = off.provider_role; owner = off.provider_id; tenant = off.tenant_id ?? null; dealType = off.deal_type ?? dealType;
         } else {
           const req = await loadRequest(ctx, toId);
-          if (req?.demand_role && req.demand_id) { role = req.demand_role; owner = req.demand_id; }
+          if (req?.demand_role && req.demand_id) { role = req.demand_role; owner = req.demand_id; tenant = req.tenant_id ?? null; }
         }
         if (!role || !owner) continue;
         if (await alreadyPushed(ctx, toId)) continue;
         await pushRoleAction(ctx.env, {
           target_role: role,
           target_participant_id: owner,
+          tenant_id: tenant ?? undefined,
           source_event: ctx.event,
           source_chain_key: 'deal_engine',
           source_entity_type: 'deal_links',
