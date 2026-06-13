@@ -2110,7 +2110,19 @@ export type EventType =
   | 'ics_evt_completed'
   | 'ics_evt_dispute'
   | 'ics_evt_cancelled'
-  | 'ics_evt_sla_breach';
+  | 'ics_evt_sla_breach'
+  // ── Cross-role deal engine (CROSS_ROLE_DEAL_ENGINE_PLAN.md) ──────────────────
+  | 'deal.offer.published'
+  | 'deal.request.published'
+  | 'deal.options.viewed'
+  | 'deal.accepted'
+  | 'deal.declined'
+  | 'deal.countered'
+  | 'deal.cleared'
+  | 'deal.subscribed'
+  | 'deal.link.created'
+  | 'deal.link.rofr_resolved'
+  | 'objective.subscribed';
 
 export interface CascadeContext extends PlatformEventFields {
   event: EventType;
