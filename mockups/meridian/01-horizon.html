@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MERIDIAN — Horizon · Lender</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:  oklch(0.965 0.006 85);
+    --raised: oklch(0.985 0.004 85);
+    --ink:    oklch(0.21 0.012 85);
+    --ink2:   oklch(0.42 0.012 85);
+    --ink3:   oklch(0.50 0.012 85);
+    --line:   oklch(0.885 0.008 85);
+    --petrol: oklch(0.40 0.075 200);
+    --petrol-deep: oklch(0.30 0.06 205);
+    --petrol-tint: oklch(0.94 0.015 200);
+    --amber:  oklch(0.70 0.13 70);
+    --amber-deep: oklch(0.55 0.12 70);
+    --oxide:  oklch(0.50 0.18 30);
+    --oxide-tint: oklch(0.95 0.02 30);
+    --moss:   oklch(0.55 0.09 150);
+    --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Archivo',sans-serif; background:var(--paper); color:var(--ink);
+    font-size:14px; line-height:1.5; min-height:100dvh; display:flex; flex-direction:column;
+  }
+  .mono { font-family:'JetBrains Mono',monospace; font-variant-numeric:tabular-nums; }
+
+  /* ── Top bar ─────────────────────────────── */
+  header {
+    height:60px; display:flex; align-items:center; gap:28px; padding:0 28px;
+    border-bottom:1px solid var(--line); background:var(--raised); flex-shrink:0;
+  }
+  .wordmark {
+    font-variation-settings:'wdth' 125; font-weight:800; font-size:17px;
+    letter-spacing:0.14em; color:var(--ink);
+    padding-bottom:2px; border-bottom:3px solid var(--petrol);
+  }
+  .ctx { display:flex; flex-direction:column; line-height:1.25; }
+  .ctx b { font-size:13px; font-weight:600; }
+  .ctx span { font-size:11.5px; color:var(--ink3); }
+  .spacer { flex:1; }
+  .clock { font-size:13px; color:var(--ink2); }
+  .kbd-hint {
+    display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink2);
+    border:1px solid var(--line); border-radius:6px; padding:7px 14px; background:var(--paper);
+    cursor:pointer; transition:transform 140ms var(--ease), border-color 140ms;
+  }
+  .kbd-hint:hover { border-color:var(--petrol); }
+  .kbd-hint:active { transform:scale(0.98); }
+  .kbd-hint kbd {
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; border:1px solid var(--line);
+    border-radius:4px; padding:1px 5px; background:var(--raised); color:var(--ink2);
+  }
+  .avatar {
+    width:32px; height:32px; border-radius:50%; background:var(--petrol); color:white;
+    display:grid; place-items:center; font-size:12px; font-weight:700;
+  }
+
+  /* ── Layout ──────────────────────────────── */
+  .main { flex:1; display:grid; grid-template-columns:1fr 348px; min-height:0; }
+
+  /* ── Horizon board ───────────────────────── */
+  .board { padding:20px 0 8px 0; overflow-y:auto; }
+  .board-head, .lane-row {
+    display:grid; grid-template-columns:148px 1.15fr 1fr 1.2fr 1.1fr 1.1fr 0.9fr;
+  }
+  .board-head { position:sticky; top:0; background:var(--paper); z-index:3; padding-bottom:8px; }
+  .bucket-h {
+    font-size:10.5px; font-weight:700; letter-spacing:0.12em; color:var(--ink3);
+    font-variation-settings:'wdth' 110; padding:0 10px 6px 10px;
+    border-left:1px solid var(--line);
+  }
+  .bucket-h.breach { color:var(--oxide); }
+  .bucket-h .tick { font-family:'JetBrains Mono',monospace; font-weight:400; letter-spacing:0; display:block; font-size:10px; color:var(--ink3); margin-top:1px; }
+
+  .lane-row { border-top:1px solid var(--line); }
+  .lane-label {
+    padding:14px 14px 14px 28px; font-variation-settings:'wdth' 116; font-weight:700;
+    font-size:11px; letter-spacing:0.1em; color:var(--petrol-deep); line-height:1.4;
+  }
+  .lane-label .n { display:block; font-family:'JetBrains Mono',monospace; font-weight:400; font-size:10.5px; color:var(--ink3); letter-spacing:0; margin-top:2px; }
+  .cell { border-left:1px solid var(--line); padding:10px; min-height:96px; display:flex; flex-direction:column; gap:8px; }
+
+  /* ── Tiles ───────────────────────────────── */
+  .tile {
+    background:var(--raised); border:1px solid var(--line); border-radius:8px;
+    padding:9px 11px 10px; cursor:pointer; position:relative;
+    transition:transform 160ms var(--ease), border-color 160ms, box-shadow 160ms;
+  }
+  .tile:hover { border-color:var(--petrol); box-shadow:0 1px 4px oklch(0.40 0.075 200 / 0.10); }
+  .tile:active { transform:scale(0.98); }
+  .tile.breached { border:1.5px solid var(--oxide); background:var(--oxide-tint); }
+  .tile .ref { font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--ink3); }
+  .tile .title { font-size:12.5px; font-weight:600; line-height:1.35; margin:2px 0 4px; }
+  .tile .zar { font-family:'JetBrains Mono',monospace; font-weight:700; letter-spacing:-0.01em; }
+  .zar.m1 { font-size:13px; }   /* < R20m */
+  .zar.m2 { font-size:15.5px; } /* R20m – R500m */
+  .zar.m3 { font-size:20px; }   /* > R500m */
+  .tile .meta { display:flex; align-items:center; gap:8px; margin-top:5px; font-size:11px; color:var(--ink2); }
+  .chip {
+    font-family:'JetBrains Mono',monospace; font-size:9.5px; padding:2px 7px; border-radius:99px;
+    background:var(--petrol-tint); color:var(--petrol-deep); white-space:nowrap;
+  }
+  .chip.ox { background:var(--oxide-tint); color:var(--oxide); border:1px solid var(--oxide); }
+  .fuse { height:3px; border-radius:2px; background:var(--line); margin-top:8px; overflow:hidden; }
+  .fuse > i { display:block; height:100%; border-radius:2px; background:var(--petrol); }
+  .fuse.warn > i { background:var(--amber-deep); }
+  .fuse.dead > i { background:var(--oxide); width:100% !important; }
+  .breach-note { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--oxide); font-weight:700; margin-top:6px; }
+
+  /* ── Duty Stream ─────────────────────────── */
+  aside {
+    border-left:1px solid var(--line); background:var(--raised); display:flex;
+    flex-direction:column; min-height:0; box-shadow:-1px 0 0 oklch(0.21 0.012 85 / 0.04);
+  }
+  .duty-head { padding:18px 22px 12px; border-bottom:1px solid var(--line); }
+  .duty-head h2 { font-variation-settings:'wdth' 118; font-size:12px; font-weight:800; letter-spacing:0.12em; color:var(--ink); }
+  .duty-head p { font-size:11.5px; color:var(--ink3); margin-top:2px; }
+  .duty-list { overflow-y:auto; flex:1; }
+  .duty { padding:15px 22px; border-bottom:1px solid var(--line); display:grid; grid-template-columns:30px 1fr; gap:12px; }
+  .duty .rank { font-family:'JetBrains Mono',monospace; font-size:19px; font-weight:700; color:var(--petrol); line-height:1.1; }
+  .duty.ox .rank { color:var(--oxide); }
+  .duty h3 { font-size:13px; font-weight:600; line-height:1.35; }
+  .duty .why { font-size:11.5px; color:var(--ink2); margin:3px 0 9px; }
+  .why .mono { font-weight:500; }
+  .why .due-ox { color:var(--oxide); font-weight:700; }
+  .why .due-am { color:var(--amber-deep); font-weight:700; }
+  .duty .acts { display:flex; gap:8px; }
+  .btn {
+    font-family:'Archivo',sans-serif; font-size:12px; font-weight:600; border-radius:6px;
+    padding:8px 13px; min-height:34px; cursor:pointer; border:1px solid transparent;
+    transition:transform 140ms var(--ease), background 140ms;
+  }
+  .btn:active { transform:scale(0.97); }
+  .btn.pri { background:var(--petrol); color:white; }
+  .btn.pri:hover { background:var(--petrol-deep); }
+  .btn.ghost { background:transparent; border-color:var(--line); color:var(--ink2); }
+  .btn.ghost:hover { border-color:var(--ink3); color:var(--ink); }
+  .btn.ox { background:var(--oxide); color:white; }
+
+  /* ── Wire ticker ─────────────────────────── */
+  .wire {
+    flex-shrink:0; border-top:1px solid var(--line); background:var(--raised);
+    display:flex; align-items:stretch; height:40px; overflow:hidden;
+  }
+  .wire-label {
+    display:flex; align-items:center; padding:0 18px 0 28px; gap:8px;
+    font-variation-settings:'wdth' 118; font-size:10.5px; font-weight:800; letter-spacing:0.12em;
+    color:var(--petrol-deep); border-right:1px solid var(--line); flex-shrink:0;
+  }
+  .pulse { width:7px; height:7px; border-radius:50%; background:var(--moss); }
+  .wire-feed { display:flex; align-items:center; gap:34px; padding:0 22px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink2); white-space:nowrap; overflow:hidden; }
+  .wire-feed b { color:var(--ink); font-weight:600; }
+  .dir-out { color:var(--petrol); font-weight:700; }
+  .dir-in { color:var(--moss); font-weight:700; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wordmark">MERIDIAN</div>
+  <div class="ctx">
+    <b>Lender · Credit Operations</b>
+    <span>Nedbank CIB — Energy &amp; Infrastructure</span>
+  </div>
+  <div class="spacer"></div>
+  <div class="clock mono">Thu 12 Jun · 09:41 SAST</div>
+  <div class="kbd-hint">Atlas — search anything <kbd>⌘K</kbd></div>
+  <div class="avatar">LM</div>
+</header>
+
+<div class="main">
+  <!-- ════════ HORIZON BOARD ════════ -->
+  <section class="board" aria-label="Obligation horizon">
+    <div class="board-head">
+      <div></div>
+      <div class="bucket-h breach">BREACHED<span class="tick">consequence running</span></div>
+      <div class="bucket-h">&lt; 2 HOURS<span class="tick">before 11:41</span></div>
+      <div class="bucket-h">TODAY<span class="tick">before 17:00</span></div>
+      <div class="bucket-h">48 HOURS<span class="tick">by Sat 14</span></div>
+      <div class="bucket-h">THIS WEEK<span class="tick">by Fri 19</span></div>
+      <div class="bucket-h">LATER<span class="tick">&gt; 7 days</span></div>
+    </div>
+
+    <!-- Lane: Covenants -->
+    <div class="lane-row">
+      <div class="lane-label">COVENANTS &amp; MONITORING<span class="n">W38 · 12 live</span></div>
+      <div class="cell">
+        <div class="tile breached">
+          <div class="ref">LCC-412 · covenant_certificate</div>
+          <div class="title">Q1 DSCR certificate — Kangnas Wind</div>
+          <div class="zar m3">R 850 000 000</div>
+          <div class="meta"><span class="chip ox">CERT OVERDUE</span><span>Kangnas RF (Pty) Ltd</span></div>
+          <div class="fuse dead"><i></i></div>
+          <div class="breach-note">⚠ BREACHED 2H 14M AGO → dunning cycle 2 arms 12:00</div>
+        </div>
+      </div>
+      <div class="cell"></div>
+      <div class="cell">
+        <div class="tile">
+          <div class="ref">LCC-415 · covenant_certificate</div>
+          <div class="title">Insurance covenant cert — De Aar PV</div>
+          <div class="zar m2">R 412 000 000</div>
+          <div class="meta"><span class="chip">REVIEW</span><span>De Aar Solar RF</span></div>
+          <div class="fuse warn"><i style="width:22%"></i></div>
+        </div>
+      </div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell">
+        <div class="tile">
+          <div class="ref">LCC-418 · covenant_certificate</div>
+          <div class="title">LLCR certificate — Redstone CSP</div>
+          <div class="zar m2">R 290 000 000</div>
+          <div class="meta"><span class="chip">AWAITING SUBMIT</span><span>Redstone RF</span></div>
+          <div class="fuse"><i style="width:84%"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lane: Facilities & Drawdowns -->
+    <div class="lane-row">
+      <div class="lane-label">FACILITIES &amp; DRAWDOWNS<span class="n">W21 · W30 · 10 live</span></div>
+      <div class="cell"></div>
+      <div class="cell">
+        <div class="tile">
+          <div class="ref">LDD-2031 · drawdown</div>
+          <div class="title">Drawdown #4 — Karusa Wind 140MW</div>
+          <div class="zar m2">R 42 500 000</div>
+          <div class="meta"><span class="chip">CP GATE</span><span>11 / 12 CPs verified</span></div>
+          <div class="fuse warn"><i style="width:14%"></i></div>
+        </div>
+      </div>
+      <div class="cell">
+        <div class="tile">
+          <div class="ref">LDB-077 · disbursement_uop</div>
+          <div class="title">UoP verification — Soetwater BESS</div>
+          <div class="zar m1">R 18 000 000</div>
+          <div class="meta"><span class="chip">EVIDENCE IN</span><span>14 docs uploaded 09:12</span></div>
+          <div class="fuse"><i style="width:46%"></i></div>
+        </div>
+      </div>
+      <div class="cell"></div>
+      <div class="cell">
+        <div class="tile">
+          <div class="ref">LDD-2029 · drawdown</div>
+          <div class="title">Drawdown #3 — Umoyilanga hybrid</div>
+          <div class="zar m2">R 96 400 000</div>
+          <div class="meta"><span class="chip">IE REVIEW</span><span>Arup site visit Mon</span></div>
+          <div class="fuse"><i style="width:71%"></i></div>
+        </div>
+      </div>
+      <div class="cell"></div>
+    </div>
+
+    <!-- Lane: Distressed -->
+    <div class="lane-row">
+      <div class="lane-label">DISTRESSED &amp; ENFORCEMENT<span class="n">W45 · 2 live</span></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell">
+        <div class="tile">
+          <div class="ref">LDF-009 · loan_default</div>
+          <div class="title">Event of default — Sere extension · standstill expires 16:00</div>
+          <div class="zar m3">R 1 430 000 000</div>
+          <div class="meta"><span class="chip ox">STANDSTILL</span><span>4 lenders · agent: us</span></div>
+          <div class="fuse warn"><i style="width:19%"></i></div>
+        </div>
+      </div>
+      <div class="cell"></div>
+      <div class="cell">
+        <div class="tile">
+          <div class="ref">LDF-007 · loan_default</div>
+          <div class="title">Restructure term sheet — Aggeneys PV</div>
+          <div class="zar m2">R 380 000 000</div>
+          <div class="meta"><span class="chip">RESTRUCTURE</span><span>counsel draft v3</span></div>
+          <div class="fuse"><i style="width:62%"></i></div>
+        </div>
+      </div>
+      <div class="cell"></div>
+    </div>
+
+    <!-- Lane: Security & Transfers -->
+    <div class="lane-row">
+      <div class="lane-label">SECURITY &amp; TRANSFERS<span class="n">W69 · W61 · 7 live</span></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell">
+        <div class="tile">
+          <div class="ref">LSP-209 · security_perfection</div>
+          <div class="title">Cession registration lapse risk — Karoshoek</div>
+          <div class="zar m2">R 310 000 000</div>
+          <div class="meta"><span class="chip">CONTINUATION DUE</span><span>Deeds office: Kimberley</span></div>
+          <div class="fuse warn"><i style="width:24%"></i></div>
+        </div>
+      </div>
+      <div class="cell">
+        <div class="tile">
+          <div class="ref">LLT-031 · loan_transfer</div>
+          <div class="title">Secondary sale — non-resident ExCon approval</div>
+          <div class="zar m2">R 264 000 000</div>
+          <div class="meta"><span class="chip">SARB PACK</span><span>transferee: SG Paris</span></div>
+          <div class="fuse"><i style="width:55%"></i></div>
+        </div>
+      </div>
+      <div class="cell"></div>
+      <div class="cell">
+        <div class="tile">
+          <div class="ref">LSP-214 · security_perfection</div>
+          <div class="title">Bond registration — Grootfontein BESS</div>
+          <div class="zar m1">R 95 000 000</div>
+          <div class="meta"><span class="chip">LODGED</span><span>awaiting deeds exam</span></div>
+          <div class="fuse"><i style="width:90%"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lane: Origination -->
+    <div class="lane-row">
+      <div class="lane-label">ORIGINATION<span class="n">W53 · 4 live</span></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell">
+        <div class="tile">
+          <div class="ref">LCO-118 · credit_origination</div>
+          <div class="title">Credit committee pack — Mulilo PV cluster</div>
+          <div class="zar m3">R 1 200 000 000</div>
+          <div class="meta"><span class="chip">CREDIT REVIEW</span><span>committee sits Mon 10:00</span></div>
+          <div class="fuse"><i style="width:58%"></i></div>
+        </div>
+      </div>
+      <div class="cell">
+        <div class="tile">
+          <div class="ref">LCO-121 · credit_origination</div>
+          <div class="title">KYC refresh — Witberg Wind sponsors</div>
+          <div class="zar m1">R 8 400 000</div>
+          <div class="meta"><span class="chip">KYC</span><span>FIC docs requested</span></div>
+          <div class="fuse"><i style="width:77%"></i></div>
+        </div>
+      </div>
+      <div class="cell"></div>
+    </div>
+  </section>
+
+  <!-- ════════ DUTY STREAM ════════ -->
+  <aside aria-label="Duty stream">
+    <div class="duty-head">
+      <h2>DUTY STREAM</h2>
+      <p>Computed 09:41 — ranked by ZAR at risk × time remaining</p>
+    </div>
+    <div class="duty-list">
+      <div class="duty ox">
+        <div class="rank">1</div>
+        <div>
+          <h3>Kangnas Q1 DSCR certificate overdue</h3>
+          <div class="why"><span class="mono">R 850m</span> facility · <span class="due-ox">breached 2h 14m ago</span> · dunning cycle 2 fires 12:00 unless cured or escalated</div>
+          <div class="acts"><button class="btn ox">Escalate · cycle 2</button><button class="btn ghost">Open thread</button></div>
+        </div>
+      </div>
+      <div class="duty">
+        <div class="rank">2</div>
+        <div>
+          <h3>Approve CP gate — Karusa drawdown #4</h3>
+          <div class="why"><span class="mono">R 42.5m</span> · <span class="due-am">closes in 1h 22m</span> · 11/12 CPs verified, AI suggests condition-subsequent on CP-09</div>
+          <div class="acts"><button class="btn pri">Approve CP gate</button><button class="btn ghost">Open thread</button></div>
+        </div>
+      </div>
+      <div class="duty">
+        <div class="rank">3</div>
+        <div>
+          <h3>Sere standstill expires 16:00</h3>
+          <div class="why"><span class="mono">R 1.43bn</span> EoD · 4-lender syndicate, we are agent · convene review before expiry or acceleration window opens</div>
+          <div class="acts"><button class="btn pri">Convene review</button><button class="btn ghost">Open thread</button></div>
+        </div>
+      </div>
+      <div class="duty">
+        <div class="rank">4</div>
+        <div>
+          <h3>File cession continuation — Karoshoek</h3>
+          <div class="why"><span class="mono">R 310m</span> security · lapse = unperfected collateral · Kimberley deeds office cut-off 15:30</div>
+          <div class="acts"><button class="btn pri">File continuation</button><button class="btn ghost">Open thread</button></div>
+        </div>
+      </div>
+      <div class="duty">
+        <div class="rank">5</div>
+        <div>
+          <h3>Submit SARB ExCon pack — LLT-031</h3>
+          <div class="why"><span class="mono">R 264m</span> transfer to non-resident · ExCon approval crosses SARB at every tier · pack 90% assembled</div>
+          <div class="acts"><button class="btn pri">Submit pack</button><button class="btn ghost">Open thread</button></div>
+        </div>
+      </div>
+      <div class="duty">
+        <div class="rank">6</div>
+        <div>
+          <h3>Verify UoP evidence — Soetwater BESS</h3>
+          <div class="why"><span class="mono">R 18m</span> · borrower uploaded 14 docs at 09:12 · clears next disbursement tranche</div>
+          <div class="acts"><button class="btn pri">Start verification</button><button class="btn ghost">Open thread</button></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- ════════ THE WIRE ════════ -->
+<div class="wire" aria-label="Live cascade wire">
+  <div class="wire-label"><span class="pulse"></span>THE WIRE</div>
+  <div class="wire-feed">
+    <span><b>09:38</b> <span class="dir-out">OUT →</span> IPP · Karusa Wind — CP docs complete → their 48h funding timer armed</span>
+    <span><b>09:31</b> <span class="dir-in">IN ←</span> Offtaker · take-or-pay claim filed vs Sere → quantum review queued (<b>R 7.2m</b>)</span>
+    <span><b>09:24</b> <span class="dir-out">OUT →</span> Regulator · NERSA — Kangnas dunning crossed to regulator inbox (cycle 3 path)</span>
+    <span><b>09:12</b> <span class="dir-in">IN ←</span> IPP · Soetwater — UoP evidence bundle uploaded (14 docs)</span>
+  </div>
+</div>
+
+</body>
+</html>

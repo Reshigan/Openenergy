@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MERIDIAN — Thread · LDD-2031</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:  oklch(0.965 0.006 85);
+    --raised: oklch(0.985 0.004 85);
+    --ink:    oklch(0.21 0.012 85);
+    --ink2:   oklch(0.42 0.012 85);
+    --ink3:   oklch(0.50 0.012 85);
+    --line:   oklch(0.885 0.008 85);
+    --petrol: oklch(0.40 0.075 200);
+    --petrol-deep: oklch(0.30 0.06 205);
+    --petrol-tint: oklch(0.94 0.015 200);
+    --amber:  oklch(0.70 0.13 70);
+    --amber-deep: oklch(0.55 0.12 70);
+    --oxide:  oklch(0.50 0.18 30);
+    --oxide-tint: oklch(0.95 0.02 30);
+    --moss:   oklch(0.55 0.09 150);
+    --moss-tint: oklch(0.95 0.02 150);
+    --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Archivo',sans-serif; background:var(--paper); color:var(--ink); font-size:14px; line-height:1.5; min-height:100dvh; display:flex; flex-direction:column; }
+  .mono { font-family:'JetBrains Mono',monospace; font-variant-numeric:tabular-nums; }
+
+  header { height:60px; display:flex; align-items:center; gap:28px; padding:0 28px; border-bottom:1px solid var(--line); background:var(--raised); flex-shrink:0; }
+  .wordmark { font-variation-settings:'wdth' 125; font-weight:800; font-size:17px; letter-spacing:0.14em; padding-bottom:2px; border-bottom:3px solid var(--petrol); }
+  .crumb { font-size:12.5px; color:var(--ink3); }
+  .crumb a { color:var(--petrol-deep); text-decoration:none; font-weight:600; }
+  .spacer { flex:1; }
+  .clock { font-size:13px; color:var(--ink2); }
+
+  .main { flex:1; display:grid; grid-template-columns:1fr 336px; min-height:0; overflow-y:auto; align-items:start; }
+
+  /* ── Case header ─────────────────────────── */
+  .case { padding:30px 44px 120px; max-width:780px; }
+  .case-head { display:flex; align-items:flex-start; gap:26px; padding-bottom:22px; border-bottom:1px solid var(--line); }
+  .case-head .id { flex:1; }
+  .case-head .ref { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink3); }
+  .case-head h1 { font-size:23px; font-weight:700; letter-spacing:-0.01em; line-height:1.25; margin:4px 0 6px; }
+  .case-head .chain { font-size:12.5px; color:var(--ink2); }
+  .case-head .chain b { color:var(--petrol-deep); }
+  .quantum { text-align:right; }
+  .quantum .z { font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:700; letter-spacing:-0.02em; }
+  .quantum .l { font-size:11px; color:var(--ink3); }
+  .sla { margin-top:10px; }
+  .sla .t { font-size:12px; font-weight:700; color:var(--amber-deep); }
+  .fuse { height:3px; width:170px; border-radius:2px; background:var(--line); margin-top:5px; margin-left:auto; }
+  .fuse > i { display:block; height:100%; width:14%; border-radius:2px; background:var(--amber-deep); }
+
+  /* ── State rail ──────────────────────────── */
+  .rail { margin-top:28px; }
+  .state { display:grid; grid-template-columns:34px 1fr; gap:0 18px; position:relative; }
+  .state .dot { width:14px; height:14px; border-radius:50%; margin:5px 0 0 10px; background:var(--paper); border:2px solid var(--line); z-index:1; }
+  .state.done .dot { background:var(--moss); border-color:var(--moss); }
+  .state.now .dot { background:var(--petrol); border-color:var(--petrol); box-shadow:0 0 0 5px var(--petrol-tint); }
+  .state::before { content:''; position:absolute; left:16px; top:22px; bottom:-6px; width:2px; background:var(--line); }
+  .state.done::before { background:var(--moss); }
+  .state:last-child::before { display:none; }
+  .state .body { padding-bottom:30px; }
+  .state .name { font-variation-settings:'wdth' 112; font-weight:700; font-size:13px; letter-spacing:0.06em; }
+  .state.ahead .name { color:var(--ink3); font-weight:600; }
+  .state .when { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink3); margin-left:10px; }
+  .state .by { font-size:12px; color:var(--ink2); margin-top:2px; }
+
+  .evidence { margin-top:10px; border:1px solid var(--line); border-radius:8px; background:var(--raised); overflow:hidden; }
+  .ev-row { display:flex; align-items:center; gap:10px; padding:9px 14px; font-size:12.5px; border-top:1px solid var(--line); }
+  .ev-row:first-child { border-top:none; }
+  .ev-row .tag { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink3); width:64px; flex-shrink:0; }
+  .ok  { color:var(--moss); font-weight:700; }
+  .bad { color:var(--oxide); font-weight:700; }
+  .cp-grid { display:grid; grid-template-columns:1fr 1fr; }
+  .cp { display:flex; gap:8px; align-items:baseline; padding:8px 14px; font-size:12px; border-top:1px solid var(--line); }
+  .cp:nth-child(-n+2) { border-top:none; }
+  .cp .mono { font-size:10.5px; color:var(--ink3); }
+
+  /* ── AI why-card ─────────────────────────── */
+  .ai {
+    margin-top:14px; border:1px solid oklch(0.40 0.075 200 / 0.35); border-radius:10px;
+    background:var(--petrol-tint); padding:16px 18px;
+  }
+  .ai .k { font-variation-settings:'wdth' 118; font-size:10.5px; font-weight:800; letter-spacing:0.12em; color:var(--petrol-deep); }
+  .ai p { font-size:13px; margin:7px 0 12px; line-height:1.55; }
+  .ai p b { font-weight:700; }
+
+  .btn { font-family:'Archivo',sans-serif; font-size:12.5px; font-weight:600; border-radius:6px; padding:9px 15px; min-height:36px; cursor:pointer; border:1px solid transparent; transition:transform 140ms var(--ease), background 140ms; }
+  .btn:active { transform:scale(0.97); }
+  .btn.pri { background:var(--petrol); color:white; }
+  .btn.pri:hover { background:var(--petrol-deep); }
+  .btn.ghost { background:transparent; border-color:var(--line); color:var(--ink2); }
+  .btn.ghost:hover { border-color:var(--ink3); color:var(--ink); }
+  .btn.danger { background:transparent; border-color:oklch(0.50 0.18 30 / 0.4); color:var(--oxide); }
+
+  /* ── Right rail ──────────────────────────── */
+  .side { border-left:1px solid var(--line); background:var(--raised); padding:26px 24px 120px; position:sticky; top:0; }
+  .side h2 { font-variation-settings:'wdth' 118; font-size:10.5px; font-weight:800; letter-spacing:0.12em; color:var(--ink3); margin:26px 0 10px; }
+  .side h2:first-child { margin-top:0; }
+  .actor { display:flex; gap:11px; align-items:center; padding:9px 0; border-bottom:1px solid var(--line); }
+  .actor:last-of-type { border-bottom:none; }
+  .actor .av { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-size:10.5px; font-weight:700; color:white; background:var(--petrol); flex-shrink:0; }
+  .actor .av.alt { background:var(--ink2); }
+  .actor b { font-size:12.5px; display:block; }
+  .actor span { font-size:11px; color:var(--ink3); }
+  .timer { padding:10px 0; border-bottom:1px solid var(--line); }
+  .timer b { font-size:12.5px; }
+  .timer .mono { font-size:12px; color:var(--amber-deep); font-weight:700; }
+  .timer .mono.armed { color:var(--ink3); font-weight:500; }
+  .timer p { font-size:11px; color:var(--ink3); }
+  .linked { display:block; padding:9px 0; border-bottom:1px solid var(--line); text-decoration:none; color:inherit; }
+  .linked .mono { font-size:10.5px; color:var(--ink3); }
+  .linked b { font-size:12.5px; font-weight:600; display:block; }
+  .linked:hover b { color:var(--petrol-deep); }
+
+  /* ── Action footer ───────────────────────── */
+  .actbar {
+    position:fixed; left:0; right:336px; bottom:0; background:var(--raised);
+    border-top:1px solid var(--line); padding:14px 44px 16px;
+  }
+  .cascade { display:flex; align-items:baseline; gap:9px; font-size:12px; color:var(--ink2); margin-bottom:11px; }
+  .cascade .k { font-variation-settings:'wdth' 118; font-size:10px; font-weight:800; letter-spacing:0.12em; color:var(--petrol-deep); flex-shrink:0; }
+  .actbar .row { display:flex; gap:10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wordmark">MERIDIAN</div>
+  <div class="crumb"><a href="01-horizon.html">Horizon</a> / Facilities &amp; Drawdowns / <span class="mono">LDD-2031</span></div>
+  <div class="spacer"></div>
+  <div class="clock mono">Thu 12 Jun · 09:41 SAST</div>
+</header>
+
+<div class="main">
+  <!-- ════════ THE THREAD ════════ -->
+  <article class="case">
+    <div class="case-head">
+      <div class="id">
+        <div class="ref">LDD-2031 · drawdown · opened Mon 09 Jun 14:02</div>
+        <h1>Drawdown #4 — Karusa Wind 140MW</h1>
+        <div class="chain"><b>W21 Loan Drawdown chain</b> · IE + CP gate · SARB large-exposure check at funding</div>
+      </div>
+      <div class="quantum">
+        <div class="z">R 42 500 000</div>
+        <div class="l">utilisation request · facility R 680m · 31% drawn after this</div>
+        <div class="sla">
+          <div class="t">CP gate closes in 1h 22m</div>
+          <div class="fuse"><i></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rail">
+
+      <div class="state done">
+        <div class="dot"></div>
+        <div class="body">
+          <span class="name">SUBMITTED</span><span class="when">Mon 09 Jun 14:02</span>
+          <div class="by">by Thandi Mokoena — Karusa Wind RF (borrower)</div>
+          <div class="evidence">
+            <div class="ev-row"><span class="tag">PDF</span> Drawdown notice #4 — signed utilisation request <span class="ok" style="margin-left:auto">✓</span></div>
+            <div class="ev-row"><span class="tag">XLSX</span> Construction cost schedule — June certified values <span class="ok" style="margin-left:auto">✓</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="state done">
+        <div class="dot"></div>
+        <div class="body">
+          <span class="name">DOCS VERIFIED</span><span class="when">Tue 10 Jun 08:15</span>
+          <div class="by">by Lerato Mahlangu — Nedbank CIB (agent) · auto-checked against facility agreement schedule 4</div>
+        </div>
+      </div>
+
+      <div class="state now">
+        <div class="dot"></div>
+        <div class="body">
+          <span class="name">CP REVIEW — current</span><span class="when">entered Tue 10 Jun 08:15 · SLA 48h</span>
+          <div class="by">pending: Lerato Mahlangu (you) · 11 of 12 conditions precedent verified</div>
+          <div class="evidence">
+            <div class="cp-grid">
+              <div class="cp"><span class="ok">✓</span> CP-01 Board resolution <span class="mono">verified</span></div>
+              <div class="cp"><span class="ok">✓</span> CP-02 Legal opinion <span class="mono">verified</span></div>
+              <div class="cp"><span class="ok">✓</span> CP-04 IE progress cert <span class="mono">Arup · 87%</span></div>
+              <div class="cp"><span class="ok">✓</span> CP-05 No-default cert <span class="mono">verified</span></div>
+              <div class="cp"><span class="ok">✓</span> CP-07 Account balances <span class="mono">DSRA funded</span></div>
+              <div class="cp"><span class="bad">✗</span> CP-09 Insurance broker letter <span class="mono">cert expired 31 May</span></div>
+            </div>
+            <div class="ev-row" style="border-top:1px solid var(--line)"><span class="tag">+6</span> remaining CPs all verified — expand to view</div>
+          </div>
+
+          <div class="ai">
+            <div class="k">AI · WHY THIS IS STUCK</div>
+            <p>CP-09 fails because the Hollard policy certificate lapsed <b>31 May</b>; renewal is bound but the broker letter wasn't reissued. The same broker reissued in <b>2 days</b> for LDD-2029. Facility agreement cl. 19.3(b) permits approval with a <b>condition subsequent</b> (10 business days) for insurance evidence. Recommend: approve with CS on CP-09 + auto-chase the broker — keeps the borrower's contractor payment run on schedule.</p>
+            <div style="display:flex; gap:9px">
+              <button class="btn pri">Accept — approve with CS + chase broker</button>
+              <button class="btn ghost">Dismiss</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="state ahead">
+        <div class="dot"></div>
+        <div class="body"><span class="name">IE SIGN-OFF</span><div class="by">Arup confirms drawdown vs construction progress · SLA 24h</div></div>
+      </div>
+
+      <div class="state ahead">
+        <div class="dot"></div>
+        <div class="body"><span class="name">APPROVED</span><div class="by">arms borrower's 48h funding-confirmation timer</div></div>
+      </div>
+
+      <div class="state ahead">
+        <div class="dot"></div>
+        <div class="body"><span class="name">FUNDED → SETTLED</span><div class="by">payment evidence chain · SARB large-exposure return if cumulative &gt; R 300m</div></div>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- ════════ SIDE RAIL ════════ -->
+  <aside class="side">
+    <h2>ACTORS</h2>
+    <div class="actor"><div class="av">KW</div><div><b>Karusa Wind RF</b><span>borrower · IPP — Thandi Mokoena</span></div></div>
+    <div class="actor"><div class="av alt">NC</div><div><b>Nedbank CIB</b><span>facility agent · you — Lerato Mahlangu</span></div></div>
+    <div class="actor"><div class="av alt">AR</div><div><b>Arup</b><span>independent engineer · next gate</span></div></div>
+
+    <h2>TIMERS</h2>
+    <div class="timer"><b>CP gate SLA</b> · <span class="mono">1h 22m left</span><p>breach escalates to credit head + flags the case on Horizon</p></div>
+    <div class="timer"><b>Funding window</b> · <span class="mono armed">48h — arms on approval</span><p>borrower confirms receipt; missed window auto-queries the paying bank</p></div>
+
+    <h2>LINKED CASES</h2>
+    <a class="linked" href="#"><span class="mono">LCO-094 · W53</span><b>Facility origination — approved Feb 2026</b></a>
+    <a class="linked" href="#"><span class="mono">LSP-187 · W69</span><b>Security package — perfected, next continuation 2027</b></a>
+    <a class="linked" href="#"><span class="mono">LCC-401 · W38</span><b>DSCR certificate — current, next due 31 Jul</b></a>
+  </aside>
+</div>
+
+<!-- ════════ ACTION BAR with cascade preview ════════ -->
+<div class="actbar">
+  <div class="cascade">
+    <span class="k">CASCADE →</span>
+    <span>Approving notifies <b style="color:var(--ink)">Karusa Wind (IPP)</b> and <b style="color:var(--ink)">Arup (IE)</b>, arms the 48h funding-confirmation timer on their side, and writes the audit evidence-chain entry. Rejecting requires a structured reason code and opens their cure window.</span>
+  </div>
+  <div class="row">
+    <button class="btn pri">Approve CP gate</button>
+    <button class="btn ghost">Approve with condition subsequent — CP-09</button>
+    <button class="btn danger">Reject · reason code</button>
+  </div>
+</div>
+
+</body>
+</html>
