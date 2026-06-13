@@ -20,3 +20,6 @@ docs/video/output/
 open-energy-platform/media/
 open-energy-platform/test-results/
 .playwright-mcp/
+
+# superpowers brainstorm scratch
+.superpowers/
