@@ -23,6 +23,7 @@ import { registerPredictiveMaintenanceRules } from './predictive-maintenance';
 import { registerWarrantySupplyRules } from './warranty-supply';
 import { registerDefaultFreezeRules } from './default-freeze';
 import { registerOnboardingProvisioningRules } from './onboarding-provisioning';
+import { registerDealEngineRules } from './deal-engine';
 
 registerTradingSafetyRules();
 registerLifecycleSequencingRules();
@@ -46,5 +47,6 @@ registerPredictiveMaintenanceRules();
 registerWarrantySupplyRules();
 registerDefaultFreezeRules();
 registerOnboardingProvisioningRules();
+registerDealEngineRules();
 
-export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules, registerLenderCovenantRules, registerCarbonEventRules, registerRegulatorInboxRules, registerOfftakerProcurementRules, registerUnderservedInboxRules, registerPpaDeliveryShortfallRules, registerPtwWoInteractionRules, registerTariffRepriceRules, registerPredictiveMaintenanceRules, registerWarrantySupplyRules, registerDefaultFreezeRules, registerOnboardingProvisioningRules };
+export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules, registerLenderCovenantRules, registerCarbonEventRules, registerRegulatorInboxRules, registerOfftakerProcurementRules, registerUnderservedInboxRules, registerPpaDeliveryShortfallRules, registerPtwWoInteractionRules, registerTariffRepriceRules, registerPredictiveMaintenanceRules, registerWarrantySupplyRules, registerDefaultFreezeRules, registerOnboardingProvisioningRules, registerDealEngineRules };
