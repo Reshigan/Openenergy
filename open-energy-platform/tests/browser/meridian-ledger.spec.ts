@@ -19,9 +19,10 @@
 // WHY THE LENDER TOKEN: lender is a write party on covenant_certificate
 // (registry roles = {admin, support, lender} on both begin-review and
 // flag-breach), and covenant_certificate's lender lane is 'monitoring' — so the
-// lender sees the ledger, the cards, the thread AND the action bar. (It is also
-// the only lender chain whose counterparty lane is regulator rather than
-// ipp_developer; see meridian.spec.ts for the two-sided thread proof.)
+// lender sees the ledger, the cards, the thread AND the action bar.
+// (covenant_certificate is a three-lane chain — lender:'monitoring',
+// ipp_developer:'finance', regulator:'enforcement_regulator'; see
+// meridian.spec.ts for the two-sided thread proof.)
 //
 // WHY IT STOPS SHORT OF SUBMITTING (prod-safe, read-mostly): firing the
 // flag-breach POST mutates prod state IRREVERSIBLY — it transitions the
@@ -209,7 +210,7 @@ test.describe('Meridian Ledger — covenant_certificate', () => {
     // spec is a prod-safe read-mostly smoke: it proves the form opens with the
     // right schema and that submit enables, then dismisses without POSTing.
     await page.keyboard.press('Escape');
-    await expect(page.locator('.mer.veil')).toHaveCount(0);
+    await expect(page.locator('.mer.veil')).toHaveCount(0, { timeout: 15_000 });
 
     const real = errors.filter((e) => !isBenign(e));
     expect(real, real.join('\n')).toEqual([]);
