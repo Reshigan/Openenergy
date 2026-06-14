@@ -1757,10 +1757,368 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
   // ───────── CARBON FUND ─────────
   // Skipped: W4 Article 6 corresponding adjustments (oe_article6_adjustments uses
   // `ca_status`, no sla_deadline_at); W11 carbon MRV chain (mrv_submissions has
-  // chain_status but no sla_deadline_at — deadlines live on doe_due_at/cra_due_at);
-  // W17 carbon retirement (carbon_retirements predates the oe_ table convention and
-  // its chain columns arrive via ALTER in migration 124, not the CREATE TABLE DDL —
-  // fails the registry shape contract on both counts).
+  // chain_status but no sla_deadline_at — deadlines live on doe_due_at/cra_due_at).
+  // (W17 carbon retirement now lands in the parity batch below — it does expose
+  // chain_status + sla_deadline_at + an events table, contrary to the old skip note.)
+
+  // ───────── CARBON (parity batch) ─────────
+  // Six carbon chains that were never migrated to the registry. Each renders
+  // through the generic Ledger/Thread surfaces. Action paths are full segments
+  // (these routes are segment-per-transition, not POST /:id/action).
+
+  // W82 — Carbon credit issuance (registry serialization + buffer-pool integrity)
+  {
+    key: 'carbon_issuance', wave: 82, table: 'oe_carbon_issuances',
+    title: 'Credit issuance', refCol: 'issuance_number', titleCol: 'project_name',
+    quantumCol: 'requested_tco2e', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['issued', 'rejected', 'withdrawn', 'cancelled'],
+    counterpartyCol: 'proponent_party_name',
+    lanes: { carbon_fund: 'issuance_registry' },
+    eventsTable: 'oe_carbon_issuances_events', eventsFk: 'issuance_id',
+    actions: [
+      { action: 'begin-screening', label: 'Begin screening',
+        path: '/api/carbon-issuance/chain/:id/begin-screening',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Opens desk screening of the issuance request; predicts a realistic mint date.',
+        fields: [
+          { key: 'screening_ref', label: 'Screening ref', type: 'evidence' },
+          { key: 'screening_basis', label: 'Basis / evidence', type: 'evidence' },
+        ],
+      },
+      { action: 'verify-against-mrv', label: 'Verify against MRV',
+        path: '/api/carbon-issuance/chain/:id/verify-against-mrv',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Recomputes the integrity battery — buffer deduction, net issuable, headroom, over-issuance flag.',
+        fields: [
+          { key: 'verified_tco2e', label: 'Verified', type: 'number', unit: 'tCO2e' },
+          { key: 'already_issued_tco2e', label: 'Already issued', type: 'number', unit: 'tCO2e' },
+          { key: 'verification_check_ref', label: 'Verification ref', type: 'evidence' },
+          { key: 'verification_check_basis', label: 'Basis / evidence', type: 'evidence' },
+        ],
+      },
+      { action: 'confirm-issuance', label: 'Confirm issuance', tone: 'primary',
+        path: '/api/carbon-issuance/chain/:id/confirm-issuance',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Mints the serialised credits to the registry; closes the case issued.',
+        fields: [
+          { key: 'issuance_ref', label: 'Issuance ref', type: 'evidence' },
+          { key: 'corresponding_adjustment_ref', label: 'Corresponding-adjustment ref', type: 'evidence' },
+          { key: 'issuance_basis', label: 'Basis / evidence', type: 'evidence' },
+        ],
+      },
+      { action: 'reject', label: 'Reject', tone: 'oxide',
+        path: '/api/carbon-issuance/chain/:id/reject',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Rejects the issuance request; closes the case adversely.',
+        fields: [
+          { key: 'reason_code', label: 'Reason', type: 'string', placeholder: 'e.g. over_issuance' },
+          { key: 'rejection_ref', label: 'Rejection notice ref', type: 'evidence' },
+          { key: 'rejection_basis', label: 'Basis / evidence', type: 'evidence' },
+          { key: 'regulator_ref', label: 'Regulator ref', type: 'evidence' },
+        ],
+      },
+    ],
+    kpis: [
+      { key: 'total', label: 'Issuances', compute: 'count' },
+      { key: 'requested', label: 'Requested', compute: 'sum_quantum' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+    ],
+  },
+
+  // W91 — CCP eligibility assessment (Calyx Global / ICVCM Core Carbon Principles)
+  {
+    key: 'ccp_assessment', wave: 91, table: 'oe_ccp_assessments',
+    title: 'CCP assessment', refCol: 'assessment_number', titleCol: 'project_name',
+    quantumCol: 'assessed_annual_tco2e', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['ccp_label_granted', 'ccp_label_denied', 'withdrawn'],
+    counterpartyCol: 'proponent_party_name',
+    lanes: { carbon_fund: 'mrv_verification' },
+    eventsTable: 'oe_ccp_assessments_events', eventsFk: 'assessment_id',
+    actions: [
+      { action: 'begin-assessment', label: 'Begin assessment',
+        path: '/api/ccp-assessment/chain/:id/begin-assessment',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Opens the 10-criterion CCP assessment; the live aggregate/weakest/gap battery re-derives from the scores.',
+        fields: [
+          { key: 'assessment_ref', label: 'Assessment ref', type: 'evidence' },
+          { key: 'assessment_basis', label: 'Basis / evidence', type: 'evidence' },
+        ],
+      },
+      { action: 'submit-for-decision', label: 'Submit for decision',
+        path: '/api/ccp-assessment/chain/:id/submit-for-decision',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Submits the completed assessment for the CCP label decision.',
+        fields: [
+          { key: 'decision_ref', label: 'Decision ref', type: 'evidence' },
+          { key: 'decision_basis', label: 'Basis / evidence', type: 'evidence' },
+        ],
+      },
+      { action: 'grant-ccp-label', label: 'Grant CCP label', tone: 'primary',
+        path: '/api/ccp-assessment/chain/:id/grant-ccp-label',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Grants the CCP label (optionally conditional); closes the assessment as eligible.',
+        fields: [
+          { key: 'conditional_grant_conditions', label: 'Conditions (if conditional)', type: 'string' },
+          { key: 'corsia_eligibility_ref', label: 'CORSIA eligibility ref', type: 'evidence' },
+          { key: 'grant_basis', label: 'Basis / evidence', type: 'evidence' },
+        ],
+      },
+      { action: 'deny-ccp-label', label: 'Deny CCP label', tone: 'oxide',
+        path: '/api/ccp-assessment/chain/:id/deny-ccp-label',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Denies the CCP label — crosses to the integrity regulator on every tier.',
+        fields: [
+          { key: 'reason_code', label: 'Reason', type: 'string', placeholder: 'e.g. additionality_gap' },
+          { key: 'denial_ref', label: 'Denial notice ref', type: 'evidence' },
+          { key: 'denial_basis', label: 'Basis / evidence', type: 'evidence' },
+          { key: 'regulator_ref', label: 'Regulator ref', type: 'evidence' },
+        ],
+      },
+    ],
+    kpis: [
+      { key: 'total', label: 'Assessments', compute: 'count' },
+      { key: 'assessed', label: 'Assessed', compute: 'sum_quantum' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+    ],
+  },
+
+  // W109 — Carbon credit quality rating (third-party rater; methodology→additionality→permanence→leakage→cobenefits)
+  {
+    key: 'carbon_credit_rating', wave: 109, table: 'oe_carbon_credit_rating',
+    title: 'Credit quality rating', refCol: 'rating_number', titleCol: 'project_name',
+    quantumCol: 'scope_scale_tonnes', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['re_rated', 'withdrawn', 'escalated_to_integrity', 'downgraded'],
+    counterpartyCol: 'issuer_name',
+    lanes: { carbon_fund: 'trading_markets' },
+    eventsTable: 'oe_carbon_credit_rating_events', eventsFk: 'rating_id',
+    initiation: {
+      label: 'Request rating',
+      path: '/api/carbon/credit-rating/chain',
+      fields: [
+        { key: 'project_name', label: 'Project', type: 'string' },
+        { key: 'issuer_name', label: 'Issuer', type: 'string' },
+        { key: 'scope_scale_tonnes', label: 'Scope / scale', type: 'number', unit: 'tCO2e' },
+        { key: 'methodology_name', label: 'Methodology', type: 'string' },
+        { key: 'credit_vintage_year', label: 'Vintage year', type: 'number' },
+        { key: 'narrative', label: 'Narrative', type: 'string' },
+      ],
+    },
+    actions: [
+      { action: 'start-desk-review', label: 'Start desk review',
+        path: '/api/carbon/credit-rating/chain/:id/start-desk-review',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Opens the rating desk review; the five sub-scores can then be entered.',
+        fields: [
+          { key: 'notes', label: 'Notes', type: 'string' },
+        ],
+      },
+      { action: 'compute-composite', label: 'Compute composite',
+        path: '/api/carbon/credit-rating/chain/:id/compute-composite',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Computes the weighted composite rating from the five sub-scores.',
+        fields: [
+          { key: 'notes', label: 'Notes', type: 'string' },
+        ],
+      },
+      { action: 'publish-rating', label: 'Publish rating', tone: 'primary',
+        path: '/api/carbon/credit-rating/chain/:id/publish-rating',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Publishes the rating and moves the case into ongoing monitoring.',
+        fields: [
+          { key: 'notes', label: 'Notes', type: 'string' },
+        ],
+      },
+      { action: 'escalate-to-integrity', label: 'Escalate to integrity', tone: 'oxide',
+        path: '/api/carbon/credit-rating/chain/:id/escalate-to-integrity',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Escalates an integrity concern to the registry/regulator; hard-terminates the rating.',
+        fields: [
+          { key: 'integrity_reason', label: 'Integrity reason', type: 'string' },
+          { key: 'reason_code', label: 'Reason code', type: 'string' },
+          { key: 'regulator_ref', label: 'Regulator ref', type: 'evidence' },
+        ],
+      },
+    ],
+    kpis: [
+      { key: 'total', label: 'Ratings', compute: 'count' },
+      { key: 'scope', label: 'Scope', compute: 'sum_quantum' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+    ],
+  },
+
+  // W103 — ESG disclosure & third-party assurance (JSE-SRL / IFRS S1-S2 / DFFE)
+  {
+    key: 'esg_disclosure', wave: 103, table: 'oe_esg_disclosure',
+    title: 'ESG disclosure', refCol: 'disclosure_number', titleCol: 'reporting_entity_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['archived', 'cancelled'],
+    counterpartyCol: 'reporting_entity_name',
+    lanes: { carbon_fund: 'article6_compliance' },
+    eventsTable: 'oe_esg_disclosure_events', eventsFk: 'disclosure_id',
+    actions: [
+      { action: 'engage-assurance', label: 'Engage assurance',
+        path: '/api/carbon/esg-disclosure/chain/:id/engage-assurance',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Engages an external assurance provider against the compiled disclosure.',
+        fields: [
+          { key: 'assurance_level', label: 'Assurance level', type: 'enum', options: ['limited', 'reasonable'] },
+          { key: 'assurance_provider', label: 'Provider', type: 'string' },
+          { key: 'notes', label: 'Notes', type: 'string' },
+        ],
+      },
+      { action: 'complete-assurance', label: 'Complete assurance',
+        path: '/api/carbon/esg-disclosure/chain/:id/complete-assurance',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Records the assurance opinion and clears the disclosure for publication.',
+        fields: [
+          { key: 'assurance_opinion', label: 'Opinion', type: 'string' },
+          { key: 'notes', label: 'Notes', type: 'string' },
+        ],
+      },
+      { action: 'file-regulator', label: 'File with regulator', tone: 'primary',
+        path: '/api/carbon/esg-disclosure/chain/:id/file-regulator',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Files the published disclosure with JSE SENS / CIPC / DFFE / SARS.',
+        fields: [
+          { key: 'jse_sens_ref', label: 'JSE SENS ref', type: 'evidence' },
+          { key: 'cipc_ref', label: 'CIPC ref', type: 'evidence' },
+          { key: 'dffe_ref', label: 'DFFE ref', type: 'evidence' },
+        ],
+      },
+      { action: 'restate-disclosure', label: 'Restate', tone: 'oxide',
+        path: '/api/carbon/esg-disclosure/chain/:id/restate-disclosure',
+        roles: ['admin', 'carbon_fund'],
+        cascadeHint: 'Restates a published disclosure — crosses to the regulator on every tier.',
+        fields: [
+          { key: 'restated_reason', label: 'Restatement reason', type: 'string' },
+          { key: 'notes', label: 'Notes', type: 'string' },
+        ],
+      },
+    ],
+    kpis: [
+      { key: 'total', label: 'Disclosures', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+    ],
+  },
+
+  // W225 — Scope 3 value-chain emission calc & third-party assurance (TCFD / IFRS S2 / GHG Protocol / CDP)
+  // NOTE: status col is chain_status but the SLA deadline col on this table is `sla_deadline`
+  // (no _at suffix); events live in the shared audit_events table, not a per-chain oe_*_events.
+  {
+    key: 'carbon_scope3_disclosure', wave: 225, table: 'oe_carbon_scope3_disclosures',
+    title: 'Scope 3 disclosure', refCol: 'id', titleCol: 'entity_name',
+    quantumCol: 'scope3_total_tco2e', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline',
+    terminal: ['disclosure_filed', 'assurance_qualified', 'withdrawn'],
+    counterpartyCol: 'entity_name',
+    lanes: { carbon_fund: 'article6_compliance' },
+    eventsTable: null, eventsFk: null,
+    initiation: {
+      label: 'Open Scope 3 disclosure',
+      path: '/api/carbon/scope3-disclosure/chain',
+      fields: [
+        { key: 'entity_name', label: 'Reporting entity', type: 'string' },
+        { key: 's3_tier', label: 'Tier', type: 'enum', options: ['standard', 'enhanced', 'comprehensive'] },
+        { key: 'reporting_year', label: 'Reporting year', type: 'number' },
+        { key: 'reporting_framework', label: 'Framework', type: 'string', placeholder: 'e.g. IFRS S2 / CDP' },
+        { key: 'category_count', label: 'Category count', type: 'number' },
+      ],
+    },
+    actions: [
+      { action: 'close-data-collection', label: 'Close data collection',
+        path: '/api/carbon/scope3-disclosure/chain/:id/action',
+        roles: ['admin', 'carbon_fund', 'support'],
+        cascadeHint: 'Closes value-chain data collection and records primary-data coverage.',
+        fields: [
+          { key: 'action', label: 'Action', type: 'string', required: true, placeholder: 'close_data_collection' },
+          { key: 'primary_data_coverage_pct', label: 'Primary-data coverage', type: 'number', unit: '%' },
+        ],
+      },
+      { action: 'complete-internal-review', label: 'Complete review',
+        path: '/api/carbon/scope3-disclosure/chain/:id/action',
+        roles: ['admin', 'carbon_fund', 'support'],
+        cascadeHint: 'Closes internal review and records the total Scope 3 footprint.',
+        fields: [
+          { key: 'action', label: 'Action', type: 'string', required: true, placeholder: 'complete_internal_review' },
+          { key: 'scope3_total_tco2e', label: 'Scope 3 total', type: 'number', unit: 'tCO2e' },
+        ],
+      },
+      { action: 'issue-reasonable-assurance', label: 'Issue assurance', tone: 'primary',
+        path: '/api/carbon/scope3-disclosure/chain/:id/action',
+        roles: ['admin', 'carbon_fund', 'support'],
+        cascadeHint: 'Records reasonable third-party assurance over the Scope 3 inventory.',
+        fields: [
+          { key: 'action', label: 'Action', type: 'string', required: true, placeholder: 'issue_reasonable_assurance' },
+          { key: 'assurance_provider', label: 'Provider', type: 'string' },
+          { key: 'assurance_standard', label: 'Standard', type: 'string', placeholder: 'e.g. ISAE 3410' },
+        ],
+      },
+      { action: 'file-disclosure', label: 'File disclosure', tone: 'primary',
+        path: '/api/carbon/scope3-disclosure/chain/:id/action',
+        roles: ['admin', 'carbon_fund', 'support'],
+        cascadeHint: 'Files the assured Scope 3 disclosure with the platform/registry; closes the case.',
+        fields: [
+          { key: 'action', label: 'Action', type: 'string', required: true, placeholder: 'file_disclosure' },
+          { key: 'filing_platform', label: 'Platform', type: 'string' },
+          { key: 'filing_ref', label: 'Filing ref', type: 'evidence' },
+        ],
+      },
+    ],
+    kpis: [
+      { key: 'total', label: 'Disclosures', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+    ],
+  },
+
+  // W17 — Carbon credit retirement (per-scope SLA; article6 / compliance / voluntary)
+  // NOTE: table is `carbon_retirements` (pre-oe_ convention) — still exposes chain_status +
+  // sla_deadline_at + an events table, so it satisfies the registry shape contract.
+  {
+    key: 'carbon_retirement', wave: 17, table: 'carbon_retirements',
+    title: 'Credit retirement', refCol: 'certificate_number', titleCol: 'beneficiary_name',
+    quantumCol: 'quantity', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['retired', 'rejected', 'cancelled'],
+    counterpartyCol: 'beneficiary_name',
+    lanes: { carbon_fund: 'retirement_offset' },
+    eventsTable: 'oe_retirement_chain_events', eventsFk: 'retirement_id',
+    actions: [
+      { action: 'begin-validation', label: 'Begin validation',
+        path: '/api/carbon/retirement-chain/:id/begin-validation',
+        roles: ['admin', 'carbon', 'carbon_fund'],
+        cascadeHint: 'Opens validation of the retirement request; the per-scope SLA starts.',
+        fields: [
+          { key: 'notes', label: 'Validation notes', type: 'string' },
+        ],
+      },
+      { action: 'finalize', label: 'Finalize retirement', tone: 'primary',
+        path: '/api/carbon/retirement-chain/:id/finalize',
+        roles: ['admin', 'carbon', 'carbon_fund'],
+        cascadeHint: 'Retires the credits and mints the retirement certificate hash; closes the case.',
+        fields: [
+          { key: 'notes', label: 'Notes', type: 'string' },
+        ],
+      },
+      { action: 'reject', label: 'Reject', tone: 'oxide',
+        path: '/api/carbon/retirement-chain/:id/reject',
+        roles: ['admin', 'carbon', 'carbon_fund'],
+        cascadeHint: 'Rejects the retirement at validation; Article 6 / compliance rejections cross to the regulator.',
+        fields: [
+          { key: 'reason', label: 'Rejection reason', type: 'string' },
+          { key: 'notes', label: 'Notes', type: 'string' },
+        ],
+      },
+    ],
+    kpis: [
+      { key: 'total', label: 'Retirements', compute: 'count' },
+      { key: 'quantity', label: 'Volume', compute: 'sum_quantum' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+    ],
+  },
 
   // W37 — Carbon project registration / PDD (Gold Standard + Verra + Art 6.4 + DFFE DNA)
   {
