@@ -58,6 +58,8 @@ const ippDomains: Domain[] = [
       { key: 'punch_list', label: 'Punch list', chainKey: 'punch_list', description: 'Pre-COD punch list items and closure.' },
       { key: 'mir', label: 'Material inspections', chainKey: 'ipp_mir', description: 'Material inspection request records.' },
       { key: 'handover_dossier', label: 'Handover dossier', chainKey: 'handover_dossier', description: 'O&M handover documentation package.' },
+      { key: 'project_change_order', label: 'Change orders', chainKey: 'project_change_order', description: 'Project change-order / variation control (W81).' },
+      { key: 'submittal_rfi', label: 'Submittals / RFIs', chainKey: 'submittal_rfi', description: 'EPC submittal and RFI document control (W96).' },
     ],
   },
   {
