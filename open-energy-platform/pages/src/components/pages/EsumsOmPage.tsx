@@ -13,9 +13,7 @@ import { EsumsOmOpportunities } from '../widgets/EsumsOmOpportunities';
 import { PredictiveAssetHealthChainTab } from '../esums/PredictiveAssetHealthChainTab';
 import { CommissioningTab } from '../esums/CommissioningTab';
 import { SmartMeterChainTab } from '../esums/SmartMeterChainTab';
-import { WarrantyClaimChainTab } from '../esums/WarrantyClaimChainTab';
 import { VendorEscalationChainTab } from '../esums/VendorEscalationChainTab';
-import { WoChainTab } from '../esums/WoChainTab';
 import { PrChainTab } from '../esums/PrChainTab';
 import { AvailabilityGuaranteeChainTab } from '../esums/AvailabilityGuaranteeChainTab';
 import { PmComplianceChainTab } from '../esums/PmComplianceChainTab';
@@ -74,28 +72,12 @@ export function EsumsOmPage() {
       customContent: <SmartMeterChainTab />,
     },
     {
-      key: 'warranty_claims',
-      label: 'Warranty claims',
-      endpoint: '',
-      description: 'OEM warranty / RMA claim chain — open → triage → submit → ack → review → approve|deny|dispute → fulfill → close. Severity-tiered SLAs (safety 4h / performance 24h / cosmetic 72h). Safety-tier denials and SLA breaches escalate into the regulator inbox.',
-      columns: [],
-      customContent: <WarrantyClaimChainTab />,
-    },
-    {
       key: 'vendor_escalation',
       label: 'Vendor escalation',
       endpoint: '',
       description: 'Supplier-defect escalation chain (CPA §56/§61 + NRCS) — filed → vendor triage → vendor decision → escalated to OEM → OEM field investigation → OEM decision → remediation → closed (with recall, arbitration and withdrawal branches). URGENT defect-class SLAs (safety recall 4h triage; single unit 7d). Each event is tagged with the contractual party (operator/vendor/OEM). Safety-recall and fleet-systemic OEM decisions, recalls, arbitrations and SLA breaches cross into the regulator inbox.',
       columns: [],
       customContent: <VendorEscalationChainTab />,
-    },
-    {
-      key: 'wo_chain',
-      label: 'WO dispatch chain',
-      endpoint: '',
-      description: '12-state P6 work order dispatch chain — created → assigned → acknowledged → en route → on site → diagnosing → repairing → testing → completed → verified → closed. Priority-tiered SLAs (critical 15m / 1h per stage). Critical-priority cancels and SLA breaches escalate into the regulator inbox.',
-      columns: [],
-      customContent: <WoChainTab />,
     },
     {
       key: 'pr_chain',

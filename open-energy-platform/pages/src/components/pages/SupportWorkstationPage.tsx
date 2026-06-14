@@ -2,16 +2,9 @@ import React, { useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
 import { SupportTicketChainTab } from '../support/SupportTicketChainTab';
-import { ProblemManagementChainTab } from '../problem-management/ProblemManagementChainTab';
-import { ChangeEnablementChainTab } from '../change-enablement/ChangeEnablementChainTab';
-import { SecurityRemediationChainTab } from '../security-remediation/SecurityRemediationChainTab';
-import { WarrantyRecoveryChainTab } from '../warranty-recovery/WarrantyRecoveryChainTab';
-import { SparePartsProvisioningChainTab } from '../spare-parts-provisioning/SparePartsProvisioningChainTab';
 import { ServiceContractChainTab } from '../service-contract/ServiceContractChainTab';
 import { ServiceRequestChainTab } from '../support/ServiceRequestChainTab';
 import { OemFcoChainTab } from '../oem-fco/OemFcoChainTab';
-import { WoChainTab } from '../esums/WoChainTab';
-import { WarrantyClaimChainTab } from '../esums/WarrantyClaimChainTab';
 import { PmComplianceChainTab } from '../esums/PmComplianceChainTab';
 import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
 import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
@@ -461,36 +454,6 @@ export function SupportWorkstationPage() {
             body: () => <SupportTicketChainTab />,
           },
           {
-            key: 'problem_chain',
-            label: 'Problems',
-            chainKey: 'problem_record',
-            body: () => <ProblemManagementChainTab />,
-          },
-          {
-            key: 'change_chain',
-            label: 'Changes',
-            chainKey: 'change_request',
-            body: () => <ChangeEnablementChainTab />,
-          },
-          {
-            key: 'security_remediation',
-            label: 'Vuln remediation',
-            chainKey: 'security_remediation',
-            body: () => <SecurityRemediationChainTab />,
-          },
-          {
-            key: 'warranty_recovery',
-            label: 'Warranty recovery',
-            chainKey: 'warranty_recovery',
-            body: () => <WarrantyRecoveryChainTab />,
-          },
-          {
-            key: 'spare_parts',
-            label: 'Spare parts',
-            chainKey: 'spare_parts_provisioning',
-            body: () => <SparePartsProvisioningChainTab />,
-          },
-          {
             key: 'service_contracts',
             label: 'Service contracts',
             chainKey: 'service_contract',
@@ -507,20 +470,6 @@ export function SupportWorkstationPage() {
             label: 'OEM FCO/ECN',
             chainKey: 'oem_fco',
             body: () => <OemFcoChainTab />,
-          },
-          {
-            key: 'work_orders',
-            label: 'Work orders (W16)',
-            group: 'Field operations',
-            chainKey: 'work_order',
-            body: () => <WoChainTab />,
-          },
-          {
-            key: 'warranty_claims',
-            label: 'Warranty claims (W15)',
-            group: 'Field operations',
-            chainKey: 'warranty_claim',
-            body: () => <WarrantyClaimChainTab />,
           },
           {
             key: 'pm_compliance',
