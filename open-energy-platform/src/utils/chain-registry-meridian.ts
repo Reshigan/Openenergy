@@ -3255,6 +3255,240 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     },
   },
 
+  // ───────── OFFTAKER (parity batch) ─────────
+  // Three Offtaker PPA state-machine chains never migrated to the registry.
+  // Single offtaker-desk write {admin, offtaker}; READ all nine personas;
+  // regulator is cascade-driven (read-only) so no regulator lane. actor_party
+  // records the contractual function per step (claimant / counterparty /
+  // arbitrator / settlement_analyst etc.), not the JWT role.
+
+  // W101 — PPA annual reconciliation & true-up (IFRS 15 + NERSA s34; the annual
+  // financial-close gate; restate-after-settlement door; INVERTED authority
+  // ladder; FINANCIAL-CLOSE SIGNATURE — restate/dispute always to regulator)
+  {
+    key: 'ppa_annual_recon', wave: 101, table: 'oe_ppa_annual_recon',
+    title: 'PPA annual reconciliation', refCol: 'recon_number', titleCol: 'ppa_name',
+    quantumCol: 'top_residual_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['settled', 'restated', 'cancelled'],
+    counterpartyCol: 'seller_party_name',
+    lanes: { offtaker: 'operations_offtaker', ipp_developer: 'finance' },
+    eventsTable: 'oe_ppa_annual_recon_events', eventsFk: 'recon_id',
+    actions: [
+      { action: 'reconcile', label: 'Reconcile year', tone: 'primary',
+        path: '/api/offtaker/ppa-annual-recon/chain/:id/reconcile',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Posts the net cash position for the closed year; arms auditor + counterparty signoff.',
+        fields: [
+          { key: 'net_cash_position_zar', label: 'Net cash position', type: 'number', unit: 'ZAR' },
+          { key: 'narrative', label: 'Reconciliation note', type: 'evidence' },
+        ],
+      },
+      { action: 'sign-off', label: 'Sign off', tone: 'primary',
+        path: '/api/offtaker/ppa-annual-recon/chain/:id/sign-off',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Auditor + counterparty signoff on the closed year; crosses into the regulator inbox for material + major tiers.',
+        fields: [
+          { key: 'auditor_party', label: 'Auditor', type: 'string' },
+          { key: 'counterparty_party', label: 'Counterparty', type: 'string' },
+        ],
+      },
+      { action: 'settle', label: 'Settle', tone: 'primary',
+        path: '/api/offtaker/ppa-annual-recon/chain/:id/settle',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Records payment against the invoiced true-up; closes the reconciliation year.',
+        fields: [
+          { key: 'payment_ref', label: 'Payment reference', type: 'evidence' },
+        ],
+      },
+      { action: 'raise-dispute', label: 'Raise dispute', tone: 'oxide',
+        path: '/api/offtaker/ppa-annual-recon/chain/:id/raise-dispute',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Opens a reconciliation dispute; crosses into the regulator inbox for EVERY tier (NERSA s30 — W101 signature).',
+        fields: [
+          { key: 'disputed_reason', label: 'Dispute reason', type: 'evidence' },
+        ],
+      },
+      { action: 'restate-year', label: 'Restate year', tone: 'oxide',
+        path: '/api/offtaker/ppa-annual-recon/chain/:id/restate-year',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Post-signoff restatement of a closed year; crosses into the regulator inbox for EVERY tier (IFRS 15 — W101 signature).',
+        fields: [
+          { key: 'restated_reason', label: 'Restatement reason', type: 'evidence' },
+        ],
+      },
+    ],
+    filters: [
+      { key: 'signoff_pending', label: 'Signoff pending', statuses: ['reconciled', 'disputed'] },
+      { key: 'dispute', label: 'Disputed', statuses: ['disputed'] },
+      { key: 'computing', label: 'Computing', statuses: ['year_opened', 'data_collected', 'variance_classified', 'top_residual_computed', 'cpi_capacity_applied'] },
+      { key: 'closing', label: 'Closing', statuses: ['signed_off', 'invoiced'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['settled', 'restated', 'cancelled'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Reconciliations', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+      { key: 'residual', label: 'Top residual', compute: 'sum_quantum' },
+    ],
+    initiation: null,
+  },
+
+  // W78 — PPA change-in-law / qualifying-change relief (cost pass-through on a
+  // statute/tax/regulation change after financial close; arbitration branch;
+  // INVERTED quantum tiering; SIGNATURE — arbitration referral always reportable)
+  {
+    key: 'ppa_change_in_law', wave: 78, table: 'oe_ppa_change_in_law',
+    title: 'PPA change-in-law', refCol: 'cil_number', titleCol: 'generator_name',
+    quantumCol: 'claim_quantum_zar_m', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['implemented', 'rejected', 'withdrawn'],
+    counterpartyCol: 'generator_name',
+    lanes: { offtaker: 'contracts', ipp_developer: 'finance' },
+    eventsTable: 'oe_ppa_change_in_law_events', eventsFk: 'change_in_law_id',
+    actions: [
+      { action: 'submit-claim', label: 'Submit claim', tone: 'primary',
+        path: '/api/ppa-change-in-law/chain/:id/submit-claim',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Submits the assessed relief claim; tier is re-derived from the claimed quantum and arms counterparty review.',
+        fields: [
+          { key: 'claim_quantum_zar_m', label: 'Claim quantum', type: 'number', unit: 'ZAR' },
+          { key: 'assessed_quantum_zar_m', label: 'Assessed quantum', type: 'number', unit: 'ZAR' },
+          { key: 'relief_mechanism', label: 'Relief mechanism', type: 'string' },
+          { key: 'assessment_basis', label: 'Assessment basis', type: 'evidence' },
+          { key: 'assessment_ref', label: 'Assessment reference', type: 'evidence' },
+          { key: 'claim_ref', label: 'Claim reference', type: 'evidence' },
+        ],
+      },
+      { action: 'issue-determination', label: 'Issue determination', tone: 'primary',
+        path: '/api/ppa-change-in-law/chain/:id/issue-determination',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Grants relief on a negotiated determination; crosses into the regulator inbox for material+ tiers on governmental changes.',
+        fields: [
+          { key: 'granted_quantum_zar_m', label: 'Granted quantum', type: 'number', unit: 'ZAR' },
+          { key: 'relief_mechanism', label: 'Relief mechanism', type: 'string' },
+          { key: 'determination_basis', label: 'Determination basis', type: 'evidence' },
+        ],
+      },
+      { action: 'refer-to-arbitration', label: 'Refer to arbitration', tone: 'oxide',
+        path: '/api/ppa-change-in-law/chain/:id/refer-to-arbitration',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Refers a contested claim to arbitration; crosses into the regulator inbox for EVERY tier (W78 signature).',
+        fields: [
+          { key: 'arbitrator_name', label: 'Arbitrator', type: 'string' },
+          { key: 'reason_code', label: 'Reason code', type: 'string' },
+          { key: 'arbitration_basis', label: 'Arbitration basis', type: 'evidence' },
+        ],
+      },
+      { action: 'implement-relief', label: 'Implement relief', tone: 'primary',
+        path: '/api/ppa-change-in-law/chain/:id/implement-relief',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Implements the granted relief into the PPA (terminal); closes the change-in-law claim.',
+        fields: [
+          { key: 'implementation_basis', label: 'Implementation basis', type: 'evidence' },
+        ],
+      },
+      { action: 'withdraw-claim', label: 'Withdraw claim', tone: 'oxide',
+        path: '/api/ppa-change-in-law/chain/:id/withdraw-claim',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Claimant withdraws the claim (terminal); closes the change-in-law runway.',
+        fields: [
+          { key: 'reason_code', label: 'Reason code', type: 'string' },
+          { key: 'withdrawal_basis', label: 'Withdrawal basis', type: 'evidence' },
+        ],
+      },
+    ],
+    filters: [
+      { key: 'arbitration', label: 'In arbitration', statuses: ['in_arbitration'] },
+      { key: 'negotiation', label: 'Negotiation', statuses: ['claim_submitted', 'counterparty_review', 'negotiation', 'determination_pending'] },
+      { key: 'assessment', label: 'Assessment', statuses: ['event_logged', 'eligibility_review', 'impact_assessment'] },
+      { key: 'granted', label: 'Relief granted', statuses: ['relief_granted'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['implemented', 'rejected', 'withdrawn'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Claims', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+      { key: 'claimed', label: 'Claim quantum', compute: 'sum_quantum' },
+    ],
+    initiation: null,
+  },
+
+  // W87 — PPA scheduled-energy nomination & deviation settlement (day-ahead
+  // nominate → confirm → gate → deliver → meter → reconcile → settle at the
+  // deviation tariff; tier RE-DERIVED from absolute deviation %; NOMINATION-
+  // INTEGRITY SIGNATURE — disputes always to NERSA s30)
+  {
+    key: 'ppa_nomination', wave: 87, table: 'oe_ppa_nominations',
+    title: 'PPA nomination', refCol: 'nomination_number', titleCol: 'ppa_reference',
+    quantumCol: 'predicted_penalty_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['deviation_settled', 'excused', 'cancelled'],
+    counterpartyCol: 'seller_name',
+    lanes: { offtaker: 'operations_offtaker', ipp_developer: 'finance' },
+    eventsTable: 'oe_ppa_nomination_events', eventsFk: 'nomination_id',
+    actions: [
+      { action: 'submit-da-nomination', label: 'Submit DA nomination', tone: 'primary',
+        path: '/api/ppa-nomination/chain/:id/submit-da-nomination',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Submits the day-ahead nominated energy; arms confirmation against the seller schedule.',
+        fields: [
+          { key: 'da_nominated_mwh', label: 'Day-ahead nominated', type: 'number', unit: 'MWh' },
+          { key: 'effective_nominated_mwh', label: 'Effective nominated', type: 'number', unit: 'MWh' },
+          { key: 'ppa_tariff_zar_per_mwh', label: 'PPA tariff', type: 'number', unit: 'ZAR' },
+          { key: 'deviation_tariff_zar_per_mwh', label: 'Deviation tariff', type: 'number', unit: 'ZAR' },
+          { key: 'penalty_tariff_zar_per_mwh', label: 'Penalty tariff', type: 'number', unit: 'ZAR' },
+          { key: 'installed_capacity_mw', label: 'Installed capacity', type: 'number', unit: 'MW' },
+          { key: 'weather_attributable_pct', label: 'Weather-attributable', type: 'number' },
+        ],
+      },
+      { action: 'ingest-meter', label: 'Ingest meter', tone: 'primary',
+        path: '/api/ppa-nomination/chain/:id/ingest-meter',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Ingests metered delivery; deviation analytics and tier are re-derived from the metered MWh.',
+        fields: [
+          { key: 'metered_mwh', label: 'Metered', type: 'number', unit: 'MWh' },
+        ],
+      },
+      { action: 'reconcile', label: 'Reconcile', tone: 'primary',
+        path: '/api/ppa-nomination/chain/:id/reconcile',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Reconciles metered vs nominated; weather-normalises the residual and arms settlement.',
+        fields: [
+          { key: 'metered_mwh', label: 'Metered', type: 'number', unit: 'MWh' },
+          { key: 'weather_attributable_pct', label: 'Weather-attributable', type: 'number' },
+        ],
+      },
+      { action: 'settle-deviation', label: 'Settle deviation', tone: 'primary',
+        path: '/api/ppa-nomination/chain/:id/settle-deviation',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Settles the deviation at the penalty tariff; crosses into the regulator inbox for material + major tiers.',
+        fields: [
+          { key: 'settled_amount_zar', label: 'Settled amount', type: 'number', unit: 'ZAR' },
+        ],
+      },
+      { action: 'raise-dispute', label: 'Raise dispute', tone: 'oxide',
+        path: '/api/ppa-nomination/chain/:id/raise-dispute',
+        roles: ['admin', 'offtaker'],
+        cascadeHint: 'Opens a deviation dispute; crosses into the regulator inbox for EVERY tier (NERSA s30 — W87 signature).',
+        fields: [
+          { key: 'dispute_ground', label: 'Dispute ground', type: 'evidence' },
+        ],
+      },
+    ],
+    filters: [
+      { key: 'dispute', label: 'Disputed', statuses: ['dispute_raised'] },
+      { key: 'reconciling', label: 'Reconciling', statuses: ['meter_data_received', 'reconciled'] },
+      { key: 'delivery', label: 'In delivery', statuses: ['delivery_in_progress', 'delivery_complete'] },
+      { key: 'nominating', label: 'Nominating', statuses: ['nomination_window_open', 'da_nominated', 'da_confirmed', 'id_revised'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['deviation_settled', 'excused', 'cancelled'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Nominations', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+      { key: 'penalty', label: 'Predicted penalty', compute: 'sum_quantum' },
+    ],
+    initiation: null,
+  },
+
   // ───────── REGULATOR ─────────
   // Regulator lanes on cross-referred chains (W33/W38/W40/W43/W49/W57/W74 etc.)
   // also appear on entries above/below via the lanes map.

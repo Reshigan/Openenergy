@@ -293,6 +293,7 @@ const offtakerDomains: Domain[] = [
       { key: 'tariff_indexation', label: 'Tariff indexation', chainKey: 'tariff_indexation', description: 'IFRS 16 / NERSA s4 annual CPI repricing (W39).', mockStates: ['scheduled','notice_issued','disputed','agreed','applied'], mockState: 'scheduled' },
       { key: 'ppa_termination', label: 'PPA termination', chainKey: 'ppa_termination', description: 'NERSA s34 + IFRS 16 ETA buy-out (W62).', mockStates: ['notice_given','valuation','agreed','disputed','terminated'], mockState: 'notice_given' },
       { key: 'rec_lifecycle', label: 'REC / GO lifecycle', chainKey: 'rec_lifecycle', description: 'I-REC/SAREC attribute certificate (W70).', mockStates: ['device_registered','metered','issued','transferred','retired','clawed_back'], mockState: 'issued' },
+      { key: 'change_in_law', label: 'Change-in-law relief', chainKey: 'ppa_change_in_law', description: 'Qualifying-change cost pass-through & relief, arbitration branch (W78).', mockStates: ['event_logged','eligibility_review','claim_submitted','negotiation','in_arbitration','relief_granted','implemented'], mockState: 'negotiation' },
       { key: 'procurement_options', label: 'Procurement options', description: 'Active RFP responses and LOI pipeline.' },
       { key: 'ppa_variations', label: 'PPA variations', description: 'Signed PPA amendment register.' },
     ],
@@ -305,6 +306,8 @@ const offtakerDomains: Domain[] = [
     features: [
       { key: 'take_or_pay', label: 'Take-or-pay obligations', chainKey: 'ppa_take_or_pay', description: 'IFRS 16 + NERSA s34 ToP machine (W32).', mockStates: ['contracted','delivered','shortfall','cure_window','disputed','settled'], mockState: 'contracted' },
       { key: 'curtailment_claim', label: 'Curtailment claims', chainKey: 'curtailment_claim', description: 'Deemed-energy compensation chain (W46).', mockStates: ['claim_lodged','validated','quantum_agreed','settled','disputed','arbitration'], mockState: 'validated' },
+      { key: 'ppa_nomination', label: 'Energy nominations', chainKey: 'ppa_nomination', description: 'Day-ahead nomination & deviation settlement at the deviation tariff (W87).', mockStates: ['nomination_window_open','da_nominated','da_confirmed','delivery_complete','reconciled','dispute_raised','deviation_settled'], mockState: 'reconciled' },
+      { key: 'annual_recon', label: 'Annual reconciliation', chainKey: 'ppa_annual_recon', description: 'IFRS 15 / NERSA s34 annual true-up & financial close (W101).', mockStates: ['year_opened','data_collected','reconciled','signed_off','invoiced','settled','restated'], mockState: 'reconciled' },
       { key: 'delivery_reports', label: 'Delivery reports', description: 'Monthly MWh contracted vs delivered.' },
       { key: 'billing', label: 'Billing & payments', description: 'Invoice register and payment status.' },
       { key: 'metering', label: 'Metering & reconciliation', description: 'Smart meter reconciliation data.' },
