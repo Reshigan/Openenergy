@@ -70,8 +70,11 @@ export default function AtlasPage() {
             <h2>{d.label.toUpperCase()}</h2>
             {d.features.map(f => {
               const live = f.chainKey ? liveByChain.get(f.chainKey) : undefined;
+              // Chain-backed functions open their Meridian Ledger; non-chain
+              // functions stay on the legacy workstation tab (coexistence).
+              const to = f.chainKey ? `/ledger/${f.chainKey}` : `${cfg.workstationPath}?tab=${f.key}`;
               return (
-                <Link key={f.key} className="fn" to={`${cfg.workstationPath}?tab=${f.key}`}>
+                <Link key={f.key} className="fn" to={to}>
                   <span className="name">{f.label}</span>
                   {live && <span className="live mono">{live.live} live</span>}
                   {live && live.breached > 0 && <span className="breach mono">{live.breached} ⚠</span>}

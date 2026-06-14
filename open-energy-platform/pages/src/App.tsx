@@ -44,6 +44,7 @@ const ActivityFeedShell     = React.lazy(() => import('./components/ActivityFeed
 const HorizonPage           = React.lazy(() => import('./meridian/HorizonPage'));
 const ThreadPage            = React.lazy(() => import('./meridian/ThreadPage'));
 const AtlasPage             = React.lazy(() => import('./meridian/AtlasPage'));
+const LedgerPage            = React.lazy(() => import('./meridian/LedgerPage'));
 const DealDeskPage          = React.lazy(() => import('./meridian/DealDeskPage'));
 const CommandPalette        = React.lazy(() => import('./meridian/CommandPalette'));
 
@@ -614,6 +615,7 @@ function AppRoutes() {
       <Route path="/horizon" element={<ProtectedRoute><HorizonPage /></ProtectedRoute>} />
       <Route path="/thread/:chainKey/:id" element={<ProtectedRoute><ThreadPage /></ProtectedRoute>} />
       <Route path="/atlas" element={<ProtectedRoute><AtlasPage /></ProtectedRoute>} />
+      <Route path="/ledger/:chainKey" element={<ProtectedRoute><LedgerPage /></ProtectedRoute>} />
       <Route path="/deals" element={<ProtectedRoute><DealDeskPage /></ProtectedRoute>} />
       {/* Meridian cutover — legacy role launchpads redirect to Horizon. The
           launchpad components stay routable at /launch-legacy/:role for
