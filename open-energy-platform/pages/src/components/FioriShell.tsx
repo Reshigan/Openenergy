@@ -48,7 +48,7 @@ const BASE_NAV: NavItem[] = [
   { path: '/ledger/trade_allocation',                        label: 'Trade allocation',      icon: 'swap_horiz',    section: 'Trading' },
   { path: '/trader-risk/workstation?tab=risk',               label: 'Risk dashboard',        icon: 'insights',      section: 'Risk' },
   { path: '/trader-risk/workstation?tab=margin',             label: 'Margin',                icon: 'price_check',   section: 'Risk' },
-  { path: '/trader-risk/workstation?tab=poslimit',           label: 'Position limits',       icon: 'warning',       section: 'Risk' },
+  { path: '/ledger/poslimit_case',                           label: 'Position limits',       icon: 'warning',       section: 'Risk' },
   { path: '/ledger/counterparty_margin',                     label: 'Counterparty margin',   icon: 'account_balance',section: 'Risk' },
   { path: '/ledger/market_abuse_case',                       label: 'Surveillance / STOR',   icon: 'security',      section: 'Compliance (Trader)' },
   { path: '/ledger/algo_certification',                      label: 'Algo certification',    icon: 'code',          section: 'Compliance (Trader)' },

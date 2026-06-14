@@ -4,7 +4,6 @@ import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { RiskTab } from '../risk/RiskTab';
 import { MmComplianceTab } from '../trader/MmComplianceTab';
-import { PoslimitChainTab } from '../poslimit/PoslimitChainTab';
 import { SettlementFailChainTab } from '../settlement-fail/SettlementFailChainTab';
 import { BenchmarkTransitionChainTab } from '../benchmark-transition/BenchmarkTransitionChainTab';
 import { PreTradeCreditChainTab } from '../trader/PreTradeCreditChainTab';
@@ -776,7 +775,6 @@ export function TraderWorkstationPage() {
         { key: 'cross_border_trades', label: 'Cross-border pre-approvals (W222)', group: 'Compliance & reporting', chainKey: 'cross_border_trade', body: ({ onRefresh }) => <CrossBorderTradeTab onRefresh={onRefresh} /> },
         { key: 'isda_agreements', label: 'ISDA agreements (W232)', group: 'Compliance & reporting', chainKey: 'isda_agreement', body: ({ onRefresh }) => <IsdaAgreementTab onRefresh={onRefresh} /> },
         { key: 'mm-compliance', label: 'MM compliance', group: 'Compliance & reporting', chainKey: 'oe_mm_obligations', body: () => <MmComplianceTab /> },
-        { key: 'poslimit', label: 'Position limits', group: 'Compliance & reporting', chainKey: 'poslimit_case', body: () => <PoslimitChainTab /> },
         { key: 'strate-swift-connectors', label: 'Settlement rails', group: 'Compliance & reporting', body: () => <StrateSwiftConnectorTab /> },
         { key: 'sap-oracle-erp-connectors', label: 'ERP connectors', group: 'Compliance & reporting', body: () => <SapOracleErpConnectorTab /> },
         { key: 'government-filing-connectors', label: 'Filing connectors', group: 'Compliance & reporting', body: () => <GovernmentFilingConnectorTab /> },
@@ -816,10 +814,7 @@ export function TraderWorkstationPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {[
-                  { label: 'Trade reporting (FSCA)', description: 'FMA 2012 OTC derivative trade repository reporting. View and file W44 reports.', tabKey: 'trade-reporting' },
-                  { label: 'Position reports', description: 'Open position limits and breach cases. View W29 FSCA §41 position limit workflows.', tabKey: 'poslimit' },
                   { label: 'P&L attribution', description: 'Daily P&L attribution by book and strategy. View and manage W-pnl attribution chain.', tabKey: 'pnl-attribution' },
-                  { label: 'Market abuse STOR submissions', description: 'FMA Ch.X suspicious transaction reports filed to the FSCA. View surveillance cases.', tabKey: 'market-abuse' },
                 ].map(link => (
                   <a
                     key={link.tabKey}
