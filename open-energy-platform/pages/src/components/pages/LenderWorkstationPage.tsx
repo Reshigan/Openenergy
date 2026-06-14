@@ -7,7 +7,6 @@ import { DscrMonitoringChainTab } from '../lender/DscrMonitoringChainTab';
 import { DunningTab } from '../lender/DunningTab';
 import { LoanRestructureChainTab } from '../lender/LoanRestructureChainTab';
 import { ReserveAccountChainTab } from '../lender/ReserveAccountChainTab';
-import { SecurityPerfectionChainTab } from '../lender/SecurityPerfectionChainTab';
 import { SllKpiChainTab } from '../lender/SllKpiChainTab';
 import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
 import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
@@ -785,7 +784,6 @@ export function LenderWorkstationPage() {
         { key: 'sll_kpi', label: 'SLL KPI & margin ratchet', group: 'Monitoring', chainKey: 'slb_kpi_ratchet', body: () => <SllKpiChainTab /> },
         { key: 'construction_cost_report', label: 'IE cost-to-complete (W231)', group: 'Monitoring', chainKey: 'construction_cost_report', body: ({ onRefresh }) => <ConstructionCostReportTab onRefresh={onRefresh} /> },
         { key: 'reserve_account', label: 'Reserve accounts (DSRA/MRA)', group: 'Portfolio', chainKey: 'reserve_account', body: () => <ReserveAccountChainTab /> },
-        { key: 'security_perfection', label: 'Security perfection', group: 'Portfolio', chainKey: 'security_perfection', body: () => <SecurityPerfectionChainTab /> },
         { key: 'loan_restructure', label: 'Loan restructure & A&E', group: 'Portfolio', chainKey: 'loan_restructure', body: () => <LoanRestructureChainTab /> },
         { key: 'dunning', label: 'Dunning queue', group: 'Enforcement', body: () => <DunningTab /> },
         { key: 'esap_compliance', label: 'ESAP Compliance (W195)', group: 'Risk', chainKey: 'esap_compliance', body: () => <LenderEsapTab /> },

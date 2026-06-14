@@ -4,21 +4,12 @@ import { platformTabs } from '../platformTabs';
 import { lenderCompletionTabs } from '../roleCompletionTabs';
 import { LenderInsights } from '../widgets/LenderInsights';
 import { DunningTab } from '../lender/DunningTab';
-import { SecurityPerfectionChainTab } from '../lender/SecurityPerfectionChainTab';
 import { ReserveAccountChainTab } from '../lender/ReserveAccountChainTab';
 import { DscrMonitoringChainTab } from '../lender/DscrMonitoringChainTab';
 import { SllKpiChainTab } from '../lender/SllKpiChainTab';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
-    {
-      key: 'security-perfection',
-      label: 'Security perfection',
-      endpoint: '',
-      description: 'Collateral perfection & registration chain · Deeds Registries Act + Movable Property Security Act + Companies Act s126 share pledges + FMA/STRATE dematerialised securities + cession in securitatem debiti + SARB Exchange Control. Tracks every security instrument from identification → documentation → execution → registry lodgement → registration → perfection. URGENT tier SLA (larger/CP-critical = tighter); lapse crosses regulator at every tier, perfection-overdue crosses for major/critical, defective-registration for critical only.',
-      columns: [],
-      customContent: <SecurityPerfectionChainTab />,
-    },
     {
       key: 'reserve-accounts',
       label: 'Reserve accounts',
