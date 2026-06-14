@@ -83,7 +83,7 @@ const BASE_NAV: NavItem[] = [
   { path: '/ledger/covenant_certificate',                     label: 'Covenant certificates', icon: 'verified',      section: 'Monitoring' },
   { path: '/lender-suite/workstation?tab=dscr_monitoring',    label: 'DSCR monitoring',       icon: 'bar_chart',     section: 'Monitoring' },
   { path: '/lender-suite/workstation?tab=esap_monitoring_chain',label: 'ESAP monitoring',     icon: 'eco',           section: 'Monitoring' },
-  { path: '/lender-suite/workstation?tab=loan_default',       label: 'Default & enforcement', icon: 'gavel',         section: 'Default Management' },
+  { path: '/ledger/loan_default',                             label: 'Default & enforcement', icon: 'gavel',         section: 'Default Management' },
 
   // ── Offtaker workstation deep-links ───────────────────────────────────────
   { path: '/offtaker-suite/workstation',                      label: 'Offtaker workstation',  icon: 'flash_on',      section: 'Contracts (Offtaker)' },

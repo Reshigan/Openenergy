@@ -4,7 +4,6 @@ import { platformTabs } from '../platformTabs';
 import { lenderCompletionTabs } from '../roleCompletionTabs';
 import { LenderInsights } from '../widgets/LenderInsights';
 import { DunningTab } from '../lender/DunningTab';
-import { LoanDefaultChainTab } from '../lender/LoanDefaultChainTab';
 import { CreditOriginationChainTab } from '../lender/CreditOriginationChainTab';
 import { LoanTransferChainTab } from '../lender/LoanTransferChainTab';
 import { SecurityPerfectionChainTab } from '../lender/SecurityPerfectionChainTab';
@@ -61,14 +60,6 @@ export function LenderSuitePage() {
       description: 'Sustainability-linked loan KPI compliance & margin ratchet chain · LMA SLL Principles + ICMA SLBP + SA Green Finance Taxonomy 2025 + SARB Climate-Risk Practice Standard 2024. Tests each climate / safety / disclosure KPI against pre-agreed targets and routes the loan through period_open → data_collected → kpi_measured → verifying → kpi_verified → attested → margin_amended → reported (clean) or breach_recorded → cure_period → cure_validated → restated. Tier RE-DERIVED on every transition from kpi_variance_pct × materiality_class; INVERTED tier SLA — severe gets LONGEST cure window per LMA SLL governance. FLOOR-AT-MATERIAL for climate_kpi / safety_kpi / mandatory_disclosure_kpi. Live ESG margin-pricing battery on every record: effective margin bps, cumulative ratchet bps + ZAR, TCFD completeness %, attestation completeness %, SBTi pathway, taxonomy alignment %, verifier provenance band, predicted amendment date, days-to-KPI-due, urgency band. SIGNATURE regulator-inbox crossings: record_breach + execute_amendment + fail_cure cross regulator at EVERY tier (SARB CPS 2024 + Green Finance Taxonomy 2025 sustainable-finance integrity hard-line); waive + sla_breached for material+severe only.',
       columns: [],
       customContent: <SllKpiChainTab />,
-    },
-    {
-      key: 'loan-defaults',
-      label: 'Loan defaults',
-      endpoint: '',
-      description: 'LMA event-of-default → enforcement / step-in / restructure / write-off chain · picks up where covenant acceleration ends. URGENT tier SLA; write-off crosses regulator for ALL tiers, acceleration + enforcement + SLA breach senior/mezz only.',
-      columns: [],
-      customContent: <LoanDefaultChainTab />,
     },
     {
       key: 'dunning',

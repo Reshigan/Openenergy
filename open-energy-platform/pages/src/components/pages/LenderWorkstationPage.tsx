@@ -6,7 +6,6 @@ import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstatio
 import { CreditOriginationChainTab } from '../lender/CreditOriginationChainTab';
 import { DscrMonitoringChainTab } from '../lender/DscrMonitoringChainTab';
 import { DunningTab } from '../lender/DunningTab';
-import { LoanDefaultChainTab } from '../lender/LoanDefaultChainTab';
 import { LoanRestructureChainTab } from '../lender/LoanRestructureChainTab';
 import { LoanTransferChainTab } from '../lender/LoanTransferChainTab';
 import { ReserveAccountChainTab } from '../lender/ReserveAccountChainTab';
@@ -792,7 +791,6 @@ export function LenderWorkstationPage() {
         { key: 'reserve_account', label: 'Reserve accounts (DSRA/MRA)', group: 'Portfolio', chainKey: 'reserve_account', body: () => <ReserveAccountChainTab /> },
         { key: 'security_perfection', label: 'Security perfection', group: 'Portfolio', chainKey: 'security_perfection', body: () => <SecurityPerfectionChainTab /> },
         { key: 'loan_restructure', label: 'Loan restructure & A&E', group: 'Portfolio', chainKey: 'loan_restructure', body: () => <LoanRestructureChainTab /> },
-        { key: 'loan_default', label: 'Default & enforcement', group: 'Enforcement', chainKey: 'loan_default', body: () => <LoanDefaultChainTab /> },
         { key: 'dunning', label: 'Dunning queue', group: 'Enforcement', body: () => <DunningTab /> },
         { key: 'esap_compliance', label: 'ESAP Compliance (W195)', group: 'Risk', chainKey: 'esap_compliance', body: () => <LenderEsapTab /> },
         { key: 'facility_amendments', label: 'Facility Amendments', group: 'Risk', chainKey: 'facility_amendment', body: () => <LenderFacilityAmendmentTab /> },
