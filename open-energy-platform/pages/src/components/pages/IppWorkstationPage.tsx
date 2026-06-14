@@ -77,7 +77,6 @@ const IppDocumentControlChainTab = React.lazy(() => import('../ipp/IppDocumentCo
 const IppSubmittalChainTab = React.lazy(() => import('../ipp/IppSubmittalChainTab').then(m => ({ default: m.IppSubmittalChainTab })));
 const IppRfiChainTab = React.lazy(() => import('../ipp/IppRfiChainTab').then(m => ({ default: m.IppRfiChainTab })));
 const IppChangeOrderChainTab = React.lazy(() => import('../ipp/IppChangeOrderChainTab').then(m => ({ default: m.IppChangeOrderChainTab })));
-const TakeOrPayChainTab = React.lazy(() => import('../take-or-pay/TakeOrPayChainTab').then(m => ({ default: m.TakeOrPayChainTab })));
 const ScadaConnectorTab = React.lazy(() => import('../scadaConnector/ScadaConnectorTab').then(m => ({ default: m.ScadaConnectorTab })));
 const MqttOpcuaConnectorTab = React.lazy(() => import('../mqttOpcuaConnector/MqttOpcuaConnectorTab').then(m => ({ default: m.MqttOpcuaConnectorTab })));
 const AnomalyDetectionMlTab = React.lazy(() => import('../anomalyDetectionMl/AnomalyDetectionMlTab').then(m => ({ default: m.AnomalyDetectionMlTab })));
@@ -1384,7 +1383,6 @@ export function IppWorkstationPage() {
         { key: 'green-bond-reports', label: 'Green bond reports (W202)', group: 'Finance', chainKey: 'green_bond_report', body: ({ onRefresh }) => <GreenBondReportTab onRefresh={onRefresh} /> },
         { key: 'dscr-reports', label: 'DSCR reports (W212)', group: 'Finance', chainKey: 'dscr_report', body: ({ onRefresh }) => <DscrReportTab onRefresh={onRefresh} /> },
         { key: 'credit_insurance', label: 'Credit insurance (W218)', group: 'Finance', chainKey: 'credit_insurance', body: ({ onRefresh }) => <CreditInsuranceTab onRefresh={onRefresh} /> },
-        { key: 'take-or-pay-claims', label: 'Take-or-pay claims', group: 'Finance', chainKey: 'curtailment_claim', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><TakeOrPayChainTab /></React.Suspense> },
         { key: 'milestone-variance', label: 'Milestone variance reports (W207)', group: 'Project controls', chainKey: 'milestone_variance_report', body: ({ onRefresh }) => <MilestoneVarianceTab onRefresh={onRefresh} /> },
         { key: 'subcontractors', label: 'Subcontractors', group: 'Construction', chainKey: 'ipp_subcontractor', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppSubcontractorTab /></React.Suspense> },
         { key: 'dfr', label: 'Daily field report', group: 'Construction', chainKey: 'dfr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><DfrChainTab /></React.Suspense> },

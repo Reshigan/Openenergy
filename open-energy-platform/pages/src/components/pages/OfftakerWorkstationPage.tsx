@@ -3,22 +3,15 @@ import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '..
 import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
-import { CurtailmentClaimTab } from '../offtaker/CurtailmentClaimTab';
 import { OfftakerUseClaimTab } from '../offtaker/OfftakerUseClaimTab';
 import { ObligationsTab } from '../offtaker/ObligationsTab';
-import { PaymentSecurityChainTab } from '../offtaker/PaymentSecurityChainTab';
 import { PpaChangeInLawChainTab } from '../offtaker/PpaChangeInLawChainTab';
-import { PpaContractChainTab } from '../offtaker/PpaContractChainTab';
 import { PpaAnnualReconChainTab } from '../offtaker/PpaAnnualReconChainTab';
 import { PpaNominationChainTab } from '../offtaker/PpaNominationChainTab';
-import { PpaTerminationChainTab } from '../offtaker/PpaTerminationChainTab';
-import { RecLifecycleChainTab } from '../offtaker/RecLifecycleChainTab';
-import { TariffIndexationTab } from '../offtaker/TariffIndexationTab';
 import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
 import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
 import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
 import { WheelingChargesTab } from '../grid/WheelingChargesTab';
-import { TakeOrPayChainTab } from '../take-or-pay/TakeOrPayChainTab';
 import { ReportPanel, type ReportConfig } from '../launch/ReportPanel';
 import type { WizardSpec } from '../launch/WizardModal';
 import type { TourDef } from '../launch/ProductTour';
@@ -659,8 +652,6 @@ export function OfftakerWorkstationPage() {
       wizards={OFFTAKER_WIZARDS}
       tour={OFFTAKER_TOUR}
       tabs={[
-        { key: 'ppa_contract', label: 'PPA contracts', group: 'Contracts', chainKey: 'ppa_contract_chain', body: () => <PpaContractChainTab /> },
-        { key: 'tariff_indexation', label: 'Tariff indexation', group: 'Contracts', chainKey: 'tariff_indexation', body: () => <TariffIndexationTab /> },
         { key: 'change_in_law', label: 'PPA change-in-law', group: 'Contracts', chainKey: 'ppa_change_in_law', body: () => <PpaChangeInLawChainTab /> },
         { key: 'ppa_nomination', label: 'PPA nominations', group: 'Contracts', chainKey: 'ppa_nomination', body: () => <PpaNominationChainTab /> },
         { key: 'ppa_annual_recon', label: 'PPA annual reconciliation', group: 'Contracts', chainKey: 'ppa_annual_recon', body: () => <PpaAnnualReconChainTab /> },
@@ -671,23 +662,12 @@ export function OfftakerWorkstationPage() {
         { key: 'tariffs', label: 'Tariffs', group: 'Operations', body: () => <TariffsTab /> },
         { key: 'budgets', label: 'Budget vs actual', group: 'Operations', body: ({ onRefresh }) => <BudgetsTab onRefresh={onRefresh} /> },
         { key: 'bills', label: 'Bill upload & AI', group: 'Operations', body: ({ onRefresh }) => <BillUploadTab onRefresh={onRefresh} /> },
-        { key: 'curtailment_claim', label: 'Curtailment claims', group: 'Operations', chainKey: 'curtailment_claim', body: () => <CurtailmentClaimTab /> },
-        {
-          key: 'take_or_pay',
-          label: 'Take-or-pay obligations (W32)',
-          group: 'Operations',
-          chainKey: 'take_or_pay',
-          body: () => <TakeOrPayChainTab />,
-        },
         { key: 'unserved_energy_claims', label: 'USE Claims', group: 'Operations', chainKey: 'unserved_energy_claim', body: () => <OfftakerUseClaimTab /> },
-        { key: 'payment_security', label: 'Payment security', group: 'Security', chainKey: 'ppa_payment_security', body: () => <PaymentSecurityChainTab /> },
         { key: 'obligations', label: 'Obligations register', group: 'Security', body: () => <ObligationsTab /> },
         { key: 'slb_kpi', label: 'SLB KPI ratchet (W204)', group: 'Contracts', chainKey: 'slb_kpi_ratchet', body: ({ onRefresh }) => <SlbKpiTab onRefresh={onRefresh} /> },
         { key: 'green_tariff', label: 'Green tariff disclosure (W210)', group: 'Compliance', chainKey: 'green_tariff_disclosure', body: ({ onRefresh }) => <GreenTariffTab onRefresh={onRefresh} /> },
         { key: 'recs', label: 'RECs portfolio', group: 'Compliance', body: ({ onRefresh }) => <RecsTab onRefresh={onRefresh} /> },
         { key: 'scope2', label: 'Scope 2', group: 'Compliance', body: ({ onRefresh }) => <Scope2Tab onRefresh={onRefresh} /> },
-        { key: 'rec_lifecycle', label: 'REC lifecycle', group: 'Compliance', chainKey: 'rec_lifecycle', body: () => <RecLifecycleChainTab /> },
-        { key: 'ppa_termination', label: 'PPA termination', group: 'Compliance', chainKey: 'ppa_termination', body: () => <PpaTerminationChainTab /> },
         { key: 'strate-swift-connectors', label: 'Settlement rails', group: 'Compliance', body: () => <StrateSwiftConnectorTab /> },
         { key: 'sap-oracle-erp-connectors', label: 'ERP connectors', group: 'Compliance', body: () => <SapOracleErpConnectorTab /> },
         { key: 'government-filing-connectors', label: 'Filing connectors', group: 'Compliance', body: () => <GovernmentFilingConnectorTab /> },

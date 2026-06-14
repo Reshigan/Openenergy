@@ -87,12 +87,12 @@ const BASE_NAV: NavItem[] = [
 
   // ── Offtaker workstation deep-links ───────────────────────────────────────
   { path: '/offtaker-suite/workstation',                      label: 'Offtaker workstation',  icon: 'flash_on',      section: 'Contracts (Offtaker)' },
-  { path: '/offtaker-suite/workstation?tab=ppa_contract',     label: 'PPA contracts',         icon: 'description',   section: 'Contracts (Offtaker)' },
-  { path: '/offtaker-suite/workstation?tab=tariff_indexation',label: 'Tariff indexation',     icon: 'price_change',  section: 'Contracts (Offtaker)' },
-  { path: '/offtaker-suite/workstation?tab=payment_security', label: 'Payment security',      icon: 'shield',        section: 'Contracts (Offtaker)' },
+  { path: '/ledger/ppa_contract_chain',                       label: 'PPA contracts',         icon: 'description',   section: 'Contracts (Offtaker)' },
+  { path: '/ledger/tariff_indexation',                        label: 'Tariff indexation',     icon: 'price_change',  section: 'Contracts (Offtaker)' },
+  { path: '/ledger/ppa_payment_security',                     label: 'Payment security',      icon: 'shield',        section: 'Contracts (Offtaker)' },
   { path: '/offtaker-suite/workstation?tab=ppa_annual_recon', label: 'PPA reconciliation',    icon: 'balance',       section: 'Operations (Offtaker)' },
-  { path: '/offtaker-suite/workstation?tab=curtailment_claim',label: 'Curtailment claims',    icon: 'electric_bolt', section: 'Operations (Offtaker)' },
-  { path: '/offtaker-suite/workstation?tab=take_or_pay',      label: 'Take-or-pay',           icon: 'gavel',         section: 'Operations (Offtaker)' },
+  { path: '/ledger/curtailment_claim',                        label: 'Curtailment claims',    icon: 'electric_bolt', section: 'Operations (Offtaker)' },
+  { path: '/ledger/ppa_take_or_pay',                          label: 'Take-or-pay',           icon: 'gavel',         section: 'Operations (Offtaker)' },
   { path: '/offtaker-suite/workstation?tab=recs',             label: 'RECs & sustainability', icon: 'eco',           section: 'Compliance (Offtaker)' },
   { path: '/offtaker-suite/workstation?tab=scope2',           label: 'Scope 2 reporting',     icon: 'public',        section: 'Compliance (Offtaker)' },
 

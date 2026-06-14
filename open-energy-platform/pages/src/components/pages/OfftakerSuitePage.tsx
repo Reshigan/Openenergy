@@ -4,66 +4,11 @@ import { platformTabs } from '../platformTabs';
 import { offtakerCompletionTabs } from '../roleCompletionTabs';
 import { OfftakerInsights } from '../widgets/OfftakerInsights';
 import { ObligationsTab } from '../offtaker/ObligationsTab';
-import { PpaContractChainTab } from '../offtaker/PpaContractChainTab';
-import { TakeOrPayChainTab } from '../take-or-pay/TakeOrPayChainTab';
-import { TariffIndexationTab } from '../offtaker/TariffIndexationTab';
-import { CurtailmentClaimTab } from '../offtaker/CurtailmentClaimTab';
-import { PaymentSecurityChainTab } from '../offtaker/PaymentSecurityChainTab';
-import { PpaTerminationChainTab } from '../offtaker/PpaTerminationChainTab';
-import { RecLifecycleChainTab } from '../offtaker/RecLifecycleChainTab';
 import { PpaChangeInLawChainTab } from '../offtaker/PpaChangeInLawChainTab';
 import { PpaNominationChainTab } from '../offtaker/PpaNominationChainTab';
 
 export function OfftakerSuitePage() {
   const tabs: TabSpec[] = [
-    {
-      key: 'ppa-contracts',
-      label: 'PPA contracts',
-      endpoint: '',
-      description: 'PPA contract execution lifecycle · NERSA Section 34 on strategic execute, dispute branch, termination + auto-expire.',
-      columns: [],
-      customContent: <PpaContractChainTab />,
-    },
-    {
-      key: 'take-or-pay',
-      label: 'Take-or-pay',
-      endpoint: '',
-      description: 'Take-or-Pay annual reconciliation chain (IFRS 16 / NERSA Section 34) · 10-state P6 calendar-year roll-up of monthly delivery shortfalls; quantum agreement → settlement / Section 34 dispute / board waiver.',
-      columns: [],
-      customContent: <TakeOrPayChainTab />,
-    },
-    {
-      key: 'tariff-indexation',
-      label: 'Tariff indexation',
-      endpoint: '',
-      description: 'Annual PPA tariff repricing chain (NERSA ERA §4 + IFRS 16) · 11-state P6 CPI/PPI escalation: publish index → calculate → notice → review → agree → apply, with dispute / recalculation / arbitration branches. Seller-vs-offtaker split write; arbitration crosses to the regulator inbox.',
-      columns: [],
-      customContent: <TariffIndexationTab />,
-    },
-    {
-      key: 'curtailment-claims',
-      label: 'Curtailment claims',
-      endpoint: '',
-      description: 'Deemed-energy compensation chain (REIPPPP PPA curtailment + NERSA Grid Code) · 12-state P6 supply-side mirror of take-or-pay: when the buyer/SO curtails an available plant, the PPA compensates the seller for the MWh it would have generated. Classification gate → validation → quantum → settlement, with non-compensable / dispute / recalculation / arbitration branches. URGENT SLA (utility-scale tightest); arbitration crosses to the regulator inbox for every tier.',
-      columns: [],
-      customContent: <CurtailmentClaimTab />,
-    },
-    {
-      key: 'payment-security',
-      label: 'Payment security',
-      endpoint: '',
-      description: 'PPA payment-security / credit-support instrument chain (NERSA Section 34 bankability + LMA credit-support) · 12-state P6 lifecycle of the offtaker credit support that backstops the PPA: instrument submission → verification → active cover, with adequacy review, drawdown, replenishment, expiry, substitution branches and release / forfeiture / rejection terminals. URGENT SLA (larger required cover tightest); offtaker submits, seller administers; forfeiture crosses to the regulator inbox for every tier, drawdown / rejection / SLA breach cross for large exposures.',
-      columns: [],
-      customContent: <PaymentSecurityChainTab />,
-    },
-    {
-      key: 'ppa-termination',
-      label: 'PPA termination',
-      endpoint: '',
-      description: 'PPA termination & early-termination amount (buy-out) chain (NERSA ERA s34 security-of-supply + PPA event-of-default / cure / long-stop FM / change-in-law + IFRS 9/16 ETA treatment) · 12-state P6 exit of the offtake relationship: a termination event arises, notice is served, a cure window runs, and — if uncured — the PPA terminates and an early-termination amount (the buy-out) is calculated, agreed and settled. The buy-out basis turns on the CAUSE (seller default / prolonged FM = debt only; buyer default / change in law = debt + equity make-whole; no-fault = negotiated). MIXED SLA (cure / assessment / dispute INVERTED, settlement URGENT); offtaker drives, seller (IPP) disputes the calculated buy-out, an independent expert resolves. Confirming a termination for an involuntary cause crosses to the regulator inbox for every tier; no-fault + settlement + SLA breaches cross for major + critical.',
-      columns: [],
-      customContent: <PpaTerminationChainTab />,
-    },
     {
       key: 'change-in-law',
       label: 'Change in law',
@@ -79,14 +24,6 @@ export function OfftakerSuitePage() {
       description: 'PPA scheduled-energy nomination & deviation settlement chain (NERSA Metering Code + NTCSA System Operator + PPA forecast / nomination / deviation clauses + IFRS 15 variable-consideration revenue recognition) · 12-state P6 daily lifecycle of a scheduled-energy nomination: window opens, day-ahead nomination is submitted and confirmed, intraday revisions are accepted up to gate closure, delivery runs, the meter delivers settled volumes, reconciliation classifies any deviation, optionally a dispute is raised, and the deviation is settled (compensation seller↔offtaker per the deviation ladder) or excused (force majeure / curtailment / grid outage). Tier is RE-DERIVED on every transition from absolute deviation %: minor < 5% / standard 5–10% / material 10–20% / major ≥ 20%. URGENT SLA (larger deviation = tighter window); offtaker drives, the seller / system operator / independent meter party is derived from the action. Raising a dispute crosses to the regulator inbox for every tier (the nomination-integrity hard line — sister of W66 complaints); excusing a period, settling a major / material deviation and SLA breaches cross for material + major.',
       columns: [],
       customContent: <PpaNominationChainTab />,
-    },
-    {
-      key: 'rec-lifecycle',
-      label: 'REC lifecycle',
-      endpoint: '',
-      description: 'REC / Guarantee-of-Origin certificate lifecycle (I-REC Standard · SAREC / AReP · EU Guarantee-of-Origin · GHG Protocol Scope 2 market-based method) · 12-state P6 renewable-attribute chain: requested → eligibility → issued → listed → transferred → allocated → retired, with eligibility-fail rejection, an integrity-dispute branch (restore / claw-back) and cancel / vintage-expiry terminals. The offtaker retires the certificate to substantiate a renewable-consumption claim (RE100 / CDP / carbon-tax offset); the lifecycle prevents DOUBLE COUNTING — one MWh attribute issued once, owned by one party at a time, retired once. INVERTED SLA (larger volume / compliance claim = more verification time); tier by MWh with a compliance floor at major. Two-party write — issuer / registry drives issuance, listing, transfer, dispute resolution, claw-back, cancel and expiry; the holder (offtaker) allocates consumption, retires and raises integrity disputes. A clawed-back certificate crosses to the regulator inbox for every tier; rejected issuance and SLA breaches cross for major + critical.',
-      columns: [],
-      customContent: <RecLifecycleChainTab />,
     },
     {
       key: 'obligations',
