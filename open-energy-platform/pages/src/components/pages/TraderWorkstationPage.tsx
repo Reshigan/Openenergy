@@ -5,12 +5,6 @@ import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstatio
 import { RiskTab } from '../risk/RiskTab';
 import { MmComplianceTab } from '../trader/MmComplianceTab';
 import { PoslimitChainTab } from '../poslimit/PoslimitChainTab';
-import { BestExecutionTab } from '../trader/BestExecutionTab';
-import { TradeReportingChainTab } from '../trader/TradeReportingChainTab';
-import { MarketAbuseChainTab } from '../trader/MarketAbuseChainTab';
-import { AlgoCertChainTab } from '../trader/AlgoCertChainTab';
-import { CounterpartyMarginChainTab } from '../counterparty-margin/CounterpartyMarginChainTab';
-import { TradeAllocationChainTab } from '../trade-allocation/TradeAllocationChainTab';
 import { SettlementFailChainTab } from '../settlement-fail/SettlementFailChainTab';
 import { BenchmarkTransitionChainTab } from '../benchmark-transition/BenchmarkTransitionChainTab';
 import { PreTradeCreditChainTab } from '../trader/PreTradeCreditChainTab';
@@ -774,15 +768,9 @@ export function TraderWorkstationPage() {
         { key: 'pnl-attribution', label: 'Daily P&L attribution', group: 'Active trading', chainKey: 'pnl_attribution', body: () => <PnlAttributionChainTab /> },
         { key: 'risk', label: 'Risk dashboard', group: 'Risk & margin', body: () => <RiskTab /> },
         { key: 'margin', label: 'Margin calls', group: 'Risk & margin', body: ({ onRefresh }) => <MarginTab onRefresh={onRefresh} /> },
-        { key: 'market-abuse', label: 'Market surveillance', group: 'Risk & margin', chainKey: 'market_abuse_case', body: () => <MarketAbuseChainTab /> },
-        { key: 'counterparty-margin', label: 'Counterparty default', group: 'Risk & margin', chainKey: 'counterparty_margin', body: () => <CounterpartyMarginChainTab /> },
-        { key: 'algo-cert', label: 'Algo certification', group: 'Risk & margin', chainKey: 'algo_certification', body: () => <AlgoCertChainTab /> },
         { key: 'exceptions', label: 'Post-trade exceptions', group: 'Post-trade & settlement', body: ({ onRefresh }) => <ExceptionsTab onRefresh={onRefresh} /> },
-        { key: 'trade-allocation', label: 'Trade allocation', group: 'Post-trade & settlement', chainKey: 'trade_allocation', body: () => <TradeAllocationChainTab /> },
         { key: 'settlement-fail', label: 'Settlement fails', group: 'Post-trade & settlement', chainKey: 'settlement_fail', body: () => <SettlementFailChainTab /> },
         { key: 'benchmark-transition', label: 'Benchmark transition', group: 'Post-trade & settlement', chainKey: 'benchmark_transition', body: () => <BenchmarkTransitionChainTab /> },
-        { key: 'best-ex', label: 'Best execution', group: 'Post-trade & settlement', chainKey: 'best_execution', body: () => <BestExecutionTab /> },
-        { key: 'trade-reporting', label: 'Trade reporting', group: 'Post-trade & settlement', chainKey: 'trade_report', body: () => <TradeReportingChainTab /> },
         { key: 'fsca-compliance', label: 'FSCA compliance report (W201)', group: 'Compliance & reporting', chainKey: 'fsca_compliance_report', body: ({ onRefresh }) => <FscaComplianceTab onRefresh={onRefresh} /> },
         { key: 'fsca_conduct_reports', label: 'FSCA conduct reports (W216)', group: 'Compliance & reporting', chainKey: 'fsca_conduct_report', body: ({ onRefresh }) => <FscaConductReportTab onRefresh={onRefresh} /> },
         { key: 'cross_border_trades', label: 'Cross-border pre-approvals (W222)', group: 'Compliance & reporting', chainKey: 'cross_border_trade', body: ({ onRefresh }) => <CrossBorderTradeTab onRefresh={onRefresh} /> },
