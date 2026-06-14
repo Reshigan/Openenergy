@@ -4207,7 +4207,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'ipp_developer', 'support'],
         cascadeHint: 'Rejects the disposition and escalates; every escalated NCR crosses the regulator queue.',
         fields: [
-          { key: 'reason_code', label: 'Escalation reason', type: 'string', required: true,
+          { key: 'reason_code', label: 'Escalation reason', type: 'string',
             placeholder: 'Why the disposition is rejected and escalated' },
         ],
       },
@@ -4277,7 +4277,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'ipp_developer', 'support'],
         cascadeHint: 'Suspends active work under this statement; cases needing statutory notification cross the regulator queue.',
         fields: [
-          { key: 'suspension_reason', label: 'Suspension reason', type: 'string', required: true,
+          { key: 'suspension_reason', label: 'Suspension reason', type: 'string',
             placeholder: 'Why work is being suspended' },
         ],
       },
@@ -4286,7 +4286,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'ipp_developer', 'support'],
         cascadeHint: 'Rejects the method statement; a revised statement must be drafted as a new revision.',
         fields: [
-          { key: 'reason_code', label: 'Rejection reason', type: 'string', required: true,
+          { key: 'reason_code', label: 'Rejection reason', type: 'string',
             placeholder: 'Why the method statement is rejected' },
         ],
       },
