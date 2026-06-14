@@ -238,6 +238,8 @@ const lenderDomains: Domain[] = [
       { key: 'drawdown', label: 'Drawdowns / UoP', chainKey: 'drawdown', description: 'IE+CP gated drawdown and use-of-proceeds (W30).', mockStates: ['draft','ie_review','approved','disbursed','clawback_triggered'], mockState: 'ie_review' },
       { key: 'covenant_certificate', label: 'Covenant certificates', chainKey: 'covenant_certificate', description: 'LMA covenant compliance certificates (W38).', mockStates: ['requested','submitted','under_review','waiver_requested','compliant','breach','acceleration'], mockState: 'under_review' },
       { key: 'security_perfection', label: 'Security perfection', chainKey: 'security_perfection', description: 'Deeds/STRATE security registration (W69).', mockStates: ['draft','filed','cession_registered','perfected','lapsed'], mockState: 'cession_registered' },
+      { key: 'dscr_monitoring', label: 'DSCR monitoring', chainKey: 'dscr_monitoring', description: 'Quarterly DSCR/LLCR covenant testing with cure lifecycle (W86).', mockStates: ['period_open','computed','watch','breach_recorded','lock_up','cure_in_progress','certified_clean','accelerated'], mockState: 'computed' },
+      { key: 'reserve_account', label: 'Reserve accounts', chainKey: 'reserve_account', description: 'DSRA/MRA funding, drawdown, cure and release (W77).', mockStates: ['reserve_required','funding_in_progress','funded','shortfall_flagged','cure_pending','drawn','released','breached'], mockState: 'funded' },
       { key: 'portfolio', label: 'Portfolio overview', description: 'Portfolio NAV, exposure, and sector map.' },
       { key: 'lender_risk', label: 'Risk dashboard', description: 'Concentration, covenant breach, watch-list.' },
     ],
@@ -249,6 +251,7 @@ const lenderDomains: Domain[] = [
     color: 'oklch(0.44 0.15 30)',
     features: [
       { key: 'loan_default', label: 'Default & enforcement', chainKey: 'loan_default', description: 'LMA event-of-default enforcement/step-in (W45).', mockStates: ['performing','watchlist','event_of_default','standstill','enforcement','step_in','restructure','write_off'], mockState: 'watchlist' },
+      { key: 'loan_restructure', label: 'Restructure & A&E', chainKey: 'loan_restructure', description: 'LMA Amend & Extend / forbearance with credit-committee gate (W108).', mockStates: ['trigger_event','restructure_proposal_drafted','lender_credit_committee_review','term_sheet_signed','effective_date','completed','escalated_to_default'], mockState: 'lender_credit_committee_review' },
     ],
   },
   {
@@ -257,6 +260,7 @@ const lenderDomains: Domain[] = [
     icon: '◎',
     color: 'oklch(0.46 0.14 55)',
     features: [
+      { key: 'sll_kpi', label: 'SLL KPI & ratchet', chainKey: 'sll_kpi', description: 'Sustainability-linked KPI compliance with margin ratchet (W95).', mockStates: ['baseline_set','kpi_period_open','independent_verification','kpi_attested','ratchet_computed','breach_recorded','cure_period','margin_amended','cure_failed'], mockState: 'kpi_attested' },
       { key: 'esg_lender', label: 'ESG / DFI monitoring', description: 'Equator Principles E&S monitoring.' },
       { key: 'benchmark_lender', label: 'Benchmark transition', description: 'JIBAR→ZARONIA credit facility resets.' },
       { key: 'concentrations', label: 'Large-exposure concentration', description: 'SARB large-exposure limits monitoring.' },
