@@ -712,6 +712,8 @@ const esumsDomains: Domain[] = [
     features: [
       { key: 'prognostics', label: 'Asset prognostics', chainKey: 'asset_prognostics', description: 'Predictive O&M — anomaly, RUL, fault fingerprint.', mockStates: ['nominal','anomaly_detected','degrading','maintenance_due','failed'], mockState: 'nominal' },
       { key: 'availability', label: 'Availability guarantee', chainKey: 'availability_guarantee', description: 'IEC 61724 uptime contract and LD tracking.', mockStates: ['active','under_review','breach','cure','settled','waived'], mockState: 'active' },
+      { key: 'bess-soh', label: 'BESS state-of-health', chainKey: 'bess_soh', description: 'Battery degradation tracking and augmentation programme.', mockStates: ['monitoring','augmentation_required','works_in_progress','recommissioned','decommissioned'], mockState: 'monitoring' },
+      { key: 'soiling-audit', label: 'Soiling audit', chainKey: 'soiling_audit', description: 'IEC 61724 soiling losses and cleaning economics.', mockStates: ['measured','economics_assessed','cleaning_authorized','post_clean_measured','settled'], mockState: 'measured' },
     ],
   },
   {
@@ -742,6 +744,7 @@ const esumsDomains: Domain[] = [
     color: 'oklch(0.42 0.10 250)',
     features: [
       { key: 'audit', label: 'Audit log', description: 'Tamper-evident audit chain and evidence log.' },
+      { key: 'generation-revenue-assurance', label: 'Revenue assurance', chainKey: 'generation_revenue_assurance', description: 'Settlement-vs-expected reconciliation and recovery.', mockStates: ['reconciling','variance_flagged','recovery_claimed','recovered','written_off'], mockState: 'reconciling' },
     ],
   },
 ];
