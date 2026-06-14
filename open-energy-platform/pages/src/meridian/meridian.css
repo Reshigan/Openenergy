@@ -448,6 +448,11 @@
 .mer.ledger { display:flex; flex-direction:column; min-height:100dvh; }
 .mer.ledger .ledger-body { flex:1; min-height:0; overflow-y:auto; padding:28px 44px 60px; max-width:920px; }
 
+/* ── Frame body (Phase E secondary routes: master-data CRUD, panels, connectors) ── */
+/* Wider than ledger-body — these host full tables/forms ported from workstation tabs. */
+.mer.mer-frame .mer-frame-body { flex:1; min-height:0; overflow-y:auto; padding:24px 44px 64px; max-width:1280px; }
+@media (max-width:900px) { .mer.mer-frame .mer-frame-body { padding:18px 18px 48px; } }
+
 /* ── KPI strip ── */
 .mer.ledger .kpis { display:flex; flex-wrap:wrap; gap:14px 36px; margin-bottom:22px; }
 .mer.ledger .kpi { display:flex; flex-direction:column; gap:2px; }
