@@ -79,7 +79,7 @@ const BASE_NAV: NavItem[] = [
   { path: '/lender-suite/workstation?tab=credit_origination', label: 'Credit origination',   icon: 'credit_card',   section: 'Credit' },
   { path: '/lender-suite/workstation?tab=facilities',         label: 'Facility register',     icon: 'description',   section: 'Credit' },
   { path: '/lender-suite/workstation?tab=cp_clearances',      label: 'CP clearances',         icon: 'checklist',     section: 'Credit' },
-  { path: '/lender-suite/workstation?tab=drawdown',           label: 'Drawdowns',             icon: 'payments',      section: 'Credit' },
+  { path: '/ledger/drawdown',                                 label: 'Drawdowns',             icon: 'payments',      section: 'Credit' },
   { path: '/ledger/covenant_certificate',                     label: 'Covenant certificates', icon: 'verified',      section: 'Monitoring' },
   { path: '/lender-suite/workstation?tab=dscr_monitoring',    label: 'DSCR monitoring',       icon: 'bar_chart',     section: 'Monitoring' },
   { path: '/lender-suite/workstation?tab=esap_monitoring_chain',label: 'ESAP monitoring',     icon: 'eco',           section: 'Monitoring' },

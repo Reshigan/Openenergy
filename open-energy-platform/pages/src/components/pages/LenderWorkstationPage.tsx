@@ -4,7 +4,6 @@ import { WorkstationShell, ListingTable, Pill, ActionModal } from '../launch/Wor
 import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { CreditOriginationChainTab } from '../lender/CreditOriginationChainTab';
-import { DrawdownChainTab } from '../lender/DrawdownChainTab';
 import { DscrMonitoringChainTab } from '../lender/DscrMonitoringChainTab';
 import { DunningTab } from '../lender/DunningTab';
 import { LoanDefaultChainTab } from '../lender/LoanDefaultChainTab';
@@ -786,7 +785,6 @@ export function LenderWorkstationPage() {
         { key: 'facilities', label: 'Facilities', group: 'Origination', body: () => <FacilitiesTab /> },
         { key: 'credit_origination', label: 'Credit origination', group: 'Origination', chainKey: 'credit_facility_application', body: () => <CreditOriginationChainTab /> },
         { key: 'cp_clearances', label: 'CP clearance (W223)', group: 'Origination', chainKey: 'cp_clearance', body: ({ onRefresh }) => <CpClearanceTab onRefresh={onRefresh} /> },
-        { key: 'drawdown', label: 'Drawdowns / UoP', group: 'Monitoring', chainKey: 'drawdown', body: () => <DrawdownChainTab /> },
         { key: 'dscr_monitoring', label: 'DSCR monitoring', group: 'Monitoring', chainKey: 'dscr_monitoring', body: () => <DscrMonitoringChainTab /> },
         { key: 'sll_kpi', label: 'SLL KPI & margin ratchet', group: 'Monitoring', chainKey: 'slb_kpi_ratchet', body: () => <SllKpiChainTab /> },
         { key: 'construction_cost_report', label: 'IE cost-to-complete (W231)', group: 'Monitoring', chainKey: 'construction_cost_report', body: ({ onRefresh }) => <ConstructionCostReportTab onRefresh={onRefresh} /> },

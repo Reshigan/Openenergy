@@ -4,7 +4,6 @@ import { platformTabs } from '../platformTabs';
 import { lenderCompletionTabs } from '../roleCompletionTabs';
 import { LenderInsights } from '../widgets/LenderInsights';
 import { DunningTab } from '../lender/DunningTab';
-import { DrawdownChainTab } from '../lender/DrawdownChainTab';
 import { DisbursementChainTab } from '../disbursement/DisbursementChainTab';
 import { LoanDefaultChainTab } from '../lender/LoanDefaultChainTab';
 import { CreditOriginationChainTab } from '../lender/CreditOriginationChainTab';
@@ -23,14 +22,6 @@ export function LenderSuitePage() {
       description: 'Credit facility origination & credit-approval chain · NCA + Banks Act + Basel III + SARB large-exposure + LMA. The front-end of project finance — screening, credit assessment, committee decision, agreement, CPs, activation. INVERTED tier SLA; activate crosses regulator for major/systemic, decline for systemic only.',
       columns: [],
       customContent: <CreditOriginationChainTab />,
-    },
-    {
-      key: 'drawdowns',
-      label: 'Drawdowns',
-      endpoint: '',
-      description: 'Disbursement certification chain · IE + CP gate, SARB large-exposure on senior approvals, regulator inbox on senior breaches.',
-      columns: [],
-      customContent: <DrawdownChainTab />,
     },
     {
       key: 'disbursements',
