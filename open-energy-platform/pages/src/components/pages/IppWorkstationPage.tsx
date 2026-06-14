@@ -85,7 +85,6 @@ const MqttOpcuaConnectorTab = React.lazy(() => import('../mqttOpcuaConnector/Mqt
 const AnomalyDetectionMlTab = React.lazy(() => import('../anomalyDetectionMl/AnomalyDetectionMlTab').then(m => ({ default: m.AnomalyDetectionMlTab })));
 const RulPredictionMlTab = React.lazy(() => import('../rulPredictionMl/RulPredictionMlTab'));
 const FaultFingerprintMlTab = React.lazy(() => import('../faultFingerprintMl/FaultFingerprintMlTab').then(m => ({ default: m.FaultFingerprintMlTab })));
-const StageGateTab = React.lazy(() => import('../stageGate/StageGateTab'));
 const IppIssuesTab = React.lazy(() => import('../ippIssues/IppIssuesTab'));
 const IppRiskTab = React.lazy(() => import('../ippRisk/IppRiskTab'));
 const IppStakeholderTab = React.lazy(() => import('../ippStakeholder/IppStakeholderTab'));
@@ -1295,7 +1294,6 @@ export function IppWorkstationPage() {
         { key: 'annual-compliance-assessment', label: 'Annual grid code compliance self-assessment (W188)', group: 'Risk', chainKey: 'ipp_acs', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppAnnualComplianceAssessmentTab /></React.Suspense> },
         { key: 'annual-audit', label: 'Annual financial statements & audit (W189)', group: 'Risk', chainKey: 'ipp_aud', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppAnnualAuditTab /></React.Suspense> },
         { key: 'emp-compliance-report', label: 'EMP annual compliance report (W190)', group: 'Risk', chainKey: 'ipp_empr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEmpComplianceReportTab /></React.Suspense> },
-        { key: 'stage-gates', label: 'Stage gates', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><StageGateTab /></React.Suspense> },
         { key: 'issues-log', label: 'Issues log', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppIssuesTab /></React.Suspense> },
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppRiskTab /></React.Suspense> },
         { key: 'stakeholder-register', label: 'Stakeholder register', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppStakeholderTab /></React.Suspense> },

@@ -807,7 +807,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'ipp_developer'],
         cascadeHint: 'Kills the project at the gate from any non-terminal state — hard-terminal close, reportable per the tier floor rules.',
         fields: [
-          { key: 'reason_code', label: 'Rejection reason', type: 'string', required: true,
+          { key: 'reason_code', label: 'Rejection reason', type: 'string',
             placeholder: 'e.g. IE found unmitigated geotechnical risk' },
           { key: 'evidence_payload', label: 'Evidence / basis', type: 'evidence' },
         ],

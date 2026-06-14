@@ -11,7 +11,6 @@ import { SllKpiChainTab } from '../lender/SllKpiChainTab';
 import { StrateSwiftConnectorTab } from '../strateSwiftConnector/StrateSwiftConnectorTab';
 import { SapOracleErpConnectorTab } from '../sapOracleErpConnector/SapOracleErpConnectorTab';
 import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
-import StageGateTab from '../stageGate/StageGateTab';
 import { LenderEsapTab } from '../lender/LenderEsapTab';
 import { LenderFacilityAmendmentTab } from '../lender/LenderFacilityAmendmentTab';
 import { ReportPanel, type ReportConfig } from '../launch/ReportPanel';
@@ -793,7 +792,6 @@ export function LenderWorkstationPage() {
         { key: 'strate-swift-connectors', label: 'Settlement rails', group: 'Reporting', body: () => <StrateSwiftConnectorTab /> },
         { key: 'sap-oracle-erp-connectors', label: 'ERP connectors', group: 'Reporting', body: () => <SapOracleErpConnectorTab /> },
         { key: 'government-filing-connectors', label: 'Filing connectors', group: 'Reporting', body: () => <GovernmentFilingConnectorTab /> },
-        { key: 'stage-gates', label: 'Stage gates', group: 'Reporting', body: () => <StageGateTab readOnly /> },
         { key: 'reports', label: 'Reports & Exports', group: 'Reporting',
           body: () => (
             <div className="space-y-8">

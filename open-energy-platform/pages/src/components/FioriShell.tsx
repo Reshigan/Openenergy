@@ -60,7 +60,7 @@ const BASE_NAV: NavItem[] = [
   { path: '/ipp-lifecycle/workstation',                       label: 'IPP workstation',       icon: 'apartment',     section: 'Project Controls' },
   { path: '/ipp-lifecycle/workstation?tab=projects',          label: 'Projects',              icon: 'apartment',     section: 'Project Controls' },
   { path: '/ipp-lifecycle/workstation?tab=milestones',        label: 'Milestones',            icon: 'flag',          section: 'Project Controls' },
-  { path: '/ipp-lifecycle/workstation?tab=stage-gates',       label: 'Stage gates',           icon: 'verified',      section: 'Project Controls' },
+  { path: '/ledger/stage_gate',       label: 'Stage gates',           icon: 'verified',      section: 'Project Controls' },
   { path: '/ipp-lifecycle/workstation?tab=risk-register',     label: 'Risk register',         icon: 'warning',       section: 'Project Controls' },
   { path: '/ipp-lifecycle/workstation?tab=milestone-variance',label: 'Milestone variance',    icon: 'timeline',      section: 'Project Controls' },
   { path: '/ipp-lifecycle/workstation?tab=document-control',  label: 'Document control',      icon: 'folder',        section: 'Document Control (IPP)' },

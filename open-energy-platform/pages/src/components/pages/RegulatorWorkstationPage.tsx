@@ -20,7 +20,6 @@ import { RegulatorExportPackTab } from '../regulatorExport/RegulatorExportPackTa
 import { ReconciliationAttestationTab } from '../reconciliation/ReconciliationAttestationTab';
 import { ControlEnvironmentAuditTab } from '../controlEnvironment/ControlEnvironmentAuditTab';
 import { GovernmentFilingConnectorTab } from '../governmentFilingConnector/GovernmentFilingConnectorTab';
-import StageGateTab from '../stageGate/StageGateTab';
 import { ReportPanel, type ReportConfig } from '../launch/ReportPanel';
 import type { WizardSpec } from '../launch/WizardModal';
 import type { TourDef } from '../launch/ProductTour';
@@ -402,9 +401,6 @@ export function RegulatorWorkstationPage() {
         },
         { key: 'government-filing-connectors', label: 'Filing connectors (W126)',
           body: () => <GovernmentFilingConnectorTab />,
-        },
-        { key: 'stage-gates', label: 'Stage gates (W131)',
-          body: () => <StageGateTab readOnly />,
         },
         { key: 'public-consultations', label: 'Public consultations (W209)',
           chainKey: 'public_consultation',
