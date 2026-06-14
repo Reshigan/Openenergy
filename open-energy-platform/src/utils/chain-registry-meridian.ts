@@ -2704,6 +2704,227 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     ],
   },
 
+  // ───────── GRID (parity batch) ─────────
+  // Three Grid state-machine chains never migrated to the registry. Single-desk
+  // SO write {admin, grid_operator} (+ support for black-start). Regulator is
+  // read-only + cascade-driven, so no regulator lane.
+
+  // W105 — Imbalance settlement (Grid wholesale MTU pricing; per-MTU actual-vs-
+  // nominated imbalance × price × penalty, posted to BRPs; dispute window; URGENT)
+  {
+    key: 'imbalance_settlement', wave: 105, table: 'oe_imbalance_settlement',
+    title: 'Imbalance settlement', refCol: 'settlement_number', titleCol: 'brp_label',
+    quantumCol: 'total_owed_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['settled', 'archived', 'cancelled'],
+    counterpartyCol: 'brp_id',
+    lanes: { grid_operator: 'operations_grid' },
+    eventsTable: 'oe_imbalance_settlement_events', eventsFk: 'settlement_id',
+    actions: [
+      { action: 'compute-imbalance', label: 'Compute imbalance', tone: 'primary',
+        path: '/api/grid/imbalance-settlement/chain/:id/compute-imbalance',
+        roles: ['admin', 'grid_operator'],
+        cascadeHint: 'Computes the per-MTU imbalance MWh (metered − nominated); arms the pricing step.',
+        fields: [
+          { key: 'imbalance_mwh', label: 'Imbalance', type: 'number', unit: 'MWh' },
+          { key: 'imbalance_quantum_zar', label: 'Imbalance quantum', type: 'number', unit: 'ZAR' },
+          { key: 'notes', label: 'Note', type: 'string' },
+        ],
+      },
+      { action: 'price-imbalance', label: 'Price imbalance',
+        path: '/api/grid/imbalance-settlement/chain/:id/price-imbalance',
+        roles: ['admin', 'grid_operator'],
+        cascadeHint: 'Applies long/short imbalance price and penalty multiplier; recomputes charge, penalty and total owed.',
+        fields: [
+          { key: 'long_price_zar_per_mwh', label: 'Long price', type: 'number', unit: 'ZAR' },
+          { key: 'short_price_zar_per_mwh', label: 'Short price', type: 'number', unit: 'ZAR' },
+          { key: 'penalty_multiplier', label: 'Penalty multiplier', type: 'number' },
+        ],
+      },
+      { action: 'raise-dispute', label: 'Raise dispute', tone: 'oxide',
+        path: '/api/grid/imbalance-settlement/chain/:id/raise-dispute',
+        roles: ['admin', 'grid_operator'],
+        cascadeHint: 'Opens a settlement dispute; for HV BRPs crosses every tier into the regulator inbox (W105 signature).',
+        fields: [
+          { key: 'dispute_reason_code', label: 'Dispute reason code', type: 'string', required: true },
+          { key: 'dispute_narrative', label: 'Dispute narrative', type: 'evidence' },
+        ],
+      },
+      { action: 'mark-settled', label: 'Mark settled', tone: 'primary',
+        path: '/api/grid/imbalance-settlement/chain/:id/mark-settled',
+        roles: ['admin', 'grid_operator'],
+        cascadeHint: 'Closes the settlement period; zeroes outstanding and (with non-zero penalty on material/systemic tiers) crosses into the regulator inbox.',
+        fields: [
+          { key: 'narrative', label: 'Settlement note', type: 'string' },
+        ],
+      },
+    ],
+    filters: [
+      { key: 'pricing', label: 'In pricing', statuses: ['meter_data_received', 'nominations_reconciled', 'imbalance_computed', 'priced'] },
+      { key: 'invoicing', label: 'Invoicing', statuses: ['invoice_issued', 'invoice_acknowledged', 'invoice_revised', 'payment_pending'] },
+      { key: 'dispute', label: 'Dispute', statuses: ['dispute_window_open', 'disputed', 'resolved_dispute'] },
+      { key: 'arrears', label: 'Aged arrears', statuses: ['aged_arrears'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['settled', 'archived', 'cancelled'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Settlements', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+      { key: 'owed', label: 'Total owed', compute: 'sum_quantum' },
+    ],
+    initiation: null,
+  },
+
+  // W84 — Black-start capability (SA Grid Code OC-1/OC-12 restoration; annual
+  // witnessed drill; solicit → award → execute → drill → recertify; URGENT)
+  {
+    key: 'black_start', wave: 84, table: 'oe_black_start_capabilities',
+    title: 'Black-start capability', refCol: 'capability_number', titleCol: 'facility_name',
+    quantumCol: 'contract_value_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['recertified', 'contract_terminated'],
+    counterpartyCol: 'bsc_provider_name',
+    lanes: { grid_operator: 'operations_grid' },
+    eventsTable: 'oe_black_start_capabilities_events', eventsFk: 'capability_id',
+    actions: [
+      { action: 'award-contract', label: 'Award contract', tone: 'primary',
+        path: '/api/black-start/chain/:id/award-contract',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'Awards the BSC contract to the selected provider; arms contract execution.',
+        fields: [
+          { key: 'bsc_provider_id', label: 'BSC provider ID', type: 'string' },
+          { key: 'bsc_provider_name', label: 'BSC provider', type: 'string' },
+          { key: 'contract_ref', label: 'Contract reference', type: 'evidence' },
+          { key: 'contract_value_zar', label: 'Contract value', type: 'number', unit: 'ZAR' },
+        ],
+      },
+      { action: 'complete-drill', label: 'Complete drill',
+        path: '/api/black-start/chain/:id/complete-drill',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'Records the witnessed restoration drill outcome against the six hold-point flags; arms recertification.',
+        fields: [
+          { key: 'cranking_source_confirmed_flag', label: 'Cranking source confirmed (1=yes, 0=no)', type: 'number' },
+          { key: 'dead_bus_energisation_flag', label: 'Dead-bus energisation (1=yes, 0=no)', type: 'number' },
+          { key: 'frequency_hold_flag', label: 'Frequency hold (1=yes, 0=no)', type: 'number' },
+          { key: 'voltage_hold_flag', label: 'Voltage hold (1=yes, 0=no)', type: 'number' },
+          { key: 'auxiliary_load_pickup_flag', label: 'Auxiliary load pickup (1=yes, 0=no)', type: 'number' },
+          { key: 'backfeed_within_sla_flag', label: 'Backfeed within SLA (1=yes, 0=no)', type: 'number' },
+        ],
+      },
+      { action: 'recertify', label: 'Recertify capability', tone: 'primary',
+        path: '/api/black-start/chain/:id/recertify',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'Recertifies the BSC unit as restoration-ready; resets the drill clock and crosses into the regulator inbox for material/island-critical tiers.',
+        fields: [
+          { key: 'last_action_ref', label: 'Certification reference', type: 'evidence' },
+        ],
+      },
+      { action: 'fail-drill', label: 'Fail drill', tone: 'oxide',
+        path: '/api/black-start/chain/:id/fail-drill',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'Records a failed restoration drill; crosses into the regulator inbox for EVERY tier (W84 reliability hard line).',
+        fields: [
+          { key: 'reason_code', label: 'Failure reason code', type: 'string', required: true },
+          { key: 'chain_basis', label: 'Failure basis', type: 'evidence' },
+        ],
+      },
+      { action: 'terminate-contract', label: 'Terminate contract', tone: 'oxide',
+        path: '/api/black-start/chain/:id/terminate-contract',
+        roles: ['admin', 'support', 'grid_operator'],
+        cascadeHint: 'Terminates the BSC contract; loss of restoration capability crosses into the regulator inbox for EVERY tier.',
+        fields: [
+          { key: 'reason_code', label: 'Termination reason code', type: 'string', required: true },
+          { key: 'chain_basis', label: 'Termination basis', type: 'evidence' },
+        ],
+      },
+    ],
+    filters: [
+      { key: 'procurement', label: 'Procurement', statuses: ['needs_assessed', 'solicitation_issued', 'bid_evaluation', 'contract_awarded', 'contract_executed'] },
+      { key: 'drill', label: 'Drill cycle', statuses: ['drill_scheduled', 'drill_in_progress', 'drill_completed'] },
+      { key: 'failed', label: 'Failed / remediation', statuses: ['drill_failed', 'remediation_required'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['recertified', 'contract_terminated'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Capabilities', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+      { key: 'contract', label: 'Contract value', compute: 'sum_quantum' },
+    ],
+    initiation: null,
+  },
+
+  // W110 — Transmission outage (NERSA Grid Code C-3 + NTCSA Outage Coordination;
+  // SO-driven EHV/HV outage windows with N-1 security assessment; URGENT)
+  {
+    key: 'transmission_outage', wave: 110, table: 'oe_transmission_outage',
+    title: 'Transmission outage', refCol: 'outage_number', titleCol: 'corridor_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    terminal: ['archived', 'rejected', 'withdrawn', 'emergency_cancelled'],
+    counterpartyCol: 'asset_label',
+    lanes: { grid_operator: 'operations_grid' },
+    eventsTable: 'oe_transmission_outage_events', eventsFk: 'outage_id',
+    actions: [
+      { action: 'approve-outage', label: 'Approve outage', tone: 'primary',
+        path: '/api/grid/transmission-outage/chain/:id/approve-outage',
+        roles: ['admin', 'grid_operator'],
+        cascadeHint: 'Reliability committee approves the outage window; for backbone 400kV+ corridors crosses into the regulator inbox.',
+        fields: [
+          { key: 'notes', label: 'Approval note', type: 'string' },
+        ],
+      },
+      { action: 'commence-outage', label: 'Commence outage',
+        path: '/api/grid/transmission-outage/chain/:id/commence-outage',
+        roles: ['admin', 'grid_operator'],
+        cascadeHint: 'SO opens the live outage; starts the in-progress supervision clock.',
+        fields: [
+          { key: 'actual_start_at', label: 'Actual start', type: 'date' },
+        ],
+      },
+      { action: 'verify-return-to-service', label: 'Verify return to service', tone: 'primary',
+        path: '/api/grid/transmission-outage/chain/:id/verify-return-to-service',
+        roles: ['admin', 'grid_operator'],
+        cascadeHint: 'Verifies the corridor is re-energised and the RTS test passed; arms post-outage review.',
+        fields: [
+          { key: 'rts_test_passed', label: 'RTS test passed', type: 'boolean' },
+        ],
+      },
+      { action: 'emergency-cancel', label: 'Emergency cancel', tone: 'oxide',
+        path: '/api/grid/transmission-outage/chain/:id/emergency-cancel',
+        roles: ['admin', 'grid_operator'],
+        cascadeHint: 'Forced cancellation of an approved outage; crosses into the regulator inbox for EVERY tier (W110 signature security event).',
+        fields: [
+          { key: 'emergency_cancel_reason', label: 'Emergency cancel reason', type: 'evidence' },
+        ],
+      },
+    ],
+    filters: [
+      { key: 'assessment', label: 'Assessment', statuses: ['outage_requested', 'security_assessment', 'n1_contingency_run', 'reliability_committee_review'] },
+      { key: 'approved', label: 'Approved / scheduled', statuses: ['outage_approved', 'outage_window_open'] },
+      { key: 'in_progress', label: 'In progress', statuses: ['outage_in_progress', 'extended', 'suspended'] },
+      { key: 'restoring', label: 'Restoring', statuses: ['outage_completed', 'return_to_service', 'post_outage_review'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['archived', 'rejected', 'withdrawn', 'emergency_cancelled'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Outages', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+      { key: 'in_progress', label: 'Active', compute: 'count' },
+    ],
+    initiation: {
+      label: 'Request transmission outage',
+      path: '/api/grid/transmission-outage/chain',
+      fields: [
+        { key: 'asset_id', label: 'Asset', type: 'string', required: true },
+        { key: 'asset_label', label: 'Asset label', type: 'string' },
+        { key: 'transmission_voltage_kv', label: 'Voltage', type: 'number' },
+        { key: 'corridor_name', label: 'Corridor', type: 'string' },
+        { key: 'substation_a', label: 'Substation A', type: 'string' },
+        { key: 'substation_b', label: 'Substation B', type: 'string' },
+        { key: 'outage_reason', label: 'Outage reason', type: 'string' },
+        { key: 'scheduled_start_at', label: 'Scheduled start', type: 'date' },
+        { key: 'scheduled_end_at', label: 'Scheduled end', type: 'date' },
+      ],
+    },
+  },
+
   // ───────── REGULATOR ─────────
   // Regulator lanes on cross-referred chains (W33/W38/W40/W43/W49/W57/W74 etc.)
   // also appear on entries above/below via the lanes map.
