@@ -199,6 +199,7 @@ const traderDomains: Domain[] = [
       { key: 'best_execution', label: 'Best-execution / RFQ', chainKey: 'best_execution', description: 'FSCA Conduct Standard RFQ chain (W36).', mockStates: ['rfq_sent','quotes_received','quote_selected','executed','confirmed'], mockState: 'quotes_received' },
       { key: 'imbalance', label: 'Imbalance settlement', description: 'Grid imbalance cash-out settlement.' },
       { key: 'black_start', label: 'Black start', description: 'NETSO black-start cost recovery.' },
+      { key: 'benchmark_transition', label: 'Benchmark transition', chainKey: 'benchmark_transition', description: 'JIBAR cessation / benchmark fallback transition (W90).' },
     ],
   },
   {
@@ -492,6 +493,7 @@ const supportDomains: Domain[] = [
       { key: 'escalations', label: 'Escalations', description: 'Tickets escalated to engineering/management.' },
       { key: 'csat', label: 'CSAT lifecycle', chainKey: 'csat_record', description: 'Customer satisfaction survey chain (W208).' },
       { key: 'sla_performance_reports', label: 'SLA performance', chainKey: 'sla_performance_report', description: 'SLA adherence reports (W217).' },
+      { key: 'cyber_incident', label: 'Cyber incident', chainKey: 'cyber_incident', description: 'POPIA s22 / Cybercrimes Act breach response (W26).' },
     ],
   },
   {
