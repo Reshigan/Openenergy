@@ -5,7 +5,6 @@ import { SupportTicketChainTab } from '../support/SupportTicketChainTab';
 import { ServiceContractChainTab } from '../service-contract/ServiceContractChainTab';
 import { ServiceRequestChainTab } from '../support/ServiceRequestChainTab';
 import { OemFcoChainTab } from '../oem-fco/OemFcoChainTab';
-import { PmComplianceChainTab } from '../esums/PmComplianceChainTab';
 import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
 import { AnomalyDetectionMlTab } from '../anomalyDetectionMl/AnomalyDetectionMlTab';
 import RulPredictionMlTab from '../rulPredictionMl/RulPredictionMlTab';
@@ -470,13 +469,6 @@ export function SupportWorkstationPage() {
             label: 'OEM FCO/ECN',
             chainKey: 'oem_fco',
             body: () => <OemFcoChainTab />,
-          },
-          {
-            key: 'pm_compliance',
-            label: 'PM schedule compliance (W59)',
-            group: 'Field operations',
-            chainKey: 'pm_compliance',
-            body: () => <PmComplianceChainTab />,
           },
           {
             key: 'csat',

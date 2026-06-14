@@ -10,19 +10,11 @@ import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../SuitePage';
 import { EsumsOmCockpit } from '../widgets/EsumsOmCockpit';
 import { EsumsOmOpportunities } from '../widgets/EsumsOmOpportunities';
-import { PredictiveAssetHealthChainTab } from '../esums/PredictiveAssetHealthChainTab';
-import { CommissioningTab } from '../esums/CommissioningTab';
 import { SmartMeterChainTab } from '../esums/SmartMeterChainTab';
-import { VendorEscalationChainTab } from '../esums/VendorEscalationChainTab';
-import { PrChainTab } from '../esums/PrChainTab';
-import { AvailabilityGuaranteeChainTab } from '../esums/AvailabilityGuaranteeChainTab';
-import { PmComplianceChainTab } from '../esums/PmComplianceChainTab';
-import { PermitToWorkChainTab } from '../esums/PermitToWorkChainTab';
 import { GenerationRevenueAssuranceChainTab } from '../esums/GenerationRevenueAssuranceChainTab';
 import { BessSohChainTab } from '../esums/BessSohChainTab';
 import { SoilingAuditChainTab } from '../esums/SoilingAuditChainTab';
 import { EsgDisclosureChainTab } from '../carbon/EsgDisclosureChainTab';
-import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
 import { DataSourcesTab } from '../esums/DataSourcesTab';
 import { StationParticipantLinkTab } from '../esums/StationParticipantLinkTab';
@@ -48,68 +40,12 @@ export function EsumsOmPage() {
       customContent: <EsumsOmOpportunities />,
     },
     {
-      key: 'prognostics',
-      label: 'Predictive health',
-      endpoint: '',
-      description: '12-state P6 Predictive Asset Health & Prognostics chain — the NTT-beating predictive O&M brain. Six-method anomaly ensemble (EWMA SPC control chart, z-score, Tukey IQR, rate-of-change, persistence, fleet percentile), OLS degradation trend with R², remaining-useful-life projection and explainable physics-based fault fingerprinting (12 fault modes; safety modes auto-flagged). predicted → triaged → diagnosed → action planned → WO raised → monitoring → resolved (with auto-suppress, dismiss, escalate, record-failure, expire and recurrence branches). URGENT revenue/safety-tier SLAs (higher revenue-at-risk or safety-implicated = tighter window). Every prediction quantifies revenue-at-risk in ZAR and an O&M savings ledger benchmarked to beat NTT Data by 30%. Single-party write (asset team). Confirmed safety/high-tier failures, safety+high escalations and major/critical SLA breaches cross into the regulator inbox.',
-      columns: [],
-      customContent: <PredictiveAssetHealthChainTab />,
-    },
-    {
-      key: 'commissioning',
-      label: 'Commissioning chain',
-      endpoint: '',
-      description: 'Site onboarding workflow — planned → registered → devices → ingestion → first telemetry → energised → in O&M. P6-grade audit chain with SLA gates per stage.',
-      columns: [],
-      customContent: <CommissioningTab />,
-    },
-    {
       key: 'smart_meter',
       label: 'Smart-meter chain',
       endpoint: '',
       description: 'NRS 047 smart meter lifecycle from purchase order through FAT, delivery, installation, commissioning, comms test and data-quality validation to operational service.',
       columns: [],
       customContent: <SmartMeterChainTab />,
-    },
-    {
-      key: 'vendor_escalation',
-      label: 'Vendor escalation',
-      endpoint: '',
-      description: 'Supplier-defect escalation chain (CPA §56/§61 + NRCS) — filed → vendor triage → vendor decision → escalated to OEM → OEM field investigation → OEM decision → remediation → closed (with recall, arbitration and withdrawal branches). URGENT defect-class SLAs (safety recall 4h triage; single unit 7d). Each event is tagged with the contractual party (operator/vendor/OEM). Safety-recall and fleet-systemic OEM decisions, recalls, arbitrations and SLA breaches cross into the regulator inbox.',
-      columns: [],
-      customContent: <VendorEscalationChainTab />,
-    },
-    {
-      key: 'pr_chain',
-      label: 'PR chain',
-      endpoint: '',
-      description: '9-state P6 Performance-Ratio sustained-underperformance chain — monitoring → warning → investigating → RCA → intervention planned → executing → verified → closed (with escalation + false-alarm branches). Tier SLAs (utility 24h warning, 30d intervention). Utility-tier escalations and SLA breaches cross into the regulator inbox.',
-      columns: [],
-      customContent: <PrChainTab />,
-    },
-    {
-      key: 'availability_guarantee',
-      label: 'Availability guarantee',
-      endpoint: '',
-      description: '12-state P6 O&M Availability Guarantee & Liquidated Damages chain (IEC 61724/62446 + REIPPPP O&M service agreement) — period open → measurement submitted → adjustment review → reconciled → meets guarantee → settled (happy path), with a shortfall branch (shortfall flagged → LD assessed → settled), an optional cure period, and a dispute branch. The availability counterpart to the PR chain — availability is time-based uptime, PR is energy-based yield. URGENT shortfall-tier SLAs (larger shortfall = tighter window). Single-party write: each event is tagged with the contractual party (asset owner / O&M contractor). Critical-tier (severe/critical) shortfalls, dispute resolutions and SLA breaches cross into the regulator inbox as a security-of-supply concern.',
-      columns: [],
-      customContent: <AvailabilityGuaranteeChainTab />,
-    },
-    {
-      key: 'pm_compliance',
-      label: 'PM compliance',
-      endpoint: '',
-      description: '12-state P6 Preventive-Maintenance Schedule Compliance & Deferral chain (IEC 62446/61724 + REIPPPP O&M service-agreement PM-program discipline) — pm scheduled → work assigned → in progress → completed → verification pending → closed (happy path), with a rework loop (require rework → in progress), an on-hold loop (parts/access pending), a deferral branch (request deferral → deferred on approval, or back to work assigned on rejection), a skip terminal (the window lapsed unexecuted — a compliance failure), and a cancel terminal. The PROACTIVE maintenance-program counterpart UPSTREAM of the availability guarantee and PR chains — keeping PMs on schedule is what keeps availability and PR within guarantee. URGENT criticality-tier SLAs (more critical PM = tighter response window). Single-party write: each event is tagged with the contractual party (asset owner / O&M contractor). Skipping a critical / safety-critical PM, deferring a safety-critical PM, and critical-tier SLA breaches cross into the regulator inbox as a maintenance-compliance failure.',
-      columns: [],
-      customContent: <PmComplianceChainTab />,
-    },
-    {
-      key: 'permit_to_work',
-      label: 'Permit to work',
-      endpoint: '',
-      description: '12-state P6 Permit-to-Work / Lock-Out-Tag-Out chain (OHSA + SANS 10142 + REIPPPP O&M safe-work-permit discipline) — permit requested → hazard assessment → isolation pending → isolation confirmed → permit issued → work in progress → work complete → permit closed (happy path), with a suspend/resume loop, a reject terminal (permit refused at assessment), a revoke terminal (permit cancelled mid-work — always reportable), and a withdraw terminal. The CONTROL-OF-WORK gate that authorises every hazardous O&M intervention before a technician touches an isolated or energised asset — upstream of the WO dispatch and PM compliance chains. URGENT hazard-tier SLAs (more hazardous work = tighter window). Single-party write: each event is tagged with the contractual party (issuing authority / permit holder). Issuing a permit for live-electrical or confined-space work (or any critical/catastrophic hazard tier), every permit revocation, and critical-tier SLA breaches cross into the regulator inbox as a control-of-work safety concern.',
-      columns: [],
-      customContent: <PermitToWorkChainTab />,
     },
     {
       key: 'revenue_assurance',
@@ -142,14 +78,6 @@ export function EsumsOmPage() {
       description: '12-state P6 ESG Disclosure Lifecycle & Assurance Chain (ISSB IFRS S1+S2 / TCFD 4 pillars / GRI Universal + sector / CDP Climate-Water-Forests / JSE SRL 2024 / King IV Principles 1-3 + 15-17 / SBTi alignment / Carbon Tax Act §6 / SAICA Code 8). Full JSE-listed entity annual ESG cycle: period_open → collect_data → verify_boundary → compute_metrics → compile_draft → submit_for_review → engage_assurance → start_assurance → complete_assurance → publish_disclosure → file_regulator → archive_year + disputed branch (from draft/internal-review/assured → resolve back to internal-review) + restate_disclosure from filed (UNIVERSAL hard line — sister of W42 reversal — always crosses regulator) + cancel_year (universal when year_had_listed_disclosure). Beats Workiva ESG / Sphera SpheraCloud / SAP Sustainability Control Tower / Microsoft Sustainability Manager / IBM Envizi / Salesforce Net Zero Cloud / Greenstone / EcoVadis / Persefoni / Watershed / Diligent ESG / Bloomberg ESG / Refinitiv Lipper ESG via a LIVE 4-framework completeness battery (TCFD / GRI / CDP / JSE-SRL / King-IV / ISSB-S1S2 + SBTi alignment + ESG Disclosure Index + assurance-confidence ladder + regulator-filing countdown) composed every fetch from raw inputs. Tier RE-DERIVED on every transition from scope × climate-exposure × assurance: minor entity_only+low+none / standard entity+subs OR medium OR limited / material group OR high OR limited / strategic group AND (high OR reasonable). FLOOR-AT-MATERIAL when JSE listed OR Scope 3 15-cat OR scenario-required OR 8+ material topics OR SBTi committed. INVERTED SLA polarity (strategic = 270d annual cycle; minor publish = 7d). 4-step authority ladder (analyst → director → audit chair → board). SIGNATURE — restate_disclosure crosses regulator EVERY tier (UNIVERSAL hard line), qualified/adverse/disclaimer opinion crosses on material+strategic, cancel-of-listed-year crosses universally, sla_breach strategic only (filing-deadline miss).',
       columns: [],
       customContent: <EsgDisclosureChainTab />,
-    },
-    {
-      key: 'hse_chain',
-      label: 'HSE incidents',
-      endpoint: '',
-      description: 'OHSA Section 24 + NEMA Section 30 workplace-safety + environmental incident lifecycle — reported → triaged → authority notified → investigating → CAPA planned/executing → verified → closed (with escalation + false-alarm branches). Tier SLAs (fatal 1h triage; major 4h; environmental 4h). Reportable-tier (fatal/major/environmental) authority notifications, escalations and SLA breaches cross into the regulator inbox.',
-      columns: [],
-      customContent: <HseIncidentChainTab />,
     },
     {
       key: 'cyber_chain',

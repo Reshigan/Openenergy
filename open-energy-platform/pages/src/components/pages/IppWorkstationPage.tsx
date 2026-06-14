@@ -69,7 +69,6 @@ const PunchListChainTab = React.lazy(() => import('../ipp/PunchListChainTab').th
 const ItpChainTab = React.lazy(() => import('../ipp/ItpChainTab').then(m => ({ default: m.ItpChainTab })));
 const HandoverDossierChainTab = React.lazy(() => import('../ipp/HandoverDossierChainTab').then(m => ({ default: m.HandoverDossierChainTab })));
 const ProjectRiskChainTab = React.lazy(() => import('../ipp/ProjectRiskChainTab').then(m => ({ default: m.ProjectRiskChainTab })));
-const HseIncidentChainTab = React.lazy(() => import('../hse/HseIncidentChainTab').then(m => ({ default: m.HseIncidentChainTab })));
 const CyberIncidentChainTab = React.lazy(() => import('../cyber/CyberIncidentChainTab').then(m => ({ default: m.CyberIncidentChainTab })));
 const IppScheduleChainTab = React.lazy(() => import('../ipp/IppScheduleChainTab').then(m => ({ default: m.IppScheduleChainTab })));
 const IppEvmChainTab = React.lazy(() => import('../ipp/IppEvmChainTab').then(m => ({ default: m.IppEvmChainTab })));
@@ -1392,7 +1391,6 @@ export function IppWorkstationPage() {
         { key: 'handover_dossier', label: 'Handover dossier', group: 'Construction', chainKey: 'handover_dossier', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><HandoverDossierChainTab /></React.Suspense> },
         { key: 'method-statements', label: 'Method statements', group: 'Safety & grid', chainKey: 'ipp_method_statement', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppMethodStatementTab /></React.Suspense> },
         { key: 'env-monitoring', label: 'Environmental monitoring', group: 'Safety & grid', chainKey: 'ipp_env_monitoring', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEnvMonitoringTab /></React.Suspense> },
-        { key: 'hse_chain', label: 'HSE incidents', group: 'Safety & grid', chainKey: 'hse_incident', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><HseIncidentChainTab /></React.Suspense> },
         { key: 'cyber_chain', label: 'Cyber incidents', group: 'Safety & grid', chainKey: 'cyber_incident', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><CyberIncidentChainTab /></React.Suspense> },
         {
           key: 'warranty_claims',

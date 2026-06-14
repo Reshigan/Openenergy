@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { WorkstationShell, ListingTable, Pill, ActionModal } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
-import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { SubmittalRfiChainTab } from '../ipp/SubmittalRfiChainTab';
 import { ProjectChangeOrderChainTab } from '../ipp/ProjectChangeOrderChainTab';
 import { ItpChainTab } from '../ipp/ItpChainTab';
@@ -330,7 +329,6 @@ export function EpcWorkstationPage() {
             />
           ),
         },
-        { key: 'hse', label: 'HSE incidents (W25)', group: 'Safety & HSE', chainKey: 'hse_incident', body: () => <HseIncidentChainTab /> },
         {
           key: 'audit',
           label: 'Audit trail',

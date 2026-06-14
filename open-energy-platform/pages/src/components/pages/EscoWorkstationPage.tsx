@@ -1,15 +1,7 @@
 import React from 'react';
 import { WorkstationShell, ListingTable, Pill } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
-import { PmComplianceChainTab } from '../esums/PmComplianceChainTab';
-import { PermitToWorkChainTab } from '../esums/PermitToWorkChainTab';
-import { PredictiveAssetHealthChainTab } from '../esums/PredictiveAssetHealthChainTab';
-import { AvailabilityGuaranteeChainTab } from '../esums/AvailabilityGuaranteeChainTab';
-import { VendorEscalationChainTab } from '../esums/VendorEscalationChainTab';
-import { HseIncidentChainTab } from '../hse/HseIncidentChainTab';
 import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
-import { CommissioningTab } from '../esums/CommissioningTab';
-import { PrChainTab } from '../esums/PrChainTab';
 import { ServiceContractChainTab } from '../service-contract/ServiceContractChainTab';
 import type { WizardSpec } from '../launch/WizardModal';
 import type { TourDef } from '../launch/ProductTour';
@@ -240,14 +232,6 @@ export function EscoWorkstationPage() {
             />
           ),
         },
-        { key: 'pm-compliance', label: 'PM compliance (W59)', group: 'Work orders', chainKey: 'pm_compliance', body: () => <PmComplianceChainTab /> },
-        { key: 'permit-to-work', label: 'Permit-to-work (W64)', group: 'Work orders', chainKey: 'permit_to_work', body: () => <PermitToWorkChainTab /> },
-        { key: 'commissioning', label: 'Site commissioning (W12)', group: 'Work orders', chainKey: 'commissioning', body: () => <CommissioningTab /> },
-        { key: 'prognostics', label: 'Asset prognostics (W71)', group: 'Asset health & AI', chainKey: 'asset_prognostics', body: () => <PredictiveAssetHealthChainTab /> },
-        { key: 'availability', label: 'Availability guarantees (W51)', group: 'Asset health & AI', chainKey: 'availability_guarantee', body: () => <AvailabilityGuaranteeChainTab /> },
-        { key: 'pr-underperformance', label: 'PR underperformance (W24)', group: 'Asset health & AI', chainKey: 'pr_underperformance', body: () => <PrChainTab /> },
-        { key: 'vendor-escalation', label: 'Vendor escalation (W35)', group: 'Supply chain', chainKey: 'vendor_escalation', body: () => <VendorEscalationChainTab /> },
-        { key: 'hse', label: 'HSE incidents (W25)', group: 'Safety & permits', chainKey: 'hse_incident', body: () => <HseIncidentChainTab /> },
         { key: 'cyber', label: 'Cyber incidents (W26)', group: 'Safety & permits', chainKey: 'cyber_incident', body: () => <CyberIncidentChainTab /> },
         {
           key: 'audit',
