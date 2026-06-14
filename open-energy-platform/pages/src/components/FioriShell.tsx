@@ -80,7 +80,7 @@ const BASE_NAV: NavItem[] = [
   { path: '/lender-suite/workstation?tab=facilities',         label: 'Facility register',     icon: 'description',   section: 'Credit' },
   { path: '/lender-suite/workstation?tab=cp_clearances',      label: 'CP clearances',         icon: 'checklist',     section: 'Credit' },
   { path: '/lender-suite/workstation?tab=drawdown',           label: 'Drawdowns',             icon: 'payments',      section: 'Credit' },
-  { path: '/lender-suite/workstation?tab=covenant_cert',      label: 'Covenant certificates', icon: 'verified',      section: 'Monitoring' },
+  { path: '/ledger/covenant_certificate',                     label: 'Covenant certificates', icon: 'verified',      section: 'Monitoring' },
   { path: '/lender-suite/workstation?tab=dscr_monitoring',    label: 'DSCR monitoring',       icon: 'bar_chart',     section: 'Monitoring' },
   { path: '/lender-suite/workstation?tab=esap_monitoring_chain',label: 'ESAP monitoring',     icon: 'eco',           section: 'Monitoring' },
   { path: '/lender-suite/workstation?tab=loan_default',       label: 'Default & enforcement', icon: 'gavel',         section: 'Default Management' },
