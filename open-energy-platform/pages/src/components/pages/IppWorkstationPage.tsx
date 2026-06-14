@@ -65,17 +65,13 @@ const IPP_REPORTS: ReportConfig[] = [
 // Lazy-loaded tab modules — each loads only when the tab is first activated.
 const BondRegistryTab = React.lazy(() => import('../ipp/BondRegistryTab').then(m => ({ default: m.BondRegistryTab })));
 const PlannedOutageChainTab = React.lazy(() => import('../grid/PlannedOutageChainTab').then(m => ({ default: m.PlannedOutageChainTab })));
-const ProcurementChainTab = React.lazy(() => import('../ipp/ProcurementChainTab').then(m => ({ default: m.ProcurementChainTab })));
-const CodChainTab = React.lazy(() => import('../ipp/CodChainTab').then(m => ({ default: m.CodChainTab })));
 const DfrChainTab = React.lazy(() => import('../ipp/DfrChainTab').then(m => ({ default: m.DfrChainTab })));
 const PunchListChainTab = React.lazy(() => import('../ipp/PunchListChainTab').then(m => ({ default: m.PunchListChainTab })));
 const ItpChainTab = React.lazy(() => import('../ipp/ItpChainTab').then(m => ({ default: m.ItpChainTab })));
 const HandoverDossierChainTab = React.lazy(() => import('../ipp/HandoverDossierChainTab').then(m => ({ default: m.HandoverDossierChainTab })));
 const ProjectRiskChainTab = React.lazy(() => import('../ipp/ProjectRiskChainTab').then(m => ({ default: m.ProjectRiskChainTab })));
-const InsuranceClaimChainTab = React.lazy(() => import('../ipp/InsuranceClaimChainTab').then(m => ({ default: m.InsuranceClaimChainTab })));
 const HseIncidentChainTab = React.lazy(() => import('../hse/HseIncidentChainTab').then(m => ({ default: m.HseIncidentChainTab })));
 const CyberIncidentChainTab = React.lazy(() => import('../cyber/CyberIncidentChainTab').then(m => ({ default: m.CyberIncidentChainTab })));
-const EdCommitmentChainTab = React.lazy(() => import('../ed/EdCommitmentChainTab').then(m => ({ default: m.EdCommitmentChainTab })));
 const GcaChainTab = React.lazy(() => import('../gca/GcaChainTab').then(m => ({ default: m.GcaChainTab })));
 const IppScheduleChainTab = React.lazy(() => import('../ipp/IppScheduleChainTab').then(m => ({ default: m.IppScheduleChainTab })));
 const IppEvmChainTab = React.lazy(() => import('../ipp/IppEvmChainTab').then(m => ({ default: m.IppEvmChainTab })));
@@ -1386,7 +1382,6 @@ export function IppWorkstationPage() {
           ),
         },
         { key: 'insurance', label: 'Insurance', group: 'Finance', body: ({ onRefresh }) => <InsuranceTab onRefresh={onRefresh} /> },
-        { key: 'insurance_claims', label: 'Insurance claims', group: 'Finance', chainKey: 'insurance_claim', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><InsuranceClaimChainTab /></React.Suspense> },
         { key: 'bonds', label: 'Bonds', group: 'Finance', chainKey: 'ipp_performance_bonds', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><BondRegistryTab /></React.Suspense> },
         { key: 'progress-claims', label: 'Progress claims', group: 'Finance', chainKey: 'ipp_progress_claim', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppProgressClaimTab /></React.Suspense> },
         { key: 'cp-tracker', label: 'Conditions Precedent (W192)', group: 'Finance', chainKey: 'cp_tracker', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppCpTrackerTab /></React.Suspense> },
@@ -1396,8 +1391,6 @@ export function IppWorkstationPage() {
         { key: 'take-or-pay-claims', label: 'Take-or-pay claims', group: 'Finance', chainKey: 'curtailment_claim', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><TakeOrPayChainTab /></React.Suspense> },
         { key: 'milestone-variance', label: 'Milestone variance reports (W207)', group: 'Project controls', chainKey: 'milestone_variance_report', body: ({ onRefresh }) => <MilestoneVarianceTab onRefresh={onRefresh} /> },
         { key: 'subcontractors', label: 'Subcontractors', group: 'Construction', chainKey: 'ipp_subcontractor', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppSubcontractorTab /></React.Suspense> },
-        { key: 'procurement', label: 'Procurement / RFPs', group: 'Construction', chainKey: 'procurement_rfp', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><ProcurementChainTab /></React.Suspense> },
-        { key: 'cod', label: 'Construction / COD', group: 'Construction', chainKey: 'cod_chain', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><CodChainTab /></React.Suspense> },
         { key: 'dfr', label: 'Daily field report', group: 'Construction', chainKey: 'dfr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><DfrChainTab /></React.Suspense> },
         { key: 'site_diary', label: 'Site diary (W143)', group: 'Construction', chainKey: 'ipp_construction_diary', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppDiaryTab /></React.Suspense> },
         { key: 'punch_list', label: 'Punch list', group: 'Construction', chainKey: 'punch_list', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><PunchListChainTab /></React.Suspense> },
@@ -1408,7 +1401,6 @@ export function IppWorkstationPage() {
         { key: 'planned_outages', label: 'Planned outages', group: 'Safety & grid', chainKey: 'planned_outage', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><PlannedOutageChainTab /></React.Suspense> },
         { key: 'hse_chain', label: 'HSE incidents', group: 'Safety & grid', chainKey: 'hse_incident', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><HseIncidentChainTab /></React.Suspense> },
         { key: 'cyber_chain', label: 'Cyber incidents', group: 'Safety & grid', chainKey: 'cyber_incident', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><CyberIncidentChainTab /></React.Suspense> },
-        { key: 'ed_chain', label: 'ED commitments', group: 'Safety & grid', chainKey: 'ed_commitment', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><EdCommitmentChainTab /></React.Suspense> },
         { key: 'gca_chain', label: 'Grid connection', group: 'Safety & grid', chainKey: 'gca_connection', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><GcaChainTab /></React.Suspense> },
         {
           key: 'warranty_claims',

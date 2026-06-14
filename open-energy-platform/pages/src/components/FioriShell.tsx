@@ -67,11 +67,11 @@ const BASE_NAV: NavItem[] = [
   { path: '/ipp-lifecycle/workstation?tab=submittals',        label: 'Submittals',            icon: 'upload_file',   section: 'Document Control (IPP)' },
   { path: '/ipp-lifecycle/workstation?tab=rfis',              label: 'RFIs',                  icon: 'help',          section: 'Document Control (IPP)' },
   { path: '/ipp-lifecycle/workstation?tab=change-orders',     label: 'Change orders',         icon: 'change_circle', section: 'Document Control (IPP)' },
-  { path: '/ipp-lifecycle/workstation?tab=cod',               label: 'COD milestone',         icon: 'bolt',          section: 'Construction (IPP)' },
+  { path: '/ledger/cod_chain',                                label: 'COD milestone',         icon: 'bolt',          section: 'Construction (IPP)' },
   { path: '/ipp-lifecycle/workstation?tab=hse_chain',         label: 'HSE incidents',         icon: 'health_and_safety', section: 'Construction (IPP)' },
   { path: '/ipp-lifecycle/workstation?tab=dscr-reports',      label: 'DSCR reports',          icon: 'bar_chart',     section: 'Finance (IPP)' },
   { path: '/ipp-lifecycle/workstation?tab=bonds',             label: 'Bonds & insurance',     icon: 'shield',        section: 'Finance (IPP)' },
-  { path: '/ipp-lifecycle/workstation?tab=procurement',       label: 'REIPPPP procurement',   icon: 'shopping_cart', section: 'Regulatory (IPP)' },
+  { path: '/ledger/procurement_rfp',                          label: 'REIPPPP procurement',   icon: 'shopping_cart', section: 'Regulatory (IPP)' },
   { path: '/ipp-lifecycle/workstation?tab=gca_chain',         label: 'Grid connection',       icon: 'electrical_services', section: 'Regulatory (IPP)' },
 
   // ── Lender workstation deep-links ─────────────────────────────────────────
