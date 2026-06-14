@@ -122,12 +122,12 @@ const BASE_NAV: NavItem[] = [
   { path: '/regulator-suite/workstation',                      label: 'Regulator workstation',icon: 'gavel',         section: 'Inbox (Regulator)' },
   { path: '/regulator-suite/workstation?tab=inbox',            label: 'Regulatory inbox',     icon: 'inbox',         section: 'Inbox (Regulator)' },
   { path: '/regulator-suite/workstation?tab=surveillance',     label: 'Surveillance',         icon: 'monitor_heart', section: 'Inbox (Regulator)' },
-  { path: '/regulator-suite/workstation?tab=licence_applications',label:'Licence applications',icon: 'approval',     section: 'Licensing' },
-  { path: '/regulator-suite/workstation?tab=licence_renewals', label: 'Licence renewals',     icon: 'autorenew',     section: 'Licensing' },
-  { path: '/regulator-suite/workstation?tab=compliance_inspections',label:'Inspections',      icon: 'fact_check',    section: 'Enforcement' },
+  { path: '/ledger/licence_application',                       label:'Licence applications',icon: 'approval',     section: 'Licensing' },
+  { path: '/ledger/licence_renewal',                           label: 'Licence renewals',     icon: 'autorenew',     section: 'Licensing' },
+  { path: '/ledger/compliance_inspection',                     label:'Inspections',      icon: 'fact_check',    section: 'Enforcement' },
   { path: '/regulator-suite/workstation?tab=enforcement',      label: 'Enforcement actions',  icon: 'security',      section: 'Enforcement' },
-  { path: '/regulator-suite/workstation?tab=tariff_determinations',label:'Tariff determinations',icon:'price_change', section: 'Economics' },
-  { path: '/regulator-suite/workstation?tab=levy_assessments', label: 'Levy assessments',     icon: 'receipt',       section: 'Economics' },
+  { path: '/ledger/tariff_determination',                      label:'Tariff determinations',icon:'price_change', section: 'Economics' },
+  { path: '/ledger/levy_assessment',                           label: 'Levy assessments',     icon: 'receipt',       section: 'Economics' },
 
   // ── Admin workstation deep-links ──────────────────────────────────────────
   { path: '/admin-platform/workstation',                       label: 'Platform admin',       icon: 'settings',      section: 'Platform' },

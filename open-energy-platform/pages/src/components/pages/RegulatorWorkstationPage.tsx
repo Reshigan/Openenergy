@@ -8,14 +8,6 @@ import { NoticesTab } from '../regulator/NoticesTab';
 import { EnforcementActionChainTab } from '../regulator/EnforcementActionChainTab';
 import { EnforcementActionS35ChainTab } from '../regulator/EnforcementActionS35ChainTab';
 import { EsgDisclosureChainTab } from '../carbon/EsgDisclosureChainTab';
-import { DispositionChainTab } from '../disposition/DispositionChainTab';
-import { LicenceRenewalChainTab } from '../licence-renewal/LicenceRenewalChainTab';
-import { ComplianceInspectionChainTab } from '../compliance-inspection/ComplianceInspectionChainTab';
-import { TariffDeterminationChainTab } from '../tariff-determination/TariffDeterminationChainTab';
-import { LicenceApplicationChainTab } from '../licence-application/LicenceApplicationChainTab';
-import { SsegRegistrationChainTab } from '../sseg-registration/SsegRegistrationChainTab';
-import { ComplaintResolutionChainTab } from '../complaint-resolution/ComplaintResolutionChainTab';
-import { LevyAssessmentChainTab } from '../levy-assessment/LevyAssessmentChainTab';
 import { RegulatorExportPackTab } from '../regulatorExport/RegulatorExportPackTab';
 import { ReconciliationAttestationTab } from '../reconciliation/ReconciliationAttestationTab';
 import { ControlEnvironmentAuditTab } from '../controlEnvironment/ControlEnvironmentAuditTab';
@@ -409,54 +401,6 @@ export function RegulatorWorkstationPage() {
         { key: 'market_conduct_exams', label: 'Market conduct exams (W220)',
           chainKey: 'market_conduct_exam',
           body: ({ onRefresh }) => <MarketConductExamTab onRefresh={onRefresh} />,
-        },
-        {
-          key: 'licence_applications',
-          label: 'Licence applications (W49)',
-          chainKey: 'licence_application',
-          body: () => <LicenceApplicationChainTab />,
-        },
-        {
-          key: 'licence_renewals',
-          label: 'Licence renewals (W33)',
-          chainKey: 'licence_renewal',
-          body: () => <LicenceRenewalChainTab />,
-        },
-        {
-          key: 'complaint_resolution',
-          label: 'Complaint resolution (W66)',
-          chainKey: 'complaint_resolution',
-          body: () => <ComplaintResolutionChainTab />,
-        },
-        {
-          key: 'compliance_inspections',
-          label: 'Compliance inspections (W40)',
-          chainKey: 'compliance_inspection',
-          body: () => <ComplianceInspectionChainTab />,
-        },
-        {
-          key: 'dispositions',
-          label: 'Dispositions (W31)',
-          chainKey: 'disposition',
-          body: () => <DispositionChainTab />,
-        },
-        {
-          key: 'levy_assessments',
-          label: 'Levy assessment (W74)',
-          chainKey: 'levy_assessment',
-          body: () => <LevyAssessmentChainTab />,
-        },
-        {
-          key: 'sseg_registrations',
-          label: 'SSEG registrations (W57)',
-          chainKey: 'sseg_registration',
-          body: () => <SsegRegistrationChainTab />,
-        },
-        {
-          key: 'tariff_determinations',
-          label: 'Tariff determination (W43)',
-          chainKey: 'tariff_determination',
-          body: () => <TariffDeterminationChainTab />,
         },
         { key: 'reports', label: 'Reports & Exports',
           body: () => (
