@@ -167,11 +167,11 @@ const BASE_NAV: NavItem[] = [
   { path: '/epc/workstation?tab=rfis',                         label: 'RFIs',                 icon: 'help',          section: 'Document Control (EPC)' },
   { path: '/epc/workstation?tab=change-orders',                label: 'Change orders',        icon: 'change_circle', section: 'Document Control (EPC)' },
   { path: '/epc/workstation?tab=technical-queries',            label: 'Technical queries',    icon: 'quiz',          section: 'Document Control (EPC)' },
-  { path: '/epc/workstation?tab=itps',                         label: 'ITPs',                 icon: 'checklist',     section: 'Quality (EPC)' },
-  { path: '/epc/workstation?tab=ncrs',                         label: 'NCRs',                 icon: 'report',        section: 'Quality (EPC)' },
-  { path: '/epc/workstation?tab=punch-list',                   label: 'Punch list',           icon: 'playlist_add_check', section: 'Quality (EPC)' },
-  { path: '/epc/workstation?tab=method-statements',            label: 'Method statements',    icon: 'article',       section: 'Quality (EPC)' },
-  { path: '/epc/workstation?tab=site-diary',                   label: 'Site diary',           icon: 'book',          section: 'Site (EPC)' },
+  { path: '/ledger/itp',                                       label: 'ITPs',                 icon: 'checklist',     section: 'Quality (EPC)' },
+  { path: '/ledger/ncr',                                       label: 'NCRs',                 icon: 'report',        section: 'Quality (EPC)' },
+  { path: '/ledger/punch_list',                                label: 'Punch list',           icon: 'playlist_add_check', section: 'Quality (EPC)' },
+  { path: '/ledger/ipp_method_statement',                      label: 'Method statements',    icon: 'article',       section: 'Quality (EPC)' },
+  { path: '/ledger/ipp_construction_diary',                    label: 'Site diary',           icon: 'book',          section: 'Site (EPC)' },
   { path: '/ledger/hse_incident',                              label: 'HSE incidents',        icon: 'health_and_safety', section: 'Site (EPC)' },
 
   // ── Shared Ops / Sustainability / Finance / Insights ─────────────────────

@@ -65,8 +65,6 @@ const IPP_REPORTS: ReportConfig[] = [
 // Lazy-loaded tab modules — each loads only when the tab is first activated.
 const BondRegistryTab = React.lazy(() => import('../ipp/BondRegistryTab').then(m => ({ default: m.BondRegistryTab })));
 const DfrChainTab = React.lazy(() => import('../ipp/DfrChainTab').then(m => ({ default: m.DfrChainTab })));
-const PunchListChainTab = React.lazy(() => import('../ipp/PunchListChainTab').then(m => ({ default: m.PunchListChainTab })));
-const ItpChainTab = React.lazy(() => import('../ipp/ItpChainTab').then(m => ({ default: m.ItpChainTab })));
 const HandoverDossierChainTab = React.lazy(() => import('../ipp/HandoverDossierChainTab').then(m => ({ default: m.HandoverDossierChainTab })));
 const ProjectRiskChainTab = React.lazy(() => import('../ipp/ProjectRiskChainTab').then(m => ({ default: m.ProjectRiskChainTab })));
 const CyberIncidentChainTab = React.lazy(() => import('../cyber/CyberIncidentChainTab').then(m => ({ default: m.CyberIncidentChainTab })));
@@ -85,14 +83,11 @@ const IppIssuesTab = React.lazy(() => import('../ippIssues/IppIssuesTab'));
 const IppRiskTab = React.lazy(() => import('../ippRisk/IppRiskTab'));
 const IppStakeholderTab = React.lazy(() => import('../ippStakeholder/IppStakeholderTab'));
 const IppLessonsLearnedTab = React.lazy(() => import('../ippLessonsLearned/IppLessonsLearnedTab'));
-const IppNcrTab = React.lazy(() => import('../ippNcr/IppNcrTab'));
-const IppMethodStatementTab = React.lazy(() => import('../ippMethodStatement/IppMethodStatementTab'));
 const IppEnvMonitoringTab = React.lazy(() => import('../ippEnvMonitoring/IppEnvMonitoringTab'));
 const IppMirTab = React.lazy(() => import('../ippMir/IppMirTab'));
 const IppSubcontractorTab = React.lazy(() => import('../ippSubcontractor/IppSubcontractorTab'));
 const IppProgressClaimTab = React.lazy(() => import('../ippProgressClaim/IppProgressClaimTab'));
 const IppTqTab = React.lazy(() => import('../ippTq/IppTqTab'));
-const IppDiaryTab = React.lazy(() => import('../ipp/IppDiaryTab').then(m => ({ default: m.IppDiaryTab })));
 const IppSiteInstructionTab = React.lazy(() => import('../ipp/IppSiteInstructionTab').then(m => ({ default: m.IppSiteInstructionTab })));
 const IppDlpDefectTab = React.lazy(() => import('../ipp/IppDlpDefectTab').then(m => ({ default: m.IppDlpDefectTab })));
 const IppVariationOrderTab = React.lazy(() => import('../ipp/IppVariationOrderTab').then(m => ({ default: m.IppVariationOrderTab })));
@@ -1294,8 +1289,6 @@ export function IppWorkstationPage() {
         { key: 'risk-register', label: 'Risk register', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppRiskTab /></React.Suspense> },
         { key: 'stakeholder-register', label: 'Stakeholder register', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppStakeholderTab /></React.Suspense> },
         { key: 'lessons-learned', label: 'Lessons learned', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppLessonsLearnedTab /></React.Suspense> },
-        { key: 'ncr', label: 'Non-conformance (NCR)', group: 'Risk & quality', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppNcrTab /></React.Suspense> },
-        { key: 'itp', label: 'ITP / Quality plan', group: 'Risk & quality', chainKey: 'itp', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><ItpChainTab /></React.Suspense> },
         { key: 'project_risk', label: 'Risk analysis (EMV/SRA)', group: 'Risk & quality', chainKey: 'project_risk', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><ProjectRiskChainTab /></React.Suspense> },
         { key: 'reports', label: 'Reports & Exports', group: 'Risk & quality',
           body: () => (
@@ -1385,11 +1378,8 @@ export function IppWorkstationPage() {
         { key: 'milestone-variance', label: 'Milestone variance reports (W207)', group: 'Project controls', chainKey: 'milestone_variance_report', body: ({ onRefresh }) => <MilestoneVarianceTab onRefresh={onRefresh} /> },
         { key: 'subcontractors', label: 'Subcontractors', group: 'Construction', chainKey: 'ipp_subcontractor', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppSubcontractorTab /></React.Suspense> },
         { key: 'dfr', label: 'Daily field report', group: 'Construction', chainKey: 'dfr', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><DfrChainTab /></React.Suspense> },
-        { key: 'site_diary', label: 'Site diary (W143)', group: 'Construction', chainKey: 'ipp_construction_diary', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppDiaryTab /></React.Suspense> },
-        { key: 'punch_list', label: 'Punch list', group: 'Construction', chainKey: 'punch_list', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><PunchListChainTab /></React.Suspense> },
         { key: 'mir', label: 'Material inspections', group: 'Construction', chainKey: 'ipp_mir', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppMirTab /></React.Suspense> },
         { key: 'handover_dossier', label: 'Handover dossier', group: 'Construction', chainKey: 'handover_dossier', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><HandoverDossierChainTab /></React.Suspense> },
-        { key: 'method-statements', label: 'Method statements', group: 'Safety & grid', chainKey: 'ipp_method_statement', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppMethodStatementTab /></React.Suspense> },
         { key: 'env-monitoring', label: 'Environmental monitoring', group: 'Safety & grid', chainKey: 'ipp_env_monitoring', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEnvMonitoringTab /></React.Suspense> },
         { key: 'cyber_chain', label: 'Cyber incidents', group: 'Safety & grid', chainKey: 'cyber_incident', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><CyberIncidentChainTab /></React.Suspense> },
         {

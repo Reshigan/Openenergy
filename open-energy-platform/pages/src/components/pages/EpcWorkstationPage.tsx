@@ -3,8 +3,6 @@ import { WorkstationShell, ListingTable, Pill, ActionModal } from '../launch/Wor
 import { AuditPanel } from '../launch/AuditPanel';
 import { SubmittalRfiChainTab } from '../ipp/SubmittalRfiChainTab';
 import { ProjectChangeOrderChainTab } from '../ipp/ProjectChangeOrderChainTab';
-import { ItpChainTab } from '../ipp/ItpChainTab';
-import { PunchListChainTab } from '../ipp/PunchListChainTab';
 import type { WizardSpec } from '../launch/WizardModal';
 import type { TourDef } from '../launch/ProductTour';
 
@@ -261,12 +259,6 @@ export function EpcWorkstationPage() {
           ),
         },
         {
-          key: 'itps',
-          label: 'Inspection test plans',
-          group: 'Quality management',
-          body: () => <ItpChainTab />,
-        },
-        {
           key: 'ncrs',
           label: 'Non-conformance reports',
           group: 'Quality management',
@@ -284,12 +276,6 @@ export function EpcWorkstationPage() {
               ]}
             />
           ),
-        },
-        {
-          key: 'punch-list',
-          label: 'Punch list',
-          group: 'Quality management',
-          body: () => <PunchListChainTab />,
         },
         {
           key: 'method-statements',
