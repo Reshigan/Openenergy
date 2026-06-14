@@ -111,11 +111,11 @@ const BASE_NAV: NavItem[] = [
   // ── Carbon workstation deep-links ─────────────────────────────────────────
   { path: '/carbon-registry/workstation',                      label: 'Carbon workstation',   icon: 'eco',           section: 'Registry' },
   { path: '/carbon-registry/workstation?tab=mrv_chain',        label: 'MRV verification',     icon: 'verified',      section: 'Registry' },
-  { path: '/carbon-registry/workstation?tab=registration_chain',label: 'Project registration',icon: 'app_registration', section: 'Registry' },
+  { path: '/ledger/carbon_registration',                       label: 'Project registration',icon: 'app_registration', section: 'Registry' },
   { path: '/carbon-registry/workstation?tab=retirement_chain', label: 'Credit retirements',   icon: 'delete_forever',section: 'Transactions (Carbon)' },
   { path: '/carbon-registry/workstation?tab=article6',         label: 'Article 6 ITMOs',      icon: 'swap_horiz',    section: 'Transactions (Carbon)' },
-  { path: '/carbon-registry/workstation?tab=erpa_chain',       label: 'ERPA forward delivery',icon: 'schedule',      section: 'Transactions (Carbon)' },
-  { path: '/carbon-registry/workstation?tab=reversal_chain',   label: 'Carbon reversals',     icon: 'restart_alt',   section: 'Integrity (Carbon)' },
+  { path: '/ledger/carbon_erpa',                               label: 'ERPA forward delivery',icon: 'schedule',      section: 'Transactions (Carbon)' },
+  { path: '/ledger/carbon_reversal',                           label: 'Carbon reversals',     icon: 'restart_alt',   section: 'Integrity (Carbon)' },
   { path: '/carbon-registry/workstation?tab=carbon_tax_returns',label:'Carbon tax returns',   icon: 'receipt',       section: 'Integrity (Carbon)' },
 
   // ── Regulator workstation deep-links ──────────────────────────────────────

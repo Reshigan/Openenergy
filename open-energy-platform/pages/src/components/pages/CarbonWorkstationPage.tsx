@@ -4,14 +4,8 @@ import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
 import { Article6Tab } from '../carbon/Article6Tab';
-import { RegistrationChainTab } from '../carbon/RegistrationChainTab';
 import { MrvChainTab } from '../carbon/MrvChainTab';
 import { RetirementChainTab } from '../carbon/RetirementChainTab';
-import { CarbonReversalChainTab } from '../carbon/CarbonReversalChainTab';
-import { CarbonOffsetClaimChainTab } from '../carbon/CarbonOffsetClaimChainTab';
-import { CreditingRenewalChainTab } from '../carbon/CreditingRenewalChainTab';
-import { CarbonErpaChainTab } from '../carbon/CarbonErpaChainTab';
-import { PoaCpaInclusionChainTab } from '../carbon/PoaCpaInclusionChainTab';
 import { CarbonIssuanceChainTab } from '../carbon/CarbonIssuanceChainTab';
 import { CcpAssessmentChainTab } from '../carbon/CcpAssessmentChainTab';
 import { EsgDisclosureChainTab } from '../carbon/EsgDisclosureChainTab';
@@ -458,13 +452,6 @@ export function CarbonWorkstationPage() {
           body: () => <Article6Tab />,
         },
         {
-          key: 'registration_chain',
-          label: 'Project registration',
-          group: 'Project pipeline',
-          chainKey: 'carbon_registration',
-          body: () => <RegistrationChainTab />,
-        },
-        {
           key: 'mrv_chain',
           label: 'Verification chain',
           group: 'MRV & verification',
@@ -477,41 +464,6 @@ export function CarbonWorkstationPage() {
           group: 'Retirement & offset',
           chainKey: 'carbon_retirement',
           body: () => <RetirementChainTab />,
-        },
-        {
-          key: 'reversal_chain',
-          label: 'Reversals',
-          group: 'Retirement & offset',
-          chainKey: 'carbon_reversal',
-          body: () => <CarbonReversalChainTab />,
-        },
-        {
-          key: 'offset_claim_chain',
-          label: 'Tax offset claims',
-          group: 'Retirement & offset',
-          chainKey: 'carbon_offset_claim',
-          body: () => <CarbonOffsetClaimChainTab />,
-        },
-        {
-          key: 'crediting_renewal_chain',
-          label: 'Crediting renewal',
-          group: 'Project pipeline',
-          chainKey: 'crediting_period_renewal',
-          body: () => <CreditingRenewalChainTab />,
-        },
-        {
-          key: 'erpa_chain',
-          label: 'Forward ERPA delivery',
-          group: 'Trading & markets',
-          chainKey: 'carbon_erpa',
-          body: () => <CarbonErpaChainTab />,
-        },
-        {
-          key: 'poa_cpa_inclusion_chain',
-          label: 'PoA / CPA inclusion',
-          group: 'Project pipeline',
-          chainKey: 'poa_cpa_inclusion',
-          body: () => <PoaCpaInclusionChainTab />,
         },
         {
           key: 'carbon_issuance_chain',
