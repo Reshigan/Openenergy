@@ -33,6 +33,14 @@ export interface ChainActionHint {
   cascadeHint: string;       // Law 3 preview, e.g. 'Notifies borrower (IPP) and arms 14d cure window'
   tone?: 'primary' | 'ghost' | 'oxide';
   fields?: ActionFieldSpec[];
+  // HTTP verb for the transition. Default POST. PUT only for single-endpoint
+  // chains that mutate via `PUT /:id/action` (verb-in-body, see `body`).
+  method?: 'POST' | 'PUT';
+  // Static payload merged into the request body for chains that carry the
+  // transition verb in the BODY (field usually 'action') rather than the path —
+  // e.g. { action: 'grant_ael' }. Merged AFTER user-supplied form values so the
+  // fixed verb always wins. Per-verb (path-segment) chains leave this unset.
+  body?: Record<string, string | number | boolean>;
 }
 
 export interface ChainDescriptor {

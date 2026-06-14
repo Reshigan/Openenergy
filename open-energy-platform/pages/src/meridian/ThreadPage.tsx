@@ -16,7 +16,8 @@ interface ThreadData {
   case: { id: string; ref: string; title: string; status: string; deadline_at: string | null;
           quantum_zar: number | null; counterparty: string | null; raw: Record<string, unknown> };
   events: { event_type?: string; created_at?: string; actor_role?: string; note?: string }[];
-  actions: { action: string; label: string; path: string; cascadeHint: string; tone?: string; fields?: LedgerActionField[] }[];
+  actions: { action: string; label: string; path: string; cascadeHint: string; tone?: string; fields?: LedgerActionField[];
+             method?: string; body?: Record<string, unknown> }[];
   viewer_role: string;
 }
 
@@ -46,7 +47,11 @@ export default function ThreadPage() {
     setBusy(a.action);
     // api has baseURL '/api', so strip the prefix the registry paths carry.
     try {
-      await api.post(a.path.replace('/api', '').replace(':id', id), body);
+      const url = a.path.replace('/api', '').replace(':id', id);
+      // Verb-in-body chains carry their fixed transition verb in a.body; merge it
+      // AFTER user values so it always wins. PUT only when the descriptor says so.
+      const payload = { ...body, ...(a.body ?? {}) };
+      await (a.method === 'PUT' ? api.put(url, payload) : api.post(url, payload));
       setActErr(null); // success clears any previous action error
       await load();
     } catch (e: any) {
@@ -147,7 +152,9 @@ export default function ThreadPage() {
               ariaLabel={formAction.label}
               cascadeHint={formAction.cascadeHint}
               onSubmit={async (values) => {
-                await api.post(formAction.path.replace('/api', '').replace(':id', id), values);
+                const url = formAction.path.replace('/api', '').replace(':id', id);
+                const payload = { ...values, ...(formAction.body ?? {}) };
+                await (formAction.method === 'PUT' ? api.put(url, payload) : api.post(url, payload));
                 setFormAction(null);
                 await load();
               }}
