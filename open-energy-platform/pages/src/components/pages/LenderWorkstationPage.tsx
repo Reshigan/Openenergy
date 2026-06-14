@@ -6,7 +6,6 @@ import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstatio
 import { DscrMonitoringChainTab } from '../lender/DscrMonitoringChainTab';
 import { DunningTab } from '../lender/DunningTab';
 import { LoanRestructureChainTab } from '../lender/LoanRestructureChainTab';
-import { LoanTransferChainTab } from '../lender/LoanTransferChainTab';
 import { ReserveAccountChainTab } from '../lender/ReserveAccountChainTab';
 import { SecurityPerfectionChainTab } from '../lender/SecurityPerfectionChainTab';
 import { SllKpiChainTab } from '../lender/SllKpiChainTab';
@@ -785,7 +784,6 @@ export function LenderWorkstationPage() {
         { key: 'dscr_monitoring', label: 'DSCR monitoring', group: 'Monitoring', chainKey: 'dscr_monitoring', body: () => <DscrMonitoringChainTab /> },
         { key: 'sll_kpi', label: 'SLL KPI & margin ratchet', group: 'Monitoring', chainKey: 'slb_kpi_ratchet', body: () => <SllKpiChainTab /> },
         { key: 'construction_cost_report', label: 'IE cost-to-complete (W231)', group: 'Monitoring', chainKey: 'construction_cost_report', body: ({ onRefresh }) => <ConstructionCostReportTab onRefresh={onRefresh} /> },
-        { key: 'loan_transfer', label: 'Loan transfer / secondary', group: 'Portfolio', chainKey: 'loan_transfer', body: () => <LoanTransferChainTab /> },
         { key: 'reserve_account', label: 'Reserve accounts (DSRA/MRA)', group: 'Portfolio', chainKey: 'reserve_account', body: () => <ReserveAccountChainTab /> },
         { key: 'security_perfection', label: 'Security perfection', group: 'Portfolio', chainKey: 'security_perfection', body: () => <SecurityPerfectionChainTab /> },
         { key: 'loan_restructure', label: 'Loan restructure & A&E', group: 'Portfolio', chainKey: 'loan_restructure', body: () => <LoanRestructureChainTab /> },

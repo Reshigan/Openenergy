@@ -4,7 +4,6 @@ import { platformTabs } from '../platformTabs';
 import { lenderCompletionTabs } from '../roleCompletionTabs';
 import { LenderInsights } from '../widgets/LenderInsights';
 import { DunningTab } from '../lender/DunningTab';
-import { LoanTransferChainTab } from '../lender/LoanTransferChainTab';
 import { SecurityPerfectionChainTab } from '../lender/SecurityPerfectionChainTab';
 import { ReserveAccountChainTab } from '../lender/ReserveAccountChainTab';
 import { DscrMonitoringChainTab } from '../lender/DscrMonitoringChainTab';
@@ -12,14 +11,6 @@ import { SllKpiChainTab } from '../lender/SllKpiChainTab';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
-    {
-      key: 'loan-transfers',
-      label: 'Loan transfers',
-      endpoint: '',
-      description: 'Secondary loan transfer / participation chain · LMA + Banks Act large-exposure + SARB Exchange Control + FIC. A lender of record sells down part of a facility — KYC/sanctions screening, obligor consent, SARB review (non-resident), certificate execution, settlement, register update. INVERTED tier SLA; approving a non-resident transfer crosses SARB at every tier, screening failure always crosses (FIC), completing a major/systemic transfer crosses Banks Act large-exposure.',
-      columns: [],
-      customContent: <LoanTransferChainTab />,
-    },
     {
       key: 'security-perfection',
       label: 'Security perfection',
