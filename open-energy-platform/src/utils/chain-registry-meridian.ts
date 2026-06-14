@@ -2486,7 +2486,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
   // absorbed by the per-entry statusCol/deadlineCol fields. No human ref
   // column; trading_day identifies the case.
   {
-    key: 'dispatch_nomination', wave: 13, table: 'oe_dispatch_nominations',
+    key: 'oe_dispatch_nominations', wave: 13, table: 'oe_dispatch_nominations',
     title: 'Dispatch nomination', refCol: 'id', titleCol: 'trading_day',
     quantumCol: 'charge_zar', statusCol: 'nomination_status',
     deadlineCol: 'next_sla_due_at',
@@ -4564,7 +4564,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
   // Non-standard columns: `commissioning_status` + `commissioning_due_at`,
   // added by per-column ALTERs in mig 114.
   {
-    key: 'site_commissioning', wave: 12, table: 'om_sites',
+    key: 'commissioning', wave: 12, table: 'om_sites',
     title: 'Site commissioning', refCol: 'id', titleCol: 'name',
     quantumCol: null, statusCol: 'commissioning_status',
     deadlineCol: 'commissioning_due_at',
@@ -4619,7 +4619,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
   // weighted tiers). Non-standard columns: plain `status` + `sla_deadline`
   // (mig 232). No human ref column; asset_label identifies the prediction.
   {
-    key: 'asset_prognostic', wave: 71, table: 'oe_asset_prognostics',
+    key: 'asset_prognostics', wave: 71, table: 'oe_asset_prognostics',
     title: 'Asset prognostic', refCol: 'id', titleCol: 'asset_label',
     quantumCol: 'revenue_at_risk_zar', statusCol: 'status',
     deadlineCol: 'sla_deadline',
