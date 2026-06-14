@@ -4,16 +4,12 @@ import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
 import { DispatchNominationTab } from '../grid/DispatchNominationTab';
-import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
 import { RezCapacityChainTab } from '../grid/RezCapacityChainTab';
 import { WheelingChargesTab } from '../grid/WheelingChargesTab';
 import { ImbalanceSettlementChainTab } from '../grid/ImbalanceSettlementChainTab';
 import { TransmissionOutageChainTab } from '../grid/TransmissionOutageChainTab';
-import { GridCodeComplianceChainTab } from '../grid-code-compliance/GridCodeComplianceChainTab';
-import { ConnectionEnergizationChainTab } from '../connection-energization/ConnectionEnergizationChainTab';
 import { LoadCurtailmentChainTab } from '../load-curtailment/LoadCurtailmentChainTab';
 import { GridCapacityChainTab } from '../grid-capacity/GridCapacityChainTab';
-import { GcaChainTab } from '../gca/GcaChainTab';
 import { BlackStartChainTab } from '../black-start/BlackStartChainTab';
 import { ScadaConnectorTab } from '../scadaConnector/ScadaConnectorTab';
 import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
@@ -516,7 +512,6 @@ export function GridOpsWorkstationPage() {
         { key: 'rez_capacity', label: 'REZ capacity allocation', group: 'Connections', chainKey: 'rez_capacity', body: () => <RezCapacityChainTab /> },
         { key: 'transmission-outage', label: 'Transmission outage coordination', group: 'Connections', chainKey: 'transmission_outage', body: () => <TransmissionOutageChainTab /> },
         { key: 'outage', label: 'Outage responses', group: 'Connections', body: ({ onRefresh }) => <OutageTab onRefresh={onRefresh} /> },
-        { key: 'planned_outage', label: 'Planned outages', group: 'Compliance', chainKey: 'planned_outage', body: () => <PlannedOutageChainTab /> },
         { key: 'scada-connectors', label: 'SCADA data', group: 'Compliance', body: () => <ScadaConnectorTab /> },
         { key: 'mqtt-opcua-connectors', label: 'MQTT/OPC-UA connectors', group: 'Compliance', body: () => <MqttOpcuaConnectorTab /> },
         { key: 'smart-meter-assets', label: 'Smart meter assets (W199)', group: 'Compliance', chainKey: 'smart_meter_asset', body: ({ onRefresh }) => <SmartMeterAssetsTab onRefresh={onRefresh} /> },
@@ -536,22 +531,7 @@ export function GridOpsWorkstationPage() {
           chainKey: 'grid_capacity_allocation',
           body: () => <GridCapacityChainTab />,
         },
-        { key: 'gca_chain', label: 'Grid connection agreements (W28)', group: 'Connections', chainKey: 'gca_connection', body: () => <GcaChainTab /> },
         { key: 'black_start', label: 'Black start activation', group: 'Operations', chainKey: 'black_start', body: () => <BlackStartChainTab /> },
-        {
-          key: 'grid_code_compliance',
-          label: 'Grid code compliance (W67)',
-          group: 'Compliance',
-          chainKey: 'grid_code_compliance',
-          body: () => <GridCodeComplianceChainTab />,
-        },
-        {
-          key: 'connection_energization',
-          label: 'Connection energization (W75)',
-          group: 'Connections',
-          chainKey: 'connection_energization',
-          body: () => <ConnectionEnergizationChainTab />,
-        },
         { key: 'reports', label: 'Reports & Exports', group: 'Compliance',
           body: () => (
             <div className="space-y-8">

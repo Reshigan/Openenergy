@@ -5,13 +5,9 @@ import { gridCompletionTabs } from '../roleCompletionTabs';
 import { GridInsights } from '../widgets/GridInsights';
 import { WheelingChargesTab } from '../grid/WheelingChargesTab';
 import { DispatchNominationTab } from '../grid/DispatchNominationTab';
-import { PlannedOutageChainTab } from '../grid/PlannedOutageChainTab';
-import { GcaChainTab } from '../gca/GcaChainTab';
 import { LoadCurtailmentChainTab } from '../load-curtailment/LoadCurtailmentChainTab';
 import { ReserveActivationChainTab } from '../reserve-activation/ReserveActivationChainTab';
 import { GridCapacityChainTab } from '../grid-capacity/GridCapacityChainTab';
-import { GridCodeComplianceChainTab } from '../grid-code-compliance/GridCodeComplianceChainTab';
-import { ConnectionEnergizationChainTab } from '../connection-energization/ConnectionEnergizationChainTab';
 import { BlackStartChainTab } from '../black-start/BlackStartChainTab';
 import { RezCapacityChainTab } from '../grid/RezCapacityChainTab';
 
@@ -45,14 +41,6 @@ export function GridOperatorSuitePage() {
       customContent: <DispatchNominationTab />,
     },
     {
-      key: 'planned_outages',
-      label: 'Planned outages',
-      endpoint: '',
-      description: 'NERSA Grid Code §C-1.3 — IPP outage submissions, severity-tiered SLAs, commence/restore/close audit chain.',
-      columns: [],
-      customContent: <PlannedOutageChainTab />,
-    },
-    {
       key: 'capacity_allocation',
       label: 'Capacity allocation',
       endpoint: '',
@@ -67,22 +55,6 @@ export function GridOperatorSuitePage() {
       description: 'NTCSA 2024 Grid Capacity Allocation Rules + DMRE IRP-2023 + CSIR REZ identification + REIPPPP multi-criteria scoring — competitive multi-applicant auctions inside a constrained Renewable Energy Development Zone. Application → completeness → shortlist → multi-criteria evaluation (price 50% + BBBEE 20% + ED 15% + local-content 15%) → award proposal → capacity awarded → financial close gate → construction → COD. INVERTED tier SLA (mega capacity = longer window), FLOOR-AT-MEGA for priority / constraint-relief / JET-program zones, REZ headroom + competition ratio + DMRE 40% local-content gate live battery. SIGNATURE: award_capacity + forfeit_allocation cross regulator EVERY tier (security-of-supply hard line).',
       columns: [],
       customContent: <RezCapacityChainTab />,
-    },
-    {
-      key: 'gca_chain',
-      label: 'UNGCA chain',
-      endpoint: '',
-      description: 'NERSA Grid Code C-1 — IPP connection applications, studies, cost estimates, UNGCA execution, energisation. Inverted tier SLAs.',
-      columns: [],
-      customContent: <GcaChainTab />,
-    },
-    {
-      key: 'connection_energization',
-      label: 'Connection energization',
-      endpoint: '',
-      description: 'SA Grid Code / NTCSA commissioning hold-point gate — the physical go-live of a new generator after capacity allocation (W58) and the GCA (W28). connection ready → programme review → approved → pre-energization inspection → energization authorized → cold commissioning → synchronized → trial operation → compliance testing → commercial operation, with suspend-on-failed-hold-point (→ resume) and withdraw-before-COD branches. INVERTED tier SLA (larger connection = longer window), split-write facility (IPP) ↔ operator (SO). Issuing the COD crosses to the regulator for every tier; energization authorization, suspension + SLA breaches cross for transmission + bulk.',
-      columns: [],
-      customContent: <ConnectionEnergizationChainTab />,
     },
     {
       key: 'black_start',
@@ -107,14 +79,6 @@ export function GridOperatorSuitePage() {
       description: 'NERSA Grid Code + System Operation Code — ancillary-services reserve activation & settlement. The SO instructs a contracted reserve provider during a frequency / contingency event; the provider responds; the SO measures delivered response and settles availability + utilisation, or a non-performance penalty. URGENT SLA (faster product = tighter window), two-party SO↔provider write, non-performance / dispute / withdraw branches.',
       columns: [],
       customContent: <ReserveActivationChainTab />,
-    },
-    {
-      key: 'grid_code_compliance',
-      label: 'Grid Code compliance',
-      endpoint: '',
-      description: 'NERSA Grid Code (NRS 097 / network codes) — the SO’s technical conformance monitoring of an already-connected plant. Non-conformance raised → assessment → corrective-action plan (with revise loop) → remediation → compliance retest → closed, with an operating-restriction branch and a disconnection terminal. URGENT tier SLA (more severe breach = tighter window), split-write operator (SO) ↔ facility (IPP), restriction / disconnection / withdraw branches. Disconnection always crosses to the regulator; restriction + SLA breach cross at serious / critical tiers.',
-      columns: [],
-      customContent: <GridCodeComplianceChainTab />,
     },
     {
       key: 'insights',

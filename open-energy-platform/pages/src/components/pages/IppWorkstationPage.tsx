@@ -64,7 +64,6 @@ const IPP_REPORTS: ReportConfig[] = [
 
 // Lazy-loaded tab modules — each loads only when the tab is first activated.
 const BondRegistryTab = React.lazy(() => import('../ipp/BondRegistryTab').then(m => ({ default: m.BondRegistryTab })));
-const PlannedOutageChainTab = React.lazy(() => import('../grid/PlannedOutageChainTab').then(m => ({ default: m.PlannedOutageChainTab })));
 const DfrChainTab = React.lazy(() => import('../ipp/DfrChainTab').then(m => ({ default: m.DfrChainTab })));
 const PunchListChainTab = React.lazy(() => import('../ipp/PunchListChainTab').then(m => ({ default: m.PunchListChainTab })));
 const ItpChainTab = React.lazy(() => import('../ipp/ItpChainTab').then(m => ({ default: m.ItpChainTab })));
@@ -72,7 +71,6 @@ const HandoverDossierChainTab = React.lazy(() => import('../ipp/HandoverDossierC
 const ProjectRiskChainTab = React.lazy(() => import('../ipp/ProjectRiskChainTab').then(m => ({ default: m.ProjectRiskChainTab })));
 const HseIncidentChainTab = React.lazy(() => import('../hse/HseIncidentChainTab').then(m => ({ default: m.HseIncidentChainTab })));
 const CyberIncidentChainTab = React.lazy(() => import('../cyber/CyberIncidentChainTab').then(m => ({ default: m.CyberIncidentChainTab })));
-const GcaChainTab = React.lazy(() => import('../gca/GcaChainTab').then(m => ({ default: m.GcaChainTab })));
 const IppScheduleChainTab = React.lazy(() => import('../ipp/IppScheduleChainTab').then(m => ({ default: m.IppScheduleChainTab })));
 const IppEvmChainTab = React.lazy(() => import('../ipp/IppEvmChainTab').then(m => ({ default: m.IppEvmChainTab })));
 const IppDocumentControlChainTab = React.lazy(() => import('../ipp/IppDocumentControlChainTab').then(m => ({ default: m.IppDocumentControlChainTab })));
@@ -1396,10 +1394,8 @@ export function IppWorkstationPage() {
         { key: 'handover_dossier', label: 'Handover dossier', group: 'Construction', chainKey: 'handover_dossier', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><HandoverDossierChainTab /></React.Suspense> },
         { key: 'method-statements', label: 'Method statements', group: 'Safety & grid', chainKey: 'ipp_method_statement', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppMethodStatementTab /></React.Suspense> },
         { key: 'env-monitoring', label: 'Environmental monitoring', group: 'Safety & grid', chainKey: 'ipp_env_monitoring', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><IppEnvMonitoringTab /></React.Suspense> },
-        { key: 'planned_outages', label: 'Planned outages', group: 'Safety & grid', chainKey: 'planned_outage', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><PlannedOutageChainTab /></React.Suspense> },
         { key: 'hse_chain', label: 'HSE incidents', group: 'Safety & grid', chainKey: 'hse_incident', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><HseIncidentChainTab /></React.Suspense> },
         { key: 'cyber_chain', label: 'Cyber incidents', group: 'Safety & grid', chainKey: 'cyber_incident', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><CyberIncidentChainTab /></React.Suspense> },
-        { key: 'gca_chain', label: 'Grid connection', group: 'Safety & grid', chainKey: 'gca_connection', body: () => <React.Suspense fallback={<div className="animate-pulse h-32 bg-gray-50 m-4 rounded-md" />}><GcaChainTab /></React.Suspense> },
         {
           key: 'warranty_claims',
           label: 'Warranty / RMA (W15)',
@@ -1415,24 +1411,6 @@ export function IppWorkstationPage() {
                 { key: 'manufacturer', label: 'OEM' },
                 { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['remediated','closed'].includes(r.chain_status) ? 'good' : ['rejected','dispute'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
                 { key: 'created_at', label: 'Opened', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
-        },
-        {
-          key: 'connection_energization_ipp',
-          label: 'Energization (W75)',
-          group: 'Safety & grid',
-          chainKey: 'connection_energization',
-          body: () => (
-            <ListingTable
-              endpoint="/connection-energization/chain"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No energization cases', description: 'SA Grid Code/NTCSA connection energization cases for this facility will appear here.' }}
-              columns={[
-                { key: 'connection_type', label: 'Connection type' },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={['commercial_operation'].includes(r.chain_status) ? 'good' : ['withdrawn','suspended'].includes(r.chain_status) ? 'bad' : 'warn'}>{r.chain_status.replace(/_/g,' ')}</Pill> },
-                { key: 'created_at', label: 'Initiated', render: (r) => new Date(r.created_at).toLocaleDateString() },
               ]}
             />
           ),

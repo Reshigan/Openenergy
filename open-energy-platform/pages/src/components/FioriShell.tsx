@@ -72,7 +72,7 @@ const BASE_NAV: NavItem[] = [
   { path: '/ipp-lifecycle/workstation?tab=dscr-reports',      label: 'DSCR reports',          icon: 'bar_chart',     section: 'Finance (IPP)' },
   { path: '/ipp-lifecycle/workstation?tab=bonds',             label: 'Bonds & insurance',     icon: 'shield',        section: 'Finance (IPP)' },
   { path: '/ledger/procurement_rfp',                          label: 'REIPPPP procurement',   icon: 'shopping_cart', section: 'Regulatory (IPP)' },
-  { path: '/ipp-lifecycle/workstation?tab=gca_chain',         label: 'Grid connection',       icon: 'electrical_services', section: 'Regulatory (IPP)' },
+  { path: '/ledger/gca_connection',                           label: 'Grid connection',       icon: 'electrical_services', section: 'Regulatory (IPP)' },
 
   // ── Lender workstation deep-links ─────────────────────────────────────────
   { path: '/lender-suite/workstation',                        label: 'Lender workstation',    icon: 'account_balance',section: 'Credit' },
@@ -102,11 +102,11 @@ const BASE_NAV: NavItem[] = [
   { path: '/grid-operator/workstation?tab=demand_response',    label: 'Demand response',      icon: 'electric_bolt', section: 'Operations (Grid)' },
   { path: '/grid-operator/workstation?tab=ancillary',          label: 'Ancillary services',   icon: 'settings_backup_restore', section: 'Operations (Grid)' },
   { path: '/grid-operator/workstation?tab=eop_activations',    label: 'EOP activations',      icon: 'emergency',     section: 'Operations (Grid)' },
-  { path: '/grid-operator/workstation?tab=planned_outage',     label: 'Planned outages',      icon: 'event',         section: 'Infrastructure' },
+  { path: '/ledger/planned_outage',                            label: 'Planned outages',      icon: 'event',         section: 'Infrastructure' },
   { path: '/grid-operator/workstation?tab=substation-assets',  label: 'Substation assets',    icon: 'power',         section: 'Infrastructure' },
   { path: '/grid-operator/workstation?tab=wheeling_charges',   label: 'Wheeling charges',     icon: 'receipt',       section: 'Commercial (Grid)' },
   { path: '/grid-operator/workstation?tab=grid_capacity_allocations',label:'Capacity queue',  icon: 'queue',         section: 'Commercial (Grid)' },
-  { path: '/grid-operator/workstation?tab=grid_code_compliance',label: 'Grid code compliance',icon: 'gavel',         section: 'Regulatory (Grid)' },
+  { path: '/ledger/grid_code_compliance',                      label: 'Grid code compliance',icon: 'gavel',         section: 'Regulatory (Grid)' },
 
   // ── Carbon workstation deep-links ─────────────────────────────────────────
   { path: '/carbon-registry/workstation',                      label: 'Carbon workstation',   icon: 'eco',           section: 'Registry' },
