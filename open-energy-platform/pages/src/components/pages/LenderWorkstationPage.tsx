@@ -3,7 +3,6 @@ import { api } from '../../lib/api';
 import { WorkstationShell, ListingTable, Pill, ActionModal } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
-import { CovenantCertificateTab } from '../lender/CovenantCertificateTab';
 import { CreditOriginationChainTab } from '../lender/CreditOriginationChainTab';
 import { DrawdownChainTab } from '../lender/DrawdownChainTab';
 import { DscrMonitoringChainTab } from '../lender/DscrMonitoringChainTab';
@@ -788,7 +787,6 @@ export function LenderWorkstationPage() {
         { key: 'credit_origination', label: 'Credit origination', group: 'Origination', chainKey: 'credit_facility_application', body: () => <CreditOriginationChainTab /> },
         { key: 'cp_clearances', label: 'CP clearance (W223)', group: 'Origination', chainKey: 'cp_clearance', body: ({ onRefresh }) => <CpClearanceTab onRefresh={onRefresh} /> },
         { key: 'drawdown', label: 'Drawdowns / UoP', group: 'Monitoring', chainKey: 'drawdown', body: () => <DrawdownChainTab /> },
-        { key: 'covenant_cert', label: 'Covenant certificates', group: 'Monitoring', chainKey: 'covenant_certificate', body: () => <CovenantCertificateTab /> },
         { key: 'dscr_monitoring', label: 'DSCR monitoring', group: 'Monitoring', chainKey: 'dscr_monitoring', body: () => <DscrMonitoringChainTab /> },
         { key: 'sll_kpi', label: 'SLL KPI & margin ratchet', group: 'Monitoring', chainKey: 'slb_kpi_ratchet', body: () => <SllKpiChainTab /> },
         { key: 'construction_cost_report', label: 'IE cost-to-complete (W231)', group: 'Monitoring', chainKey: 'construction_cost_report', body: ({ onRefresh }) => <ConstructionCostReportTab onRefresh={onRefresh} /> },
