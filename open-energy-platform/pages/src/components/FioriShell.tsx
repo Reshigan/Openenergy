@@ -98,14 +98,14 @@ const BASE_NAV: NavItem[] = [
 
   // ── Grid workstation deep-links ───────────────────────────────────────────
   { path: '/grid-operator/workstation',                        label: 'Grid workstation',     icon: 'bolt',          section: 'Operations (Grid)' },
-  { path: '/grid-operator/workstation?tab=dispatch_nomination',label: 'Dispatch nominations', icon: 'bolt',          section: 'Operations (Grid)' },
+  { path: '/ledger/dispatch_nomination',                       label: 'Dispatch nominations', icon: 'bolt',          section: 'Operations (Grid)' },
   { path: '/grid-operator/workstation?tab=demand_response',    label: 'Demand response',      icon: 'electric_bolt', section: 'Operations (Grid)' },
-  { path: '/grid-operator/workstation?tab=ancillary',          label: 'Ancillary services',   icon: 'settings_backup_restore', section: 'Operations (Grid)' },
+  { path: '/ledger/reserve_activation',                        label: 'Ancillary services',   icon: 'settings_backup_restore', section: 'Operations (Grid)' },
   { path: '/grid-operator/workstation?tab=eop_activations',    label: 'EOP activations',      icon: 'emergency',     section: 'Operations (Grid)' },
   { path: '/ledger/planned_outage',                            label: 'Planned outages',      icon: 'event',         section: 'Infrastructure' },
   { path: '/grid-operator/workstation?tab=substation-assets',  label: 'Substation assets',    icon: 'power',         section: 'Infrastructure' },
   { path: '/grid-operator/workstation?tab=wheeling_charges',   label: 'Wheeling charges',     icon: 'receipt',       section: 'Commercial (Grid)' },
-  { path: '/grid-operator/workstation?tab=grid_capacity_allocations',label:'Capacity queue',  icon: 'queue',         section: 'Commercial (Grid)' },
+  { path: '/ledger/rez_capacity',                              label: 'Capacity queue',       icon: 'queue',         section: 'Commercial (Grid)' },
   { path: '/ledger/grid_code_compliance',                      label: 'Grid code compliance',icon: 'gavel',         section: 'Regulatory (Grid)' },
 
   // ── Carbon workstation deep-links ─────────────────────────────────────────

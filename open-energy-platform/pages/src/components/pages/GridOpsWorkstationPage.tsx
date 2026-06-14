@@ -3,13 +3,9 @@ import { WorkstationShell, ListingTable, Pill, ActionModal, FieldSpec } from '..
 import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
 import { api } from '../../lib/api';
-import { DispatchNominationTab } from '../grid/DispatchNominationTab';
-import { RezCapacityChainTab } from '../grid/RezCapacityChainTab';
 import { WheelingChargesTab } from '../grid/WheelingChargesTab';
 import { ImbalanceSettlementChainTab } from '../grid/ImbalanceSettlementChainTab';
 import { TransmissionOutageChainTab } from '../grid/TransmissionOutageChainTab';
-import { LoadCurtailmentChainTab } from '../load-curtailment/LoadCurtailmentChainTab';
-import { GridCapacityChainTab } from '../grid-capacity/GridCapacityChainTab';
 import { BlackStartChainTab } from '../black-start/BlackStartChainTab';
 import { ScadaConnectorTab } from '../scadaConnector/ScadaConnectorTab';
 import { MqttOpcuaConnectorTab } from '../mqttOpcuaConnector/MqttOpcuaConnectorTab';
@@ -502,14 +498,12 @@ export function GridOpsWorkstationPage() {
       wizards={GRID_WIZARDS}
       tour={GRID_TOUR}
       tabs={[
-        { key: 'dispatch_nomination', label: 'Dispatch nominations', group: 'Operations', chainKey: 'oe_dispatch_nominations', body: () => <DispatchNominationTab /> },
         { key: 'curtailment', label: 'Curtailment events', group: 'Operations', body: ({ onRefresh }) => <CurtailmentTab onRefresh={onRefresh} /> },
         { key: 'demand_response', label: 'Demand response (W205)', group: 'Operations', chainKey: 'demand_response_event', body: ({ onRefresh }) => <DemandResponseTab onRefresh={onRefresh} /> },
-        { key: 'ancillary', label: 'Ancillary services', group: 'Operations', chainKey: 'reserve_activation', body: ({ onRefresh }) => <AncillaryTab onRefresh={onRefresh} /> },
+        { key: 'ancillary', label: 'Ancillary services', group: 'Operations', body: ({ onRefresh }) => <AncillaryTab onRefresh={onRefresh} /> },
         { key: 'imbalance-settlement', label: 'Imbalance settlement', group: 'Operations', chainKey: 'imbalance_settlement', body: () => <ImbalanceSettlementChainTab /> },
         { key: 'wheeling_charges', label: 'Wheeling charges', group: 'Operations', body: () => <WheelingChargesTab /> },
         { key: 'interconnector_schedules', label: 'SAPP interconnector schedules (W234)', group: 'Operations', chainKey: 'interconnector_schedule', body: ({ onRefresh }) => <InterconnectorScheduleTab onRefresh={onRefresh} /> },
-        { key: 'rez_capacity', label: 'REZ capacity allocation', group: 'Connections', chainKey: 'rez_capacity', body: () => <RezCapacityChainTab /> },
         { key: 'transmission-outage', label: 'Transmission outage coordination', group: 'Connections', chainKey: 'transmission_outage', body: () => <TransmissionOutageChainTab /> },
         { key: 'outage', label: 'Outage responses', group: 'Connections', body: ({ onRefresh }) => <OutageTab onRefresh={onRefresh} /> },
         { key: 'scada-connectors', label: 'SCADA data', group: 'Compliance', body: () => <ScadaConnectorTab /> },
@@ -517,20 +511,6 @@ export function GridOpsWorkstationPage() {
         { key: 'smart-meter-assets', label: 'Smart meter assets (W199)', group: 'Compliance', chainKey: 'smart_meter_asset', body: ({ onRefresh }) => <SmartMeterAssetsTab onRefresh={onRefresh} /> },
         { key: 'substation-assets', label: 'Substation assets (W211)', group: 'Compliance', chainKey: 'substation_asset', body: ({ onRefresh }) => <SubstationAssetsTab onRefresh={onRefresh} /> },
         { key: 'eop_activations', label: 'EOP activations (W215)', group: 'Operations', chainKey: 'eop_activation', body: ({ onRefresh }) => <EopActivationTab onRefresh={onRefresh} /> },
-        {
-          key: 'load_curtailments',
-          label: 'Load curtailment (W34)',
-          group: 'Operations',
-          chainKey: 'load_curtailment',
-          body: () => <LoadCurtailmentChainTab />,
-        },
-        {
-          key: 'grid_capacity_allocations',
-          label: 'Capacity allocation (W58)',
-          group: 'Connections',
-          chainKey: 'grid_capacity_allocation',
-          body: () => <GridCapacityChainTab />,
-        },
         { key: 'black_start', label: 'Black start activation', group: 'Operations', chainKey: 'black_start', body: () => <BlackStartChainTab /> },
         { key: 'reports', label: 'Reports & Exports', group: 'Compliance',
           body: () => (

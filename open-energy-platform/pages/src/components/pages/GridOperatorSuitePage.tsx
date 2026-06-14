@@ -4,12 +4,7 @@ import { platformTabs } from '../platformTabs';
 import { gridCompletionTabs } from '../roleCompletionTabs';
 import { GridInsights } from '../widgets/GridInsights';
 import { WheelingChargesTab } from '../grid/WheelingChargesTab';
-import { DispatchNominationTab } from '../grid/DispatchNominationTab';
-import { LoadCurtailmentChainTab } from '../load-curtailment/LoadCurtailmentChainTab';
-import { ReserveActivationChainTab } from '../reserve-activation/ReserveActivationChainTab';
-import { GridCapacityChainTab } from '../grid-capacity/GridCapacityChainTab';
 import { BlackStartChainTab } from '../black-start/BlackStartChainTab';
-import { RezCapacityChainTab } from '../grid/RezCapacityChainTab';
 
 const instructionTypes = [
   { value: 'curtail', label: 'Curtail' },
@@ -33,52 +28,12 @@ export function GridOperatorSuitePage() {
       customContent: <WheelingChargesTab />,
     },
     {
-      key: 'dispatch_nominations',
-      label: 'Dispatch nominations',
-      endpoint: '',
-      description: 'BRP nomination → SO acceptance → activation → performance → settlement audit chain with per-stage SLA windows.',
-      columns: [],
-      customContent: <DispatchNominationTab />,
-    },
-    {
-      key: 'capacity_allocation',
-      label: 'Capacity allocation',
-      endpoint: '',
-      description: 'NERSA Grid Code + NTCSA Interim Capacity Allocation Rules (2024) — the scarce-capacity QUEUE upstream of the GCA. Application → completeness screening → capacity assessment (load-flow / fault-level / headroom) → queue position → allocation offer → reservation → firm allocation. INVERTED tier SLA (bigger connection = longer window), two-party applicant↔network/committee write, reject / lapse / relinquish / withdraw branches.',
-      columns: [],
-      customContent: <GridCapacityChainTab />,
-    },
-    {
-      key: 'rez_capacity',
-      label: 'REZ capacity allocation (NTCSA 2024)',
-      endpoint: '',
-      description: 'NTCSA 2024 Grid Capacity Allocation Rules + DMRE IRP-2023 + CSIR REZ identification + REIPPPP multi-criteria scoring — competitive multi-applicant auctions inside a constrained Renewable Energy Development Zone. Application → completeness → shortlist → multi-criteria evaluation (price 50% + BBBEE 20% + ED 15% + local-content 15%) → award proposal → capacity awarded → financial close gate → construction → COD. INVERTED tier SLA (mega capacity = longer window), FLOOR-AT-MEGA for priority / constraint-relief / JET-program zones, REZ headroom + competition ratio + DMRE 40% local-content gate live battery. SIGNATURE: award_capacity + forfeit_allocation cross regulator EVERY tier (security-of-supply hard line).',
-      columns: [],
-      customContent: <RezCapacityChainTab />,
-    },
-    {
       key: 'black_start',
       label: 'Black-start capability',
       endpoint: '',
       description: 'SA Grid Code OC-1/OC-12 + NTCSA Black-Start Annex + NERSA System Defence & Restoration Plan + NRS 048-2 — Black-Start Capability (BSC) contracting & annual restoration drill. needs assessed → solicitation → bid evaluation → award → execute → schedule drill → drill in progress → drill completed → recertified, with drill_failed → remediation_required → drill_scheduled (failure loop) and contract_terminated terminal. URGENT SLA (larger unit = tighter window). Live restoration-readiness battery: contracted vs target MW, coverage, geographic + fuel + voltage-class diversity, drill pass rate, restoration-path validity gate, criticality score. RELIABILITY SIGNATURE: fail_drill + terminate_contract cross regulator for EVERY tier; recertify + require_remediation + sla_breached cross material + island_critical.',
       columns: [],
       customContent: <BlackStartChainTab />,
-    },
-    {
-      key: 'load_curtailment',
-      label: 'Load curtailment',
-      endpoint: '',
-      description: 'NERSA Grid Code §CSC-1 — emergency load-curtailment instructions during Stage 1-8 load-shedding. URGENT SLA (higher stage = tighter), split-write SO↔customer, refuse/partial/withdraw branches.',
-      columns: [],
-      customContent: <LoadCurtailmentChainTab />,
-    },
-    {
-      key: 'reserve_activation',
-      label: 'Reserve activation',
-      endpoint: '',
-      description: 'NERSA Grid Code + System Operation Code — ancillary-services reserve activation & settlement. The SO instructs a contracted reserve provider during a frequency / contingency event; the provider responds; the SO measures delivered response and settles availability + utilisation, or a non-performance penalty. URGENT SLA (faster product = tighter window), two-party SO↔provider write, non-performance / dispute / withdraw branches.',
-      columns: [],
-      customContent: <ReserveActivationChainTab />,
     },
     {
       key: 'insights',
