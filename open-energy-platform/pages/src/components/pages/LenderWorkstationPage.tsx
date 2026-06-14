@@ -3,7 +3,6 @@ import { api } from '../../lib/api';
 import { WorkstationShell, ListingTable, Pill, ActionModal } from '../launch/WorkstationShell';
 import { AuditPanel } from '../launch/AuditPanel';
 import { useWorkstationKpis, useWorkstationPanel } from '../launch/useWorkstationSummary';
-import { CreditOriginationChainTab } from '../lender/CreditOriginationChainTab';
 import { DscrMonitoringChainTab } from '../lender/DscrMonitoringChainTab';
 import { DunningTab } from '../lender/DunningTab';
 import { LoanRestructureChainTab } from '../lender/LoanRestructureChainTab';
@@ -782,7 +781,6 @@ export function LenderWorkstationPage() {
       tour={LENDER_TOUR}
       tabs={[
         { key: 'facilities', label: 'Facilities', group: 'Origination', body: () => <FacilitiesTab /> },
-        { key: 'credit_origination', label: 'Credit origination', group: 'Origination', chainKey: 'credit_facility_application', body: () => <CreditOriginationChainTab /> },
         { key: 'cp_clearances', label: 'CP clearance (W223)', group: 'Origination', chainKey: 'cp_clearance', body: ({ onRefresh }) => <CpClearanceTab onRefresh={onRefresh} /> },
         { key: 'dscr_monitoring', label: 'DSCR monitoring', group: 'Monitoring', chainKey: 'dscr_monitoring', body: () => <DscrMonitoringChainTab /> },
         { key: 'sll_kpi', label: 'SLL KPI & margin ratchet', group: 'Monitoring', chainKey: 'slb_kpi_ratchet', body: () => <SllKpiChainTab /> },

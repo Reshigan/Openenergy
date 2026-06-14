@@ -76,7 +76,7 @@ const BASE_NAV: NavItem[] = [
 
   // ── Lender workstation deep-links ─────────────────────────────────────────
   { path: '/lender-suite/workstation',                        label: 'Lender workstation',    icon: 'account_balance',section: 'Credit' },
-  { path: '/lender-suite/workstation?tab=credit_origination', label: 'Credit origination',   icon: 'credit_card',   section: 'Credit' },
+  { path: '/ledger/credit_facility_application',              label: 'Credit origination',   icon: 'credit_card',   section: 'Credit' },
   { path: '/lender-suite/workstation?tab=facilities',         label: 'Facility register',     icon: 'description',   section: 'Credit' },
   { path: '/lender-suite/workstation?tab=cp_clearances',      label: 'CP clearances',         icon: 'checklist',     section: 'Credit' },
   { path: '/ledger/drawdown',                                 label: 'Drawdowns',             icon: 'payments',      section: 'Credit' },
