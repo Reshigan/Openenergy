@@ -4429,6 +4429,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'total', label: 'Notices', compute: 'count' },
       { key: 'breached', label: 'Overdue', compute: 'count_breached' },
     ],
+    initiation: {
+      label: 'Issue compliance notice',
+      path: '/api/regulator/inbox/compliance-notices',
+      fields: [
+        { key: 'licensee_user_id', label: 'Licensee', type: 'string', required: true },
+        { key: 'notice_type', label: 'Notice type', type: 'enum', required: true,
+          options: ['remediation', 'warning', 'penalty', 'suspension', 'revocation', 'information_request'] },
+        { key: 'title', label: 'Title', type: 'string', required: true },
+        { key: 'body', label: 'Notice body', type: 'evidence', required: true },
+        { key: 'remedy_deadline_at', label: 'Remedy deadline', type: 'date' },
+      ],
+    },
   },
 
   // W31 — Regulatory disposition (NERSA §10; INVERTED SLA; fed by every prior
@@ -5072,6 +5084,20 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
       { key: 'cost', label: 'Total cost', compute: 'sum_quantum' },
     ],
+    initiation: {
+      label: 'Raise work order',
+      path: '/api/esums/work-orders',
+      fields: [
+        { key: 'site_id', label: 'Site', type: 'string', required: true },
+        { key: 'category', label: 'Category', type: 'enum', required: true,
+          options: ['corrective', 'preventive', 'inspection', 'cleaning', 'installation', 'upgrade'] },
+        { key: 'priority', label: 'Priority', type: 'enum', required: true,
+          options: ['critical', 'high', 'medium', 'low'] },
+        { key: 'title', label: 'Title', type: 'string', required: true },
+        { key: 'description', label: 'Description', type: 'string' },
+        { key: 'assigned_to', label: 'Assigned technician', type: 'string' },
+      ],
+    },
   },
 
   // W41 — ITIL problem management (ITIL 4 + ISO 20000-1; SINGLE-PARTY — the
