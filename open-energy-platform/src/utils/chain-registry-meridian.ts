@@ -2720,6 +2720,131 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     ],
   },
 
+  // ───────── CARBON — Phase E descriptors ─────────
+  // Two carbon chains (WRITE {admin, carbon_fund, support}; verb-in-body
+  // transitions POST /:id/action {action}; no dedicated *_events table — Thread
+  // reads audit_events; regulator reached via regulator_inbox, no write lane).
+  // Magnitudes are tCO2e, not ZAR — no quantum lane weighting. Husk tabs live on
+  // CarbonWorkstationPage.
+
+  // W206 — Carbon registry transfer (AML/KYC gate → registry review → authorize
+  // → transfer → receipt → CA notification / domestic complete). Two-party
+  // (counterparty_id = transferee) but the transferee holds no write — single
+  // carbon-fund write lane. No human ref column or ZAR quantum (quantity_tco2e).
+  {
+    key: 'carbon_registry_transfer', wave: 206, table: 'oe_carbon_registry_transfers',
+    title: 'Registry transfer', refCol: 'id', titleCol: null,
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline',
+    terminal: ['ca_notified', 'completed', 'aml_rejected', 'registry_rejected', 'cancelled'],
+    counterpartyCol: 'counterparty_id',
+    lanes: { carbon_fund: 'issuance_registry' },
+    eventsTable: null, eventsFk: null,
+    actions: [
+      { action: 'authorize', label: 'Authorize transfer', tone: 'primary',
+        path: '/api/carbon-registry-transfers/:id/action', method: 'POST', body: { action: 'authorize' },
+        roles: ['admin', 'carbon_fund', 'support'],
+        cascadeHint: 'Clears the transfer after AML/KYC and registry review; the registry initiation window opens.',
+        fields: [
+          { key: 'reason_detail', label: 'Authorisation note', type: 'string' },
+        ],
+      },
+      { action: 'confirm_receipt', label: 'Confirm receipt',
+        path: '/api/carbon-registry-transfers/:id/action', method: 'POST', body: { action: 'confirm_receipt' },
+        roles: ['admin', 'carbon_fund', 'support'],
+        cascadeHint: 'Confirms credits landed in the destination account; arms CA notification or domestic completion.' },
+      { action: 'complete_domestic', label: 'Complete domestic transfer',
+        path: '/api/carbon-registry-transfers/:id/action', method: 'POST', body: { action: 'complete_domestic' },
+        roles: ['admin', 'carbon_fund', 'support'],
+        cascadeHint: 'Closes a domestic transfer once receipt confirms; terminates the chain.' },
+      { action: 'notify_ca', label: 'Notify competent authority',
+        path: '/api/carbon-registry-transfers/:id/action', method: 'POST', body: { action: 'notify_ca' },
+        roles: ['admin', 'carbon_fund', 'support'],
+        cascadeHint: 'Files the cross-border corresponding-adjustment notification; always crosses the regulator inbox and terminates the chain.',
+        fields: [
+          { key: 'reason_detail', label: 'Notification note', type: 'string' },
+        ],
+      },
+      { action: 'fail_aml_kyc', label: 'Fail AML / KYC', tone: 'oxide',
+        path: '/api/carbon-registry-transfers/:id/action', method: 'POST', body: { action: 'fail_aml_kyc' },
+        roles: ['admin', 'carbon_fund', 'support'],
+        cascadeHint: 'Rejects the transfer on AML/KYC grounds; always crosses the regulator inbox and terminates the chain.',
+        fields: [
+          { key: 'reason_code', label: 'Reason code', type: 'string', required: true },
+          { key: 'reason_detail', label: 'Notes', type: 'string' },
+        ],
+      },
+    ],
+    filters: [
+      { key: 'screening', label: 'Screening', statuses: ['transfer_requested', 'aml_kyc_check', 'aml_kyc_passed', 'registry_review'] },
+      { key: 'transferring', label: 'Transferring', statuses: ['authorized', 'transfer_in_flight', 'destination_receipt', 'ca_notation_required'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['ca_notified', 'completed', 'aml_rejected', 'registry_rejected', 'cancelled'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Transfers', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+    ],
+  },
+
+  // W213 — Methodology amendment (materiality → minor/major classification →
+  // amendment submission → DNA notification → revalidation → approve/reject).
+  // Single-party carbon-fund write; no counterparty or regulator read/write.
+  // Descriptive deviation_description; magnitude is estimated_impact_tco2e.
+  {
+    key: 'methodology_amendment', wave: 213, table: 'oe_methodology_amendments',
+    title: 'Methodology amendment', refCol: 'id', titleCol: 'deviation_description',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline',
+    terminal: ['amendment_approved', 'amendment_rejected', 'withdrawn'],
+    counterpartyCol: null,
+    lanes: { carbon_fund: 'mrv_verification' },
+    eventsTable: null, eventsFk: null,
+    actions: [
+      { action: 'classify_major', label: 'Classify as major', tone: 'primary',
+        path: '/api/methodology-amendments/:id/action', method: 'POST', body: { action: 'classify_major' },
+        roles: ['admin', 'carbon_fund', 'support'],
+        cascadeHint: 'Classifies the deviation as a major change; routes it through the full revalidation path.',
+        fields: [
+          { key: 'reason_detail', label: 'Classification note', type: 'string' },
+        ],
+      },
+      { action: 'submit_amendment', label: 'Submit amendment',
+        path: '/api/methodology-amendments/:id/action', method: 'POST', body: { action: 'submit_amendment' },
+        roles: ['admin', 'carbon_fund', 'support'],
+        cascadeHint: 'Submits the methodology update for review and DNA notification.' },
+      { action: 'notify_dna', label: 'Notify DNA',
+        path: '/api/methodology-amendments/:id/action', method: 'POST', body: { action: 'notify_dna' },
+        roles: ['admin', 'carbon_fund', 'support'],
+        cascadeHint: 'Notifies the Designated National Authority; always crosses the regulator inbox.' },
+      { action: 'approve_amendment', label: 'Approve amendment',
+        path: '/api/methodology-amendments/:id/action', method: 'POST', body: { action: 'approve_amendment' },
+        roles: ['admin', 'carbon_fund', 'support'],
+        cascadeHint: 'Approves the amendment; crosses the regulator inbox for Article 6 / major changes and terminates the chain.',
+        fields: [
+          { key: 'reason_detail', label: 'Approval note', type: 'string' },
+        ],
+      },
+      { action: 'reject_amendment', label: 'Reject amendment', tone: 'oxide',
+        path: '/api/methodology-amendments/:id/action', method: 'POST', body: { action: 'reject_amendment' },
+        roles: ['admin', 'carbon_fund', 'support'],
+        cascadeHint: 'Rejects the amendment; always crosses the regulator inbox and terminates the chain.',
+        fields: [
+          { key: 'reason_code', label: 'Reason code', type: 'string', required: true },
+          { key: 'reason_detail', label: 'Notes', type: 'string' },
+        ],
+      },
+    ],
+    filters: [
+      { key: 'assessing', label: 'Assessing', statuses: ['deviation_identified', 'materiality_assessment', 'minor_deviation', 'major_deviation', 'methodology_update'] },
+      { key: 'revalidating', label: 'Revalidating', statuses: ['dna_notified', 'validator_assigned', 'revalidation'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['amendment_approved', 'amendment_rejected', 'withdrawn'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Amendments', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+    ],
+  },
+
   // ───────── GRID OPERATOR ─────────
   // Two-party grid waves W18 (planned outage), W28 (GCA), W67 (grid code
   // compliance) and W75 (connection energization) are registered above in the
@@ -3178,6 +3303,176 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         { key: 'scheduled_end_at', label: 'Scheduled end', type: 'date' },
       ],
     },
+  },
+
+  // ───────── GRID — Phase E descriptors ─────────
+  // Three single-party grid chains (SO-owned; WRITE {admin, grid_operator[, support]};
+  // regulator reached via regulator_inbox, read-only — no regulator/applicant
+  // write lane). Verb-in-body transitions (POST /:id/action, {action}). No
+  // dedicated *_events table — Thread reads audit_events. Husk tabs live on
+  // GridOpsWorkstationPage.
+
+  // W215 — EOP activation (NTCSA emergency operating procedure; SO declares an
+  // emergency, runs load-shedding/restoration, then a post-event review).
+  // No human ref column or ZAR quantum; affected_mw is the magnitude.
+  {
+    key: 'eop_activation', wave: 215, table: 'oe_eop_activations',
+    title: 'EOP activation', refCol: 'id', titleCol: 'contingency_description',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline',
+    terminal: ['per_completed', 'per_outstanding', 'escalated_to_regulator', 'withdrawn'],
+    counterpartyCol: null,
+    lanes: { grid_operator: 'operations_grid' },
+    eventsTable: null, eventsFk: null,
+    actions: [
+      { action: 'activate_eop', label: 'Activate EOP', tone: 'primary',
+        path: '/api/eop-activations/:id/action', method: 'POST', body: { action: 'activate_eop' },
+        roles: ['admin', 'grid_operator', 'support'],
+        cascadeHint: 'SO declares the emergency operating procedure; alerts the operations centre and starts the restoration clock.',
+        fields: [
+          { key: 'reason_detail', label: 'Activation note', type: 'string' },
+        ],
+      },
+      { action: 'commence_restoration', label: 'Commence restoration',
+        path: '/api/eop-activations/:id/action', method: 'POST', body: { action: 'commence_restoration' },
+        roles: ['admin', 'grid_operator', 'support'],
+        cascadeHint: 'Begins restoration toward normal operations as the contingency clears.' },
+      { action: 'complete_per', label: 'Complete post-event review',
+        path: '/api/eop-activations/:id/action', method: 'POST', body: { action: 'complete_per' },
+        roles: ['admin', 'grid_operator', 'support'],
+        cascadeHint: 'Closes the post-event review; terminates the activation with findings logged.',
+        fields: [
+          { key: 'reason_detail', label: 'Review findings', type: 'string' },
+        ],
+      },
+      { action: 'escalate_to_regulator', label: 'Escalate to regulator', tone: 'oxide',
+        path: '/api/eop-activations/:id/action', method: 'POST', body: { action: 'escalate_to_regulator' },
+        roles: ['admin', 'grid_operator', 'support'],
+        cascadeHint: 'Refers the activation to NERSA where the PER is outstanding or contested; crosses the regulator inbox.',
+        fields: [
+          { key: 'reason_code', label: 'Reason code', type: 'string' },
+          { key: 'reason_detail', label: 'Notes', type: 'string' },
+        ],
+      },
+    ],
+    filters: [
+      { key: 'active', label: 'Active', statuses: ['contingency_detected', 'eop_activated', 'operations_centre_alerted', 'load_shedding_assessed', 'restoration_in_progress'] },
+      { key: 'review', label: 'In review', statuses: ['normal_operations_restored', 'post_event_review'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['per_completed', 'per_outstanding', 'escalated_to_regulator', 'withdrawn'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Activations', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+    ],
+  },
+
+  // W234 — SAPP interconnector schedule (Southern African Power Pool
+  // cross-border schedule: submit → SAPP ack → counter/negotiate → agree →
+  // operate → complete; deviation + dispute branches). sla_deadline is nullable
+  // here (the only Phase-E grid chain with a non-NOT-NULL deadline). Priced in
+  // USD/MWh — no ZAR quantum column. WRITE {admin, grid_operator} (no support).
+  {
+    key: 'interconnector_schedule', wave: 234, table: 'oe_interconnector_schedules',
+    title: 'Interconnector schedule', refCol: 'interconnector_id', titleCol: 'interconnector_name',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline',
+    terminal: ['completed', 'cancelled'],
+    counterpartyCol: 'neighbour_utility',
+    lanes: { grid_operator: 'operations_grid' },
+    eventsTable: null, eventsFk: null,
+    actions: [
+      { action: 'agree_schedule', label: 'Agree schedule', tone: 'primary',
+        path: '/api/grid/interconnector-schedule/:id/action', method: 'POST', body: { action: 'agree_schedule' },
+        roles: ['admin', 'grid_operator'],
+        cascadeHint: 'Locks the agreed cross-border schedule with the neighbouring utility; arms the delivery window.',
+        fields: [
+          { key: 'reason_detail', label: 'Notes', type: 'string' },
+        ],
+      },
+      { action: 'commence_delivery', label: 'Commence delivery',
+        path: '/api/grid/interconnector-schedule/:id/action', method: 'POST', body: { action: 'commence_delivery' },
+        roles: ['admin', 'grid_operator'],
+        cascadeHint: 'Moves the schedule into operating; metered flow is reconciled against the agreed profile.' },
+      { action: 'complete_delivery', label: 'Complete delivery',
+        path: '/api/grid/interconnector-schedule/:id/action', method: 'POST', body: { action: 'complete_delivery' },
+        roles: ['admin', 'grid_operator'],
+        cascadeHint: 'Closes the schedule once the delivery window ends and flows reconcile.' },
+      { action: 'raise_dispute', label: 'Raise dispute', tone: 'oxide',
+        path: '/api/grid/interconnector-schedule/:id/action', method: 'POST', body: { action: 'raise_dispute' },
+        roles: ['admin', 'grid_operator'],
+        cascadeHint: 'Disputes a deviation or settlement against the SAPP schedule; crosses the regulator inbox.',
+        fields: [
+          { key: 'reason_code', label: 'Reason code', type: 'string', required: true },
+          { key: 'reason_detail', label: 'Grounds', type: 'string' },
+        ],
+      },
+    ],
+    filters: [
+      { key: 'negotiating', label: 'Negotiating', statuses: ['schedule_draft', 'submitted_to_sapp', 'sapp_review', 'counter_schedule_received', 'negotiation'] },
+      { key: 'operating', label: 'Agreed / operating', statuses: ['agreed', 'operating', 'deviated', 'deviation_resolved'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['completed', 'cancelled', 'dispute'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Schedules', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+    ],
+  },
+
+  // W211 — Substation asset lifecycle (commissioning → energised →
+  // assessment/refurbishment cycles → decommission/failure). Human asset tag
+  // (asset_number), name, and refurbishment_cost_zar (raw ZAR) for quantum.
+  {
+    key: 'substation_asset', wave: 211, table: 'oe_substation_assets',
+    title: 'Substation asset', refCol: 'asset_number', titleCol: 'name',
+    quantumCol: 'refurbishment_cost_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline',
+    terminal: ['decommissioned', 'failed'],
+    counterpartyCol: null,
+    lanes: { grid_operator: 'compliance_grid' },
+    eventsTable: null, eventsFk: null,
+    actions: [
+      { action: 'energise', label: 'Energise asset', tone: 'primary',
+        path: '/api/substation-assets/:id/action', method: 'POST', body: { action: 'energise' },
+        roles: ['admin', 'grid_operator', 'support'],
+        cascadeHint: 'Energises the commissioned asset; brings it into service on the network.',
+        fields: [
+          { key: 'reason_detail', label: 'Energisation note', type: 'string' },
+        ],
+      },
+      { action: 'return_to_service', label: 'Return to service',
+        path: '/api/substation-assets/:id/action', method: 'POST', body: { action: 'return_to_service' },
+        roles: ['admin', 'grid_operator', 'support'],
+        cascadeHint: 'Returns the asset to service after refurbishment or outage.' },
+      { action: 'decommission', label: 'Decommission', tone: 'oxide',
+        path: '/api/substation-assets/:id/action', method: 'POST', body: { action: 'decommission' },
+        roles: ['admin', 'grid_operator', 'support'],
+        cascadeHint: 'Permanently retires the asset; crosses the regulator inbox for transmission / critical-node assets.',
+        fields: [
+          { key: 'reason_code', label: 'Reason code', type: 'string' },
+          { key: 'reason_detail', label: 'Notes', type: 'string' },
+        ],
+      },
+      { action: 'record_failure', label: 'Record failure', tone: 'oxide',
+        path: '/api/substation-assets/:id/action', method: 'POST', body: { action: 'record_failure' },
+        roles: ['admin', 'grid_operator', 'support'],
+        cascadeHint: 'Records an in-service asset failure; always crosses the regulator inbox.',
+        fields: [
+          { key: 'reason_code', label: 'Failure mode', type: 'string', required: true },
+          { key: 'reason_detail', label: 'Notes', type: 'string' },
+        ],
+      },
+    ],
+    filters: [
+      { key: 'commissioning', label: 'Commissioning', statuses: ['registered', 'commissioning'] },
+      { key: 'in_service', label: 'In service', statuses: ['energised', 'condition_assessment', 'assessment_complete', 'refurbishment_planned', 'returned_to_service'] },
+      { key: 'out_of_service', label: 'Out of service', statuses: ['out_of_service', 'refurbishment', 'decommission_decision'] },
+      { key: 'resolved', label: 'Retired', statuses: ['decommissioned', 'failed'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Assets', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+      { key: 'refurb', label: 'Refurb cost', compute: 'sum_quantum' },
+    ],
   },
 
   // ───────── LENDER (parity batch) ─────────
