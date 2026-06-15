@@ -493,7 +493,17 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
       { key: 'budget', label: 'Project budget', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'Open cost report',
+      path: '/api/lender/construction-cost-report',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'ipp_id', label: 'IPP', type: 'string', required: true },
+        { key: 'report_month', label: 'Report month', type: 'string', required: true, placeholder: 'YYYY-MM' },
+        { key: 'total_project_budget_zar', label: 'Project budget', type: 'number', unit: 'ZAR' },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // W223 — CP clearance / financial close (LMA + SARB; INVERTED SLA)
@@ -539,7 +549,19 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'total', label: 'CP registers', compute: 'count' },
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New CP register',
+      path: '/api/cp-clearances',
+      fields: [
+        { key: 'cp_tier', label: 'CP tier', type: 'enum', options: ['minor', 'standard', 'major', 'systemic'] },
+        { key: 'borrower_name', label: 'Borrower', type: 'string' },
+        { key: 'facility_ref', label: 'Facility ref', type: 'string' },
+        { key: 'project_ref', label: 'Project ref', type: 'string' },
+        { key: 'cp_count_total', label: 'Total CPs', type: 'number' },
+        { key: 'closing_deadline', label: 'Closing deadline', type: 'date' },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // W195 — ESAP compliance monitoring (IFC PS + EP4; INVERTED SLA)
@@ -585,7 +607,20 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'total', label: 'Periods', compute: 'count' },
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'Open monitoring period',
+      path: '/api/esap-compliance',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'reporting_period', label: 'Reporting period', type: 'string', required: true, placeholder: 'YYYY-MM' },
+        { key: 'commitment_tier', label: 'Commitment tier', type: 'enum', required: true, options: ['systemic', 'major', 'significant', 'minor', 'routine'] },
+        { key: 'es_monitor_id', label: 'E&S monitor', type: 'string' },
+        { key: 'finding_count_minor', label: 'Minor findings', type: 'number' },
+        { key: 'finding_count_major', label: 'Major findings', type: 'number' },
+        { key: 'remediation_deadline', label: 'Remediation deadline', type: 'date' },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // W214 — E&S action plan (ESAP) monitoring (EP IV + IFC PS1–PS8; INVERTED SLA)
@@ -636,7 +671,22 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'total', label: 'ESAPs', compute: 'count' },
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'Issue ESAP',
+      path: '/api/esap-monitoring',
+      fields: [
+        { key: 'esap_tier', label: 'ESAP tier', type: 'enum', options: ['category_c', 'category_b', 'category_a', 'critical_ps'] },
+        { key: 'project_ref', label: 'Project ref', type: 'string' },
+        { key: 'facility_ref', label: 'Facility ref', type: 'string' },
+        { key: 'loan_ref', label: 'Loan ref', type: 'string' },
+        { key: 'ep_category', label: 'EP category', type: 'string' },
+        { key: 'ps_triggers', label: 'PS triggers', type: 'string' },
+        { key: 'monitoring_cycle', label: 'Monitoring cycle', type: 'string' },
+        { key: 'site_name', label: 'Site name', type: 'string' },
+        { key: 'site_location', label: 'Site location', type: 'string' },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // W194 — Facility amendment & consent (LMA; INVERTED SLA by amendment class)
@@ -683,7 +733,21 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'total', label: 'Amendments', compute: 'count' },
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'Request amendment',
+      path: '/api/facility-amendments',
+      fields: [
+        { key: 'facility_id', label: 'Facility', type: 'string', required: true },
+        { key: 'amendment_class', label: 'Amendment class', type: 'enum', required: true, options: ['unanimous_consent', 'majority_consent', 'technical_amendment', 'administrative_amendment', 'clerical_correction'] },
+        { key: 'amendment_ref', label: 'Amendment ref', type: 'string' },
+        { key: 'amendment_type', label: 'Amendment type', type: 'string' },
+        { key: 'majority_threshold_pct', label: 'Majority threshold', type: 'number', unit: '%' },
+        { key: 'unanimous_required', label: 'Unanimous required (1/0)', type: 'number' },
+        { key: 'security_variation', label: 'Security variation (1/0)', type: 'number' },
+        { key: 'pricing_change_bps', label: 'Pricing change', type: 'number', unit: 'bps' },
+        { key: 'description', label: 'Description', type: 'string' },
+      ],
+    },
   },
 
   // ───────── TRADER ─────────
@@ -12489,6 +12553,16 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'lender', 'support'],
         cascadeHint: 'Withdraws the capital-adequacy report (terminal).' },
     ],
+    initiation: {
+      label: 'New CAR period',
+      path: '/api/capital-adequacy-reports',
+      fields: [
+        { key: 'report_period', label: 'Report period', type: 'string', placeholder: 'YYYY-MM' },
+        { key: 'reporting_date', label: 'Reporting date', type: 'date' },
+        { key: 'bank_tier', label: 'Bank tier', type: 'enum', options: ['smaller', 'mid_tier', 'large', 'systemically_important'] },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // ───────── COMPLIANCE REPORTS (no-descriptor backfill) ─────────
