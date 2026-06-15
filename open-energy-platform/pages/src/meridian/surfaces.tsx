@@ -53,6 +53,21 @@ const AnomalyDetectionMl = lazyConnectorOrMl(() => import('../components/anomaly
 const RulPredictionMl = lazyConnectorOrMl(() => import('../components/rulPredictionMl/RulPredictionMlTab'));
 const FaultFingerprintMl = lazyConnectorOrMl(() => import('../components/faultFingerprintMl/FaultFingerprintMlTab'));
 
+// ── ESCO surfaces (E2.8a — first end-to-end workstation migration) ───────────
+// SitesPortfolioSurface is a self-contained `{ role }` body — lazy directly.
+const EscoSitesPortfolio = React.lazy(() => import('./surfaces/esco/SitesPortfolioSurface'));
+
+// AuditPanel is the shared L5 audit/export/recon primitive; it takes `{ prefix, reconHint }`,
+// not `{ role }`. Wrap it in a lazy adapter that supplies the esco endpoint prefix + recon
+// column hint (carried verbatim from the retired EscoWorkstationPage `audit` tab).
+const EscoAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { AuditPanel } = await import('../components/launch/AuditPanel');
+  const Adapter: SurfaceComponent = () => (
+    <AuditPanel prefix="/esums" reconHint="event_id, entity_type, actor_id, timestamp" />
+  );
+  return { default: Adapter };
+});
+
 // ── Registry ───────────────────────────────────────────────────────────────
 export const SURFACE_REGISTRY: Record<
   string,
@@ -93,4 +108,7 @@ export const SURFACE_REGISTRY: Record<
   'admin:fault-fingerprint': FaultFingerprintMl,
   'support:fault-fingerprint': FaultFingerprintMl,
   'ipp_developer:fault-fingerprint': FaultFingerprintMl,
+  // esco workstation migration (E2.8a) — keys match roleData feature keys emitted by Atlas
+  'esco:sites-portfolio': EscoSitesPortfolio,
+  'esco:audit': EscoAuditPanel,
 };

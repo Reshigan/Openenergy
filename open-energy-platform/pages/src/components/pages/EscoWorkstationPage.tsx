@@ -1,8 +1,5 @@
 import React from 'react';
-import { WorkstationShell, ListingTable, Pill } from '../launch/WorkstationShell';
-import { AuditPanel } from '../launch/AuditPanel';
-import { CyberIncidentChainTab } from '../cyber/CyberIncidentChainTab';
-import { ServiceContractChainTab } from '../service-contract/ServiceContractChainTab';
+import { WorkstationShell } from '../launch/WorkstationShell';
 import type { TourDef } from '../launch/ProductTour';
 
 
@@ -26,35 +23,7 @@ export function EscoWorkstationPage() {
       title="O&M operations workstation"
       subtitle="Site portfolio → Work orders & PM → Asset health → Safety & permits → Supply chain → Compliance"
       tour={ESCO_TOUR}
-      tabs={[
-        { key: 'service-contracts', label: 'Service contracts', group: 'Site portfolio', chainKey: 'service_contract', body: () => <ServiceContractChainTab /> },
-        {
-          key: 'sites-portfolio',
-          label: 'Sites under management',
-          group: 'Site portfolio',
-          body: () => (
-            <ListingTable
-              endpoint="/esums/commissioning"
-              rowKey={(r) => r.id}
-              empty={{ title: 'No sites', description: 'Commissioned sites under O&M management will appear here.' }}
-              columns={[
-                { key: 'site_name', label: 'Site', render: (r) => <span className="font-medium">{r.site_name}</span> },
-                { key: 'installed_capacity_kw', label: 'Capacity', render: (r) => r.installed_capacity_kw != null ? `${(r.installed_capacity_kw / 1000).toFixed(1)} MW` : '—' },
-                { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={r.chain_status === 'in_om' ? 'good' : r.chain_status === 'failed' ? 'bad' : 'warn'}>{r.chain_status?.replace(/_/g, ' ')}</Pill> },
-                { key: 'client_name', label: 'Client' },
-                { key: 'created_at', label: 'Commissioned', render: (r) => new Date(r.created_at).toLocaleDateString() },
-              ]}
-            />
-          ),
-        },
-        { key: 'cyber', label: 'Cyber incidents (W26)', group: 'Safety & permits', chainKey: 'cyber_incident', body: () => <CyberIncidentChainTab /> },
-        {
-          key: 'audit',
-          label: 'Audit trail',
-          group: 'Reporting & compliance',
-          body: () => <AuditPanel prefix="/esums" reconHint="event_id, entity_type, actor_id, timestamp" />,
-        },
-      ]}
+      tabs={[]}
     />
   );
 }
