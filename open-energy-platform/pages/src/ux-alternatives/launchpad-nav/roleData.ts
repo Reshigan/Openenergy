@@ -401,6 +401,8 @@ const carbonDomains: Domain[] = [
       { key: 'article6', label: 'Article 6 ITMO', chainKey: 'article6_adjustment', description: 'UNFCCC ITMO corresponding-adjustment ledger (W4).', mockStates: ['pending_transfer','under_review','adjusted','retired','disputed'], mockState: 'under_review' },
       { key: 'esg_disclosure_chain', label: 'ESG disclosure', chainKey: 'esg_disclosure', description: 'ESG disclosure and third-party assurance.' },
       { key: 'scope3_disclosure_chain', label: 'Scope 3 disclosure', chainKey: 'carbon_scope3_disclosure', description: 'Value-chain Scope 3 emission disclosure.' },
+      { key: 'reports', label: 'Reports & exports', description: 'Issuance, retirement and offset-claim reports with pivots and exports.' },
+      { key: 'audit', label: 'Audit & compliance', description: 'Tamper-evident audit chain, certified exports and registry reconciliation.' },
     ],
   },
   {

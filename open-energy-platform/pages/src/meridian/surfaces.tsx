@@ -85,6 +85,31 @@ const EpcAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(as
   return { default: Adapter };
 });
 
+// ── Carbon surfaces (E2.8c — CarbonWorkstationPage migration) ────────────────
+// All 14 chain tabs (article6, mrv_chain, retirement, issuance, ccp, credit_rating, esg,
+// scope3, carbon_tax_returns, carbon_budget, vcm, certificate_bundle, registry_transfers,
+// methodology_amendments) have MERIDIAN_CHAINS descriptors → retired to /ledger/:chainKey.
+// The four remaining non-chain inline tabs are extracted to self-contained `{ role }` bodies
+// (Bucket B/D): vintages, mrv (the non-chain MRV-submissions CRUD), certificates, reports.
+const CarbonVintages = React.lazy(() => import('./surfaces/carbon/VintagesSurface'));
+const CarbonMrv = React.lazy(() => import('./surfaces/carbon/MrvSurface'));
+const CarbonCertificates = React.lazy(() => import('./surfaces/carbon/CertificatesSurface'));
+const CarbonReports = React.lazy(() => import('./surfaces/carbon/ReportsSurface'));
+
+// Audit tab carried verbatim from the CarbonWorkstationPage `audit` tab
+// (prefix /carbon-registry, recon hint + carbon registry recon sources).
+const CarbonAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { AuditPanel } = await import('../components/launch/AuditPanel');
+  const Adapter: SurfaceComponent = () => (
+    <AuditPanel
+      prefix="/carbon-registry"
+      reconHint="serial_id,retirement_ref,quantity_tco2e,retired_at"
+      reconSourceOptions={['verra', 'gold_standard', 'cdm', 'sa_redd']}
+    />
+  );
+  return { default: Adapter };
+});
+
 // ── Registry ───────────────────────────────────────────────────────────────
 export const SURFACE_REGISTRY: Record<
   string,
@@ -132,4 +157,10 @@ export const SURFACE_REGISTRY: Record<
   'epc_contractor:rfis': EpcRfis,
   'epc_contractor:technical-queries': EpcTechnicalQueries,
   'epc_contractor:audit': EpcAuditPanel,
+  // carbon_fund workstation migration (E2.8c) — keys match roleData feature keys emitted by Atlas
+  'carbon_fund:vintages': CarbonVintages,
+  'carbon_fund:mrv': CarbonMrv,
+  'carbon_fund:certificates': CarbonCertificates,
+  'carbon_fund:reports': CarbonReports,
+  'carbon_fund:audit': CarbonAuditPanel,
 };
