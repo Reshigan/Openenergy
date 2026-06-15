@@ -11608,7 +11608,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'ipp_developer'],
         cascadeHint: 'Records a deficient self-assessment; crosses the NERSA inbox on ALL tiers and feeds W31 disposition + W67 grid-code compliance.',
         fields: [
-          { key: 'notes', label: 'Deficiency detail', type: 'string', required: true },
+          { key: 'notes', label: 'Deficiency detail', type: 'string' },
         ],
       },
       { action: 'declare_lapsed', label: 'Declare lapsed', tone: 'oxide',
@@ -11697,7 +11697,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'ipp_developer', 'regulator'],
         cascadeHint: 'Attaches conditions to a conditional approval; reportable on significant/major/material tiers.',
         fields: [
-          { key: 'conditions_text', label: 'Conditions', type: 'evidence', required: true },
+          { key: 'conditions_text', label: 'Conditions', type: 'evidence' },
         ],
       },
       { action: 'reject_change', label: 'Reject change', tone: 'oxide',
