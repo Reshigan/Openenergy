@@ -197,6 +197,7 @@ const traderDomains: Domain[] = [
       { key: 'trade_allocation', label: 'Trade allocation', chainKey: 'trade_allocation', description: 'DTCC-style block→per-account allocation (W76).', mockStates: ['executed','pending_allocation','allocated','affirmed','matched','settled'], mockState: 'allocated' },
       { key: 'trade_report', label: 'Trade reporting', chainKey: 'trade_report', description: 'FMA post-trade repository reporting (W44).', mockStates: ['draft','submitted','acknowledged','accepted','rejected','resubmitted'], mockState: 'submitted' },
       { key: 'best_execution', label: 'Best-execution / RFQ', chainKey: 'best_execution', description: 'FSCA Conduct Standard RFQ chain (W36).', mockStates: ['rfq_sent','quotes_received','quote_selected','executed','confirmed'], mockState: 'quotes_received' },
+      { key: 'exceptions', label: 'Post-trade exceptions', description: 'Post-trade mismatches (price, volume, settlement) triage and resolution.' },
       { key: 'imbalance', label: 'Imbalance settlement', description: 'Grid imbalance cash-out settlement.' },
       { key: 'black_start', label: 'Black start', description: 'NETSO black-start cost recovery.' },
       { key: 'benchmark_transition', label: 'Benchmark transition', chainKey: 'benchmark_transition', description: 'JIBAR cessation / benchmark fallback transition (W90).' },
@@ -209,11 +210,21 @@ const traderDomains: Domain[] = [
     color: 'oklch(0.44 0.10 320)',
     features: [
       { key: 'market_abuse_case', label: 'Market surveillance', chainKey: 'market_abuse_case', description: 'FMA Ch.X market abuse STOR machine (W52).', mockStates: ['monitoring','alert_raised','investigation','file_stor','cleared','dismissed'], mockState: 'monitoring' },
-      { key: 'oe_mm_obligations', label: 'MM compliance', chainKey: 'oe_mm_obligations', description: 'Market-making consecutive-miss breach (W9).', mockStates: ['none','warning','breach','escalated'], mockState: 'none' },
+      // W9 MM compliance is a chain widget but oe_mm_obligations is deliberately excluded from
+      // MERIDIAN_CHAINS ("not a case-list model"), so it has NO chainKey here — Atlas routes it
+      // to /surface/oe_mm_obligations (registered trader:oe_mm_obligations) not /ledger (E2.3).
+      { key: 'oe_mm_obligations', label: 'MM compliance', description: 'Market-making consecutive-miss breach (W9).', mockStates: ['none','warning','breach','escalated'], mockState: 'none' },
       { key: 'algo_certification', label: 'Algo certification', chainKey: 'algo_certification', description: 'FMA/FSCA MiFID RTS6 algo cert gate (W60).', mockStates: ['submitted','testing','review','approved','deployed_live','suspended'], mockState: 'testing' },
       { key: 'esg_reports', label: 'ESG / sustainability', description: 'ESG disclosure and Scope 3 reports.' },
       { key: 'article6', label: 'Article 6 ITMO', chainKey: 'article6_adjustment', description: 'UNFCCC corresponding-adjustment ledger (W4).' },
       { key: 'black_start_chain', label: 'Black start chain', description: 'NERSA black-start compliance.' },
+      // Connectors (shared) + report/audit surfaces — added in E2.3 so Atlas can reach the
+      // trader:* surfaces registered in meridian/surfaces.tsx (the husk tabs had no roleData feature).
+      { key: 'strate-swift', label: 'Settlement rails (W124)', description: 'STRATE/SWIFT settlement connectors.' },
+      { key: 'sap-oracle-erp', label: 'ERP connectors (W125)', description: 'SAP/Oracle ERP integration.' },
+      { key: 'government-filing', label: 'Filing connectors (W126)', description: 'NERSA/SARS government filing connectors.' },
+      { key: 'reports', label: 'Reports & exports', description: 'Trade settlement, best-execution and FSCA trade reports with pivots and exports.' },
+      { key: 'audit', label: 'Audit & compliance', description: 'Tamper-evident audit chain, certified exports and trade reconciliation.' },
     ],
   },
 ];

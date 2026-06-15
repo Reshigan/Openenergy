@@ -325,6 +325,53 @@ const EsumsProtectionRelayTests: React.LazyExoticComponent<SurfaceComponent> = R
   return { default: Adapter };
 });
 
+// ── Trader surfaces (E2.3 — TraderWorkstationPage migration) ─────────────────
+// Chain tabs WITH MERIDIAN_CHAINS descriptors → retired to /ledger/:chainKey (deleted from the
+// husk): pretrade_credit_check, pnl_attribution, settlement_fail, benchmark_transition,
+// fsca_compliance_report, fsca_conduct_report, cross_border_trade, isda_agreement.
+// Plan-mandated EXCEPTION — trader ORDER surfaces are NOT chains: `orders` (/trading/orders),
+// `exceptions` (/trading/exceptions) are EXTRACTED as Bucket B self-contained bodies, never
+// retired as chains. `rejections` + `margin` are likewise non-chain listing bodies (Bucket B).
+// `reports` is a ReportPanel surface (Bucket D). All four extracted to new files below.
+// MmComplianceTab (W9) is a chain widget but `oe_mm_obligations` is deliberately EXCLUDED from
+// MERIDIAN_CHAINS ("not a case-list model") → Bucket B, EXTRACTED here as an adapter (no new
+// file); the roleData feature's chainKey was dropped in E2.3 so Atlas routes to /surface, not
+// /ledger. RiskTab is a self-contained no-prop named export → adapter (no new file).
+// strate-swift / sap-oracle-erp / government-filing — shared connectors, already exposed as
+// `trader:*` via the connector trio above (roleData features added in E2.3 to reach them).
+const TraderOrders = React.lazy(() => import('./surfaces/trader/OrdersSurface'));
+const TraderRejections = React.lazy(() => import('./surfaces/trader/RejectionsSurface'));
+const TraderMargin = React.lazy(() => import('./surfaces/trader/MarginSurface'));
+const TraderExceptions = React.lazy(() => import('./surfaces/trader/ExceptionsSurface'));
+const TraderReports = React.lazy(() => import('./surfaces/trader/ReportsSurface'));
+
+// RiskTab + MmComplianceTab are self-contained no-prop named exports → lazy adapters that
+// ignore `role` and render the tab unchanged.
+const TraderRisk: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { RiskTab } = await import('../components/risk/RiskTab');
+  const Adapter: SurfaceComponent = () => <RiskTab />;
+  return { default: Adapter };
+});
+const TraderMmCompliance: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { MmComplianceTab } = await import('../components/trader/MmComplianceTab');
+  const Adapter: SurfaceComponent = () => <MmComplianceTab />;
+  return { default: Adapter };
+});
+
+// Audit tab carried verbatim from the TraderWorkstationPage `audit` tab
+// (prefix /trading, trade-recon hint + counterparty/broker/jse recon sources).
+const TraderAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { AuditPanel } = await import('../components/launch/AuditPanel');
+  const Adapter: SurfaceComponent = () => (
+    <AuditPanel
+      prefix="/trading"
+      reconHint="external_ref,matched_at,energy_type,volume_mwh,price_zar_mwh"
+      reconSourceOptions={['counterparty', 'broker', 'jse']}
+    />
+  );
+  return { default: Adapter };
+});
+
 // ── Registry ───────────────────────────────────────────────────────────────
 export const SURFACE_REGISTRY: Record<
   string,
@@ -432,4 +479,15 @@ export const SURFACE_REGISTRY: Record<
   'esco:protection-relay-tests': EsumsProtectionRelayTests,
   'esco:projects': EsumsProjects,
   'esco:alerts': EsumsAlerts,
+  // trader workstation migration (E2.3) — keys match roleData feature keys emitted by Atlas.
+  // strate-swift / sap-oracle-erp / government-filing already registered in the connector trio
+  // above (trader roleData features added in E2.3).
+  'trader:orders': TraderOrders,
+  'trader:rejections': TraderRejections,
+  'trader:risk': TraderRisk,
+  'trader:margin': TraderMargin,
+  'trader:exceptions': TraderExceptions,
+  'trader:oe_mm_obligations': TraderMmCompliance,
+  'trader:reports': TraderReports,
+  'trader:audit': TraderAuditPanel,
 };
