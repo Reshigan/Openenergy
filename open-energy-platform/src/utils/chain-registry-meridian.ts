@@ -106,6 +106,19 @@ export function quantumZar(chain: ChainDescriptor, row: Record<string, unknown>)
   return chain.quantumCol.endsWith('_zar_m') ? n * 1_000_000 : n;
 }
 
+// Narrow column list for the Horizon/Ledger list paths. These read only the
+// case-summary columns below (assembleHorizon / assembleLedger) — never the full
+// row — so SELECT * needlessly ships every wide chain column on the hottest D1
+// path (Horizon batches this across ~76 chains × 60 rows). Every name is a static
+// descriptor field, satisfying the identifier-safety rule. Thread keeps SELECT *:
+// it renders the whole row as `.raw`. `id` is always included (used as the case id
+// and join key); the rest are deduped and nulls dropped.
+export function listSelectCols(chain: ChainDescriptor): string {
+  const cols = ['id', chain.refCol, chain.titleCol, chain.quantumCol,
+    chain.statusCol, chain.deadlineCol, chain.counterpartyCol];
+  return [...new Set(cols.filter((x): x is string => !!x))].join(', ');
+}
+
 // SECURITY: table/column/status values below are interpolated into SQL identifiers
 // by the horizon/thread routes. They MUST be static literals in this file — never
 // derived from request input.

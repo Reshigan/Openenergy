@@ -10,7 +10,7 @@ import { Hono } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import {
-  getChain, bucketFor, attentionScore, quantumZar, type ChainDescriptor,
+  getChain, bucketFor, attentionScore, quantumZar, listSelectCols, type ChainDescriptor,
 } from '../utils/chain-registry-meridian';
 
 export interface LedgerRow {
@@ -70,7 +70,7 @@ ledger.get('/:chainKey', async (c) => {
 
   const filterKey = c.req.query('status');
   const filter = (chain.filters ?? []).find(f => f.key === filterKey);
-  let sql = `SELECT * FROM ${chain.table}`;
+  let sql = `SELECT ${listSelectCols(chain)} FROM ${chain.table}`;
   const binds: unknown[] = [];
   if (filter) {
     sql += ` WHERE ${chain.statusCol} IN (${filter.statuses.map(() => '?').join(',')})`;

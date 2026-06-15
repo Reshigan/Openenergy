@@ -71,8 +71,12 @@ describe('quantumZar', () => {
 describe('MERIDIAN_CHAINS registry shape', () => {
   it('every entry has table, statusCol default, deadline col, ≥1 lane', () => {
     for (const d of MERIDIAN_CHAINS) {
-      expect(d.table).toMatch(/^(oe_|om_)/);
-      expect(d.key).toMatch(/^[a-z_]+$/);
+      // oe_/om_ is the convention; these four are documented legacy pre-oe_
+      // tables (migrations 002/026/056/110) the registry deliberately reuses.
+      const LEGACY = new Set(['carbon_retirements', 'mrv_submissions', 'support_tickets', 'ipp_performance_bonds']);
+      expect(d.table.startsWith('oe_') || d.table.startsWith('om_') || LEGACY.has(d.table),
+        `unexpected table name ${d.table} (chain ${d.key})`).toBe(true);
+      expect(d.key).toMatch(/^[a-z0-9_]+$/);
       expect(Object.keys(d.lanes).length).toBeGreaterThan(0);
       expect(d.terminal.length).toBeGreaterThan(0);
     }
@@ -133,10 +137,15 @@ describe('registry tables exist in migrations', () => {
     .map(f => readFileSync(join(migDir, f), 'utf8'))
     .join('\n');
 
+  // DDL may quote the identifier (`oe_x`) and table names share prefixes
+  // (oe_enforcement_action vs oe_enforcement_actions), so anchor on optional
+  // backticks + a `(` boundary rather than a bare substring.
+  const createRe = (table: string) =>
+    new RegExp(`CREATE TABLE IF NOT EXISTS\\s+\`?${table}\`?\\s*\\(`);
+
   it('every registry table has a CREATE TABLE migration', () => {
     for (const d of MERIDIAN_CHAINS) {
-      expect(allSql, `missing table ${d.table} (chain ${d.key})`)
-        .toContain(`CREATE TABLE IF NOT EXISTS ${d.table}`);
+      expect(createRe(d.table).test(allSql), `missing table ${d.table} (chain ${d.key})`).toBe(true);
     }
   });
 
@@ -148,9 +157,12 @@ describe('registry tables exist in migrations', () => {
     // later `ALTER TABLE <table> ADD COLUMN` (e.g. om_sites' commissioning_status /
     // commissioning_due_at arrive via per-column ALTERs in migration 114).
     const hasColumn = (table: string, col: string): boolean => {
-      const block = sqlNoComments.split(`CREATE TABLE IF NOT EXISTS ${table}`)[1]?.split(');')[0] ?? '';
+      // Anchor the CREATE TABLE on optional backticks + `(` so a prefix-sharing
+      // sibling (oe_enforcement_actions) can't be matched for oe_enforcement_action.
+      const m = createRe(table).exec(sqlNoComments);
+      const block = m ? sqlNoComments.slice(m.index + m[0].length).split(');')[0] : '';
       if (block.includes(col)) return true;
-      return new RegExp(`ALTER TABLE\\s+${table}\\s+ADD COLUMN\\s+${col}\\b`).test(sqlNoComments);
+      return new RegExp(`ALTER TABLE\\s+\`?${table}\`?\\s+ADD COLUMN\\s+\`?${col}\\b`).test(sqlNoComments);
     };
     for (const d of MERIDIAN_CHAINS) {
       expect(hasColumn(d.table, d.deadlineCol), `${d.table} missing ${d.deadlineCol}`).toBe(true);
