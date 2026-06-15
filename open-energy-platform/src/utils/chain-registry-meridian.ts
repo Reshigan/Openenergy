@@ -12490,6 +12490,195 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         cascadeHint: 'Withdraws the capital-adequacy report (terminal).' },
     ],
   },
+
+  // ───────── COMPLIANCE REPORTS (no-descriptor backfill) ─────────
+
+  // W230 — CBT/SED annual report (REIPPPP CBT + socio-economic-development DMRE reporting; POST /:id/action verb-in-body)
+  // terminal[] = CBT_HARD_TERMINALS {approved,cancelled,escalated}; the route has no broad NOT IN sweep —
+  // its SLA sweep selects an explicit live set IN ('submitted','under_review','queries_issued','response_submitted'),
+  // and non_compliant/remediation_submitted are NON-terminal (they loop back), so they stay live in Horizon.
+  // DMRE-side actions (commence_review/approve_report/issue_non_compliance/escalate) are gated to {admin,support,regulator}.
+  {
+    key: 'cbt_sed_report', wave: 230, table: 'oe_cbt_sed_reports',
+    title: 'CBT/SED annual report', refCol: 'report_ref', titleCol: 'project_name',
+    quantumCol: 'annual_cbt_disbursement_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline',
+    terminal: ['approved', 'cancelled', 'escalated'],
+    counterpartyCol: 'beneficiary_community',
+    lanes: { ipp_developer: 'regulatory_risk', support: 'platform_ops', regulator: 'licensing' },
+    eventsTable: null, eventsFk: null,
+    actions: [
+      { action: 'submit_report', label: 'Submit to DMRE', tone: 'primary',
+        method: 'POST', path: '/api/ipp/cbt-sed/:id/action',
+        body: { action: 'submit_report' },
+        roles: ['admin', 'support', 'ipp_developer', 'regulator'],
+        cascadeHint: 'IPP formally submits the annual CBT/SED report to DMRE, starting the (inverted-tier) review SLA clock.',
+        fields: [
+          { key: 'report_ref', label: 'DMRE submission reference', type: 'string' },
+          { key: 'reason', label: 'Notes', type: 'string' },
+        ],
+      },
+      { action: 'commence_review', label: 'Commence DMRE review', tone: 'primary',
+        method: 'POST', path: '/api/ipp/cbt-sed/:id/action',
+        body: { action: 'commence_review' },
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'DMRE opens its review of the submitted report.',
+        fields: [
+          { key: 'reason', label: 'Notes', type: 'string' },
+        ],
+      },
+      { action: 'approve_report', label: 'Approve report', tone: 'primary',
+        method: 'POST', path: '/api/ipp/cbt-sed/:id/action',
+        body: { action: 'approve_report' },
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'DMRE approves the annual report (terminal); medium/major CBT approvals cross the regulator inbox (transparency).',
+        fields: [
+          { key: 'reason', label: 'Notes', type: 'string' },
+        ],
+      },
+      { action: 'issue_non_compliance', label: 'Issue non-compliance', tone: 'oxide',
+        method: 'POST', path: '/api/ipp/cbt-sed/:id/action',
+        body: { action: 'issue_non_compliance' },
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'DMRE issues a non-compliance finding (loops to remediation); always crosses the regulator inbox.',
+        fields: [
+          { key: 'non_compliance_reason', label: 'Grounds for non-compliance', type: 'string' },
+        ],
+      },
+      { action: 'escalate', label: 'Escalate to enforcement', tone: 'oxide',
+        method: 'POST', path: '/api/ipp/cbt-sed/:id/action',
+        body: { action: 'escalate' },
+        roles: ['admin', 'support', 'regulator'],
+        cascadeHint: 'Escalates to DMRE Enforcement / BBBEE Commission (terminal); always crosses the regulator inbox.',
+        fields: [
+          { key: 'escalation_reason', label: 'Escalation basis', type: 'string' },
+        ],
+      },
+    ],
+  },
+
+  // W201 — FSCA compliance report (FAIS s.17 annual compliance certificate; POST /:id/action verb-in-body)
+  // terminal[] = FSCC_HARD_TERMINALS {filed,refiled,revocation_risk} = the route SLA-sweep NOT IN clause.
+  {
+    key: 'fsca_compliance_report', wave: 201, table: 'oe_fsca_compliance_reports',
+    title: 'FSCA compliance report', refCol: 'fsca_reference', titleCol: 'fsp_licence_number',
+    quantumCol: null, statusCol: 'chain_status', // report-tracking only; no ZAR-at-risk column
+    deadlineCol: 'sla_deadline',
+    terminal: ['filed', 'refiled', 'revocation_risk'],
+    counterpartyCol: null,
+    lanes: { trader: 'compliance_reporting', support: 'platform_ops' },
+    eventsTable: null, eventsFk: null,
+    actions: [
+      { action: 'co_sign', label: 'Compliance-officer sign-off', tone: 'primary',
+        method: 'POST', path: '/api/fsca-compliance-reports/:id/action',
+        body: { action: 'co_sign' },
+        roles: ['admin', 'trader', 'support'],
+        cascadeHint: 'Compliance officer signs off and submits to FSCA; crosses the regulator inbox on every tier.',
+        fields: [
+          { key: 'fsca_reference', label: 'FSCA reference', type: 'string' },
+          { key: 'reason', label: 'Notes', type: 'string' },
+        ],
+      },
+      { action: 'file_clean', label: 'File clean', tone: 'primary',
+        method: 'POST', path: '/api/fsca-compliance-reports/:id/action',
+        body: { action: 'file_clean' },
+        roles: ['admin', 'trader', 'support'],
+        cascadeHint: 'FSCA files the report clean (terminal); crosses the regulator inbox.',
+        fields: [
+          { key: 'reason', label: 'Notes', type: 'string' },
+        ],
+      },
+      { action: 'flag_deficiency', label: 'Flag deficiency', tone: 'oxide',
+        method: 'POST', path: '/api/fsca-compliance-reports/:id/action',
+        body: { action: 'flag_deficiency' },
+        roles: ['admin', 'trader', 'support'],
+        cascadeHint: 'Flags a compliance deficiency and routes to remediation; crosses the regulator inbox.',
+        fields: [
+          { key: 'deficiency_description', label: 'Deficiency description', type: 'string' },
+        ],
+      },
+      { action: 'refile', label: 'Refile after remediation', tone: 'primary',
+        method: 'POST', path: '/api/fsca-compliance-reports/:id/action',
+        body: { action: 'refile' },
+        roles: ['admin', 'trader', 'support'],
+        cascadeHint: 'Refiles the report after remediation (terminal); crosses the regulator inbox.',
+        fields: [
+          { key: 'reason', label: 'Notes', type: 'string' },
+        ],
+      },
+      { action: 'flag_revocation_risk', label: 'Flag revocation risk', tone: 'oxide',
+        method: 'POST', path: '/api/fsca-compliance-reports/:id/action',
+        body: { action: 'flag_revocation_risk' },
+        roles: ['admin', 'trader', 'support'],
+        cascadeHint: 'Flags the FSP licence as at risk (terminal); crosses the regulator inbox on every tier.',
+        fields: [
+          { key: 'revocation_risk_reason', label: 'Revocation-risk basis', type: 'string' },
+        ],
+      },
+    ],
+  },
+
+  // W210 — Green-tariff disclosure (GHG Scope-2 / I-REC additionality labelling; POST /:id/action verb-in-body)
+  // terminal[] = GT_HARD_TERMINALS {disclosed,rejected,withdrawn} = the route SLA-sweep NOT IN clause.
+  {
+    key: 'green_tariff_disclosure', wave: 210, table: 'oe_green_tariff_disclosures',
+    title: 'Green-tariff disclosure', refCol: 'label_certificate_number', titleCol: 'disclosure_period',
+    quantumCol: null, statusCol: 'chain_status', // MWh/match-% only; no ZAR-at-risk column
+    deadlineCol: 'sla_deadline',
+    terminal: ['disclosed', 'rejected', 'withdrawn'],
+    counterpartyCol: null,
+    lanes: { offtaker: 'contracts', support: 'platform_ops' },
+    eventsTable: null, eventsFk: null,
+    actions: [
+      { action: 'approve_review', label: 'Approve review', tone: 'primary',
+        method: 'POST', path: '/api/green-tariff-disclosures/:id/action',
+        body: { action: 'approve_review' },
+        roles: ['admin', 'offtaker', 'support'],
+        cascadeHint: 'Independent verifier signs off the REC/GOO attribute match.',
+        fields: [
+          { key: 'reviewer_name', label: 'Reviewer name', type: 'string' },
+          { key: 'reviewer_ref', label: 'Reviewer reference', type: 'string' },
+        ],
+      },
+      { action: 'issue_label', label: 'Issue green label', tone: 'primary',
+        method: 'POST', path: '/api/green-tariff-disclosures/:id/action',
+        body: { action: 'issue_label' },
+        roles: ['admin', 'offtaker', 'support'],
+        cascadeHint: 'Issues the green-label certificate; for corporate-PPA/SBTi classes crosses the regulator inbox (public claim).',
+        fields: [
+          { key: 'label_certificate_number', label: 'Label certificate number', type: 'string' },
+          { key: 'label_valid_until', label: 'Valid until', type: 'date' },
+        ],
+      },
+      { action: 'complete_disclosure', label: 'Complete disclosure', tone: 'primary',
+        method: 'POST', path: '/api/green-tariff-disclosures/:id/action',
+        body: { action: 'complete_disclosure' },
+        roles: ['admin', 'offtaker', 'support'],
+        cascadeHint: 'Completes the public Scope-2 disclosure (terminal).',
+        fields: [
+          { key: 'disclosure_date', label: 'Disclosure date', type: 'date' },
+        ],
+      },
+      { action: 'reject', label: 'Reject', tone: 'oxide',
+        method: 'POST', path: '/api/green-tariff-disclosures/:id/action',
+        body: { action: 'reject' },
+        roles: ['admin', 'offtaker', 'support'],
+        cascadeHint: 'Rejects the disclosure on eligibility grounds (terminal); always crosses the regulator inbox (false-green-claim prevention).',
+        fields: [
+          { key: 'rejection_reason', label: 'Rejection reason', type: 'string' },
+        ],
+      },
+      { action: 'withdraw', label: 'Withdraw', tone: 'oxide',
+        method: 'POST', path: '/api/green-tariff-disclosures/:id/action',
+        body: { action: 'withdraw' },
+        roles: ['admin', 'offtaker', 'support'],
+        cascadeHint: 'Applicant withdraws the disclosure (terminal).',
+        fields: [
+          { key: 'reason', label: 'Withdrawal reason', type: 'string' },
+        ],
+      },
+    ],
+  },
 ];
 
 export function chainsForRole(role: string): ChainDescriptor[] {
