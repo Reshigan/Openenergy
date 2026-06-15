@@ -110,6 +110,58 @@ const CarbonAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy
   return { default: Adapter };
 });
 
+// ── Regulator surfaces (E2.8d — RegulatorWorkstationPage migration) ──────────
+// Chain tabs with MERIDIAN_CHAINS descriptors → retired to /ledger/:chainKey:
+//   enforcement_action, enforcement_action_s35, esg_disclosure, public_consultation,
+//   market_conduct_exam, regulator_export_pack (W119), control_environment_audit (W121).
+// The remaining tabs are extracted/registered here:
+//   - surveillance, licences, enforcement — inline CRUD/event-log bodies (Bucket B) → new files.
+//   - reports — ReportPanel surface (Bucket D) → new file.
+//   - inbox, notices — already-standalone named-export tab components → adapter-wrapped.
+//   - icfr_attestations — ReconciliationAttestationTab (W120) has NO chain descriptor, so it is
+//     EXTRACTED as Bucket E (regulatorView read-only) rather than retired.
+//   - government_filing — shared connector (NOT a chain), already exposed as
+//     `regulator:government-filing` via GovernmentFilingConnector above.
+const RegulatorSurveillance = React.lazy(() => import('./surfaces/regulator/SurveillanceSurface'));
+const RegulatorLicences = React.lazy(() => import('./surfaces/regulator/LicencesSurface'));
+const RegulatorEnforcement = React.lazy(() => import('./surfaces/regulator/EnforcementSurface'));
+const RegulatorReports = React.lazy(() => import('./surfaces/regulator/ReportsSurface'));
+
+// InboxTab + NoticesTab are self-contained no-prop named exports; wrap each in a lazy adapter
+// that ignores `role` and renders the tab unchanged.
+const RegulatorInbox: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { InboxTab } = await import('../components/regulator/InboxTab');
+  const Adapter: SurfaceComponent = () => <InboxTab />;
+  return { default: Adapter };
+});
+const RegulatorNotices: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { NoticesTab } = await import('../components/regulator/NoticesTab');
+  const Adapter: SurfaceComponent = () => <NoticesTab />;
+  return { default: Adapter };
+});
+
+// W120 ReconciliationAttestationTab has no MERIDIAN_CHAINS descriptor → Bucket E. The regulator
+// sees the read-only incoming view (regulatorView). Named export taking `{ regulatorView? }`.
+const RegulatorIcfrAttestations: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { ReconciliationAttestationTab } = await import('../components/reconciliation/ReconciliationAttestationTab');
+  const Adapter: SurfaceComponent = ({ role }) => <ReconciliationAttestationTab regulatorView={role === 'regulator'} />;
+  return { default: Adapter };
+});
+
+// Audit tab carried verbatim from the RegulatorWorkstationPage `audit` tab
+// (prefix /regulator, licence recon hint + dmre/nersa_internal/eskom recon sources).
+const RegulatorAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { AuditPanel } = await import('../components/launch/AuditPanel');
+  const Adapter: SurfaceComponent = () => (
+    <AuditPanel
+      prefix="/regulator"
+      reconHint="licence_number,licensee_name,status,capacity_mw"
+      reconSourceOptions={['dmre', 'nersa_internal', 'eskom']}
+    />
+  );
+  return { default: Adapter };
+});
+
 // ── Registry ───────────────────────────────────────────────────────────────
 export const SURFACE_REGISTRY: Record<
   string,
@@ -131,6 +183,8 @@ export const SURFACE_REGISTRY: Record<
   'offtaker:government-filing': GovernmentFilingConnector,
   'trader:government-filing': GovernmentFilingConnector,
   'regulator:government-filing': GovernmentFilingConnector,
+  // regulator roleData feature key is `government_filing` (underscore) — alias to same connector (E2.8d)
+  'regulator:government_filing': GovernmentFilingConnector,
   // mqtt-opcua → grid_operator,support,ipp_developer
   'grid_operator:mqtt-opcua': MqttOpcuaConnector,
   'support:mqtt-opcua': MqttOpcuaConnector,
@@ -163,4 +217,13 @@ export const SURFACE_REGISTRY: Record<
   'carbon_fund:certificates': CarbonCertificates,
   'carbon_fund:reports': CarbonReports,
   'carbon_fund:audit': CarbonAuditPanel,
+  // regulator workstation migration (E2.8d) — keys match roleData feature keys emitted by Atlas
+  'regulator:inbox': RegulatorInbox,
+  'regulator:notices': RegulatorNotices,
+  'regulator:surveillance': RegulatorSurveillance,
+  'regulator:licences': RegulatorLicences,
+  'regulator:enforcement': RegulatorEnforcement,
+  'regulator:icfr_attestations': RegulatorIcfrAttestations,
+  'regulator:reports': RegulatorReports,
+  'regulator:audit': RegulatorAuditPanel,
 };

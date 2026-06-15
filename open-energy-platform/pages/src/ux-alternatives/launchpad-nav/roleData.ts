@@ -585,7 +585,7 @@ const regulatorDomains: Domain[] = [
     color: 'oklch(0.46 0.12 200)',
     features: [
       { key: 'levy_assessments', label: 'Levy assessments', chainKey: 'levy_assessment', description: 'NERA Act §5B levy assessment chain (W74).', mockStates: ['assessed','invoice_issued','final_demand','enforcement','paid','write_off'], mockState: 'invoice_issued' },
-      { key: 'regulator_exports', label: 'Regulatory exports', description: 'Certified export packages (W119).' },
+      { key: 'regulator_exports', label: 'Regulatory exports', chainKey: 'regulator_export_pack', description: 'Certified export packages (W119).' },
       { key: 'icfr_attestations', label: 'ICFR attestations', description: 'Reconciliation attestation packs (W120).' },
     ],
   },
@@ -598,8 +598,10 @@ const regulatorDomains: Domain[] = [
       { key: 'inbox', label: 'Regulatory inbox', description: 'Cross-chain regulatory inbox — escalated items.' },
       { key: 'government_filing', label: 'Filing connectors', description: 'NERSA/FSCA government filing connectors (W126).' },
       { key: 'stage_gates_view', label: 'Stage gates (read)', description: 'Platform-wide DG gate view (W131).' },
-      { key: 'external_controls', label: 'External controls', description: 'Control environment audit (W121).' },
+      { key: 'external_controls', label: 'External controls', chainKey: 'control_environment_audit', description: 'Control environment audit (W121).' },
       { key: 'esg_disclosure_view', label: 'ESG disclosure (read)', chainKey: 'esg_disclosure', description: 'ESG disclosure read-only view.' },
+      { key: 'reports', label: 'Reports & exports', description: 'Statutory submissions, levy assessments and disposition reports with pivots and exports.' },
+      { key: 'audit', label: 'Audit & compliance', description: 'Tamper-evident audit chain, certified exports and licence reconciliation.' },
     ],
   },
 ];
