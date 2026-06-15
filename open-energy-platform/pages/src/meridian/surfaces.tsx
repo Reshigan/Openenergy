@@ -198,23 +198,84 @@ const LenderAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy
   return { default: Adapter };
 });
 
+// ── Admin surfaces (E2.1 — AdminWorkstationPage migration) ───────────────────
+// Chain tabs with MERIDIAN_CHAINS descriptors → retired to /ledger/:chainKey:
+//   audit_chain_block (W118), regulator_export_pack (W119), control_environment_audit (W121),
+//   kyc_verification (W198). These are reached from Atlas via their roleData feature chainKey.
+// The remaining non-chain tabs are extracted/registered here:
+//   - tenant_events / billing / flags — inline CRUD bodies (Bucket B) → new files.
+//   - pii_access — inline read-only listing (Bucket B) → new file (roleData feature added in E2.1).
+//   - monitoring (Cascade DLQ) / subscription_billing (W228) — inline operational bodies (Bucket D)
+//     → new files (subscription_billing roleData feature added in E2.1).
+//   - popia (POPIA data subject requests, W233) — inline operational body (Bucket E) → new file.
+//   - reports — ReportPanel surface (Bucket D) → new file (roleData feature added in E2.1).
+//   - settlement_audit / platform_audit — two AuditPanel adapters (carried verbatim from the husk).
+//   - reconciliation_attestation (W120) — ReconciliationAttestationTab has NO chain descriptor
+//     (audit_recon_runs is not in the meridian chain registry), so it is EXTRACTED as Bucket E
+//     (admin sees the operator view, regulatorView=false) rather than retired.
+//   - settlement_rails / erp_connectors / filing_connectors / anomaly_admin /
+//     rul_prediction_admin / fault_fingerprint_admin — shared connectors/ML, registered below via
+//     the connector/ML trio adapters under keys matching admin's real roleData feature keys
+//     (rul_prediction_admin + fault_fingerprint_admin roleData features added in E2.1).
+const AdminTenant = React.lazy(() => import('./surfaces/admin/TenantSurface'));
+const AdminBilling = React.lazy(() => import('./surfaces/admin/BillingSurface'));
+const AdminFlags = React.lazy(() => import('./surfaces/admin/FlagsSurface'));
+const AdminPiiAccess = React.lazy(() => import('./surfaces/admin/PiiAccessSurface'));
+const AdminCascadeDlq = React.lazy(() => import('./surfaces/admin/CascadeDlqSurface'));
+const AdminSubscriptionBilling = React.lazy(() => import('./surfaces/admin/SubscriptionBillingSurface'));
+const AdminDataSubjectRequest = React.lazy(() => import('./surfaces/admin/DataSubjectRequestSurface'));
+const AdminReports = React.lazy(() => import('./surfaces/admin/ReportsSurface'));
+
+// W120 ReconciliationAttestationTab has no MERIDIAN_CHAINS descriptor → Bucket E. Admin sees the
+// operator (non-regulator) view. Named export taking `{ regulatorView? }`.
+const AdminReconciliationAttestation: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { ReconciliationAttestationTab } = await import('../components/reconciliation/ReconciliationAttestationTab');
+  const Adapter: SurfaceComponent = ({ role }) => <ReconciliationAttestationTab regulatorView={role === 'regulator'} />;
+  return { default: Adapter };
+});
+
+// Two AuditPanel adapters carried verbatim from the AdminWorkstationPage `settlement_audit` and
+// `platform_audit` tabs (distinct prefixes + recon hints + recon source options).
+const AdminSettlementAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { AuditPanel } = await import('../components/launch/AuditPanel');
+  const Adapter: SurfaceComponent = () => (
+    <AuditPanel
+      prefix="/settlement"
+      reconHint="bank_ref,value_date,amount_zar,narrative"
+      reconSourceOptions={['bank', 'absa', 'standard_bank', 'fnb', 'nedbank']}
+    />
+  );
+  return { default: Adapter };
+});
+const AdminPlatformAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { AuditPanel } = await import('../components/launch/AuditPanel');
+  const Adapter: SurfaceComponent = () => (
+    <AuditPanel
+      prefix="/admin-platform"
+      reconHint="billing_run_id,tenant_id,amount_zar,period_end"
+      reconSourceOptions={['billing_processor', 'stripe', 'paystack', 'manual']}
+    />
+  );
+  return { default: Adapter };
+});
+
 // ── Registry ───────────────────────────────────────────────────────────────
 export const SURFACE_REGISTRY: Record<
   string,
   React.LazyExoticComponent<SurfaceComponent> | SurfaceComponent
 > = {
-  // strate-swift → admin,lender,offtaker,trader
-  'admin:strate-swift': StrateSwiftConnector,
+  // strate-swift → admin (roleData feature key `settlement_rails`),lender,offtaker,trader
+  'admin:settlement_rails': StrateSwiftConnector,
   'lender:strate-swift': StrateSwiftConnector,
   'offtaker:strate-swift': StrateSwiftConnector,
   'trader:strate-swift': StrateSwiftConnector,
-  // sap-oracle-erp → admin,lender,offtaker,trader
-  'admin:sap-oracle-erp': SapOracleErpConnector,
+  // sap-oracle-erp → admin (roleData feature key `erp_connectors`),lender,offtaker,trader
+  'admin:erp_connectors': SapOracleErpConnector,
   'lender:sap-oracle-erp': SapOracleErpConnector,
   'offtaker:sap-oracle-erp': SapOracleErpConnector,
   'trader:sap-oracle-erp': SapOracleErpConnector,
-  // government-filing → admin,lender,offtaker,trader,regulator
-  'admin:government-filing': GovernmentFilingConnector,
+  // government-filing → admin (roleData feature key `filing_connectors`),lender,offtaker,trader,regulator
+  'admin:filing_connectors': GovernmentFilingConnector,
   'lender:government-filing': GovernmentFilingConnector,
   'offtaker:government-filing': GovernmentFilingConnector,
   'trader:government-filing': GovernmentFilingConnector,
@@ -228,16 +289,16 @@ export const SURFACE_REGISTRY: Record<
   // scada → grid_operator,ipp_developer
   'grid_operator:scada': ScadaConnector,
   'ipp_developer:scada': ScadaConnector,
-  // anomaly-detection ML → admin,support,ipp_developer
-  'admin:anomaly-detection': AnomalyDetectionMl,
+  // anomaly-detection ML → admin (roleData feature key `anomaly_admin`),support,ipp_developer
+  'admin:anomaly_admin': AnomalyDetectionMl,
   'support:anomaly-detection': AnomalyDetectionMl,
   'ipp_developer:anomaly-detection': AnomalyDetectionMl,
-  // rul-prediction ML → admin,support,ipp_developer
-  'admin:rul-prediction': RulPredictionMl,
+  // rul-prediction ML → admin (roleData feature key `rul_prediction_admin`),support,ipp_developer
+  'admin:rul_prediction_admin': RulPredictionMl,
   'support:rul-prediction': RulPredictionMl,
   'ipp_developer:rul-prediction': RulPredictionMl,
-  // fault-fingerprint ML → admin,support,ipp_developer
-  'admin:fault-fingerprint': FaultFingerprintMl,
+  // fault-fingerprint ML → admin (roleData feature key `fault_fingerprint_admin`),support,ipp_developer
+  'admin:fault_fingerprint_admin': FaultFingerprintMl,
   'support:fault-fingerprint': FaultFingerprintMl,
   'ipp_developer:fault-fingerprint': FaultFingerprintMl,
   // esco workstation migration (E2.8a) — keys match roleData feature keys emitted by Atlas
@@ -268,4 +329,18 @@ export const SURFACE_REGISTRY: Record<
   'lender:dunning': LenderDunning,
   'lender:reports': LenderReports,
   'lender:audit': LenderAuditPanel,
+  // admin workstation migration (E2.1) — keys match roleData feature keys emitted by Atlas.
+  // settlement_rails / erp_connectors / filing_connectors / anomaly_admin / rul_prediction_admin /
+  // fault_fingerprint_admin are registered in the connector/ML trio above.
+  'admin:tenant_events': AdminTenant,
+  'admin:billing': AdminBilling,
+  'admin:flags': AdminFlags,
+  'admin:pii_access': AdminPiiAccess,
+  'admin:monitoring': AdminCascadeDlq,
+  'admin:subscription_billing': AdminSubscriptionBilling,
+  'admin:popia': AdminDataSubjectRequest,
+  'admin:reports': AdminReports,
+  'admin:reconciliation_attestation': AdminReconciliationAttestation,
+  'admin:settlement_audit': AdminSettlementAuditPanel,
+  'admin:platform_audit': AdminPlatformAuditPanel,
 };

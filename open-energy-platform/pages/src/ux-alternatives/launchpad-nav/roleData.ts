@@ -626,6 +626,7 @@ const adminDomains: Domain[] = [
       { key: 'flags', label: 'Feature flags', description: 'Global and per-tenant feature flag overrides.' },
       { key: 'kyc_verifications', label: 'KYC / FICA', chainKey: 'kyc_verification', description: 'KYC verification queue (W198).' },
       { key: 'popia', label: 'POPIA rights', description: 'Data subject access and erasure requests.' },
+      { key: 'pii_access', label: 'PII access log', description: 'POPIA s.18/s.19 cross-tenant PII access audit log.' },
     ],
   },
   {
@@ -635,11 +636,13 @@ const adminDomains: Domain[] = [
     color: 'oklch(0.42 0.12 140)',
     features: [
       { key: 'billing', label: 'Billing runs', description: 'Monthly subscription billing and invoicing.' },
+      { key: 'subscription_billing', label: 'Subscription billing (W228)', description: 'Platform SaaS-invoice oversight with dunning ladder.' },
       { key: 'settlement_audit', label: 'Settlement audit', description: 'Settlement reconciliation and break review.' },
       { key: 'platform_audit', label: 'Platform audit', description: 'Full platform audit log (cascade events).' },
       { key: 'cron', label: 'Cron jobs', description: 'Manual cron job trigger and dry-run.' },
       { key: 'monitoring', label: 'Monitoring', description: 'DLQ, cascade errors, system health.' },
       { key: 'revenue', label: 'Revenue dashboard', description: 'Platform fee revenue by tenant (W-commercial).' },
+      { key: 'reports', label: 'Reports & exports', description: 'Platform events and role-action-queue reports with pivots and exports.' },
     ],
   },
   {
@@ -661,7 +664,7 @@ const adminDomains: Domain[] = [
     features: [
       { key: 'audit_chain', label: 'Audit chain (W118)', chainKey: 'audit_chain_block', description: 'Tamper-evident Merkle audit chain.' },
       { key: 'regulator_exports_admin', label: 'Regulator exports (W119)', chainKey: 'regulator_export_pack', description: 'Certified regulatory export packs.' },
-      { key: 'reconciliation_attestation', label: 'Reconciliation attestation (W120)', chainKey: 'audit_recon_runs', description: 'CA(SA)-signed reconciliation packs.' },
+      { key: 'reconciliation_attestation', label: 'Reconciliation attestation (W120)', description: 'CA(SA)-signed reconciliation packs.' },
       { key: 'control_environment', label: 'Control environment (W121)', chainKey: 'control_environment_audit', description: 'Annual internal control audit cycle.' },
       { key: 'esg_admin', label: 'ESG reporting', description: 'Platform-wide ESG aggregate reports.' },
       { key: 'contracts_admin', label: 'Contract templates', description: 'Platform contract template registry.' },
@@ -677,6 +680,8 @@ const adminDomains: Domain[] = [
       { key: 'intelligence', label: 'AI intelligence', description: 'Platform AI decision audit trail.' },
       { key: 'briefing', label: 'Briefing', description: 'Daily AI briefings per role.' },
       { key: 'anomaly_admin', label: 'Anomaly detection (W127)', description: 'Platform anomaly ML monitoring.' },
+      { key: 'rul_prediction_admin', label: 'RUL prediction (W128)', description: 'Platform remaining-useful-life ML monitoring.' },
+      { key: 'fault_fingerprint_admin', label: 'Fault fingerprint (W129)', description: 'Platform fault-fingerprint ML monitoring.' },
     ],
   },
   {
