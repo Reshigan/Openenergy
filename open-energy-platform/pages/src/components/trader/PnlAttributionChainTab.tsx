@@ -448,7 +448,7 @@ export function PnlAttributionChainTab() {
         if (!reason) return;
         body.variance_reason = reason;
       } else if (action === 'restate-pnl') {
-        const reason = window.prompt('Restate reason (required). NOTE: 2nd restate within 30d crosses regulator EVERY tier (W111 SIGNATURE):', row.restate_reason ?? '');
+        const reason = window.prompt('Restate reason (required). NOTE: 2nd restate within 30d crosses regulator EVERY tier:', row.restate_reason ?? '');
         if (!reason) return;
         body.restate_reason = reason;
       }
@@ -476,8 +476,8 @@ export function PnlAttributionChainTab() {
             OR FRTB IMA OR cross-border. SIGNATURE: <strong>restate-pnl crosses regulator EVERY tier when 2nd within 30d</strong> (IFRS 9
             stage 3 trigger); flag-variance crosses material+systemic at gap&ge;10%; approve-pnl crosses systemic when stress
             period active; publish-pnl crosses systemic when FRTB IMA; SLA breach crosses material+systemic. 4-step authority
-            ladder: trader {'→'} desk_head {'→'} market_risk_manager {'→'} CFO. 3 bridges: W2 trading risk, W107 pre-trade credit,
-            W44 trade reporting.
+            ladder: trader {'→'} desk_head {'→'} market_risk_manager {'→'} CFO. 3 bridges: trading risk, pre-trade credit,
+            trade reporting.
           </p>
         </div>
       </header>
@@ -497,9 +497,9 @@ export function PnlAttributionChainTab() {
         <span>Reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
         <span>Variance imminent: <span className="font-semibold text-[#a06200]">{kpis.variance_imminent_count}</span></span>
         <span>Restate risk: <span className="font-semibold text-[#9b1f1f]">{kpis.restate_risk_count}</span></span>
-        <span>Bridges to W2 (risk): <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.trading_risk_bridged_count}</span></span>
-        <span>Bridges to W107 (pretrade): <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.pretrade_bridged_count}</span></span>
-        <span>Bridges to W44 (reporting): <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.trade_reporting_bridged_count}</span></span>
+        <span>Bridges to risk: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.trading_risk_bridged_count}</span></span>
+        <span>Bridges to pretrade: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.pretrade_bridged_count}</span></span>
+        <span>Bridges to reporting: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.trade_reporting_bridged_count}</span></span>
         <span>Total daily P&amp;L: <span className={`font-semibold ${kpis.total_daily_pnl_zar_sum >= 0 ? 'text-[#1f5b3a]' : 'text-[#9b1f1f]'}`}>{fmtZar(kpis.total_daily_pnl_zar_sum)}</span></span>
       </div>
 
@@ -746,11 +746,11 @@ function Drawer({
           </Section>
 
           {/* Bridges */}
-          <Section title="3-bridge architecture (W2 / W107 / W44)">
+          <Section title="3-bridge architecture (trading risk / pre-trade credit / trade reporting)">
             <Grid>
-              <Field label="W2 trading risk ref"     value={row.trading_risk_ref ?? '-'}  tone={row.bridges_to_trading_risk_chain_live ? 'ok' : 'warn'} />
-              <Field label="W107 pre-trade ref"      value={row.pretrade_credit_ref ?? '-'} tone={row.bridges_to_pretrade_credit_chain_live ? 'ok' : 'warn'} />
-              <Field label="W44 trade reporting ref" value={row.trade_reporting_ref ?? '-'} tone={row.bridges_to_trade_reporting_chain_live ? 'ok' : 'warn'} />
+              <Field label="Trading risk ref"      value={row.trading_risk_ref ?? '-'}  tone={row.bridges_to_trading_risk_chain_live ? 'ok' : 'warn'} />
+              <Field label="Pre-trade credit ref"  value={row.pretrade_credit_ref ?? '-'} tone={row.bridges_to_pretrade_credit_chain_live ? 'ok' : 'warn'} />
+              <Field label="Trade reporting ref"   value={row.trade_reporting_ref ?? '-'} tone={row.bridges_to_trade_reporting_chain_live ? 'ok' : 'warn'} />
               <Field label="Regulator inbox ref"     value={row.regulator_inbox_ref ?? '-'} />
               <Field label="Regulator ref"           value={row.regulator_ref ?? '-'} />
               <Field label="Last restate at"         value={fmtDate(row.last_restate_at)} />

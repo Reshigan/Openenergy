@@ -428,7 +428,7 @@ export function PreTradeCreditChainTab() {
             Pre-Trade Credit Check &amp; Settlement-Risk Exposure — FMA Ch.X s50 + FSCA + BIS PFMI + CFTC Reg 1.73 + MiFID II Art 17
           </h2>
           <p className="text-xs text-[#4a5568]">
-            12-state P6 pre-trade gate upstream of every other Trader chain (W2, W9, W29, W36, W44, W52, W60, W68, W76):
+            12-state P6 pre-trade gate upstream of every other Trader chain:
             order submitted {'->'} KYC verified {'->'} credit line checked {'->'} settlement risk assessed {'->'} concentration checked {'->'}
             halt status verified {'->'} mark age validated {'->'} cleared {'->'} archived, with hold-for-review / manually-clear /
             manually-reject / reject / override branches. URGENT sub-second SLA polarity: systemic 500ms, material 2s,
@@ -455,9 +455,9 @@ export function PreTradeCreditChainTab() {
         <span>Reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
         <span>Cross-border: <span className="font-semibold text-[#7a4500]">{kpis.cross_border_count}</span></span>
         <span>Overridden: <span className="font-semibold text-[#9b1f1f]">{kpis.overridden_count}</span></span>
-        <span>Bridges to W2 (trading risk): <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.trading_risk_bridged_count}</span></span>
-        <span>Bridges to W29 (position limit): <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.position_limit_bridged_count}</span></span>
-        <span>Bridges to W68 (counterparty margin): <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.counterparty_margin_bridged_count}</span></span>
+        <span>Bridges to trading risk: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.trading_risk_bridged_count}</span></span>
+        <span>Bridges to position limit: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.position_limit_bridged_count}</span></span>
+        <span>Bridges to counterparty margin: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.counterparty_margin_bridged_count}</span></span>
         <span>Total notional: <span className="font-semibold text-[#1f5b3a]">{fmtZar(kpis.total_notional_zar)}</span></span>
       </div>
 
@@ -716,9 +716,9 @@ function Drawer({
 
           <Section title="Bridges">
             <Grid>
-              <Field k="W2 trading-risk" v={row.bridges_to_trading_risk_chain_live ? 'YES' : 'no'} />
-              <Field k="W29 position-limit" v={row.bridges_to_position_limit_chain_live ? 'YES' : 'no'} />
-              <Field k="W68 counterparty-margin" v={row.bridges_to_counterparty_margin_chain_live ? 'YES' : 'no'} />
+              <Field k="Trading-risk" v={row.bridges_to_trading_risk_chain_live ? 'YES' : 'no'} />
+              <Field k="Position-limit" v={row.bridges_to_position_limit_chain_live ? 'YES' : 'no'} />
+              <Field k="Counterparty-margin" v={row.bridges_to_counterparty_margin_chain_live ? 'YES' : 'no'} />
               <Field k="Counterparty margin ref" v={row.counterparty_margin_ref ?? '-'} />
               <Field k="VaR limit" v={fmtZar(row.var_limit_zar)} />
               <Field k="Current position" v={fmtZar(row.current_position_zar)} />

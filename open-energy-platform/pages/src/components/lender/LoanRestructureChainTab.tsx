@@ -268,8 +268,8 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: 'ifrs9_3',                         label: 'IFRS 9 Stage 3' },
   { key: 'public_bondholder',               label: 'Public bondholder' },
   { key: 'sarb_le',                         label: 'SARB large exposure' },
-  { key: 'covenant_bridged',                label: 'W38 covenant bridge' },
-  { key: 'dscr_bridged',                    label: 'W86 DSCR bridge' },
+  { key: 'covenant_bridged',                label: 'Covenant bridge' },
+  { key: 'dscr_bridged',                    label: 'DSCR bridge' },
   { key: 'board_escalated',                 label: 'Board escalation' },
 ];
 
@@ -354,11 +354,11 @@ function getActions(row: LrsRow): ChainAction[] {
     });
     actions.push({
       key: 'escalate-to-default',
-      label: 'Escalate to default — feeds W45 (lender)',
+      label: 'Escalate to default — feeds default enforcement (lender)',
       fields: [
-        { key: 'narrative', label: 'Basis — escalating to default; failed restructure feeds W45 enforcement chain. SIGNATURE — crosses regulator EVERY tier (Basel III IFRS 9 Stage 3 + LMA event of default + SARB Banks Act §61)', type: 'textarea', required: true },
+        { key: 'narrative', label: 'Basis — escalating to default; failed restructure feeds the default enforcement chain. SIGNATURE — crosses regulator EVERY tier (Basel III IFRS 9 Stage 3 + LMA event of default + SARB Banks Act §61)', type: 'textarea', required: true },
         { key: 'escalation_reason', label: 'Escalation reason (e.g. consent_failed / borrower_default / restructure_unworkable / abandoned_mid_cure)', type: 'text', required: false, placeholder: row.escalation_reason ?? '' },
-        { key: 'default_chain_ref', label: 'W45 default chain ref (optional, leave blank to create new)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
+        { key: 'default_chain_ref', label: 'Default chain ref (optional, leave blank to create new)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -389,11 +389,11 @@ function getActions(row: LrsRow): ChainAction[] {
     });
     actions.push({
       key: 'escalate-to-default',
-      label: 'Escalate to default — feeds W45 (lender)',
+      label: 'Escalate to default — feeds default enforcement (lender)',
       fields: [
-        { key: 'narrative', label: 'Basis — escalating to default; failed restructure feeds W45 enforcement chain. SIGNATURE — crosses regulator EVERY tier', type: 'textarea', required: true },
+        { key: 'narrative', label: 'Basis — escalating to default; failed restructure feeds the default enforcement chain. SIGNATURE — crosses regulator EVERY tier', type: 'textarea', required: true },
         { key: 'escalation_reason', label: 'Escalation reason', type: 'text', required: false, placeholder: row.escalation_reason ?? '' },
-        { key: 'default_chain_ref', label: 'W45 default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
+        { key: 'default_chain_ref', label: 'Default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -419,11 +419,11 @@ function getActions(row: LrsRow): ChainAction[] {
     });
     actions.push({
       key: 'escalate-to-default',
-      label: 'Escalate to default — feeds W45 (lender)',
+      label: 'Escalate to default — feeds default enforcement (lender)',
       fields: [
         { key: 'narrative', label: 'Basis — escalating to default. SIGNATURE — crosses regulator EVERY tier', type: 'textarea', required: true },
         { key: 'escalation_reason', label: 'Escalation reason', type: 'text', required: false, placeholder: row.escalation_reason ?? '' },
-        { key: 'default_chain_ref', label: 'W45 default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
+        { key: 'default_chain_ref', label: 'Default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -470,11 +470,11 @@ function getActions(row: LrsRow): ChainAction[] {
     });
     actions.push({
       key: 'escalate-to-default',
-      label: 'Escalate to default — feeds W45 (lender)',
+      label: 'Escalate to default — feeds default enforcement (lender)',
       fields: [
         { key: 'narrative', label: 'Basis — escalating to default. SIGNATURE — crosses regulator EVERY tier', type: 'textarea', required: true },
         { key: 'escalation_reason', label: 'Escalation reason', type: 'text', required: false, placeholder: row.escalation_reason ?? '' },
-        { key: 'default_chain_ref', label: 'W45 default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
+        { key: 'default_chain_ref', label: 'Default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -512,11 +512,11 @@ function getActions(row: LrsRow): ChainAction[] {
     });
     actions.push({
       key: 'escalate-to-default',
-      label: 'Escalate to default — feeds W45 (lender)',
+      label: 'Escalate to default — feeds default enforcement (lender)',
       fields: [
         { key: 'narrative', label: 'Basis — escalating to default. SIGNATURE — crosses regulator EVERY tier', type: 'textarea', required: true },
         { key: 'escalation_reason', label: 'Escalation reason', type: 'text', required: false, placeholder: row.escalation_reason ?? '' },
-        { key: 'default_chain_ref', label: 'W45 default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
+        { key: 'default_chain_ref', label: 'Default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -542,11 +542,11 @@ function getActions(row: LrsRow): ChainAction[] {
     });
     actions.push({
       key: 'escalate-to-default',
-      label: 'Escalate to default — feeds W45 (lender)',
+      label: 'Escalate to default — feeds default enforcement (lender)',
       fields: [
         { key: 'narrative', label: 'Basis — escalating to default. SIGNATURE — crosses regulator EVERY tier', type: 'textarea', required: true },
         { key: 'escalation_reason', label: 'Escalation reason', type: 'text', required: false, placeholder: row.escalation_reason ?? '' },
-        { key: 'default_chain_ref', label: 'W45 default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
+        { key: 'default_chain_ref', label: 'Default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -574,11 +574,11 @@ function getActions(row: LrsRow): ChainAction[] {
     });
     actions.push({
       key: 'escalate-to-default',
-      label: 'Escalate to default — feeds W45 (lender)',
+      label: 'Escalate to default — feeds default enforcement (lender)',
       fields: [
         { key: 'narrative', label: 'Basis — escalating to default. SIGNATURE — crosses regulator EVERY tier', type: 'textarea', required: true },
         { key: 'escalation_reason', label: 'Escalation reason', type: 'text', required: false, placeholder: row.escalation_reason ?? '' },
-        { key: 'default_chain_ref', label: 'W45 default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
+        { key: 'default_chain_ref', label: 'Default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -613,11 +613,11 @@ function getActions(row: LrsRow): ChainAction[] {
     });
     actions.push({
       key: 'escalate-to-default',
-      label: 'Escalate to default — feeds W45 (lender)',
+      label: 'Escalate to default — feeds default enforcement (lender)',
       fields: [
         { key: 'narrative', label: 'Basis — escalating to default. SIGNATURE — crosses regulator EVERY tier', type: 'textarea', required: true },
         { key: 'escalation_reason', label: 'Escalation reason', type: 'text', required: false, placeholder: row.escalation_reason ?? '' },
-        { key: 'default_chain_ref', label: 'W45 default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
+        { key: 'default_chain_ref', label: 'Default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -643,11 +643,11 @@ function getActions(row: LrsRow): ChainAction[] {
     });
     actions.push({
       key: 'escalate-to-default',
-      label: 'Escalate to default — feeds W45 (lender)',
+      label: 'Escalate to default — feeds default enforcement (lender)',
       fields: [
         { key: 'narrative', label: 'Basis — escalating to default. SIGNATURE — crosses regulator EVERY tier', type: 'textarea', required: true },
         { key: 'escalation_reason', label: 'Escalation reason', type: 'text', required: false, placeholder: row.escalation_reason ?? '' },
-        { key: 'default_chain_ref', label: 'W45 default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
+        { key: 'default_chain_ref', label: 'Default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -664,11 +664,11 @@ function getActions(row: LrsRow): ChainAction[] {
     });
     actions.push({
       key: 'escalate-to-default',
-      label: 'Escalate to default — feeds W45 (lender)',
+      label: 'Escalate to default — feeds default enforcement (lender)',
       fields: [
         { key: 'narrative', label: 'Basis — escalating to default. SIGNATURE — crosses regulator EVERY tier', type: 'textarea', required: true },
         { key: 'escalation_reason', label: 'Escalation reason', type: 'text', required: false, placeholder: row.escalation_reason ?? '' },
-        { key: 'default_chain_ref', label: 'W45 default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
+        { key: 'default_chain_ref', label: 'Default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -693,11 +693,11 @@ function getActions(row: LrsRow): ChainAction[] {
     });
     actions.push({
       key: 'escalate-to-default',
-      label: 'Escalate to default — feeds W45 (lender)',
+      label: 'Escalate to default — feeds default enforcement (lender)',
       fields: [
         { key: 'narrative', label: 'Basis — escalating to default. SIGNATURE — crosses regulator EVERY tier', type: 'textarea', required: true },
         { key: 'escalation_reason', label: 'Escalation reason', type: 'text', required: false, placeholder: row.escalation_reason ?? '' },
-        { key: 'default_chain_ref', label: 'W45 default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
+        { key: 'default_chain_ref', label: 'Default chain ref (optional)', type: 'text', required: false, placeholder: row.default_chain_ref ?? '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -808,17 +808,17 @@ function renderDetail(row: LrsRow): React.ReactNode {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {row.bridges_to_covenant_certificate_chain_live && (
               <span style={{ borderRadius: 4, background: 'oklch(0.88 0.04 250)', color: TX1, fontSize: 10, fontWeight: 600, padding: '2px 8px' }}>
-                W38 {row.covenant_breach_ref ?? ''}
+                Covenant {row.covenant_breach_ref ?? ''}
               </span>
             )}
             {row.bridges_to_dscr_monitoring_chain_live && (
               <span style={{ borderRadius: 4, background: 'oklch(0.88 0.04 250)', color: TX1, fontSize: 10, fontWeight: 600, padding: '2px 8px' }}>
-                W86 {row.dscr_shortfall_ref ?? ''}
+                DSCR {row.dscr_shortfall_ref ?? ''}
               </span>
             )}
             {row.bridges_to_default_chain_live && (
               <span style={{ borderRadius: 4, background: 'oklch(0.90 0.06 20)', color: BAD, fontSize: 10, fontWeight: 600, padding: '2px 8px' }}>
-                W45 {row.default_chain_ref ?? '(new)'}
+                Default {row.default_chain_ref ?? '(new)'}
               </span>
             )}
           </div>
@@ -941,7 +941,7 @@ export function LoanRestructureChainTab() {
         </h2>
         <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
           12-state P6 loan restructure / Amendment-and-Extend lifecycle — fills the structured-forbearance gap between
-          W38 covenant certificate + W86 DSCR monitoring and W45 default enforcement. INVERTED SLA polarity (systemic = LONGEST).
+          covenant certificate + DSCR monitoring and default enforcement. INVERTED SLA polarity (systemic = LONGEST).
           SIGNATURE: escalate_to_default crosses regulator EVERY tier.
         </p>
       </header>
@@ -952,7 +952,7 @@ export function LoanRestructureChainTab() {
         <KpiTile label="Active"              value={k?.active_count ?? 0}           tone={(k?.active_count ?? 0) > 0 ? 'warn' : undefined} />
         <KpiTile label="Awaiting consent"    value={k?.consent_open_count ?? 0}     tone={(k?.consent_open_count ?? 0) > 0 ? 'warn' : undefined} />
         <KpiTile label="Completed"           value={k?.completed_count ?? 0}        tone="ok" />
-        <KpiTile label="Escalated to W45"    value={k?.escalated_count ?? 0}        tone={(k?.escalated_count ?? 0) > 0 ? 'bad' : undefined} />
+        <KpiTile label="Escalated to default" value={k?.escalated_count ?? 0}        tone={(k?.escalated_count ?? 0) > 0 ? 'bad' : undefined} />
         <KpiTile label="Rejected"            value={k?.rejected_count ?? 0}         tone={(k?.rejected_count ?? 0) > 0 ? 'bad' : undefined} />
         <KpiTile label="Abandoned"           value={k?.abandoned_count ?? 0} />
         <KpiTile label="Systemic"            value={k?.systemic_count ?? 0}         tone={(k?.systemic_count ?? 0) > 0 ? 'bad' : undefined} />
@@ -963,9 +963,9 @@ export function LoanRestructureChainTab() {
         <KpiTile label="Public bondholder"   value={k?.public_bondholder_count ?? 0} tone={(k?.public_bondholder_count ?? 0) > 0 ? 'warn' : undefined} />
         <KpiTile label="SARB large exposure" value={k?.sarb_le_count ?? 0}          tone={(k?.sarb_le_count ?? 0) > 0 ? 'warn' : undefined} />
         <KpiTile label="Board escalation"    value={k?.board_escalated_count ?? 0}  tone={(k?.board_escalated_count ?? 0) > 0 ? 'warn' : undefined} />
-        <KpiTile label="W38 covenant bridge" value={k?.covenant_bridged_count ?? 0} />
-        <KpiTile label="W86 DSCR bridge"     value={k?.dscr_bridged_count ?? 0} />
-        <KpiTile label="W45 default bridge"  value={k?.default_bridged_count ?? 0}  tone={(k?.default_bridged_count ?? 0) > 0 ? 'bad' : undefined} />
+        <KpiTile label="Covenant bridge"     value={k?.covenant_bridged_count ?? 0} />
+        <KpiTile label="DSCR bridge"         value={k?.dscr_bridged_count ?? 0} />
+        <KpiTile label="Default bridge"      value={k?.default_bridged_count ?? 0}  tone={(k?.default_bridged_count ?? 0) > 0 ? 'bad' : undefined} />
         <KpiTile label="Total facility"      value={fmtZar(k?.total_facility_zar ?? 0)} />
         <KpiTile label="Total outstanding"   value={fmtZar(k?.total_outstanding_zar ?? 0)} />
         <KpiTile label="Total relief"        value={fmtZar(k?.total_relief_zar ?? 0)} />
@@ -1004,7 +1004,7 @@ export function LoanRestructureChainTab() {
               item={{ ...row, sla_deadline_at: row.sla_deadline_at ?? null }}
               allStates={ALL_STATES}
               branchStates={BRANCH_STATES}
-              title={`${row.restructure_number}${row.is_reportable_flag ? ' ●' : ''}${row.public_bondholder_consent_required ? ' ▲' : ''}${row.ifrs9_stage_3_at_trigger ? ' ✦' : ''}${row.bridges_to_default_chain_live ? ' →W45' : ''}`}
+              title={`${row.restructure_number}${row.is_reportable_flag ? ' ●' : ''}${row.public_bondholder_consent_required ? ' ▲' : ''}${row.ifrs9_stage_3_at_trigger ? ' ✦' : ''}${row.bridges_to_default_chain_live ? ' →Default' : ''}`}
               meta={[
                 row.borrower_name ?? row.borrower_id,
                 row.facility_name ?? row.facility_id,

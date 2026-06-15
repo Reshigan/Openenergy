@@ -399,8 +399,8 @@ export default function IppMirTab({ readOnly = false }: Props) {
             </p>
             <p className="text-xs text-red-800 mt-0.5">
               ISO 9001 §8.6: non-conforming materials must be segregated, clearly marked, and prevented from unintended use.
-              W139 SIGNATURE: reject_material crosses regulator EVERY tier when IE witnessed — lender notification required.
-              Raise NCR (W136) and initiate return-to-supplier process.
+              Rejection crosses regulator at every tier when IE witnessed — lender notification required.
+              Raise an NCR and initiate return-to-supplier process.
             </p>
           </div>
         </div>
@@ -526,7 +526,7 @@ export default function IppMirTab({ readOnly = false }: Props) {
                       {!!row.floor_nersa_material && <Flag label="NERSA" title="NERSA-regulated equipment (transformer, switchgear)" cls="bg-orange-100 text-orange-800" />}
                       {!!row.floor_critical_safety && <Flag label="SAFE" title="Safety-critical material (fire suppression, structural)" cls="bg-red-200 text-red-900" />}
                       {!!row.floor_manufacturer_warranty_at_risk && <Flag label="WRY" title="Rejection voids manufacturer warranty" cls="bg-amber-100 text-amber-800" />}
-                      {!!row.is_reportable && <Flag label="⚑" title="Regulator crossed (W139 SIGNATURE)" cls="bg-red-200 text-red-800" />}
+                      {!!row.is_reportable && <Flag label="⚑" title="Regulator crossed" cls="bg-red-200 text-red-800" />}
                     </div>
                   </td>
                   {!readOnly && (
@@ -608,7 +608,7 @@ export default function IppMirTab({ readOnly = false }: Props) {
             {selected.is_signature_live && (
               <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
                 <p className="text-xs font-semibold text-red-900">
-                  W139 SIGNATURE — Regulator notification required
+                  Regulator notification required
                 </p>
                 <p className="text-xs text-red-800 mt-0.5">
                   IE witnessed this rejection/quarantine — regulator notification is mandatory at every tier per ISO 9001 §8.6 + REIPPPP quality specifications.
@@ -860,7 +860,7 @@ export default function IppMirTab({ readOnly = false }: Props) {
             {isSignatureCreate && (
               <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
                 <p className="text-xs font-semibold text-red-900">
-                  W139 SIGNATURE — reject_material / quarantine_material will trigger regulator notification
+                  Rejection or quarantine will trigger regulator notification
                 </p>
                 <p className="text-xs text-red-800 mt-0.5">
                   IE witnessed or critical safety flag is set. Any rejection or quarantine will cross regulator at EVERY tier per ISO 9001 §8.6.
@@ -943,11 +943,11 @@ export default function IppMirTab({ readOnly = false }: Props) {
               {/* Cross-references */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">NCR ref (W136)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">NCR ref</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newNcrRef} onChange={e => setNewNcrRef(e.target.value)} placeholder="ncr-xxx" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Submittal ref (W116)</label>
+                  <label className="text-xs text-[#6b7685] block mb-1">Submittal ref</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newSubmittalRef} onChange={e => setNewSubmittalRef(e.target.value)} placeholder="sub-xxx" />
                 </div>
                 <div>

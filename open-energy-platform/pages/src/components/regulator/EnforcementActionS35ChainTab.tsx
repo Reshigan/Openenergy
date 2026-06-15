@@ -256,8 +256,8 @@ const FILTER_ROW_ACTION: Array<{ key: string; label: string }> = [
   { key: 'paja_at_risk',     label: 'PAJA at risk' },
   { key: 'gazette_required', label: 'Gazette required' },
   { key: 'appeals_open',     label: 'Appeals open' },
-  { key: 'inspection_bridged', label: 'Bridged to W40' },
-  { key: 'complaint_bridged',  label: 'Bridged to W66' },
+  { key: 'inspection_bridged', label: 'Bridged to inspection' },
+  { key: 'complaint_bridged',  label: 'Bridged to complaint' },
   { key: 'strategic', label: 'Strategic' },
   { key: 'material',  label: 'Material' },
   { key: 'standard',  label: 'Standard' },
@@ -459,8 +459,8 @@ export function EnforcementActionS35ChainTab() {
                     {r.respondent_party_label ?? r.respondent_party_id}
                     <span className="text-[#6b7685]"> - {r.respondent_licence_class ?? '-'}</span>
                     {floored && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fff4d6] text-[#a06200]">FLOOR</span>}
-                    {r.bridges_to_inspection_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)]">W40</span>}
-                    {r.bridges_to_complaint_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#e8defc] text-[#5320a3]">W66</span>}
+                    {r.bridges_to_inspection_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)]">INSP</span>}
+                    {r.bridges_to_complaint_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#e8defc] text-[#5320a3]">CMPL</span>}
                     {r.gazette_publication_required_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fde0e0] text-[#9b1f1f]">GAZETTE</span>}
                     {r.paja_fairness_at_risk_flag_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fbd0d0] text-[#7a1414]">PAJA</span>}
                   </td>
@@ -661,10 +661,10 @@ function EnfDrawer({
                 <span className="px-2 py-0.5 rounded-full bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)] font-medium">Auth: {AUTH_LABEL[authorityNow]}</span>
               )}
               {row.bridges_to_inspection_chain_live && (
-                <span className="px-2 py-0.5 rounded-full bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)] font-medium">W40 inspection bridge</span>
+                <span className="px-2 py-0.5 rounded-full bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)] font-medium">Inspection bridge</span>
               )}
               {row.bridges_to_complaint_chain_live && (
-                <span className="px-2 py-0.5 rounded-full bg-[#e8defc] text-[#5320a3] font-medium">W66 complaint bridge</span>
+                <span className="px-2 py-0.5 rounded-full bg-[#e8defc] text-[#5320a3] font-medium">Complaint bridge</span>
               )}
             </div>
           </div>
@@ -722,8 +722,8 @@ function EnfDrawer({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {row.triggering_inspection_id && <Pair label="W40 inspection ref" value={row.triggering_inspection_id} />}
-            {row.triggering_complaint_id && <Pair label="W66 complaint ref" value={row.triggering_complaint_id} />}
+            {row.triggering_inspection_id && <Pair label="Inspection ref" value={row.triggering_inspection_id} />}
+            {row.triggering_complaint_id && <Pair label="Complaint ref" value={row.triggering_complaint_id} />}
             {row.triggering_sla_breach_chain_ref && <Pair label="SLA breach ref" value={row.triggering_sla_breach_chain_ref} />}
             {row.triggering_reason_summary_text && <Pair label="Trigger summary" value={row.triggering_reason_summary_text} />}
             {row.respondent_licence_id && <Pair label="Licence ID" value={row.respondent_licence_id} />}

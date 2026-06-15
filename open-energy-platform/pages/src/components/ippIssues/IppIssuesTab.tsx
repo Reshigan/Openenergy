@@ -483,7 +483,7 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
             {/* W132 SIGNATURE warning */}
             {(selected.chain_status === 'raised' || selected.chain_status === 'overdue_flagged') && selected.is_safety_or_regulatory_live && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                <p className="text-xs font-semibold text-red-800">W132 SIGNATURE</p>
+                <p className="text-xs font-semibold text-red-800">Regulator escalation</p>
                 <p className="text-xs text-red-700 mt-0.5">
                   Escalating this {selected.is_safety ? 'safety' : 'regulatory'} issue will file a regulator crossing (OHSA s24 / ERA s35). Confirm before proceeding.
                 </p>
@@ -558,7 +558,7 @@ export default function IppIssuesTab({ readOnly = false }: Props) {
               <FormField label="Description">
                 <textarea className="w-full text-sm border rounded px-2 py-1.5" rows={3} value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Issue description and context" />
               </FormField>
-              <FormField label="Stage gate ref (W131, optional)">
+              <FormField label="Stage gate ref (optional)">
                 <input className="w-full text-sm border rounded px-2 py-1.5 font-mono" value={newStageGateRef} onChange={e => setNewStageGateRef(e.target.value)} placeholder="sg-001" />
               </FormField>
               <div className="flex gap-4">

@@ -496,7 +496,7 @@ function getActions(row: SoilRow): ChainAction[] {
       fields: [
         {
           key: 'recovery_documented',
-          label: 'Recovery documented in W79 ledger? (true/false)',
+          label: 'Recovery documented in generation revenue ledger? (true/false)',
           type: 'text',
           required: false,
           placeholder: String(!!row.recovery_documented),

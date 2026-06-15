@@ -380,7 +380,7 @@ function getActions(row: IssuanceRow): ChainAction[] {
       fields: [
         {
           key: 'serialization_basis',
-          label: 'Serialization basis — assignment of the unique serial-number block (W82 signature: serial transparency)',
+          label: 'Serialization basis — assignment of the unique serial-number block (serial transparency)',
           type: 'textarea',
           required: true,
         },
@@ -590,7 +590,7 @@ function getActions(row: IssuanceRow): ChainAction[] {
       fields: [
         {
           key: 'dispute_basis',
-          label: 'Dispute basis — quantum or serial dispute (W82 signature: crosses regulator EVERY tier)',
+          label: 'Dispute basis — quantum or serial dispute (crosses regulator EVERY tier)',
           type: 'textarea',
           required: true,
         },
@@ -610,7 +610,7 @@ function getActions(row: IssuanceRow): ChainAction[] {
         },
         {
           key: 'regulator_ref',
-          label: 'Regulator reference (W82 hard line — dispute always reportable)',
+          label: 'Regulator reference (dispute always reportable)',
           type: 'text',
           required: false,
           placeholder: '',
@@ -970,7 +970,7 @@ export function CarbonIssuanceChainTab() {
           12-state minting chain · requested → screening → verification check → serialization →
           pending registry → issued, with on_hold/returned/disputed loops and terminal
           rejected/withdrawn/cancelled. INVERTED SLA: the larger the volume the longer every window.
-          W82 signature: raise_dispute crosses regulator EVERY tier; confirm_issuance crosses EVERY tier
+          Raise-dispute crosses regulator EVERY tier; confirm-issuance crosses EVERY tier
           when CA-required (Article 6), else major/mega; reject and SLA breach cross for major/mega.
           Beats Verra Registry on APX, Gold Standard, S&amp;P Global Environmental Registry, Cercarbono and
           Puro.earth — live serial-block transparency, buffer-pool maths (AFOLU 20% / non-AFOLU 5%),

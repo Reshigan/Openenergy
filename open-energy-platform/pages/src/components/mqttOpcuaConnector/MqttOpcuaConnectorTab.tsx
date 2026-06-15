@@ -306,7 +306,7 @@ const ACTION_LABEL: Record<ActionKind, string> = {
   'disconnect':            'DISCONNECT (CISO - HARD; crosses EVERY tier WHEN critical_safety_payload)',
   'suspend':               'Suspend (OT security mgr - maintenance window, SOFT)',
   'resume':                'Resume (OT security mgr - exit maintenance)',
-  'revoke-credential':     'REVOKE CREDENTIAL (SIGNATURE - W123 crosses EVERY tier; NERSA + IEC 62443 + POPIA + SARB BA 700)',
+  'revoke-credential':     'REVOKE CREDENTIAL (SIGNATURE - crosses EVERY tier; NERSA + IEC 62443 + POPIA + SARB BA 700)',
   'activate-failover':     'Activate failover (OT security mgr - cutover to secondary peer; large/national cross)',
 };
 
@@ -536,7 +536,7 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
         body.reason_code = reason;
       } else if (action === 'revoke-credential') {
         const reason = window.prompt(
-          'Revoke credential reason. NOTE: SIGNATURE - W123 MQTT-OPCUA-REVOKE crosses regulator EVERY tier (NERSA Grid Code C-3 + IEC 62443 + POPIA s19 + SARB BA 700 cyber notice).',
+          'Revoke credential reason. NOTE: SIGNATURE - MQTT-OPCUA-REVOKE crosses regulator EVERY tier (NERSA Grid Code C-3 + IEC 62443 + POPIA s19 + SARB BA 700 cyber notice).',
           row.reason_code ?? 'credential_compromised',
         );
         if (reason === null) return;
@@ -570,13 +570,13 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
     <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">MQTT / OPC UA connector (W123)</h2>
+          <h2 className="text-base font-semibold text-[#0c2a4d]">MQTT / OPC UA connector</h2>
           <p className="text-[11px] text-[#4a5568]">
             11-state forward + 4 branch IoT broker bridge - MQTT v5 / MQTT-SN / OPC UA 1.05 / Pub/Sub / Sparkplug B / IEC 61400-25 / IEEE 2030.5 CSIP / SunSpec Modbus
             across PV-industry / energy / battery / inverter / wind companion specs.
             Beats AWS IoT Core + Azure IoT Hub + HiveMQ Enterprise + EMQX + VerneMQ + Kepware KEPServerEX + Matrikon OPC UA Server.
             INVERTED SLA HOURS (edge 168 / small 240 / medium 360 / large 480 / national 720).
-            FLOOR-AT-LARGE-FLEET {'≥'}1 flag / FLOOR-AT-NATIONAL-IOT-BACKBONE {'≥'}3 flags. Mandatory W118 audit bridge.
+            FLOOR-AT-LARGE-FLEET {'≥'}1 flag / FLOOR-AT-NATIONAL-IOT-BACKBONE {'≥'}3 flags. Mandatory audit-chain bridge.
             SIGNATURE: revoke_credential crosses EVERY tier (NERSA Grid Code C-3 + IEC 62443 + POPIA s19 + SARB BA 700 cyber notice).
             External IoT peer reads via mTLS-gated /api/mqtt-opcua-connector/peer/:peer_id with x-mtls-cert-fingerprint header.
           </p>
@@ -620,11 +620,11 @@ export function MqttOpcuaConnectorTab({ regulatorView }: Props = {}) {
         <span>Floor flags: <span className="font-semibold text-[#a06200]">{kpis.floor_flag_total}</span></span>
         <span>Cert {'<'}60d: <span className="font-semibold text-[#a06200]">{kpis.certs_expiring_within_60d}</span></span>
         <span>Cert {'<'}14d: <span className="font-semibold text-[#9b1f1f]">{kpis.certs_expiring_within_14d}</span></span>
-        <span>W118: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
-        <span>W122: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w122_bridged_count}</span></span>
-        <span>W71: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w71_bridged_count}</span></span>
-        <span>W50: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w50_bridged_count}</span></span>
-        <span>W26: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w26_bridged_count}</span></span>
+        <span>Audit chain: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
+        <span>SCADA: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w122_bridged_count}</span></span>
+        <span>Prognostics: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w71_bridged_count}</span></span>
+        <span>Reserve: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w50_bridged_count}</span></span>
+        <span>Cyber: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w26_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / priority pills */}
@@ -979,13 +979,13 @@ function Drawer({
 
         {/* Bridges */}
         <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (W118 mandatory)</div>
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (audit-chain mandatory)</div>
           <div className="grid grid-cols-5 gap-2">
-            <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="W118 audit" />
-            <BridgePill on={!!row.bridges_to_w122_scada_connector_live} label="W122 SCADA" />
-            <BridgePill on={!!row.bridges_to_w71_asset_prognostics_live} label="W71 prognostics" />
-            <BridgePill on={!!row.bridges_to_w50_reserve_activation_live} label="W50 reserve" />
-            <BridgePill on={!!row.bridges_to_w26_cyber_incident_live} label="W26 cyber" />
+            <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="Audit chain" />
+            <BridgePill on={!!row.bridges_to_w122_scada_connector_live} label="SCADA" />
+            <BridgePill on={!!row.bridges_to_w71_asset_prognostics_live} label="Prognostics" />
+            <BridgePill on={!!row.bridges_to_w50_reserve_activation_live} label="Reserve" />
+            <BridgePill on={!!row.bridges_to_w26_cyber_incident_live} label="Cyber" />
           </div>
         </div>
 
@@ -1135,9 +1135,9 @@ function ProposeModal({
       <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose MQTT / OPC UA connector (W123)</h3>
+            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose MQTT / OPC UA connector</h3>
             <p className="text-[11px] text-[#4a5568]">
-              W118 audit-chain bridge mandatory. Tier auto-derived from endpoint_count with FLOOR-AT-LARGE-FLEET {'≥'}1 flag and FLOOR-AT-NATIONAL-IOT-BACKBONE {'≥'}3 flags.
+              Audit-chain bridge mandatory. Tier auto-derived from endpoint_count with FLOOR-AT-LARGE-FLEET {'≥'}1 flag and FLOOR-AT-NATIONAL-IOT-BACKBONE {'≥'}3 flags.
             </p>
           </div>
           <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
@@ -1173,19 +1173,19 @@ function ProposeModal({
           <Field label="Title">
             <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="Kakamas inverter fleet MQTT v5 connector" />
           </Field>
-          <Field label="W118 block ref (mandatory)">
+          <Field label="Audit-chain block ref (mandatory)">
             <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
           </Field>
-          <Field label="W122 SCADA connector ref">
+          <Field label="SCADA connector ref">
             <input value={w122} onChange={(e) => setW122(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="scc-2026-0042" />
           </Field>
-          <Field label="W71 asset prognostics ref">
+          <Field label="Asset prognostics ref">
             <input value={w71} onChange={(e) => setW71(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="aprog-2026-0021" />
           </Field>
-          <Field label="W50 reserve activation ref">
+          <Field label="Reserve activation ref">
             <input value={w50} onChange={(e) => setW50(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="rsv-act-2026-0011" />
           </Field>
-          <Field label="W26 cyber incident ref">
+          <Field label="Cyber incident ref">
             <input value={w26} onChange={(e) => setW26(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="cyber-2026-0005" />
           </Field>
         </div>

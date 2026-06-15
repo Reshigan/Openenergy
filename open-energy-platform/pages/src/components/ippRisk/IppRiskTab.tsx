@@ -473,7 +473,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
             {/* W133 SIGNATURE warning */}
             {selected.is_safety && (selected.risk_tier === 'critical_impact' || selected.risk_tier === 'catastrophic') && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                <p className="text-xs font-semibold text-red-800">W133 SIGNATURE</p>
+                <p className="text-xs font-semibold text-red-800">Safety escalation — regulator crossing</p>
                 <p className="text-xs text-red-700 mt-0.5">
                   Escalating this safety {selected.risk_tier} risk will file a regulator crossing (OHSA s24 critical risk materialisation). Confirm before proceeding.
                 </p>
@@ -560,7 +560,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
                   newProb * newImpact >= 4 ? 'medium_impact' : 'low_impact'
                 ]})</span>
               </div>
-              <FormField label="Stage gate ref (W131, optional)">
+              <FormField label="Stage gate ref (optional)">
                 <input className="w-full text-sm border rounded px-2 py-1.5 font-mono" value={newStageGateRef} onChange={e => setNewStageGateRef(e.target.value)} placeholder="sg-001" />
               </FormField>
               <div className="flex gap-4">

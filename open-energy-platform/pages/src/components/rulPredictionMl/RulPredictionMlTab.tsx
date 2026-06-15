@@ -307,7 +307,7 @@ const FILTERS_FAMILY: Array<{ key: string; label: string }> = [
   { key: 'family:deepsurv',      label: 'DeepSurv' },
   { key: 'family:rsf',           label: 'RSF' },
   { key: 'family:xgb_surv',      label: 'XGB-Surv' },
-  { key: 'family:baseline_ols',  label: 'Baseline OLS (W71)' },
+  { key: 'family:baseline_ols',  label: 'Baseline OLS' },
 ];
 
 const FILTERS_ASSET: Array<{ key: string; label: string }> = [
@@ -355,13 +355,13 @@ const ACTION_LABEL: Record<ActionKind, string> = {
   'calibrate':                'Calibrate (data_steward - isotonic / sigmoid calibration + PH check)',
   'deploy-shadow':            'Deploy shadow (data_steward - production-mirror inference, no actions)',
   'activate-live-ab':         'ACTIVATE LIVE A/B (CTO - challenger receives traffic; survival inference begins)',
-  'promote-champion':         'Promote champion (CTO - challenger wins A/B; replaces W71 OLS - W128-UNIQUE crosses regulator at fleet_systemic + ISO 42001)',
+  'promote-champion':         'Promote champion (CTO - challenger wins A/B; replaces OLS - crosses regulator at fleet_systemic + ISO 42001)',
   'retrain':                  'Retrain (CTO - drift-triggered or scheduled re-fit)',
   'archive':                  'Archive (CEO - HARD terminal, retire model)',
   'detect-drift':             'Detect drift (data_steward - PH-assumption violation / hazard-shift; SOFT pause)',
-  'rollback-model':           'ROLLBACK MODEL (CTO - SIGNATURE - W128-RUL-ROLLBACK crosses regulator EVERY tier: ISO 42001 + NIST AI RMF + SOC 2 + NERC CIP-013)',
+  'rollback-model':           'ROLLBACK MODEL (CTO - SIGNATURE - crosses regulator EVERY tier: ISO 42001 + NIST AI RMF + SOC 2 + NERC CIP-013)',
   'recall-model':             'RECALL MODEL (CEO - HARD safety pull; crosses EVERY tier WHEN safety_critical_rul)',
-  'activate-failover-to-ols': 'Failover to OLS (data_steward - revert to W71 OLS baseline; multi-juris + systemic crossings)',
+  'activate-failover-to-ols': 'Failover to OLS (data_steward - revert to OLS baseline; multi-juris + systemic crossings)',
 };
 
 function fmtHoursSla(h: number | null | undefined): string {
@@ -386,7 +386,7 @@ function fmtFamily(s: string | null | undefined): string {
     deepsurv: 'DeepSurv',
     rsf: 'Random Survival Forest',
     xgb_surv: 'XGBoost-Survival',
-    baseline_ols: 'Baseline OLS (W71)',
+    baseline_ols: 'Baseline OLS',
   };
   return map[String(s)] ?? String(s).replace(/_/g, ' ');
 }
@@ -599,15 +599,15 @@ export function RulPredictionMlTab({ regulatorView }: Props = {}) {
         const note = window.prompt('Live A/B notes (NOTE: CTO sign-off; live survival inference begins):', '');
         if (note !== null) body.notes = note;
       } else if (action === 'promote-champion') {
-        const kml = window.prompt('Kaplan-Meier lift vs W71 OLS baseline (%):', String(row.kaplan_meier_lift_vs_ols ?? 22));
+        const kml = window.prompt('Kaplan-Meier lift vs OLS baseline (%):', String(row.kaplan_meier_lift_vs_ols ?? 22));
         if (kml !== null) body.kaplan_meier_lift_vs_ols = Number(kml);
-        const recw71 = window.prompt('Reconciliation with W71 OLS baseline (%):', String(row.reconciliation_with_w71_ols_pct ?? 90));
+        const recw71 = window.prompt('Reconciliation with OLS baseline (%):', String(row.reconciliation_with_w71_ols_pct ?? 90));
         if (recw71 !== null) body.reconciliation_with_w71_ols_pct = Number(recw71);
         const ntt = window.prompt('NTT baseline comparison (% improvement, negative = worse):', String(row.ntt_baseline_comparison_pct ?? 30));
         if (ntt !== null) body.ntt_baseline_comparison_pct = Number(ntt);
         const mae = window.prompt('RUL p50 MAE in days (lower better):', String(row.rul_p50_mae_days ?? 18));
         if (mae !== null) body.rul_p50_mae_days = Number(mae);
-        const note = window.prompt('Champion promotion notes. W128-UNIQUE: replaces W71 OLS - fleet_systemic + ISO 42001 crosses regulator.', '');
+        const note = window.prompt('Champion promotion notes. Replaces OLS - fleet_systemic + ISO 42001 crosses regulator.', '');
         if (note !== null) body.notes = note;
       } else if (action === 'retrain') {
         const due = window.prompt('Next retrain due ISO date (e.g. 2026-08-30T00:00:00Z):', row.retrain_due_at ?? '');
@@ -629,7 +629,7 @@ export function RulPredictionMlTab({ regulatorView }: Props = {}) {
         if (note !== null) body.notes = note;
       } else if (action === 'rollback-model') {
         const reason = window.prompt(
-          'Rollback reason. NOTE: SIGNATURE - W128-RUL-ROLLBACK crosses regulator EVERY tier (ISO 42001 incident + NIST AI RMF MAP-MEASURE-MANAGE + SOC 2 control failure + NERC CIP-013 audit-evidence-chain). SECOND Phase-D hard line.',
+          'Rollback reason. NOTE: SIGNATURE - crosses regulator EVERY tier (ISO 42001 incident + NIST AI RMF MAP-MEASURE-MANAGE + SOC 2 control failure + NERC CIP-013 audit-evidence-chain).',
           row.reason_code ?? 'champion_underperforming',
         );
         if (reason === null) return;
@@ -643,7 +643,7 @@ export function RulPredictionMlTab({ regulatorView }: Props = {}) {
         body.reason_code = reason;
       } else if (action === 'activate-failover-to-ols') {
         const note = window.prompt(
-          'OLS failover notes. NOTE: revert to W71 OLS baseline; crosses regulator at multi_jurisdiction + fleet_systemic tiers.',
+          'OLS failover notes. NOTE: revert to OLS baseline; crosses regulator at multi_jurisdiction + fleet_systemic tiers.',
           '',
         );
         if (note !== null) body.notes = note;
@@ -670,13 +670,13 @@ export function RulPredictionMlTab({ regulatorView }: Props = {}) {
     <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">RUL prediction ML model governance (W128)</h2>
+          <h2 className="text-base font-semibold text-[#0c2a4d]">RUL prediction ML model governance</h2>
           <p className="text-[11px] text-[#4a5568]">
-            12-state forward + 4 branch Phase-D survival/Cox PH ML BRAIN replacing W71 OLS-style degradation slope (Sister of W127). Cox PH / AFT / DeepSurv / Random Survival Forest / XGBoost-Survival / baseline OLS.
+            12-state forward + 4 branch survival/Cox PH ML BRAIN replacing OLS-style degradation slope (Sister of anomaly ML). Cox PH / AFT / DeepSurv / Random Survival Forest / XGBoost-Survival / baseline OLS.
             Beats AspenTech Mtell RUL + GE APM survival + Uptake Fusion prognostics + Augury RUL + C3.ai reliability + SparkCognition SparkPredict RUL + Petuum + DataRPM survival stacks.
-            INVERTED SLA HOURS (single 24 / small 96 / large 240 / multi-juris. 480 / systemic 720). LONGER shadow_deployed (72-1080h) + survival_dataset_bound (48-720h) than W127.
-            FLOOR-AT-LARGE-FLEET {'≥'}1 flag / FLOOR-AT-FLEET-SYSTEMIC {'≥'}3 flags. W71 OLS bridge NOT NULL + W118 audit bridge mandatory.
-            SIGNATURE W128-RUL-ROLLBACK: rollback_model crosses EVERY tier (SECOND Phase-D hard line). W128-UNIQUE: promote_champion crosses regulator at fleet_systemic when ISO 42001 (replacing OLS at systemic scale is itself a governance event).
+            INVERTED SLA HOURS (single 24 / small 96 / large 240 / multi-juris. 480 / systemic 720). LONGER shadow_deployed (72-1080h) + survival_dataset_bound (48-720h) than the anomaly chain.
+            FLOOR-AT-LARGE-FLEET {'≥'}1 flag / FLOOR-AT-FLEET-SYSTEMIC {'≥'}3 flags. OLS bridge NOT NULL + audit bridge mandatory.
+            SIGNATURE: rollback_model crosses EVERY tier (rollback hard line). promote_champion crosses regulator at fleet_systemic when ISO 42001 (replacing OLS at systemic scale is itself a governance event).
             Internal ML governance chain (no public peer endpoint).
           </p>
         </div>
@@ -721,11 +721,11 @@ export function RulPredictionMlTab({ regulatorView }: Props = {}) {
         <span>Retrain {'<'}60d: <span className="font-semibold text-[#a06200]">{kpis.retrain_within_60d}</span></span>
         <span>Retrain {'<'}14d: <span className="font-semibold text-[#9b1f1f]">{kpis.retrain_within_14d}</span></span>
         <span>Card exp. {'<'}30d: <span className="font-semibold text-[#9b1f1f]">{kpis.model_card_expiring_30d}</span></span>
-        <span>W118: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
-        <span>W71: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w71_bridged_count}</span></span>
-        <span>W21: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w21_bridged_count}</span></span>
-        <span>W77: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w77_bridged_count}</span></span>
-        <span>W63: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w63_bridged_count}</span></span>
+        <span>Audit: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
+        <span>OLS baseline: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w71_bridged_count}</span></span>
+        <span>Lender drawdown: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w21_bridged_count}</span></span>
+        <span>Reserve account: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w77_bridged_count}</span></span>
+        <span>Warranty recov.: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w63_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / priority pills */}
@@ -993,7 +993,7 @@ function Drawer({
             </div>
             <h3 className="text-lg font-semibold text-[#0c2a4d]">{row.model_number}</h3>
             <p className="text-[11px] text-[#4a5568]">
-              {row.title || 'RUL prediction ML model (W128 - replaces W71 OLS baseline)'}
+              {row.title || 'RUL prediction ML model (replaces OLS baseline)'}
               {row.model_version ? <> {'•'} v<span className="font-mono">{row.model_version}</span></> : null}
               {row.training_dataset_hash ? <> {'•'} dataset <span className="font-mono text-[10px]">{row.training_dataset_hash.slice(0, 12)}</span></> : null}
               {row.feature_count != null ? <> {'•'} {row.feature_count} covariates</> : null}
@@ -1053,7 +1053,7 @@ function Drawer({
             <div className="font-mono text-[12px] text-[#0c2a4d]">{row.censoring_rate ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">W71 OLS recon. %</div>
+            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">OLS recon. %</div>
             <div className="font-mono text-[12px] text-[#0c2a4d]">{row.reconciliation_with_w71_ols_pct ?? '-'}</div>
           </div>
           <div>
@@ -1110,13 +1110,13 @@ function Drawer({
 
         {/* Bridges */}
         <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (W71 NOT NULL + W118 mandatory)</div>
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (OLS NOT NULL + audit mandatory)</div>
           <div className="grid grid-cols-5 gap-2">
-            <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="W118 audit" />
-            <BridgePill on={!!row.bridges_to_w71_asset_prognostics_live} label="W71 OLS baseline" />
-            <BridgePill on={!!row.bridges_to_w21_lender_drawdown_live} label="W21 lender drawdown" />
-            <BridgePill on={!!row.bridges_to_w77_reserve_account_live} label="W77 reserve account" />
-            <BridgePill on={!!row.bridges_to_w63_warranty_recovery_live} label="W63 warranty recov." />
+            <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="Audit" />
+            <BridgePill on={!!row.bridges_to_w71_asset_prognostics_live} label="OLS baseline" />
+            <BridgePill on={!!row.bridges_to_w21_lender_drawdown_live} label="Lender drawdown" />
+            <BridgePill on={!!row.bridges_to_w77_reserve_account_live} label="Reserve account" />
+            <BridgePill on={!!row.bridges_to_w63_warranty_recovery_live} label="Warranty recov." />
           </div>
         </div>
 
@@ -1196,7 +1196,7 @@ const FAMILY_OPTIONS: Array<{ key: RpmFamily; label: string }> = [
   { key: 'deepsurv',     label: 'DeepSurv (neural net)' },
   { key: 'rsf',          label: 'Random Survival Forest' },
   { key: 'xgb_surv',     label: 'XGBoost Survival' },
-  { key: 'baseline_ols', label: 'Baseline OLS (W71 baseline)' },
+  { key: 'baseline_ols', label: 'Baseline OLS' },
 ];
 
 const ASSET_OPTIONS: Array<{ key: RpmAssetClass; label: string }> = [
@@ -1268,11 +1268,11 @@ function ProposeModal({
       <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose RUL prediction ML model (W128)</h3>
+            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose RUL prediction ML model</h3>
             <p className="text-[11px] text-[#4a5568]">
-              W71 OLS baseline bridge REQUIRED (NOT NULL constraint - needed for KM-lift + reconciliation). W118 audit bridge mandatory.
+              OLS baseline bridge REQUIRED (NOT NULL constraint - needed for KM-lift + reconciliation). Audit bridge mandatory.
               Tier auto-derived from (assets_covered, jurisdiction_count, safety_critical) with FLOOR-AT-LARGE-FLEET {'≥'}1 flag and FLOOR-AT-FLEET-SYSTEMIC {'≥'}3 flags.
-              Replaces W71 OLS-style degradation slope (survival/Cox PH).
+              Replaces OLS-style degradation slope (survival/Cox PH).
             </p>
           </div>
           <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
@@ -1310,19 +1310,19 @@ function ProposeModal({
           <Field label="Title">
             <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="Eastern Cape wind fleet Cox PH v1" />
           </Field>
-          <Field label="W71 OLS baseline ref (REQUIRED - NOT NULL)">
+          <Field label="OLS baseline ref (REQUIRED - NOT NULL)">
             <input value={w71} onChange={(e) => setW71(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="aprog-2026-007" />
           </Field>
-          <Field label="W118 block ref (mandatory)">
+          <Field label="Audit block ref (mandatory)">
             <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
           </Field>
-          <Field label="W21 lender drawdown ref">
+          <Field label="Lender drawdown ref">
             <input value={w21} onChange={(e) => setW21(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="draw-2026-0007" />
           </Field>
-          <Field label="W77 reserve account ref">
+          <Field label="Reserve account ref">
             <input value={w77} onChange={(e) => setW77(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="rac-2026-0011" />
           </Field>
-          <Field label="W63 warranty recovery ref">
+          <Field label="Warranty recovery ref">
             <input value={w63} onChange={(e) => setW63(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="wrec-2026-0019" />
           </Field>
         </div>

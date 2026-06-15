@@ -101,7 +101,7 @@ export default function GtiaSurface(_props: { role: string }) {
               { value: 'proprietary', label: 'Proprietary' },
             ]},
             { key: 'project_ref', label: 'Project reference', required: false },
-            { key: 'gca_ref', label: 'GCA reference (W28)', required: false },
+            { key: 'gca_ref', label: 'GCA reference', required: false },
             { key: 'reason', label: 'Notes', type: 'textarea', required: false },
           ]}
         />

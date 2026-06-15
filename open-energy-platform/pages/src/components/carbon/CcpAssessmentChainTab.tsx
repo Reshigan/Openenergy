@@ -404,7 +404,7 @@ function getActions(row: AssessmentRow): ChainAction[] {
         { key: 'grant_ref',                    label: 'Grant reference (e.g. GRT-CCP-2026-0007)', type: 'text', required: false, placeholder: '' },
         { key: 'conditional_grant_conditions', label: 'Conditional grant conditions (leave blank for FULL eligible; populate for CONDITIONAL)', type: 'textarea', required: false, placeholder: '' },
         { key: 'corsia_eligibility_ref',       label: 'CORSIA eligibility reference (only if CCP-eligible — unlocks Phase-2 aviation retirements)', type: 'text', required: false, placeholder: '' },
-        { key: 'regulator_ref',                label: 'Regulator reference (W91 hard line — conditional or major/mega cross to regulator)', type: 'text', required: false, placeholder: '' },
+        { key: 'regulator_ref',                label: 'Regulator reference (hard line — conditional or major/mega cross to regulator)', type: 'text', required: false, placeholder: '' },
       ],
       // grant_ccp_label crosses regulator EVERY tier when CONDITIONAL, else for major+mega
       cascadeTo: ['regulator'],
@@ -414,10 +414,10 @@ function getActions(row: AssessmentRow): ChainAction[] {
       key: 'deny-ccp-label',
       label: 'Deny CCP label (ICVCM)',
       fields: [
-        { key: 'denial_basis', label: 'Denial basis — ICVCM denies the CCP label (W91 signature: crosses regulator EVERY tier)', type: 'textarea', required: true },
+        { key: 'denial_basis', label: 'Denial basis — ICVCM denies the CCP label (signature: crosses regulator EVERY tier)', type: 'textarea', required: true },
         { key: 'reason_code',  label: 'Reason code (e.g. integrity_floor_failed / weakest_criterion_fail / additionality_fail)', type: 'text', required: false, placeholder: 'integrity_floor_failed' },
         { key: 'denial_ref',   label: 'Denial reference (e.g. DEN-CCP-2026-0007)', type: 'text', required: false, placeholder: '' },
-        { key: 'regulator_ref', label: 'Regulator reference (W91 hard line — denial always reportable)', type: 'text', required: false, placeholder: '' },
+        { key: 'regulator_ref', label: 'Regulator reference (hard line — denial always reportable)', type: 'text', required: false, placeholder: '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -752,7 +752,7 @@ export function CcpAssessmentChainTab() {
           12-state quality-label chain · requested → screening → eligibility check → assessment →
           VVB review → decision pending → CCP label GRANTED (clean), with on_hold / returned /
           disputed loops, and terminal DENIED / withdrawn. INVERTED SLA: larger assessed volume =
-          longer window. W91 signature: deny_ccp_label crosses regulator EVERY tier; grant crosses
+          longer window. Signature: deny_ccp_label crosses regulator EVERY tier; grant crosses
           EVERY tier when CONDITIONAL, else major+mega; raise_dispute and SLA breach cross
           major+mega. Beats Sylvera / BeZero / Calyx Global / Renoster / Pachama via live
           10-criterion aggregate, weakest-criterion ID, integrity-floor cross, CORSIA Phase-2

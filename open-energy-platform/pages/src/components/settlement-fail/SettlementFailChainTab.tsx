@@ -414,7 +414,7 @@ export function SettlementFailChainTab() {
         { key: 'chain_basis', label: 'Resume basis — force majeure lifted, resume accrual', required: true },
       ],
       'write-off': [
-        { key: 'chain_basis', label: 'Write-off basis — UNCOLLECTABLE LOSS (ALWAYS crosses regulator — W85 hard line)', required: true },
+        { key: 'chain_basis', label: 'Write-off basis — UNCOLLECTABLE LOSS (ALWAYS crosses regulator)', required: true },
         { key: 'reason_code', label: 'Reason code', placeholder: 'counterparty_insolvency / systemic_default / extended_unresolved', defaultValue: 'counterparty_insolvency' },
       ],
     };
@@ -458,7 +458,7 @@ export function SettlementFailChainTab() {
             repeat-fail score 0–100, substitute inventory flag, cross-default risk flag,
             urgency band, predicted resolution days) — beats Euroclear CSDR Penalty Mechanism /
             Clearstream T2S / DTCC Settlement Fail Tracking / JSE-STRATE T+3 monitor /
-            Euronext CSDR / Citi-Velocity overnight-batch portals. The W85 SIGNATURE is
+            Euronext CSDR / Citi-Velocity overnight-batch portals. The SIGNATURE is
             DELIVERY-INTEGRITY: write_off crosses regulator for EVERY tier (uncollectable
             loss is ALWAYS a FMA/FSCA reportable event); close_cash + initiate_buy_in +
             sla_breached cross material + systemic only.

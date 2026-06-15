@@ -512,7 +512,7 @@ export function ScadaConnectorTab({ regulatorView }: Props = {}) {
         body.reason_code = reason;
       } else if (action === 'revoke') {
         const reason = window.prompt(
-          'Revoke reason. NOTE: SIGNATURE - W122 SCADA-CONNECTOR-REVOKE crosses regulator EVERY tier (NERSA + SARB BA 700 cyber notice + SOC report).',
+          'Revoke reason. NOTE: SIGNATURE - SCADA-CONNECTOR-REVOKE crosses regulator EVERY tier (NERSA + SARB BA 700 cyber notice + SOC report).',
           row.reason_code ?? 'cert_revoked_by_counterparty',
         );
         if (reason === null) return;
@@ -546,12 +546,12 @@ export function ScadaConnectorTab({ regulatorView }: Props = {}) {
     <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">SCADA / IEC 61850 connector (W122)</h2>
+          <h2 className="text-base font-semibold text-[#0c2a4d]">SCADA / IEC 61850 connector</h2>
           <p className="text-[11px] text-[#4a5568]">
             12-state forward + 4 branch protocol bridge - IEC 61850 MMS/GOOSE/SV + 60870-5-104 + DNP3 + Modbus + IEEE C37.118 + OPC UA.
             Beats Triangle MicroWorks + Kalkitech SYNC 4000 + NovaTech Orion LX + SEL RTAC + OSIsoft PI + AVEVA.
             INVERTED SLA HOURS (pilot 168 / small 240 / medium 360 / large 480 / national 720).
-            FLOOR-AT-LARGE {'≥'}1 flag / FLOOR-AT-NATIONAL {'≥'}3 flags. Mandatory W118 audit bridge.
+            FLOOR-AT-LARGE {'≥'}1 flag / FLOOR-AT-NATIONAL {'≥'}3 flags. Mandatory audit bridge.
             SIGNATURE: revoke crosses EVERY tier (NERSA + SARB BA 700 cyber notice).
             External SCADA counterparty reads via mTLS-gated /api/scada-connector/peer/:peer_id.
           </p>
@@ -595,11 +595,11 @@ export function ScadaConnectorTab({ regulatorView }: Props = {}) {
         <span>Floor flags: <span className="font-semibold text-[#a06200]">{kpis.floor_flag_total}</span></span>
         <span>Cert {'<'}60d: <span className="font-semibold text-[#a06200]">{kpis.certs_expiring_within_60d}</span></span>
         <span>Cert {'<'}14d: <span className="font-semibold text-[#9b1f1f]">{kpis.certs_expiring_within_14d}</span></span>
-        <span>W118: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
-        <span>W110: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w110_bridged_count}</span></span>
-        <span>W50: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w50_bridged_count}</span></span>
-        <span>W67: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w67_bridged_count}</span></span>
-        <span>W26: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w26_bridged_count}</span></span>
+        <span>Audit: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
+        <span>Transmission outage: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w110_bridged_count}</span></span>
+        <span>Reserve activation: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w50_bridged_count}</span></span>
+        <span>Grid code: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w67_bridged_count}</span></span>
+        <span>Cyber incident: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w26_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / priority pills */}
@@ -930,13 +930,13 @@ function Drawer({
 
         {/* Bridges */}
         <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (W118 mandatory)</div>
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (audit mandatory)</div>
           <div className="grid grid-cols-5 gap-2">
-            <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="W118 audit" />
-            <BridgePill on={!!row.bridges_to_w110_transmission_outage_live} label="W110 outage" />
-            <BridgePill on={!!row.bridges_to_w50_reserve_activation_live} label="W50 reserve" />
-            <BridgePill on={!!row.bridges_to_w67_grid_code_compliance_live} label="W67 grid code" />
-            <BridgePill on={!!row.bridges_to_w26_cyber_incident_live} label="W26 cyber" />
+            <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="Audit" />
+            <BridgePill on={!!row.bridges_to_w110_transmission_outage_live} label="Transmission outage" />
+            <BridgePill on={!!row.bridges_to_w50_reserve_activation_live} label="Reserve activation" />
+            <BridgePill on={!!row.bridges_to_w67_grid_code_compliance_live} label="Grid code" />
+            <BridgePill on={!!row.bridges_to_w26_cyber_incident_live} label="Cyber incident" />
           </div>
         </div>
 
@@ -1075,9 +1075,9 @@ function ProposeModal({
       <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px] text-[oklch(0.46_0.16_55)]">
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose SCADA connector (W122)</h3>
+            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose SCADA connector</h3>
             <p className="text-[11px] text-[#4a5568]">
-              W118 audit-chain bridge mandatory. Tier auto-derived from substation_capacity_mva with FLOOR-AT-LARGE {'≥'}1 flag and FLOOR-AT-NATIONAL {'≥'}3 flags.
+              Audit-chain bridge mandatory. Tier auto-derived from substation_capacity_mva with FLOOR-AT-LARGE {'≥'}1 flag and FLOOR-AT-NATIONAL {'≥'}3 flags.
             </p>
           </div>
           <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[oklch(0.46_0.16_55)] hover:bg-[#f3f5f9]">Close</button>
@@ -1104,19 +1104,19 @@ function ProposeModal({
           <Field label="Title">
             <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="Koeberg 400kV IEC 61850 MMS connector" />
           </Field>
-          <Field label="W118 block ref (mandatory)">
+          <Field label="Audit block ref (mandatory)">
             <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
           </Field>
-          <Field label="W110 transmission outage ref">
+          <Field label="Transmission outage ref">
             <input value={w110} onChange={(e) => setW110(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="outage-tx-2026-0042" />
           </Field>
-          <Field label="W50 reserve activation ref">
+          <Field label="Reserve activation ref">
             <input value={w50} onChange={(e) => setW50(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="rsv-act-2026-0021" />
           </Field>
-          <Field label="W67 grid code compliance ref">
+          <Field label="Grid code compliance ref">
             <input value={w67} onChange={(e) => setW67(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="gcc-2026-0011" />
           </Field>
-          <Field label="W26 cyber incident ref">
+          <Field label="Cyber incident ref">
             <input value={w26} onChange={(e) => setW26(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="cyber-2026-0005" />
           </Field>
         </div>

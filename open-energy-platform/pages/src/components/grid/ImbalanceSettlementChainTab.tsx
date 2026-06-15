@@ -222,8 +222,8 @@ const FILTERS = [
   { key: 'critical_urgency', label: 'Critical urgency' },
   { key: 'dispute_open',     label: 'Dispute open' },
   { key: 'arrears',          label: 'Aged arrears' },
-  { key: 'dispatch_bridged', label: 'Bridged W13' },
-  { key: 'reserve_bridged',  label: 'Bridged W50' },
+  { key: 'dispatch_bridged', label: 'Bridged dispatch' },
+  { key: 'reserve_bridged',  label: 'Bridged reserve' },
   { key: 'systemic',         label: 'Systemic' },
   { key: 'material',         label: 'Material' },
   { key: 'standard',         label: 'Standard' },
@@ -534,8 +534,8 @@ function renderDetail(row: ImbRow): React.ReactNode {
         <div>
           <div style={{ fontSize: 10, color: TX3, fontFamily: MONO, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>References</div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-            {row.dispatch_nomination_ref   && <DetailPair label="W13 dispatch ref"   value={row.dispatch_nomination_ref} />}
-            {row.reserve_activation_ref    && <DetailPair label="W50 reserve ref"    value={row.reserve_activation_ref} />}
+            {row.dispatch_nomination_ref   && <DetailPair label="Dispatch ref"       value={row.dispatch_nomination_ref} />}
+            {row.reserve_activation_ref    && <DetailPair label="Reserve ref"        value={row.reserve_activation_ref} />}
             {row.regulator_inbox_ref       && <DetailPair label="Regulator inbox"    value={row.regulator_inbox_ref} />}
             {row.regulator_ref             && <DetailPair label="Regulator ref"      value={row.regulator_ref} />}
             {row.dispute_reason_code       && <DetailPair label="Dispute reason"     value={row.dispute_reason_code} />}
@@ -635,7 +635,7 @@ export function ImbalanceSettlementChainTab() {
       <div>
         <div style={{ fontSize: 18, fontWeight: 700, color: TX1 }}>Imbalance Settlement</div>
         <div style={{ fontSize: 12, color: TX2, marginTop: 2 }}>
-          MTU wholesale imbalance settlement · URGENT SLA · W13 dispatch + W50 reserve bridges
+          MTU wholesale imbalance settlement · URGENT SLA · dispatch + reserve bridges
         </div>
       </div>
 
@@ -705,8 +705,8 @@ export function ImbalanceSettlementChainTab() {
             fmtZar(row.total_owed_zar_live ?? row.total_owed_zar),
           ];
           if (floored) metaParts.push('FLOOR');
-          if (row.bridges_to_dispatch_chain_live) metaParts.push('W13');
-          if (row.bridges_to_reserve_activation_chain_live) metaParts.push('W50');
+          if (row.bridges_to_dispatch_chain_live) metaParts.push('DISPATCH');
+          if (row.bridges_to_reserve_activation_chain_live) metaParts.push('RESERVE');
           if ((row.arrears_days_live ?? 0) >= 30) metaParts.push(`ARREARS ${row.arrears_days_live}d`);
 
           const cascadeTo: string[] = [];

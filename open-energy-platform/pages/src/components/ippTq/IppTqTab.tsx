@@ -376,7 +376,7 @@ export default function IppTqTab({ readOnly = false }: Props) {
             </p>
             <p className="text-xs text-orange-800 mt-0.5">
               FIDIC: designer responses to construction-blocking queries are contractually due within 48 hours.
-              W142 SIGNATURE: flag_design_change crosses regulator when structural safety flag set — IE notification mandatory.
+              flag_design_change crosses regulator when structural safety flag set — IE notification mandatory.
               Review and allocate to the responsible designer immediately.
             </p>
           </div>
@@ -574,7 +574,7 @@ export default function IppTqTab({ readOnly = false }: Props) {
             {/* SIGNATURE alert */}
             {(selected.chain_status === 'response_drafted' || selected.chain_status === 'response_approved') && !!selected.floor_structural_safety && (
               <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3">
-                <p className="text-xs font-bold text-red-900">W142 SIGNATURE: Structural safety flag set</p>
+                <p className="text-xs font-bold text-red-900">Structural safety flag set</p>
                 <p className="text-xs text-red-800 mt-0.5">
                   flag_design_change on this TQ will cross regulator on ALL tiers (structural integrity always reportable — IE notification mandatory).
                 </p>
@@ -786,7 +786,7 @@ export default function IppTqTab({ readOnly = false }: Props) {
 
             {isSignatureCreate && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
-                W142 SIGNATURE flag set — flag_design_change will notify regulator on ALL tiers (structural integrity always reportable).
+                Structural safety flag set — flag_design_change will notify regulator on ALL tiers (structural integrity always reportable).
               </div>
             )}
 
@@ -795,19 +795,19 @@ export default function IppTqTab({ readOnly = false }: Props) {
               <p className="text-xs font-medium text-[#3d4756]">Cross-references</p>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <label className="flex flex-col gap-1">
-                  <span className="text-[#6b7685]">RFI ref (W116)</span>
+                  <span className="text-[#6b7685]">RFI ref</span>
                   <input className="border rounded px-2 py-1" value={newRfiRef} onChange={e => setNewRfiRef(e.target.value)} placeholder="RFI-042" />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[#6b7685]">NCR ref (W136)</span>
+                  <span className="text-[#6b7685]">NCR ref</span>
                   <input className="border rounded px-2 py-1" value={newNcrRef} onChange={e => setNewNcrRef(e.target.value)} placeholder="NCR-018" />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[#6b7685]">Method statement ref (W137)</span>
+                  <span className="text-[#6b7685]">Method statement ref</span>
                   <input className="border rounded px-2 py-1" value={newMsRef} onChange={e => setNewMsRef(e.target.value)} placeholder="MS-007" />
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-[#6b7685]">Submittal ref (W115)</span>
+                  <span className="text-[#6b7685]">Submittal ref</span>
                   <input className="border rounded px-2 py-1" value={newSubmittalRef} onChange={e => setNewSubmittalRef(e.target.value)} placeholder="SUB-031" />
                 </label>
               </div>

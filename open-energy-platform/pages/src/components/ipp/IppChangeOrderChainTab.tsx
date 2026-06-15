@@ -416,7 +416,7 @@ function getActions(row: IcoRow): ChainAction[] {
       key: 'approve',
       label: 'Approve (IPP CEO — SIGNATURE SCOPE-BASELINE-CHANGE-APPROVE: crosses regulator EVERY tier when scope_baseline_change OR regulatory_re_consent_required)',
       fields: [
-        { key: 'ceo_name', label: 'IPP CEO name. NOTE: W117 SIGNATURE SCOPE-BASELINE-CHANGE-APPROVE — crosses regulator EVERY tier when scope_baseline_change OR regulatory_re_consent_required.', type: 'text', required: true, placeholder: row.ceo_name ?? '' },
+        { key: 'ceo_name', label: 'IPP CEO name. NOTE: SIGNATURE SCOPE-BASELINE-CHANGE-APPROVE — crosses regulator EVERY tier when scope_baseline_change OR regulatory_re_consent_required.', type: 'text', required: true, placeholder: row.ceo_name ?? '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -515,7 +515,7 @@ function getActions(row: IcoRow): ChainAction[] {
       key: 'reject',
       label: 'Reject (Owner Rep — crosses regulator EVERY tier when cumulative CR pct >= 15%)',
       fields: [
-        { key: 'reject_reason', label: 'Reject reason (required). NOTE: W117 — crosses regulator EVERY tier when cumulative_change_value_pct >= 15% (REIPPPP cumulative CR cap).', type: 'textarea', required: true, placeholder: row.reject_reason ?? '' },
+        { key: 'reject_reason', label: 'Reject reason (required). NOTE: crosses regulator EVERY tier when cumulative_change_value_pct >= 15% (REIPPPP cumulative CR cap).', type: 'textarea', required: true, placeholder: row.reject_reason ?? '' },
       ],
       cascadeTo: row.cumulative_change_value_pct >= 15 ? ['regulator'] : [],
     });
@@ -568,7 +568,7 @@ function renderDetail(row: IcoRow): React.ReactNode {
           <DetailPair label="Schedule impact (d)"      value={`${row.schedule_impact_days}d`} />
           <DetailPair label="Contract value"           value={fmtZar(row.contract_value_zar)} />
           <DetailPair label="Hash chain position"      value={String(row.hash_chain_position)} />
-          <DetailPair label="Merkle segment (W118)"    value={(row.merkle_root_segment ?? '-').slice(0, 12) + '...'} />
+          <DetailPair label="Merkle segment (audit)"    value={(row.merkle_root_segment ?? '-').slice(0, 12) + '...'} />
           <DetailPair label="Last actor"               value={row.last_actor_party ?? '-'} />
           <DetailPair label="Ball-in-court"            value={row.current_ball_in_court_party ?? '-'} />
         </div>
@@ -600,16 +600,16 @@ function renderDetail(row: IcoRow): React.ReactNode {
       {/* Bridges */}
       <div style={{ marginBottom: 10 }}>
         <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: TX3, marginBottom: 4 }}>
-          7-bridge architecture (W116 / W115 / W114 / W112 / W113 / W19 / W20)
+          7-bridge architecture (RFI / submittal / doc-control / schedule / EVM / procurement / COD)
         </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-          <DetailPair label="W116 RFI ref"         value={row.rfi_ref ?? '-'} />
-          <DetailPair label="W115 submittal ref"   value={row.submittal_ref ?? '-'} />
-          <DetailPair label="W114 doc-control ref" value={row.document_control_ref ?? '-'} />
-          <DetailPair label="W112 schedule ref"    value={row.schedule_ref ?? '-'} />
-          <DetailPair label="W113 EVM ref"         value={row.evm_ref ?? '-'} />
-          <DetailPair label="W19 procurement ref"  value={row.procurement_ref ?? '-'} />
-          <DetailPair label="W20 COD ref"          value={row.cod_ref ?? '-'} />
+          <DetailPair label="RFI ref"         value={row.rfi_ref ?? '-'} />
+          <DetailPair label="Submittal ref"   value={row.submittal_ref ?? '-'} />
+          <DetailPair label="Doc-control ref" value={row.document_control_ref ?? '-'} />
+          <DetailPair label="Schedule ref"    value={row.schedule_ref ?? '-'} />
+          <DetailPair label="EVM ref"         value={row.evm_ref ?? '-'} />
+          <DetailPair label="Procurement ref"  value={row.procurement_ref ?? '-'} />
+          <DetailPair label="COD ref"          value={row.cod_ref ?? '-'} />
           <DetailPair label="Regulator inbox ref"  value={row.regulator_inbox_ref ?? '-'} />
           <DetailPair label="Regulator ref"        value={row.regulator_ref ?? '-'} />
           <DetailPair label="Regulator crossed at" value={fmtDate(row.regulator_crossed_at)} />
@@ -861,13 +861,13 @@ export function IppChangeOrderChainTab() {
         <span>EAC {'Δ'}: <span style={{ fontWeight: 700, color: BAD }}>{fmtZar(kpis.eac_delta_zar_total)}</span></span>
         <span>Sched days: <span style={{ fontWeight: 700, color: WARN }}>{kpis.schedule_impact_days_total}</span></span>
         <span>Completeness avg: <span style={{ fontWeight: 700, color: TX1 }}>{kpis.completeness_avg}/130</span></span>
-        <span>W116 (RFI): <span style={{ fontWeight: 700, color: TX1 }}>{kpis.rfi_bridged_count}</span></span>
-        <span>W115 (sub): <span style={{ fontWeight: 700, color: TX1 }}>{kpis.submittal_bridged_count}</span></span>
-        <span>W114 (doc): <span style={{ fontWeight: 700, color: TX1 }}>{kpis.document_control_bridged_count}</span></span>
-        <span>W112 (sch): <span style={{ fontWeight: 700, color: TX1 }}>{kpis.schedule_bridged_count}</span></span>
-        <span>W113 (EVM): <span style={{ fontWeight: 700, color: TX1 }}>{kpis.evm_bridged_count}</span></span>
-        <span>W19 (proc): <span style={{ fontWeight: 700, color: TX1 }}>{kpis.procurement_bridged_count}</span></span>
-        <span>W20 (COD): <span style={{ fontWeight: 700, color: TX1 }}>{kpis.cod_bridged_count}</span></span>
+        <span>RFI: <span style={{ fontWeight: 700, color: TX1 }}>{kpis.rfi_bridged_count}</span></span>
+        <span>Submittal: <span style={{ fontWeight: 700, color: TX1 }}>{kpis.submittal_bridged_count}</span></span>
+        <span>Doc control: <span style={{ fontWeight: 700, color: TX1 }}>{kpis.document_control_bridged_count}</span></span>
+        <span>Schedule: <span style={{ fontWeight: 700, color: TX1 }}>{kpis.schedule_bridged_count}</span></span>
+        <span>EVM: <span style={{ fontWeight: 700, color: TX1 }}>{kpis.evm_bridged_count}</span></span>
+        <span>Procurement: <span style={{ fontWeight: 700, color: TX1 }}>{kpis.procurement_bridged_count}</span></span>
+        <span>COD: <span style={{ fontWeight: 700, color: TX1 }}>{kpis.cod_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / lifecycle pills */}

@@ -840,7 +840,7 @@ export function ReserveAccountChainTab() {
           reserve required → funding scheduled → funding in progress → funded → (monitored) → release requested
           → released. A test date showing balance below target flags a SHORTFALL, which opens a cure window —
           replenished, waived or, on failure, BREACHED (event of default). URGENT SLA: the larger the reserve
-          target, the tighter every window. The W77 signature — a reserve BREACH crosses to the regulator for
+          target, the tighter every window. The signature — a reserve BREACH crosses to the regulator for
           EVERY tier; a waiver and an SLA breach cross for the large tiers (major + systemic).
         </p>
       </header>

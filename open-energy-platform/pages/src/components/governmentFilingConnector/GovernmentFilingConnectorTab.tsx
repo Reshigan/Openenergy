@@ -437,7 +437,7 @@ function getActions(row: GfcRow): ChainAction[] {
         { key: 'failed_filing_count_quarter', label: 'Failed filing count (quarter)', type: 'text', required: false },
         { key: 'failure_rate_pct', label: 'Failure rate %', type: 'text', required: false },
         { key: 'reconciliation_break_count', label: 'Reconciliation break count', type: 'text', required: false },
-        { key: 'w118_block_ref', label: 'W118 audit block ref (MANDATORY this ack)', type: 'text', required: true },
+        { key: 'w118_block_ref', label: 'Audit block ref (MANDATORY this ack)', type: 'text', required: true },
         { key: 'notes', label: 'Acknowledgement notes. NOTE: SIGNATURE - crosses regulator at systemic_critical tier (board + counsel sign-off).', type: 'textarea', required: false },
       ],
     });
@@ -488,7 +488,7 @@ function getActions(row: GfcRow): ChainAction[] {
       key: 'revoke-credential',
       label: 'REVOKE CREDENTIAL (SIGNATURE - crosses EVERY tier)',
       fields: [
-        { key: 'reason_code', label: 'Revoke credential reason. NOTE: SIGNATURE - W126 GOVERNMENT-FILING-CONNECTOR-REVOKE crosses regulator EVERY tier (Companies Act + Tax Admin Act + ERA s.10 + PAIA s.18 e-Filing profile compromise disclosure).', type: 'textarea', required: true },
+        { key: 'reason_code', label: 'Revoke credential reason. NOTE: SIGNATURE - government-filing-connector-revoke crosses regulator EVERY tier (Companies Act + Tax Admin Act + ERA s.10 + PAIA s.18 e-Filing profile compromise disclosure).', type: 'textarea', required: true },
       ],
     });
   }
@@ -566,14 +566,14 @@ function renderDetail(row: GfcRow): React.ReactNode {
 
       {/* Bridges */}
       <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 6, padding: 12 }}>
-        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: TX3, marginBottom: 8 }}>Cross-chain bridges (W118 mandatory)</div>
+        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: TX3, marginBottom: 8 }}>Cross-chain bridges (audit chain mandatory)</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {[
-            { on: !!row.bridges_to_w118_audit_chain_live, label: 'W118 audit' },
-            { on: !!row.bridges_to_w125_erp_connector_live, label: 'W125 ERP' },
-            { on: !!row.bridges_to_w124_settlement_connector_live, label: 'W124 settlement' },
-            { on: !!row.bridges_to_w74_nersa_levy_live, label: 'W74 NERSA levy' },
-            { on: !!row.bridges_to_w48_carbon_tax_live, label: 'W48 carbon tax' },
+            { on: !!row.bridges_to_w118_audit_chain_live, label: 'Audit chain' },
+            { on: !!row.bridges_to_w125_erp_connector_live, label: 'ERP connector' },
+            { on: !!row.bridges_to_w124_settlement_connector_live, label: 'Settlement connector' },
+            { on: !!row.bridges_to_w74_nersa_levy_live, label: 'NERSA levy' },
+            { on: !!row.bridges_to_w48_carbon_tax_live, label: 'Carbon tax' },
           ].map(({ on, label }) => (
             <span key={label} style={{
               background: on ? ACC : BG2,
@@ -738,7 +738,7 @@ export function GovernmentFilingConnectorTab({ regulatorView }: Props = {}) {
       {/* Header */}
       <div style={{ marginBottom: 16, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1, margin: 0 }}>CIPC / SARS / NERSA government-filing connector (W126)</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1, margin: 0 }}>CIPC / SARS / NERSA government-filing connector</h2>
           <p style={{ fontSize: 11, color: TX2, margin: '4px 0 0' }}>
             10-state forward + 4 branch SA government regulator filing spine.
             INVERTED SLA: single 168h / quarterly 240h / annual 360h / multi-juris. 480h / systemic 720h.
@@ -786,11 +786,11 @@ export function GovernmentFilingConnectorTab({ regulatorView }: Props = {}) {
         <span>Cred &lt;60d: <strong style={{ color: WARN }}>{kpis.creds_expiring_within_60d}</strong></span>
         <span>Cred &lt;14d: <strong style={{ color: BAD }}>{kpis.creds_expiring_within_14d}</strong></span>
         <span>Deadline &lt;30d: <strong style={{ color: BAD }}>{kpis.deadlines_within_30d}</strong></span>
-        <span>W118: <strong style={{ color: TX1 }}>{kpis.w118_bridged_count}</strong></span>
-        <span>W125: <strong style={{ color: TX1 }}>{kpis.w125_bridged_count}</strong></span>
-        <span>W124: <strong style={{ color: TX1 }}>{kpis.w124_bridged_count}</strong></span>
-        <span>W74: <strong style={{ color: TX1 }}>{kpis.w74_bridged_count}</strong></span>
-        <span>W48: <strong style={{ color: TX1 }}>{kpis.w48_bridged_count}</strong></span>
+        <span>Audit chain: <strong style={{ color: TX1 }}>{kpis.w118_bridged_count}</strong></span>
+        <span>ERP connector: <strong style={{ color: TX1 }}>{kpis.w125_bridged_count}</strong></span>
+        <span>Settlement: <strong style={{ color: TX1 }}>{kpis.w124_bridged_count}</strong></span>
+        <span>NERSA levy: <strong style={{ color: TX1 }}>{kpis.w74_bridged_count}</strong></span>
+        <span>Carbon tax: <strong style={{ color: TX1 }}>{kpis.w48_bridged_count}</strong></span>
       </div>
 
       {/* Filter pills */}
@@ -995,9 +995,9 @@ function ProposeModal({
       <div style={{ width: '100%', maxWidth: 680, background: BG1, borderRadius: 8, padding: 20, fontSize: 12, color: TX1, maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: TX1 }}>Propose government-filing connector (W126)</h3>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: TX1 }}>Propose government-filing connector</h3>
             <p style={{ margin: '4px 0 0', fontSize: 11, color: TX2 }}>
-              W118 audit bridge mandatory. Tier auto-derived from filing_count, jurisdiction_count, national_statutory with floor flags.
+              Audit bridge mandatory. Tier auto-derived from filing_count, jurisdiction_count, national_statutory with floor flags.
             </p>
           </div>
           <button type="button" onClick={onClose} style={{ background: BG2, border: `1px solid ${BORDER}`, borderRadius: 4, padding: '4px 12px', fontSize: 12, cursor: 'pointer', color: TX1 }}>Close</button>
@@ -1041,19 +1041,19 @@ function ProposeModal({
           <Field label="Title">
             <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} placeholder="Acme CIPC annual return + SARS VAT201 stack" />
           </Field>
-          <Field label="W118 block ref (mandatory)">
+          <Field label="Audit block ref (mandatory)">
             <input value={w118} onChange={(e) => setW118(e.target.value)} style={inputStyle} placeholder="audit-block-2026-1234" />
           </Field>
-          <Field label="W125 ERP connector ref">
-            <input value={w125} onChange={(e) => setW125(e.target.value)} style={inputStyle} placeholder="soec-w125-001" />
+          <Field label="ERP connector ref">
+            <input value={w125} onChange={(e) => setW125(e.target.value)} style={inputStyle} placeholder="soec-001" />
           </Field>
-          <Field label="W124 settlement connector ref">
+          <Field label="Settlement connector ref">
             <input value={w124} onChange={(e) => setW124(e.target.value)} style={inputStyle} placeholder="ssc-2026-0017" />
           </Field>
-          <Field label="W74 NERSA levy ref">
+          <Field label="NERSA levy ref">
             <input value={w74} onChange={(e) => setW74(e.target.value)} style={inputStyle} placeholder="regulator-levy-2026-0011" />
           </Field>
-          <Field label="W48 carbon tax offset claim ref">
+          <Field label="Carbon tax offset claim ref">
             <input value={w48} onChange={(e) => setW48(e.target.value)} style={inputStyle} placeholder="cot-2026-0005" />
           </Field>
         </div>

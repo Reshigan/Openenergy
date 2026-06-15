@@ -329,11 +329,11 @@ const ACTION_LABEL: Record<ActionKind, string> = {
   'calibrate':          'Calibrate (data_steward - isotonic / sigmoid calibration + threshold)',
   'deploy-shadow':      'Deploy shadow (data_steward - production-mirror inference, no actions)',
   'activate-live-ab':   'ACTIVATE LIVE A/B (CTO - challenger receives traffic; live inference begins)',
-  'promote-champion':   'Promote champion (CTO - challenger wins A/B; replaces W71 heuristic)',
+  'promote-champion':   'Promote champion (CTO - challenger wins A/B; replaces heuristic ensemble)',
   'retrain':            'Retrain (CTO - drift-triggered or scheduled re-fit)',
   'archive':            'Archive (CEO - HARD terminal, retire model)',
   'detect-drift':       'Detect drift (data_steward - PSI / KS exceedance; SOFT pause)',
-  'rollback-model':     'ROLLBACK MODEL (CTO - SIGNATURE - W127-ML-ROLLBACK crosses regulator EVERY tier: ISO 42001 + NIST AI RMF + SOC 2)',
+  'rollback-model':     'ROLLBACK MODEL (CTO - SIGNATURE - ML-ROLLBACK crosses regulator EVERY tier: ISO 42001 + NIST AI RMF + SOC 2)',
   'recall-model':       'RECALL MODEL (CEO - HARD safety pull; crosses EVERY tier WHEN safety_critical_inference)',
   'activate-failover':  'Activate failover (data_steward - revert to baseline / heuristic; multi-juris + systemic crossings)',
 };
@@ -567,11 +567,11 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
         const note = window.prompt('Live A/B notes (NOTE: CTO sign-off; live inference begins):', '');
         if (note !== null) body.notes = note;
       } else if (action === 'promote-champion') {
-        const recw71 = window.prompt('Reconciliation with W71 heuristic (%):', String(row.reconciliation_with_w71_heuristic_pct ?? 92));
+        const recw71 = window.prompt('Reconciliation with heuristic ensemble (%):', String(row.reconciliation_with_w71_heuristic_pct ?? 92));
         if (recw71 !== null) body.reconciliation_with_w71_heuristic_pct = Number(recw71);
         const ntt = window.prompt('NTT baseline comparison (% improvement, negative = worse):', String(row.ntt_baseline_comparison_pct ?? 30));
         if (ntt !== null) body.ntt_baseline_comparison_pct = Number(ntt);
-        const note = window.prompt('Champion promotion notes (replaces W71 heuristic):', '');
+        const note = window.prompt('Champion promotion notes (replaces heuristic ensemble):', '');
         if (note !== null) body.notes = note;
       } else if (action === 'retrain') {
         const due = window.prompt('Next retrain due ISO date (e.g. 2026-08-30T00:00:00Z):', row.retrain_due_at ?? '');
@@ -593,7 +593,7 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
         if (note !== null) body.notes = note;
       } else if (action === 'rollback-model') {
         const reason = window.prompt(
-          'Rollback reason. NOTE: SIGNATURE - W127-ML-ROLLBACK crosses regulator EVERY tier (ISO 42001 incident + NIST AI RMF MAP-MEASURE-MANAGE + SOC 2 control failure + audit-evidence-chain).',
+          'Rollback reason. NOTE: SIGNATURE - ML-ROLLBACK crosses regulator EVERY tier (ISO 42001 incident + NIST AI RMF MAP-MEASURE-MANAGE + SOC 2 control failure + audit-evidence-chain).',
           row.reason_code ?? 'champion_underperforming',
         );
         if (reason === null) return;
@@ -607,7 +607,7 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
         body.reason_code = reason;
       } else if (action === 'activate-failover') {
         const note = window.prompt(
-          'Failover notes. NOTE: revert to baseline / W71 heuristic; crosses regulator at multi_jurisdiction + fleet_systemic tiers.',
+          'Failover notes. NOTE: revert to baseline / heuristic ensemble; crosses regulator at multi_jurisdiction + fleet_systemic tiers.',
           '',
         );
         if (note !== null) body.notes = note;
@@ -634,13 +634,13 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
     <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">Anomaly-detection ML model governance (W127)</h2>
+          <h2 className="text-base font-semibold text-[#0c2a4d]">Anomaly-detection ML model governance</h2>
           <p className="text-[11px] text-[#4a5568]">
-            12-state forward + 4 branch Phase-D ML BRAIN replacing W71 heuristic 6-method anomaly ensemble. LSTM AE / Transformer AE / VAE / Isolation Forest / OC-SVM / Prophet residual / baseline heuristic.
+            12-state forward + 4 branch ML BRAIN replacing the heuristic 6-method anomaly ensemble. LSTM AE / Transformer AE / VAE / Isolation Forest / OC-SVM / Prophet residual / baseline heuristic.
             Beats AspenTech Mtell + GE APM + Uptake Fusion + Augury + C3.ai AI/ML + SparkCognition + Petuum + DataRPM.
             INVERTED SLA HOURS (single 24 / small 96 / large 240 / multi-juris. 480 / systemic 720).
-            FLOOR-AT-LARGE-FLEET {'≥'}1 flag / FLOOR-AT-FLEET-SYSTEMIC {'≥'}3 flags. W118 audit bridge mandatory.
-            SIGNATURE W127-ML-ROLLBACK: rollback_model crosses EVERY tier (ISO 42001 incident + NIST AI RMF MAP-MEASURE-MANAGE + SOC 2 control failure + audit-evidence-chain reconciliation; FIRST Phase-D hard line).
+            FLOOR-AT-LARGE-FLEET {'≥'}1 flag / FLOOR-AT-FLEET-SYSTEMIC {'≥'}3 flags. Audit bridge mandatory.
+            SIGNATURE ML-ROLLBACK: rollback_model crosses EVERY tier (ISO 42001 incident + NIST AI RMF MAP-MEASURE-MANAGE + SOC 2 control failure + audit-evidence-chain reconciliation; first hard line).
             Internal ML governance chain (no public peer endpoint).
           </p>
         </div>
@@ -685,11 +685,11 @@ export function AnomalyDetectionMlTab({ regulatorView }: Props = {}) {
         <span>Retrain {'<'}60d: <span className="font-semibold text-[#a06200]">{kpis.retrain_within_60d}</span></span>
         <span>Retrain {'<'}14d: <span className="font-semibold text-[#9b1f1f]">{kpis.retrain_within_14d}</span></span>
         <span>Card exp. {'<'}30d: <span className="font-semibold text-[#9b1f1f]">{kpis.model_card_expiring_30d}</span></span>
-        <span>W118: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
-        <span>W71: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w71_bridged_count}</span></span>
-        <span>W12: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w12_bridged_count}</span></span>
-        <span>W126: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w126_bridged_count}</span></span>
-        <span>W74: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w74_bridged_count}</span></span>
+        <span>Audit: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
+        <span>Prognostics: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w71_bridged_count}</span></span>
+        <span>Site comm.: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w12_bridged_count}</span></span>
+        <span>Gov filing: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w126_bridged_count}</span></span>
+        <span>NERSA levy: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w74_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / priority pills */}
@@ -957,7 +957,7 @@ function Drawer({
             </div>
             <h3 className="text-lg font-semibold text-[#0c2a4d]">{row.model_number}</h3>
             <p className="text-[11px] text-[#4a5568]">
-              {row.title || 'Anomaly-detection ML model (W127 - replaces W71 heuristic)'}
+              {row.title || 'Anomaly-detection ML model (replaces heuristic ensemble)'}
               {row.model_version ? <> {'•'} v<span className="font-mono">{row.model_version}</span></> : null}
               {row.training_dataset_hash ? <> {'•'} dataset <span className="font-mono text-[10px]">{row.training_dataset_hash.slice(0, 12)}</span></> : null}
               {row.feature_count != null ? <> {'•'} {row.feature_count} features</> : null}
@@ -1017,7 +1017,7 @@ function Drawer({
             <div className="font-mono text-[12px] text-[#0c2a4d]">{row.inference_throughput_per_sec ?? '-'}/s</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">W71 recon. %</div>
+            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Heuristic recon. %</div>
             <div className="font-mono text-[12px] text-[#0c2a4d]">{row.reconciliation_with_w71_heuristic_pct ?? '-'}</div>
           </div>
           <div>
@@ -1074,13 +1074,13 @@ function Drawer({
 
         {/* Bridges */}
         <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (W118 mandatory)</div>
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (audit mandatory)</div>
           <div className="grid grid-cols-5 gap-2">
-            <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="W118 audit" />
-            <BridgePill on={!!row.bridges_to_w71_asset_prognostics_live} label="W71 prognostics" />
-            <BridgePill on={!!row.bridges_to_w12_site_commissioning_live} label="W12 site comm." />
-            <BridgePill on={!!row.bridges_to_w126_government_filing_live} label="W126 gov filing" />
-            <BridgePill on={!!row.bridges_to_w74_nersa_levy_live} label="W74 NERSA levy" />
+            <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="Audit" />
+            <BridgePill on={!!row.bridges_to_w71_asset_prognostics_live} label="Prognostics" />
+            <BridgePill on={!!row.bridges_to_w12_site_commissioning_live} label="Site comm." />
+            <BridgePill on={!!row.bridges_to_w126_government_filing_live} label="Gov filing" />
+            <BridgePill on={!!row.bridges_to_w74_nersa_levy_live} label="NERSA levy" />
           </div>
         </div>
 
@@ -1161,7 +1161,7 @@ const FAMILY_OPTIONS: Array<{ key: AdmlFamily; label: string }> = [
   { key: 'isolation_forest_ensemble', label: 'Isolation Forest ensemble' },
   { key: 'one_class_svm',             label: 'One-Class SVM' },
   { key: 'prophet_residual',          label: 'Prophet residual' },
-  { key: 'baseline_heuristic',        label: 'Baseline heuristic (W71-style)' },
+  { key: 'baseline_heuristic',        label: 'Baseline heuristic' },
 ];
 
 const ASSET_OPTIONS: Array<{ key: AdmlAssetClass; label: string }> = [
@@ -1233,10 +1233,10 @@ function ProposeModal({
       <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose anomaly-detection ML model (W127)</h3>
+            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose anomaly-detection ML model</h3>
             <p className="text-[11px] text-[#4a5568]">
-              W118 audit bridge mandatory. Tier auto-derived from (assets_covered, jurisdiction_count, safety_critical) with FLOOR-AT-LARGE-FLEET {'≥'}1 flag and FLOOR-AT-FLEET-SYSTEMIC {'≥'}3 flags.
-              Replaces W71 heuristic 6-method anomaly ensemble.
+              Audit bridge mandatory. Tier auto-derived from (assets_covered, jurisdiction_count, safety_critical) with FLOOR-AT-LARGE-FLEET {'≥'}1 flag and FLOOR-AT-FLEET-SYSTEMIC {'≥'}3 flags.
+              Replaces the heuristic 6-method anomaly ensemble.
             </p>
           </div>
           <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
@@ -1274,19 +1274,19 @@ function ProposeModal({
           <Field label="Title">
             <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="Eastern Cape wind fleet LSTM autoencoder v1" />
           </Field>
-          <Field label="W118 block ref (mandatory)">
+          <Field label="Audit block ref (mandatory)">
             <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
           </Field>
-          <Field label="W71 asset prognostics ref (REPLACES)">
+          <Field label="Asset prognostics ref (REPLACES)">
             <input value={w71} onChange={(e) => setW71(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="aprog-2026-007" />
           </Field>
-          <Field label="W12 site commissioning ref">
+          <Field label="Site commissioning ref">
             <input value={w12} onChange={(e) => setW12(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="com-2026-009" />
           </Field>
-          <Field label="W126 government filing ref">
+          <Field label="Government filing ref">
             <input value={w126} onChange={(e) => setW126(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="gfc-2026-0015" />
           </Field>
-          <Field label="W74 NERSA levy ref">
+          <Field label="NERSA levy ref">
             <input value={w74} onChange={(e) => setW74(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="regulator-levy-2026-0011" />
           </Field>
         </div>

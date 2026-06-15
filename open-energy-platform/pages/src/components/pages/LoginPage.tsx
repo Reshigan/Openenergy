@@ -184,7 +184,7 @@ function BrandPanel() {
           {[
             { label: 'COD gate · Karoo Wind 1',        note: '2 sign-offs pending',        dot: T.brandAmber },
             { label: 'DSCR covenant breach',            note: 'Lender notification sent',   dot: '#c97a14' },
-            { label: 'W64 PTW live-electrical issued',  note: '4h 20m remaining',           dot: T.brandAccent },
+            { label: 'Permit-to-work issued · live-electrical', note: '4h 20m remaining',     dot: T.brandAccent },
           ].map((ev) => (
             <div
               key={ev.label}

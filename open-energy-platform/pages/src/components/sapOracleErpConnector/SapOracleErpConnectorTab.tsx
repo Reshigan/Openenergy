@@ -325,7 +325,7 @@ const ACTION_LABEL: Record<ActionKind, string> = {
   'disconnect':                 'DISCONNECT (CFO - HARD; crosses EVERY tier WHEN sox_404_in_scope OR sars_efiling_critical_path)',
   'suspend':                    'Suspend (financial controller - period-close lockout, SOFT)',
   'resume':                     'Resume (financial controller - exit lockout)',
-  'revoke-credential':          'REVOKE CREDENTIAL (SIGNATURE - W125 crosses EVERY tier; SARS + CIPC + SOC 1 Type II + ISO 27001 + PCAOB AS 5)',
+  'revoke-credential':          'REVOKE CREDENTIAL (SIGNATURE - crosses EVERY tier; SARS + CIPC + SOC 1 Type II + ISO 27001 + PCAOB AS 5)',
   'activate-failover':          'Activate failover (financial controller - primary to DR ERP; enterprise+group+multi_country cross)',
 };
 
@@ -570,12 +570,12 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
     <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">SAP / Oracle ERP connector (W125)</h2>
+          <h2 className="text-base font-semibold text-[#0c2a4d]">SAP / Oracle ERP connector</h2>
           <p className="text-[11px] text-[#4a5568]">
             10-state forward + 4 branch enterprise back-office GL/AP/AR posting spine - SAP S/4HANA OData v4 / SAP ECC IDoc FIDCC1/FIDCC2/REMADV/INVOIC / Oracle EBS + Fusion / Workday / SAGE 300 / Dynamics 365 / NetSuite / Epicor / IFS.
             Beats SAP S/4HANA Cloud Integration + Oracle Integration Cloud + Workday Integration Cloud + MuleSoft + Boomi + Informatica + TIBCO + IBM AppConnect + SnapLogic + Celigo integrator.io.
             INVERTED SLA HOURS (single 168 / multi-module 240 / enterprise 360 / group 480 / multi-country 720).
-            FLOOR-AT-ENTERPRISE-WIDE {'≥'}1 flag / FLOOR-AT-MULTI-COUNTRY {'≥'}3 flags. W118 audit bridge mandatory.
+            FLOOR-AT-ENTERPRISE-WIDE {'≥'}1 flag / FLOOR-AT-MULTI-COUNTRY {'≥'}3 flags. Audit-chain bridge mandatory.
             SIGNATURE: revoke_credential crosses EVERY tier (SARS + CIPC + SOC 1 Type II + ISO 27001 + PCAOB AS 5 service-account compromise).
             External ERP counterparty reads via mTLS-gated /api/sap-oracle-erp-connector/peer/:peer_id with x-mtls-cert-fingerprint header.
           </p>
@@ -619,11 +619,11 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
         <span>Floor flags: <span className="font-semibold text-[#a06200]">{kpis.floor_flag_total}</span></span>
         <span>Cred {'<'}60d: <span className="font-semibold text-[#a06200]">{kpis.creds_expiring_within_60d}</span></span>
         <span>Cred {'<'}14d: <span className="font-semibold text-[#9b1f1f]">{kpis.creds_expiring_within_14d}</span></span>
-        <span>W118: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
-        <span>W124: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w124_bridged_count}</span></span>
-        <span>W68: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w68_bridged_count}</span></span>
-        <span>W3: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w3_bridged_count}</span></span>
-        <span>W21: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w21_bridged_count}</span></span>
+        <span>Audit chain: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
+        <span>Settlement connector: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w124_bridged_count}</span></span>
+        <span>Counterparty margin: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w68_bridged_count}</span></span>
+        <span>Settlement P6: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w3_bridged_count}</span></span>
+        <span>Drawdown: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w21_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / priority pills */}
@@ -996,13 +996,13 @@ function Drawer({
 
         {/* Bridges */}
         <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (W118 mandatory)</div>
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (audit chain mandatory)</div>
           <div className="grid grid-cols-5 gap-2">
-            <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="W118 audit" />
-            <BridgePill on={!!row.bridges_to_w124_settlement_connector_live} label="W124 settlement" />
-            <BridgePill on={!!row.bridges_to_w68_counterparty_margin_live} label="W68 margin" />
-            <BridgePill on={!!row.bridges_to_w3_settlement_p6_live} label="W3 settlement" />
-            <BridgePill on={!!row.bridges_to_w21_drawdown_live} label="W21 drawdown" />
+            <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="Audit chain" />
+            <BridgePill on={!!row.bridges_to_w124_settlement_connector_live} label="Settlement connector" />
+            <BridgePill on={!!row.bridges_to_w68_counterparty_margin_live} label="Counterparty margin" />
+            <BridgePill on={!!row.bridges_to_w3_settlement_p6_live} label="Settlement P6" />
+            <BridgePill on={!!row.bridges_to_w21_drawdown_live} label="Drawdown" />
           </div>
         </div>
 
@@ -1160,9 +1160,9 @@ function ProposeModal({
       <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose SAP / Oracle ERP connector (W125)</h3>
+            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose SAP / Oracle ERP connector</h3>
             <p className="text-[11px] text-[#4a5568]">
-              W118 audit bridge mandatory. Tier auto-derived from (module_count, company_code_count, jurisdiction_count) with FLOOR-AT-ENTERPRISE-WIDE {'≥'}1 flag and FLOOR-AT-MULTI-COUNTRY {'≥'}3 flags.
+              Audit-chain bridge mandatory. Tier auto-derived from (module_count, company_code_count, jurisdiction_count) with FLOOR-AT-ENTERPRISE-WIDE {'≥'}1 flag and FLOOR-AT-MULTI-COUNTRY {'≥'}3 flags.
             </p>
           </div>
           <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
@@ -1200,19 +1200,19 @@ function ProposeModal({
           <Field label="Title">
             <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="Acme SAP S/4HANA GL/AP/AR posting rail" />
           </Field>
-          <Field label="W118 block ref (mandatory)">
+          <Field label="Audit block ref (mandatory)">
             <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
           </Field>
-          <Field label="W124 settlement connector ref">
+          <Field label="Settlement connector ref">
             <input value={w124} onChange={(e) => setW124(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="soec-w124-001" />
           </Field>
-          <Field label="W68 counterparty margin ref">
+          <Field label="Counterparty margin ref">
             <input value={w68} onChange={(e) => setW68(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="ccm-2026-0021" />
           </Field>
-          <Field label="W3 settlement P6 ref">
+          <Field label="Settlement P6 ref">
             <input value={w3} onChange={(e) => setW3(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="stl-2026-0011" />
           </Field>
-          <Field label="W21 drawdown ref">
+          <Field label="Drawdown ref">
             <input value={w21} onChange={(e) => setW21(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="dd-2026-0005" />
           </Field>
         </div>

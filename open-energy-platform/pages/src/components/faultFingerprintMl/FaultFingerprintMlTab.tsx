@@ -343,7 +343,7 @@ const FILTERS = [
   { key: 'retrained',                    label: 'Retrained' },
   { key: 'archived',                     label: 'Archived' },
   { key: 'class_drift_detected',         label: 'Class drift' },
-  { key: 'failover_to_physics_baseline', label: 'W71 failover' },
+  { key: 'failover_to_physics_baseline', label: 'Physics failover' },
   { key: 'tier:single_asset',             label: 'Single asset (36h)' },
   { key: 'tier:small_fleet',              label: 'Small fleet (120h)' },
   { key: 'tier:large_fleet',              label: 'Large fleet (300h)' },
@@ -355,7 +355,7 @@ const FILTERS = [
   { key: 'family:cnn_1d',            label: '1D-CNN' },
   { key: 'family:lightgbm',          label: 'LightGBM' },
   { key: 'family:catboost',          label: 'CatBoost' },
-  { key: 'family:baseline_physics',  label: 'Baseline phys. (W71)' },
+  { key: 'family:baseline_physics',  label: 'Baseline phys.' },
   { key: 'asset:wind_turbine',          label: 'Wind' },
   { key: 'asset:pv_inverter',           label: 'PV' },
   { key: 'asset:battery_storage',       label: 'Battery' },
@@ -401,8 +401,8 @@ const ACTION_LABEL: Record<string, string> = {
   'detect-class-drift':           'Detect class drift',
   'rollback-model':               'Rollback model (SIGNATURE)',
   'recall-model':                 'Recall model (HARD)',
-  'failover-to-physics-baseline': 'Failover to W71 physics baseline',
-  'add-novel-class':              'Add novel class (W129-UNIQUE)',
+  'failover-to-physics-baseline': 'Failover to physics baseline',
+  'add-novel-class':              'Add novel class',
 };
 
 function getActions(row: FfmlRow): ChainAction[] {
@@ -435,7 +435,7 @@ function getActions(row: FfmlRow): ChainAction[] {
           { key: 'training_dataset_hash', label: 'Labeled dataset hash (SHA-256, 12-mode-labeled corpus)', type: 'text', required: true },
           { key: 'training_examples_count', label: 'Training examples count', type: 'text', required: false },
           { key: 'validation_examples_count', label: 'Validation examples count', type: 'text', required: false },
-          { key: 'class_count', label: 'Class count (12 W71 modes default)', type: 'text', required: false },
+          { key: 'class_count', label: 'Class count (12 physics modes default)', type: 'text', required: false },
           { key: 'class_label_set_hash', label: 'Class label set hash (SHA-256)', type: 'text', required: false },
         ],
       });
@@ -523,9 +523,9 @@ function getActions(row: FfmlRow): ChainAction[] {
         key: nextAction,
         label: ACTION_LABEL[nextAction],
         fields: [
-          { key: 'reconciliation_with_w71_physics_pct', label: 'Reconciliation with W71 12-mode physics baseline (%, top-1 match)', type: 'text', required: true },
+          { key: 'reconciliation_with_w71_physics_pct', label: 'Reconciliation with 12-mode physics baseline (%, top-1 match)', type: 'text', required: true },
           { key: 'ntt_baseline_comparison_pct', label: 'NTT baseline comparison (% improvement, negative=worse)', type: 'text', required: false },
-          { key: 'notes', label: 'Champion promotion notes (replaces W71 12-mode physics)', type: 'textarea', required: false },
+          { key: 'notes', label: 'Champion promotion notes (replaces 12-mode physics)', type: 'textarea', required: false },
         ],
       });
     } else if (nextAction === 'retrain') {
@@ -566,7 +566,7 @@ function getActions(row: FfmlRow): ChainAction[] {
       key: 'failover-to-physics-baseline',
       label: ACTION_LABEL['failover-to-physics-baseline'],
       fields: [
-        { key: 'notes', label: 'W71 physics failover notes. NOTE: reverts to W71 12-mode rules; crosses regulator at multi_jurisdiction + fleet_systemic tiers.', type: 'textarea', required: false },
+        { key: 'notes', label: 'Physics failover notes. NOTE: reverts to 12-mode physics rules; crosses regulator at multi_jurisdiction + fleet_systemic tiers.', type: 'textarea', required: false },
       ],
     });
   }
@@ -576,7 +576,7 @@ function getActions(row: FfmlRow): ChainAction[] {
       key: 'add-novel-class',
       label: ACTION_LABEL['add-novel-class'],
       fields: [
-        { key: 'notes', label: 'Novel class notes (RE-ENTRY to multiclass_model_trained). NOTE: W129-UNIQUE - EU AI Act Art 14 product-class change; fleet_systemic crosses regulator.', type: 'textarea', required: false },
+        { key: 'notes', label: 'Novel class notes (RE-ENTRY to multiclass_model_trained). NOTE: EU AI Act Art 14 product-class change; fleet_systemic crosses regulator.', type: 'textarea', required: false },
         { key: 'class_distribution_payload', label: 'Updated class distribution payload (JSON)', type: 'textarea', required: false },
       ],
     });
@@ -587,7 +587,7 @@ function getActions(row: FfmlRow): ChainAction[] {
       key: 'rollback-model',
       label: ACTION_LABEL['rollback-model'],
       fields: [
-        { key: 'reason_code', label: 'Rollback reason. NOTE: SIGNATURE - W129 inherits W127-ML-ROLLBACK Phase-D hard line. Crosses regulator EVERY tier (THIRD Phase-D rollback signature; ISO 42001 + NIST AI RMF + SOC 2 + NERC CIP-013 + SOX).', type: 'textarea', required: true },
+        { key: 'reason_code', label: 'Rollback reason. NOTE: SIGNATURE - inherits the ML-rollback hard line. Crosses regulator EVERY tier (ISO 42001 + NIST AI RMF + SOC 2 + NERC CIP-013 + SOX).', type: 'textarea', required: true },
       ],
     });
     actions.push({
@@ -625,7 +625,7 @@ function renderDetail(row: FfmlRow): React.ReactNode {
         <DetailPair label="Calib. Brier" value={String(row.calibration_brier ?? '-')} />
         <DetailPair label="Class drift PSI" value={String(row.class_drift_psi ?? '-')} />
         <DetailPair label="Novel detect." value={String(row.novel_class_detection_rate ?? '-')} />
-        <DetailPair label="W71 phys. recon. %" value={String(row.reconciliation_with_w71_physics_pct ?? '-')} />
+        <DetailPair label="Physics recon. %" value={String(row.reconciliation_with_w71_physics_pct ?? '-')} />
         <DetailPair label="NTT baseline %" value={`${row.ntt_baseline_comparison_pct ?? '-'}%`} />
         <DetailPair label="Latency p50" value={`${row.inference_latency_p50_ms ?? '-'} ms`} />
         <DetailPair label="Latency p99" value={`${row.inference_latency_p99_ms ?? '-'} ms`} />
@@ -720,13 +720,13 @@ function renderDetail(row: FfmlRow): React.ReactNode {
 
       {/* Bridges */}
       <div style={{ marginBottom: 12, background: BG1, border: `1px solid ${BORDER}`, borderRadius: 6, padding: 12 }}>
-        <div style={{ marginBottom: 8, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em', color: TX3 }}>Cross-chain bridges (W71 NOT NULL + W118 mandatory)</div>
+        <div style={{ marginBottom: 8, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em', color: TX3 }}>Cross-chain bridges (physics NOT NULL + audit mandatory)</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
-          <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="W118 audit" />
-          <BridgePill on={!!row.bridges_to_w71_asset_prognostics_live} label="W71 12-mode physics" />
-          <BridgePill on={!!row.bridges_to_w15_warranty_claim_live} label="W15 warranty / RMA" />
-          <BridgePill on={!!row.bridges_to_w41_problem_management_live} label="W41 problem mgmt" />
-          <BridgePill on={!!row.bridges_to_w63_warranty_recovery_live} label="W63 warranty recov." />
+          <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="Audit" />
+          <BridgePill on={!!row.bridges_to_w71_asset_prognostics_live} label="12-mode physics" />
+          <BridgePill on={!!row.bridges_to_w15_warranty_claim_live} label="Warranty / RMA" />
+          <BridgePill on={!!row.bridges_to_w41_problem_management_live} label="Problem mgmt" />
+          <BridgePill on={!!row.bridges_to_w63_warranty_recovery_live} label="Warranty recov." />
         </div>
       </div>
 
@@ -768,7 +768,7 @@ function fmtFamily(s: string | null | undefined): string {
     cnn_1d: '1D-CNN',
     lightgbm: 'LightGBM',
     catboost: 'CatBoost',
-    baseline_physics: 'Baseline physics (W71)',
+    baseline_physics: 'Baseline physics',
   };
   return map[String(s)] ?? String(s).replace(/_/g, ' ');
 }
@@ -785,7 +785,7 @@ const FAMILY_OPTIONS: Array<{ key: FfmlFamily; label: string }> = [
   { key: 'cnn_1d',            label: '1D-CNN (deep)' },
   { key: 'lightgbm',          label: 'LightGBM' },
   { key: 'catboost',          label: 'CatBoost' },
-  { key: 'baseline_physics',  label: 'Baseline physics (W71 12-mode)' },
+  { key: 'baseline_physics',  label: 'Baseline physics (12-mode)' },
 ];
 
 const ASSET_OPTIONS: Array<{ key: FfmlAssetClass; label: string }> = [
@@ -951,13 +951,13 @@ export function FaultFingerprintMlTab({ regulatorView }: Props = {}) {
       {/* Header */}
       <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: TX1 }}>Fault-fingerprint multi-class ML governance (W129)</h2>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: TX1 }}>Fault-fingerprint multi-class ML governance</h2>
           <p style={{ margin: '4px 0 0', fontSize: 11, color: TX2, maxWidth: 900 }}>
-            12-state forward + 4 branch Phase-D multi-class fault classifier BRAIN replacing W71 12-mode physics rules (Sister of W127 anomaly ML + W128 survival ML).
-            XGBoost / Random Forest / Gradient Boosting / 1D-CNN / LightGBM / CatBoost / baseline physics (W71).
+            12-state forward + 4 branch multi-class fault classifier BRAIN replacing 12-mode physics rules (Sister of anomaly ML + survival ML).
+            XGBoost / Random Forest / Gradient Boosting / 1D-CNN / LightGBM / CatBoost / baseline physics.
             Beats AspenTech Mtell + GE APM + Uptake Fusion + Augury + C3.ai + SparkCognition + Petuum + DataRPM.
             INVERTED SLA HOURS (single 36 / small 120 / large 300 / multi-juris. 600 / systemic 900).
-            SIGNATURE W129: rollback_model crosses EVERY tier (THIRD Phase-D rollback signature). W129-UNIQUE: add_novel_class at fleet_systemic (EU AI Act Art 14).
+            SIGNATURE: rollback_model crosses EVERY tier (rollback signature). add_novel_class at fleet_systemic (EU AI Act Art 14).
           </p>
         </div>
         {!regulatorView && (
@@ -997,18 +997,18 @@ export function FaultFingerprintMlTab({ regulatorView }: Props = {}) {
         <span>Retrained: <strong style={{ color: GOOD }}>{kpis.retrained_count}</strong></span>
         <span>Archived: <strong style={{ color: GOOD }}>{kpis.archived_count}</strong></span>
         <span>Class drift: <strong style={{ color: WARN }}>{kpis.class_drift_count}</strong></span>
-        <span>W71 failover: <strong style={{ color: WARN }}>{kpis.failover_count}</strong></span>
+        <span>Physics failover: <strong style={{ color: WARN }}>{kpis.failover_count}</strong></span>
         <span>Reportable: <strong style={{ color: BAD }}>{kpis.reportable_total}</strong></span>
         <span>Floor flags: <strong style={{ color: WARN }}>{kpis.floor_flag_total}</strong></span>
         <span>Retrain &lt;60d: <strong style={{ color: WARN }}>{kpis.retrain_within_60d}</strong></span>
         <span>Retrain &lt;14d: <strong style={{ color: BAD }}>{kpis.retrain_within_14d}</strong></span>
         <span>Card exp. &lt;30d: <strong style={{ color: BAD }}>{kpis.model_card_expiring_30d}</strong></span>
         <span>Strat. fail: <strong style={{ color: BAD }}>{kpis.min_samples_floor_fail_count}</strong></span>
-        <span>W118: <strong style={{ color: TX1 }}>{kpis.w118_bridged_count}</strong></span>
-        <span>W71: <strong style={{ color: TX1 }}>{kpis.w71_bridged_count}</strong></span>
-        <span>W15: <strong style={{ color: TX1 }}>{kpis.w15_bridged_count}</strong></span>
-        <span>W41: <strong style={{ color: TX1 }}>{kpis.w41_bridged_count}</strong></span>
-        <span>W63: <strong style={{ color: TX1 }}>{kpis.w63_bridged_count}</strong></span>
+        <span>Audit: <strong style={{ color: TX1 }}>{kpis.w118_bridged_count}</strong></span>
+        <span>Physics: <strong style={{ color: TX1 }}>{kpis.w71_bridged_count}</strong></span>
+        <span>Warranty: <strong style={{ color: TX1 }}>{kpis.w15_bridged_count}</strong></span>
+        <span>Problem mgmt: <strong style={{ color: TX1 }}>{kpis.w41_bridged_count}</strong></span>
+        <span>Warranty recov.: <strong style={{ color: TX1 }}>{kpis.w63_bridged_count}</strong></span>
       </div>
 
       {/* Filter groups */}
@@ -1263,9 +1263,9 @@ function ProposeModal({
       <div style={{ width: '100%', maxWidth: 640, borderRadius: 8, background: BG1, padding: 20, fontSize: 12, color: TX1, maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ marginBottom: 12, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: TX1 }}>Propose fault-fingerprint ML model (W129)</h3>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: TX1 }}>Propose fault-fingerprint ML model</h3>
             <p style={{ margin: '4px 0 0', fontSize: 11, color: TX2 }}>
-              W71 12-mode physics baseline bridge REQUIRED (NOT NULL). W118 audit bridge mandatory.
+              12-mode physics baseline bridge REQUIRED (NOT NULL). Audit bridge mandatory.
               Tier auto-derived from assets_covered + jurisdiction_count + safety_critical with FLOOR-AT-LARGE-FLEET ≥1 flag and FLOOR-AT-FLEET-SYSTEMIC ≥3 flags.
             </p>
           </div>
@@ -1307,25 +1307,25 @@ function ProposeModal({
           <Field label="Feature count">
             <input value={featureCount} onChange={(e) => setFeatureCount(e.target.value)} type="number" style={inputStyle} placeholder="64" />
           </Field>
-          <Field label="Class count (12 W71 default)">
+          <Field label="Class count (12 default)">
             <input value={classCount} onChange={(e) => setClassCount(e.target.value)} type="number" style={inputStyle} placeholder="12" />
           </Field>
           <Field label="Title">
             <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} placeholder="Northern Cape PV inverter XGBoost v1" />
           </Field>
-          <Field label="W71 12-mode physics ref (REQUIRED)">
+          <Field label="12-mode physics ref (REQUIRED)">
             <input value={w71} onChange={(e) => setW71(e.target.value)} style={inputStyle} placeholder="aprog-2026-007" />
           </Field>
-          <Field label="W118 block ref (mandatory)">
+          <Field label="Audit block ref (mandatory)">
             <input value={w118} onChange={(e) => setW118(e.target.value)} style={inputStyle} placeholder="audit-block-2026-1234" />
           </Field>
-          <Field label="W15 warranty / RMA ref">
+          <Field label="Warranty / RMA ref">
             <input value={w15} onChange={(e) => setW15(e.target.value)} style={inputStyle} placeholder="claim-2026-0007" />
           </Field>
-          <Field label="W41 problem mgmt ref">
+          <Field label="Problem mgmt ref">
             <input value={w41} onChange={(e) => setW41(e.target.value)} style={inputStyle} placeholder="prob-2026-0011" />
           </Field>
-          <Field label="W63 warranty recovery ref">
+          <Field label="Warranty recovery ref">
             <input value={w63} onChange={(e) => setW63(e.target.value)} style={inputStyle} placeholder="wrec-2026-0019" />
           </Field>
         </div>

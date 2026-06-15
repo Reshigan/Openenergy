@@ -122,8 +122,15 @@ export async function verifyToken(
       );
       if (!valid) return null;
     } else {
-      // HS256 — constant-time comparison to prevent timing oracle
+      // HS256 — constant-time comparison to prevent timing oracle.
+      // Algorithm-confusion guard: if this deployment is configured for ES256
+      // (env carries a public-key JWK), reject any HS256 token outright — an
+      // attacker must not be able to downgrade alg via the token header.
+      if (typeof secretOrEnv === 'object' && secretOrEnv.JWT_PUBLIC_KEY_JWK) return null;
+      // Fail closed when no HMAC secret is configured: never key HMAC with an
+      // undefined secret (which would encode to the literal "undefined").
       const secret = typeof secretOrEnv === 'string' ? secretOrEnv : secretOrEnv.JWT_SECRET;
+      if (!secret) return null;
       const expected = base64UrlEncodeBytes(new Uint8Array(await signWithHMAC(`${headerB64}.${bodyB64}`, secret)));
       const enc = new TextEncoder();
       const a = enc.encode(sigB64);

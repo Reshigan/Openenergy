@@ -311,7 +311,7 @@ const ACTION_FOR_STATE: Partial<Record<RepStatus, ActionKind>> = {
 };
 
 const ACTION_LABEL: Record<ActionKind, string> = {
-  'select-blocks':            'Select W118 blocks (preparer - block height range + bridge refs)',
+  'select-blocks':            'Select audit blocks (preparer - block height range + bridge refs)',
   'filter-leaves':            'Filter leaves (preparer - prune below materiality threshold)',
   'assemble-xbrl':            'Assemble XBRL (preparer - IFRS Taxonomy 2.1 / iXBRL)',
   'attach-narratives':        'Attach narratives (preparer - IFRS S1/S2 + GRI/SASB/TCFD/ISSB)',
@@ -322,7 +322,7 @@ const ACTION_LABEL: Record<ActionKind, string> = {
   'lodge-via-api':            'Lodge via mTLS (CEO - hand off to /lodge/:target public endpoint)',
   'record-acknowledgement':   'Record acknowledgement (regulator - ack code + inbox ref)',
   'archive':                  'Archive (controller - HARD terminal)',
-  'reject-pack':              'REJECT (regulator - W119 SIGNATURE: crosses regulator EVERY tier)',
+  'reject-pack':              'REJECT (regulator - SIGNATURE: crosses regulator EVERY tier)',
   'withdraw':                 'Withdraw (CEO - voluntary; crosses regulator on heavy tiers)',
   'restate':                  'Restate (CFO - supersede an acknowledged pack; crosses regulator quarterly+)',
   'suspend':                  'Suspend (CFO - regulator-audit-in-progress; SOFT, resume to internal_qa)',
@@ -497,15 +497,15 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
     try {
       const body: Record<string, unknown> = {};
       if (action === 'select-blocks') {
-        const lo = window.prompt('W118 block height range low (MANDATORY bridge):', String(row.w118_block_height_range_low ?? ''));
+        const lo = window.prompt('Audit block height range low (MANDATORY bridge):', String(row.w118_block_height_range_low ?? ''));
         if (lo === null) return;
         body.w118_block_height_range_low = Number(lo);
-        const hi = window.prompt('W118 block height range high:', String(row.w118_block_height_range_high ?? lo));
+        const hi = window.prompt('Audit block height range high:', String(row.w118_block_height_range_high ?? lo));
         if (hi === null) return;
         body.w118_block_height_range_high = Number(hi);
-        const evm = window.prompt('W113 EVM bridge ref (optional):', row.w113_evm_ref ?? '');
+        const evm = window.prompt('EVM bridge ref (optional):', row.w113_evm_ref ?? '');
         if (evm) body.w113_evm_ref = evm;
-        const doc = window.prompt('W114 doc-control bridge ref (optional):', row.w114_doc_control_ref ?? '');
+        const doc = window.prompt('Doc-control bridge ref (optional):', row.w114_doc_control_ref ?? '');
         if (doc) body.w114_doc_control_ref = doc;
       } else if (action === 'filter-leaves') {
         const note = window.prompt('Filter notes (materiality threshold applied):', '');
@@ -554,7 +554,7 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
         const code = window.prompt('Regulator reject code (e.g. NERSA-VALIDATE-422):', row.regulator_reject_code ?? '');
         if (!code) return;
         body.regulator_reject_code = code;
-        const reason = window.prompt('Reject reason. NOTE: crosses regulator EVERY tier (W119 SIGNATURE).', row.reject_reason ?? '');
+        const reason = window.prompt('Reject reason. NOTE: crosses regulator EVERY tier (SIGNATURE).', row.reject_reason ?? '');
         if (reason !== null) body.reject_reason = reason;
       } else if (action === 'withdraw') {
         const reason = window.prompt('Withdraw reason (CEO):', row.withdraw_reason ?? '');
@@ -594,10 +594,10 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
     <div className="text-[12px] text-[oklch(0.46_0.16_55)]">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">Certified regulator export packs (W119)</h2>
+          <h2 className="text-base font-semibold text-[#0c2a4d]">Certified regulator export packs</h2>
           <p className="text-[11px] text-[#4a5568]">
             12-state XBRL/iXBRL/ESG-narrative chain lodged via mTLS to NERSA, IPPO, SARB, DMRE, FSCA, DFFE, DTI, JSE, SARS, CIPC.
-            INVERTED SLA. FLOOR-AT-QUARTERLY {'≥'}1 flag / FLOOR-AT-ANNUAL {'≥'}2 flags. Mandatory W118 bridge.
+            INVERTED SLA. FLOOR-AT-QUARTERLY {'≥'}1 flag / FLOOR-AT-ANNUAL {'≥'}2 flags. Mandatory audit bridge.
           </p>
         </div>
         {!regulatorView && (
@@ -642,12 +642,12 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
         <span>ESG avg: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.esg_avg}/100</span></span>
         <span>Controls avg: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.controls_avg}/140</span></span>
         <span>Integrity avg: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.integrity_avg}/140</span></span>
-        <span>W118: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w118_bridged_count}</span></span>
-        <span>W113: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w113_bridged_count}</span></span>
-        <span>W114: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w114_bridged_count}</span></span>
-        <span>W115: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w115_bridged_count}</span></span>
-        <span>W116: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w116_bridged_count}</span></span>
-        <span>W117: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w117_bridged_count}</span></span>
+        <span>Audit: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w118_bridged_count}</span></span>
+        <span>EVM: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w113_bridged_count}</span></span>
+        <span>Doc control: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w114_bridged_count}</span></span>
+        <span>Submittal: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w115_bridged_count}</span></span>
+        <span>RFI: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w116_bridged_count}</span></span>
+        <span>Change order: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.w117_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / priority pills */}
@@ -903,14 +903,14 @@ function Drawer({
           <div>
             <div className="mb-1 text-[10px] uppercase tracking-wider text-[#6b7685]">Bridges</div>
             <ul className="space-y-0.5 text-[11px] text-[#4a5568]">
-              <li>W118 audit chain: <span className={row.bridges_to_w118_audit_chain_live ? 'text-[#1f5b3a] font-semibold' : 'text-[#9b1f1f] font-semibold'}>
+              <li>Audit chain: <span className={row.bridges_to_w118_audit_chain_live ? 'text-[#1f5b3a] font-semibold' : 'text-[#9b1f1f] font-semibold'}>
                 {row.bridges_to_w118_audit_chain_live ? 'BRIDGED (mandatory)' : 'MISSING (mandatory)'}
               </span></li>
-              <li>W113 EVM: <span className={row.bridges_to_w113_evm_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w113_evm_chain_live ? 'bridged' : '-'}</span></li>
-              <li>W114 doc control: <span className={row.bridges_to_w114_doc_control_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w114_doc_control_chain_live ? 'bridged' : '-'}</span></li>
-              <li>W115 submittal: <span className={row.bridges_to_w115_submittal_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w115_submittal_chain_live ? 'bridged' : '-'}</span></li>
-              <li>W116 RFI: <span className={row.bridges_to_w116_rfi_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w116_rfi_chain_live ? 'bridged' : '-'}</span></li>
-              <li>W117 change order: <span className={row.bridges_to_w117_change_order_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w117_change_order_chain_live ? 'bridged' : '-'}</span></li>
+              <li>EVM: <span className={row.bridges_to_w113_evm_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w113_evm_chain_live ? 'bridged' : '-'}</span></li>
+              <li>Doc control: <span className={row.bridges_to_w114_doc_control_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w114_doc_control_chain_live ? 'bridged' : '-'}</span></li>
+              <li>Submittal: <span className={row.bridges_to_w115_submittal_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w115_submittal_chain_live ? 'bridged' : '-'}</span></li>
+              <li>RFI: <span className={row.bridges_to_w116_rfi_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w116_rfi_chain_live ? 'bridged' : '-'}</span></li>
+              <li>Change order: <span className={row.bridges_to_w117_change_order_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w117_change_order_chain_live ? 'bridged' : '-'}</span></li>
             </ul>
           </div>
           <div>

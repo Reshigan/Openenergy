@@ -320,7 +320,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
             </p>
             <p className="text-xs text-purple-800 mt-0.5">
               PMBOK 7: safety lessons must be disseminated immediately — failure to apply a known safety lesson creates OHSA liability.
-              W135 SIGNATURE: disseminate_finding crosses regulator on all safety lessons regardless of tier.
+              Disseminating a safety finding crosses to the regulator regardless of tier.
             </p>
           </div>
         </div>
@@ -477,7 +477,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
             {/* W135 SIGNATURE warning */}
             {(selected.lesson_type === 'safety' || !!selected.prevents_fatality) && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                <p className="text-xs font-semibold text-red-800">W135 SIGNATURE — Safety / Prevents fatality</p>
+                <p className="text-xs font-semibold text-red-800">Safety / Prevents fatality</p>
                 <p className="text-xs text-red-700 mt-0.5">
                   {selected.prevents_fatality ? 'This lesson involves a prevents-fatality scenario. ' : ''}
                   Disseminating this finding will trigger a mandatory regulator crossing (OHSA §24 — safety lesson dissemination is always reportable).
@@ -602,7 +602,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
             {/* SIGNATURE warning in create form */}
             {isSignatureCreate && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
-                <p className="text-xs font-semibold text-red-800">W135 SIGNATURE — Safety / Prevents fatality</p>
+                <p className="text-xs font-semibold text-red-800">Safety / Prevents fatality</p>
                 <p className="text-xs text-red-700 mt-0.5">
                   Disseminating this lesson will trigger a mandatory regulator crossing across all tiers.
                 </p>
@@ -665,7 +665,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
               {/* SIGNATURE checkbox */}
               <label className="flex items-center gap-2 text-xs cursor-pointer p-2 rounded border border-red-200 bg-red-50">
                 <input type="checkbox" checked={newPreventsFatality} onChange={e => setNewPreventsFatality(e.target.checked)} />
-                <span className="font-medium text-red-800">Prevents fatality (W135 SIGNATURE — triggers regulator crossing on dissemination)</span>
+                <span className="font-medium text-red-800">Prevents fatality (triggers regulator crossing on dissemination)</span>
               </label>
 
               {/* Cross-references */}

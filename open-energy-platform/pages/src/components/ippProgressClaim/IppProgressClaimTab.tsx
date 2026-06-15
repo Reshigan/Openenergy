@@ -375,7 +375,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
               {db.disputed_count} disputed payment claim{db.disputed_count !== 1 ? 's' : ''} — JBCC dispute resolution required
             </p>
             <p className="text-xs text-orange-800 mt-0.5">
-              JBCC: contractor disputes must be resolved within 10 working days. W141 SIGNATURE: certify_by_engineer crosses regulator
+              JBCC: contractor disputes must be resolved within 10 working days. Engineer certification crosses regulator
               when IE milestone flag set — lender notification mandatory. Final account crosses regulator on ALL tiers.
               Review dispute reasons and resolve before the SLA deadline.
             </p>
@@ -583,7 +583,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
             {/* SIGNATURE alert */}
             {selected.chain_status === 'pm_review' && !!selected.floor_ie_milestone_payment && (
               <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3">
-                <p className="text-xs font-bold text-red-900">W141 SIGNATURE: IE milestone payment</p>
+                <p className="text-xs font-bold text-red-900">Signature: IE milestone payment</p>
                 <p className="text-xs text-red-800 mt-0.5">
                   certify_by_engineer on this claim will cross regulator on ALL tiers (REIPPPP + Equator EP4 mandatory lender notification).
                 </p>
@@ -822,7 +822,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
 
             {isSignatureCreate && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
-                W141 SIGNATURE flag set — certify_by_engineer (IE milestone) and/or approve_payment (lender cert) will notify regulator on ALL tiers.
+                Signature flag set — certify_by_engineer (IE milestone) and/or approve_payment (lender cert) will notify regulator on ALL tiers.
               </div>
             )}
 

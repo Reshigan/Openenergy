@@ -450,8 +450,8 @@ export function ServiceContractChainTab() {
             12-stage commercial-coverage chain · draft → quoted → pending activation → active → renewal due →
             renewal quoted → negotiating → renewed, with a conditional-grace buffer (in grace → expired) and a
             suspension cycle (active → suspended → reinstated / expired / cancelled). The COMMERCIAL GATE under every
-            other OEM-support chain — a ticket (W14) is answered to this contract&apos;s response-SLA entitlement, an RMA
-            (W15) draws on its parts allowance, a spare (W72) is provisioned against its coverage — but none manage the
+            other OEM-support chain — a ticket is answered to this contract&apos;s response-SLA entitlement, an RMA
+            draws on its parts allowance, a spare is provisioned against its coverage — but none manage the
             contract itself; this is that layer. The DIFFERENTIATOR over ServiceMax / SAP Service Cloud / Salesforce
             Field Service entitlements / IFS: the entitlement is LIVE-WIRED as a real coverage gate, the renewal urgency
             is COVERAGE-GAP-aware (mission-critical chased fastest), and a lapse on important coverage crosses to the

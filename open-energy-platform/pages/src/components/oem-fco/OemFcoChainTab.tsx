@@ -459,8 +459,8 @@ export function OemFcoChainTab() {
             → notification sent → acknowledged → scheduling → rolling out → completed, with a suspend ↔ resume loop and
             cancel / withdraw branches. The MANUFACTURER&apos;S fleet-wide change-management lane — Tesla Megapack module
             recalls, Vestas gearbox upgrade campaigns, GE blade-bond bulletins, Sungrow capacitor service bulletins,
-            SolarEdge optimizer recalls, SMA firmware-coupled hardware revisions. Distinct from W47 (customer-initiated
-            RFC), W55 (firmware-only), W15 (single-unit RMA), W63 (commercial chase). The DIFFERENTIATOR over PTC
+            SolarEdge optimizer recalls, SMA firmware-coupled hardware revisions. Distinct from customer-initiated
+            RFCs, firmware-only changes, single-unit RMAs, and commercial recovery claims. The DIFFERENTIATOR over PTC
             Windchill ECM / Siemens Teamcenter Change Manager / Oracle Agile PLM / Arena PLM / Aras Innovator / Dassault
             Enovia / SAP PLM field-action / Tesla Megapack service campaigns / Vestas Online Service Bulletins / GE
             Vernova fleet upgrade campaigns: the campaign is a LIVE FLEET-OPERATIONAL programme with per-fleet completion

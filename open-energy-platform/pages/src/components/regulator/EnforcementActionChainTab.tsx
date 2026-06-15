@@ -331,7 +331,7 @@ const ACTION_FIELDS: Partial<Record<ActionKind, (row: CaseRow) => ActionField[]>
     { key: 'regulator_ref', label: 'Regulator reference (severe + liable crosses every tier; material+ for others)' },
   ],
   'impose-penalty': (row) => [
-    { key: 'imposed_penalty_zar', label: 'Imposed penalty (ZAR) — public register entry (W93 SIGNATURE — every tier crosses)', type: 'number', defaultValue: String(row.proposed_penalty_total_zar_live ?? row.proposed_penalty_total_zar ?? 0), required: true },
+    { key: 'imposed_penalty_zar', label: 'Imposed penalty (ZAR) — public register entry (signature — every tier crosses)', type: 'number', defaultValue: String(row.proposed_penalty_total_zar_live ?? row.proposed_penalty_total_zar ?? 0), required: true },
     { key: 'payment_due_date', label: 'Payment due date (YYYY-MM-DD)', type: 'date' },
     { key: 'penalty_basis', label: 'Penalty basis — quantum reasoning' },
     { key: 'penalty_ref', label: 'Penalty notice reference' },
@@ -474,7 +474,7 @@ export function EnforcementActionChainTab() {
             → representations_period (PAJA s4 + ERA s35(3) audi) → (hearing_held optional) → determination
             → penalty_imposed → paid (clean terminal), with appealed (Tribunal), enforced_via_court
             (sheriff/writ/attachment/garnishee), dismissed and withdrawn terminals. The ENFORCEMENT-TEETH
-            layer downstream of W5 inbox / W31 disposition / W40 compliance inspection. The DIFFERENTIATOR
+            layer downstream of the regulator inbox / disposition / compliance inspection. The DIFFERENTIATOR
             over FERC Office of Enforcement / Ofgem provisional+final penalty notice / Bundesnetzagentur
             Bußgeldverfahren / CRE CoRDiS / AER civil-penalty undertaking / ACER / SEC ALJ administrative
             proceedings / SARS TAA Ch15: every case is LIVE-scored every fetch against an AUDI-WINDOW
@@ -485,7 +485,7 @@ export function EnforcementActionChainTab() {
             Tier is PENALTY-QUANTUM-DERIVED on every transition (minor &lt;R100k / standard &lt;R500k /
             material &lt;R1m / severe ≥R1m) with FLOOR-AT-SEVERE for safety_violation /
             systemic_market_abuse / repeat_offender classes. INVERTED SLA — a larger penalty gets MORE
-            procedural time (audi strengthens with magnitude). The W93 SIGNATURE — penalty_imposed
+            procedural time (audi strengthens with magnitude). The signature transition — penalty_imposed
             crosses regulator EVERY tier (public-register / s35 transparency obligation). Enforced via
             court, appealed, severe+liable determinations, floor-at-severe service, dismiss/withdraw and
             SLA breach also cross.

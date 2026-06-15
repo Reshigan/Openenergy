@@ -391,7 +391,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
             </p>
             <p className="text-xs text-red-800 mt-0.5">
               NEMA s30 + EIA conditions: exceedances near sensitive receptors (schools, hospitals, communities) or in breach of EIA conditions
-              trigger immediate DFFE/NEAS notification. W138 SIGNATURE: flag_exceedance crosses regulator EVERY tier when
+              trigger immediate DFFE/NEAS notification. flag_exceedance crosses regulator EVERY tier when
               near_sensitive_receptor, EIA condition breach, or NEMA s30 notification floor is set.
             </p>
           </div>
@@ -536,7 +536,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
                             title="Lender report required"
                           >LDR</span>
                         )}
-                        {!!row.is_reportable && <Flag label="⚑" title="Regulator crossed (W138 SIGNATURE)" cls="bg-red-200 text-red-800" />}
+                        {!!row.is_reportable && <Flag label="⚑" title="Regulator crossed" cls="bg-red-200 text-red-800" />}
                       </div>
                     </td>
                     {!readOnly && (
@@ -620,7 +620,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
             {selected.is_signature_live && (
               <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
                 <p className="text-xs font-semibold text-red-900">
-                  W138 SIGNATURE — Regulator notification required
+                  Regulator notification required
                 </p>
                 <p className="text-xs text-red-800 mt-0.5">
                   This exceedance involves a sensitive receptor, EIA condition breach, or NEMA s30 notification requirement.
@@ -835,7 +835,7 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
             {isSignatureCreate && (
               <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
                 <p className="text-xs font-semibold text-red-900">
-                  W138 SIGNATURE — flag_exceedance will trigger regulator notification on this monitoring record
+                  flag_exceedance will trigger regulator notification on this monitoring record
                 </p>
                 <p className="text-xs text-red-800 mt-0.5">
                   Near sensitive receptor, EIA condition breach flag, or NEMA s30 notification floor is set.
@@ -928,20 +928,20 @@ export default function IppEnvMonitoringTab({ readOnly = false }: Props) {
               {/* Cross-references */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">NCR ref (W136)</label>
-                  <input aria-label="NCR ref (W136)" className="text-xs border rounded px-2 py-1.5 w-full" value={newNcrRef} onChange={e => setNewNcrRef(e.target.value)} placeholder="ncr-xxx" />
+                  <label className="text-xs text-[#6b7685] block mb-1">NCR ref</label>
+                  <input aria-label="NCR ref" className="text-xs border rounded px-2 py-1.5 w-full" value={newNcrRef} onChange={e => setNewNcrRef(e.target.value)} placeholder="ncr-xxx" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">HSE incident ref (W25)</label>
-                  <input aria-label="HSE incident ref (W25)" className="text-xs border rounded px-2 py-1.5 w-full" value={newHseRef} onChange={e => setNewHseRef(e.target.value)} placeholder="hse-xxx" />
+                  <label className="text-xs text-[#6b7685] block mb-1">HSE incident ref</label>
+                  <input aria-label="HSE incident ref" className="text-xs border rounded px-2 py-1.5 w-full" value={newHseRef} onChange={e => setNewHseRef(e.target.value)} placeholder="hse-xxx" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Method statement ref (W137)</label>
-                  <input aria-label="Method statement ref (W137)" className="text-xs border rounded px-2 py-1.5 w-full" value={newMsRef} onChange={e => setNewMsRef(e.target.value)} placeholder="ms-xxx" />
+                  <label className="text-xs text-[#6b7685] block mb-1">Method statement ref</label>
+                  <input aria-label="Method statement ref" className="text-xs border rounded px-2 py-1.5 w-full" value={newMsRef} onChange={e => setNewMsRef(e.target.value)} placeholder="ms-xxx" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Stage gate ref (W131)</label>
-                  <input aria-label="Stage gate ref (W131)" className="text-xs border rounded px-2 py-1.5 w-full" value={newStageGateRef} onChange={e => setNewStageGateRef(e.target.value)} placeholder="sg-xxx" />
+                  <label className="text-xs text-[#6b7685] block mb-1">Stage gate ref</label>
+                  <input aria-label="Stage gate ref" className="text-xs border rounded px-2 py-1.5 w-full" value={newStageGateRef} onChange={e => setNewStageGateRef(e.target.value)} placeholder="sg-xxx" />
                 </div>
               </div>
             </div>

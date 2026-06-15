@@ -339,7 +339,7 @@ function getActions(row: AcbRow): ChainAction[] {
   if (row.chain_status === 'block_proposed') {
     actions.push({
       key: 'collect-segments',
-      label: 'Collect segments (auditor — ingest W113/W114/W115/W116/W117 leaves)',
+      label: 'Collect segments (auditor — ingest EVM / doc-control / submittal / RFI / change-order leaves)',
       tone: 'primary',
       fields: [
         { key: 'segment_count',      label: 'Segment count (ingested leaves)',  type: 'text',     required: true,  placeholder: String(row.segment_count ?? 0) },
@@ -365,11 +365,11 @@ function getActions(row: AcbRow): ChainAction[] {
       label: 'Verify integrity (auditor — Byzantine 2-of-3 verifier quorum, 5-chain reconciliation)',
       tone: 'primary',
       fields: [
-        { key: 'reconciliation_status_w113_evm', label: 'Reconcile W113 EVM chain (true/false)',         type: 'text', required: false, placeholder: 'true' },
-        { key: 'reconciliation_status_w114_doc', label: 'Reconcile W114 doc-control chain (true/false)', type: 'text', required: false, placeholder: 'true' },
-        { key: 'reconciliation_status_w115_sub', label: 'Reconcile W115 submittal chain (true/false)',   type: 'text', required: false, placeholder: 'true' },
-        { key: 'reconciliation_status_w116_rfi', label: 'Reconcile W116 RFI chain (true/false)',         type: 'text', required: false, placeholder: 'true' },
-        { key: 'reconciliation_status_w117_co',  label: 'Reconcile W117 change-order chain (true/false)',type: 'text', required: false, placeholder: 'true' },
+        { key: 'reconciliation_status_w113_evm', label: 'Reconcile EVM chain (true/false)',         type: 'text', required: false, placeholder: 'true' },
+        { key: 'reconciliation_status_w114_doc', label: 'Reconcile doc-control chain (true/false)', type: 'text', required: false, placeholder: 'true' },
+        { key: 'reconciliation_status_w115_sub', label: 'Reconcile submittal chain (true/false)',   type: 'text', required: false, placeholder: 'true' },
+        { key: 'reconciliation_status_w116_rfi', label: 'Reconcile RFI chain (true/false)',         type: 'text', required: false, placeholder: 'true' },
+        { key: 'reconciliation_status_w117_co',  label: 'Reconcile change-order chain (true/false)',type: 'text', required: false, placeholder: 'true' },
         { key: 'cross_chain_break_count',        label: 'Cross-chain break count (0 = clean)',           type: 'text', required: false, placeholder: '0' },
       ],
     });
@@ -504,11 +504,11 @@ function getActions(row: AcbRow): ChainAction[] {
   if (EMERGENCY_FROM.includes(row.chain_status)) {
     actions.push({
       key: 'emergency-seal',
-      label: 'EMERGENCY SEAL (BoardAudit — W118 SIGNATURE SIGNATURE-CHAIN-BREAK-SEAL: crosses regulator EVERY tier)',
+      label: 'EMERGENCY SEAL (BoardAudit — SIGNATURE-CHAIN-BREAK-SEAL: crosses regulator EVERY tier)',
       tone: 'danger',
       cascadeTo: ['regulator', 'admin'],
       fields: [
-        { key: 'fork_reason',                    label: 'EMERGENCY SEAL reason (BoardAudit). NOTE: W118 SIGNATURE SIGNATURE-CHAIN-BREAK-SEAL hard line — crosses regulator EVERY tier (NERSA/IPPO/SARB/JSE-SRL).', type: 'textarea', required: true },
+        { key: 'fork_reason',                    label: 'EMERGENCY SEAL reason (BoardAudit). NOTE: SIGNATURE-CHAIN-BREAK-SEAL hard line — crosses regulator EVERY tier (NERSA/IPPO/SARB/JSE-SRL).', type: 'textarea', required: true },
         { key: 'signature_chain_break_detected', label: 'Set signature_chain_break_detected (true/false)', type: 'text', required: false, placeholder: 'true' },
         { key: 'hash_collision_suspected',       label: 'Set hash_collision_suspected (true/false)',       type: 'text', required: false, placeholder: 'true' },
       ],
@@ -557,7 +557,7 @@ function renderDetail(row: AcbRow): React.ReactNode {
           <DetailPair label="Reportable"              value={row.is_reportable_flag ? 'YES' : 'no'} />
           <DetailPair label="Reg crossed at"          value={fmtDate(row.regulator_crossed_at)} />
           <DetailPair label="Breach crosses reg"      value={row.breach_crosses_regulator ? 'YES (monthly/quarterly)' : 'no'} />
-          <DetailPair label="W118 bridges met"        value={String([row.bridges_to_w113_evm_chain_live, row.bridges_to_w114_doc_control_chain_live, row.bridges_to_w115_submittal_chain_live, row.bridges_to_w116_rfi_chain_live, row.bridges_to_w117_change_order_chain_live].filter(Boolean).length) + '/5'} />
+          <DetailPair label="Bridges met"             value={String([row.bridges_to_w113_evm_chain_live, row.bridges_to_w114_doc_control_chain_live, row.bridges_to_w115_submittal_chain_live, row.bridges_to_w116_rfi_chain_live, row.bridges_to_w117_change_order_chain_live].filter(Boolean).length) + '/5'} />
           <DetailPair label="Anchor method"           value={row.anchor_method ?? '-'} />
           <DetailPair label="Public verify URL"       value="/api/audit-chain/verify/..." />
         </div>
@@ -581,14 +581,14 @@ function renderDetail(row: AcbRow): React.ReactNode {
       {/* 5-bridge architecture */}
       <div>
         <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 6 }}>
-          5-bridge architecture (W113 EVM / W114 doc / W115 sub / W116 RFI / W117 CO)
+          5-bridge architecture (EVM / doc / sub / RFI / CO)
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <DetailPair label="W113 EVM ref"         value={row.w113_evm_ref ?? '-'} />
-          <DetailPair label="W114 doc-control ref" value={row.w114_doc_control_ref ?? '-'} />
-          <DetailPair label="W115 submittal ref"   value={row.w115_submittal_ref ?? '-'} />
-          <DetailPair label="W116 RFI ref"         value={row.w116_rfi_ref ?? '-'} />
-          <DetailPair label="W117 CO ref"          value={row.w117_change_order_ref ?? '-'} />
+          <DetailPair label="EVM ref"              value={row.w113_evm_ref ?? '-'} />
+          <DetailPair label="Doc-control ref"      value={row.w114_doc_control_ref ?? '-'} />
+          <DetailPair label="Submittal ref"        value={row.w115_submittal_ref ?? '-'} />
+          <DetailPair label="RFI ref"              value={row.w116_rfi_ref ?? '-'} />
+          <DetailPair label="CO ref"               value={row.w117_change_order_ref ?? '-'} />
           <DetailPair label="Regulator inbox ref"  value={row.regulator_inbox_ref ?? '-'} />
           <DetailPair label="Regulator ref"        value={row.regulator_ref ?? '-'} />
           <DetailPair label="Reg crossed at"       value={fmtDate(row.regulator_crossed_at)} />
@@ -602,11 +602,11 @@ function renderDetail(row: AcbRow): React.ReactNode {
         </div>
         <div className="flex flex-wrap gap-2">
           {([
-            ['W113 EVM',           !!row.reconciliation_status_w113_evm],
-            ['W114 doc-control',   !!row.reconciliation_status_w114_doc],
-            ['W115 submittals',    !!row.reconciliation_status_w115_sub],
-            ['W116 RFIs',          !!row.reconciliation_status_w116_rfi],
-            ['W117 change orders', !!row.reconciliation_status_w117_co],
+            ['EVM',           !!row.reconciliation_status_w113_evm],
+            ['Doc-control',   !!row.reconciliation_status_w114_doc],
+            ['Submittals',    !!row.reconciliation_status_w115_sub],
+            ['RFIs',          !!row.reconciliation_status_w116_rfi],
+            ['Change orders', !!row.reconciliation_status_w117_co],
           ] as [string, boolean][]).map(([label, on]) => (
             <span
               key={label}
@@ -825,13 +825,13 @@ export function AuditChainBlockTab() {
           Tamper-Evident Audit Chain
         </h2>
         <p style={{ fontSize: 11, color: TX2, marginTop: 4, lineHeight: 1.5 }}>
-          12-state platform-wide audit chain (W118 Phase-B opener):
+          12-state platform-wide audit chain:
           block_proposed {'→'} segments_collected {'→'} merkle_built {'→'} integrity_verified {'→'} block_signed {'→'} anchored {'→'} published {'→'} independently_verifiable {'→'} reconciled {'→'} archived (HARD terminal),
           with rejected terminal + suspended / restated / forked soft branches.
           INVERTED SLA (HOURS): hourly 1h, daily 6h, weekly 24h, monthly 72h, quarterly 168h.
           FLOOR-AT-MONTHLY on ANY one of 5 flags; 2+ lifts to quarterly.
           SIGNATURE: <strong>emergency_seal crosses regulator EVERY tier</strong>.
-          5 bridges: W113 EVM / W114 doc-control / W115 submittals / W116 RFIs / W117 change-orders.
+          5 bridges: EVM / doc-control / submittals / RFIs / change-orders.
           Public verify: <span style={{ fontFamily: MONO }}>/api/audit-chain/verify/:block_height</span>.
         </p>
       </header>
@@ -873,11 +873,11 @@ export function AuditChainBlockTab() {
         <span>Cross-chain breaks: <strong style={{ color: BAD }}>{kpis.cross_chain_break_total}</strong></span>
         <span>Segments total: <strong>{kpis.segment_count_total}</strong></span>
         <span>Completeness avg: <strong>{kpis.completeness_avg}/130</strong></span>
-        <span>W113 (EVM): <strong>{kpis.w113_bridged_count}</strong></span>
-        <span>W114 (doc): <strong>{kpis.w114_bridged_count}</strong></span>
-        <span>W115 (sub): <strong>{kpis.w115_bridged_count}</strong></span>
-        <span>W116 (RFI): <strong>{kpis.w116_bridged_count}</strong></span>
-        <span>W117 (CO): <strong>{kpis.w117_bridged_count}</strong></span>
+        <span>EVM: <strong>{kpis.w113_bridged_count}</strong></span>
+        <span>Doc: <strong>{kpis.w114_bridged_count}</strong></span>
+        <span>Sub: <strong>{kpis.w115_bridged_count}</strong></span>
+        <span>RFI: <strong>{kpis.w116_bridged_count}</strong></span>
+        <span>CO: <strong>{kpis.w117_bridged_count}</strong></span>
       </div>
 
       {/* Filter pills */}

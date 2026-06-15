@@ -233,6 +233,11 @@ admin.post('/applications/:id/hearings', async (c) => {
   return c.json({ success: true, data: { id: hId } }, 201);
 });
 
+admin.get('/hearings', async (c) => {
+  const rows = await c.env.DB.prepare(`SELECT * FROM oe_hearings ORDER BY scheduled_at DESC LIMIT 200`).all();
+  return c.json({ success: true, data: rows.results || [] });
+});
+
 admin.post('/hearings/:id/conclude', async (c) => {
   const user = getCurrentUser(c);
   if (!isRegulator(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
@@ -349,6 +354,11 @@ admin.post('/appeals/:id/resolve', async (c) => {
 });
 
 // Compliance audits
+admin.get('/audits', async (c) => {
+  const rows = await c.env.DB.prepare(`SELECT * FROM oe_compliance_audits ORDER BY started_at DESC LIMIT 200`).all();
+  return c.json({ success: true, data: rows.results || [] });
+});
+
 admin.post('/audits', async (c) => {
   const user = getCurrentUser(c);
   if (!isRegulator(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);

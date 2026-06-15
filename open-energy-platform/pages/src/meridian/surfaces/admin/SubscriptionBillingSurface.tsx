@@ -114,7 +114,7 @@ export default function SubscriptionBillingSurface(_props: { role: string }) {
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-4">
         <p className="text-[12px] leading-relaxed text-[#3d4756] max-w-2xl">
-          Monthly SaaS invoices run as a W228 chain: draft to issued to payment_pending to paid,
+          Monthly SaaS invoices run as a billing chain: draft to issued to payment_pending to paid,
           with a cron dunning ladder (overdue, dunning_1, dunning_2, suspended). Admin exits are
           waive, write off, cancel and reactivate. Actions below are limited to those valid from
           each row's current state.

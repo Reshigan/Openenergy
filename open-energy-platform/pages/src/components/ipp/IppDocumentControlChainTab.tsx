@@ -424,7 +424,7 @@ function getActions(row: IpdRow): ChainAction[] {
       key: 'reject',
       label: 'Reject (Engineer of Record — SIGNATURE DOCUMENT-REJECT-CRITICAL: crosses regulator EVERY tier when safety_critical OR ifc_blocking)',
       fields: [
-        { key: 'reject_reason', label: 'Reject reason (required). NOTE: W114 SIGNATURE DOCUMENT-REJECT-CRITICAL — crosses regulator EVERY tier when safety_critical OR ifc_blocking flag set.', type: 'textarea', required: true, placeholder: row.reject_reason ?? '' },
+        { key: 'reject_reason', label: 'Reject reason (required). NOTE: SIGNATURE DOCUMENT-REJECT-CRITICAL — crosses regulator EVERY tier when safety_critical OR ifc_blocking flag set.', type: 'textarea', required: true, placeholder: row.reject_reason ?? '' },
       ],
       // crosses ALL tiers when safety_critical OR ifc_blocking (SIGNATURE hard line)
       cascadeTo: (row.current_tier === 'safety_critical' || !!row.ifc_blocking) ? ['regulator'] : [],
@@ -474,7 +474,7 @@ function renderDetail(row: IpdRow): React.ReactNode {
           <DetailPair label="Regulator filing window" value={fmtHoursSla(row.regulator_filing_window_hours_live)} />
           <DetailPair label="Reached IFC"             value={row.reached_ifc ? 'YES' : 'no'} />
           <DetailPair label="Hash chain position"     value={String(row.hash_chain_position)} />
-          <DetailPair label="Merkle segment (W118)"   value={(row.merkle_root_segment ?? '-').slice(0, 12) + '...'} />
+          <DetailPair label="Merkle segment"          value={(row.merkle_root_segment ?? '-').slice(0, 12) + '...'} />
           <DetailPair label="Last transmittal #"      value={row.last_transmittal_number ?? '-'} />
           <DetailPair label="Last transmittal at"     value={fmtDate(row.last_transmittal_at)} />
           <DetailPair label="Reviewer"                value={row.reviewer_name ?? '-'} />
@@ -499,13 +499,13 @@ function renderDetail(row: IpdRow): React.ReactNode {
 
       {/* 5-bridge architecture */}
       <div>
-        <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: TX3 }}>5-bridge architecture (W112 / W113 / W19 / W20 / W18)</div>
+        <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: TX3 }}>5-bridge architecture (schedule / EVM / procurement / COD / planned outage)</div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-          <DetailPair label="W112 schedule ref"      value={row.schedule_ref ?? '-'} />
-          <DetailPair label="W113 EVM ref"           value={row.evm_ref ?? '-'} />
-          <DetailPair label="W19 procurement ref"    value={row.procurement_ref ?? '-'} />
-          <DetailPair label="W20 COD ref"            value={row.cod_ref ?? '-'} />
-          <DetailPair label="W18 planned outage ref" value={row.planned_outage_ref ?? '-'} />
+          <DetailPair label="Schedule ref"           value={row.schedule_ref ?? '-'} />
+          <DetailPair label="EVM ref"                value={row.evm_ref ?? '-'} />
+          <DetailPair label="Procurement ref"        value={row.procurement_ref ?? '-'} />
+          <DetailPair label="COD ref"                value={row.cod_ref ?? '-'} />
+          <DetailPair label="Planned outage ref"     value={row.planned_outage_ref ?? '-'} />
           <DetailPair label="Regulator inbox ref"    value={row.regulator_inbox_ref ?? '-'} />
           <DetailPair label="Regulator ref"          value={row.regulator_ref ?? '-'} />
           <DetailPair label="Last responder"         value={row.last_responder_party ?? '-'} />
@@ -696,7 +696,7 @@ export function IppDocumentControlChainTab() {
           12-state P6 drawing-control lifecycle: draft uploaded → metadata indexed → revision open → IDC assigned → transmitted → reviewed → commented → revised → approved →
           issued for construction → as-built finalised → archived, with rejected (terminal) / withdrawn (terminal) / hold (soft pause) branches.
           URGENT SLA on transmitted: safety_critical 24h, electrical 72h, mechanical 120h, civil 168h. FLOOR-AT-SAFETY-CRITICAL on any of 5 flags.
-          SIGNATURE: reject crosses regulator EVERY tier when safety_critical OR ifc_blocking (W114 DOCUMENT-REJECT-CRITICAL hard line).
+          SIGNATURE: reject crosses regulator EVERY tier when safety_critical OR ifc_blocking (DOCUMENT-REJECT-CRITICAL hard line).
         </p>
       </header>
 
@@ -729,11 +729,11 @@ export function IppDocumentControlChainTab() {
         <span>CCP: <span style={{ fontWeight: 600, color: BAD }}>{kpis.ccp_count}</span></span>
         <span>Revisions: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.revisions_total}</span></span>
         <span>Completeness avg: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.completeness_avg}/130</span></span>
-        <span>W112 (schedule): <span style={{ fontWeight: 600, color: TX1 }}>{kpis.schedule_bridged_count}</span></span>
-        <span>W113 (EVM): <span style={{ fontWeight: 600, color: TX1 }}>{kpis.evm_bridged_count}</span></span>
-        <span>W19 (procurement): <span style={{ fontWeight: 600, color: TX1 }}>{kpis.procurement_bridged_count}</span></span>
-        <span>W20 (COD): <span style={{ fontWeight: 600, color: TX1 }}>{kpis.cod_bridged_count}</span></span>
-        <span>W18 (planned outage): <span style={{ fontWeight: 600, color: TX1 }}>{kpis.planned_outage_bridged_count}</span></span>
+        <span>Schedule: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.schedule_bridged_count}</span></span>
+        <span>EVM: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.evm_bridged_count}</span></span>
+        <span>Procurement: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.procurement_bridged_count}</span></span>
+        <span>COD: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.cod_bridged_count}</span></span>
+        <span>Planned outage: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.planned_outage_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / lifecycle filter pills */}

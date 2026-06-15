@@ -305,14 +305,14 @@ const ACTION_LABEL: Record<ActionKind, string> = {
   'load-iso20022-schemas':       'Load ISO 20022 (settlements clerk - pacs/camt/pain/admi/auth)',
   'establish-messaging-session': 'Establish session (settlements clerk - SWIFT user-key + mTLS)',
   'validate-test-messages':      'Validate test msgs (settlements clerk - latency + throughput)',
-  'bind-reconciliation-account': 'Bind recon account (settlements clerk - W120 attestation pair)',
+  'bind-reconciliation-account': 'Bind recon account (settlements clerk - reconciliation attestation pair)',
   'authorize-live-settlement':   'AUTHORIZE LIVE (settlements mgr - SWIFT global crosses SARB ExCon)',
   'activate-reconciliation':     'Activate reconciliation (CFO - cycle tie-out)',
   'archive':                     'Archive (CEO - HARD terminal, retire connector)',
   'disconnect':                  'DISCONNECT (CFO - HARD; crosses EVERY tier WHEN CPMI systemic)',
   'suspend':                     'Suspend (settlements mgr - SARB maintenance window, SOFT)',
   'resume':                      'Resume (settlements mgr - exit maintenance)',
-  'revoke-credential':           'REVOKE CREDENTIAL (SIGNATURE - W124 crosses EVERY tier; SARB + FIC Act s28A + SOC + Basel III)',
+  'revoke-credential':           'REVOKE CREDENTIAL (SIGNATURE - crosses EVERY tier; SARB + FIC Act s28A + SOC + Basel III)',
   'activate-failover':           'Activate failover (settlements mgr - primary to secondary BIC; samos/swift cross)',
   'settle-cycle':                'Settle cycle (settlements mgr - settlement run + recon update; FIC Act if excon expired)',
 };
@@ -513,7 +513,7 @@ export function StrateSwiftConnectorTab({ regulatorView }: Props = {}) {
         const mpm = window.prompt('Settlement messages per minute:', String(row.settlement_messages_per_minute ?? 200));
         if (mpm !== null) body.settlement_messages_per_minute = Number(mpm);
       } else if (action === 'bind-reconciliation-account') {
-        const w120 = window.prompt('W120 reconciliation attestation ref (MANDATORY pair):', row.w120_reconciliation_attestation_ref ?? '');
+        const w120 = window.prompt('Reconciliation attestation ref (MANDATORY pair):', row.w120_reconciliation_attestation_ref ?? '');
         if (w120 !== null) body.w120_reconciliation_attestation_ref = w120;
       } else if (action === 'authorize-live-settlement') {
         const exconCurrent = row.excon_authorization_status ?? 'none';
@@ -538,7 +538,7 @@ export function StrateSwiftConnectorTab({ regulatorView }: Props = {}) {
         if (fail !== null) body.failed_settlement_count_24h = Number(fail);
         const fr = window.prompt('Failure rate %:', String(row.failure_rate_pct ?? 0));
         if (fr !== null) body.failure_rate_pct = Number(fr);
-        const w118 = window.prompt('W118 audit block ref (MANDATORY this cycle):', row.w118_block_ref ?? '');
+        const w118 = window.prompt('Audit block ref (MANDATORY this cycle):', row.w118_block_ref ?? '');
         if (w118 !== null) body.w118_block_ref = w118;
         const note = window.prompt(
           'Cycle notes. NOTE: SIGNATURE - crosses EVERY tier WHEN sarb_excon flag set AND ExCon expired.',
@@ -564,7 +564,7 @@ export function StrateSwiftConnectorTab({ regulatorView }: Props = {}) {
         body.reason_code = reason;
       } else if (action === 'revoke-credential') {
         const reason = window.prompt(
-          'Revoke credential reason. NOTE: SIGNATURE - W124 STRATE-SWIFT-CONNECTOR-REVOKE crosses regulator EVERY tier (SARB + FIC Act s28A + SOC report + Basel III LCR breach + CPMI-IOSCO PFMI systemic disclosure).',
+          'Revoke credential reason. NOTE: SIGNATURE - STRATE-SWIFT-CONNECTOR-REVOKE crosses regulator EVERY tier (SARB + FIC Act s28A + SOC report + Basel III LCR breach + CPMI-IOSCO PFMI systemic disclosure).',
           row.reason_code ?? 'swift_user_key_compromised',
         );
         if (reason === null) return;
@@ -598,12 +598,12 @@ export function StrateSwiftConnectorTab({ regulatorView }: Props = {}) {
     <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">STRATE / SWIFT settlement connector (W124)</h2>
+          <h2 className="text-base font-semibold text-[#0c2a4d]">STRATE / SWIFT settlement connector</h2>
           <p className="text-[11px] text-[#4a5568]">
             12-state forward + 4 branch financial settlement spine - ISO 20022 XML / SWIFT MT / SWIFT MX / STRATE / SARB SAMOS RTGS / SADC RTGS / EFT-ACH / PCC EB.
             Beats SWIFT Alliance Access + Bottomline B2B + FIS Open Payments Hub + ACI Worldwide UP + TCS BaNCS Payments + Volante VolPay + Finastra PaaS + Temenos Transact Payments + Murex MX.3.
             INVERTED SLA HOURS (domestic 168 / multi-bank 240 / STRATE 360 / SAMOS 480 / SWIFT 720).
-            FLOOR-AT-SAMOS-RTGS {'≥'}1 flag / FLOOR-AT-SWIFT-GLOBAL {'≥'}3 flags. W118 + W120 audit bridges mandatory.
+            FLOOR-AT-SAMOS-RTGS {'≥'}1 flag / FLOOR-AT-SWIFT-GLOBAL {'≥'}3 flags. Audit + reconciliation attestation bridges mandatory.
             SIGNATURE: revoke_credential crosses EVERY tier (SARB + FIC Act s28A + SOC report + Basel III LCR + CPMI-IOSCO PFMI Principle 9).
             External bank counterparty reads via mTLS-gated /api/strate-swift-connector/peer/:peer_id with x-mtls-cert-fingerprint header.
           </p>
@@ -646,11 +646,11 @@ export function StrateSwiftConnectorTab({ regulatorView }: Props = {}) {
         <span>Floor flags: <span className="font-semibold text-[#a06200]">{kpis.floor_flag_total}</span></span>
         <span>Key {'<'}60d: <span className="font-semibold text-[#a06200]">{kpis.keys_expiring_within_60d}</span></span>
         <span>Key {'<'}14d: <span className="font-semibold text-[#9b1f1f]">{kpis.keys_expiring_within_14d}</span></span>
-        <span>W118: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
-        <span>W120: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w120_bridged_count}</span></span>
-        <span>W68: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w68_bridged_count}</span></span>
-        <span>W3: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w3_bridged_count}</span></span>
-        <span>W21: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w21_bridged_count}</span></span>
+        <span>Audit: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
+        <span>Recon attest: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w120_bridged_count}</span></span>
+        <span>Counterparty margin: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w68_bridged_count}</span></span>
+        <span>Settlement: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w3_bridged_count}</span></span>
+        <span>Drawdown: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w21_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / priority pills */}
@@ -1022,13 +1022,13 @@ function Drawer({
 
         {/* Bridges */}
         <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (W118 + W120 mandatory)</div>
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (audit + reconciliation attestation mandatory)</div>
           <div className="grid grid-cols-5 gap-2">
-            <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="W118 audit" />
-            <BridgePill on={!!row.bridges_to_w120_reconciliation_attestation_live} label="W120 attest" />
-            <BridgePill on={!!row.bridges_to_w68_counterparty_margin_live} label="W68 margin" />
-            <BridgePill on={!!row.bridges_to_w3_settlement_p6_live} label="W3 settlement" />
-            <BridgePill on={!!row.bridges_to_w21_drawdown_live} label="W21 drawdown" />
+            <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="Audit" />
+            <BridgePill on={!!row.bridges_to_w120_reconciliation_attestation_live} label="Recon attest" />
+            <BridgePill on={!!row.bridges_to_w68_counterparty_margin_live} label="Counterparty margin" />
+            <BridgePill on={!!row.bridges_to_w3_settlement_p6_live} label="Settlement" />
+            <BridgePill on={!!row.bridges_to_w21_drawdown_live} label="Drawdown" />
           </div>
         </div>
 
@@ -1170,9 +1170,9 @@ function ProposeModal({
       <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px] text-[oklch(0.46_0.16_55)]">
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose STRATE / SWIFT connector (W124)</h3>
+            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose STRATE / SWIFT connector</h3>
             <p className="text-[11px] text-[#4a5568]">
-              W118 + W120 audit/attestation bridges mandatory. Tier auto-derived from settlement_value_zar_per_cycle with FLOOR-AT-SAMOS-RTGS {'≥'}1 flag and FLOOR-AT-SWIFT-GLOBAL {'≥'}3 flags.
+              Audit + reconciliation attestation bridges mandatory. Tier auto-derived from settlement_value_zar_per_cycle with FLOOR-AT-SAMOS-RTGS {'≥'}1 flag and FLOOR-AT-SWIFT-GLOBAL {'≥'}3 flags.
             </p>
           </div>
           <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[oklch(0.46_0.16_55)] hover:bg-[#f3f5f9]">Close</button>
@@ -1202,19 +1202,19 @@ function ProposeModal({
           <Field label="Title">
             <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="FNB ISO 20022 corporate EFT rail" />
           </Field>
-          <Field label="W118 block ref (mandatory)">
+          <Field label="Audit block ref (mandatory)">
             <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
           </Field>
-          <Field label="W120 attestation ref (mandatory)">
+          <Field label="Reconciliation attestation ref (mandatory)">
             <input value={w120} onChange={(e) => setW120(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="ratt-2026-0042" />
           </Field>
-          <Field label="W68 counterparty margin ref">
+          <Field label="Counterparty margin ref">
             <input value={w68} onChange={(e) => setW68(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="ccm-2026-0021" />
           </Field>
-          <Field label="W3 settlement P6 ref">
+          <Field label="Settlement P6 ref">
             <input value={w3} onChange={(e) => setW3(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="stl-2026-0011" />
           </Field>
-          <Field label="W21 drawdown ref">
+          <Field label="Drawdown ref">
             <input value={w21} onChange={(e) => setW21(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="dd-2026-0005" />
           </Field>
         </div>

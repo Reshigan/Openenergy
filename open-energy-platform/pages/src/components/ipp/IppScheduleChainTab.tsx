@@ -465,7 +465,7 @@ function getActions(row: IpsRow): ChainAction[] {
       key: 'mark-late-finish',
       label: 'Mark LATE FINISH (PM — SIGNATURE crosses regulator EVERY tier when >=1MW)',
       fields: [
-        { key: 'late_finish_reason', label: 'Late-finish reason (required). NOTE: W112 SIGNATURE — crosses regulator EVERY tier when project_capacity_mw>=1MW.', type: 'textarea', required: true, placeholder: row.late_finish_reason ?? '' },
+        { key: 'late_finish_reason', label: 'Late-finish reason (required). NOTE: SIGNATURE — crosses regulator EVERY tier when project_capacity_mw>=1MW.', type: 'textarea', required: true, placeholder: row.late_finish_reason ?? '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -557,12 +557,12 @@ function renderDetail(row: IpsRow): React.ReactNode {
 
       {/* 4-bridge architecture */}
       <div style={{ marginBottom: 10 }}>
-        <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 4 }}>4-bridge architecture (W19 / W20 / W23 / W25)</div>
+        <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 4 }}>4-bridge architecture</div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-          <DetailPair label="W19 procurement ref"      value={row.procurement_ref ?? '-'}     tone={row.bridges_to_procurement_chain_live ? 'ok' : 'warn'} />
-          <DetailPair label="W20 COD ref"              value={row.cod_ref ?? '-'}             tone={row.bridges_to_cod_chain_live ? 'ok' : 'warn'} />
-          <DetailPair label="W23 insurance claim ref"  value={row.insurance_claim_ref ?? '-'} tone={row.bridges_to_insurance_claim_chain_live ? 'ok' : 'warn'} />
-          <DetailPair label="W25 HSE incident ref"     value={row.hse_incident_ref ?? '-'}    tone={row.bridges_to_hse_incident_chain_live ? 'ok' : 'warn'} />
+          <DetailPair label="Procurement ref"          value={row.procurement_ref ?? '-'}     tone={row.bridges_to_procurement_chain_live ? 'ok' : 'warn'} />
+          <DetailPair label="COD ref"                  value={row.cod_ref ?? '-'}             tone={row.bridges_to_cod_chain_live ? 'ok' : 'warn'} />
+          <DetailPair label="Insurance claim ref"      value={row.insurance_claim_ref ?? '-'} tone={row.bridges_to_insurance_claim_chain_live ? 'ok' : 'warn'} />
+          <DetailPair label="HSE incident ref"         value={row.hse_incident_ref ?? '-'}    tone={row.bridges_to_hse_incident_chain_live ? 'ok' : 'warn'} />
           <DetailPair label="Regulator inbox ref"      value={row.regulator_inbox_ref ?? '-'} />
           <DetailPair label="Regulator ref"            value={row.regulator_ref ?? '-'} />
           <DetailPair label="Last variance at"         value={fmtDate(row.last_variance_at)} />
@@ -757,7 +757,7 @@ export function IppScheduleChainTab() {
           <strong> SIGNATURE: mark-late-finish crosses regulator EVERY tier when project_capacity_mw ≥ 1 MW</strong> (REIPPPP + DMRE §34 + NERSA C-5);
           cancel-schedule crosses regulator EVERY tier ≥1 MW; rebaseline-schedule crosses large+mega.
           4-step authority ladder: scheduler → project_manager → portfolio_director → IPP_CEO.
-          4 bridges: W19 procurement, W20 COD, W23 insurance claim, W25 HSE incident.
+          4 bridges: procurement, COD, insurance claim, HSE incident.
           Nightly schedule-health recompute at 00:15 UTC keeps CPI/SPI/SV/CV live.
         </p>
       </header>
@@ -779,10 +779,10 @@ export function IppScheduleChainTab() {
         <span>Reportable: <strong style={{ color: BAD }}>{kpis.reportable_total}</strong></span>
         <span>Late-finish risk: <strong style={{ color: BAD }}>{kpis.late_finish_risk_count}</strong></span>
         <span>Rebaseline imminent: <strong style={{ color: WARN }}>{kpis.rebaseline_imminent_count}</strong></span>
-        <span>Bridges W19 (procurement): <strong style={{ color: TX1 }}>{kpis.procurement_bridged_count}</strong></span>
-        <span>Bridges W20 (COD): <strong style={{ color: TX1 }}>{kpis.cod_bridged_count}</strong></span>
-        <span>Bridges W23 (claim): <strong style={{ color: TX1 }}>{kpis.insurance_bridged_count}</strong></span>
-        <span>Bridges W25 (HSE): <strong style={{ color: TX1 }}>{kpis.hse_bridged_count}</strong></span>
+        <span>Bridges procurement: <strong style={{ color: TX1 }}>{kpis.procurement_bridged_count}</strong></span>
+        <span>Bridges COD: <strong style={{ color: TX1 }}>{kpis.cod_bridged_count}</strong></span>
+        <span>Bridges claim: <strong style={{ color: TX1 }}>{kpis.insurance_bridged_count}</strong></span>
+        <span>Bridges HSE: <strong style={{ color: TX1 }}>{kpis.hse_bridged_count}</strong></span>
         <span>PV total: <strong style={{ color: TX1 }}>{fmtZar(kpis.planned_value_zar_sum)}</strong></span>
         <span>EV total: <strong style={{ color: GOOD }}>{fmtZar(kpis.earned_value_zar_sum)}</strong></span>
         <span>AC total: <strong style={{ color: WARN }}>{fmtZar(kpis.actual_cost_zar_sum)}</strong></span>

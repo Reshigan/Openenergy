@@ -357,17 +357,17 @@ const ACTION_LABEL: Record<ActionKind, string> = {
   'sync-baselines':                'Sync baselines (ml_analyst - lock champion + NTT baseline versions)',
   'bind-telemetry-window':         'Bind telemetry window (ml_analyst - freeze cycle window + asset coverage)',
   'run-ntt-emulation':             'Run NTT emulation (ml_analyst - emulate NTT IoT/O&M stack predictions)',
-  'collect-champion-predictions':  'Collect champion predictions (ml_analyst - pull W127+W128+W129 inference)',
+  'collect-champion-predictions':  'Collect champion predictions (ml_analyst - pull anomaly + RUL + fault inference)',
   'compute-counterfactuals':       'Compute counterfactuals (ml_analyst - per-asset Δ revenue NTT vs champion)',
   'revenue-weight-score':          'Revenue-weight score (data_steward - aggregate ZAR; auto-flags material/reneg)',
   'test-significance':             'Test significance (data_steward - paired-t + Wilcoxon + Brier + 95% CI)',
   'certify-savings':               'Certify savings (CTO - sign off savings_vs_ntt_pct; TOP-HEAVY crosses regulator on reneg trigger)',
-  'publish-audit':                 'Publish audit (CTO - W118 MANDATORY - publish Merkle hash; EVERY tier crosses regulator WHEN diversion)',
+  'publish-audit':                 'Publish audit (CTO - audit block MANDATORY - publish Merkle hash; EVERY tier crosses regulator WHEN diversion)',
   'trigger-retraining':            'Trigger retraining (CTO - 4 consecutive cycles below target / drift)',
   'archive':                       'Archive (CEO - HARD terminal, cycle closed-out)',
   'flag-significance-failure':     'Flag significance failure (data_steward - paired-t p {>=} 0.10; SOFT; systemic crosses regulator)',
   'rollback-cycle':                'ROLLBACK CYCLE (CTO - withdraw cycle results; HARD terminal)',
-  'recall-certification':          'RECALL CERTIFICATION (CEO - W130 SIGNATURE - withdraws a published savings cert; crosses regulator EVERY tier; SARB MA s38 + IFRS restatement + ISO 42001 incident)',
+  'recall-certification':          'RECALL CERTIFICATION (CEO - SIGNATURE - withdraws a published savings cert; crosses regulator EVERY tier; SARB MA s38 + IFRS restatement + ISO 42001 incident)',
   'activate-failover':             'Activate failover (CTO - drop back to prior cycle; SOFT)',
 };
 
@@ -579,11 +579,11 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
     try {
       const body: Record<string, unknown> = {};
       if (action === 'sync-baselines') {
-        const ca = window.prompt('Champion anomaly model version (W127):', row.champion_anomaly_model_version ?? '1.0.0');
+        const ca = window.prompt('Champion anomaly model version:', row.champion_anomaly_model_version ?? '1.0.0');
         if (ca !== null) body.champion_anomaly_model_version = ca;
-        const cr = window.prompt('Champion RUL model version (W128):', row.champion_rul_model_version ?? '1.0.0');
+        const cr = window.prompt('Champion RUL model version:', row.champion_rul_model_version ?? '1.0.0');
         if (cr !== null) body.champion_rul_model_version = cr;
-        const cf = window.prompt('Champion fault model version (W129):', row.champion_fault_model_version ?? '1.0.0');
+        const cf = window.prompt('Champion fault model version:', row.champion_fault_model_version ?? '1.0.0');
         if (cf !== null) body.champion_fault_model_version = cf;
         const ntt = window.prompt('NTT baseline version:', row.ntt_baseline_version ?? 'ntt-iot-v6.2');
         if (ntt !== null) body.ntt_baseline_version = ntt;
@@ -596,7 +596,7 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
         const p = window.prompt('NTT emulation payload (JSON):', row.ntt_emulation_payload ?? '{}');
         if (p !== null) body.ntt_emulation_payload = p;
       } else if (action === 'collect-champion-predictions') {
-        const p = window.prompt('Champion predictions payload (JSON; W127+W128+W129):', row.champion_predictions_payload ?? '{}');
+        const p = window.prompt('Champion predictions payload (JSON; anomaly + RUL + fault):', row.champion_predictions_payload ?? '{}');
         if (p !== null) body.champion_predictions_payload = p;
       } else if (action === 'compute-counterfactuals') {
         const p = window.prompt('Counterfactuals payload (JSON per-asset Δ revenue):', row.counterfactuals_payload ?? '{}');
@@ -624,13 +624,13 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
         const cu = window.prompt('CI upper (ZAR):', String(row.confidence_interval_upper_zar ?? 0));
         if (cu !== null) body.confidence_interval_upper_zar = Number(cu);
       } else if (action === 'certify-savings') {
-        const rec = window.prompt('Reconciliation with W71 savings ledger (%):', String(row.reconciliation_with_w71_savings_ledger_pct ?? 95));
+        const rec = window.prompt('Reconciliation with savings ledger (%):', String(row.reconciliation_with_w71_savings_ledger_pct ?? 95));
         if (rec !== null) body.reconciliation_with_w71_savings_ledger_pct = Number(rec);
         const note = window.prompt('Certification notes (CTO sign-off; TOP-HEAVY crosses regulator on reneg trigger).', '');
         if (note !== null) body.notes = note;
       } else if (action === 'publish-audit') {
         const h = window.prompt(
-          'W118 audit block ref (MANDATORY - publish_audit will 422 reject if missing):',
+          'Audit block ref (MANDATORY - publish_audit will 422 reject if missing):',
           row.w118_block_ref ?? '',
         );
         if (h !== null) body.w118_block_ref = h;
@@ -660,7 +660,7 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
         body.reason_code = reason;
       } else if (action === 'recall-certification') {
         const reason = window.prompt(
-          'Recall reason. NOTE: W130 SIGNATURE - withdraws a published savings certification; crosses regulator EVERY tier (SARB MA s38 + IFRS restatement + ISO 42001 incident).',
+          'Recall reason. NOTE: SIGNATURE - withdraws a published savings certification; crosses regulator EVERY tier (SARB MA s38 + IFRS restatement + ISO 42001 incident).',
           row.reason_code ?? 'savings_misstated',
         );
         if (reason === null) return;
@@ -691,13 +691,13 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
     <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">NTT comparison battery (W130) - CLOSES PHASE D</h2>
+          <h2 className="text-base font-semibold text-[#0c2a4d]">NTT comparison battery</h2>
           <p className="text-[11px] text-[#4a5568]">
-            12-state forward + 4 branch Phase-D AGGREGATOR stitching W127 anomaly LSTM-AE + W128 RUL Cox PH survival + W129 fault-fingerprint multi-class against an emulated NTT IoT/O&M baseline.
+            12-state forward + 4 branch AGGREGATOR stitching anomaly LSTM-AE + RUL Cox PH survival + fault-fingerprint multi-class against an emulated NTT IoT/O&M baseline.
             Each cycle (nightly default) produces continuously-updated, revenue-weighted, significance-gated, tamper-evident "savings-vs-NTT-30%" KPI streaming into the Esums dashboard hero.
-            INVERTED SLA HOURS (single 12 / small 48 / large 120 / multi-juris. 240 / systemic 480 - TIGHTER than W127-W129 because cycles run nightly).
-            FLOOR-AT-LARGE-FLEET {'≥'}1 flag / FLOOR-AT-FLEET-SYSTEMIC {'≥'}3 flags. W118 audit bridge MANDATORY at publish_audit (422 reject otherwise).
-            SIGNATURE W130: recall_certification crosses EVERY tier (withdrawal of a published savings certification is ALWAYS reportable - SARB MA s38 + IFRS restatement + ISO 42001 incident).
+            INVERTED SLA HOURS (single 12 / small 48 / large 120 / multi-juris. 240 / systemic 480 - TIGHTER than the underlying ML chains because cycles run nightly).
+            FLOOR-AT-LARGE-FLEET {'≥'}1 flag / FLOOR-AT-FLEET-SYSTEMIC {'≥'}3 flags. Audit bridge MANDATORY at publish_audit (422 reject otherwise).
+            SIGNATURE: recall_certification crosses EVERY tier (withdrawal of a published savings certification is ALWAYS reportable - SARB MA s38 + IFRS restatement + ISO 42001 incident).
             Authority ladder ml_analyst → data_steward → CTO → CEO. Beats NTT Data IoT + NTT O&M Suite + NTT IOWN.
           </p>
         </div>
@@ -744,11 +744,11 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
         <span>Floor flags: <span className="font-semibold text-[#a06200]">{kpis.floor_flag_total}</span></span>
         <span>Card exp. {'<'}30d: <span className="font-semibold text-[#9b1f1f]">{kpis.model_card_expiring_30d}</span></span>
         <span>Total ZAR: <span className="font-semibold text-[#1f5b3a]">{fmtZar(kpis.total_savings_sum_zar)}</span></span>
-        <span>W118: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
-        <span>W127: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w127_bridged_count}</span></span>
-        <span>W128: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w128_bridged_count}</span></span>
-        <span>W129: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w129_bridged_count}</span></span>
-        <span>W71: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w71_bridged_count}</span></span>
+        <span>Audit: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
+        <span>Anomaly: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w127_bridged_count}</span></span>
+        <span>RUL: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w128_bridged_count}</span></span>
+        <span>Fault: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w129_bridged_count}</span></span>
+        <span>Physics: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w71_bridged_count}</span></span>
         <span>Reneg. floor: <span className="font-semibold text-[#a06200]">{kpis.ntt_contract_reneg_consecutive_cycles_required} cyc.</span></span>
         <span>Material floor: <span className="font-semibold text-[#a06200]">{fmtZar(kpis.material_savings_floor_zar)}</span></span>
       </div>
@@ -1028,7 +1028,7 @@ function Drawer({
             </div>
             <h3 className="text-lg font-semibold text-[#0c2a4d]">{row.cycle_number}</h3>
             <p className="text-[11px] text-[#4a5568]">
-              {row.title || 'NTT comparison battery cycle (W130 - Phase D AGGREGATOR)'}
+              {row.title || 'NTT comparison battery cycle (AGGREGATOR)'}
               {row.ntt_baseline_version ? <> {'•'} NTT base <span className="font-mono">{row.ntt_baseline_version}</span></> : null}
               {row.cycle_window_start ? <> {'•'} {fmtDate(row.cycle_window_start)} → {fmtDate(row.cycle_window_end)}</> : null}
             </p>
@@ -1064,7 +1064,7 @@ function Drawer({
             <Field2 label="CI width" value={fmtZar(ciWidth)} />
             <Field2 label="CI lower" value={fmtZar(row.confidence_interval_lower_zar_live ?? row.confidence_interval_lower_zar)} />
             <Field2 label="CI upper" value={fmtZar(row.confidence_interval_upper_zar_live ?? row.confidence_interval_upper_zar)} />
-            <Field2 label="W71 ledger recon."
+            <Field2 label="Physics ledger recon."
                     value={fmtPct(row.reconciliation_with_w71_savings_ledger_live ?? row.reconciliation_with_w71_savings_ledger_pct)}
                     tone={(row.reconciliation_with_w71_savings_ledger_live ?? 0) >= 95 ? 'ok' : (row.reconciliation_with_w71_savings_ledger_live ?? 0) >= 80 ? 'warn' : 'bad'} />
             <Field2 label="Audit hash"
@@ -1122,13 +1122,13 @@ function Drawer({
 
         {/* Bridges */}
         <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (W118 MANDATORY at publish_audit)</div>
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (audit MANDATORY at publish_audit)</div>
           <div className="grid grid-cols-5 gap-2">
-            <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="W118 audit (req)" />
-            <BridgePill on={!!row.bridges_to_w127_anomaly_detection_live} label="W127 anomaly" />
-            <BridgePill on={!!row.bridges_to_w128_rul_survival_live} label="W128 RUL" />
-            <BridgePill on={!!row.bridges_to_w129_fault_fingerprint_live} label="W129 fault" />
-            <BridgePill on={!!row.bridges_to_w71_asset_prognostics_live} label="W71 phys. ctrl." />
+            <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="Audit (req)" />
+            <BridgePill on={!!row.bridges_to_w127_anomaly_detection_live} label="Anomaly" />
+            <BridgePill on={!!row.bridges_to_w128_rul_survival_live} label="RUL" />
+            <BridgePill on={!!row.bridges_to_w129_fault_fingerprint_live} label="Fault" />
+            <BridgePill on={!!row.bridges_to_w71_asset_prognostics_live} label="Physics ctrl." />
           </div>
         </div>
 
@@ -1313,11 +1313,11 @@ function ProposeModal({
       <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose NTT comparison cycle (W130)</h3>
+            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose NTT comparison cycle</h3>
             <p className="text-[11px] text-[#4a5568]">
-              W118 audit bridge advisable at propose; MANDATORY at publish_audit (route will 422 reject otherwise).
+              Audit bridge advisable at propose; MANDATORY at publish_audit (route will 422 reject otherwise).
               Tier auto-derived from (assets_covered, jurisdiction_count, safety_critical) with FLOOR-AT-LARGE-FLEET {'≥'}1 flag and FLOOR-AT-FLEET-SYSTEMIC {'≥'}3 flags.
-              recall_certification crosses regulator EVERY tier (W130 SIGNATURE).
+              recall_certification crosses regulator EVERY tier (SIGNATURE).
             </p>
           </div>
           <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
@@ -1355,13 +1355,13 @@ function ProposeModal({
           <Field label="NTT baseline version">
             <input value={nttVersion} onChange={(e) => setNttVersion(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="ntt-iot-v6.2" />
           </Field>
-          <Field label="Champion anomaly (W127) version">
+          <Field label="Champion anomaly version">
             <input value={championAnomaly} onChange={(e) => setChampionAnomaly(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="1.0.0" />
           </Field>
-          <Field label="Champion RUL (W128) version">
+          <Field label="Champion RUL version">
             <input value={championRul} onChange={(e) => setChampionRul(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="1.0.0" />
           </Field>
-          <Field label="Champion fault (W129) version">
+          <Field label="Champion fault version">
             <input value={championFault} onChange={(e) => setChampionFault(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="1.0.0" />
           </Field>
           <Field label="Prior cycle ref (chain link)">
@@ -1376,19 +1376,19 @@ function ProposeModal({
           <Field label="Title">
             <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="Nightly fleet-wide PV comparison 2026-05-30" />
           </Field>
-          <Field label="W118 block ref (MANDATORY at publish_audit)">
+          <Field label="Audit block ref (MANDATORY at publish_audit)">
             <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
           </Field>
-          <Field label="W127 anomaly detection ref">
+          <Field label="Anomaly detection ref">
             <input value={w127} onChange={(e) => setW127(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="ad-2026-007" />
           </Field>
-          <Field label="W128 RUL survival ref">
+          <Field label="RUL survival ref">
             <input value={w128} onChange={(e) => setW128(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="rul-2026-011" />
           </Field>
-          <Field label="W129 fault fingerprint ref">
+          <Field label="Fault fingerprint ref">
             <input value={w129} onChange={(e) => setW129(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="ffml-2026-005" />
           </Field>
-          <Field label="W71 asset prognostics ref (control variable)">
+          <Field label="Asset prognostics ref (control variable)">
             <input value={w71} onChange={(e) => setW71(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="aprog-2026-007" />
           </Field>
         </div>

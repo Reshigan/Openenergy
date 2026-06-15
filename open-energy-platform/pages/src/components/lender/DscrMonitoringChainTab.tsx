@@ -696,7 +696,7 @@ export function DscrMonitoringChainTab() {
       <header className="mb-4">
         <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>DSCR monitoring &amp; cure — the coverage-defense engine</h2>
         <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
-          12-state DSCR monitoring lifecycle · the rolling MONITOR counterpart to the periodic covenant CERTIFICATE (W38).
+          12-state DSCR monitoring lifecycle · the rolling MONITOR counterpart to the periodic covenant CERTIFICATE.
           LMA covenant schedule + SARB IFRS 9 Stage 2/3 trigger framework + Basel III LCR/NSFR. URGENT SLA: the LOWER
           the current DSCR, the TIGHTER every window. Tier is RE-DERIVED on every transition. SIGNATURE:
           declare_acceleration crosses regulator for EVERY tier (IFRS 9 Stage 3). waive_breach + enter_lock_up cross

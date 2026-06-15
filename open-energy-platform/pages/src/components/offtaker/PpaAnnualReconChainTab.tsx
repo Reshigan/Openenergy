@@ -635,8 +635,8 @@ export function PpaAnnualReconChainTab() {
           12-stage P6 chain · year_opened → data_collected → variance_classified → top_residual_computed →
           cpi_capacity_applied → reconciled → signed_off → invoiced → settled (rest state · restate door open).
           Dispute branch loops via NERSA s30. INVERTED SLA — larger variance + residual = MORE time for forensic
-          reconciliation, audit, counterparty signoff. Aggregates W87 nominations, W32 ToP residual, W39 CPI
-          indexation, W46 deemed-energy credits, W54 payment security into one signed-off ledger per year.
+          reconciliation, audit, counterparty signoff. Aggregates nominations, take-or-pay residual, CPI
+          indexation, deemed-energy credits, and payment security into one signed-off ledger per year.
         </p>
       </header>
 

@@ -207,9 +207,9 @@ const FILTERS = [
   { key: 'breached',            label: 'SLA breached' },
   { key: 'reportable',          label: 'Reportable' },
   { key: 'critical_urgency',    label: 'Critical urgency' },
-  { key: 'planned_bridged',     label: 'Bridged to W18' },
-  { key: 'curtail_bridged',     label: 'Bridged to W34' },
-  { key: 'reserve_bridged',     label: 'Bridged to W50' },
+  { key: 'planned_bridged',     label: 'Bridged to planned outage' },
+  { key: 'curtail_bridged',     label: 'Bridged to curtailment' },
+  { key: 'reserve_bridged',     label: 'Bridged to reserve activation' },
   { key: 'critical_400kv_plus', label: 'Critical 400kV+' },
   { key: 'high_275kv',          label: 'High 275kV' },
   { key: 'medium_132kv',        label: 'Medium 132kV' },
@@ -521,9 +521,9 @@ function renderDetail(row: TxoRow): React.ReactNode {
         <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 8 }}>
           <div className="text-[10px] uppercase tracking-wider mb-2" style={{ color: TX3 }}>Cross-chain references</div>
           <div className="grid grid-cols-2 gap-3">
-            {row.planned_outage_ref    && <DetailPair label="W18 planned outage ref" value={row.planned_outage_ref} />}
-            {row.curtailment_ref       && <DetailPair label="W34 curtailment ref"    value={row.curtailment_ref} />}
-            {row.reserve_activation_ref && <DetailPair label="W50 reserve ref"       value={row.reserve_activation_ref} />}
+            {row.planned_outage_ref    && <DetailPair label="Planned outage ref" value={row.planned_outage_ref} />}
+            {row.curtailment_ref       && <DetailPair label="Curtailment ref"    value={row.curtailment_ref} />}
+            {row.reserve_activation_ref && <DetailPair label="Reserve activation ref" value={row.reserve_activation_ref} />}
             {row.regulator_inbox_ref   && <DetailPair label="Regulator inbox"        value={row.regulator_inbox_ref} />}
             {row.regulator_ref         && <DetailPair label="Regulator ref"          value={row.regulator_ref} />}
           </div>
@@ -633,7 +633,7 @@ export function TransmissionOutageChainTab() {
             Transmission Outage Coordination
           </h2>
           <p style={{ fontSize: 11, color: TX3, margin: '2px 0 0', fontFamily: MONO }}>
-            W110 · N-1 security assessment · 12-state P6 · URGENT SLA
+            N-1 security assessment · 12-state lifecycle · URGENT SLA
           </p>
         </div>
         <button
@@ -696,9 +696,9 @@ export function TransmissionOutageChainTab() {
         ) : filtered.map((row) => {
           const floored = (row.floor_flag_count_live ?? 0) > 0;
           const bridges = [
-            row.bridges_to_planned_outage_chain_live && 'W18',
-            row.bridges_to_curtailment_chain_live    && 'W34',
-            row.bridges_to_reserve_activation_chain_live && 'W50',
+            row.bridges_to_planned_outage_chain_live && 'Planned outage',
+            row.bridges_to_curtailment_chain_live    && 'Curtailment',
+            row.bridges_to_reserve_activation_chain_live && 'Reserve activation',
           ].filter(Boolean).join(' · ');
 
           const metaParts: string[] = [

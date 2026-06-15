@@ -581,7 +581,7 @@ function getActions(row: IpsRow): ChainAction[] {
       fields: [
         {
           key: 'reject_reason',
-          label: 'Reject reason (required). NOTE: W115 SIGNATURE STAMP-E — crosses regulator EVERY tier when long_lead_item AND cycle_count ≥ 3.',
+          label: 'Reject reason (required). NOTE: SIGNATURE STAMP-E — crosses regulator EVERY tier when long_lead_item AND cycle_count ≥ 3.',
           type: 'textarea',
           required: true,
           placeholder: String(row.reject_reason ?? ''),
@@ -636,7 +636,7 @@ function renderDetail(row: IpsRow): React.ReactNode {
         <DetailPair label="Days to long-lead" value={row.days_to_long_lead_deadline_live !== null && row.days_to_long_lead_deadline_live !== undefined ? `${row.days_to_long_lead_deadline_live}d` : '-'} />
         <DetailPair label="Comments open" value={String(row.comments_open)} />
         <DetailPair label="Hash chain position" value={String(row.hash_chain_position)} />
-        <DetailPair label="Merkle segment (W118)" value={(row.merkle_root_segment ?? '-').slice(0, 12) + '...'} />
+        <DetailPair label="Merkle segment" value={(row.merkle_root_segment ?? '-').slice(0, 12) + '...'} />
         <DetailPair label="Last transmittal #" value={row.last_transmittal_number ?? '-'} />
         <DetailPair label="Last transmittal at" value={fmtDate(row.last_transmittal_at)} />
         <DetailPair label="Reviewer" value={row.reviewer_name ?? '-'} />
@@ -666,15 +666,15 @@ function renderDetail(row: IpsRow): React.ReactNode {
 
       {/* 6-bridge architecture */}
       <div style={{ fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 6 }}>
-        6-bridge architecture (W114 / W112 / W113 / W19 / W23 / W20)
+        6-bridge architecture (doc-control / schedule / EVM / procurement / insurance / COD)
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-4">
-        <DetailPair label="W114 doc-control ref" value={row.document_control_ref ?? '-'} />
-        <DetailPair label="W112 schedule ref" value={row.schedule_ref ?? '-'} />
-        <DetailPair label="W113 EVM ref" value={row.evm_ref ?? '-'} />
-        <DetailPair label="W19 procurement ref" value={row.procurement_ref ?? '-'} />
-        <DetailPair label="W23 insurance ref" value={row.insurance_ref ?? '-'} />
-        <DetailPair label="W20 COD ref" value={row.cod_ref ?? '-'} />
+        <DetailPair label="Doc-control ref" value={row.document_control_ref ?? '-'} />
+        <DetailPair label="Schedule ref" value={row.schedule_ref ?? '-'} />
+        <DetailPair label="EVM ref" value={row.evm_ref ?? '-'} />
+        <DetailPair label="Procurement ref" value={row.procurement_ref ?? '-'} />
+        <DetailPair label="Insurance ref" value={row.insurance_ref ?? '-'} />
+        <DetailPair label="COD ref" value={row.cod_ref ?? '-'} />
         <DetailPair label="Regulator inbox ref" value={row.regulator_inbox_ref ?? '-'} />
         <DetailPair label="Regulator ref" value={row.regulator_ref ?? '-'} />
         <DetailPair label="Last responder" value={row.last_responder_party ?? '-'} />
@@ -916,12 +916,12 @@ export function IppSubmittalChainTab() {
         <span>Dispute: <span style={{ fontWeight: 600, color: BAD }}>{kpis.dispute_count}</span></span>
         <span>Cycles total: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.cycles_total}</span></span>
         <span>Completeness avg: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.completeness_avg}/130</span></span>
-        <span>W114 (doc): <span style={{ fontWeight: 600, color: TX1 }}>{kpis.document_control_bridged_count}</span></span>
-        <span>W112 (sch): <span style={{ fontWeight: 600, color: TX1 }}>{kpis.schedule_bridged_count}</span></span>
-        <span>W113 (EVM): <span style={{ fontWeight: 600, color: TX1 }}>{kpis.evm_bridged_count}</span></span>
-        <span>W19 (proc): <span style={{ fontWeight: 600, color: TX1 }}>{kpis.procurement_bridged_count}</span></span>
-        <span>W23 (ins): <span style={{ fontWeight: 600, color: TX1 }}>{kpis.insurance_bridged_count}</span></span>
-        <span>W20 (COD): <span style={{ fontWeight: 600, color: TX1 }}>{kpis.cod_bridged_count}</span></span>
+        <span>Doc control: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.document_control_bridged_count}</span></span>
+        <span>Schedule: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.schedule_bridged_count}</span></span>
+        <span>EVM: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.evm_bridged_count}</span></span>
+        <span>Procurement: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.procurement_bridged_count}</span></span>
+        <span>Insurance: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.insurance_bridged_count}</span></span>
+        <span>COD: <span style={{ fontWeight: 600, color: TX1 }}>{kpis.cod_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / lifecycle pills */}

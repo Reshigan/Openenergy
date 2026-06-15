@@ -466,7 +466,7 @@ function getActions(row: IpeRow): ChainAction[] {
       key: 'draw-management-reserve',
       label: 'Draw MR (CFO — SIGNATURE crosses regulator EVERY tier when >=R1)',
       fields: [
-        { key: 'management_reserve_drawn_zar', label: 'MR draw amount (ZAR). NOTE: W113 SIGNATURE — crosses regulator EVERY tier when budget>=R1.', type: 'number',   required: false, placeholder: '' },
+        { key: 'management_reserve_drawn_zar', label: 'MR draw amount (ZAR). NOTE: SIGNATURE — crosses regulator EVERY tier when budget>=R1.', type: 'number',   required: false, placeholder: '' },
         { key: 'reason_code',                  label: 'MR draw reason (governance)',                                                                   type: 'textarea', required: false, placeholder: '' },
       ],
       cascadeTo: ['regulator'],
@@ -479,7 +479,7 @@ function getActions(row: IpeRow): ChainAction[] {
       key: 'cancel',
       label: 'Cancel (CFO — SIGNATURE crosses regulator EVERY tier when >=R1)',
       fields: [
-        { key: 'cancel_reason', label: 'Cancellation reason (required). NOTE: W113 SIGNATURE — crosses regulator EVERY tier when budget>=R1.', type: 'textarea', required: true, placeholder: row.cancel_reason ?? '' },
+        { key: 'cancel_reason', label: 'Cancellation reason (required). NOTE: SIGNATURE — crosses regulator EVERY tier when budget>=R1.', type: 'textarea', required: true, placeholder: row.cancel_reason ?? '' },
       ],
       cascadeTo: ['regulator'],
     });
@@ -561,12 +561,12 @@ function renderDetail(row: IpeRow): React.ReactNode {
       </DetailSection>
 
       {/* Bridges */}
-      <DetailSection title="4-bridge architecture (W112 / W21 / W30 / W77)">
+      <DetailSection title="4-bridge architecture">
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-          <DetailPair label="W112 schedule ref"        value={row.schedule_ref ?? '-'} />
-          <DetailPair label="W21 drawdown ref"         value={row.drawdown_ref ?? '-'} />
-          <DetailPair label="W30 disbursement ref"     value={row.disbursement_ref ?? '-'} />
-          <DetailPair label="W77 reserve-account ref"  value={row.reserve_account_ref ?? '-'} />
+          <DetailPair label="Schedule ref"             value={row.schedule_ref ?? '-'} />
+          <DetailPair label="Drawdown ref"             value={row.drawdown_ref ?? '-'} />
+          <DetailPair label="Disbursement ref"         value={row.disbursement_ref ?? '-'} />
+          <DetailPair label="Reserve-account ref"      value={row.reserve_account_ref ?? '-'} />
           <DetailPair label="Regulator inbox ref"      value={row.regulator_inbox_ref ?? '-'} />
           <DetailPair label="Regulator ref"            value={row.regulator_ref ?? '-'} />
           <DetailPair label="Last variance at"         value={fmtDate(row.last_variance_at)} />
@@ -751,7 +751,7 @@ export function IppEvmChainTab() {
           SIGNATURE: draw-management-reserve crosses regulator EVERY tier when budget≥R1; cancel crosses regulator EVERY tier ≥R1;
           publish-reforecast crosses large+mega when VAC&lt;0 OR CPI&lt;0.85; approve-CR crosses mega only when CR≥10% of budget.
           4-step authority ladder: cost_engineer → PM → finance_director → CFO.
-          4 bridges: W112 schedule, W21 drawdown, W30 disbursement, W77 reserve-account.
+          4 bridges: schedule, drawdown, disbursement, reserve-account.
         </p>
       </header>
 
@@ -775,10 +775,10 @@ export function IppEvmChainTab() {
         <span>Published: <span style={{ fontWeight: 600, color: GOOD }}>{kpis.published_count}</span></span>
         <span>Contingency drawn: <span style={{ fontWeight: 600, color: BAD }}>{kpis.contingency_drawn_count}</span></span>
         <span>Closed: <span style={{ fontWeight: 600, color: GOOD }}>{kpis.closed_count}</span></span>
-        <span>Bridges to W112 (schedule): <span style={{ fontWeight: 600 }}>{kpis.schedule_bridged_count}</span></span>
-        <span>W21 (drawdown): <span style={{ fontWeight: 600 }}>{kpis.drawdown_bridged_count}</span></span>
-        <span>W30 (disbursement): <span style={{ fontWeight: 600 }}>{kpis.disbursement_bridged_count}</span></span>
-        <span>W77 (reserve-acc): <span style={{ fontWeight: 600 }}>{kpis.reserve_account_bridged_count}</span></span>
+        <span>Bridges to schedule: <span style={{ fontWeight: 600 }}>{kpis.schedule_bridged_count}</span></span>
+        <span>Drawdown: <span style={{ fontWeight: 600 }}>{kpis.drawdown_bridged_count}</span></span>
+        <span>Disbursement: <span style={{ fontWeight: 600 }}>{kpis.disbursement_bridged_count}</span></span>
+        <span>Reserve-acc: <span style={{ fontWeight: 600 }}>{kpis.reserve_account_bridged_count}</span></span>
         <span>Budget total: <span style={{ fontWeight: 600 }}>{fmtZar(kpis.total_budget_zar_sum)}</span></span>
         <span>EV total: <span style={{ fontWeight: 600, color: GOOD }}>{fmtZar(kpis.earned_value_zar_sum)}</span></span>
         <span>AC total: <span style={{ fontWeight: 600, color: WARN }}>{fmtZar(kpis.actual_cost_zar_sum)}</span></span>

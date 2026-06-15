@@ -484,7 +484,7 @@ function getActions(row: CcrRow): ChainAction[] {
   if (escalatable) {
     actions.push({
       key: 'escalate-to-integrity',
-      label: 'Escalate to integrity (fraud → W42 reversal)',
+      label: 'Escalate to integrity (fraud → reversal)',
       tone: 'danger',
       fields: [
         { key: 'integrity_reason', label: 'Integrity escalation reason', type: 'textarea', required: false, placeholder: '' },
@@ -547,7 +547,7 @@ function renderDetail(row: CcrRow): React.ReactNode {
             })}
           </div>
           <div className="text-[10px] mt-2" style={{ color: TX3 }}>
-            AAA-BBB investment-grade · BB-B speculative · CCC/D distressed (W42 buffer pool eligible)
+            AAA-BBB investment-grade · BB-B speculative · CCC/D distressed (buffer pool eligible)
           </div>
         </div>
       )}
@@ -595,9 +595,9 @@ function renderDetail(row: CcrRow): React.ReactNode {
       <div className="rounded border p-3" style={{ background: BG1, borderColor: BORDER }}>
         <div className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: TX3 }}>Bridges to sibling carbon chains</div>
         <div className="grid grid-cols-3 gap-3">
-          <BridgePill on={!!row.bridges_to_registration_chain_live} label="W37 Registration PDD" ref_={row.registration_chain_ref} />
-          <BridgePill on={!!row.bridges_to_mrv_chain_live} label="W11 MRV verification" ref_={row.mrv_chain_ref} />
-          <BridgePill on={!!row.bridges_to_reversal_chain_live} label="W42 Reversal/buffer pool" ref_={row.reversal_chain_ref} />
+          <BridgePill on={!!row.bridges_to_registration_chain_live} label="Registration PDD" ref_={row.registration_chain_ref} />
+          <BridgePill on={!!row.bridges_to_mrv_chain_live} label="MRV verification" ref_={row.mrv_chain_ref} />
+          <BridgePill on={!!row.bridges_to_reversal_chain_live} label="Reversal / buffer pool" ref_={row.reversal_chain_ref} />
         </div>
       </div>
 
@@ -735,7 +735,7 @@ export function CreditRatingChainTab() {
       <header className="mb-4">
         <h2 style={{ fontSize: 15, fontWeight: 700, color: TX1 }}>Carbon Credit Quality Rating</h2>
         <p style={{ fontSize: 11, color: TX2, marginTop: 2 }}>
-          W109 · 12-state INVERTED SLA rating chain · S&P 8-band · 5-pillar scoring battery · 3-bridge (W37/W11/W42) · ICROA/CCP/Article 6
+          12-state INVERTED SLA rating chain · S&P 8-band · 5-pillar scoring battery · 3-bridge (registration / MRV / reversal) · ICROA/CCP/Article 6
         </p>
       </header>
 

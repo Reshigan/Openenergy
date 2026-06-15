@@ -394,7 +394,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
             </p>
             <p className="text-xs text-red-800 mt-0.5">
               SA Construction Regs.6: principal contractor is liable for subcontractor safety compliance.
-              W140 SIGNATURE: terminate_subcontractor crosses regulator EVERY tier on safety_violation — immediate OHSA notification mandatory.
+              terminate_subcontractor crosses regulator EVERY tier on safety_violation — immediate OHSA notification mandatory.
               Review suspension reasons and confirm reinstatement conditions are met before reactivating.
             </p>
           </div>
@@ -513,7 +513,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
                       {!!row.floor_reipppp_ed_reporting && <Flag label="ED" title="REIPPPP ED commitment included in this subcontract" cls="bg-green-100 text-green-800" />}
                       {!!row.floor_bee_verification && <Flag label="BEE" title="BEE level requires third-party verification" cls="bg-amber-100 text-amber-800" />}
                       {!!row.floor_ie_oversight && <Flag label="IE" title="IE oversight required — critical trade" cls="bg-[oklch(0.90_0.015_250)] text-[oklch(0.17_0.010_250)]" />}
-                      {!!row.is_reportable && <Flag label="⚑" title="Regulator crossed (W140 SIGNATURE)" cls="bg-red-200 text-red-800" />}
+                      {!!row.is_reportable && <Flag label="⚑" title="Regulator crossed" cls="bg-red-200 text-red-800" />}
                       {row.insurance_near_expiry_live && <Flag label="INS!" title="Insurance expiry within 60 days or already expired" cls="bg-orange-100 text-orange-800" />}
                     </div>
                   </td>
@@ -596,7 +596,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
             {selected.is_signature_live && (
               <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
                 <p className="text-xs font-semibold text-red-900">
-                  W140 SIGNATURE — Regulator notification required
+                  Regulator notification required
                 </p>
                 <p className="text-xs text-red-800 mt-0.5">
                   OHSA Construction Regs.6: this termination for safety_violation or OHSA safety incident requires mandatory
@@ -795,7 +795,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
               (ACTIONS[selected.chain_status] ?? []).some(a => a.action === 'terminate_subcontractor') && (
                 <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
                   <p className="text-xs font-semibold text-amber-900">
-                    W140 SIGNATURE — terminate for safety_violation crosses regulator EVERY tier
+                    Terminate for safety_violation crosses regulator EVERY tier
                   </p>
                   <p className="text-xs text-amber-800 mt-0.5">
                     If termination_cause = safety_violation, mandatory OHSA notification to Department of Labour
@@ -858,7 +858,7 @@ export default function IppSubcontractorTab({ readOnly = false }: Props) {
             {isSignatureCreate && (
               <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
                 <p className="text-xs font-semibold text-red-900">
-                  W140 SIGNATURE — suspend/terminate may trigger regulator notification
+                  Suspend/terminate may trigger regulator notification
                 </p>
                 <p className="text-xs text-red-800 mt-0.5">
                   OHSA notification or IE oversight flag is set. Any safety suspension or termination for

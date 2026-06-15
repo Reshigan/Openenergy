@@ -335,7 +335,24 @@ function RegApplicationsTab() {
 }
 
 function RegHearingsTab() {
-  return <Section title="Hearings"><div className="widget-empty">Hearing schedule view — coming as part of the regulator workstation.</div></Section>;
+  const [rows, setRows] = useState<any[]>([]);
+  useEffect(() => { void api.get('/regulator-l5/hearings').then((r) => setRows(r.data?.data || [])); }, []);
+  return (
+    <Section title="Hearings">
+      <Table headers={['Application', 'Scheduled', 'Venue', 'Attendees', 'Status']}>
+        {rows.map((r) => (
+          <tr key={r.id}>
+            <td className="font-mono text-[10px]">{r.application_id}</td>
+            <td className="font-mono text-[10px]">{r.scheduled_at ? new Date(r.scheduled_at).toLocaleString() : '—'}</td>
+            <td>{r.venue || '—'}</td>
+            <td className="text-right font-mono">{r.attendee_count ?? '—'}</td>
+            <td><Pill status={r.status} /></td>
+          </tr>
+        ))}
+        {!rows.length && <Empty cols={5} />}
+      </Table>
+    </Section>
+  );
 }
 
 function RegDecisionsTab() {
@@ -382,7 +399,26 @@ function RegAppealsTab() {
 }
 
 function RegAuditsTab() {
-  return <Section title="Compliance audits"><div className="widget-empty">Open compliance audits from the regulator workstation.</div></Section>;
+  const [rows, setRows] = useState<any[]>([]);
+  useEffect(() => { void api.get('/regulator-l5/audits').then((r) => setRows(r.data?.data || [])); }, []);
+  return (
+    <Section title="Compliance audits">
+      <Table headers={['Licensee', 'Type', 'Scope', 'Started', 'Findings', 'Penalty', 'Status']}>
+        {rows.map((r) => (
+          <tr key={r.id}>
+            <td className="font-mono text-[10px]">{r.licensee_id}</td>
+            <td>{String(r.audit_type || '').replace(/_/g, ' ')}</td>
+            <td>{r.scope || '—'}</td>
+            <td className="font-mono text-[10px]">{r.started_at ? new Date(r.started_at).toLocaleDateString() : '—'}</td>
+            <td className="text-right font-mono">{r.findings_count ?? 0}</td>
+            <td className="text-right font-mono">{r.penalty_zar ? formatZAR(r.penalty_zar) : '—'}</td>
+            <td><Pill status={r.status} /></td>
+          </tr>
+        ))}
+        {!rows.length && <Empty cols={7} />}
+      </Table>
+    </Section>
+  );
 }
 
 // ═════════════════════════════════════════════════════════════════════════

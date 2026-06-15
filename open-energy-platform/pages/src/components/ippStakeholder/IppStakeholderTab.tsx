@@ -540,7 +540,7 @@ export default function IppStakeholderTab({ readOnly = false }: Props) {
             {/* W134 SIGNATURE warning */}
             {selected.chain_status === 'resistant' && (selected.power_score ?? 0) >= 4 && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                <p className="text-xs font-semibold text-red-800">W134 SIGNATURE — High-power resistant stakeholder</p>
+                <p className="text-xs font-semibold text-red-800">High-power resistant stakeholder</p>
                 <p className="text-xs text-red-700 mt-0.5">
                   Power score {selected.power_score} ≥ 4. Escalating will trigger a mandatory regulator crossing
                   (REIPPPP S4 + IFC PS1 community-participation risk). Confirm before proceeding.

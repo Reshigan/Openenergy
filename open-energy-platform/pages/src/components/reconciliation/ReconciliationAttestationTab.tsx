@@ -312,8 +312,8 @@ const ACTION_FOR_STATE: Partial<Record<RattStatus, ActionKind>> = {
 
 const ACTION_LABEL: Record<ActionKind, string> = {
   'define-scope':                'Define scope (reconciler - feeds, materiality, period)',
-  'ingest-feeds':                'Ingest feeds (reconciler - SAP/Oracle/SAGE/STRATE/SWIFT/W118)',
-  'pair-blocks':                 'Pair W118 blocks (reconciler - pct paired auto-derived)',
+  'ingest-feeds':                'Ingest feeds (reconciler - SAP/Oracle/SAGE/STRATE/SWIFT/audit-chain)',
+  'pair-blocks':                 'Pair audit-chain blocks (reconciler - pct paired auto-derived)',
   'compute-variance':            'Compute variance (controller - ZAR totals vs materiality)',
   'classify-break':              'Classify break (controller - 8 break taxonomies)',
   'log-root-cause':              'Log root cause (controller - 12 root-cause taxonomies)',
@@ -326,7 +326,7 @@ const ACTION_LABEL: Record<ActionKind, string> = {
   'suspend':                     'Suspend (CFO - regulator-audit-in-progress; resume to scope)',
   'resume-from-suspend':         'Resume (CFO - back to scope_defined)',
   'restate':                     'Restate (CFO - supersede signed pack; crosses quarterly+)',
-  'escalate-to-audit-committee': 'Escalate to AC (W120 SIGNATURE: regulator EVERY tier)',
+  'escalate-to-audit-committee': 'Escalate to AC (SIGNATURE: regulator EVERY tier)',
   'lift-escalation':             'Lift escalation (audit_committee_chair - resume to review)',
 };
 
@@ -521,13 +521,13 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
         const ingested = await prompt('Feeds ingested (count):', String(row.feeds_ingested_count ?? 0));
         if (ingested !== null) body.feeds_ingested_count = Number(ingested);
       } else if (action === 'pair-blocks') {
-        const lo = await prompt('W118 block height range low (MANDATORY bridge):', String(row.w118_block_height_range_low ?? ''));
+        const lo = await prompt('Audit-chain block height range low (MANDATORY bridge):', String(row.w118_block_height_range_low ?? ''));
         if (lo === null) return;
         body.w118_block_height_range_low = Number(lo);
-        const hi = await prompt('W118 block height range high:', String(row.w118_block_height_range_high ?? lo));
+        const hi = await prompt('Audit-chain block height range high:', String(row.w118_block_height_range_high ?? lo));
         if (hi === null) return;
         body.w118_block_height_range_high = Number(hi);
-        const w119 = await prompt('W119 export pack ref (MANDATORY bridge):', row.w119_export_pack_ref ?? '');
+        const w119 = await prompt('Regulator-export pack ref (MANDATORY bridge):', row.w119_export_pack_ref ?? '');
         if (w119) body.w119_export_pack_ref = w119;
         const paired = await prompt('Feeds paired (count):', String(row.feeds_paired_count ?? 0));
         if (paired !== null) body.feeds_paired_count = Number(paired);
@@ -600,7 +600,7 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
         body.restate_reason = reason;
       } else if (action === 'escalate-to-audit-committee') {
         const reason = await prompt(
-          'Escalation reason. W120 SIGNATURE: ICFR-DEFICIENCY-ATTEST crosses regulator EVERY tier (JSE 8.62 + s30).',
+          'Escalation reason. SIGNATURE: ICFR-DEFICIENCY-ATTEST crosses regulator EVERY tier (JSE 8.62 + s30).',
           row.escalation_reason ?? '',
         );
         if (reason === null) return;
@@ -631,12 +631,12 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
     <div className="text-[12px]" style={{ color: 'oklch(0.17 0.010 250)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">Reconciliation attestation (W120)</h2>
+          <h2 className="text-base font-semibold text-[#0c2a4d]">Reconciliation attestation</h2>
           <p className="text-[11px] text-[#4a5568]">
             12-state ICFR attestation chain reconciling SAP S/4HANA, Oracle Fusion, SAGE 300, Workday, STRATE,
-            SWIFT MT940, NERSA/IPPO/DMRE inboxes, bank statements against W118 published blocks.
+            SWIFT MT940, NERSA/IPPO/DMRE inboxes, bank statements against published audit-chain blocks.
             INVERTED SLA HOURS (daily 24h / weekly 96h / monthly 168h / quarterly 360h / annual 720h).
-            FLOOR-AT-QUARTERLY {'≥'}1 flag / FLOOR-AT-ANNUAL {'≥'}2 flags. Mandatory W118 + W119 bridges.
+            FLOOR-AT-QUARTERLY {'≥'}1 flag / FLOOR-AT-ANNUAL {'≥'}2 flags. Mandatory audit-chain + regulator-export bridges.
             SIGNATURE: escalate-to-audit-committee crosses regulator EVERY tier.
           </p>
         </div>
@@ -681,13 +681,13 @@ export function ReconciliationAttestationTab({ regulatorView }: Props = {}) {
         <span>ICFR avg: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.icfr_avg}/140</span></span>
         <span>Variance avg: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.variance_avg}/140</span></span>
         <span>Remediation avg: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.remediation_avg}/140</span></span>
-        <span>W118: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w118_bridged_count}</span></span>
-        <span>W119: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w119_bridged_count}</span></span>
-        <span>W113: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w113_bridged_count}</span></span>
-        <span>W114: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w114_bridged_count}</span></span>
-        <span>W115: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w115_bridged_count}</span></span>
-        <span>W116: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w116_bridged_count}</span></span>
-        <span>W117: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w117_bridged_count}</span></span>
+        <span>Audit chain: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w118_bridged_count}</span></span>
+        <span>Regulator export: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w119_bridged_count}</span></span>
+        <span>EVM: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w113_bridged_count}</span></span>
+        <span>Doc control: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w114_bridged_count}</span></span>
+        <span>Submittal: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w115_bridged_count}</span></span>
+        <span>RFI: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w116_bridged_count}</span></span>
+        <span>Change order: <span className="font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>{kpis.w117_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / priority pills */}
@@ -952,17 +952,17 @@ function Drawer({
           <div>
             <div className="mb-1 text-[10px] uppercase tracking-wider text-[#6b7685]">Bridges</div>
             <ul className="space-y-0.5 text-[11px] text-[#4a5568]">
-              <li>W118 audit chain: <span className={row.bridges_to_w118_audit_chain_live ? 'text-[#1f5b3a] font-semibold' : 'text-[#9b1f1f] font-semibold'}>
+              <li>Audit chain: <span className={row.bridges_to_w118_audit_chain_live ? 'text-[#1f5b3a] font-semibold' : 'text-[#9b1f1f] font-semibold'}>
                 {row.bridges_to_w118_audit_chain_live ? 'BRIDGED (mandatory)' : 'MISSING (mandatory)'}
               </span></li>
-              <li>W119 regulator export: <span className={row.bridges_to_w119_regulator_export_chain_live ? 'text-[#1f5b3a] font-semibold' : 'text-[#9b1f1f] font-semibold'}>
+              <li>Regulator export: <span className={row.bridges_to_w119_regulator_export_chain_live ? 'text-[#1f5b3a] font-semibold' : 'text-[#9b1f1f] font-semibold'}>
                 {row.bridges_to_w119_regulator_export_chain_live ? 'BRIDGED (mandatory)' : 'MISSING (mandatory)'}
               </span></li>
-              <li>W113 EVM: <span className={row.bridges_to_w113_evm_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w113_evm_chain_live ? 'bridged' : '-'}</span></li>
-              <li>W114 doc control: <span className={row.bridges_to_w114_doc_control_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w114_doc_control_chain_live ? 'bridged' : '-'}</span></li>
-              <li>W115 submittal: <span className={row.bridges_to_w115_submittal_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w115_submittal_chain_live ? 'bridged' : '-'}</span></li>
-              <li>W116 RFI: <span className={row.bridges_to_w116_rfi_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w116_rfi_chain_live ? 'bridged' : '-'}</span></li>
-              <li>W117 change order: <span className={row.bridges_to_w117_change_order_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w117_change_order_chain_live ? 'bridged' : '-'}</span></li>
+              <li>EVM: <span className={row.bridges_to_w113_evm_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w113_evm_chain_live ? 'bridged' : '-'}</span></li>
+              <li>Doc control: <span className={row.bridges_to_w114_doc_control_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w114_doc_control_chain_live ? 'bridged' : '-'}</span></li>
+              <li>Submittal: <span className={row.bridges_to_w115_submittal_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w115_submittal_chain_live ? 'bridged' : '-'}</span></li>
+              <li>RFI: <span className={row.bridges_to_w116_rfi_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w116_rfi_chain_live ? 'bridged' : '-'}</span></li>
+              <li>Change order: <span className={row.bridges_to_w117_change_order_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w117_change_order_chain_live ? 'bridged' : '-'}</span></li>
             </ul>
           </div>
           <div>

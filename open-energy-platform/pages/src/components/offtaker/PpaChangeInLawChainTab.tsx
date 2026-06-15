@@ -616,7 +616,7 @@ export function PpaChangeInLawChainTab() {
           in law; when a statute, tax or regulation changes after financial close (a carbon-tax rate, a NERSA Grid Code
           amendment, an environmental-licensing condition, an import duty), the affected party tests it against the PPA
           qualifying-change definition and, if it qualifies, seeks relief — a tariff adjustment, lump-sum or term
-          extension. A contested claim goes to arbitration. DISTINCT from W39 indexation (scheduled CPI repricing of an
+          extension. A contested claim goes to arbitration. DISTINCT from scheduled tariff indexation (CPI repricing of an
           UNCHANGED tariff). INVERTED SLA (bigger quantum = deeper test + longer windows). Referring a claim to
           arbitration crosses to the regulator inbox for EVERY tier; granting tariff-affecting relief crosses for a
           GOVERNMENTAL change of material+ quantum; SLA breaches cross for major + critical.

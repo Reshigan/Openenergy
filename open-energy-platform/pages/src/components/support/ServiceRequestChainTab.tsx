@@ -636,7 +636,7 @@ function SrDrawer({
                 {cs === 'submitted' && (
                   <ActionBtn label="Check entitlement (service desk)" onClick={() => {
                     const status = window.prompt('Entitlement status (entitled | not_entitled | contract_expired | overage):') ?? undefined;
-                    const contract = window.prompt('Service contract id (W80, optional):') ?? undefined;
+                    const contract = window.prompt('Service contract id (optional):') ?? undefined;
                     const over = window.prompt('Overage units (optional):') ?? undefined;
                     void doAction('check-entitlement', {
                       entitlement_status: status,
@@ -648,7 +648,7 @@ function SrDrawer({
                 {cs === 'entitlement_checked' && (
                   <ActionBtn label="Request approval (service desk)" onClick={() => {
                     const approver = window.prompt('Approver actor id:') ?? undefined;
-                    const cab = window.confirm('Requires CAB review (W47 change enablement)?');
+                    const cab = window.confirm('Requires CAB review (change enablement)?');
                     void doAction('request-approval', {
                       approver_actor_id: approver,
                       requires_cab_review: cab,
@@ -659,7 +659,7 @@ function SrDrawer({
                   <>
                     <ActionBtn label="Approve (approver)" tone="good" onClick={() => {
                       const conds = window.prompt('Approval conditions (optional):') ?? undefined;
-                      const cabRef = window.prompt('CAB change ref (W47, optional):') ?? undefined;
+                      const cabRef = window.prompt('CAB change ref (optional):') ?? undefined;
                       void doAction('approve', {
                         approval_conditions_text: conds,
                         cab_change_id: cabRef,

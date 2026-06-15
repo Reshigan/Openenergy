@@ -540,14 +540,14 @@ function getActions(row: IprRow): ChainAction[] {
   if (CAN_CONVERT_TO_CHANGE_ORDER.includes(s)) {
     actions.push({
       key: 'convert-to-change-order',
-      label: 'Convert to change order (Engineer — W117 link; construction_blocking + emergency_safety only)',
+      label: 'Convert to change order (Engineer — change-order link; construction_blocking + emergency_safety only)',
       tone: 'warn',
       // crosses construction_blocking + emergency_safety only (W117 auto-link)
       cascadeTo: (row.current_tier === 'construction_blocking' || row.current_tier === 'emergency_safety') ? ['regulator'] : [],
       fields: [
         {
           key: 'linked_change_order_ref',
-          label: 'Linked Change-Order reference (W117 link). NOTE: construction_blocking + emergency_safety only.',
+          label: 'Linked Change-Order reference. NOTE: construction_blocking + emergency_safety only.',
           type: 'text',
           required: true,
           placeholder: row.linked_change_order_ref ?? '',
@@ -587,7 +587,7 @@ function getActions(row: IprRow): ChainAction[] {
       fields: [
         {
           key: 'escalation_reason',
-          label: 'Escalation reason. NOTE: W116 SIGNATURE SAFETY-RFI-ESCALATE — crosses regulator EVERY tier when safety_hazard_identified OR regulatory_inquiry_triggered.',
+          label: 'Escalation reason. NOTE: SIGNATURE SAFETY-RFI-ESCALATE — crosses regulator EVERY tier when safety_hazard_identified OR regulatory_inquiry_triggered.',
           type: 'textarea',
           required: true,
           placeholder: row.escalation_reason ?? '',
@@ -607,7 +607,7 @@ function getActions(row: IprRow): ChainAction[] {
       fields: [
         {
           key: 'reject_reason',
-          label: 'Reject reason (required). NOTE: W116 SIGNATURE — crosses regulator EVERY tier when contractor_claim_basis AND cost_impact_zar ≥ R10m.',
+          label: 'Reject reason (required). NOTE: SIGNATURE — crosses regulator EVERY tier when contractor_claim_basis AND cost_impact_zar ≥ R10m.',
           type: 'textarea',
           required: true,
           placeholder: row.reject_reason ?? '',
@@ -667,8 +667,8 @@ function renderDetail(row: IprRow): React.ReactNode {
           <DetailPair label="Cost impact"             value={fmtZar(row.cost_impact_zar)} />
           <DetailPair label="Schedule impact"         value={`${row.schedule_impact_days}d`} />
           <DetailPair label="Hash chain position"     value={String(row.hash_chain_position)} />
-          <DetailPair label="Merkle segment (W118)"   value={(row.merkle_root_segment ?? '-').slice(0, 12) + '...'} />
-          <DetailPair label="W117 CO link"            value={row.linked_change_order_ref ?? '-'} />
+          <DetailPair label="Merkle segment"           value={(row.merkle_root_segment ?? '-').slice(0, 12) + '...'} />
+          <DetailPair label="Change-order link"        value={row.linked_change_order_ref ?? '-'} />
           <DetailPair label="Last responder"          value={row.last_responder_party ?? '-'} />
           <DetailPair label="Ball-in-court"           value={row.current_ball_in_court_party ?? '-'} />
         </div>
@@ -700,16 +700,16 @@ function renderDetail(row: IprRow): React.ReactNode {
       {/* Bridges */}
       <div>
         <div className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: TX3 }}>
-          6-bridge architecture (W114 / W115 / W112 / W113 / W19 / W20)
+          6-bridge architecture (doc-control / submittals / schedule / EVM / procurement / COD)
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
-          <DetailPair label="W114 doc-control ref" value={row.document_control_ref ?? '-'} />
-          <DetailPair label="W115 submittal ref"   value={row.submittal_ref ?? '-'} />
-          <DetailPair label="W112 schedule ref"    value={row.schedule_ref ?? '-'} />
-          <DetailPair label="W113 EVM ref"         value={row.evm_ref ?? '-'} />
-          <DetailPair label="W19 procurement ref"  value={row.procurement_ref ?? '-'} />
-          <DetailPair label="W20 COD ref"          value={row.cod_ref ?? '-'} />
-          <DetailPair label="W117 CO ref"          value={row.linked_change_order_ref ?? '-'} />
+          <DetailPair label="Doc-control ref"      value={row.document_control_ref ?? '-'} />
+          <DetailPair label="Submittal ref"        value={row.submittal_ref ?? '-'} />
+          <DetailPair label="Schedule ref"         value={row.schedule_ref ?? '-'} />
+          <DetailPair label="EVM ref"              value={row.evm_ref ?? '-'} />
+          <DetailPair label="Procurement ref"      value={row.procurement_ref ?? '-'} />
+          <DetailPair label="COD ref"              value={row.cod_ref ?? '-'} />
+          <DetailPair label="Change-order ref"     value={row.linked_change_order_ref ?? '-'} />
           <DetailPair label="Regulator inbox ref"  value={row.regulator_inbox_ref ?? '-'} />
           <DetailPair label="Regulator ref"        value={row.regulator_ref ?? '-'} />
           <DetailPair label="Stoppage started at"  value={fmtDate(row.stoppage_started_at)} />
@@ -916,9 +916,9 @@ export function IppRfiChainTab() {
           with rejected (terminal) / void (terminal, pre-triage pull) / escalated (soft) branches.
           URGENT SLA polarity (HOURS) on submitted: emergency_safety 4h, construction_blocking 24h, coordination 72h, clarification 168h
           (higher RFI-criticality gets TIGHTEST window). FLOOR-AT-EMERGENCY-SAFETY on ANY one of 5 contextual flags.
-          SIGNATURE: escalate crosses regulator EVERY tier when safety_hazard_identified OR regulatory_inquiry_triggered (W116 SAFETY-RFI-ESCALATE);
+          SIGNATURE: escalate crosses regulator EVERY tier when safety_hazard_identified OR regulatory_inquiry_triggered (SAFETY-RFI-ESCALATE);
           reject crosses EVERY tier when contractor_claim_basis AND cost_impact_zar ≥ R10m; close_out never crosses regulator.
-          4-party split: contractor_PM → doc_controller → engineer → owner_rep. 6 bridges: W114 / W115 / W112 / W113 / W19 / W20.
+          4-party split: contractor_PM → doc_controller → engineer → owner_rep. 6 bridges: doc-control / submittals / schedule / EVM / procurement / COD.
         </p>
       </header>
 
@@ -954,12 +954,12 @@ export function IppRfiChainTab() {
         <span>Completeness avg: <span style={{ fontWeight: 600 }}>{kpis.completeness_avg}/130</span></span>
         <span>Cost impact: <span style={{ fontWeight: 600, color: BAD }}>{fmtZar(kpis.cost_impact_zar_total)}</span></span>
         <span>Sched days: <span style={{ fontWeight: 600, color: WARN }}>{kpis.schedule_impact_days_total}</span></span>
-        <span>W114 (doc): <span style={{ fontWeight: 600 }}>{kpis.document_control_bridged_count}</span></span>
-        <span>W115 (sub): <span style={{ fontWeight: 600 }}>{kpis.submittal_bridged_count}</span></span>
-        <span>W112 (sch): <span style={{ fontWeight: 600 }}>{kpis.schedule_bridged_count}</span></span>
-        <span>W113 (EVM): <span style={{ fontWeight: 600 }}>{kpis.evm_bridged_count}</span></span>
-        <span>W19 (proc): <span style={{ fontWeight: 600 }}>{kpis.procurement_bridged_count}</span></span>
-        <span>W20 (COD): <span style={{ fontWeight: 600 }}>{kpis.cod_bridged_count}</span></span>
+        <span>Doc: <span style={{ fontWeight: 600 }}>{kpis.document_control_bridged_count}</span></span>
+        <span>Sub: <span style={{ fontWeight: 600 }}>{kpis.submittal_bridged_count}</span></span>
+        <span>Sch: <span style={{ fontWeight: 600 }}>{kpis.schedule_bridged_count}</span></span>
+        <span>EVM: <span style={{ fontWeight: 600 }}>{kpis.evm_bridged_count}</span></span>
+        <span>Proc: <span style={{ fontWeight: 600 }}>{kpis.procurement_bridged_count}</span></span>
+        <span>COD: <span style={{ fontWeight: 600 }}>{kpis.cod_bridged_count}</span></span>
       </div>
 
       {/* Row 1: action / lifecycle filter pills */}

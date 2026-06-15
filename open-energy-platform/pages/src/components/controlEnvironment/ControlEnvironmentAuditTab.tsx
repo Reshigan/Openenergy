@@ -585,14 +585,14 @@ function renderDetail(row: CeaRow): React.ReactNode {
         <div>
           <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em', color: TX3, marginBottom: 4 }}>Bridges</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: 11, color: TX2 }}>
-            <span>W118 audit chain: <span style={{ color: row.bridges_to_w118_audit_chain_live ? GOOD : BAD, fontWeight: 700 }}>{row.bridges_to_w118_audit_chain_live ? 'BRIDGED (mandatory)' : 'MISSING (mandatory)'}</span></span>
-            <span>W119 regulator export: <span style={{ color: row.bridges_to_w119_regulator_export_chain_live ? GOOD : TX3 }}>{row.bridges_to_w119_regulator_export_chain_live ? 'bridged' : '-'}</span></span>
-            <span>W120 reconciliation attest: <span style={{ color: row.bridges_to_w120_reconciliation_attestation_chain_live ? GOOD : TX3 }}>{row.bridges_to_w120_reconciliation_attestation_chain_live ? 'bridged' : '-'}</span></span>
-            <span>W113 EVM: <span style={{ color: row.bridges_to_w113_evm_chain_live ? GOOD : TX3 }}>{row.bridges_to_w113_evm_chain_live ? 'bridged' : '-'}</span></span>
-            <span>W114 doc control: <span style={{ color: row.bridges_to_w114_doc_control_chain_live ? GOOD : TX3 }}>{row.bridges_to_w114_doc_control_chain_live ? 'bridged' : '-'}</span></span>
-            <span>W115 submittal: <span style={{ color: row.bridges_to_w115_submittal_chain_live ? GOOD : TX3 }}>{row.bridges_to_w115_submittal_chain_live ? 'bridged' : '-'}</span></span>
-            <span>W116 RFI: <span style={{ color: row.bridges_to_w116_rfi_chain_live ? GOOD : TX3 }}>{row.bridges_to_w116_rfi_chain_live ? 'bridged' : '-'}</span></span>
-            <span>W117 change order: <span style={{ color: row.bridges_to_w117_change_order_chain_live ? GOOD : TX3 }}>{row.bridges_to_w117_change_order_chain_live ? 'bridged' : '-'}</span></span>
+            <span>Audit chain: <span style={{ color: row.bridges_to_w118_audit_chain_live ? GOOD : BAD, fontWeight: 700 }}>{row.bridges_to_w118_audit_chain_live ? 'BRIDGED (mandatory)' : 'MISSING (mandatory)'}</span></span>
+            <span>Regulator export: <span style={{ color: row.bridges_to_w119_regulator_export_chain_live ? GOOD : TX3 }}>{row.bridges_to_w119_regulator_export_chain_live ? 'bridged' : '-'}</span></span>
+            <span>Reconciliation attest: <span style={{ color: row.bridges_to_w120_reconciliation_attestation_chain_live ? GOOD : TX3 }}>{row.bridges_to_w120_reconciliation_attestation_chain_live ? 'bridged' : '-'}</span></span>
+            <span>EVM: <span style={{ color: row.bridges_to_w113_evm_chain_live ? GOOD : TX3 }}>{row.bridges_to_w113_evm_chain_live ? 'bridged' : '-'}</span></span>
+            <span>Doc control: <span style={{ color: row.bridges_to_w114_doc_control_chain_live ? GOOD : TX3 }}>{row.bridges_to_w114_doc_control_chain_live ? 'bridged' : '-'}</span></span>
+            <span>Submittal: <span style={{ color: row.bridges_to_w115_submittal_chain_live ? GOOD : TX3 }}>{row.bridges_to_w115_submittal_chain_live ? 'bridged' : '-'}</span></span>
+            <span>RFI: <span style={{ color: row.bridges_to_w116_rfi_chain_live ? GOOD : TX3 }}>{row.bridges_to_w116_rfi_chain_live ? 'bridged' : '-'}</span></span>
+            <span>Change order: <span style={{ color: row.bridges_to_w117_change_order_chain_live ? GOOD : TX3 }}>{row.bridges_to_w117_change_order_chain_live ? 'bridged' : '-'}</span></span>
           </div>
         </div>
         <div>
@@ -779,9 +779,9 @@ export function ControlEnvironmentAuditTab({ regulatorView }: Props = {}) {
     <div style={{ fontSize: 12, color: TX1 }}>
       <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <div>
-          <h2 style={{ fontSize: 16, fontWeight: 600, color: TX1, margin: 0 }}>Control-environment audit (W121)</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: TX1, margin: 0 }}>Control-environment audit</h2>
           <p style={{ fontSize: 11, color: TX2, margin: '4px 0 0' }}>
-            12-state per-control evidence dossier — Design / ToD / ToOE / deficiency / remediation — against W118 chain + W119 packs + W120 attestations.
+            12-state per-control evidence dossier — Design / ToD / ToOE / deficiency / remediation — against the audit chain + regulator export packs + reconciliation attestations.
             INVERTED SLA HOURS (preventive 168 / detective 240 / corrective 360 / directive 480 / governance 720).
             FLOOR-AT-DIRECTIVE {'>'}=1 flag / FLOOR-AT-GOVERNANCE {'>'}=2 flags. SIGNATURE: flag-deficient EVERY tier when material_weakness_suspected.
           </p>
@@ -820,14 +820,14 @@ export function ControlEnvironmentAuditTab({ regulatorView }: Props = {}) {
         <span>ToD avg: <strong style={{ color: TX1 }}>{kpis.tod_avg}/130</strong></span>
         <span>ToOE avg: <strong style={{ color: TX1 }}>{kpis.tooe_avg}/130</strong></span>
         <span>Evidence avg: <strong style={{ color: TX1 }}>{kpis.evidence_avg}/130</strong></span>
-        <span>W118: <strong style={{ color: TX1 }}>{kpis.w118_bridged_count}</strong></span>
-        <span>W119: <strong style={{ color: TX1 }}>{kpis.w119_bridged_count}</strong></span>
-        <span>W120: <strong style={{ color: TX1 }}>{kpis.w120_bridged_count}</strong></span>
-        <span>W113: <strong style={{ color: TX1 }}>{kpis.w113_bridged_count}</strong></span>
-        <span>W114: <strong style={{ color: TX1 }}>{kpis.w114_bridged_count}</strong></span>
-        <span>W115: <strong style={{ color: TX1 }}>{kpis.w115_bridged_count}</strong></span>
-        <span>W116: <strong style={{ color: TX1 }}>{kpis.w116_bridged_count}</strong></span>
-        <span>W117: <strong style={{ color: TX1 }}>{kpis.w117_bridged_count}</strong></span>
+        <span>Audit chain: <strong style={{ color: TX1 }}>{kpis.w118_bridged_count}</strong></span>
+        <span>Regulator export: <strong style={{ color: TX1 }}>{kpis.w119_bridged_count}</strong></span>
+        <span>Reconciliation: <strong style={{ color: TX1 }}>{kpis.w120_bridged_count}</strong></span>
+        <span>EVM: <strong style={{ color: TX1 }}>{kpis.w113_bridged_count}</strong></span>
+        <span>Doc control: <strong style={{ color: TX1 }}>{kpis.w114_bridged_count}</strong></span>
+        <span>Submittal: <strong style={{ color: TX1 }}>{kpis.w115_bridged_count}</strong></span>
+        <span>RFI: <strong style={{ color: TX1 }}>{kpis.w116_bridged_count}</strong></span>
+        <span>Change order: <strong style={{ color: TX1 }}>{kpis.w117_bridged_count}</strong></span>
       </div>
 
       {/* Filter pills — 4 rows */}
