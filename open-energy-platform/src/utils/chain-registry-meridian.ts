@@ -4039,6 +4039,128 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     initiation: null,
   },
 
+  // ───────── OFFTAKER — Phase E descriptors ─────────
+  // Two offtaker chains with verb-in-body transitions (POST /:id/action,
+  // {action}). No dedicated *_events table — Thread reads audit_events.
+  // Husk tabs live on OfftakerWorkstationPage.
+
+  // W229 — Virtual PPA / CfD settlement (financial CfD differential settlement;
+  // reference-price → statement → ack/dispute → recalc/ISDA → payment).
+  // Two-party (generator_id seller, offtaker_id buyer); WRITE {admin, support,
+  // offtaker, ipp_developer} — admin/support gate the calculation/recalc verbs,
+  // counterparties may acknowledge/dispute/record payment. Quantum is the ZAR
+  // settlement differential. No human ref column distinct from the CfD contract.
+  {
+    key: 'virtual_ppa_settlement', wave: 229, table: 'oe_virtual_ppa_settlements',
+    title: 'Virtual PPA / CfD settlement', refCol: 'contract_ref', titleCol: 'settlement_period',
+    quantumCol: 'settlement_amount_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline',
+    terminal: ['settled', 'written_off', 'cancelled'],
+    counterpartyCol: 'generator_id',
+    lanes: { offtaker: 'operations_offtaker', ipp_developer: 'finance' },
+    eventsTable: null, eventsFk: null,
+    actions: [
+      { action: 'issue_statement', label: 'Issue statement', tone: 'primary',
+        path: '/api/offtaker/virtual-ppa-settlement/:id/action', method: 'POST', body: { action: 'issue_statement' },
+        roles: ['admin', 'support'],
+        cascadeHint: 'Issues the differential settlement statement to both parties; arms acknowledgement and the payment window.' },
+      { action: 'acknowledge', label: 'Acknowledge',
+        path: '/api/offtaker/virtual-ppa-settlement/:id/action', method: 'POST', body: { action: 'acknowledge' },
+        roles: ['admin', 'support', 'offtaker', 'ipp_developer'],
+        cascadeHint: 'Counterparty accepts the statement; the payment clock keeps running toward settlement.' },
+      { action: 'dispute', label: 'Dispute', tone: 'oxide',
+        path: '/api/offtaker/virtual-ppa-settlement/:id/action', method: 'POST', body: { action: 'dispute' },
+        roles: ['admin', 'support', 'offtaker', 'ipp_developer'],
+        cascadeHint: 'Raises a dispute on the differential; arms recalculation or ISDA determination.',
+        fields: [
+          { key: 'reason_detail', label: 'Dispute reason', type: 'string', required: true },
+        ],
+      },
+      { action: 'record_payment', label: 'Record payment',
+        path: '/api/offtaker/virtual-ppa-settlement/:id/action', method: 'POST', body: { action: 'record_payment' },
+        roles: ['admin', 'support', 'offtaker', 'ipp_developer'],
+        cascadeHint: 'Records the differential payment in full; settles and terminates the chain.',
+        fields: [
+          { key: 'payment_ref', label: 'Payment reference', type: 'evidence' },
+        ],
+      },
+      { action: 'write_off', label: 'Write off', tone: 'oxide',
+        path: '/api/offtaker/virtual-ppa-settlement/:id/action', method: 'POST', body: { action: 'write_off' },
+        roles: ['admin', 'support'],
+        cascadeHint: 'Writes off an uncollectable differential; terminates the chain.',
+        fields: [
+          { key: 'reason_detail', label: 'Write-off note', type: 'string', required: true },
+        ],
+      },
+    ],
+    filters: [
+      { key: 'calculating', label: 'Calculating', statuses: ['reference_price_pending', 'calculated', 'recalculating', 'isda_determination'] },
+      { key: 'settling', label: 'Settling', statuses: ['statement_issued', 'payment_pending', 'disputed', 'partially_settled', 'overdue'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['settled', 'written_off', 'cancelled'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Settlements', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+      { key: 'differential', label: 'Net differential', compute: 'sum_quantum' },
+    ],
+  },
+
+  // W219 — Wheeling access (transmission/distribution wheeling agreement
+  // lifecycle; application → feasibility → impact → terms → negotiation →
+  // agreement → active → modification/renewal). WRITE {admin, offtaker,
+  // grid_operator, support} — the offtaker requests, the SO assesses/issues.
+  // No human ref or ZAR quantum (capacity is physical, MW); descriptive route
+  // text. Both write parties share the offtaker community lane convention.
+  {
+    key: 'wheeling_access', wave: 219, table: 'oe_wheeling_access',
+    title: 'Wheeling access', refCol: 'id', titleCol: 'wheeling_route_description',
+    quantumCol: null, statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline',
+    terminal: ['terminated', 'expired', 'withdrawn'],
+    counterpartyCol: null,
+    lanes: { offtaker: 'contracts', grid_operator: 'operations_grid' },
+    eventsTable: null, eventsFk: null,
+    actions: [
+      { action: 'issue_terms', label: 'Issue terms', tone: 'primary',
+        path: '/api/wheeling-access/:id/action', method: 'POST', body: { action: 'issue_terms' },
+        roles: ['admin', 'grid_operator', 'support'],
+        cascadeHint: 'SO issues proposed wheeling terms after feasibility and impact assessment; arms negotiation.' },
+      { action: 'execute_agreement', label: 'Execute agreement',
+        path: '/api/wheeling-access/:id/action', method: 'POST', body: { action: 'execute_agreement' },
+        roles: ['admin', 'offtaker', 'grid_operator', 'support'],
+        cascadeHint: 'Signs the wheeling agreement after negotiation; arms activation.',
+        fields: [
+          { key: 'reason_detail', label: 'Execution note', type: 'string' },
+        ],
+      },
+      { action: 'activate', label: 'Activate',
+        path: '/api/wheeling-access/:id/action', method: 'POST', body: { action: 'activate' },
+        roles: ['admin', 'grid_operator', 'support'],
+        cascadeHint: 'Activates the executed wheeling agreement; transmission access goes live.' },
+      { action: 'terminate', label: 'Terminate', tone: 'oxide',
+        path: '/api/wheeling-access/:id/action', method: 'POST', body: { action: 'terminate' },
+        roles: ['admin', 'offtaker', 'grid_operator', 'support'],
+        cascadeHint: 'Terminates the wheeling agreement; transmission access closes and the chain terminates.',
+        fields: [
+          { key: 'reason_detail', label: 'Termination reason', type: 'string', required: true },
+        ],
+      },
+      { action: 'withdraw', label: 'Withdraw', tone: 'ghost',
+        path: '/api/wheeling-access/:id/action', method: 'POST', body: { action: 'withdraw' },
+        roles: ['admin', 'offtaker', 'support'],
+        cascadeHint: 'Withdraws the wheeling application before execution; terminates the chain.' },
+    ],
+    filters: [
+      { key: 'assessing', label: 'Assessing', statuses: ['access_application', 'feasibility_study', 'impact_assessment', 'terms_proposed', 'negotiation'] },
+      { key: 'active', label: 'Active', statuses: ['agreement_signed', 'active', 'modification_requested', 'renewal_due'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['terminated', 'expired', 'withdrawn'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Wheeling agreements', compute: 'count' },
+      { key: 'breached', label: 'Breached', compute: 'count_breached' },
+    ],
+  },
+
   // ───────── REGULATOR ─────────
   // Regulator lanes on cross-referred chains (W33/W38/W40/W43/W49/W57/W74 etc.)
   // also appear on entries above/below via the lanes map.
@@ -4610,6 +4732,71 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     ],
   },
 
+  // ───────── REGULATOR — Phase E descriptor ─────────
+  // W106 — Enforcement action s35 (ERA §35 enforcement lifecycle; WRITE
+  // {admin, regulator}). Path-segment transitions POST /:id/<kebab-action>
+  // (no verb-in-body). INVERTED SLA (strategic gets longest runway).
+  // Dedicated event table oe_enforcement_action_events (FK action_id).
+  // Table is oe_enforcement_action (NOT *_s35); entity_type is
+  // enforcement_action_s35. Husk tab lives on RegulatorWorkstationPage.
+  {
+    key: 'enforcement_action_s35', wave: 106, table: 'oe_enforcement_action',
+    title: 'Enforcement action', refCol: 'enforcement_case_number', titleCol: 'title',
+    quantumCol: 'sanction_quantum_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    // settled is a SOFT terminal (accepts archive_action forward); hard terminals
+    // per enforcement-action-s35-spec HARD_TERMINALS.
+    terminal: ['archived', 'withdrawn', 'cancelled'],
+    counterpartyCol: 'respondent_party_id',
+    lanes: { regulator: 'enforcement_regulator' },
+    eventsTable: 'oe_enforcement_action_events', eventsFk: 'action_id',
+    actions: [
+      { action: 'issue-notice', label: 'Issue notice', tone: 'primary',
+        path: '/api/regulator/enforcement-action-s35/chain/:id/issue-notice',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Issues the drafted s35 enforcement notice to the respondent; arms the acknowledgement window.' },
+      { action: 'adjudicate', label: 'Adjudicate',
+        path: '/api/regulator/enforcement-action-s35/chain/:id/adjudicate',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Records the adjudication outcome on the response; arms sanction determination.',
+        fields: [
+          { key: 'narrative', label: 'Adjudication note', type: 'string' },
+        ],
+      },
+      { action: 'impose-sanction', label: 'Impose sanction', tone: 'oxide',
+        path: '/api/regulator/enforcement-action-s35/chain/:id/impose-sanction',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Imposes the sanction quantum and opens the appeal window.',
+        fields: [
+          { key: 'sanction_quantum_zar', label: 'Sanction quantum', type: 'number', unit: 'ZAR' },
+          { key: 'narrative', label: 'Determination note', type: 'string' },
+        ],
+      },
+      { action: 'mark-settled', label: 'Mark settled',
+        path: '/api/regulator/enforcement-action-s35/chain/:id/mark-settled',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Records full settlement of the enforced sanction; arms archival.' },
+      { action: 'withdraw-action', label: 'Withdraw', tone: 'ghost',
+        path: '/api/regulator/enforcement-action-s35/chain/:id/withdraw-action',
+        roles: ['admin', 'regulator'],
+        cascadeHint: 'Withdraws the enforcement action; terminates the chain without sanction.',
+        fields: [
+          { key: 'narrative', label: 'Withdrawal reason', type: 'string', required: true },
+        ],
+      },
+    ],
+    filters: [
+      { key: 'notice', label: 'Notice', statuses: ['triggered', 'notice_drafted', 'notice_issued', 'respondent_acknowledged', 'response_received'] },
+      { key: 'adjudicating', label: 'Adjudicating', statuses: ['adjudication_in_progress', 'adjudicated', 'sanction_imposed', 'appeal_window_open', 'appealed', 're_adjudicated', 'enforcement_in_progress'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['settled', 'archived', 'withdrawn', 'cancelled'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Enforcement actions', compute: 'count' },
+      { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
+      { key: 'sanction', label: 'Sanction quantum', compute: 'sum_quantum' },
+    ],
+  },
+
   // ── SUPPORT (OEM-Support family) ────────────────────────────────────────────
   // W14 support tickets skipped: support_tickets has no oe_/om_ prefix (mig 118)
 
@@ -5095,6 +5282,59 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'total', label: 'Provisioning lines', compute: 'count' },
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
       { key: 'stockout', label: 'Stockout exposure', compute: 'sum_quantum' },
+    ],
+  },
+
+  // ───────── SUPPORT — Phase E descriptor ─────────
+  // W104 — Service request (ITIL service-catalog request lifecycle; WRITE
+  // {admin, support}). Path-segment transitions POST /:id/<kebab-action> (no
+  // verb-in-body). Dedicated event table oe_service_request_chain_events
+  // (FK request_id). Husk tab lives on SupportWorkstationPage.
+  {
+    key: 'service_request', wave: 104, table: 'oe_service_request_chain',
+    title: 'Service request', refCol: 'request_number', titleCol: 'title',
+    quantumCol: 'severity_zar', statusCol: 'chain_status',
+    deadlineCol: 'sla_deadline_at',
+    // fulfilled/closed stay LIVE (soft milestones — verify/close/reopen act from them);
+    // hard terminals per service-request-spec HARD_TERMINALS.
+    terminal: ['archived', 'rejected', 'cancelled'],
+    counterpartyCol: 'requested_for_party_id',
+    lanes: { support: 'itil_service_mgmt' },
+    eventsTable: 'oe_service_request_chain_events', eventsFk: 'request_id',
+    actions: [
+      { action: 'approve', label: 'Approve request', tone: 'primary',
+        path: '/api/support/service-request/chain/:id/approve',
+        roles: ['admin', 'support'],
+        cascadeHint: 'Clears the request after entitlement and approval; arms assignment and fulfilment.' },
+      { action: 'assign', label: 'Assign',
+        path: '/api/support/service-request/chain/:id/assign',
+        roles: ['admin', 'support'],
+        cascadeHint: 'Assigns the request to a fulfiller and starts the fulfilment clock.' },
+      { action: 'mark-fulfilled', label: 'Mark fulfilled',
+        path: '/api/support/service-request/chain/:id/mark-fulfilled',
+        roles: ['admin', 'support'],
+        cascadeHint: 'Records the requested item as delivered; arms user verification.' },
+      { action: 'close', label: 'Close request',
+        path: '/api/support/service-request/chain/:id/close',
+        roles: ['admin', 'support'],
+        cascadeHint: 'Closes the verified request; the chain reaches its closed milestone.' },
+      { action: 'reject', label: 'Reject', tone: 'oxide',
+        path: '/api/support/service-request/chain/:id/reject',
+        roles: ['admin', 'support'],
+        cascadeHint: 'Rejects the request on entitlement or approval grounds; terminates the chain.',
+        fields: [
+          { key: 'notes', label: 'Reason', type: 'string', required: true },
+        ],
+      },
+    ],
+    filters: [
+      { key: 'intake', label: 'Intake', statuses: ['submitted', 'entitlement_checked', 'approval_pending', 'approved'] },
+      { key: 'fulfilling', label: 'Fulfilling', statuses: ['assigned', 'fulfilment_in_progress', 'awaiting_user', 'user_responded', 'fulfilled', 'verified'] },
+      { key: 'resolved', label: 'Resolved', statuses: ['closed', 'archived', 'rejected', 'cancelled'] },
+    ],
+    kpis: [
+      { key: 'total', label: 'Service requests', compute: 'count' },
+      { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
   },
 
