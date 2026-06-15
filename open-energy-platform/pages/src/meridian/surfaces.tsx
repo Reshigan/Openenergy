@@ -528,6 +528,80 @@ const OfftakerAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.la
   return { default: Adapter };
 });
 
+// ── IPP developer surfaces (E2.7 — IppWorkstationPage migration) ─────────────
+// IppWorkstationPage (role `ipp_developer`) carried ~90 tabs. Bucket A: 70 chain listing
+// tabs whose chainKey IS present in MERIDIAN_CHAINS → retired to /ledger/:chainKey (deleted
+// from the husk). The only STALE chainKey was `ipp_acr` (annual-report tab) — NOT in
+// MERIDIAN_CHAINS — so it is treated as Bucket E and its backing widget (IppAnnualReportTab)
+// is extracted/registered here, the chainKey dropped from roleData so Atlas routes to /surface.
+// Non-chain inline tabs EXTRACTED to self-contained `{ role }` bodies (Bucket B/D):
+//   - projects, milestones, schedule (Project controls); insurance (Finance);
+//     community, gtia (Safety & grid); invite_partners (Partnerships) → new files (Bucket B).
+//   - reports — the IPP_REPORTS ReportPanel config + 7 print/CSV report sections (Bucket D) → new file.
+// Already-imported default/named-export tab widgets → registered directly via lazy adapters
+//   (no new file): IppIssuesTab/IppRiskTab/IppStakeholderTab/IppLessonsLearnedTab (Risk & quality,
+//   optional `{ readOnly? }` default exports), IppAnnualReportTab (Bucket E, no props).
+// scada / mqtt-opcua / anomaly-detection / rul-prediction / fault-fingerprint — shared connectors
+//   + ML tabs (NOT chains), already exposed as `ipp_developer:*` via the connector/ML trio above;
+//   the slugs had NO matching roleData feature (UNREACHABLE) so roleData features carrying those
+//   keys were ADDED in E2.7 to reach them.
+// audit → AuditPanel adapter (prefix /ipp, milestone recon hint + lender_ie/nersa/dmre recon
+//   sources carried verbatim); roleData `audit` feature added in E2.7.
+const IppProjects = React.lazy(() => import('./surfaces/ipp/ProjectsSurface'));
+const IppMilestones = React.lazy(() => import('./surfaces/ipp/MilestonesSurface'));
+const IppSchedulePulse = React.lazy(() => import('./surfaces/ipp/SchedulePulseSurface'));
+const IppInsurance = React.lazy(() => import('./surfaces/ipp/InsuranceSurface'));
+const IppCommunity = React.lazy(() => import('./surfaces/ipp/CommunitySurface'));
+const IppGtia = React.lazy(() => import('./surfaces/ipp/GtiaSurface'));
+const IppInvitePartners = React.lazy(() => import('./surfaces/ipp/InvitePartnersSurface'));
+const IppReports = React.lazy(() => import('./surfaces/ipp/ReportsSurface'));
+
+// IppIssuesTab / IppRiskTab / IppStakeholderTab / IppLessonsLearnedTab are default exports taking
+// an optional `{ readOnly? }` prop; wrap each in a lazy adapter that ignores `role` and renders
+// the developer (editable) view unchanged.
+const IppIssues: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const Tab = (await import('../components/ippIssues/IppIssuesTab')).default;
+  const Adapter: SurfaceComponent = () => <Tab />;
+  return { default: Adapter };
+});
+const IppRisk: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const Tab = (await import('../components/ippRisk/IppRiskTab')).default;
+  const Adapter: SurfaceComponent = () => <Tab />;
+  return { default: Adapter };
+});
+const IppStakeholder: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const Tab = (await import('../components/ippStakeholder/IppStakeholderTab')).default;
+  const Adapter: SurfaceComponent = () => <Tab />;
+  return { default: Adapter };
+});
+const IppLessonsLearned: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const Tab = (await import('../components/ippLessonsLearned/IppLessonsLearnedTab')).default;
+  const Adapter: SurfaceComponent = () => <Tab />;
+  return { default: Adapter };
+});
+
+// Bucket E — IppAnnualReportTab (W159) backs the `ipp_acr` tab, but `ipp_acr` is NOT in
+// MERIDIAN_CHAINS, so the widget is extracted here as a no-prop named-export adapter.
+const IppAnnualReport: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { IppAnnualReportTab } = await import('../components/ipp/IppAnnualReportTab');
+  const Adapter: SurfaceComponent = () => <IppAnnualReportTab />;
+  return { default: Adapter };
+});
+
+// Audit tab carried verbatim from the IppWorkstationPage `audit` tab
+// (prefix /ipp, milestone recon hint + lender_ie/nersa/dmre recon sources).
+const IppAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { AuditPanel } = await import('../components/launch/AuditPanel');
+  const Adapter: SurfaceComponent = () => (
+    <AuditPanel
+      prefix="/ipp"
+      reconHint="project_id,milestone_name,satisfied_at,evidence_ref"
+      reconSourceOptions={['lender_ie', 'nersa', 'dmre']}
+    />
+  );
+  return { default: Adapter };
+});
+
 // ── Registry ───────────────────────────────────────────────────────────────
 export const SURFACE_REGISTRY: Record<
   string,
@@ -673,4 +747,21 @@ export const SURFACE_REGISTRY: Record<
   'offtaker:wheeling': OfftakerWheelingCharges,
   'offtaker:obligations': OfftakerObligations,
   'offtaker:audit': OfftakerAuditPanel,
+  // ipp_developer workstation migration (E2.7) — keys match roleData feature keys emitted by Atlas.
+  // scada / mqtt-opcua / anomaly-detection / rul-prediction / fault-fingerprint are registered in
+  // the connector/ML trio above (ipp_developer roleData features added in E2.7 to reach them).
+  'ipp_developer:projects': IppProjects,
+  'ipp_developer:milestones': IppMilestones,
+  'ipp_developer:schedule': IppSchedulePulse,
+  'ipp_developer:insurance': IppInsurance,
+  'ipp_developer:community': IppCommunity,
+  'ipp_developer:gtia': IppGtia,
+  'ipp_developer:invite_partners': IppInvitePartners,
+  'ipp_developer:reports': IppReports,
+  'ipp_developer:issues_log': IppIssues,
+  'ipp_developer:risk_register': IppRisk,
+  'ipp_developer:stakeholder_register': IppStakeholder,
+  'ipp_developer:lessons_learned': IppLessonsLearned,
+  'ipp_developer:annual_report': IppAnnualReport,
+  'ipp_developer:audit': IppAuditPanel,
 };

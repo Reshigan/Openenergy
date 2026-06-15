@@ -113,6 +113,12 @@ const ippDomains: Domain[] = [
       { key: 'project_risk', label: 'Risk analysis (EMV)', chainKey: 'project_risk', description: 'Quantitative risk EMV/SRA analysis.' },
       { key: 'ncr', label: 'Non-conformance', description: 'NCR log and corrective actions.' },
       { key: 'lessons_learned', label: 'Lessons learned', description: 'Project lessons learned register.' },
+      // E2.7 — non-chain report/audit surfaces extracted from the IppWorkstationPage husk
+      // (registered as ipp_developer:* in meridian/surfaces.tsx). annual_report backs W159
+      // IppAnnualReportTab, whose chainKey ipp_acr is NOT in MERIDIAN_CHAINS (Bucket E).
+      { key: 'reports', label: 'Reports & exports', description: 'REIPPPP, milestone-variance, DSCR and generation reports with pivots and certified exports.' },
+      { key: 'annual_report', label: 'Annual compliance report', description: 'NERSA annual compliance report (W159) with CSV / PDF export.' },
+      { key: 'audit', label: 'Audit & compliance', description: 'Tamper-evident audit chain, certified exports and milestone-evidence reconciliation.' },
     ],
   },
   {
@@ -128,6 +134,7 @@ const ippDomains: Domain[] = [
       { key: 'reipppp_reports', label: 'REIPPPP progress report', chainKey: 'ipp_rpr', description: 'Annual REIPPPP progress report (W185).' },
       { key: 'licence_returns', label: 'NERSA licence return', chainKey: 'ipp_anr', description: 'Annual NERSA licence return (W184).' },
       { key: 'annual_audit', label: 'Annual audit', chainKey: 'ipp_aud', description: 'Financial statements and audit (W189).' },
+      { key: 'cbt_sed_report', label: 'CBT/SED DMRE report', chainKey: 'cbt_sed_report', description: 'CBT/SED DMRE report review (W230).' },
     ],
   },
   {
@@ -142,6 +149,27 @@ const ippDomains: Domain[] = [
       { key: 'gca_chain', label: 'Grid connection', chainKey: 'gca_connection', description: 'NERSA Grid Code C-1 connection agreement (W28).' },
       { key: 'method_statements', label: 'Method statements', chainKey: 'ipp_method_statement', description: 'Construction method statement register.' },
       { key: 'warranty_claims', label: 'Warranty / RMA', chainKey: 'warranty_claim', description: 'OEM warranty and RMA claims (W15).' },
+      { key: 'export_curtailments', label: 'Grid export curtailments', chainKey: 'export_curtailment', description: 'Grid export curtailment claims (W221).' },
+      // E2.7 — non-chain inline surfaces extracted from the IppWorkstationPage husk.
+      { key: 'gtia', label: 'GTIA', description: 'Grid Technical Interface Agreement — protection and SCADA settings with the network operator (W224).' },
+      { key: 'community', label: 'Community', description: 'Per-project ED/SED commitments, stakeholder register and engagement log.' },
+    ],
+  },
+  {
+    key: 'predictive_ml',
+    label: 'Predictive ML',
+    icon: '◇',
+    color: 'oklch(0.46 0.16 290)',
+    // E2.7 — shared connector + ML tabs (NOT chains) registered as ipp_developer:* in
+    // meridian/surfaces.tsx via the connector/ML trio adapters. These feature keys carry the
+    // slugs the registry expects so Atlas routes them to /surface (no chainKey).
+    features: [
+      { key: 'scada', label: 'SCADA connectors', description: 'SCADA telemetry connector — real-time plant measurement ingestion.' },
+      { key: 'mqtt-opcua', label: 'MQTT / OPC-UA', description: 'Industrial MQTT / OPC-UA telemetry connector configuration.' },
+      { key: 'anomaly-detection', label: 'Anomaly detection', description: 'Predictive anomaly-detection ML on plant telemetry.' },
+      { key: 'rul-prediction', label: 'RUL prediction', description: 'Remaining-useful-life prediction for plant assets.' },
+      { key: 'fault-fingerprint', label: 'Fault fingerprint', description: 'Physics-based fault-fingerprint ML diagnostics.' },
+      { key: 'invite_partners', label: 'Invite partners', description: 'Invite lenders, offtakers and carbon funds to your projects via a direct registration link.' },
     ],
   },
   {

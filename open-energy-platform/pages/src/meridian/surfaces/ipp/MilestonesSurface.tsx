@@ -1,0 +1,99 @@
+// pages/src/meridian/surfaces/ipp/MilestonesSurface.tsx — IPP "Milestones" surface.
+// Bucket B: extracted verbatim from the retired IppWorkstationPage `milestones` tab body
+// (per-project milestone listing + satisfy ActionModal). Self-contained `{ role }` body;
+// the husk's `onRefresh` re-fetch trigger is replaced by a local refreshKey.
+import { useEffect, useState } from 'react';
+import { Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
+import { api } from '../../../lib/api';
+
+type Project = { id: string; project_name?: string; name?: string };
+type Milestone = { id: string; name: string; due_date: string | null; status: string };
+
+export default function MilestonesSurface(_props: { role: string }) {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [pid, setPid] = useState<string>('');
+  const [items, setItems] = useState<Milestone[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [satisfying, setSatisfying] = useState<Milestone | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await api.get('/projects');
+        const rows = (r.data?.data || []) as Project[];
+        setProjects(rows);
+        if (rows.length > 0) setPid(rows[0].id);
+      } catch (e: unknown) {
+        setErr(e instanceof Error ? e.message : 'failed to load projects');
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!pid) return;
+    setLoading(true); setErr(null);
+    api.get(`/projects/${pid}/milestones`)
+      .then((r) => setItems((r.data?.data || []) as Milestone[]))
+      .catch((e: unknown) => setErr(e instanceof Error ? e.message : 'failed'))
+      .finally(() => setLoading(false));
+  }, [pid, refreshKey]);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-end gap-3">
+        <label className="block text-[13px]">
+          <span className="text-[#6b7685]">Project</span>
+          <select value={pid} onChange={(e) => setPid(e.target.value)} className="mt-1 h-9 px-3 border border-[#dde4ec] rounded-md text-[13px]">
+            {projects.map(p => <option key={p.id} value={p.id}>{p.project_name || p.name || p.id}</option>)}
+          </select>
+        </label>
+      </div>
+      {err && <div className="text-[12px] text-red-700">{err}</div>}
+      {loading ? (
+        <div className="text-[13px] text-[#6b7685]">Loading milestones…</div>
+      ) : items.length === 0 ? (
+        <div className="text-[13px] text-[#6b7685]">No milestones for this project.</div>
+      ) : (
+        <div className="rounded-xl border border-[#dde4ec] bg-white overflow-hidden">
+          <table className="w-full text-[13px]">
+            <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+              <tr><th className="px-4 py-2">Milestone</th><th className="px-4 py-2">Due</th><th className="px-4 py-2">Status</th><th className="px-4 py-2" /></tr>
+            </thead>
+            <tbody>
+              {items.map(m => (
+                <tr key={m.id} className="border-t border-[#e5ebf2]">
+                  <td className="px-4 py-2">{m.name}</td>
+                  <td className="px-4 py-2">{m.due_date || '—'}</td>
+                  <td className="px-4 py-2"><Pill tone={m.status === 'satisfied' ? 'good' : m.status === 'overdue' ? 'bad' : 'warn'}>{m.status}</Pill></td>
+                  <td className="px-4 py-2">
+                    {m.status !== 'satisfied' && (
+                      <button type="button" onClick={() => setSatisfying(m)} className="px-2 py-1 text-[11px] bg-[oklch(0.46_0.16_55)] text-white rounded">Satisfy</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {satisfying && (
+        <ActionModal
+          title={`Satisfy milestone · ${satisfying.name}`}
+          submitLabel="Mark satisfied"
+          fields={[
+            { key: 'evidence_url', label: 'Evidence URL or R2 key' },
+            { key: 'notes', label: 'Notes', type: 'textarea', required: true },
+          ] as FieldSpec[]}
+          onClose={() => setSatisfying(null)}
+          onSubmit={async (v) => {
+            await api.post(`/projects/${pid}/milestones/${satisfying.id}/satisfy`, v);
+            setSatisfying(null);
+            setRefreshKey((k) => k + 1);
+          }}
+        />
+      )}
+    </div>
+  );
+}
