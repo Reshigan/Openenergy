@@ -162,6 +162,42 @@ const RegulatorAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.l
   return { default: Adapter };
 });
 
+// ── Lender surfaces (E2.8e — LenderWorkstationPage migration) ────────────────
+// All 10 chain tabs (cp_clearance, dscr_monitoring, slb_kpi_ratchet, construction_cost_report,
+// reserve_account, loan_restructure, esap_compliance, facility_amendment, capital_adequacy_report,
+// esap_monitoring) have MERIDIAN_CHAINS descriptors → retired to /ledger/:chainKey. The remaining
+// non-chain tabs are extracted/registered here:
+//   - facilities — inline ListingTable body (Bucket B) → new file.
+//   - reports — ReportPanel surface (Bucket D) → new file.
+//   - dunning — DunningTab (Wave 6), a self-contained no-prop named export with no chain
+//     descriptor (Bucket B) → adapter-wrapped (no new file).
+//   - strate-swift / sap-oracle-erp / government-filing — shared connectors, already exposed
+//     as `lender:*` via the connector trio above (roleData features added in E2.8e to reach them).
+const LenderFacilities = React.lazy(() => import('./surfaces/lender/FacilitiesSurface'));
+const LenderReports = React.lazy(() => import('./surfaces/lender/ReportsSurface'));
+
+// DunningTab is a self-contained no-prop named export; wrap in a lazy adapter that ignores
+// `role` and renders the tab unchanged.
+const LenderDunning: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { DunningTab } = await import('../components/lender/DunningTab');
+  const Adapter: SurfaceComponent = () => <DunningTab />;
+  return { default: Adapter };
+});
+
+// Audit tab carried verbatim from the LenderWorkstationPage `audit` tab
+// (prefix /lender, facility-covenant recon hint + sarb/jse_srl/lender_ie recon sources).
+const LenderAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { AuditPanel } = await import('../components/launch/AuditPanel');
+  const Adapter: SurfaceComponent = () => (
+    <AuditPanel
+      prefix="/lender"
+      reconHint="facility_id,covenant_test,measured_value,status"
+      reconSourceOptions={['sarb', 'jse_srl', 'lender_ie']}
+    />
+  );
+  return { default: Adapter };
+});
+
 // ── Registry ───────────────────────────────────────────────────────────────
 export const SURFACE_REGISTRY: Record<
   string,
@@ -226,4 +262,10 @@ export const SURFACE_REGISTRY: Record<
   'regulator:icfr_attestations': RegulatorIcfrAttestations,
   'regulator:reports': RegulatorReports,
   'regulator:audit': RegulatorAuditPanel,
+  // lender workstation migration (E2.8e) — keys match roleData feature keys emitted by Atlas.
+  // strate-swift / sap-oracle-erp / government-filing already registered in the connector trio above.
+  'lender:facilities': LenderFacilities,
+  'lender:dunning': LenderDunning,
+  'lender:reports': LenderReports,
+  'lender:audit': LenderAuditPanel,
 };
