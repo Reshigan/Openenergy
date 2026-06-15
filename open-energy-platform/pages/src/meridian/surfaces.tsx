@@ -68,6 +68,23 @@ const EscoAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(a
   return { default: Adapter };
 });
 
+// ── EPC surfaces (E2.8b — EpcWorkstationPage migration) ──────────────────────
+// Two non-chain inline CRUD/listing tabs (RFIs, Technical queries) had no MERIDIAN_CHAINS
+// descriptor, so they're extracted to self-contained `{ role }` bodies (Bucket B) rather
+// than retired to /ledger. The remaining EPC tabs (submittals, change-orders, ncrs,
+// method-statements, site-diary) DO have chain descriptors and are reached via /ledger/:chainKey.
+const EpcRfis = React.lazy(() => import('./surfaces/epc/RfisSurface'));
+const EpcTechnicalQueries = React.lazy(() => import('./surfaces/epc/TechnicalQueriesSurface'));
+
+// Audit tab carried verbatim from the EpcWorkstationPage `audit` tab (prefix /ipp, same recon hint).
+const EpcAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { AuditPanel } = await import('../components/launch/AuditPanel');
+  const Adapter: SurfaceComponent = () => (
+    <AuditPanel prefix="/ipp" reconHint="event_id, entity_type, actor_id, timestamp" />
+  );
+  return { default: Adapter };
+});
+
 // ── Registry ───────────────────────────────────────────────────────────────
 export const SURFACE_REGISTRY: Record<
   string,
@@ -111,4 +128,8 @@ export const SURFACE_REGISTRY: Record<
   // esco workstation migration (E2.8a) — keys match roleData feature keys emitted by Atlas
   'esco:sites-portfolio': EscoSitesPortfolio,
   'esco:audit': EscoAuditPanel,
+  // epc_contractor workstation migration (E2.8b) — keys match roleData feature keys emitted by Atlas
+  'epc_contractor:rfis': EpcRfis,
+  'epc_contractor:technical-queries': EpcTechnicalQueries,
+  'epc_contractor:audit': EpcAuditPanel,
 };
