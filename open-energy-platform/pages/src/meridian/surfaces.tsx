@@ -462,6 +462,72 @@ const GridAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(a
   return { default: Adapter };
 });
 
+// ── Offtaker surfaces (E2.6 — OfftakerWorkstationPage migration) ─────────────
+// Chain tabs WITH MERIDIAN_CHAINS descriptors → retired to /ledger/:chainKey (deleted from the
+// husk): change_in_law (ppa_change_in_law W78), ppa_nomination (ppa_nomination W87),
+// ppa_annual_recon (ppa_annual_recon W101), wheeling_access (wheeling_access W219),
+// virtual_ppa_settlement (virtual_ppa_settlement W229), unserved_energy_claims
+// (unserved_energy_claim), slb_kpi (slb_kpi_ratchet W204), green_tariff (green_tariff_disclosure
+// W210). The first three already had an offtaker roleData feature with that chainKey; the other
+// five had NO roleData feature, so roleData features carrying those chainKeys were ADDED in E2.6
+// (service_request precedent) to keep the chains Atlas-reachable. The custom inline W### tab
+// bodies (WheelingAccessTab, VirtualPpaSettlementTab, SlbKpiTab, GreenTariffTab) were deleted with
+// their tabs — the generic chain ledger renders them now.
+// Non-chain inline tabs EXTRACTED to self-contained `{ role }` bodies:
+//   - sites — delivery-points + site-groups ListingTables + new-group ActionModal (Bucket B).
+//   - tariffs — tariffs ListingTable (Bucket B).
+//   - budgets — period selector + budget-vs-actual ListingTable + set-budget ActionModal (Bucket B).
+//   - bills — AI bill analyser / PPA-mix optimiser / LOI drafter (Bucket D/E).
+//   - recs — REC portfolio cards + transfer/retire ActionModals (Bucket B); registered under the
+//     existing `rec_retirement` feature key (no chainKey).
+//   - scope2 — annual Scope 2 disclosures ListingTable + new-disclosure ActionModal (Bucket B);
+//     roleData `scope2` feature added in E2.6 (distinct from the `scope3` carbon chain).
+//   - reports — ReportPanel surface (Bucket D); roleData `reports` feature added in E2.6.
+// Already-imported standalone named exports → registered directly via adapters (no new file):
+//   - wheeling_charges — WheelingChargesTab (scope="offtaker"); registered under the existing
+//     `wheeling` feature key (no chainKey).
+//   - obligations — ObligationsTab (no-prop); roleData `obligations` feature added in E2.6.
+// strate-swift / sap-oracle-erp / government-filing — shared connectors (NOT chains), already
+//   exposed as `offtaker:*` via the connector trio above; roleData features (strate-swift /
+//   sap-oracle-erp / government-filing) added in E2.6 to reach them.
+// audit → AuditPanel adapter (prefix /offtaker-suite, REC recon hint + i_rec/gold_standard/verra
+//   recon sources carried verbatim); roleData `audit` feature added in E2.6.
+const OfftakerSites = React.lazy(() => import('./surfaces/offtaker/SitesSurface'));
+const OfftakerTariffs = React.lazy(() => import('./surfaces/offtaker/TariffsSurface'));
+const OfftakerBudgets = React.lazy(() => import('./surfaces/offtaker/BudgetsSurface'));
+const OfftakerBills = React.lazy(() => import('./surfaces/offtaker/BillsSurface'));
+const OfftakerRecs = React.lazy(() => import('./surfaces/offtaker/RecsSurface'));
+const OfftakerScope2 = React.lazy(() => import('./surfaces/offtaker/Scope2Surface'));
+const OfftakerReports = React.lazy(() => import('./surfaces/offtaker/ReportsSurface'));
+
+// WheelingChargesTab is an already-imported standalone named export (optional `scope` prop); the
+// husk rendered the offtaker view. ObligationsTab is a self-contained no-prop named export. Wrap
+// each in a lazy adapter that ignores `role` and renders the tab unchanged.
+const OfftakerWheelingCharges: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { WheelingChargesTab } = await import('../components/grid/WheelingChargesTab');
+  const Adapter: SurfaceComponent = () => <WheelingChargesTab scope="offtaker" />;
+  return { default: Adapter };
+});
+const OfftakerObligations: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { ObligationsTab } = await import('../components/offtaker/ObligationsTab');
+  const Adapter: SurfaceComponent = () => <ObligationsTab />;
+  return { default: Adapter };
+});
+
+// Audit tab carried verbatim from the OfftakerWorkstationPage `audit` tab
+// (prefix /offtaker-suite, REC recon hint + i_rec/gold_standard/verra recon sources).
+const OfftakerAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { AuditPanel } = await import('../components/launch/AuditPanel');
+  const Adapter: SurfaceComponent = () => (
+    <AuditPanel
+      prefix="/offtaker-suite"
+      reconHint="certificate_serial,mwh_represented,status,registry"
+      reconSourceOptions={['i_rec', 'gold_standard', 'verra']}
+    />
+  );
+  return { default: Adapter };
+});
+
 // ── Registry ───────────────────────────────────────────────────────────────
 export const SURFACE_REGISTRY: Record<
   string,
@@ -595,4 +661,16 @@ export const SURFACE_REGISTRY: Record<
   'grid_operator:wheeling_charges': GridWheelingCharges,
   'grid_operator:reports': GridReports,
   'grid_operator:audit': GridAuditPanel,
+  // offtaker workstation migration (E2.6) — keys match roleData feature keys emitted by Atlas.
+  // strate-swift / sap-oracle-erp / government-filing already registered in the connector trio above.
+  'offtaker:sites': OfftakerSites,
+  'offtaker:tariffs': OfftakerTariffs,
+  'offtaker:budgets': OfftakerBudgets,
+  'offtaker:bills': OfftakerBills,
+  'offtaker:rec_retirement': OfftakerRecs,
+  'offtaker:scope2': OfftakerScope2,
+  'offtaker:reports': OfftakerReports,
+  'offtaker:wheeling': OfftakerWheelingCharges,
+  'offtaker:obligations': OfftakerObligations,
+  'offtaker:audit': OfftakerAuditPanel,
 };

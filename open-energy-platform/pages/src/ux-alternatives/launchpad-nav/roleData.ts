@@ -314,6 +314,9 @@ const offtakerDomains: Domain[] = [
       { key: 'ppa_termination', label: 'PPA termination', chainKey: 'ppa_termination', description: 'NERSA s34 + IFRS 16 ETA buy-out (W62).', mockStates: ['notice_given','valuation','agreed','disputed','terminated'], mockState: 'notice_given' },
       { key: 'rec_lifecycle', label: 'REC / GO lifecycle', chainKey: 'rec_lifecycle', description: 'I-REC/SAREC attribute certificate (W70).', mockStates: ['device_registered','metered','issued','transferred','retired','clawed_back'], mockState: 'issued' },
       { key: 'change_in_law', label: 'Change-in-law relief', chainKey: 'ppa_change_in_law', description: 'Qualifying-change cost pass-through & relief, arbitration branch (W78).', mockStates: ['event_logged','eligibility_review','claim_submitted','negotiation','in_arbitration','relief_granted','implemented'], mockState: 'negotiation' },
+      { key: 'wheeling_access', label: 'Wheeling access', chainKey: 'wheeling_access', description: 'Third-party transmission access agreement (W219).', mockStates: ['requested','study','offered','accepted','active','terminated'], mockState: 'active' },
+      { key: 'virtual_ppa_settlement', label: 'Virtual PPA / CfD', chainKey: 'virtual_ppa_settlement', description: 'Contract-for-difference financial PPA settlement (W229).', mockStates: ['period_open','strike_set','settled','disputed','reconciled'], mockState: 'settled' },
+      { key: 'slb_kpi', label: 'SLB KPI ratchet', chainKey: 'slb_kpi_ratchet', description: 'Sustainability-linked-bond KPI margin ratchet (W204).', mockStates: ['target_set','measured','verified','ratchet_applied','disputed'], mockState: 'measured' },
       { key: 'procurement_options', label: 'Procurement options', description: 'Active RFP responses and LOI pipeline.' },
       { key: 'ppa_variations', label: 'PPA variations', description: 'Signed PPA amendment register.' },
     ],
@@ -328,10 +331,15 @@ const offtakerDomains: Domain[] = [
       { key: 'curtailment_claim', label: 'Curtailment claims', chainKey: 'curtailment_claim', description: 'Deemed-energy compensation chain (W46).', mockStates: ['claim_lodged','validated','quantum_agreed','settled','disputed','arbitration'], mockState: 'validated' },
       { key: 'ppa_nomination', label: 'Energy nominations', chainKey: 'ppa_nomination', description: 'Day-ahead nomination & deviation settlement at the deviation tariff (W87).', mockStates: ['nomination_window_open','da_nominated','da_confirmed','delivery_complete','reconciled','dispute_raised','deviation_settled'], mockState: 'reconciled' },
       { key: 'annual_recon', label: 'Annual reconciliation', chainKey: 'ppa_annual_recon', description: 'IFRS 15 / NERSA s34 annual true-up & financial close (W101).', mockStates: ['year_opened','data_collected','reconciled','signed_off','invoiced','settled','restated'], mockState: 'reconciled' },
+      { key: 'unserved_energy_claims', label: 'Unserved-energy claims', chainKey: 'unserved_energy_claim', description: 'Use-of-system unserved-energy claim chain.', mockStates: ['claim_lodged','validated','quantum_agreed','settled','disputed'], mockState: 'validated' },
       { key: 'delivery_reports', label: 'Delivery reports', description: 'Monthly MWh contracted vs delivered.' },
       { key: 'billing', label: 'Billing & payments', description: 'Invoice register and payment status.' },
       { key: 'metering', label: 'Metering & reconciliation', description: 'Smart meter reconciliation data.' },
       { key: 'wheeling', label: 'Wheeling statements', description: 'Third-party access wheeling charges.' },
+      { key: 'sites', label: 'Sites & groups', description: 'Delivery-point and site-group register.' },
+      { key: 'tariffs', label: 'Tariffs', description: 'Tariff schedule and TOU rate register.' },
+      { key: 'budgets', label: 'Budget vs actual', description: 'Per-period energy budget vs actual consumption.' },
+      { key: 'bills', label: 'Bill upload & AI', description: 'AI bill analyser, PPA-mix optimiser and LOI drafter.' },
     ],
   },
   {
@@ -342,6 +350,7 @@ const offtakerDomains: Domain[] = [
     features: [
       { key: 'ppa_payment_security', label: 'Payment security', chainKey: 'ppa_payment_security', description: 'Guarantee/LC/PCG bankability backstop (W54).', mockStates: ['issued','active','expiry_warning','renewed','forfeited'], mockState: 'active' },
       { key: 'credit_support', label: 'Credit support docs', description: 'LC, PCG and guarantee register.' },
+      { key: 'obligations', label: 'Obligations register', description: 'Payment-security and contractual obligation register.' },
     ],
   },
   {
@@ -354,8 +363,14 @@ const offtakerDomains: Domain[] = [
       { key: 'scope3', label: 'Scope 3 value-chain', chainKey: 'carbon_scope3_disclosure', description: 'Value-chain Scope 3 emission disclosure.' },
       { key: 'carbon_offset', label: 'Carbon offsets', chainKey: 'carbon_offset_claim', description: 'Carbon Tax Act offset claim management.' },
       { key: 'rec_retirement', label: 'REC retirement', description: 'Scope-2 zero-carbon claim certificates.' },
+      { key: 'green_tariff', label: 'Green tariff disclosure', chainKey: 'green_tariff_disclosure', description: 'Green-tariff / RE100 disclosure chain (W210).', mockStates: ['draft','submitted','verified','published','disputed'], mockState: 'submitted' },
+      { key: 'scope2', label: 'Scope 2 emissions', description: 'Annual location/market-based Scope 2 disclosures.' },
       { key: 'popia_data', label: 'POPIA data rights', description: 'Data subject access and correction log.' },
       { key: 'annual_reports', label: 'Sustainability reports', description: 'Annual sustainability and GRI reports.' },
+      { key: 'strate-swift', label: 'Settlement rails', description: 'STRATE / SWIFT settlement-rail connector.' },
+      { key: 'sap-oracle-erp', label: 'ERP connectors', description: 'SAP / Oracle ERP integration connector.' },
+      { key: 'government-filing', label: 'Filing connectors', description: 'Government statutory-filing connector.' },
+      { key: 'audit', label: 'Audit & compliance', description: 'Tamper-evident audit log, REC reconciliation and certified exports.' },
     ],
   },
   {
@@ -366,6 +381,7 @@ const offtakerDomains: Domain[] = [
     features: [
       { key: 'ppa_portfolio', label: 'PPA portfolio', description: 'Portfolio summary — MW, cost, term.' },
       { key: 'energy_cost', label: 'Energy cost analysis', description: 'Blended tariff and cost-per-MWh trends.' },
+      { key: 'reports', label: 'Reports & exports', description: 'PPA, statutory, green-tariff and Scope 2 report exports.' },
     ],
   },
 ];
