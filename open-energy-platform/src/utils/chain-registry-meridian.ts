@@ -4255,6 +4255,19 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
       { key: 'differential', label: 'Net differential', compute: 'sum_quantum' },
     ],
+    initiation: {
+      label: 'Open VPPA settlement',
+      path: '/api/offtaker/virtual-ppa-settlement/open',
+      fields: [
+        { key: 'contract_ref', label: 'Contract ref', type: 'string', required: true },
+        { key: 'generator_id', label: 'Generator', type: 'string', required: true },
+        { key: 'offtaker_id', label: 'Offtaker', type: 'string', required: true },
+        { key: 'settlement_period', label: 'Settlement period', type: 'string', required: true, placeholder: 'e.g. 2026-Q2' },
+        { key: 'reference_index', label: 'Reference index', type: 'enum', required: true, options: ['day_ahead_market', 'eskom_megaflex', 'ifrt_reference', 'wholesale_pool'] },
+        { key: 'notional_mwh', label: 'Notional volume', type: 'number', required: true, unit: 'MWh' },
+        { key: 'strike_price_zar_per_mwh', label: 'Strike price', type: 'number', required: true, unit: 'ZAR' },
+      ],
+    },
   },
 
   // W219 — Wheeling access (transmission/distribution wheeling agreement
@@ -4311,6 +4324,21 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'total', label: 'Wheeling agreements', compute: 'count' },
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
     ],
+    initiation: {
+      label: 'Apply for wheeling access',
+      path: '/api/wheeling-access',
+      fields: [
+        { key: 'wheel_tier', label: 'Wheeling tier', type: 'enum', options: ['small_embedded', 'medium_distributed', 'large_industrial', 'bulk_transmission'] },
+        { key: 'requested_capacity_mw', label: 'Requested capacity', type: 'number', unit: 'MW' },
+        { key: 'ipp_ref', label: 'IPP ref', type: 'string' },
+        { key: 'wheeling_route_description', label: 'Wheeling route', type: 'string' },
+        { key: 'voltage_level_kv', label: 'Voltage level (kV)', type: 'number' },
+        { key: 'wheeling_distance_km', label: 'Wheeling distance (km)', type: 'number' },
+        { key: 'gca_ref', label: 'GCA ref', type: 'string' },
+        { key: 'ppa_ref', label: 'PPA ref', type: 'string' },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // ───────── REGULATOR ─────────
@@ -12661,6 +12689,21 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'offtaker', 'support'],
         cascadeHint: 'Withdraws the ratchet event (terminal).' },
     ],
+    initiation: {
+      label: 'Record SLB KPI',
+      path: '/api/slb-kpi-ratchets',
+      fields: [
+        { key: 'kpi_period', label: 'KPI period', type: 'string', placeholder: 'e.g. 2026-H1' },
+        { key: 'period_start', label: 'Period start', type: 'date' },
+        { key: 'period_end', label: 'Period end', type: 'date' },
+        { key: 'slb_tier', label: 'SLB tier', type: 'enum', options: ['voluntary', 'green_finance', 'listed', 'regulatory'] },
+        { key: 'kpi_name', label: 'KPI name', type: 'string' },
+        { key: 'kpi_target_value', label: 'KPI target value', type: 'number' },
+        { key: 'kpi_unit', label: 'KPI unit', type: 'string' },
+        { key: 'ppa_ref', label: 'PPA ref', type: 'string' },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // W199 — Smart-meter asset (IEC metering asset commissioning; POST /:id/action verb-in-body)
@@ -12785,6 +12828,20 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     ],
+    initiation: {
+      label: 'Lodge unserved-energy claim',
+      path: '/api/unserved-energy-claims',
+      fields: [
+        { key: 'grid_operator_id', label: 'Grid operator', type: 'string', required: true },
+        { key: 'event_date', label: 'Event date', type: 'date', required: true },
+        { key: 'customer_category', label: 'Customer category', type: 'enum', required: true, options: ['industrial', 'commercial', 'municipal', 'residential', 'scheduled'] },
+        { key: 'unserved_mwh', label: 'Unserved energy', type: 'number', required: true, unit: 'MWh' },
+        { key: 'claimed_amount_zar', label: 'Claimed amount', type: 'number', required: true, unit: 'ZAR' },
+        { key: 'load_shedding_stage', label: 'Load-shedding stage', type: 'number' },
+        { key: 'nrs048_reference', label: 'NRS 048 reference', type: 'string' },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // W205 — Demand-response event (NERSA DR programme activation + settlement; POST /:id/action verb-in-body)
@@ -13109,6 +13166,21 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     ],
+    initiation: {
+      label: 'Submit green-tariff disclosure',
+      path: '/api/green-tariff-disclosures',
+      fields: [
+        { key: 'disclosure_period', label: 'Disclosure period', type: 'string', required: true, placeholder: 'e.g. 2026' },
+        { key: 'green_tariff_class', label: 'Green tariff class', type: 'enum', options: ['voluntary', 'corporate_ppa', 'utility_green_tariff', 'sbti_aligned'] },
+        { key: 'consumption_mwh', label: 'Consumption', type: 'number', unit: 'MWh' },
+        { key: 'contracted_green_mwh', label: 'Contracted green', type: 'number', unit: 'MWh' },
+        { key: 'generation_technology', label: 'Generation technology', type: 'string' },
+        { key: 'additionality_claim', label: 'Additionality claim (1/0)', type: 'number' },
+        { key: 'ppa_ref', label: 'PPA ref', type: 'string' },
+        { key: 'tariff_contract_number', label: 'Tariff contract number', type: 'string' },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 ];
 
