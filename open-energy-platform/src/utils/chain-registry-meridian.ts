@@ -11487,6 +11487,20 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
       { key: 'notional', label: 'Gross notional', compute: 'sum_quantum' },
     ],
+    initiation: {
+      label: 'Open P&L attribution',
+      path: '/api/trader/pnl-attribution/chain',
+      fields: [
+        { key: 'book_id', label: 'Book ID', type: 'string' },
+        { key: 'book_label', label: 'Book label', type: 'string' },
+        { key: 'desk_id', label: 'Desk ID', type: 'string' },
+        { key: 'business_date', label: 'Business date', type: 'date' },
+        { key: 'gross_notional_zar', label: 'Gross notional', type: 'number', unit: 'ZAR' },
+        { key: 'benchmark_label', label: 'Benchmark label', type: 'string' },
+        { key: 'title', label: 'Title', type: 'string' },
+        { key: 'narrative', label: 'Narrative', type: 'string' },
+      ],
+    },
   },
 
   // W216 — FSCA periodic conduct report (FSCA Conduct Standard 1/2020; verb-in-body)
@@ -11535,6 +11549,21 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
       { key: 'notional', label: 'Notional', compute: 'sum_quantum' },
     ],
+    initiation: {
+      label: 'Open reporting period',
+      path: '/api/fsca-conduct-reports',
+      fields: [
+        { key: 'reporting_period', label: 'Reporting period', type: 'string', required: true },
+        { key: 'reporting_year', label: 'Reporting year', type: 'number', required: true },
+        { key: 'report_tier', label: 'Report tier', type: 'enum', options: ['retail', 'professional', 'market_maker', 'systemic'] },
+        { key: 'is_annual', label: 'Annual report', type: 'boolean' },
+        { key: 'total_notional_zar', label: 'Total notional', type: 'number', unit: 'ZAR' },
+        { key: 'client_count', label: 'Client count', type: 'number' },
+        { key: 'complaint_count', label: 'Complaint count', type: 'number' },
+        { key: 'compliance_officer', label: 'Compliance officer', type: 'string' },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // W222 — Cross-border trade & regulatory pre-approval (FMA §17 + SARB ExCon; verb-in-body)
@@ -11591,6 +11620,21 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
       { key: 'notional', label: 'Notional', compute: 'sum_quantum' },
     ],
+    initiation: {
+      label: 'Apply for pre-approval',
+      path: '/api/cross-border-trades',
+      fields: [
+        { key: 'cbt_tier', label: 'CBT tier', type: 'enum', options: ['small', 'standard', 'large', 'systemic'] },
+        { key: 'counterparty_jurisdiction', label: 'Counterparty jurisdiction', type: 'string' },
+        { key: 'counterparty_type', label: 'Counterparty type', type: 'string' },
+        { key: 'trade_type', label: 'Trade type', type: 'string' },
+        { key: 'notional_zar', label: 'Notional', type: 'number', unit: 'ZAR' },
+        { key: 'notional_currency', label: 'Notional currency', type: 'string' },
+        { key: 'underlying_trade_ref', label: 'Underlying trade ref', type: 'string' },
+        { key: 'algo_cert_ref', label: 'Algo cert ref', type: 'string' },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // W232 — ISDA master agreement negotiation (verb-in-body; WRITE {admin, trader})
@@ -11637,6 +11681,24 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
       { key: 'notional', label: 'Avg notional', compute: 'sum_quantum' },
     ],
+    initiation: {
+      label: 'Open ISDA negotiation',
+      path: '/api/trader/isda-agreement',
+      fields: [
+        { key: 'counterparty_id', label: 'Counterparty ID', type: 'string', required: true },
+        { key: 'counterparty_name', label: 'Counterparty name', type: 'string', required: true },
+        { key: 'counterparty_type', label: 'Counterparty type', type: 'enum', required: true, options: ['bank', 'broker', 'energy_company', 'ccp', 'other'] },
+        { key: 'agreement_type', label: 'Agreement type', type: 'enum', required: true, options: ['isda_2002', 'isda_2018', 'isda_csa', 'credit_support_annex'] },
+        { key: 'base_currency', label: 'Base currency', type: 'string' },
+        { key: 'average_notional_zar', label: 'Average notional', type: 'number', unit: 'ZAR' },
+        { key: 'vm_csa_included', label: 'VM CSA included', type: 'number' },
+        { key: 'umr_applicable', label: 'UMR applicable', type: 'number' },
+        { key: 'vm_threshold_zar', label: 'VM threshold', type: 'number', unit: 'ZAR' },
+        { key: 'vm_mta_zar', label: 'VM MTA', type: 'number', unit: 'ZAR' },
+        { key: 'netting_opinion_obtained', label: 'Netting opinion obtained', type: 'number' },
+        { key: 'fic_fica_confirmed', label: 'FIC/FICA confirmed', type: 'number' },
+      ],
+    },
   },
 
   // ───────── IPP COMPLIANCE/REPORTING (no-descriptor backfill) ─────────
@@ -12289,6 +12351,20 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'trader'],
         cascadeHint: 'Files a cleared or rejected check to the archive (hard terminal).' },
     ],
+    initiation: {
+      label: 'Run pre-trade check',
+      path: '/api/trader/pretrade-credit/chain',
+      fields: [
+        { key: 'order_ref', label: 'Order ref', type: 'string' },
+        { key: 'counterparty_id', label: 'Counterparty ID', type: 'string' },
+        { key: 'counterparty_name', label: 'Counterparty name', type: 'string' },
+        { key: 'energy_type', label: 'Energy type', type: 'string' },
+        { key: 'side', label: 'Side', type: 'enum', options: ['buy', 'sell'] },
+        { key: 'volume_mwh', label: 'Volume', type: 'number', unit: 'MWh' },
+        { key: 'price_zar_per_mwh', label: 'Price', type: 'number', unit: 'ZAR' },
+        { key: 'notional_exposure_zar', label: 'Notional exposure', type: 'number', unit: 'ZAR' },
+      ],
+    },
   },
 
   // W204 — SLB KPI ratchet (sustainability-linked bond coupon ratchet; POST /:id/action verb-in-body)
@@ -12690,6 +12766,19 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     ],
+    initiation: {
+      label: 'Open compliance report',
+      path: '/api/fsca-compliance-reports',
+      fields: [
+        { key: 'report_year', label: 'Report year', type: 'number' },
+        { key: 'reporting_period_start', label: 'Reporting period start', type: 'date' },
+        { key: 'reporting_period_end', label: 'Reporting period end', type: 'date' },
+        { key: 'fsp_licence_number', label: 'FSP licence number', type: 'string' },
+        { key: 'fsp_class', label: 'FSP class', type: 'enum', options: ['micro', 'standard', 'large', 'systemic'] },
+        { key: 'compliance_officer_name', label: 'Compliance officer', type: 'string' },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // W210 — Green-tariff disclosure (GHG Scope-2 / I-REC additionality labelling; POST /:id/action verb-in-body)
