@@ -508,37 +508,6 @@ const LENDER_WIZARDS: WizardSpec[] = [
     onSubmit: async (values) => { await api.post('/security-perfection/chain', values); },
   },
   {
-    id: 'lender-restructure',
-    title: 'Initiate loan restructure (W45)',
-    steps: [
-      {
-        title: 'Restructure basis',
-        description: 'Identify the restructure type, trigger event, and current outstanding balance.',
-        aiHint: 'Loan restructure (Wave W45) picks up where acceleration ends. Debt-for-equity and partial write-down require SARB impairment notification.',
-        fields: [
-          { key: 'facility_ref', label: 'Facility reference', type: 'text', required: true },
-          { key: 'restructure_type', label: 'Restructure type', type: 'select', required: true, options: [{ value: 'maturity_extension', label: 'Maturity extension' }, { value: 'rate_reset', label: 'Rate reset' }, { value: 'covenant_waiver', label: 'Covenant waiver' }, { value: 'debt_for_equity', label: 'Debt-for-equity' }, { value: 'partial_write_down', label: 'Partial write-down' }] },
-          { key: 'trigger_event', label: 'Trigger event', type: 'select', options: [{ value: 'financial_distress', label: 'Financial distress' }, { value: 'market_disruption', label: 'Market disruption' }, { value: 'force_majeure', label: 'Force majeure' }, { value: 'regulatory_change', label: 'Regulatory change' }] },
-          { key: 'current_outstanding_zar', label: 'Current outstanding (ZAR)', type: 'number', required: true },
-        ],
-      },
-      {
-        title: 'New terms',
-        description: 'Specify the revised maturity, margin, DSCR floor, and equity requirements.',
-        aiHint: 'Interest capitalisation and haircut must be approved by the credit committee. Consent solicitation is required when multiple lenders are involved.',
-        fields: [
-          { key: 'new_maturity_date', label: 'New maturity date', type: 'date' },
-          { key: 'new_margin_bps', label: 'New margin (bps)', type: 'number' },
-          { key: 'new_dscr_floor', label: 'New DSCR floor', type: 'number' },
-          { key: 'interest_capitalised_zar', label: 'Interest capitalised (ZAR)', type: 'number' },
-          { key: 'haircut_pct', label: 'Haircut %', type: 'number', placeholder: 'Debt reduction as % — 0 if none' },
-          { key: 'consent_solicitation_required', label: 'Consent solicitation required?', type: 'select', options: [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
-        ],
-      },
-    ],
-    onSubmit: async (values) => { await api.post('/lender/loan-restructure/chain', values); },
-  },
-  {
     id: 'lender-esap-monitor',
     title: 'Log EP IV ESAP finding (W214)',
     steps: [
