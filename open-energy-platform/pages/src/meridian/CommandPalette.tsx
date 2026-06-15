@@ -8,9 +8,13 @@ import './meridian.css';
 import { useNavigate } from 'react-router-dom';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { useAuth } from '../lib/useAuth';
+import { SURFACE_REGISTRY } from './surfaces';
 import { fetchHorizon, type MerCase } from './lib';
 
 interface Hit { type: 'function' | 'case'; label: string; sub: string; go: () => void }
+
+// esums_owner shares ESCO's surfaces; the registry only carries `esco:*` keys.
+const surfaceRole = (r: string) => (r === 'esums_owner' ? 'esco' : r);
 
 export default function CommandPalette() {
   const [open, setOpen] = React.useState(false);
@@ -52,11 +56,19 @@ export default function CommandPalette() {
 
   if (!open || !cfg) return null;
   const ql = q.toLowerCase();
+  // Same destination contract + reachability predicate as AtlasPage: chain → Ledger,
+  // standalone page → its route, else per-role Meridian surface. A function with no
+  // resolvable destination (never-built prototype tile) is omitted from the palette.
+  const surfaceFor = (key: string) => SURFACE_REGISTRY[`${surfaceRole(role)}:${key}`];
+  const targetFor = (f: { chainKey?: string; route?: string; key: string }) =>
+    f.chainKey ? `/ledger/${f.chainKey}` : f.route ? f.route : surfaceFor(f.key) ? `/surface/${f.key}` : null;
   const hits: Hit[] = [
     ...cfg.domains.flatMap(d => d.features
       .filter(f => f.label.toLowerCase().includes(ql))
-      .map(f => ({ type: 'function' as const, label: f.label, sub: d.label,
-        go: () => nav(`${cfg.workstationPath}?tab=${f.key}`) }))),
+      .map(f => ({ f, to: targetFor(f) }))
+      .filter((x): x is { f: typeof x.f; to: string } => x.to !== null)
+      .map(({ f, to }) => ({ type: 'function' as const, label: f.label, sub: d.label,
+        go: () => nav(to) }))),
     ...cases
       .filter(c => `${c.ref} ${c.title} ${c.counterparty ?? ''}`.toLowerCase().includes(ql))
       .map(c => ({ type: 'case' as const, label: `${c.ref} — ${c.title}`,

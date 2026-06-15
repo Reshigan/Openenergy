@@ -14,7 +14,9 @@ export default function MeridianSurfacePage() {
   const { key = '' } = useParams();
   // ProtectedRoute guarantees a user before this page mounts (AtlasPage idiom).
   const { user } = useAuth();
-  const role = user?.role ?? '';
+  // esums_owner is a legacy registerable role sharing ESCO's surfaces; the registry
+  // only carries `esco:*` keys, so resolve it to esco for lookup (AtlasPage idiom).
+  const role = (user?.role === 'esums_owner' ? 'esco' : user?.role) ?? '';
 
   const Comp = SURFACE_REGISTRY[`${role}:${key}`];
 

@@ -8,7 +8,12 @@ import './meridian.css';
 import { Link } from 'react-router-dom';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { useAuth } from '../lib/useAuth';
+import { SURFACE_REGISTRY } from './surfaces';
 import { fetchHorizon, fetchDealTypes, dealLabel, type HorizonData, type DealTypeInfo } from './lib';
+
+// esums_owner is a legacy registerable role that shares ESCO's domains + surfaces;
+// the surface registry only carries `esco:*` keys, so resolve it to esco for lookup.
+const surfaceRole = (r: string) => (r === 'esums_owner' ? 'esco' : r);
 
 export default function AtlasPage() {
   // Same source LaunchRedirect uses (App.tsx) — the signed-in user from AuthContext.
@@ -44,7 +49,11 @@ export default function AtlasPage() {
   }
 
   if (!cfg) return <div className="mer mer-error" role="alert">Unknown role.</div>;
-  const fnCount = cfg.domains.reduce((n, d) => n + d.features.length, 0);
+  // A function is reachable iff it resolves to a chain (/ledger), a mounted page
+  // (route), or a per-role Meridian surface — same predicate the render loop uses.
+  const isReachable = (f: { chainKey?: string; route?: string; key: string }) =>
+    !!(f.chainKey || f.route || SURFACE_REGISTRY[`${surfaceRole(role)}:${f.key}`]);
+  const fnCount = cfg.domains.reduce((n, d) => n + d.features.filter(isReachable).length, 0);
 
   return (
     <div className="mer atlas">
@@ -65,15 +74,23 @@ export default function AtlasPage() {
             ))}
           </section>
         )}
-        {cfg.domains.map(d => (
+        {cfg.domains.map(d => {
+          // Reachability filter: a function tile renders only if it resolves to a
+          // real destination — a registry chain (/ledger), a mounted standalone
+          // page (route), or a per-role Meridian surface (SURFACE_REGISTRY). This
+          // makes dead-end tiles structurally impossible and hides prototype menu
+          // items that were never built (no chain, no route, no surface).
+          const reachable = d.features.filter(isReachable);
+          if (reachable.length === 0) return null;
+          return (
           <section className="domain" key={d.key}>
             <h2>{d.label.toUpperCase()}</h2>
-            {d.features.map(f => {
+            {reachable.map(f => {
               const live = f.chainKey ? liveByChain.get(f.chainKey) : undefined;
-              // Chain-backed functions open their Meridian Ledger; non-chain
-              // functions open their standalone Meridian surface (/surface/:key,
-              // resolved per-role via SURFACE_REGISTRY).
-              const to = f.chainKey ? `/ledger/${f.chainKey}` : `/surface/${f.key}`;
+              // Chain-backed functions open their Meridian Ledger; functions with a
+              // standalone page open that route; everything else opens its per-role
+              // Meridian surface (/surface/:key, resolved via SURFACE_REGISTRY).
+              const to = f.chainKey ? `/ledger/${f.chainKey}` : f.route ? f.route : `/surface/${f.key}`;
               return (
                 <Link key={f.key} className="fn" to={to}>
                   <span className="name">{f.label}</span>
@@ -83,7 +100,8 @@ export default function AtlasPage() {
               );
             })}
           </section>
-        ))}
+          );
+        })}
       </main>
     </div>
   );

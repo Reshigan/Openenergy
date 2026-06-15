@@ -6,6 +6,9 @@ export type Feature = {
   key: string;
   label: string;
   chainKey?: string;
+  // Non-chain feature that has a real standalone page already mounted in App.tsx.
+  // Atlas links here instead of /surface/:key (which would need a registry entry).
+  route?: string;
   description: string;
   mockState?: string;
   mockStates?: readonly string[];
@@ -105,13 +108,13 @@ const ippDomains: Domain[] = [
     icon: '◩',
     color: 'oklch(0.48 0.14 30)',
     features: [
-      { key: 'stage_gates', label: 'Stage gates', description: 'DG0–DG4 development gate reviews.', mockStates: ['dg0_pending','dg1_pending','dg2_pending','dg3_pending','dg4_pending','approved','rejected'], mockState: 'dg2_pending' },
+      { key: 'stage_gates', label: 'Stage gates', chainKey: 'stage_gate', description: 'DG0–DG4 development gate reviews.', mockStates: ['dg0_pending','dg1_pending','dg2_pending','dg3_pending','dg4_pending','approved','rejected'], mockState: 'dg2_pending' },
       { key: 'risk_register', label: 'Risk register', description: 'Project risk register — severity × likelihood.' },
       { key: 'issues_log', label: 'Issues log', description: 'Open issues log and resolution tracking.' },
       { key: 'stakeholder_register', label: 'Stakeholder register', description: 'Stakeholder map and engagement log.' },
       { key: 'itp', label: 'ITP / Quality plan', chainKey: 'itp', description: 'Inspection and test plan.' },
       { key: 'project_risk', label: 'Risk analysis (EMV)', chainKey: 'project_risk', description: 'Quantitative risk EMV/SRA analysis.' },
-      { key: 'ncr', label: 'Non-conformance', description: 'NCR log and corrective actions.' },
+      { key: 'ncr', label: 'Non-conformance', chainKey: 'ncr', description: 'NCR log and corrective actions.' },
       { key: 'lessons_learned', label: 'Lessons learned', description: 'Project lessons learned register.' },
       // E2.7 — non-chain report/audit surfaces extracted from the IppWorkstationPage husk
       // (registered as ipp_developer:* in meridian/surfaces.tsx). annual_report backs W159
@@ -245,7 +248,7 @@ const traderDomains: Domain[] = [
       { key: 'algo_certification', label: 'Algo certification', chainKey: 'algo_certification', description: 'FMA/FSCA MiFID RTS6 algo cert gate (W60).', mockStates: ['submitted','testing','review','approved','deployed_live','suspended'], mockState: 'testing' },
       { key: 'esg_reports', label: 'ESG / sustainability', description: 'ESG disclosure and Scope 3 reports.' },
       { key: 'article6', label: 'Article 6 ITMO', chainKey: 'article6_adjustment', description: 'UNFCCC corresponding-adjustment ledger (W4).' },
-      { key: 'black_start_chain', label: 'Black start chain', description: 'NERSA black-start compliance.' },
+      { key: 'black_start_chain', label: 'Black start chain', chainKey: 'black_start', description: 'NERSA black-start compliance.' },
       // Connectors (shared) + report/audit surfaces — added in E2.3 so Atlas can reach the
       // trader:* surfaces registered in meridian/surfaces.tsx (the husk tabs had no roleData feature).
       { key: 'strate-swift', label: 'Settlement rails (W124)', description: 'STRATE/SWIFT settlement connectors.' },
@@ -393,7 +396,7 @@ const offtakerDomains: Domain[] = [
       { key: 'rec_retirement', label: 'REC retirement', description: 'Scope-2 zero-carbon claim certificates.' },
       { key: 'green_tariff', label: 'Green tariff disclosure', chainKey: 'green_tariff_disclosure', description: 'Green-tariff / RE100 disclosure chain (W210).', mockStates: ['draft','submitted','verified','published','disputed'], mockState: 'submitted' },
       { key: 'scope2', label: 'Scope 2 emissions', description: 'Annual location/market-based Scope 2 disclosures.' },
-      { key: 'popia_data', label: 'POPIA data rights', description: 'Data subject access and correction log.' },
+      { key: 'popia_data', label: 'POPIA data rights', route: '/popia', description: 'Data subject access and correction log.' },
       { key: 'annual_reports', label: 'Sustainability reports', description: 'Annual sustainability and GRI reports.' },
       { key: 'strate-swift', label: 'Settlement rails', description: 'STRATE / SWIFT settlement-rail connector.' },
       { key: 'sap-oracle-erp', label: 'ERP connectors', description: 'SAP / Oracle ERP integration connector.' },
@@ -439,7 +442,7 @@ const carbonDomains: Domain[] = [
       { key: 'mrv_chain', label: 'Verification chain', chainKey: 'mrv_submissions', description: '14-state UNFCCC MRV verification (W11).', mockStates: ['validation','site_audit','cra_review','issuance_pending','issued','rejected'], mockState: 'site_audit' },
       { key: 'mrv', label: 'MRV submissions', description: 'Monitoring, reporting and verification records.' },
       { key: 'ccp_assessment_chain', label: 'CCP eligibility', chainKey: 'ccp_assessment', description: 'Calyx Global CCP-eligibility assessment.' },
-      { key: 'methodology_amendments', label: 'Methodology amendments', description: 'Approved methodology change register.' },
+      { key: 'methodology_amendments', label: 'Methodology amendments', chainKey: 'methodology_amendment', description: 'Approved methodology change register.' },
     ],
   },
   {
@@ -710,7 +713,7 @@ const adminDomains: Domain[] = [
       { key: 'platform_audit', label: 'Platform audit', description: 'Full platform audit log (cascade events).' },
       { key: 'cron', label: 'Cron jobs', description: 'Manual cron job trigger and dry-run.' },
       { key: 'monitoring', label: 'Monitoring', description: 'DLQ, cascade errors, system health.' },
-      { key: 'revenue', label: 'Revenue dashboard', description: 'Platform fee revenue by tenant (W-commercial).' },
+      { key: 'revenue', label: 'Revenue dashboard', route: '/admin/revenue', description: 'Platform fee revenue by tenant (W-commercial).' },
       { key: 'reports', label: 'Reports & exports', description: 'Platform events and role-action-queue reports with pivots and exports.' },
     ],
   },
@@ -745,9 +748,9 @@ const adminDomains: Domain[] = [
     icon: '◈',
     color: 'oklch(0.46 0.12 200)',
     features: [
-      { key: 'dashboard', label: 'Executive dashboard', description: 'CEO/COO platform KPI dashboard.' },
-      { key: 'intelligence', label: 'AI intelligence', description: 'Platform AI decision audit trail.' },
-      { key: 'briefing', label: 'Briefing', description: 'Daily AI briefings per role.' },
+      { key: 'dashboard', label: 'Executive dashboard', route: '/dashboard', description: 'CEO/COO platform KPI dashboard.' },
+      { key: 'intelligence', label: 'AI intelligence', route: '/intelligence', description: 'Platform AI decision audit trail.' },
+      { key: 'briefing', label: 'Briefing', route: '/briefing', description: 'Daily AI briefings per role.' },
       { key: 'anomaly_admin', label: 'Anomaly detection (W127)', description: 'Platform anomaly ML monitoring.' },
       { key: 'rul_prediction_admin', label: 'RUL prediction (W128)', description: 'Platform remaining-useful-life ML monitoring.' },
       { key: 'fault_fingerprint_admin', label: 'Fault fingerprint (W129)', description: 'Platform fault-fingerprint ML monitoring.' },
@@ -762,7 +765,7 @@ const adminDomains: Domain[] = [
       { key: 'settlement_rails', label: 'Settlement rails (W124)', description: 'STRATE/SWIFT settlement connectors.' },
       { key: 'erp_connectors', label: 'ERP connectors (W125)', description: 'SAP/Oracle ERP integration.' },
       { key: 'filing_connectors', label: 'Filing connectors (W126)', description: 'NERSA/SARS government filing.' },
-      { key: 'marketplace', label: 'Marketplace', description: 'Connector and service marketplace.' },
+      { key: 'marketplace', label: 'Marketplace', route: '/marketplace', description: 'Connector and service marketplace.' },
     ],
   },
 ];
