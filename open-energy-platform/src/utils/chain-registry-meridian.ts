@@ -4746,7 +4746,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     // settled is a SOFT terminal (accepts archive_action forward); hard terminals
     // per enforcement-action-s35-spec HARD_TERMINALS.
-    terminal: ['archived', 'withdrawn', 'cancelled'],
+    terminal: ['settled', 'archived', 'withdrawn', 'cancelled'],
     counterpartyCol: 'respondent_party_id',
     lanes: { regulator: 'enforcement_regulator' },
     eventsTable: 'oe_enforcement_action_events', eventsFk: 'action_id',
@@ -5297,7 +5297,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     // fulfilled/closed stay LIVE (soft milestones — verify/close/reopen act from them);
     // hard terminals per service-request-spec HARD_TERMINALS.
-    terminal: ['archived', 'rejected', 'cancelled'],
+    terminal: ['fulfilled', 'closed', 'archived', 'rejected', 'cancelled'],
     counterpartyCol: 'requested_for_party_id',
     lanes: { support: 'itil_service_mgmt' },
     eventsTable: 'oe_service_request_chain_events', eventsFk: 'request_id',
