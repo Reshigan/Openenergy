@@ -410,6 +410,58 @@ const TraderAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy
   return { default: Adapter };
 });
 
+// ── Grid Operator surfaces (E2.5 — GridOpsWorkstationPage migration) ─────────
+// Chain tabs WITH MERIDIAN_CHAINS descriptors → retired to /ledger/:chainKey (deleted from the
+// husk): imbalance-settlement (imbalance_settlement), transmission-outage (transmission_outage),
+// black_start (black_start), demand_response (demand_response_event W205), interconnector_schedules
+// (interconnector_schedule W234), smart-meter-assets (smart_meter_asset W199), substation-assets
+// (substation_asset W211), eop_activations (eop_activation W215). The first three already had a
+// grid roleData feature with that chainKey; the latter five had NO roleData feature, so roleData
+// features carrying those chainKeys were ADDED in E2.5 (service_request precedent) to keep the
+// chains Atlas-reachable.
+// Non-chain inline tabs EXTRACTED to self-contained `{ role }` bodies:
+//   - curtailment — inline CRUD/event-log listing (Bucket B) → new file (roleData feature exists).
+//   - ancillary — inline ancillary-event listing (Bucket B) → new file (distinct from the
+//     reserve_activation W50 chain); roleData `ancillary` feature added in E2.5.
+//   - outage — inline outage-response listing (Bucket B) → new file; roleData `outage` feature
+//     added in E2.5.
+//   - reports — ReportPanel surface (Bucket D) → new file; roleData `reports` feature added in E2.5.
+// wheeling_charges — WheelingChargesTab is an already-imported standalone named export with only
+//   optional props → registered directly via an adapter (no new file); roleData `wheeling_charges`
+//   feature exists.
+// scada / mqtt-opcua — shared connectors (NOT chains), already exposed as `grid_operator:scada`
+//   and `grid_operator:mqtt-opcua` via the connector trio above; the earlier placeholder slugs did
+//   NOT match any roleData feature key (UNREACHABLE) so grid roleData `scada` + `mqtt-opcua`
+//   features were ADDED in E2.5 to reach them.
+// audit → AuditPanel adapter (prefix /grid-operator, recon hint + recon sources carried verbatim);
+//   roleData `audit` feature added in E2.5.
+const GridCurtailment = React.lazy(() => import('./surfaces/grid/CurtailmentSurface'));
+const GridAncillary = React.lazy(() => import('./surfaces/grid/AncillarySurface'));
+const GridOutage = React.lazy(() => import('./surfaces/grid/OutageSurface'));
+const GridReports = React.lazy(() => import('./surfaces/grid/ReportsSurface'));
+
+// WheelingChargesTab is an already-imported standalone named export (optional `scope` prop,
+// defaults to 'grid'); wrap in a lazy adapter that ignores `role` and renders the grid view.
+const GridWheelingCharges: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { WheelingChargesTab } = await import('../components/grid/WheelingChargesTab');
+  const Adapter: SurfaceComponent = () => <WheelingChargesTab scope="grid" />;
+  return { default: Adapter };
+});
+
+// Audit tab carried verbatim from the GridOpsWorkstationPage `audit` tab
+// (prefix /grid-operator, curtailment recon hint + eskom/nersa/so_internal recon sources).
+const GridAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { AuditPanel } = await import('../components/launch/AuditPanel');
+  const Adapter: SurfaceComponent = () => (
+    <AuditPanel
+      prefix="/grid-operator"
+      reconHint="instruction_number,effective_from,target_mw,participant_id"
+      reconSourceOptions={['eskom', 'nersa', 'so_internal']}
+    />
+  );
+  return { default: Adapter };
+});
+
 // ── Registry ───────────────────────────────────────────────────────────────
 export const SURFACE_REGISTRY: Record<
   string,
@@ -535,4 +587,12 @@ export const SURFACE_REGISTRY: Record<
   'support:cross_tenant': SupportCrossTenant,
   'support:reports': SupportReports,
   'support:audit': SupportAuditPanel,
+  // grid_operator workstation migration (E2.5) — keys match roleData feature keys emitted by Atlas.
+  // scada / mqtt-opcua are registered in the connector trio above.
+  'grid_operator:curtailment': GridCurtailment,
+  'grid_operator:ancillary': GridAncillary,
+  'grid_operator:outage': GridOutage,
+  'grid_operator:wheeling_charges': GridWheelingCharges,
+  'grid_operator:reports': GridReports,
+  'grid_operator:audit': GridAuditPanel,
 };
