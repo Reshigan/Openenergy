@@ -153,7 +153,7 @@ export function ReportPanel({ config }: { config: ReportConfig }) {
           const s = String(v);
           return s.includes(',') ? `"${s}"` : s;
         }).join(',')).join('\n');
-      await api.post('/api/reports/mail', {
+      await api.post('/reports/mail', {
         to: mailTo.trim(),
         subject: config.mailSubject ?? `${config.title} — ${new Date().toLocaleDateString()}`,
         body: `Report: ${config.title}\nFilters: from=${from || 'all'} to=${to || 'all'}\nRows: ${rows.length}`,

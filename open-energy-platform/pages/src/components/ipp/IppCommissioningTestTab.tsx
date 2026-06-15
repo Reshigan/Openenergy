@@ -98,7 +98,7 @@ export function IppCommissioningTestTab() {
     const params = new URLSearchParams();
     if (status) params.set('status', status);
     if (tier) params.set('tier', tier);
-    const res = await api.get(`/api/ipp-commissioning-test?${params}`);
+    const res = await api.get(`/ipp-commissioning-test?${params}`);
     setItems(res.data?.data?.items ?? []);
     setKpis(res.data?.data?.kpis ?? null);
     setLoaded(true);
@@ -107,14 +107,14 @@ export function IppCommissioningTestTab() {
 
   async function doAction(id: string, action: string) {
     setActionPending(true);
-    await api.put(`/api/ipp-commissioning-test/${id}/action`, { action });
+    await api.put(`/ipp-commissioning-test/${id}/action`, { action });
     setActionPending(false);
     setSelected(null);
     load(filterStatus, filterTier);
   }
 
   async function createRecord() {
-    await api.post('/api/ipp-commissioning-test', {
+    await api.post('/ipp-commissioning-test', {
       project_id: 'proj_nxt_solar_001',
       capacity_mw: parseFloat(form.capacity_mw),
       test_category: form.test_category || undefined,

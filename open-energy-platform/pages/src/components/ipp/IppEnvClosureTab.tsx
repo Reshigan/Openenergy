@@ -93,7 +93,7 @@ export function IppEnvClosureTab() {
     const params = new URLSearchParams();
     if (status) params.set('status', status);
     if (tier) params.set('tier', tier);
-    const res = await api.get(`/api/ipp-env-closure?${params}`);
+    const res = await api.get(`/ipp-env-closure?${params}`);
     setItems(res.data?.data?.items ?? []);
     setKpis(res.data?.data?.kpis ?? null);
     setLoaded(true);
@@ -102,14 +102,14 @@ export function IppEnvClosureTab() {
 
   async function doAction(id: string, action: string) {
     setActionPending(true);
-    await api.put(`/api/ipp-env-closure/${id}/action`, { action });
+    await api.put(`/ipp-env-closure/${id}/action`, { action });
     setActionPending(false);
     setSelected(null);
     load(filterStatus, filterTier);
   }
 
   async function createRecord() {
-    await api.post('/api/ipp-env-closure', {
+    await api.post('/ipp-env-closure', {
       project_id: 'proj_nxt_solar_001',
       disturbed_area_ha: parseFloat(form.disturbed_area_ha),
       eia_category: form.eia_category || undefined,

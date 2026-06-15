@@ -95,7 +95,7 @@ export function IppIeCertTab() {
     const params = new URLSearchParams();
     if (status) params.set('status', status);
     if (tier) params.set('tier', tier);
-    const res = await api.get(`/api/ipp-ie-cert?${params}`);
+    const res = await api.get(`/ipp-ie-cert?${params}`);
     setItems(res.data?.data?.items ?? []);
     setKpis(res.data?.data?.kpis ?? null);
     setLoaded(true);
@@ -104,14 +104,14 @@ export function IppIeCertTab() {
 
   async function doAction(id: string, action: string) {
     setActionPending(true);
-    await api.put(`/api/ipp-ie-cert/${id}/action`, { action });
+    await api.put(`/ipp-ie-cert/${id}/action`, { action });
     setActionPending(false);
     setSelected(null);
     load(filterStatus, filterTier);
   }
 
   async function createRecord() {
-    await api.post('/api/ipp-ie-cert', {
+    await api.post('/ipp-ie-cert', {
       project_id: 'proj_nxt_solar_001',
       milestone_value_zar: parseFloat(form.milestone_value_zar),
       milestone_category: form.milestone_category || undefined,

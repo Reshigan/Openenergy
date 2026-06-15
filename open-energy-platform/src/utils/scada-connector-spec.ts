@@ -696,25 +696,25 @@ export function isValidMtlsFingerprint(s: string | null | undefined): boolean {
 // rollout pulls from KV. 5+ entries cover the SA grid majors.
 const PEER_FINGERPRINT_ALLOWLIST = new Set<string>([
   // NTCSA national transmission SO.
-  '0000000000000000000000000000000000000000000000000000000000ntcsa',
+  '0000000000000000000000000000000000000000000000000000000000ca0001',
   // Eskom Distribution.
-  '00000000000000000000000000000000000000000000000000000000esk_dx',
+  '0000000000000000000000000000000000000000000000000000000000ca0002',
   // City of Cape Town distribution.
-  '000000000000000000000000000000000000000000000000000000000cctmd',
+  '0000000000000000000000000000000000000000000000000000000000ca0003',
   // City of Joburg / Joburg City Power.
-  '00000000000000000000000000000000000000000000000000000000jbgcp',
+  '0000000000000000000000000000000000000000000000000000000000ca0004',
   // eThekwini / Durban distribution.
-  '00000000000000000000000000000000000000000000000000000000etwni',
+  '0000000000000000000000000000000000000000000000000000000000ca0005',
   // IPP-side trusted plant ICS roots (Kakamas / De Aar / Loeriesfontein).
-  '00000000000000000000000000000000000000000000000000000kakamas1',
-  '00000000000000000000000000000000000000000000000000000deaar01',
-  '00000000000000000000000000000000000000000000000000lo3riesfont',
+  '0000000000000000000000000000000000000000000000000000000000ca0006',
+  '0000000000000000000000000000000000000000000000000000000000ca0007',
+  '0000000000000000000000000000000000000000000000000000000000ca0008',
 ]);
 
 export function isAllowedPeerFingerprint(fp: string): boolean {
   if (!isValidMtlsFingerprint(fp)) return false;
   const norm = fp.replace(/[:\s-]/g, '').toLowerCase();
-  // Real production: KV lookup. Stub: any well-formed hex passes,
-  // allow-list match returns extra trust signal.
-  return PEER_FINGERPRINT_ALLOWLIST.has(norm) || norm.length === 64;
+  // Production resolves trusted peer roots from KV; this allow-list is the
+  // seed set. A well-formed fingerprint is trusted only if it is enrolled.
+  return PEER_FINGERPRINT_ALLOWLIST.has(norm);
 }

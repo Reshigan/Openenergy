@@ -226,7 +226,8 @@ function FaultRegister({ faults }: { faults: FaultRow[] }) {
           <div className="widget-card-title">Fault register — live revenue impact</div>
           <div className="widget-card-subtitle">Sorted by severity then bleed rate. Every row updates as time passes.</div>
         </div>
-        <Link to="/esums/faults" className="text-[11px] font-semibold text-[oklch(0.46_0.16_55)] hover:underline">View all →</Link>
+        {/* Faults have no Meridian chain (anomaly feed, not a state-machine case) —
+            the dispatched work order is the navigable artifact (see WO board above). */}
       </header>
       <div className="overflow-x-auto">
         <table className="w-full text-[12px]">
@@ -255,9 +256,9 @@ function FaultRegister({ faults }: { faults: FaultRow[] }) {
                 <td className="text-right font-mono">{formatZAR(f.hourly_loss_zar)}</td>
                 <td className="text-right font-mono widget-tone-bad-text">{formatZAR(f.total_loss_zar)}</td>
                 <td className="text-right">
-                  <Link to={`/esums/faults/${f.id}`} className="text-[11px] font-semibold text-[oklch(0.46_0.16_55)] hover:underline">
-                    {f.status === 'open' ? 'Dispatch' : f.status === 'acknowledged' ? 'View' : 'Track'}
-                  </Link>
+                  <span className="text-[11px] font-semibold text-[#6b7685]">
+                    {f.status === 'open' ? 'Open' : f.status === 'acknowledged' ? 'Ack' : 'Tracking'}
+                  </span>
                 </td>
               </tr>
             ))}
@@ -395,7 +396,7 @@ function WoKanban({ wos }: { wos: WoRow[] }) {
           <div className="widget-card-title">Active work orders</div>
           <div className="widget-card-subtitle">Drag-to-reassign in the WO Board · countdown shown for SLA</div>
         </div>
-        <Link to="/esums/workorders" className="text-[11px] font-semibold text-[oklch(0.46_0.16_55)] hover:underline">View board →</Link>
+        <Link to="/ledger/om_work_order" className="text-[11px] font-semibold text-[oklch(0.46_0.16_55)] hover:underline">View board →</Link>
       </header>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 p-3">
         {lanes.map((lane) => (
@@ -427,7 +428,7 @@ function WoCard({ wo }: { wo: WoRow }) {
   const minsLeft = Math.round((new Date(wo.sla_deadline).getTime() - Date.now()) / 60_000);
   const slaTone = minsLeft < 0 ? 'widget-tone-bad-text' : minsLeft < 60 ? 'widget-tone-warn-text' : 'widget-tone-good-text';
   return (
-    <Link to={`/esums/workorders/${wo.id}`}
+    <Link to={`/thread/om_work_order/${wo.id}`}
           className="block rounded bg-white border border-[#e2e8f0] p-2 text-[11px] hover:border-[oklch(0.46_0.16_55)] transition-colors">
       <div className="flex items-center justify-between gap-1">
         <span className="font-mono font-semibold text-[#0f1c2e]">{wo.wo_number}</span>

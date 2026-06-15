@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  MERIDIAN_CHAINS, bucketFor, attentionScore, quantumZar, type HorizonBucket,
+  MERIDIAN_CHAINS, bucketFor, attentionScore, quantumZar, getChain, type HorizonBucket,
 } from '../src/utils/chain-registry-meridian';
 
 const NOW = new Date('2026-06-12T09:40:00Z').getTime();
@@ -71,8 +71,12 @@ describe('quantumZar', () => {
 describe('MERIDIAN_CHAINS registry shape', () => {
   it('every entry has table, statusCol default, deadline col, ≥1 lane', () => {
     for (const d of MERIDIAN_CHAINS) {
-      expect(d.table).toMatch(/^(oe_|om_)/);
-      expect(d.key).toMatch(/^[a-z_]+$/);
+      // oe_/om_ is the convention; these four are documented legacy pre-oe_
+      // tables (migrations 002/026/056/110) the registry deliberately reuses.
+      const LEGACY = new Set(['carbon_retirements', 'mrv_submissions', 'support_tickets', 'ipp_performance_bonds']);
+      expect(d.table.startsWith('oe_') || d.table.startsWith('om_') || LEGACY.has(d.table),
+        `unexpected table name ${d.table} (chain ${d.key})`).toBe(true);
+      expect(d.key).toMatch(/^[a-z0-9_]+$/);
       expect(Object.keys(d.lanes).length).toBeGreaterThan(0);
       expect(d.terminal.length).toBeGreaterThan(0);
     }
@@ -83,6 +87,49 @@ describe('MERIDIAN_CHAINS registry shape', () => {
   });
 });
 
+describe('registry schema extensions', () => {
+  it('getChain resolves a known key and returns undefined for unknown', () => {
+    expect(getChain('covenant_certificate')?.wave).toBe(38);
+    expect(getChain('__nope__')).toBeUndefined();
+  });
+
+  it('any filters/kpis/initiation present are well-formed', () => {
+    for (const d of MERIDIAN_CHAINS) {
+      for (const f of d.filters ?? []) {
+        expect(typeof f.key).toBe('string');
+        expect(Array.isArray(f.statuses)).toBe(true);
+        expect(f.statuses.length).toBeGreaterThan(0);
+      }
+      for (const k of d.kpis ?? []) {
+        expect(['count', 'count_breached', 'sum_quantum']).toContain(k.compute);
+      }
+      if (d.initiation) {
+        expect(d.initiation.path.startsWith('/api/')).toBe(true);
+        expect(Array.isArray(d.initiation.fields)).toBe(true);
+      }
+      for (const a of d.actions) {
+        for (const fld of a.fields ?? []) {
+          expect(['number','string','date','enum','boolean','evidence']).toContain(fld.type);
+          if (fld.type === 'enum') expect((fld.options ?? []).length).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+});
+
+describe('covenant_certificate schema extensions', () => {
+  it('covenant_certificate has filters, kpis, and breach action fields', () => {
+    const d = getChain('covenant_certificate')!;
+    expect(d.filters?.map(f => f.key)).toContain('active_breach');
+    expect(d.kpis?.some(k => k.compute === 'sum_quantum')).toBe(true);
+    const flag = d.actions.find(a => a.action === 'flag-breach')!;
+    expect(flag.fields?.find(f => f.key === 'reason_code')?.type).toBe('enum');
+    const KNOWN = new Set(['certificate_due','certificate_submitted','under_review','ratios_verified',
+      'compliant','breach_identified','waiver_requested','waiver_granted','cure_period','cured','accelerated']);
+    for (const f of d.filters ?? []) for (const s of f.statuses) expect(KNOWN.has(s)).toBe(true);
+  });
+});
+
 describe('registry tables exist in migrations', () => {
   const migDir = join(__dirname, '../migrations');
   const allSql = readdirSync(migDir)
@@ -90,10 +137,15 @@ describe('registry tables exist in migrations', () => {
     .map(f => readFileSync(join(migDir, f), 'utf8'))
     .join('\n');
 
+  // DDL may quote the identifier (`oe_x`) and table names share prefixes
+  // (oe_enforcement_action vs oe_enforcement_actions), so anchor on optional
+  // backticks + a `(` boundary rather than a bare substring.
+  const createRe = (table: string) =>
+    new RegExp(`CREATE TABLE IF NOT EXISTS\\s+\`?${table}\`?\\s*\\(`);
+
   it('every registry table has a CREATE TABLE migration', () => {
     for (const d of MERIDIAN_CHAINS) {
-      expect(allSql, `missing table ${d.table} (chain ${d.key})`)
-        .toContain(`CREATE TABLE IF NOT EXISTS ${d.table}`);
+      expect(createRe(d.table).test(allSql), `missing table ${d.table} (chain ${d.key})`).toBe(true);
     }
   });
 
@@ -105,9 +157,12 @@ describe('registry tables exist in migrations', () => {
     // later `ALTER TABLE <table> ADD COLUMN` (e.g. om_sites' commissioning_status /
     // commissioning_due_at arrive via per-column ALTERs in migration 114).
     const hasColumn = (table: string, col: string): boolean => {
-      const block = sqlNoComments.split(`CREATE TABLE IF NOT EXISTS ${table}`)[1]?.split(');')[0] ?? '';
+      // Anchor the CREATE TABLE on optional backticks + `(` so a prefix-sharing
+      // sibling (oe_enforcement_actions) can't be matched for oe_enforcement_action.
+      const m = createRe(table).exec(sqlNoComments);
+      const block = m ? sqlNoComments.slice(m.index + m[0].length).split(');')[0] : '';
       if (block.includes(col)) return true;
-      return new RegExp(`ALTER TABLE\\s+${table}\\s+ADD COLUMN\\s+${col}\\b`).test(sqlNoComments);
+      return new RegExp(`ALTER TABLE\\s+\`?${table}\`?\\s+ADD COLUMN\\s+\`?${col}\\b`).test(sqlNoComments);
     };
     for (const d of MERIDIAN_CHAINS) {
       expect(hasColumn(d.table, d.deadlineCol), `${d.table} missing ${d.deadlineCol}`).toBe(true);

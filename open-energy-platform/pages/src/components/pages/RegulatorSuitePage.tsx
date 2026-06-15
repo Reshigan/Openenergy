@@ -3,14 +3,6 @@ import { SuitePage, StatusPill, Column, TabSpec } from '../SuitePage';
 import { platformTabs } from '../platformTabs';
 import { regulatorCompletionTabs } from '../roleCompletionTabs';
 import { RegulatorInsights } from '../widgets/RegulatorInsights';
-import { DispositionChainTab } from '../disposition/DispositionChainTab';
-import { LicenceRenewalChainTab } from '../licence-renewal/LicenceRenewalChainTab';
-import { ComplianceInspectionChainTab } from '../compliance-inspection/ComplianceInspectionChainTab';
-import { TariffDeterminationChainTab } from '../tariff-determination/TariffDeterminationChainTab';
-import { LicenceApplicationChainTab } from '../licence-application/LicenceApplicationChainTab';
-import { SsegRegistrationChainTab } from '../sseg-registration/SsegRegistrationChainTab';
-import { ComplaintResolutionChainTab } from '../complaint-resolution/ComplaintResolutionChainTab';
-import { LevyAssessmentChainTab } from '../levy-assessment/LevyAssessmentChainTab';
 import { ConsultationNoticeChainTab } from '../consultation-notice/ConsultationNoticeChainTab';
 
 export function RegulatorSuitePage() {
@@ -22,72 +14,6 @@ export function RegulatorSuitePage() {
       description: 'NERSA MYPD allowed-revenue calculator, cost-of-service breakout, affordability gauge.',
       columns: [],
       customContent: <RegulatorInsights />,
-    },
-    {
-      key: 'disposition',
-      label: 'Disposition',
-      endpoint: '',
-      description: 'Compliance-notice disposition chain (NERSA Act §10) · 11-state P6 across every inbox notice from W18+; Council escalation, SAPS/DMRE/FSCA referral, §10 monthly reporting.',
-      columns: [],
-      customContent: <DispositionChainTab />,
-    },
-    {
-      key: 'licence-renewal',
-      label: 'Licence renewal',
-      endpoint: '',
-      description: 'NERSA s.14-s.16 licence renewal / amendment chain · 11-state P6 with s10 public consultation + Council vote + Tribunal appeals. INVERTED class SLA: utility 180-day evaluation; trading + SSEG compressed. Council crossings: refused for all classes; granted/amended for utility-scale only; SLA breach for all (statutory hard line).',
-      columns: [],
-      customContent: <LicenceRenewalChainTab />,
-    },
-    {
-      key: 'compliance-inspection',
-      label: 'Inspections',
-      endpoint: '',
-      description: 'Proactive compliance inspection + enforcement chain (NERSA ERA §10 monitoring + §34/§35 enforcement) · 12-state P6: scheduled → in progress → findings → directive → remediation → compliant closed, with a penalty + Tribunal-appeal enforcement branch. The active, own-initiative complement to reactive Disposition. URGENT SLA: more severe contravention = tighter windows. Appeals cross to the regulator inbox for every tier; penalties + SLA breaches cross for critical + serious. Officer drives the machinery; respondent licensee remediates + appeals.',
-      columns: [],
-      customContent: <ComplianceInspectionChainTab />,
-    },
-    {
-      key: 'tariff-determination',
-      label: 'MYPD determinations',
-      endpoint: '',
-      description: 'Tariff / revenue (MYPD price-control) determination chain (ERA §15–§16 + MYPD methodology + RCA) · 12-state P6: application received → completeness → public consultation → revenue analysis → draft → Council deliberation → determination issued → implemented, with reconsideration + High Court remittal branches. The formal price-control engine downstream of the static MYPD calculator. INVERTED class SLA: multi-year price determinations get the longest windows (deepest scrutiny); SSEG feed-in tariffs compressed. Council crossings: court remittals for every class; issued determinations + rejections for multi-year + annual only; SLA breaches material-gated. Registry/analyst/Council drive the machinery; applicant requests reconsideration; the court remits.',
-      columns: [],
-      customContent: <TariffDeterminationChainTab />,
-    },
-    {
-      key: 'licence-application',
-      label: 'Licence applications',
-      endpoint: '',
-      description: 'Initial licence application & adjudication chain (Electricity Regulation Act 4 of 2006 §§8–11 + NERSA §9 completeness + §10 public participation) · 12-state P6: received → completeness review → accepted → public participation → technical evaluation → Council decision → granted → issued, with an additional-information loop, refusal, applicant withdrawal and lapse. The ENTRY gate to the regulated market — grants the FIRST licence, distinct from W33 renewal which presumes a holder. INVERTED class SLA: major (transmission / large generation / import-export) get the longest §10 windows; minor (small-scale generation) compressed. Council crossings: refusals for EVERY class (denying market entry); major-licence grants (Gazette); SLA breaches for major + standard. Registry/evaluator/Council drive the machinery; the applicant supplies information + withdraws.',
-      columns: [],
-      customContent: <LicenceApplicationChainTab />,
-    },
-    {
-      key: 'sseg-registration',
-      label: 'SSEG registration',
-      endpoint: '',
-      description: 'Embedded-generation registration & Schedule 2 exemption chain (Electricity Regulation Act 4 of 2006 Schedule 2, as amended 2021/2023) · 12-state P6: received → eligibility screening → technical verification → exemption determination → approved → registered, with an information-gap loop, a conditional-approval loop, refusal, applicant withdrawal and lapse. The LIGHT-TOUCH front-end sibling of W49 full licensing — no public-participation step. Its signature terminal REFERS a facility that falls outside Schedule 2 (generation for sale / trading / export) UP to the §§8–11 licensing pipeline. INVERTED tier SLA: utility-scale embedded gets the longest grid-impact windows; micro rooftop is quick. Council crossings: a referral for EVERY tier (kicking into full licensing); large + utility refusals and SLA breaches. Registry/verifier/committee drive the machinery; the applicant supplies information, satisfies conditions + withdraws.',
-      columns: [],
-      customContent: <SsegRegistrationChainTab />,
-    },
-    {
-      key: 'complaints',
-      label: 'Complaints & disputes',
-      endpoint: '',
-      description:
-        'Complaints & dispute resolution chain (Electricity Regulation Act 4 of 2006 §30 + National Energy Regulator Act 40 of 2004 + NERSA Complaints Procedures) · 12-state P6: lodged → admissibility review → referred to licensee → under investigation → mediation → adjudication hearing → ruling issued → remedy monitoring → resolved, with a first-level licensee-settlement short-circuit, an investigation fast-track to hearing, plus dismiss, appeal and withdraw branches. The REACTIVE external-party complaint engine — distinct from W31 internally cross-referred Disposition and W40 own-initiative Inspection. URGENT SLA: a larger affected population means tighter windows (systemic ≥10,000 customers is fastest). Council crossings: appeals for EVERY tier (signature — every appeal is reportable), rulings + SLA breaches for major + systemic, dismissals for systemic only. The adjudicator drives the machinery; the respondent licensee settles; the complainant appeals + withdraws.',
-      columns: [],
-      customContent: <ComplaintResolutionChainTab />,
-    },
-    {
-      key: 'levy-assessment',
-      label: 'Levy & collection',
-      endpoint: '',
-      description:
-        'Regulatory levy assessment & collection chain (NERSA levies under the National Energy Regulator Act 40 of 2004 §5B + ERA / Gas Act / Petroleum Pipelines Act levy schedules) · 12-state P6: assessed → assessment review → invoiced → payment pending → partially paid → in arrears → final demand → enforcement → settled, with an objection-review short-circuit, a write-off branch and an assessment-withdrawal escape. The FINANCIAL counterpart to licensing — what licensees OWE the regulator (turnover-based, volume-based or fixed) — distinct from W43 MYPD which sets what licensees CHARGE customers. Auto-assesses from the declared base, ages arrears into 30/60/90/120+ buckets and drives a dunning cycle (invoice → final demand → enforcement) with automatic licence-good-standing linkage, beating NERSA manual billing / Ofgem licence-fee runs / FERC annual charges. URGENT SLA: a larger levy means tighter collection windows (major ≥ R50m is fastest). Council crossings: enforcement escalation + write-offs for EVERY tier (signature — every enforcement step and every write-off is reportable), final demands + SLA breaches for large + major only. The assessor drives the machinery; the licensee objects + pays.',
-      columns: [],
-      customContent: <LevyAssessmentChainTab />,
     },
     {
       key: 'consultation-notice',

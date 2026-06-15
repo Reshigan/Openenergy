@@ -82,7 +82,7 @@ export function IppLandRegisterTab() {
     const params = new URLSearchParams();
     if (status) params.set('status', status);
     if (tier) params.set('tier', tier);
-    const res = await api.get(`/api/ipp-land-register?${params}`);
+    const res = await api.get(`/ipp-land-register?${params}`);
     setItems(res.data?.data?.items ?? []);
     setKpis(res.data?.data?.kpis ?? null);
     setLoaded(true);
@@ -91,14 +91,14 @@ export function IppLandRegisterTab() {
 
   async function doAction(id: string, action: string) {
     setActionPending(true);
-    await api.put(`/api/ipp-land-register/${id}/action`, { action });
+    await api.put(`/ipp-land-register/${id}/action`, { action });
     setActionPending(false);
     setSelected(null);
     load(filterStatus, filterTier);
   }
 
   async function createRecord() {
-    await api.post('/api/ipp-land-register', {
+    await api.post('/ipp-land-register', {
       project_id: 'proj_nxt_solar_001',
       area_ha: parseFloat(form.area_ha),
       erf_count: form.erf_count ? parseInt(form.erf_count) : undefined,

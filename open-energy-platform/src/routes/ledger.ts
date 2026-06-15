@@ -1,0 +1,85 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Meridian — GET /api/ledger/:chainKey
+// Generic per-chain list: KPI strip + filter pills + card rows for one chain.
+// Table/column/status values come exclusively from the static MERIDIAN_CHAINS
+// literal (resolved via getChain). :chainKey 404s if unknown so it never
+// reaches SQL as an identifier. ?status= is matched against the descriptor's
+// static filters[].statuses and bound as parameters.
+// ═══════════════════════════════════════════════════════════════════════════
+import { Hono } from 'hono';
+import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { HonoEnv } from '../utils/types';
+import {
+  getChain, bucketFor, attentionScore, quantumZar, listSelectCols, type ChainDescriptor,
+} from '../utils/chain-registry-meridian';
+
+export interface LedgerRow {
+  id: string; ref: string; title: string; status: string;
+  deadline_at: string | null; bucket: string; quantum_zar: number | null;
+  counterparty: string | null; score: number;
+  actions: { action: string; label: string; path: string; cascadeHint: string; tone?: string; fields?: unknown[] }[];
+}
+
+function viewerCanSee(chain: ChainDescriptor, role: string): boolean {
+  if (role === 'admin') return true;
+  if (chain.lanes[role]) return true;
+  return chain.actions.some(a => a.roles.includes(role));
+}
+
+export function assembleLedger(chain: ChainDescriptor, rows: Record<string, unknown>[], role: string, now: number) {
+  const mapped: LedgerRow[] = rows.map(r => {
+    const deadline = (r[chain.deadlineCol] as string | null) ?? null;
+    const zar = quantumZar(chain, r);
+    return {
+      id: String(r.id ?? r[chain.refCol]),
+      ref: String(r[chain.refCol] ?? r.id),
+      title: chain.titleCol ? String(r[chain.titleCol] ?? chain.title) : chain.title,
+      status: String(r[chain.statusCol] ?? ''),
+      deadline_at: deadline,
+      bucket: bucketFor(deadline, now),
+      quantum_zar: zar,
+      counterparty: chain.counterpartyCol ? (String(r[chain.counterpartyCol] ?? '') || null) : null,
+      score: attentionScore(zar, deadline, now),
+      actions: chain.actions.filter(a => a.roles.includes(role)).map(({ roles: _r, ...a }) => a),
+    };
+  });
+  const BREACHED = 'breached'; // bucketFor returns 'breached' for an overdue deadline
+  const kpis = (chain.kpis ?? []).map(k => ({
+    key: k.key, label: k.label,
+    value: k.compute === 'count' ? mapped.length
+      : k.compute === 'count_breached' ? mapped.filter(m => m.bucket === BREACHED).length
+      : mapped.reduce((s, m) => s + (m.quantum_zar ?? 0), 0),
+  }));
+  return {
+    chain: { key: chain.key, wave: chain.wave, title: chain.title },
+    filters: chain.filters ?? [],
+    initiation: chain.initiation ?? null,
+    kpis,
+    rows: mapped.sort((a, b) => b.score - a.score),
+  };
+}
+
+const ledger = new Hono<HonoEnv>();
+ledger.use('*', authMiddleware);
+
+ledger.get('/:chainKey', async (c) => {
+  const chain = getChain(c.req.param('chainKey'));
+  if (!chain) return c.json({ success: false, error: 'unknown chain' }, 404);
+  const user = getCurrentUser(c);
+  if (!viewerCanSee(chain, user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
+
+  const filterKey = c.req.query('status');
+  const filter = (chain.filters ?? []).find(f => f.key === filterKey);
+  let sql = `SELECT ${listSelectCols(chain)} FROM ${chain.table}`;
+  const binds: unknown[] = [];
+  if (filter) {
+    sql += ` WHERE ${chain.statusCol} IN (${filter.statuses.map(() => '?').join(',')})`;
+    binds.push(...filter.statuses);
+  }
+  sql += ` ORDER BY (${chain.deadlineCol} IS NULL), ${chain.deadlineCol} ASC LIMIT 200`;
+  const res = await c.env.DB.prepare(sql).bind(...binds).all();
+  const rows = (res.results ?? []) as Record<string, unknown>[];
+  return c.json({ success: true, data: assembleLedger(chain, rows, user.role, Date.now()) });
+});
+
+export default ledger;

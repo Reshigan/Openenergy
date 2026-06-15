@@ -105,7 +105,7 @@ export function IppPaymentCertTab() {
     const params = new URLSearchParams();
     if (status) params.set('status', status);
     if (tier) params.set('tier', tier);
-    const res = await api.get(`/api/ipp-payment-cert?${params}`);
+    const res = await api.get(`/ipp-payment-cert?${params}`);
     const j = res.data;
     setItems(j.data?.items ?? []);
     setKpis(j.data?.kpis ?? null);
@@ -115,14 +115,14 @@ export function IppPaymentCertTab() {
 
   async function doAction(id: string, action: string) {
     setActionPending(true);
-    await api.put(`/api/ipp-payment-cert/${id}/action`, { action });
+    await api.put(`/ipp-payment-cert/${id}/action`, { action });
     setActionPending(false);
     setSelected(null);
     load(filterStatus, filterTier);
   }
 
   async function createCert() {
-    await api.post('/api/ipp-payment-cert', {
+    await api.post('/ipp-payment-cert', {
       project_id: 'proj_nxt_solar_001',
       claim_type: form.claim_type,
       claimed_value_zar: parseFloat(form.claimed_value_zar),

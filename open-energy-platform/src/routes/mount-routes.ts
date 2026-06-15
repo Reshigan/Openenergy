@@ -353,6 +353,7 @@ import interconnectorScheduleChainRoutes from './interconnector-schedule-chain';
 import nationalDashboardRoutes from './national-dashboard';
 import horizonRoutes from './horizon';
 import threadRoutes from './thread';
+import ledgerRoutes from './ledger';
 import dealsRoutes from './deals';
 
 // Hono's authMiddleware is applied per-module inside each route file using
@@ -732,6 +733,8 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   app.route('/api/horizon', horizonRoutes);
   // Meridian — generic two-sided case view over chain registry.
   app.route('/api/thread', threadRoutes);
+  // Meridian — generic per-chain list (KPI + filters + rows) over chain registry.
+  app.route('/api/ledger', ledgerRoutes);
   // Generalized cross-role deal engine (offer→match→evaluate→accept→track).
   // A specific prefix must be registered BEFORE the broad /api catch-all so
   // Hono (which matches in registration order) routes it correctly.

@@ -94,7 +94,7 @@ export function IppTpaTab() {
     const params = new URLSearchParams();
     if (status) params.set('status', status);
     if (tier) params.set('tier', tier);
-    const res = await api.get(`/api/ipp-tpa?${params}`);
+    const res = await api.get(`/ipp-tpa?${params}`);
     setItems(res.data?.data?.items ?? []);
     setKpis(res.data?.data?.kpis ?? null);
     setLoaded(true);
@@ -103,14 +103,14 @@ export function IppTpaTab() {
 
   async function doAction(id: string, action: string) {
     setActionPending(true);
-    await api.put(`/api/ipp-tpa/${id}/action`, { action });
+    await api.put(`/ipp-tpa/${id}/action`, { action });
     setActionPending(false);
     setSelected(null);
     load(filterStatus, filterTier);
   }
 
   async function createRecord() {
-    await api.post('/api/ipp-tpa', {
+    await api.post('/ipp-tpa', {
       project_id: 'proj_nxt_solar_001',
       wheeling_capacity_mw: parseFloat(form.wheeling_capacity_mw),
       tpa_category: form.tpa_category || undefined,

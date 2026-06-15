@@ -4,67 +4,12 @@ import { platformTabs } from '../platformTabs';
 import { lenderCompletionTabs } from '../roleCompletionTabs';
 import { LenderInsights } from '../widgets/LenderInsights';
 import { DunningTab } from '../lender/DunningTab';
-import { DrawdownChainTab } from '../lender/DrawdownChainTab';
-import { DisbursementChainTab } from '../disbursement/DisbursementChainTab';
-import { CovenantCertificateTab } from '../lender/CovenantCertificateTab';
-import { LoanDefaultChainTab } from '../lender/LoanDefaultChainTab';
-import { CreditOriginationChainTab } from '../lender/CreditOriginationChainTab';
-import { LoanTransferChainTab } from '../lender/LoanTransferChainTab';
-import { SecurityPerfectionChainTab } from '../lender/SecurityPerfectionChainTab';
 import { ReserveAccountChainTab } from '../lender/ReserveAccountChainTab';
 import { DscrMonitoringChainTab } from '../lender/DscrMonitoringChainTab';
 import { SllKpiChainTab } from '../lender/SllKpiChainTab';
 
 export function LenderSuitePage() {
   const tabs: TabSpec[] = [
-    {
-      key: 'credit-origination',
-      label: 'Credit origination',
-      endpoint: '',
-      description: 'Credit facility origination & credit-approval chain · NCA + Banks Act + Basel III + SARB large-exposure + LMA. The front-end of project finance — screening, credit assessment, committee decision, agreement, CPs, activation. INVERTED tier SLA; activate crosses regulator for major/systemic, decline for systemic only.',
-      columns: [],
-      customContent: <CreditOriginationChainTab />,
-    },
-    {
-      key: 'drawdowns',
-      label: 'Drawdowns',
-      endpoint: '',
-      description: 'Disbursement certification chain · IE + CP gate, SARB large-exposure on senior approvals, regulator inbox on senior breaches.',
-      columns: [],
-      customContent: <DrawdownChainTab />,
-    },
-    {
-      key: 'disbursements',
-      label: 'Disbursements',
-      endpoint: '',
-      description: 'UoP reconciliation chain · SARB Exchange Control + Equator Principles + IE certification; clawback for ALL tiers, SLA breach senior_a/b only.',
-      columns: [],
-      customContent: <DisbursementChainTab />,
-    },
-    {
-      key: 'covenant-certificates',
-      label: 'Covenant certificates',
-      endpoint: '',
-      description: 'Periodic LMA compliance certificate chain · DSCR/LLCR/gearing evidence, agent review, breach → waiver/cure/acceleration. URGENT tier SLA; acceleration crosses regulator for ALL tiers, breach + SLA breach senior/mezz only.',
-      columns: [],
-      customContent: <CovenantCertificateTab />,
-    },
-    {
-      key: 'loan-transfers',
-      label: 'Loan transfers',
-      endpoint: '',
-      description: 'Secondary loan transfer / participation chain · LMA + Banks Act large-exposure + SARB Exchange Control + FIC. A lender of record sells down part of a facility — KYC/sanctions screening, obligor consent, SARB review (non-resident), certificate execution, settlement, register update. INVERTED tier SLA; approving a non-resident transfer crosses SARB at every tier, screening failure always crosses (FIC), completing a major/systemic transfer crosses Banks Act large-exposure.',
-      columns: [],
-      customContent: <LoanTransferChainTab />,
-    },
-    {
-      key: 'security-perfection',
-      label: 'Security perfection',
-      endpoint: '',
-      description: 'Collateral perfection & registration chain · Deeds Registries Act + Movable Property Security Act + Companies Act s126 share pledges + FMA/STRATE dematerialised securities + cession in securitatem debiti + SARB Exchange Control. Tracks every security instrument from identification → documentation → execution → registry lodgement → registration → perfection. URGENT tier SLA (larger/CP-critical = tighter); lapse crosses regulator at every tier, perfection-overdue crosses for major/critical, defective-registration for critical only.',
-      columns: [],
-      customContent: <SecurityPerfectionChainTab />,
-    },
     {
       key: 'reserve-accounts',
       label: 'Reserve accounts',
@@ -88,14 +33,6 @@ export function LenderSuitePage() {
       description: 'Sustainability-linked loan KPI compliance & margin ratchet chain · LMA SLL Principles + ICMA SLBP + SA Green Finance Taxonomy 2025 + SARB Climate-Risk Practice Standard 2024. Tests each climate / safety / disclosure KPI against pre-agreed targets and routes the loan through period_open → data_collected → kpi_measured → verifying → kpi_verified → attested → margin_amended → reported (clean) or breach_recorded → cure_period → cure_validated → restated. Tier RE-DERIVED on every transition from kpi_variance_pct × materiality_class; INVERTED tier SLA — severe gets LONGEST cure window per LMA SLL governance. FLOOR-AT-MATERIAL for climate_kpi / safety_kpi / mandatory_disclosure_kpi. Live ESG margin-pricing battery on every record: effective margin bps, cumulative ratchet bps + ZAR, TCFD completeness %, attestation completeness %, SBTi pathway, taxonomy alignment %, verifier provenance band, predicted amendment date, days-to-KPI-due, urgency band. SIGNATURE regulator-inbox crossings: record_breach + execute_amendment + fail_cure cross regulator at EVERY tier (SARB CPS 2024 + Green Finance Taxonomy 2025 sustainable-finance integrity hard-line); waive + sla_breached for material+severe only.',
       columns: [],
       customContent: <SllKpiChainTab />,
-    },
-    {
-      key: 'loan-defaults',
-      label: 'Loan defaults',
-      endpoint: '',
-      description: 'LMA event-of-default → enforcement / step-in / restructure / write-off chain · picks up where covenant acceleration ends. URGENT tier SLA; write-off crosses regulator for ALL tiers, acceleration + enforcement + SLA breach senior/mezz only.',
-      columns: [],
-      customContent: <LoanDefaultChainTab />,
     },
     {
       key: 'dunning',

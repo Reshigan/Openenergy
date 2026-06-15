@@ -17,7 +17,7 @@ import { Hono } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import {
-  chainsForRole, bucketFor, attentionScore, quantumZar,
+  chainsForRole, bucketFor, attentionScore, quantumZar, listSelectCols,
   type ChainDescriptor, type HorizonBucket,
 } from '../utils/chain-registry-meridian';
 
@@ -87,7 +87,7 @@ horizon.get('/:role', async (c) => {
     c.env.DB.prepare(
       // NULLs-last: SQLite sorts NULLs first on ASC, which would let
       // deadline-less rows crowd urgent ones out of the 60-row window.
-      `SELECT * FROM ${d.table}
+      `SELECT ${listSelectCols(d)} FROM ${d.table}
        WHERE ${d.statusCol} NOT IN (${d.terminal.map(() => '?').join(',')})
        ORDER BY (${d.deadlineCol} IS NULL), ${d.deadlineCol} ASC LIMIT 60`,
     ).bind(...d.terminal),

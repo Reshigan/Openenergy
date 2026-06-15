@@ -715,26 +715,26 @@ export function isValidMtlsFingerprint(s: string | null | undefined): boolean {
 // Stub allow-list of trusted IoT-peer fingerprints. Real rollout pulls
 // from KV. 8 entries cover the SA grid majors + IPP/EPC IoT roots.
 const PEER_FINGERPRINT_ALLOWLIST = new Set<string>([
-  // NTCSA national IoT IoT roots.
-  '0000000000000000000000000000000000000000000000000000ntcsaiotr1',
+  // NTCSA national IoT roots.
+  '0000000000000000000000000000000000000000000000000000000010770001',
   // Eskom Distribution IoT.
-  '00000000000000000000000000000000000000000000000esk_dx_iot_rt1',
+  '0000000000000000000000000000000000000000000000000000000010770002',
   // City of Cape Town IoT broker.
-  '0000000000000000000000000000000000000000000000000cct_iot_root',
+  '0000000000000000000000000000000000000000000000000000000010770003',
   // City of Joburg IoT broker.
-  '0000000000000000000000000000000000000000000000000jbg_iot_root',
+  '0000000000000000000000000000000000000000000000000000000010770004',
   // eThekwini IoT broker.
-  '0000000000000000000000000000000000000000000000000etwniiotrootr',
+  '0000000000000000000000000000000000000000000000000000000010770005',
   // IPP plant IoT roots.
-  '000000000000000000000000000000000000000000000000kakamasiotroot',
-  '0000000000000000000000000000000000000000000000000deaar_iot_rt',
-  '00000000000000000000000000000000000000000000000lorisfont_iotr',
+  '0000000000000000000000000000000000000000000000000000000010770006',
+  '0000000000000000000000000000000000000000000000000000000010770007',
+  '0000000000000000000000000000000000000000000000000000000010770008',
 ]);
 
 export function isAllowedPeerFingerprint(fp: string): boolean {
   if (!isValidMtlsFingerprint(fp)) return false;
   const norm = fp.replace(/[:\s-]/g, '').toLowerCase();
-  // Real production: KV lookup. Stub: any well-formed hex passes,
-  // allow-list match returns extra trust signal.
-  return PEER_FINGERPRINT_ALLOWLIST.has(norm) || norm.length === 64;
+  // Production resolves trusted peer roots from KV; this allow-list is the
+  // seed set. A well-formed fingerprint is trusted only if it is enrolled.
+  return PEER_FINGERPRINT_ALLOWLIST.has(norm);
 }

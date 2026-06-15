@@ -7,7 +7,8 @@ import React from 'react';
 import './meridian.css';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
-import { fmtZar } from './lib';
+import { fmtZar, type LedgerActionField } from './lib';
+import { FieldForm } from './FieldForm';
 import { FuseBar } from './components';
 
 interface ThreadData {
@@ -15,7 +16,8 @@ interface ThreadData {
   case: { id: string; ref: string; title: string; status: string; deadline_at: string | null;
           quantum_zar: number | null; counterparty: string | null; raw: Record<string, unknown> };
   events: { event_type?: string; created_at?: string; actor_role?: string; note?: string }[];
-  actions: { action: string; label: string; path: string; cascadeHint: string; tone?: string }[];
+  actions: { action: string; label: string; path: string; cascadeHint: string; tone?: string; fields?: LedgerActionField[];
+             method?: string; body?: Record<string, unknown> }[];
   viewer_role: string;
 }
 
@@ -25,17 +27,31 @@ export default function ThreadPage() {
   const [busy, setBusy] = React.useState<string | null>(null);
   const [err, setErr] = React.useState<string | null>(null);          // load failure — replaces the page
   const [actErr, setActErr] = React.useState<string | null>(null);    // action failure — thread stays rendered
+  const [formAction, setFormAction] = React.useState<ThreadData['actions'][number] | null>(null); // open action-form drawer
 
   const load = React.useCallback(() =>
     api.get(`/thread/${chainKey}/${id}`).then(r => setT(r.data.data)).catch(e => setErr(String(e))),
   [chainKey, id]);
   React.useEffect(() => { load(); }, [load]);
 
-  async function act(a: ThreadData['actions'][number]) {
+  // Escape-to-dismiss + focus-restore for the action-form veil (LedgerPage idiom).
+  React.useEffect(() => {
+    if (!formAction) return undefined;
+    const prev = document.activeElement as HTMLElement | null;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFormAction(null); };
+    window.addEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', onKey); prev?.focus?.(); };
+  }, [formAction]);
+
+  async function fire(a: ThreadData['actions'][number], body: Record<string, unknown>) {
     setBusy(a.action);
     // api has baseURL '/api', so strip the prefix the registry paths carry.
     try {
-      await api.post(a.path.replace('/api', '').replace(':id', id), {});
+      const url = a.path.replace('/api', '').replace(':id', id);
+      // Verb-in-body chains carry their fixed transition verb in a.body; merge it
+      // AFTER user values so it always wins. PUT only when the descriptor says so.
+      const payload = { ...body, ...(a.body ?? {}) };
+      await (a.method === 'PUT' ? api.put(url, payload) : api.post(url, payload));
       setActErr(null); // success clears any previous action error
       await load();
     } catch (e: any) {
@@ -117,12 +133,35 @@ export default function ThreadPage() {
             {t.actions.map(a => (
               <button key={a.action} type="button" disabled={busy !== null}
                       className={`btn ${a.tone === 'oxide' ? 'ox' : 'pri'}`}
-                      title={a.cascadeHint} onClick={() => act(a)}>
+                      title={a.cascadeHint} onClick={() => a.fields?.length ? setFormAction(a) : fire(a, {})}>
                 {busy === a.action ? '…' : a.label}
               </button>
             ))}
           </div>
         </footer>
+      )}
+
+      {/* Action-form veil drawer — schema-driven for actions carrying a fields schema. */}
+      {formAction && (
+        <div className="mer veil" onClick={() => setFormAction(null)}>
+          <div className="veil-body" role="dialog" aria-modal="true" aria-label={formAction.label}
+               onClick={e => e.stopPropagation()}>
+            <FieldForm
+              fields={formAction.fields ?? []}
+              submitLabel={formAction.label}
+              ariaLabel={formAction.label}
+              cascadeHint={formAction.cascadeHint}
+              onSubmit={async (values) => {
+                const url = formAction.path.replace('/api', '').replace(':id', id);
+                const payload = { ...values, ...(formAction.body ?? {}) };
+                await (formAction.method === 'PUT' ? api.put(url, payload) : api.post(url, payload));
+                setFormAction(null);
+                await load();
+              }}
+              onCancel={() => setFormAction(null)}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
