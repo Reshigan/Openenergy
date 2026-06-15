@@ -10,18 +10,20 @@ const WORKSTATION_PREFIXES = [
   '/admin-platform/', '/esco/', '/epc/',
 ];
 
+// Workstation husks retired (Phase E3) — every role's "Workstation" nav button
+// now lands on the Meridian per-role home (/horizon).
 const ROLE_WS: Record<string, string> = {
-  ipp_developer:  '/ipp-lifecycle/workstation',
-  trader:         '/trader-risk/workstation',
-  lender:         '/lender-suite/workstation',
-  offtaker:       '/offtaker-suite/workstation',
-  carbon_fund:    '/carbon-registry/workstation',
-  grid_operator:  '/grid-operator/workstation',
-  regulator:      '/regulator-suite/workstation',
-  admin:          '/admin-platform/workstation',
-  support:        '/support/workstation',
-  esco:           '/esco/workstation',
-  epc_contractor: '/epc/workstation',
+  ipp_developer:  '/horizon',
+  trader:         '/horizon',
+  lender:         '/horizon',
+  offtaker:       '/horizon',
+  carbon_fund:    '/horizon',
+  grid_operator:  '/horizon',
+  regulator:      '/horizon',
+  admin:          '/horizon',
+  support:        '/horizon',
+  esco:           '/horizon',
+  epc_contractor: '/horizon',
 };
 
 const ROLE_META: Record<string, { label: string; accent: string }> = {

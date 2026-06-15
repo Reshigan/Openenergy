@@ -73,19 +73,6 @@ const ROLES = [
   { key: 'admin',         label: 'Admin',           short: 'Admin'    },
 ] as const;
 
-const ROLE_WORKSTATION_PATHS: Record<string, string> = {
-  ipp_developer: '/ipp-lifecycle/workstation',
-  trader:        '/trader-risk/workstation',
-  lender:        '/lender-suite/workstation',
-  offtaker:      '/offtaker-suite/workstation',
-  grid_operator: '/grid-operator/workstation',
-  carbon_fund:   '/carbon-registry/workstation',
-  regulator:     '/regulator-suite/workstation',
-  esco:          '/esco/workstation',
-  support:       '/support/workstation',
-  admin:         '/admin-platform/workstation',
-};
-
 const CATEGORIES: { key: Category; label: string }[] = [
   { key: 'all',          label: 'All'         },
   { key: 'construction', label: 'Construction' },

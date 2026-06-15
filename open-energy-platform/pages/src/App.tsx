@@ -16,17 +16,6 @@ const SubCockpitPage        = React.lazy(() => import('./components/launch/SubCo
 const LoginPageNew          = React.lazy(() => import('./components/pages/LoginPage'));
 const LenderWorkoutPage     = React.lazy(() => import('./components/pages/LenderWorkoutPage').then(m => ({ default: m.LenderWorkoutPage })));
 const LenderAuditPage       = React.lazy(() => import('./components/pages/LenderAuditPage').then(m => ({ default: m.LenderAuditPage })));
-const CarbonWorkstationPage = React.lazy(() => import('./components/pages/CarbonWorkstationPage').then(m => ({ default: m.CarbonWorkstationPage })));
-const GridOpsWorkstationPage= React.lazy(() => import('./components/pages/GridOpsWorkstationPage').then(m => ({ default: m.GridOpsWorkstationPage })));
-const RegulatorWorkstationPage = React.lazy(() => import('./components/pages/RegulatorWorkstationPage').then(m => ({ default: m.RegulatorWorkstationPage })));
-const AdminWorkstationPage  = React.lazy(() => import('./components/pages/AdminWorkstationPage').then(m => ({ default: m.AdminWorkstationPage })));
-const SupportWorkstationPage= React.lazy(() => import('./components/pages/SupportWorkstationPage').then(m => ({ default: m.SupportWorkstationPage })));
-const TraderWorkstationPage = React.lazy(() => import('./components/pages/TraderWorkstationPage').then(m => ({ default: m.TraderWorkstationPage })));
-const IppWorkstationPage    = React.lazy(() => import('./components/pages/IppWorkstationPage').then(m => ({ default: m.IppWorkstationPage })));
-const OfftakerWorkstationPage = React.lazy(() => import('./components/pages/OfftakerWorkstationPage').then(m => ({ default: m.OfftakerWorkstationPage })));
-const LenderWorkstationPage = React.lazy(() => import('./components/pages/LenderWorkstationPage').then(m => ({ default: m.LenderWorkstationPage })));
-const EscoWorkstationPage   = React.lazy(() => import('./components/pages/EscoWorkstationPage').then(m => ({ default: m.EscoWorkstationPage })));
-const EpcWorkstationPage    = React.lazy(() => import('./components/pages/EpcWorkstationPage').then(m => ({ default: m.EpcWorkstationPage })));
 const OrderDetailPage       = React.lazy(() => import('./components/pages/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })));
 const InvoiceDetailPage     = React.lazy(() => import('./components/pages/InvoiceDetailPage').then(m => ({ default: m.InvoiceDetailPage })));
 const ProjectOperationsPage = React.lazy(() => import('./components/pages/ProjectOperationsPage').then(m => ({ default: m.ProjectOperationsPage })));
@@ -85,7 +74,6 @@ const IppLifecyclePage      = React.lazy(() => import('./components/pages/IppLif
 const OfftakerSuitePage     = React.lazy(() => import('./components/pages/OfftakerSuitePage').then(m => ({ default: m.OfftakerSuitePage })));
 const CarbonRegistryPage    = React.lazy(() => import('./components/pages/CarbonRegistryPage').then(m => ({ default: m.CarbonRegistryPage })));
 const AdminPlatformPage     = React.lazy(() => import('./components/pages/AdminPlatformPage').then(m => ({ default: m.AdminPlatformPage })));
-const EsumsOmPage           = React.lazy(() => import('./components/pages/EsumsOmPage').then(m => ({ default: m.EsumsOmPage })));
 const EsumsOmPortalView     = React.lazy(() => import('./components/pages/EsumsOmPortalView').then(m => ({ default: m.EsumsOmPortalView })));
 const PlatformSettingsPage  = React.lazy(() => import('./components/pages/PlatformSettingsPage').then(m => ({ default: m.PlatformSettingsPage })));
 const EsumsOmFieldWosPage   = React.lazy(() => import('./components/pages/EsumsOmFieldWosPage').then(m => ({ default: m.EsumsOmFieldWosPage })));
@@ -631,23 +619,23 @@ function AppRoutes() {
       <Route path="/launch-legacy/:role" element={<ProtectedRoute><AppShellLayout><LaunchpadHomePage /></AppShellLayout></ProtectedRoute>} />
       <Route path="/launch-legacy/:role/:domain" element={<ProtectedRoute><AppShellLayout><SubCockpitPage /></AppShellLayout></ProtectedRoute>} />
       {/* TODO: DELETE legacy listing pages — redirected to workstation equivalents */}
-      <Route path="/contracts" element={<Navigate to="/trader-risk/workstation" replace />} />
+      <Route path="/contracts" element={<Navigate to="/horizon" replace />} />
       <Route path="/contracts/:id" element={<ProtectedRoute><Layout><ContractDetail /></Layout></ProtectedRoute>} />
-      <Route path="/trading" element={<Navigate to="/trader-risk/workstation" replace />} />
-      <Route path="/settlement" element={<Navigate to="/trader-risk/workstation" replace />} />
-      <Route path="/carbon" element={<Navigate to="/carbon-registry/workstation" replace />} />
-      <Route path="/projects" element={<Navigate to="/ipp-lifecycle/workstation" replace />} />
+      <Route path="/trading" element={<Navigate to="/horizon" replace />} />
+      <Route path="/settlement" element={<Navigate to="/horizon" replace />} />
+      <Route path="/carbon" element={<Navigate to="/horizon" replace />} />
+      <Route path="/projects" element={<Navigate to="/horizon" replace />} />
       <Route path="/projects/:id" element={<ProtectedRoute><Layout><ProjectDetail /></Layout></ProtectedRoute>} />
       <Route path="/projects/:id/lifecycle" element={<ProtectedRoute><Layout><ProjectLifecycle /></Layout></ProtectedRoute>} />
       <Route path="/esg" element={<ProtectedRoute><Layout><ESG /></Layout></ProtectedRoute>} />
-      <Route path="/grid" element={<Navigate to="/grid-operator/workstation" replace />} />
+      <Route path="/grid" element={<Navigate to="/horizon" replace />} />
       <Route path="/funds" element={<ProtectedRoute><Layout><Funds /></Layout></ProtectedRoute>} />
       <Route path="/funds/:id" element={<ProtectedRoute><Layout><FundDetail /></Layout></ProtectedRoute>} />
       <Route path="/pipeline" element={<ProtectedRoute><Layout><Pipeline /></Layout></ProtectedRoute>} />
       <Route path="/procurement" element={<ProtectedRoute><Layout><ProcurementHub /></Layout></ProtectedRoute>} />
       <Route path="/marketplace" element={<ProtectedRoute><Layout><Marketplace /></Layout></ProtectedRoute>} />
       <Route path="/modules" element={<ProtectedRoute><Layout><ModulesPage /></Layout></ProtectedRoute>} />
-      <Route path="/admin" element={<Navigate to="/admin-platform/workstation" replace />} />
+      <Route path="/admin" element={<Navigate to="/horizon" replace />} />
       <Route path="/dashboard" element={<ProtectedRoute><Layout><NationalDashboard /></Layout></ProtectedRoute>} />
       <Route path="/support" element={<ProtectedRoute><Layout><Support /></Layout></ProtectedRoute>} />
       <Route path="/admin/monitoring" element={<ProtectedRoute><Layout><Monitoring /></Layout></ProtectedRoute>} />
@@ -669,9 +657,9 @@ function AppRoutes() {
       <Route path="/lender-suite" element={<ProtectedRoute><Layout><LazyWorkbench><LenderSuitePage /></LazyWorkbench></Layout></ProtectedRoute>} />
       <Route path="/lender-suite/workout" element={<ProtectedRoute><Layout><LenderWorkoutPage /></Layout></ProtectedRoute>} />
       <Route path="/lender-suite/audit" element={<ProtectedRoute><Layout><LenderAuditPage /></Layout></ProtectedRoute>} />
-      <Route path="/carbon-registry/workstation" element={<ProtectedRoute><AppShellLayout><CarbonWorkstationPage /></AppShellLayout></ProtectedRoute>} />
-      <Route path="/grid-operator/workstation" element={<ProtectedRoute><AppShellLayout><GridOpsWorkstationPage /></AppShellLayout></ProtectedRoute>} />
-      <Route path="/esums" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/carbon-registry/workstation" element={<Navigate to="/horizon" replace />} />
+      <Route path="/grid-operator/workstation" element={<Navigate to="/horizon" replace />} />
+      <Route path="/esums" element={<Navigate to="/horizon" replace />} />
       <Route path="/settings/platform" element={<ProtectedRoute><Layout><LazyWorkbench><PlatformSettingsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       {/* Field-tech mobile WO flow — no app chrome by design (fullscreen PWA) */}
       <Route path="/esums/field/wos" element={<ProtectedRoute><LazyWorkbench><EsumsOmFieldWosPage /></LazyWorkbench></ProtectedRoute>} />
@@ -691,21 +679,21 @@ function AppRoutes() {
       <Route path="/status" element={<LazyWorkbench><PublicStatusPage /></LazyWorkbench>} />
       <Route path="/legal" element={<LazyWorkbench><PublicLegalPage /></LazyWorkbench>} />
       <Route path="/audit" element={<LazyWorkbench><PublicAuditPage /></LazyWorkbench>} />
-      <Route path="/esums/faults" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
-      <Route path="/esums/faults/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
-      <Route path="/esums/workorders" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
-      <Route path="/esums/workorders/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
-      <Route path="/esums/predictions/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsOmPage /></LazyWorkbench></Layout></ProtectedRoute>} />
+      <Route path="/esums/faults" element={<Navigate to="/horizon" replace />} />
+      <Route path="/esums/faults/:id" element={<Navigate to="/horizon" replace />} />
+      <Route path="/esums/workorders" element={<Navigate to="/horizon" replace />} />
+      <Route path="/esums/workorders/:id" element={<Navigate to="/horizon" replace />} />
+      <Route path="/esums/predictions/:id" element={<Navigate to="/horizon" replace />} />
       <Route path="/esums/sites/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsSiteDetailPage /></LazyWorkbench></Layout></ProtectedRoute>} />
-      <Route path="/regulator-suite/workstation" element={<ProtectedRoute><AppShellLayout><RegulatorWorkstationPage /></AppShellLayout></ProtectedRoute>} />
-      <Route path="/admin-platform/workstation" element={<ProtectedRoute><AppShellLayout><AdminWorkstationPage /></AppShellLayout></ProtectedRoute>} />
-      <Route path="/support/workstation" element={<ProtectedRoute><AppShellLayout><SupportWorkstationPage /></AppShellLayout></ProtectedRoute>} />
-      <Route path="/trader-risk/workstation" element={<ProtectedRoute><AppShellLayout><TraderWorkstationPage /></AppShellLayout></ProtectedRoute>} />
-      <Route path="/ipp-lifecycle/workstation" element={<ProtectedRoute><AppShellLayout><IppWorkstationPage /></AppShellLayout></ProtectedRoute>} />
-      <Route path="/offtaker-suite/workstation" element={<ProtectedRoute><AppShellLayout><OfftakerWorkstationPage /></AppShellLayout></ProtectedRoute>} />
-      <Route path="/lender-suite/workstation" element={<ProtectedRoute><AppShellLayout><LenderWorkstationPage /></AppShellLayout></ProtectedRoute>} />
-      <Route path="/esco/workstation" element={<ProtectedRoute><AppShellLayout><LazyWorkbench><EscoWorkstationPage /></LazyWorkbench></AppShellLayout></ProtectedRoute>} />
-      <Route path="/epc/workstation" element={<ProtectedRoute><AppShellLayout><LazyWorkbench><EpcWorkstationPage /></LazyWorkbench></AppShellLayout></ProtectedRoute>} />
+      <Route path="/regulator-suite/workstation" element={<Navigate to="/horizon" replace />} />
+      <Route path="/admin-platform/workstation" element={<Navigate to="/horizon" replace />} />
+      <Route path="/support/workstation" element={<Navigate to="/horizon" replace />} />
+      <Route path="/trader-risk/workstation" element={<Navigate to="/horizon" replace />} />
+      <Route path="/ipp-lifecycle/workstation" element={<Navigate to="/horizon" replace />} />
+      <Route path="/offtaker-suite/workstation" element={<Navigate to="/horizon" replace />} />
+      <Route path="/lender-suite/workstation" element={<Navigate to="/horizon" replace />} />
+      <Route path="/esco/workstation" element={<Navigate to="/horizon" replace />} />
+      <Route path="/epc/workstation" element={<Navigate to="/horizon" replace />} />
       <Route path="/trading/orders/:id" element={<ProtectedRoute><Layout><OrderDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/settlement/invoices/:id" element={<ProtectedRoute><Layout><InvoiceDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/projects/:id/operations" element={<ProtectedRoute><Layout><ProjectOperationsPage /></Layout></ProtectedRoute>} />

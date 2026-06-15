@@ -53,7 +53,7 @@ export function TenantDetailPage() {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-[12px]" style={{ color: '#6b7685' }}>
-            <Link to="/admin-platform/workstation" className="hover:underline">Admin workstation</Link>
+            <Link to="/horizon" className="hover:underline">Admin workstation</Link>
             <span>/</span>
             <span style={{ color: '#0f1c2e', fontWeight: 600 }}>Tenant</span>
           </div>
@@ -70,7 +70,7 @@ export function TenantDetailPage() {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => navigate('/admin-platform/workstation')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={() => navigate('/horizon')} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
             <ArrowLeft size={12} /> Workstation
           </button>
           <button type="button" onClick={() => void load()} className="h-9 px-3 rounded-md border border-[#dde4ec] bg-white text-[#3d4756] text-[12px] font-semibold inline-flex items-center gap-1">
