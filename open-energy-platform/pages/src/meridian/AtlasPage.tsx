@@ -71,8 +71,9 @@ export default function AtlasPage() {
             {d.features.map(f => {
               const live = f.chainKey ? liveByChain.get(f.chainKey) : undefined;
               // Chain-backed functions open their Meridian Ledger; non-chain
-              // functions stay on the legacy workstation tab (coexistence).
-              const to = f.chainKey ? `/ledger/${f.chainKey}` : `${cfg.workstationPath}?tab=${f.key}`;
+              // functions open their standalone Meridian surface (/surface/:key,
+              // resolved per-role via SURFACE_REGISTRY).
+              const to = f.chainKey ? `/ledger/${f.chainKey}` : `/surface/${f.key}`;
               return (
                 <Link key={f.key} className="fn" to={to}>
                   <span className="name">{f.label}</span>

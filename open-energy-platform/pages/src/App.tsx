@@ -46,6 +46,7 @@ const ThreadPage            = React.lazy(() => import('./meridian/ThreadPage'));
 const AtlasPage             = React.lazy(() => import('./meridian/AtlasPage'));
 const LedgerPage            = React.lazy(() => import('./meridian/LedgerPage'));
 const DealDeskPage          = React.lazy(() => import('./meridian/DealDeskPage'));
+const MeridianSurfacePage   = React.lazy(() => import('./meridian/MeridianSurfacePage'));
 const CommandPalette        = React.lazy(() => import('./meridian/CommandPalette'));
 
 // Core page components
@@ -616,6 +617,10 @@ function AppRoutes() {
       <Route path="/thread/:chainKey/:id" element={<ProtectedRoute><ThreadPage /></ProtectedRoute>} />
       <Route path="/atlas" element={<ProtectedRoute><AtlasPage /></ProtectedRoute>} />
       <Route path="/ledger/:chainKey" element={<ProtectedRoute><LedgerPage /></ProtectedRoute>} />
+      {/* One parametric route for every non-chain Meridian surface (master-data CRUD,
+          settings, analytics/ML panels, connectors). Resolves SURFACE_REGISTRY by
+          `${role}:${key}`; full-canvas, no Layout/AppShell wrapper. */}
+      <Route path="/surface/:key" element={<ProtectedRoute><MeridianSurfacePage /></ProtectedRoute>} />
       <Route path="/deals" element={<ProtectedRoute><DealDeskPage /></ProtectedRoute>} />
       {/* Meridian cutover — legacy role launchpads redirect to Horizon. The
           launchpad components stay routable at /launch-legacy/:role for
