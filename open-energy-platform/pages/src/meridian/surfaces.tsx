@@ -259,6 +259,72 @@ const AdminPlatformAuditPanel: React.LazyExoticComponent<SurfaceComponent> = Rea
   return { default: Adapter };
 });
 
+// ── Esums O&M surfaces (E2.2 — EsumsOmPage migration) ────────────────────────
+// EsumsOmPage (route /esums) is the O&M suite served to the `esco` role (the esums_owner /
+// esco roleData config, esumsDomains). Unlike the WorkstationShell husks, it was a SuitePage
+// with `const tabs: TabSpec[]`; TabSpec has no chainKey field, so each chain widget was
+// confirmed against MERIDIAN_CHAINS by inspection before deletion.
+// Chain widgets WITH a descriptor → retired to /ledger/:chainKey (deleted from the page):
+//   SmartMeterChainTab (smart_meter_asset W199), GenerationRevenueAssuranceChainTab
+//   (generation_revenue_assurance), BessSohChainTab (bess_soh), SoilingAuditChainTab
+//   (soiling_audit), EsgDisclosureChainTab (esg_disclosure), CyberIncidentChainTab
+//   (cyber_incident).
+// ProtectionRelayTestTab (/api/protection-relay-chain) has NO MERIDIAN_CHAINS descriptor →
+//   Bucket B, EXTRACTED here (registered directly as an adapter — already a self-contained
+//   no-prop widget).
+// The inline SuiteTable tabs (accruals, settlement_invoices, carbon_credits, sites, devices,
+//   faults, workorders, technicians, parts, maintenance, predictions, ingestion, projects,
+//   alerts) were extracted to self-contained single-tab SuitePage bodies (identical behaviour).
+// The remaining tabs (cockpit, opportunities, integrations, data_sources, participant_links)
+//   are already-imported no-prop widgets → registered directly via adapters (no new file).
+const EsumsAccruals = React.lazy(() => import('./surfaces/esumsom/AccrualsSurface'));
+const EsumsSettlementInvoices = React.lazy(() => import('./surfaces/esumsom/SettlementInvoicesSurface'));
+const EsumsCarbonCredits = React.lazy(() => import('./surfaces/esumsom/CarbonCreditsSurface'));
+const EsumsSites = React.lazy(() => import('./surfaces/esumsom/SitesSurface'));
+const EsumsDevices = React.lazy(() => import('./surfaces/esumsom/DevicesSurface'));
+const EsumsFaults = React.lazy(() => import('./surfaces/esumsom/FaultsSurface'));
+const EsumsWorkOrders = React.lazy(() => import('./surfaces/esumsom/WorkOrdersSurface'));
+const EsumsTechnicians = React.lazy(() => import('./surfaces/esumsom/TechniciansSurface'));
+const EsumsParts = React.lazy(() => import('./surfaces/esumsom/PartsSurface'));
+const EsumsMaintenance = React.lazy(() => import('./surfaces/esumsom/MaintenanceSurface'));
+const EsumsPredictions = React.lazy(() => import('./surfaces/esumsom/PredictionsSurface'));
+const EsumsIngestion = React.lazy(() => import('./surfaces/esumsom/IngestionSurface'));
+const EsumsProjects = React.lazy(() => import('./surfaces/esumsom/ProjectsSurface'));
+const EsumsAlerts = React.lazy(() => import('./surfaces/esumsom/AlertsSurface'));
+
+// Already-imported no-prop widgets → lazy adapters that ignore `role` and render unchanged.
+const EsumsCockpit: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { EsumsOmCockpit } = await import('../components/widgets/EsumsOmCockpit');
+  const Adapter: SurfaceComponent = () => <EsumsOmCockpit />;
+  return { default: Adapter };
+});
+const EsumsOpportunities: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { EsumsOmOpportunities } = await import('../components/widgets/EsumsOmOpportunities');
+  const Adapter: SurfaceComponent = () => <EsumsOmOpportunities />;
+  return { default: Adapter };
+});
+const EsumsIntegrations: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { InverterIntegrationsTab } = await import('../components/esums/InverterIntegrationsTab');
+  const Adapter: SurfaceComponent = () => <InverterIntegrationsTab />;
+  return { default: Adapter };
+});
+const EsumsDataSources: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { DataSourcesTab } = await import('../components/esums/DataSourcesTab');
+  const Adapter: SurfaceComponent = () => <DataSourcesTab />;
+  return { default: Adapter };
+});
+const EsumsParticipantLinks: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { StationParticipantLinkTab } = await import('../components/esums/StationParticipantLinkTab');
+  const Adapter: SurfaceComponent = () => <StationParticipantLinkTab />;
+  return { default: Adapter };
+});
+// Bucket B — ProtectionRelayTestTab has no chain descriptor; register directly.
+const EsumsProtectionRelayTests: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { ProtectionRelayTestTab } = await import('../components/esums/ProtectionRelayTestTab');
+  const Adapter: SurfaceComponent = () => <ProtectionRelayTestTab />;
+  return { default: Adapter };
+});
+
 // ── Registry ───────────────────────────────────────────────────────────────
 export const SURFACE_REGISTRY: Record<
   string,
@@ -343,4 +409,27 @@ export const SURFACE_REGISTRY: Record<
   'admin:reconciliation_attestation': AdminReconciliationAttestation,
   'admin:settlement_audit': AdminSettlementAuditPanel,
   'admin:platform_audit': AdminPlatformAuditPanel,
+  // esums O&M workstation migration (E2.2) — EsumsOmPage served to the `esco` role.
+  // Keys match the esumsDomains feature keys emitted by Atlas (underscore tab keys → hyphen
+  // feature slugs). `esco:sites-portfolio` + `esco:audit` were already registered in E2.8a.
+  'esco:cockpit': EsumsCockpit,
+  'esco:opportunities': EsumsOpportunities,
+  'esco:accruals': EsumsAccruals,
+  'esco:settlement-invoices': EsumsSettlementInvoices,
+  'esco:carbon-credits': EsumsCarbonCredits,
+  'esco:sites': EsumsSites,
+  'esco:devices': EsumsDevices,
+  'esco:faults': EsumsFaults,
+  'esco:workorders': EsumsWorkOrders,
+  'esco:technicians': EsumsTechnicians,
+  'esco:parts': EsumsParts,
+  'esco:maintenance': EsumsMaintenance,
+  'esco:predictions': EsumsPredictions,
+  'esco:ingestion': EsumsIngestion,
+  'esco:integrations': EsumsIntegrations,
+  'esco:data-sources': EsumsDataSources,
+  'esco:participant-links': EsumsParticipantLinks,
+  'esco:protection-relay-tests': EsumsProtectionRelayTests,
+  'esco:projects': EsumsProjects,
+  'esco:alerts': EsumsAlerts,
 };

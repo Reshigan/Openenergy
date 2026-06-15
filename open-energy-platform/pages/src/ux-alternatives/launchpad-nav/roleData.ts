@@ -702,6 +702,24 @@ const adminDomains: Domain[] = [
 
 const esumsDomains: Domain[] = [
   {
+    key: 'operations',
+    label: 'Operations',
+    icon: '◎',
+    color: 'oklch(0.45 0.13 165)',
+    features: [
+      { key: 'cockpit', label: 'Cockpit', description: 'Live fleet revenue ticker, fault register, fleet health grid and AI briefing.' },
+      { key: 'opportunities', label: 'Opportunities', description: 'Rule-based scan of the fleet for monetisable performance improvements.' },
+      { key: 'sites', label: 'Sites', description: 'Generation sites with live KPIs.' },
+      { key: 'devices', label: 'Devices', description: 'Inverters, meters, batteries and sensors across all sites.' },
+      { key: 'faults', label: 'Faults', description: 'Live fault register with Revenue Impact Engine.' },
+      { key: 'workorders', label: 'Work orders', description: '12-state WO lifecycle with parts, photos and SLA tracking.' },
+      { key: 'technicians', label: 'Team', description: 'Field technicians — skills, certifications, availability.' },
+      { key: 'maintenance', label: 'Maintenance', description: 'Scheduled preventive maintenance auto-creating work orders.' },
+      { key: 'projects', label: 'Projects', description: 'Portfolio-level project grouping (IPP-linked or standalone).' },
+      { key: 'alerts', label: 'Alerts', description: 'All alerts fired across the fleet in the last 7 days.' },
+    ],
+  },
+  {
     key: 'site_portfolio',
     label: 'Site Portfolio',
     icon: '◉',
@@ -733,6 +751,7 @@ const esumsDomains: Domain[] = [
       { key: 'availability', label: 'Availability guarantee', chainKey: 'availability_guarantee', description: 'IEC 61724 uptime contract and LD tracking.', mockStates: ['active','under_review','breach','cure','settled','waived'], mockState: 'active' },
       { key: 'bess-soh', label: 'BESS state-of-health', chainKey: 'bess_soh', description: 'Battery degradation tracking and augmentation programme.', mockStates: ['monitoring','augmentation_required','works_in_progress','recommissioned','decommissioned'], mockState: 'monitoring' },
       { key: 'soiling-audit', label: 'Soiling audit', chainKey: 'soiling_audit', description: 'IEC 61724 soiling losses and cleaning economics.', mockStates: ['measured','economics_assessed','cleaning_authorized','post_clean_measured','settled'], mockState: 'measured' },
+      { key: 'predictions', label: 'Predictive', description: 'AI-derived predictive maintenance signals surfaced weeks ahead.' },
     ],
   },
   {
@@ -742,6 +761,7 @@ const esumsDomains: Domain[] = [
     color: 'oklch(0.44 0.14 25)',
     features: [
       { key: 'spare-parts', label: 'Spare parts', chainKey: 'spare_parts_provisioning', description: 'VED criticality — requisition → QA → stock → issue.', mockStates: ['requisitioned','po_issued','in_transit','received','in_stock','reserved','issued'], mockState: 'in_stock' },
+      { key: 'parts', label: 'Parts catalogue', description: 'Parts catalogue and stock with low-stock reorder flags.' },
       { key: 'vendor-escalation', label: 'Vendor escalation', chainKey: 'vendor_escalation', description: 'CPA §56/§61 vendor claim chain.', mockStates: ['open','escalated','under_review','resolved','closed'], mockState: 'open' },
       { key: 'warranty-claims', label: 'Warranty claims', chainKey: 'warranty_claim', description: 'OEM 10-state RMA workflow.', mockStates: ['submitted','accepted','in_repair','shipped','closed'], mockState: 'submitted' },
       { key: 'warranty-recovery', label: 'Warranty recovery', chainKey: 'warranty_recovery', description: 'Supplier cost-recovery against warranty defects.', mockStates: ['initiated','assessment','settlement','completed'], mockState: 'initiated' },
@@ -754,6 +774,19 @@ const esumsDomains: Domain[] = [
     color: 'oklch(0.46 0.18 25)',
     features: [
       { key: 'hse', label: 'HSE incidents', chainKey: 'hse_incident', description: 'OHSA s24 + NEMA s30 incident chain.', mockStates: ['reported','under_investigation','closed','escalated'], mockState: 'reported' },
+      { key: 'protection-relay-tests', label: 'Protection tests', description: 'NRS 097-2-3 + NERSA Grid Code protection relay and anti-islanding compliance tests.' },
+    ],
+  },
+  {
+    key: 'data_integrations',
+    label: 'Data & Integrations',
+    icon: '⇄',
+    color: 'oklch(0.44 0.12 200)',
+    features: [
+      { key: 'ingestion', label: 'Ingestion', description: 'OEM connections (FusionSolar, SolarEdge, SMA, Sungrow, Modbus, Eskom AMR) with last-poll status.' },
+      { key: 'integrations', label: 'Integrations', description: 'Connect inverters and generation assets — credentials, live telemetry, custom adapters.' },
+      { key: 'data-sources', label: 'Data sources', description: 'Sensor connections and data-ingest APIs — Modbus, SunSpec, MQTT, REST, OPC-UA.' },
+      { key: 'participant-links', label: 'Participant links', description: 'Two-party onboarding handshake linking stations to downstream participant modules.' },
     ],
   },
   {
@@ -764,6 +797,9 @@ const esumsDomains: Domain[] = [
     features: [
       { key: 'audit', label: 'Audit log', description: 'Tamper-evident audit chain and evidence log.' },
       { key: 'generation-revenue-assurance', label: 'Revenue assurance', chainKey: 'generation_revenue_assurance', description: 'Settlement-vs-expected reconciliation and recovery.', mockStates: ['reconciling','variance_flagged','recovery_claimed','recovered','written_off'], mockState: 'reconciling' },
+      { key: 'accruals', label: 'Accruals', description: 'Real-time generation accrual ledger from inverter data.' },
+      { key: 'settlement-invoices', label: 'Invoices', description: 'Monthly settlement invoices derived from the accruals ledger.' },
+      { key: 'carbon-credits', label: 'Carbon credits', description: 'Monthly carbon credit records auto-minted from the accruals ledger.' },
     ],
   },
 ];
