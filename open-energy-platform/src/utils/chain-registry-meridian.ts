@@ -1143,6 +1143,22 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'capex', label: 'Capex', compute: 'sum_quantum' },
     ],
+    initiation: {
+      label: 'New stage gate',
+      path: '/api/stage-gate',
+      fields: [
+        { key: 'gate_index', label: 'Gate index (DG0–DG4)', type: 'number', required: true, placeholder: '0–4' },
+        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'title', label: 'Title', type: 'string' },
+        { key: 'capex_zar', label: 'Capex', type: 'number', unit: 'ZAR' },
+        { key: 'equator_category', label: 'Equator category', type: 'enum', options: ['cat_a', 'cat_b', 'cat_c'] },
+        { key: 'debt_sized', label: 'Debt sized', type: 'boolean' },
+        { key: 'fid_committed', label: 'FID committed', type: 'number' },
+        { key: 'nersa_notifiable', label: 'NERSA notifiable', type: 'number' },
+        { key: 'shareholder_consent_required', label: 'Shareholder consent required', type: 'number' },
+        { key: 'reason_code', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // W19 — Procurement / RFP chain (REIPPPP transparency; tier by capex)
@@ -3215,7 +3231,26 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
       { key: 'owed', label: 'Total owed', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'Open settlement period',
+      path: '/api/grid/imbalance-settlement/chain',
+      fields: [
+        { key: 'brp_id', label: 'BRP', type: 'string' },
+        { key: 'brp_label', label: 'BRP label', type: 'string' },
+        { key: 'brp_voltage_class', label: 'BRP voltage class', type: 'string' },
+        { key: 'market_zone', label: 'Market zone', type: 'string' },
+        { key: 'settlement_period_start_at', label: 'Period start', type: 'date' },
+        { key: 'settlement_period_end_at', label: 'Period end', type: 'date' },
+        { key: 'nominated_mwh', label: 'Nominated', type: 'number', unit: 'MWh' },
+        { key: 'imbalance_quantum_zar', label: 'Imbalance quantum', type: 'number', unit: 'ZAR' },
+        { key: 'imbalance_floor_flag_high_voltage_brp', label: 'High-voltage BRP', type: 'number' },
+        { key: 'imbalance_floor_flag_system_critical_period', label: 'System-critical period', type: 'number' },
+        { key: 'imbalance_floor_flag_regulator_audit_period', label: 'Regulator audit period', type: 'number' },
+        { key: 'imbalance_floor_flag_market_suspension_active', label: 'Market suspension active', type: 'number' },
+        { key: 'imbalance_floor_flag_repeated_breach_5plus', label: 'Repeated breach (5+)', type: 'number' },
+        { key: 'regulator_relevant', label: 'Regulator relevant', type: 'number' },
+      ],
+    },
   },
 
   // W84 — Black-start capability (SA Grid Code OC-1/OC-12 restoration; annual
@@ -3428,6 +3463,22 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'total', label: 'Activations', compute: 'count' },
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
     ],
+    initiation: {
+      label: 'Activate EOP',
+      path: '/api/eop-activations',
+      fields: [
+        { key: 'contingency_description', label: 'Contingency description', type: 'evidence', required: true },
+        { key: 'eop_tier', label: 'EOP tier', type: 'enum', options: ['n1_minor', 'n1_significant', 'n2_double', 'black_start'] },
+        { key: 'contingency_type', label: 'Contingency type', type: 'string' },
+        { key: 'affected_mw', label: 'Affected', type: 'number', unit: 'MW' },
+        { key: 'affected_region', label: 'Affected region', type: 'string' },
+        { key: 'load_shedding_stage', label: 'Load-shedding stage', type: 'number' },
+        { key: 'contingency_at', label: 'Contingency at', type: 'date' },
+        { key: 'ntcsa_incident_ref', label: 'NTCSA incident ref', type: 'string' },
+        { key: 'so_incident_ref', label: 'SO incident ref', type: 'string' },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // W234 — SAPP interconnector schedule (Southern African Power Pool
@@ -3480,6 +3531,24 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'total', label: 'Schedules', compute: 'count' },
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
     ],
+    initiation: {
+      label: 'New interconnector schedule',
+      path: '/api/grid/interconnector-schedule',
+      fields: [
+        { key: 'interconnector_id', label: 'Interconnector', type: 'string', required: true },
+        { key: 'interconnector_name', label: 'Interconnector name', type: 'string', required: true },
+        { key: 'neighbour_utility', label: 'Neighbour utility', type: 'string', required: true },
+        { key: 'neighbour_country', label: 'Neighbour country', type: 'string', required: true },
+        { key: 'direction', label: 'Direction', type: 'string', required: true },
+        { key: 'scheduled_mw', label: 'Scheduled', type: 'number', required: true, unit: 'MW' },
+        { key: 'delivery_start', label: 'Delivery start', type: 'date', required: true },
+        { key: 'delivery_end', label: 'Delivery end', type: 'date', required: true },
+        { key: 'product_type', label: 'Product type', type: 'string', required: true },
+        { key: 'price_per_mwh', label: 'Price per MWh', type: 'number' },
+        { key: 'currency', label: 'Currency', type: 'string', placeholder: 'USD' },
+        { key: 'counterparty_ref', label: 'Counterparty ref', type: 'string' },
+      ],
+    },
   },
 
   // W211 — Substation asset lifecycle (commissioning → energised →
@@ -3537,6 +3606,25 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
       { key: 'refurb', label: 'Refurb cost', compute: 'sum_quantum' },
     ],
+    initiation: {
+      label: 'Register substation asset',
+      path: '/api/substation-assets',
+      fields: [
+        { key: 'asset_number', label: 'Asset number', type: 'string', required: true },
+        { key: 'name', label: 'Name', type: 'string', required: true },
+        { key: 'asset_type', label: 'Asset type', type: 'string' },
+        { key: 'asset_tier', label: 'Asset tier', type: 'enum', options: ['distribution', 'subtransmission', 'transmission', 'critical_node'] },
+        { key: 'location_name', label: 'Location', type: 'string' },
+        { key: 'voltage_kv', label: 'Voltage', type: 'number', unit: 'kV' },
+        { key: 'rated_mva', label: 'Rated MVA', type: 'number' },
+        { key: 'manufacturer', label: 'Manufacturer', type: 'string' },
+        { key: 'model', label: 'Model', type: 'string' },
+        { key: 'serial_number', label: 'Serial number', type: 'string' },
+        { key: 'year_manufactured', label: 'Year manufactured', type: 'number' },
+        { key: 'expected_life_years', label: 'Expected life (years)', type: 'number' },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // ───────── LENDER (parity batch) ─────────
@@ -6221,6 +6309,26 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'Breached', compute: 'count_breached' },
       { key: 'rework', label: 'Rework cost', compute: 'sum_quantum' },
     ],
+    initiation: {
+      label: 'Raise NCR',
+      path: '/api/ipp-ncr',
+      fields: [
+        { key: 'description', label: 'Description', type: 'evidence', required: true },
+        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'ncr_category', label: 'NCR category', type: 'string', required: true },
+        { key: 'ncr_severity', label: 'Severity', type: 'enum', required: true,
+          options: ['safety_critical', 'structural', 'functional', 'minor', 'cosmetic'] },
+        { key: 'discipline', label: 'Discipline', type: 'string' },
+        { key: 'work_area', label: 'Work area', type: 'string' },
+        { key: 'rework_cost_zar', label: 'Rework cost', type: 'number', unit: 'ZAR' },
+        { key: 'schedule_impact_days', label: 'Schedule impact (days)', type: 'number' },
+        { key: 'floor_ie_notification_required', label: 'IE notification required', type: 'number' },
+        { key: 'floor_lender_consent_required', label: 'Lender consent required', type: 'number' },
+        { key: 'floor_nersa_reportable', label: 'NERSA reportable', type: 'number' },
+        { key: 'floor_hold_point_triggered', label: 'Hold point triggered', type: 'number' },
+        { key: 'floor_safety_stop_work', label: 'Safety stop-work', type: 'number' },
+      ],
+    },
   },
 
   // W137 — Method statement / SWMS (OHSA Construction Regs 2014 Reg.7; planning
@@ -10794,7 +10902,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open reports', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New ECO report',
+      path: '/api/ipp-eco-report',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'reporting_year', label: 'Reporting year', type: 'number', required: true },
+        { key: 'capacity_mw', label: 'Capacity', type: 'number', required: true, unit: 'MW' },
+        { key: 'ea_reference', label: 'EA reference', type: 'string' },
+        { key: 'eco_name', label: 'ECO name', type: 'string' },
+        { key: 'violation_category', label: 'Violation category', type: 'string' },
+      ],
+    },
   },
 
   // W151 — IPP Environmental Compliance Closure & NEMA Closure Certificate (INVERTED SLA by disturbed_area_ha).
@@ -10945,7 +11064,20 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open declarations', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'Declare force majeure',
+      path: '/api/ipp-force-majeure',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'fm_category', label: 'FM category', type: 'enum', required: true,
+          options: ['natural_disaster', 'grid_unavailability', 'political_event', 'change_in_law', 'pandemic', 'civil_unrest'] },
+        { key: 'relief_type', label: 'Relief type', type: 'enum', required: true,
+          options: ['time_extension', 'cost_relief', 'time_and_cost', 'tariff_adjustment', 'termination_right'] },
+        { key: 'estimated_relief_zar', label: 'Estimated relief', type: 'number', required: true, unit: 'ZAR' },
+        { key: 'counterparty_name', label: 'Counterparty', type: 'string' },
+        { key: 'ie_firm_name', label: 'IE firm', type: 'string' },
+      ],
+    },
   },
 
   // W153 — IPP Independent Engineer (IE) Milestone Certification (INVERTED SLA by milestone_value_zar).
@@ -11043,7 +11175,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open registers', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New land register update',
+      path: '/api/ipp-land-register',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'area_ha', label: 'Area', type: 'number', required: true, unit: 'ha' },
+        { key: 'erf_count', label: 'Erf count', type: 'number' },
+        { key: 'servitude_count', label: 'Servitude count', type: 'number' },
+        { key: 'surveyor_firm', label: 'Surveyor firm', type: 'string' },
+        { key: 'description', label: 'Description', type: 'string' },
+      ],
+    },
   },
 
   // W154 — IPP Third-Party Access & Wheeling Agreement (ERA §22 + Grid Code §C-2; INVERTED SLA by capacity).
@@ -11390,7 +11533,23 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'exposure', label: 'Claim value', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'Log curtailment claim',
+      path: '/api/export-curtailments',
+      fields: [
+        { key: 'curtailment_tier', label: 'Curtailment tier', type: 'enum', options: ['minor', 'moderate', 'significant', 'systemic'] },
+        { key: 'curtailment_type', label: 'Curtailment type', type: 'string' },
+        { key: 'site_id', label: 'Site', type: 'string' },
+        { key: 'meter_id', label: 'Meter', type: 'string' },
+        { key: 'so_curtailment_ref', label: 'SO curtailment ref', type: 'string' },
+        { key: 'ppa_ref', label: 'PPA ref', type: 'string' },
+        { key: 'curtailment_start', label: 'Curtailment start', type: 'date' },
+        { key: 'curtailment_end', label: 'Curtailment end', type: 'date' },
+        { key: 'curtailment_duration_h', label: 'Duration (hours)', type: 'number' },
+        { key: 'available_capacity_mw', label: 'Available capacity', type: 'number', unit: 'MW' },
+        { key: 'reason', label: 'Reason', type: 'string' },
+      ],
+    },
   },
 
   // ───────── TRADER — Phase E descriptors ─────────
@@ -11743,6 +11902,23 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'ipp_developer'],
         cascadeHint: 'Closes a missed assessment window; for major/flagship plants crosses DMRE + NERSA public disclosure.' },
     ],
+    initiation: {
+      label: 'New compliance assessment',
+      path: '/api/ipp-annual-compliance-assessments',
+      fields: [
+        { key: 'assessment_year', label: 'Assessment year', type: 'number', required: true },
+        { key: 'plant_mw', label: 'Plant capacity', type: 'number', required: true, unit: 'MW' },
+        { key: 'project_id', label: 'Project', type: 'string' },
+        { key: 'plant_name', label: 'Plant name', type: 'string' },
+        { key: 'grid_connection_voltage_kv', label: 'Grid connection voltage', type: 'number', unit: 'kV' },
+        { key: 'protection_systems_score', label: 'Protection systems score', type: 'number' },
+        { key: 'metering_scada_score', label: 'Metering / SCADA score', type: 'number' },
+        { key: 'reactive_power_score', label: 'Reactive power score', type: 'number' },
+        { key: 'frequency_response_score', label: 'Frequency response score', type: 'number' },
+        { key: 'frt_pq_score', label: 'FRT / PQ score', type: 'number' },
+        { key: 'notes', label: 'Notes', type: 'string' },
+      ],
+    },
   },
 
   // W160 — Contractor default & termination (FIDIC 15.2; URGENT tier SLA; PUT /:id/action verb-in-body)
@@ -11793,6 +11969,19 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     ],
+    initiation: {
+      label: 'Raise contractor default',
+      path: '/api/ipp-contractor-default',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'contract_value_zar', label: 'Contract value', type: 'number', required: true, unit: 'ZAR' },
+        { key: 'default_category', label: 'Default category', type: 'enum', required: true,
+          options: ['insolvency', 'material_breach', 'programme_delay', 'quality_failure', 'abandonment', 'force_majeure_related'] },
+        { key: 'contractor_name', label: 'Contractor', type: 'string' },
+        { key: 'contractor_reference', label: 'Contractor reference', type: 'string' },
+        { key: 'description', label: 'Description', type: 'string' },
+      ],
+    },
   },
 
   // W156 — Change of control (ERA s.11 NERSA consent; regulator co-writes evaluation stages; PUT /:id/action verb-in-body)
@@ -11841,6 +12030,20 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'ipp_developer', 'regulator'],
         cascadeHint: 'Records completion of the controlling-interest transfer once conditions are satisfied; closes the chain.' },
     ],
+    initiation: {
+      label: 'Notify change of control',
+      path: '/api/ipp-change-of-control',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'capacity_mw', label: 'Capacity', type: 'number', required: true, unit: 'MW' },
+        { key: 'transaction_type', label: 'Transaction type', type: 'string', required: true },
+        { key: 'acquirer_name', label: 'Acquirer', type: 'string', required: true },
+        { key: 'foreign_ownership_flag', label: 'Foreign ownership flag', type: 'string' },
+        { key: 'transferor_name', label: 'Transferor', type: 'string' },
+        { key: 'acquirer_ownership_pct', label: 'Acquirer ownership', type: 'number', unit: '%' },
+        { key: 'description', label: 'Description', type: 'string' },
+      ],
+    },
   },
 
   // W164 — Community trust report (DTIC socio-economic disclosure; INVERTED SLA; PUT /:id/action verb-in-body)
@@ -11929,6 +12132,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     ],
+    initiation: {
+      label: 'New EMP compliance report',
+      path: '/api/ipp-emp-compliance-reports',
+      fields: [
+        { key: 'ipp_id', label: 'IPP', type: 'string', required: true },
+        { key: 'project_name', label: 'Project name', type: 'string', required: true },
+        { key: 'plant_mw', label: 'Plant capacity', type: 'number', required: true, unit: 'MW' },
+        { key: 'annual_revenue_zar', label: 'Annual revenue', type: 'number', required: true, unit: 'ZAR' },
+        { key: 'report_year', label: 'Report year', type: 'number', required: true },
+        { key: 'eco_name', label: 'ECO name', type: 'string' },
+      ],
+    },
   },
 
   // W186 — Equity transfer (SPV secondary sale, NERSA consent ERA s.11; URGENT SLA; POST /:id/action verb-in-body)
@@ -12209,6 +12424,17 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     ],
+    initiation: {
+      label: 'Request PPA variation',
+      path: '/api/ipp-ppa-variation',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'capacity_mw', label: 'Capacity', type: 'number', required: true, unit: 'MW' },
+        { key: 'variation_type', label: 'Variation type', type: 'enum', required: true,
+          options: ['capacity_adjustment', 'tariff_revision', 'term_extension', 'offtaker_substitution', 'technical_parameters'] },
+        { key: 'description', label: 'Description', type: 'evidence', required: true },
+      ],
+    },
   },
 
   // W179 — Performance security (REIPPPP Sched 6 bond renewal; URGENT SLA by bond quantum; PUT /:id/action verb-in-body)
@@ -12251,6 +12477,21 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     ],
+    initiation: {
+      label: 'New performance security',
+      path: '/api/ipp-perf-securities',
+      fields: [
+        { key: 'project_ref', label: 'Project ref', type: 'string', required: true },
+        { key: 'bond_quantum_zar', label: 'Bond quantum', type: 'number', required: true, unit: 'ZAR' },
+        { key: 'security_type', label: 'Security type', type: 'enum',
+          options: ['performance_bond', 'advance_payment_guarantee', 'retention_guarantee', 'parent_company_guarantee', 'irrevocable_lc', 'comprehensive_package'] },
+        { key: 'expiry_date', label: 'Expiry date', type: 'date' },
+        { key: 'issuing_bank', label: 'Issuing bank', type: 'string' },
+        { key: 'beneficiary', label: 'Beneficiary', type: 'string' },
+        { key: 'bond_reference', label: 'Bond reference', type: 'string' },
+        { key: 'notes', label: 'Notes', type: 'string' },
+      ],
+    },
   },
 
   // W187 — Quarterly generation report (DMRE REIPPPP Sched 3 §4.2; INVERTED SLA by plant MW; PUT /:id/action verb-in-body)
@@ -12472,6 +12713,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     ],
+    initiation: {
+      label: 'Register smart meter',
+      path: '/api/smart-meter-assets',
+      fields: [
+        { key: 'meter_serial', label: 'Meter serial', type: 'string', required: true },
+        { key: 'site_id', label: 'Site', type: 'string', required: true },
+        { key: 'meter_class', label: 'Meter class', type: 'enum', options: ['hv_bulk', 'bulk', 'prepaid', 'post_paid'] },
+        { key: 'owner_id', label: 'Owner', type: 'string' },
+        { key: 'make_model', label: 'Make / model', type: 'string' },
+        { key: 'communication_tech', label: 'Communication tech', type: 'string' },
+      ],
+    },
   },
 
   // W197 — Unserved-energy claim (NRS 048 quality-of-supply compensation; POST /:id/action verb-in-body)
@@ -12583,6 +12836,21 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'grid_operator', 'support'],
         cascadeHint: 'Cancels the demand-response event (terminal).' },
     ],
+    initiation: {
+      label: 'Register demand-response event',
+      path: '/api/demand-response-events',
+      fields: [
+        { key: 'event_date', label: 'Event date', type: 'date', required: true },
+        { key: 'dr_programme', label: 'DR programme', type: 'enum',
+          options: ['real_time', 'day_ahead', 'interruptible_tariff', 'frequency_response'] },
+        { key: 'requested_mw', label: 'Requested shed', type: 'number', unit: 'MW' },
+        { key: 'incentive_rate_per_mw', label: 'Incentive rate', type: 'number', unit: 'ZAR' },
+        { key: 'operator_id', label: 'Operator', type: 'string' },
+        { key: 'activation_ref', label: 'Activation reference', type: 'string' },
+        { key: 'notification_type', label: 'Notification type', type: 'string' },
+        { key: 'reason', label: 'Notes', type: 'string' },
+      ],
+    },
   },
 
   // W203 — Capital-adequacy report (SARB Basel III ICAAP submission; POST /:id/action verb-in-body)
