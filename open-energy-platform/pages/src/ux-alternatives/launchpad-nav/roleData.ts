@@ -507,6 +507,7 @@ const supportDomains: Domain[] = [
     features: [
       { key: 'tickets', label: 'Tickets', description: 'P1-P4 incident ticket queue with SLA timers.', mockStates: ['open','in_progress','waiting_on_customer','resolved','closed'], mockState: 'in_progress' },
       { key: 'ticket_chain', label: 'Ticket chain (W14)', chainKey: 'support_tickets', description: 'ITIL incident lifecycle P1–P4 chain.', mockStates: ['open','in_progress','resolved','closed'], mockState: 'open' },
+      { key: 'service_request', label: 'Service requests', chainKey: 'service_request', description: 'ITIL service-request fulfilment chain (W104).' },
       { key: 'problem_chain', label: 'Problem management', chainKey: 'problem_record', description: 'ITIL 4 root-cause problem management (W41).', mockStates: ['raised','investigation','root_cause_identified','workaround','resolved','closed'], mockState: 'investigation' },
       { key: 'change_chain', label: 'Change enablement', chainKey: 'change_request', description: 'ITIL CAB/ECAB change RFC lifecycle (W47).', mockStates: ['requested','assessment','cab_review','approved','scheduled','implementing','implemented','pir','closed'], mockState: 'cab_review' },
       { key: 'escalations', label: 'Escalations', description: 'Tickets escalated to engineering/management.' },
@@ -550,6 +551,8 @@ const supportDomains: Domain[] = [
       { key: 'fault_ml', label: 'Fault fingerprint (W129)', description: '12-mode physics fault classification.' },
       { key: 'cross_tenant', label: 'Cross-tenant access', description: 'POPIA-logged cross-tenant access log.' },
       { key: 'service_contracts', label: 'Service contracts', chainKey: 'service_contract', description: 'O&M service contract register.' },
+      { key: 'reports', label: 'Reports & exports', description: 'SLA performance, CSAT and problem-record reports with pivots and exports.' },
+      { key: 'audit', label: 'Audit & compliance', description: 'Tamper-evident audit chain, certified exports and cross-tenant access reconciliation.' },
     ],
   },
 ];

@@ -345,6 +345,44 @@ const TraderMargin = React.lazy(() => import('./surfaces/trader/MarginSurface'))
 const TraderExceptions = React.lazy(() => import('./surfaces/trader/ExceptionsSurface'));
 const TraderReports = React.lazy(() => import('./surfaces/trader/ReportsSurface'));
 
+// ── Support / OEM surfaces (E2.4 — SupportWorkstationPage migration) ─────────
+// Chain tabs WITH MERIDIAN_CHAINS descriptors → retired to /ledger/:chainKey (deleted from the
+// husk): ticket_chain (support_tickets W14), service_contracts (service_contract),
+// service-request (service_request W104 — NOTE: support roleData has no feature with this
+// chainKey, so the chain is unreachable from Atlas; reported), oem_fco (oem_fco), csat
+// (csat_record W208 — the inline CsatLifecycleTab helper retired with it), sla_performance_reports
+// (sla_performance_report W217 — the inline SlaPerformanceReportTab helper retired with it).
+// Non-chain inline tabs EXTRACTED to self-contained `{ role }` bodies:
+//   - tickets — inline CRUD listing (Bucket B), carries the FileTicketModal moved out of the husk.
+//   - escalations — inline read-only listing (Bucket B).
+//   - cross_tenant — inline POPIA CRUD listing (Bucket B).
+//   - reports — ReportPanel surface (Bucket D); roleData `reports` feature added in E2.4.
+// ML + connector tabs registered via the shared connector/ML trio adapters under keys matching
+// support's real roleData feature keys (mqtt_opcua / anomaly_ml / rul_ml / fault_ml). The earlier
+// placeholder slugs (support:mqtt-opcua / anomaly-detection / rul-prediction / fault-fingerprint)
+// did NOT match any roleData feature key and were therefore UNREACHABLE — rekeyed in E2.4.
+// The shared connector/ML component files are untouched (other roles register their own keys).
+// audit → AuditPanel adapter (prefix /support, recon hint carried verbatim); roleData `audit`
+// feature added in E2.4.
+const SupportTickets = React.lazy(() => import('./surfaces/support/TicketsSurface'));
+const SupportEscalations = React.lazy(() => import('./surfaces/support/EscalationsSurface'));
+const SupportCrossTenant = React.lazy(() => import('./surfaces/support/CrossTenantSurface'));
+const SupportReports = React.lazy(() => import('./surfaces/support/ReportsSurface'));
+
+// Audit tab carried verbatim from the SupportWorkstationPage `audit` tab
+// (prefix /support, cross-tenant recon hint + ticketing recon sources).
+const SupportAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { AuditPanel } = await import('../components/launch/AuditPanel');
+  const Adapter: SurfaceComponent = () => (
+    <AuditPanel
+      prefix="/support"
+      reconHint="external_ref,agent_email,tenant_accessed,accessed_at"
+      reconSourceOptions={['zendesk', 'jira', 'freshdesk', 'manual']}
+    />
+  );
+  return { default: Adapter };
+});
+
 // RiskTab + MmComplianceTab are self-contained no-prop named exports → lazy adapters that
 // ignore `role` and render the tab unchanged.
 const TraderRisk: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
@@ -395,24 +433,24 @@ export const SURFACE_REGISTRY: Record<
   'regulator:government-filing': GovernmentFilingConnector,
   // regulator roleData feature key is `government_filing` (underscore) — alias to same connector (E2.8d)
   'regulator:government_filing': GovernmentFilingConnector,
-  // mqtt-opcua → grid_operator,support,ipp_developer
+  // mqtt-opcua → grid_operator,support (roleData feature key `mqtt_opcua`),ipp_developer
   'grid_operator:mqtt-opcua': MqttOpcuaConnector,
-  'support:mqtt-opcua': MqttOpcuaConnector,
+  'support:mqtt_opcua': MqttOpcuaConnector,
   'ipp_developer:mqtt-opcua': MqttOpcuaConnector,
   // scada → grid_operator,ipp_developer
   'grid_operator:scada': ScadaConnector,
   'ipp_developer:scada': ScadaConnector,
-  // anomaly-detection ML → admin (roleData feature key `anomaly_admin`),support,ipp_developer
+  // anomaly-detection ML → admin (roleData feature key `anomaly_admin`),support (`anomaly_ml`),ipp_developer
   'admin:anomaly_admin': AnomalyDetectionMl,
-  'support:anomaly-detection': AnomalyDetectionMl,
+  'support:anomaly_ml': AnomalyDetectionMl,
   'ipp_developer:anomaly-detection': AnomalyDetectionMl,
-  // rul-prediction ML → admin (roleData feature key `rul_prediction_admin`),support,ipp_developer
+  // rul-prediction ML → admin (roleData feature key `rul_prediction_admin`),support (`rul_ml`),ipp_developer
   'admin:rul_prediction_admin': RulPredictionMl,
-  'support:rul-prediction': RulPredictionMl,
+  'support:rul_ml': RulPredictionMl,
   'ipp_developer:rul-prediction': RulPredictionMl,
-  // fault-fingerprint ML → admin (roleData feature key `fault_fingerprint_admin`),support,ipp_developer
+  // fault-fingerprint ML → admin (roleData feature key `fault_fingerprint_admin`),support (`fault_ml`),ipp_developer
   'admin:fault_fingerprint_admin': FaultFingerprintMl,
-  'support:fault-fingerprint': FaultFingerprintMl,
+  'support:fault_ml': FaultFingerprintMl,
   'ipp_developer:fault-fingerprint': FaultFingerprintMl,
   // esco workstation migration (E2.8a) — keys match roleData feature keys emitted by Atlas
   'esco:sites-portfolio': EscoSitesPortfolio,
@@ -490,4 +528,11 @@ export const SURFACE_REGISTRY: Record<
   'trader:oe_mm_obligations': TraderMmCompliance,
   'trader:reports': TraderReports,
   'trader:audit': TraderAuditPanel,
+  // support / OEM workstation migration (E2.4) — keys match roleData feature keys emitted by Atlas.
+  // mqtt_opcua / anomaly_ml / rul_ml / fault_ml are registered in the connector/ML trio above.
+  'support:tickets': SupportTickets,
+  'support:escalations': SupportEscalations,
+  'support:cross_tenant': SupportCrossTenant,
+  'support:reports': SupportReports,
+  'support:audit': SupportAuditPanel,
 };
