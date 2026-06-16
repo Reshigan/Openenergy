@@ -12,7 +12,7 @@ export function MeridianHeader({ ctx }: { ctx?: React.ReactNode }) {
   const initials = (user?.name ?? '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '·';
   return (
     <header>
-      <div className="wordmark">MERIDIAN</div>
+      <div className="wordmark">CEC</div>
       {ctx && <div className="ctx">{ctx}</div>}
       <div className="spacer" />
       <nav className="quicklinks" aria-label="Platform sections">

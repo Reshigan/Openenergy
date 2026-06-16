@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, Link, useNavigate, useL
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './lib/useAuth';
 import { api } from './lib/api';
-import { AppShell } from './components/AppShell';
+import { MeridianFrame } from './meridian/MeridianFrame';
 
 // Page components — all lazy so each route only pays for its chunk on first visit.
 const DesignGallery         = React.lazy(() => import('./components/pages/DesignGallery').then(m => ({ default: m.DesignGallery })));
@@ -189,9 +189,10 @@ function PrototypeGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-// Layout — all authenticated pages use AppShell (FioriShell retired)
+// Layout — all authenticated pages wear the single CEC (Meridian) chrome via MeridianFrame.
+// AppShell retired and deleted; MeridianFrame is the single authed-page chrome.
 function Layout({ children }: { children: ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+  return <MeridianFrame>{children}</MeridianFrame>;
 }
 
 // AppShellLayout — alias kept so workstation routes compile without touching each line
