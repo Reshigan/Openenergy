@@ -1310,7 +1310,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New stage gate',
       path: '/api/stage-gate',
       fields: [
-        { key: 'gate_index', label: 'Gate index (DG0–DG4)', type: 'number', required: true, placeholder: '0–4' },
+        { key: 'gate_index', label: 'Gate index (DG0–DG4)', type: 'enum', required: true, options: ['0', '1', '2', '3', '4'] },
         { key: 'project_id', label: 'Project', type: 'string', required: true },
         { key: 'title', label: 'Title', type: 'string' },
         { key: 'capex_zar', label: 'Capex', type: 'number', unit: 'ZAR' },
@@ -11085,7 +11085,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         { key: 'ipp_id', label: 'IPP ID', type: 'string', required: true },
         { key: 'licence_number', label: 'Licence number', type: 'string', required: true },
         { key: 'obligation_ref', label: 'Obligation ref', type: 'string', required: true },
-        { key: 'obligation_class', label: 'Obligation class', type: 'string', required: true },
+        { key: 'obligation_class', label: 'Obligation class', type: 'enum', required: true, options: ['security_of_supply', 'environmental', 'financial', 'technical', 'administrative'] },
         { key: 'condition_description', label: 'Condition description', type: 'string', required: true },
         { key: 'compliance_period', label: 'Compliance period', type: 'string', required: true },
       ],
@@ -11148,7 +11148,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Register CP', path: '/api/ipp-cp-tracker',
       fields: [
         { key: 'cp_title', label: 'CP title', type: 'string', required: true },
-        { key: 'cp_tier', label: 'CP tier', type: 'string', required: true },
+        { key: 'cp_tier', label: 'CP tier', type: 'enum', required: true, options: ['operational', 'commercial', 'financial', 'regulatory', 'strategic'] },
         { key: 'project_ref', label: 'Project ref', type: 'string' },
         { key: 'lender_ref', label: 'Lender ref', type: 'string' },
         { key: 'gate_ref', label: 'Gate ref', type: 'string' },
