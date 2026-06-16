@@ -15,6 +15,7 @@ import { Hono } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -309,6 +310,11 @@ app.post('/', async (c) => {
       400,
     );
   }
+
+  const enumErr =
+    badEnum('trigger_category', body.trigger_category, ['scope_change', 'technology_substitution', 'capacity_increase', 'access_route_change', 'footprint_expansion', 'component_modification'])
+    ?? badEnum('amendment_category', body.amendment_category, ['basic_assessment', 'scoping_and_eia', 'variation_application', 's24g_rectification', 'exemption_application']);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 400);
 
   const tier = deriveEaCapacityTier(body.capacity_mw);
   const now = new Date();

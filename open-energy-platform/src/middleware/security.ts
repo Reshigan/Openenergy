@@ -59,11 +59,15 @@ async function doRateLimit(
   const current = await env.KV.get(key, 'json') as { count: number; windowStart: number } | null;
 
   if (!current || current.windowStart + windowSeconds < now) {
-    await env.KV.put(
-      key,
-      JSON.stringify({ count: 1, windowStart: now }),
-      { expirationTtl: windowSeconds + 10 },
-    );
+    // Best-effort persist. Rate limiting is capacity shaping, not a security
+    // boundary — a KV PUT 429 under burst must fall open (allow), never 500.
+    try {
+      await env.KV.put(
+        key,
+        JSON.stringify({ count: 1, windowStart: now }),
+        { expirationTtl: windowSeconds + 10 },
+      );
+    } catch { /* KV transient — fall open */ }
     return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowSeconds, limit: maxRequests };
   }
 
@@ -71,11 +75,13 @@ async function doRateLimit(
     return { allowed: false, remaining: 0, resetAt: current.windowStart + windowSeconds, limit: maxRequests };
   }
 
-  await env.KV.put(
-    key,
-    JSON.stringify({ count: current.count + 1, windowStart: current.windowStart }),
-    { expirationTtl: windowSeconds + 10 },
-  );
+  try {
+    await env.KV.put(
+      key,
+      JSON.stringify({ count: current.count + 1, windowStart: current.windowStart }),
+      { expirationTtl: windowSeconds + 10 },
+    );
+  } catch { /* KV transient — fall open rather than 500 the request */ }
   return {
     allowed: true,
     remaining: maxRequests - current.count - 1,

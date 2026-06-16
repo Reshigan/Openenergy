@@ -118,13 +118,23 @@ jobs:
             fi
             echo "::endgroup::"
           }
-          # posted_at, time_in_force, shard_key were supposed to come from
-          # migration 020 (force-skipped on prod). Migration 085 binds all
-          # three on INSERT into trade_orders, so the columns must exist
-          # before 085 runs.
+          # posted_at, time_in_force, shard_key, external_ref were supposed to
+          # come from migration 020 (force-skipped on prod). Migration 085 binds
+          # the first three on INSERT into trade_orders; external_ref is bound by
+          # POST /api/trading/orders (idempotency SELECT + the order INSERT), so
+          # all four columns must exist before traffic hits the route.
           attempt "ALTER trade_orders ADD posted_at"      "ALTER TABLE trade_orders ADD COLUMN posted_at TEXT;"
           attempt "ALTER trade_orders ADD time_in_force"  "ALTER TABLE trade_orders ADD COLUMN time_in_force TEXT;"
           attempt "ALTER trade_orders ADD shard_key"      "ALTER TABLE trade_orders ADD COLUMN shard_key TEXT;"
+          attempt "ALTER trade_orders ADD external_ref"   "ALTER TABLE trade_orders ADD COLUMN external_ref TEXT;"
+          # cb_tier/vcm_tier/bundle_tier are bound on INSERT by the carbon create
+          # handlers (carbon-budget-chain / vcm-project-development-chain /
+          # certificate-bundle-chain) but the tables never had the column — every
+          # real POST returned 500 ("no column named …"). Migration 508 lands them
+          # on fresh DBs; prod gets them here. CHECK mirrors the spec tier unions.
+          attempt "ALTER oe_carbon_budget_registrations ADD cb_tier" "ALTER TABLE oe_carbon_budget_registrations ADD COLUMN cb_tier TEXT CHECK(cb_tier IN ('small','medium','large','major'));"
+          attempt "ALTER oe_vcm_projects ADD vcm_tier"               "ALTER TABLE oe_vcm_projects ADD COLUMN vcm_tier TEXT CHECK(vcm_tier IN ('micro','small','large','mega'));"
+          attempt "ALTER oe_certificate_bundles ADD bundle_tier"     "ALTER TABLE oe_certificate_bundles ADD COLUMN bundle_tier TEXT CHECK(bundle_tier IN ('basic','dual','comprehensive','institutional'));"
           $ok || exit 1
 
       - name: Apply D1 migrations (remote)

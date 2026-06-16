@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   IcsStatus,
   IcsAction,
@@ -70,6 +71,12 @@ app.post('/', async (c) => {
       !direction || !scheduled_mw || !delivery_start || !delivery_end || !product_type) {
     return c.json({ error: 'Missing required fields' }, 400);
   }
+
+  const enumErr =
+    badEnum('neighbour_country', neighbour_country, ['ZW','MZ','BW','NA','LS','SZ','ZM']) ??
+    badEnum('direction', direction, ['export','import','wheeling']) ??
+    badEnum('product_type', product_type, ['day_ahead','intraday','week_ahead','bilateral']);
+  if (enumErr) return c.json({ error: enumErr }, 400);
 
   const mw = Number(scheduled_mw);
   const tier = deriveCapacityTier(mw);

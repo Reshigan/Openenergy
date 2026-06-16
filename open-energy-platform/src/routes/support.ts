@@ -17,6 +17,7 @@ import { createPasswordResetToken } from '../utils/auth-tokens';
 import { logPiiAccess } from '../utils/popia-access';
 import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 
 const support = new Hono<HonoEnv>();
 
@@ -360,6 +361,8 @@ support.post('/tickets', async (c) => {
   if (!body.subject || !body.category) {
     return c.json({ success: false, error: 'subject, category required' }, 400);
   }
+  const enumErr = badEnum('category', body.category, ['access', 'billing', 'feature_question', 'bug', 'data_issue', 'compliance', 'other']);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 400);
   const id = crypto.randomUUID();
   const ticketNumber = `OE-${new Date().getUTCFullYear()}-${id.slice(0, 8).toUpperCase()}`;
   await c.env.DB.prepare(

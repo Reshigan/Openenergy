@@ -11,6 +11,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   deriveLcrCapacityTier,
   SLA_DAYS,
@@ -181,6 +182,9 @@ router.post('/', async (c) => {
       400,
     );
   }
+
+  const enumErr = badEnum('return_type', body.return_type, ['annual_standard','annual_construction','annual_decommission']);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 400);
 
   const tier = deriveLcrCapacityTier(body.licensed_mw);
   const now = new Date();

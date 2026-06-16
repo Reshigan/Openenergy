@@ -4,6 +4,30 @@
 
 import { z } from 'zod';
 
+// ── ENUM GUARD ───────────────────────────────────────────────────────────────
+// Returns a 400-friendly message when a present value is not in `allowed`,
+// else null. `allowed` MUST be a static literal supplied by the caller — never
+// request-derived — so a bad enum returns 400 instead of a DB CHECK-constraint
+// 500. Absent (null/undefined) values pass through; let required-checks own them.
+export function badEnum(field: string, value: unknown, allowed: readonly string[]): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string' || !allowed.includes(value)) {
+    return `${field} must be one of: ${allowed.join(', ')}`;
+  }
+  return null;
+}
+
+// Returns a 400-friendly message when `value` is present but is not a finite,
+// parseable date; else null. Use before any `new Date(value).toISOString()` so a
+// malformed/garbage date returns 400 instead of an "Invalid time value" 500.
+// Absent values pass through; let required-checks own them.
+export function badDate(field: string, value: unknown): string | null {
+  if (value === undefined || value === null || value === '') return null;
+  const t = new Date(value as string).getTime();
+  if (Number.isNaN(t)) return `${field} must be a valid date`;
+  return null;
+}
+
 // ── AUTH SCHEMAS ──
 export const RegisterSchema = z.object({
   email: z.string().email('Invalid email format'),

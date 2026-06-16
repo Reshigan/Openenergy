@@ -9,6 +9,7 @@ import { Hono } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { badDate, badEnum } from '../utils/validation';
 import {
   nextStatus,
   isHardTerminal,
@@ -235,6 +236,15 @@ app.post('/', async (c) => {
       400,
     );
   }
+
+  const enumErr = badEnum('subcontractor_tier', body.subcontractor_tier, ['critical_trade', 'specialist', 'general_trade', 'labor_only']);
+  if (enumErr) return c.json({ error: enumErr }, 400);
+
+  const dateErr =
+    badDate('scheduled_start_date', body.scheduled_start_date) ??
+    badDate('scheduled_end_date', body.scheduled_end_date) ??
+    badDate('insurance_expiry_date', body.insurance_expiry_date);
+  if (dateErr) return c.json({ error: dateErr }, 400);
 
   const tier = body.subcontractor_tier as SubcontractorTier;
   const now = new Date();

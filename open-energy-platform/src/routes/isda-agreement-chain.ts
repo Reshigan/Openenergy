@@ -12,6 +12,7 @@ import {
   deriveCounterpartyTier,
   deriveIsdaSlaWindowDays,
 } from '../utils/isda-agreement-spec';
+import { badEnum } from '../utils/validation';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -77,6 +78,9 @@ app.post('/', async (c) => {
   if (!counterparty_id || !counterparty_name || !counterparty_type || !agreement_type) {
     return c.json({ error: 'counterparty_id, counterparty_name, counterparty_type, agreement_type required' }, 400);
   }
+
+  const enumErr = badEnum('counterparty_type', counterparty_type, ['domestic_bank', 'foreign_bank', 'broker_dealer', 'ccpcentral', 'corporate', 'sfp']);
+  if (enumErr) return c.json({ error: enumErr }, 400);
 
   const tier = deriveCounterpartyTier(Number(average_notional_zar ?? 0));
   const id = crypto.randomUUID();

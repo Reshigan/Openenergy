@@ -10,6 +10,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   CbStatus, CbAction, CbTier,
   deriveCbSla, CB_HARD_TERMINALS,
@@ -178,6 +179,9 @@ app.post('/', async (c) => {
   if (!body.facility_name) return c.json({ success: false, error: 'facility_name is required' }, 400);
   if (!body.sector) return c.json({ success: false, error: 'sector is required' }, 400);
   if (body.annual_threshold_tco2e == null) return c.json({ success: false, error: 'annual_threshold_tco2e is required' }, 400);
+
+  const cbTierErr = badEnum('cb_tier', body.cb_tier, ['small', 'medium', 'large', 'major']);
+  if (cbTierErr) return c.json({ success: false, error: cbTierErr }, 400);
 
   const isAdmin = ['admin', 'carbon_fund', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;

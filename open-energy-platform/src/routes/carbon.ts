@@ -62,6 +62,15 @@ carbon.post('/credits', async (c) => {
   if (!project_id || quantity === undefined) {
     return c.json({ success: false, error: 'project_id (or project_name) and quantity (or amount_tonnes) are required' }, 400);
   }
+  // Pre-validate the FK so an unknown project_id returns 404 instead of a raw
+  // FOREIGN KEY constraint 500 (carbon_holdings.project_id → carbon_projects.id).
+  const proj = await c.env.DB
+    .prepare('SELECT id FROM carbon_projects WHERE id = ?')
+    .bind(project_id)
+    .first<{ id: string }>();
+  if (!proj) {
+    return c.json({ success: false, error: 'project_id does not reference a known carbon project' }, 404);
+  }
   const id = 'cc_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
   await c.env.DB.prepare(`
     INSERT INTO carbon_holdings (id, participant_id, project_id, credit_type, quantity, vintage_year, acquisition_date, cost_basis, status)

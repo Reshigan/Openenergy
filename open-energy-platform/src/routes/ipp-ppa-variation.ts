@@ -16,7 +16,7 @@ const WRITE_ROLES = ['admin', 'ipp_developer'];
 export async function ippPpaVariationSlaSweep(env: HonoEnv['Bindings']): Promise<void> {
   const now = new Date().toISOString();
   const breaches = await env.DB
-    .prepare(`SELECT id, tier FROM oe_ipp_ppa_variation
+    .prepare(`SELECT id, variation_tier AS tier FROM oe_ipp_ppa_variation
               WHERE sla_due_at IS NOT NULL AND sla_breached = 0
                 AND chain_status NOT IN ('ppa_amended','withdrawn','rejected','appeal_determined')
                 AND sla_due_at <= ?`)
@@ -50,7 +50,7 @@ app.get('/', async (c) => {
   }
   if (project_id) { clauses.push('project_id = ?'); binds.push(project_id); }
   if (status)     { clauses.push('chain_status = ?'); binds.push(status); }
-  if (tier)       { clauses.push('tier = ?'); binds.push(tier); }
+  if (tier)       { clauses.push('variation_tier = ?'); binds.push(tier); }
 
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
@@ -131,7 +131,7 @@ app.post('/', async (c) => {
 
   await c.env.DB.prepare(`
     INSERT INTO oe_ipp_ppa_variation
-      (id, participant_id, project_id, capacity_mw, tier, variation_type, description,
+      (id, participant_id, project_id, capacity_mw, variation_tier, variation_type, description,
        chain_status, sla_due_at, sla_breached, created_at, updated_at)
     VALUES (?,?,?,?,?,?,?,'variation_requested',?,0,?,?)
   `).bind(
@@ -201,7 +201,7 @@ app.put('/:id/action', async (c) => {
   ) return c.json({ error: `Cannot transition ${current} → ${nextStatus}` }, 409);
 
   const now = new Date().toISOString();
-  const tier = row.tier as VariationTier;
+  const tier = row.variation_tier as VariationTier;
   const extraCols: Record<string, unknown> = {};
 
   if (body.action === 'approve_variation') {

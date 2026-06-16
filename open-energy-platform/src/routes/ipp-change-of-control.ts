@@ -30,6 +30,7 @@ import { Hono } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   type ChangeOfControlStatus,
   type ChangeOfControlAction,
@@ -204,6 +205,11 @@ app.post('/', async (c) => {
   if (!body.project_id || body.capacity_mw == null || !body.transaction_type || !body.acquirer_name) {
     return c.json({ error: 'project_id, capacity_mw, transaction_type, acquirer_name required' }, 400);
   }
+
+  const enumErr =
+    badEnum('transaction_type', body.transaction_type, ['share_transfer', 'asset_acquisition', 'merger_scheme_of_arrangement', 'management_buyout', 'fund_recycling', 'change_of_lender_step_in'])
+    ?? badEnum('foreign_ownership_flag', body.foreign_ownership_flag, ['domestic', 'sadc_resident', 'non_sadc_foreign']);
+  if (enumErr) return c.json({ error: enumErr }, 400);
 
   const tier = deriveOwnershipTier(body.capacity_mw);
   const now = new Date().toISOString();

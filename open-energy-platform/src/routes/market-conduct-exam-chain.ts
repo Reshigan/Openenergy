@@ -9,6 +9,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   MceStatus, MceAction, MceTier,
   deriveMceSla, MCE_HARD_TERMINALS,
@@ -117,6 +118,11 @@ app.post('/', async (c) => {
     examination_ref?: string;
     reason?: string;
   }>();
+
+  const enumErr =
+    badEnum('exam_tier', body.exam_tier, ['routine','thematic','targeted','major_systemic']) ??
+    badEnum('exam_type', body.exam_type, ['pricing_conduct','transparency','consumer_protection','market_integrity','cross_cutting','ad_hoc']);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 400);
 
   const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;

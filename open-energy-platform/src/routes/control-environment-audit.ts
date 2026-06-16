@@ -57,6 +57,7 @@ import { Hono, Context } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   nextStatus,
   isTerminal,
@@ -818,6 +819,9 @@ app.post('/', async (c) => {
   if (!periodLabel) {
     return c.json({ success: false, error: 'period_label required' }, 400);
   }
+
+  const enumErr = badEnum('control_classification', body.control_classification, ['preventive', 'detective', 'corrective', 'directive', 'governance']);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 400);
 
   const flags = {
     material_weakness_suspected:     toFlag(body.material_weakness_suspected) ?? 0,

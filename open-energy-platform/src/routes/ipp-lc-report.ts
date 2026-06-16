@@ -22,6 +22,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   deriveLcTier,
   SLA_DAYS,
@@ -182,6 +183,9 @@ router.post('/', async (c) => {
       400,
     );
   }
+
+  const enumErr = badEnum('lc_content_type', body.lc_content_type, ['goods','services','labour','sed','enterprise_dev','ownership']);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 400);
 
   const tier = deriveLcTier(body.lc_commitment_pct);
   const now = new Date();

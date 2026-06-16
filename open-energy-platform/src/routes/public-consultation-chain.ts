@@ -9,6 +9,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   PcStatus, PcAction, ConsultationTier,
   derivePcSla, PC_HARD_TERMINALS,
@@ -123,6 +124,11 @@ app.post('/', async (c) => {
   }>();
 
   if (!body.title) return c.json({ success: false, error: 'title required' }, 422);
+
+  const enumErr =
+    badEnum('consultation_type', body.consultation_type, ['tariff_determination','licence_application','licence_amendment','code_revision','policy_review','emergency_determination']) ??
+    badEnum('consultation_tier', body.consultation_tier, ['routine','significant','national','emergency']);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 400);
 
   const isAdmin = ['admin', 'regulator'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;

@@ -9,6 +9,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   BundleStatus, BundleAction, BundleTier,
   deriveBundleSla, BUNDLE_HARD_TERMINALS,
@@ -123,6 +124,9 @@ app.post('/', async (c) => {
 
   if (!body.bundle_tier) return c.json({ success: false, error: 'bundle_tier is required' }, 400);
   if (!body.bundle_type) return c.json({ success: false, error: 'bundle_type is required' }, 400);
+
+  const bundleTierErr = badEnum('bundle_tier', body.bundle_tier, ['basic', 'dual', 'comprehensive', 'institutional']);
+  if (bundleTierErr) return c.json({ success: false, error: bundleTierErr }, 400);
 
   const isAdmin = ['admin', 'carbon_fund', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;

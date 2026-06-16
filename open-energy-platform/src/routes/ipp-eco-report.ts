@@ -16,6 +16,7 @@ import { Hono } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   type EcoReportStatus,
   type EcoReportAction,
@@ -206,6 +207,9 @@ app.post('/', async (c) => {
       400,
     );
   }
+
+  const enumErr = badEnum('violation_category', body.violation_category, ['none', 'water_management', 'waste_management', 'vegetation_clearing', 'noise_dust', 'heritage_resources', 'biodiversity', 'rehabilitation']);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 400);
 
   const tier = deriveEcoCapacityTier(body.capacity_mw);
   const now = new Date();

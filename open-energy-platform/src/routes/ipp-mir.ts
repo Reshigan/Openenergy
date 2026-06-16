@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { badDate, badEnum } from '../utils/validation';
 import {
   nextStatus,
   isHardTerminal,
@@ -217,6 +218,12 @@ app.post('/', async (c) => {
   if (!body.material_description || !body.project_id || !body.material_category || !body.material_tier) {
     return c.json({ error: 'material_description, project_id, material_category, and material_tier are required' }, 400);
   }
+
+  const enumErr = badEnum('material_tier', body.material_tier, ['critical_structural', 'electrical_mechanical', 'civil', 'general']);
+  if (enumErr) return c.json({ error: enumErr }, 400);
+
+  const dateErr = badDate('scheduled_delivery_date', body.scheduled_delivery_date);
+  if (dateErr) return c.json({ error: dateErr }, 400);
 
   const tier = body.material_tier as MaterialTier;
   const now = new Date();

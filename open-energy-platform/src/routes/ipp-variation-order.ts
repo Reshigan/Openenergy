@@ -9,6 +9,7 @@ import { Hono } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   type VariationOrderStatus,
   type VariationOrderAction,
@@ -146,6 +147,9 @@ app.post('/', async (c) => {
   if (!body.project_id || !body.title || !body.variation_type) {
     return c.json({ error: 'project_id, title, variation_type required' }, 400);
   }
+
+  const enumErr = badEnum('variation_type', body.variation_type, ['scope_change','time_extension','cost_adjustment','design_change','statutory_change','provisional_sum']);
+  if (enumErr) return c.json({ error: enumErr }, 400);
 
   const tier = deriveValueTier(body.instructed_value_zar ?? null);
   const slaHours = SLA_DAYS[tier] * 24;

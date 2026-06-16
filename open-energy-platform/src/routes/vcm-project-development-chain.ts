@@ -9,6 +9,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   VcmProjectStatus, VcmProjectAction, VcmTier,
   deriveVcmSla, VCM_HARD_TERMINALS,
@@ -159,6 +160,9 @@ app.post('/', async (c) => {
   if (!body.vcm_tier || !body.project_name || !body.methodology || !body.registry_standard || !body.technology) {
     return c.json({ success: false, error: 'vcm_tier, project_name, methodology, registry_standard, and technology are required' }, 400);
   }
+
+  const vcmTierErr = badEnum('vcm_tier', body.vcm_tier, ['micro', 'small', 'large', 'mega']);
+  if (vcmTierErr) return c.json({ success: false, error: vcmTierErr }, 400);
 
   const isAdmin = ['admin', 'carbon_fund', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;

@@ -139,9 +139,13 @@ export async function cachedMonthlyTotals(
   const result = row || { total_export_kwh: 0, total_import_kwh: 0, reading_days: 0 };
   const now = new Date();
   const isCurrentMonth = yyyyMm === now.toISOString().slice(0, 7);
-  await env.KV.put(key, JSON.stringify(result), {
-    expirationTtl: isCurrentMonth ? 900 : 86_400,
-  });
+  // Best-effort cache write — a KV PUT 429 under burst must return the
+  // computed aggregate, not 500 the metering read.
+  try {
+    await env.KV.put(key, JSON.stringify(result), {
+      expirationTtl: isCurrentMonth ? 900 : 86_400,
+    });
+  } catch { /* KV transient — return computed aggregate */ }
   return result;
 }
 

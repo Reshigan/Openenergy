@@ -19,6 +19,7 @@ import { Hono } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   expiryStatusFor,
   daysUntil,
@@ -167,6 +168,9 @@ app.post('/', async (c) => {
       !body.face_value_zar || !body.issued_at || !body.expiry_at) {
     return c.json({ success: false, error: 'project_id, bond_number, bond_type, issuer, face_value_zar, issued_at, expiry_at all required' }, 400);
   }
+
+  const enumErr = badEnum('bond_type', body.bond_type, ['performance','advance_payment','retention','warranty','environmental_rehabilitation','parental_guarantee','letter_of_credit','bank_guarantee']);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 400);
 
   const id = newId('bond');
   const initialStatus = expiryStatusFor(body.expiry_at, 'active', new Date());

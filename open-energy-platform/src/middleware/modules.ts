@@ -56,8 +56,11 @@ export async function checkModuleAccess(
     
     module = result;
     
-    // Cache for 5 minutes
-    await env.KV.put(cacheKey, JSON.stringify(module), { expirationTtl: 300 });
+    // Cache for 5 minutes — best-effort; a KV PUT 429 under burst must not 500
+    // the request (this runs in the per-route gate middleware).
+    try {
+      await env.KV.put(cacheKey, JSON.stringify(module), { expirationTtl: 300 });
+    } catch { /* KV transient — proceed with the freshly-read value */ }
   }
   
   // Check if enabled
@@ -144,9 +147,12 @@ export async function getEnabledModules(env: HonoEnv['Bindings'], userRole: stri
   
   const modules = result.results?.map(r => r.module_key) || [];
   
-  // Cache for 5 minutes
-  await env.KV.put(cacheKey, JSON.stringify(modules), { expirationTtl: 300 });
-  
+  // Cache for 5 minutes — best-effort; swallow a KV PUT 429 so the burst path
+  // returns the computed module list rather than a 500.
+  try {
+    await env.KV.put(cacheKey, JSON.stringify(modules), { expirationTtl: 300 });
+  } catch { /* KV transient — return the computed list anyway */ }
+
   return modules;
 }
 

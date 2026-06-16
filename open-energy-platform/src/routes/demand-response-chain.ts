@@ -9,6 +9,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   DrStatus, DrAction, DrProgramme,
   deriveDrSla, DR_HARD_TERMINALS,
@@ -119,6 +120,9 @@ app.post('/', async (c) => {
     incentive_rate_per_mw?: number;
     reason?: string;
   }>();
+
+  const enumErr = badEnum('notification_type', body.notification_type, ['day_ahead', 'real_time', 'test']);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 400);
 
   const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;

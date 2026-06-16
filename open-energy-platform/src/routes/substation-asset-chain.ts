@@ -9,6 +9,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   SasStatus, SasAction, SubstationAssetTier,
   deriveSasSla, SAS_HARD_TERMINALS,
@@ -127,6 +128,9 @@ app.post('/', async (c) => {
   }>();
 
   if (!body.asset_number || !body.name) return c.json({ success: false, error: 'asset_number and name required' }, 422);
+
+  const enumErr = badEnum('asset_type', body.asset_type, ['power_transformer','auto_transformer','instrument_transformer','circuit_breaker','disconnector','busbar','cable','overhead_line','reactor','capacitor_bank','substation_battery','protection_relay']);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 400);
 
   const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;

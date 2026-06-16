@@ -61,10 +61,15 @@ export async function tenantQuotaMiddleware(c: Context<HonoEnv>, next: Next): Pr
     request_cost: 1,
   });
 
-  await c.env.KV.put(bucketKey, JSON.stringify({
-    tokens: check.new_tokens,
-    refill_at_ms: check.new_refill_at_ms,
-  }), { expirationTtl: match.window_seconds * 4 });
+  // Best-effort persist of the new token count. This runs on every
+  // quota-matched request, so a KV PUT 429 here must not 500 the request —
+  // skip the persist and still honour this request's allow/deny decision.
+  try {
+    await c.env.KV.put(bucketKey, JSON.stringify({
+      tokens: check.new_tokens,
+      refill_at_ms: check.new_refill_at_ms,
+    }), { expirationTtl: match.window_seconds * 4 });
+  } catch { /* KV transient — skip persist */ }
 
   if (!check.allowed) {
     // Best-effort event log — not awaited so the 429 response goes out fast.
