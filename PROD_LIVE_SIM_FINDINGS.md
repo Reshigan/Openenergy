@@ -17,6 +17,8 @@ This is the final full pre-national-launch test: does the code logic actually sa
 
 Every 5xx the simulation produced fell into one of seven classes. All are resolved (commit `4b8cdbc4`); the harness commit is `c7ad6b5a`.
 
+> **Class 2 extension (commit `276a58be`).** A re-fired post-deploy run surfaced three residual Class-2 5xx on carbon creates: the handlers guarded only their `*_tier` column and left the *sibling* `CHECK`-constrained enum columns unguarded (`methodology`/`registry_standard` on `/api/carbon/vcm-projects`, `sector` on `/api/carbon/budget`, `bundle_type` on `/api/certificate-track/bundle`). Two fixes were applied together: (a) `badEnum()` guards covering **every** `CHECK`-constrained column each handler writes from body — not just the tier — turning the 500 into a clean 400; and (b) the matching `MERIDIAN_CHAINS` initiation fields were converted from bare `string` to `enum` + `options` (static literals matching the prod DDL) so the registry-driven path — both the sim and the onboarding wizard — emits in-range values and the create *succeeds* rather than 400ing. Inline enum pickers also make this class impossible from the UI by construction (per §3.2). The lesson generalises: the Class-2 guard pass must enumerate *all* `CHECK` columns a handler writes, not only the field that happened to trip first.
+
 | Class | Symptom | Root cause | Fix |
 |---|---|---|---|
 | **1** | All ledger/thread reads + audit-chain/compliance-notices POSTs 500 under burst | An **unwrapped KV `PUT` returning 429** on the per-request front-door middleware (module-access cache, security rate-limiter, tenant-quota persist, metering aggregate cache) bubbled to a 500 — so a transient KV throttle took down *every* read and write, not just the cache write | Wrapped all six front-door KV `PUT`s in `try/catch`. A KV 429 now falls through to the freshly-computed value. Rate-limiting "falls open" (it is capacity shaping, not a security boundary). |
@@ -70,6 +72,10 @@ This turns "discover the schema drift by 500ing on prod" into "fail the build". 
 
 ## 5. Status
 
-- All seven 5xx classes fixed; backend `tsc` clean; SPA build clean; **8165/8165** unit tests green.
-- Deployed to production via CI (`deploy.yml` run on `main`), which also reconciles the Class 3/6 columns on the prod database.
-- Re-run the simulation post-deploy to confirm a clean (zero real-5xx) pass.
+- All seven 5xx classes fixed (plus the Class-2 extension above); backend `tsc` clean; SPA build clean; **8165/8165** unit tests green.
+- Deployed to production via CI (`deploy.yml` on `main`, deploy `27606668901` / SHA `276a58be`), which also reconciles the Class 3/6 columns on the prod database.
+- **Post-deploy re-run confirms a clean zero-real-5xx pass**, triple-verified against three independent sources:
+  1. Harness report totals — `status5xx: 0`, `networkErrors: 0`, `findingsP1: 0` (run `SIM-20260616111259-a8a293`, 539 HTTP calls, 515 2xx).
+  2. Raw `ledger.jsonl` — 0 of 539 records with `status >= 500`.
+  3. Prod `error_log` for the run window — 0 rows (`app.onError` never fired).
+- The remaining 24 4xx are all expected, non-defect outcomes: input-validation 400s, role-gate 403s on synthetic `-nonexistent` ids, not-found 404s (incl. the Class-7 FK pre-validation returning 404 on an absent carbon project), idempotency 409s, and three `STALE_MARK` 422 pre-trade rejections (the §3.1 marketplace observation). The single P2 — a 404 on `GET /api/thread/ipp_fm/<uuid>` — is correct: that id is a synthetic probe and does not exist in `oe_ipp_fm`.
