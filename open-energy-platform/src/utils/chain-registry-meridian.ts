@@ -3010,6 +3010,21 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: 'counterparty_id',
     lanes: { carbon_fund: 'issuance_registry' },
     eventsTable: null, eventsFk: null,
+    initiation: {
+      label: 'New Registry transfer',
+      path: '/api/carbon-registry-transfers',
+      fields: [
+        { key: 'quantity_tco2e', label: 'Quantity (tCO2e)', type: 'number', unit: 'tCO2e', required: true },
+        { key: 'transfer_type', label: 'Transfer Type', type: 'enum', options: ['domestic', 'international_art6', 'corsia', 'voluntary_crossregistry'] },
+        { key: 'counterparty_id', label: 'Counterparty (transferee)', type: 'string', placeholder: 'offtaker@openenergy.co.za' },
+        { key: 'vintage_year', label: 'Vintage Year', type: 'number' },
+        { key: 'project_id', label: 'Linked Carbon Project', type: 'string', placeholder: 'proj-demo-01' },
+        { key: 'methodology', label: 'Methodology', type: 'string', placeholder: 'VM0042' },
+        { key: 'source_registry', label: 'Source Registry', type: 'string', placeholder: 'verra' },
+        { key: 'destination_registry', label: 'Destination Registry', type: 'string', placeholder: 'gold_standard' },
+        { key: 'serial_range_start', label: 'Serial Range Start', type: 'string', placeholder: 'VCU-1000' },
+      ],
+    },
     actions: [
       { action: 'authorize', label: 'Authorize transfer', tone: 'primary',
         path: '/api/carbon-registry-transfers/:id/action', method: 'POST', body: { action: 'authorize' },
@@ -3069,6 +3084,21 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: null,
     lanes: { carbon_fund: 'mrv_verification' },
     eventsTable: null, eventsFk: null,
+    initiation: {
+      label: 'New Methodology amendment',
+      path: '/api/methodology-amendments',
+      fields: [
+        { key: 'methodology_id', label: 'Methodology ID', type: 'string', required: true, placeholder: 'VM0038' },
+        { key: 'deviation_description', label: 'Deviation Description', type: 'string', required: true, placeholder: 'Monitoring sampling interval changed from monthly to quarterly due to instrument availability' },
+        { key: 'amendment_tier', label: 'Amendment Tier', type: 'enum', options: ['minor_parameter', 'moderate_change', 'major_change', 'article6_itmo'] },
+        { key: 'project_ref', label: 'Carbon Project Reference', type: 'string', placeholder: 'CARBON-PRJ-001' },
+        { key: 'methodology_version', label: 'Methodology Version', type: 'string', placeholder: 'v1.0' },
+        { key: 'deviation_type', label: 'Deviation Type', type: 'string', placeholder: 'monitoring_parameter' },
+        { key: 'estimated_impact_tco2e', label: 'Estimated Impact', type: 'number', unit: 'tCO2e' },
+        { key: 'reason', label: 'Reason / Notes', type: 'string', placeholder: 'Initial deviation logged by project developer' },
+        { key: 'participant_id', label: 'Participant (admin/support only)', type: 'string' },
+      ],
+    },
     actions: [
       { action: 'classify_major', label: 'Classify as major', tone: 'primary',
         path: '/api/methodology-amendments/:id/action', method: 'POST', body: { action: 'classify_major' },
@@ -5316,6 +5346,20 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: 'respondent_party_id',
     lanes: { regulator: 'enforcement_regulator' },
     eventsTable: 'oe_enforcement_action_events', eventsFk: 'action_id',
+    initiation: {
+      label: 'New Enforcement action',
+      path: '/api/regulator/enforcement-action-s35/chain',
+      fields: [
+        { key: 'respondent_party_id', label: 'Respondent Party ID', type: 'string', placeholder: 'ipp-001' },
+        { key: 'respondent_party_label', label: 'Respondent Name', type: 'string', placeholder: 'Demo Wind IPP (Pty) Ltd' },
+        { key: 'triggering_event_type', label: 'Triggering Event Type', type: 'enum', options: ['inspection_finding', 'complaint', 'sla_breach_referral', 'regulator_initiated', 'criminal_intelligence'] },
+        { key: 'triggering_reason_summary_text', label: 'Reason Summary', type: 'string', placeholder: 'Repeated NRS 097-2 power-quality breach at PCC' },
+        { key: 'sanction_quantum_zar', label: 'Proposed Sanction Quantum', type: 'number', unit: 'ZAR' },
+        { key: 'sanction_quantum_zar_floor', label: 'Sanction Quantum Floor', type: 'number', unit: 'ZAR' },
+        { key: 'enforcement_floor_flag_licence_revocation_proposed', label: 'Licence Revocation Proposed', type: 'boolean' },
+        { key: 'title', label: 'Case Title', type: 'string', placeholder: 'NERSA s35 enforcement - power-quality non-conformance' },
+      ],
+    },
     actions: [
       { action: 'issue-notice', label: 'Issue notice', tone: 'primary',
         path: '/api/regulator/enforcement-action-s35/chain/:id/issue-notice',
@@ -5380,6 +5424,24 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: 'oem_name',
     lanes: { support: 'oem_supply_chain' },
     eventsTable: 'oe_warranty_claim_events', eventsFk: 'claim_id',
+    initiation: {
+      label: 'New Warranty claim',
+      path: '/api/esums/warranty-claims',
+      fields: [
+        { key: 'asset_label', label: 'Asset', type: 'string', required: true, placeholder: 'Inverter Block B3 — String 12' },
+        { key: 'oem_name', label: 'OEM / Manufacturer', type: 'string', required: true, placeholder: 'Sungrow' },
+        { key: 'subject', label: 'Claim Subject', type: 'string', required: true, placeholder: 'DC arc-fault on combiner box under warranty' },
+        { key: 'severity', label: 'Severity', type: 'enum', options: ['safety', 'performance', 'cosmetic'], required: true },
+        { key: 'description', label: 'Description', type: 'string', placeholder: 'Recurring overtemperature trips logged since commissioning.' },
+        { key: 'fault_code', label: 'Fault Code', type: 'string', placeholder: 'E054' },
+        { key: 'failure_mode', label: 'Failure Mode', type: 'string', placeholder: 'IGBT thermal runaway' },
+        { key: 'warranty_ref', label: 'Warranty Reference', type: 'string', placeholder: 'WAR-2024-00871' },
+        { key: 'asset_id', label: 'Asset ID', type: 'string', placeholder: 'asset_demo_01' },
+        { key: 'oem_id', label: 'OEM ID', type: 'string', placeholder: 'oem_sungrow' },
+        { key: 'site_id', label: 'Site ID', type: 'string', placeholder: 'site_demo_01' },
+        { key: 'tenant_id', label: 'Tenant ID', type: 'string' },
+      ],
+    },
     actions: [
       { action: 'submit', label: 'Submit to OEM',
         path: '/api/esums/warranty-claims/:id/submit',
@@ -5913,6 +5975,20 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: 'requested_for_party_id',
     lanes: { support: 'itil_service_mgmt' },
     eventsTable: 'oe_service_request_chain_events', eventsFk: 'request_id',
+    initiation: {
+      label: 'New Service request',
+      path: '/api/support/service-request/chain',
+      fields: [
+        { key: 'catalog_item_label', label: 'Catalog Item', type: 'string', placeholder: 'Rotate API key' },
+        { key: 'catalog_category', label: 'Catalog Category', type: 'string', placeholder: 'access_management' },
+        { key: 'business_justification', label: 'Business Justification', type: 'string', placeholder: 'Quarterly key rotation per security policy' },
+        { key: 'urgency_requested', label: 'Urgency', type: 'enum', options: ['low', 'normal', 'high'] },
+        { key: 'severity_zar', label: 'Severity (ZAR impact)', type: 'number', unit: 'ZAR' },
+        { key: 'requested_for_party_label', label: 'Requested For', type: 'string', placeholder: 'NXT Energy Ops' },
+        { key: 'title', label: 'Title', type: 'string', placeholder: 'API key rotation request' },
+        { key: 'regulator_relevant', label: 'Regulator Relevant', type: 'boolean' },
+      ],
+    },
     actions: [
       { action: 'approve', label: 'Approve request', tone: 'primary',
         path: '/api/support/service-request/chain/:id/approve',
@@ -5966,6 +6042,22 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: null, // the operator's own site record; no contractual counterparty column
     lanes: { support: 'field_operations' },
     eventsTable: 'oe_site_commissioning_events', eventsFk: 'site_id',
+    initiation: {
+      label: 'New Site commissioning',
+      path: '/api/esums/sites',
+      fields: [
+        { key: 'name', label: 'Site name', type: 'string', required: true, placeholder: 'Canary Test Solar Plant' },
+        { key: 'capacity_mw', label: 'Capacity (MW)', type: 'number', unit: 'MW', required: true },
+        { key: 'technology', label: 'Technology', type: 'enum', options: ['solar', 'wind', 'battery', 'hydro', 'biomass'] },
+        { key: 'capacity_kwp', label: 'Capacity (kWp)', type: 'number', unit: 'kWp' },
+        { key: 'province', label: 'Province', type: 'string', placeholder: 'Northern Cape' },
+        { key: 'latitude', label: 'Latitude', type: 'number' },
+        { key: 'longitude', label: 'Longitude', type: 'number' },
+        { key: 'commissioning_date', label: 'Commissioning date', type: 'date', placeholder: '2026-09-01' },
+        { key: 'ppa_tariff_zar_mwh', label: 'PPA tariff (ZAR/MWh)', type: 'number', unit: 'ZAR/MWh' },
+        { key: 'status', label: 'Site status', type: 'enum', options: ['planned', 'construction', 'commissioning', 'operational', 'maintenance', 'decommissioned', 'suspended'] },
+      ],
+    },
     actions: [
       { action: 'energise', label: 'Energise site',
         path: '/api/esums/commissioning/:id/energise',
@@ -6828,6 +6920,25 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: null, // planning document; no counterparty column in DDL (mig 364)
     lanes: { ipp_developer: 'safety_grid', epc_contractor: 'quality' },
     eventsTable: 'oe_ipp_ms_events', eventsFk: 'ms_id',
+    initiation: {
+      label: 'New Method statement',
+      path: '/api/ipp-method-statement',
+      fields: [
+        { key: 'ms_title', label: 'Method statement title', type: 'string', required: true, placeholder: 'PV array mounting — Block C' },
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj-001' },
+        { key: 'work_type', label: 'Work type', type: 'string', required: true, placeholder: 'mechanical_installation' },
+        { key: 'risk_tier', label: 'Risk tier', type: 'enum', options: ['high_risk', 'medium_risk', 'low_risk', 'routine'], required: true },
+        { key: 'scope_of_work', label: 'Scope of work', type: 'string', required: true, placeholder: 'Install and torque module mounting rails to ballast feet across rows 1-12.' },
+        { key: 'project_name', label: 'Project name', type: 'string', placeholder: 'Karoo Solar 75MW' },
+        { key: 'ms_number', label: 'MS number', type: 'string', placeholder: 'MS-2026-014' },
+        { key: 'work_area', label: 'Work area', type: 'string', placeholder: 'Inverter station B' },
+        { key: 'scheduled_start_date', label: 'Scheduled start date', type: 'date', placeholder: '2026-07-01' },
+        { key: 'scheduled_duration_days', label: 'Scheduled duration', type: 'number', unit: 'days' },
+        { key: 'is_critical_lift', label: 'Critical lift', type: 'boolean' },
+        { key: 'is_confined_space', label: 'Confined space', type: 'boolean' },
+        { key: 'is_live_electrical', label: 'Live electrical work', type: 'boolean' },
+      ],
+    },
     actions: [
       { action: 'submit_for_review', label: 'Submit for review',
         path: '/api/ipp-method-statement/:id/submit_for_review',
@@ -6906,6 +7017,22 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: 'contractor_signatory', // contractor side signs the diary; IPP/employer is the registry viewer
     lanes: { ipp_developer: 'construction', epc_contractor: 'site_setup' },
     eventsTable: null, eventsFk: null, // mig 386 defines no diary events table — Thread hides timeline
+    initiation: {
+      label: 'New Site diary',
+      path: '/api/ipp-diary',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj-demo-01' },
+        { key: 'diary_date', label: 'Diary Date', type: 'date', required: true, placeholder: '2026-06-16' },
+        { key: 'day_type', label: 'Day Type', type: 'enum', options: ['critical_delay', 'daily_operational', 'shutdown_partial', 'no_work'] },
+        { key: 'diary_ref', label: 'Contractor Reference', type: 'string', placeholder: 'SD-2026-1043' },
+        { key: 'weather_am', label: 'Weather AM', type: 'enum', options: ['clear', 'overcast', 'rain', 'thunder', 'high_wind'] },
+        { key: 'workforce_total', label: 'Workforce Total', type: 'number', unit: 'persons' },
+        { key: 'progress_narrative', label: 'Progress Narrative', type: 'string', placeholder: 'Grid foundations A1-A6 completed; cable trenching B underway.' },
+        { key: 'work_stoppages_minutes', label: 'Work Stoppages', type: 'number', unit: 'minutes' },
+        { key: 'contractor_signatory', label: 'Contractor Signatory', type: 'string', placeholder: 'J. Mokoena' },
+        { key: 'floor_has_safety_incident', label: 'Safety Incident Occurred', type: 'boolean' },
+      ],
+    },
     actions: [
       { action: 'submit_diary', label: 'Submit diary',
         path: '/api/ipp-diary/:id/submit_diary',
@@ -7747,7 +7874,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open applications', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New AEL application',
+      path: '/api/ipp-ael',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'trigger_category', label: 'Trigger Category', type: 'enum', options: ['new_installation', 'capacity_increase', 'fuel_change', 'technology_substitution', 'renewal', 'amendment'], required: true },
+        { key: 'ael_category', label: 'AEL Category', type: 'enum', options: ['category_1_major', 'category_2_minor', 's21_listed_activity', 'point_source', 'fugitive_emission'], required: true },
+        { key: 'capacity_mw', label: 'Capacity', type: 'number', unit: 'MW', required: true },
+        { key: 'authority_reference', label: 'Authority Reference', type: 'string', placeholder: 'AEL/2024/GP/001' },
+        { key: 'emissions_consultant', label: 'Emissions Consultant', type: 'string', placeholder: 'SRK Consulting' },
+      ],
+    },
   },
   {
     key: 'ipp_hra',
@@ -7808,7 +7946,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open assessments', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New Heritage assessment',
+      path: '/api/ipp-hra',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'trigger_category', label: 'Trigger Category', type: 'enum', options: ['new_development', 'scope_change', 'layout_modification', 'access_road', 'substation_addition', 'transmission_line'], required: true },
+        { key: 'hra_category', label: 'HRA Category', type: 'enum', options: ['phase_1_desktop', 'phase_2_field', 'phase_3_excavation', 'heritage_impact', 'mitigation_plan'], required: true },
+        { key: 'capacity_mw', label: 'Capacity (MW)', type: 'number', unit: 'MW', required: true },
+        { key: 'sahra_reference', label: 'SAHRA Reference', type: 'string', placeholder: 'SAHRA/2026/HIA/001' },
+        { key: 'heritage_consultant', label: 'Heritage Consultant', type: 'string', placeholder: 'Afri-Arch Heritage Consultants' },
+      ],
+    },
   },
   {
     key: 'ipp_wul',
@@ -7869,7 +8018,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open applications', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New Water-use licence',
+      path: '/api/ipp-wul',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'trigger_category', label: 'Trigger Category', type: 'enum', options: ['new_application', 'renewal', 'amendment', 'transfer', 'rectification'], required: true },
+        { key: 'section21_category', label: 'Section 21 Water Use Category', type: 'enum', options: ['s21_a_diversion', 's21_b_storage', 's21_c_impeding_flow', 's21_g_discharge', 's21_h_disposal'], required: true },
+        { key: 'capacity_mw', label: 'Generation Capacity', type: 'number', unit: 'MW', required: true },
+        { key: 'dws_reference', label: 'DWS Reference Number', type: 'string', placeholder: 'WUL/2025/S21A/001' },
+        { key: 'water_consultant', label: 'Water Consultant', type: 'string', placeholder: 'Zutari' },
+      ],
+    },
   },
   // env_monitoring is the standard shape: POST /:id/:action (verb in path),
   // dedicated events table, refCol/titleCol/counterpartyCol all present, no quantum.
@@ -7947,7 +8107,24 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open rounds', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New Environmental monitoring',
+      path: '/api/ipp-env-monitoring',
+      fields: [
+        { key: 'monitoring_title', label: 'Monitoring Title', type: 'string', required: true, placeholder: 'Dust monitoring station A - Q3 2026' },
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'kakamas-500mw' },
+        { key: 'monitoring_category', label: 'Monitoring Category', type: 'string', required: true, placeholder: 'air_quality' },
+        { key: 'monitoring_tier', label: 'Monitoring Tier', type: 'enum', options: ['critical', 'regular', 'routine', 'baseline'], required: true },
+        { key: 'project_name', label: 'Project Name', type: 'string', placeholder: 'Kakamas 500MW Solar' },
+        { key: 'monitoring_ref', label: 'Monitoring Reference', type: 'string', placeholder: 'K500-ENV-099' },
+        { key: 'eia_condition_ref', label: 'EIA Condition Ref', type: 'string', placeholder: 'EIA-COND-14.3' },
+        { key: 'sampling_location', label: 'Sampling Location', type: 'string', placeholder: 'Boundary fence, NW corner' },
+        { key: 'parameter_name', label: 'Parameter', type: 'string', placeholder: 'PM10' },
+        { key: 'measurement_unit', label: 'Measurement Unit', type: 'string', placeholder: 'ug/m3' },
+        { key: 'permit_limit_max', label: 'Permit Limit Max', type: 'number', unit: 'ug/m3' },
+        { key: 'is_near_sensitive_receptor', label: 'Near Sensitive Receptor', type: 'boolean' },
+      ],
+    },
   },
 
   // ───────── IPP DOCUMENTS (parity batch) ─────────
@@ -8004,7 +8181,20 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'cost', label: 'Cost impact', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New RFI',
+      path: '/api/ipp/rfis/chain',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', placeholder: 'ipp-project-demo-001' },
+        { key: 'rfi_class', label: 'RFI Class', type: 'enum', options: ['clarification', 'coordination', 'construction_blocking', 'emergency_safety'] },
+        { key: 'question_short', label: 'Question (short)', type: 'string', placeholder: 'Confirm rebar spec for foundation pour FP-12' },
+        { key: 'discipline', label: 'Discipline', type: 'string', placeholder: 'civil' },
+        { key: 'contractor_name', label: 'Contractor', type: 'string', placeholder: 'Concor Construction' },
+        { key: 'cost_impact_zar', label: 'Cost Impact', type: 'number', unit: 'ZAR' },
+        { key: 'schedule_impact_days', label: 'Schedule Impact', type: 'number', unit: 'days' },
+        { key: 'safety_hazard_identified', label: 'Safety Hazard Identified', type: 'boolean' },
+      ],
+    },
   },
   {
     key: 'ipp_submittal',
@@ -8054,7 +8244,20 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open submittals', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New Submittal',
+      path: '/api/ipp/submittals/chain',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', placeholder: 'ipp-proj-001' },
+        { key: 'submittal_class', label: 'Submittal Class', type: 'enum', options: ['om_manual', 'material_approval', 'shop_drawing', 'critical_safety'] },
+        { key: 'project_name', label: 'Project Name', type: 'string', placeholder: 'Aurora Wind Farm' },
+        { key: 'project_capacity_mw', label: 'Project Capacity', type: 'number', unit: 'MW' },
+        { key: 'submittal_type', label: 'Submittal Type', type: 'string', placeholder: 'fabrication_drawing' },
+        { key: 'discipline', label: 'Discipline', type: 'string', placeholder: 'electrical' },
+        { key: 'contractor_name', label: 'Contractor', type: 'string', placeholder: 'Aveng Grinaker-LTA' },
+        { key: 'long_lead_item', label: 'Long-Lead Item', type: 'boolean' },
+      ],
+    },
   },
   {
     key: 'ipp_tq',
@@ -8104,7 +8307,25 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open queries', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New Technical query',
+      path: '/api/ipp-tq',
+      fields: [
+        { key: 'tq_title', label: 'TQ title', type: 'string', required: true, placeholder: 'Foundation rebar spacing discrepancy at MV switchroom' },
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj-001' },
+        { key: 'query_description', label: 'Query description', type: 'string', required: true, placeholder: 'Drawing C-204 shows 150mm rebar spacing but spec SANS 10100 calls for 125mm; please confirm intent before pour.' },
+        { key: 'discipline', label: 'Discipline', type: 'enum', options: ['civil', 'structural', 'electrical', 'mechanical', 'instrumentation', 'process', 'fire_protection', 'geotechnical', 'environmental'], required: true },
+        { key: 'query_urgency', label: 'Query urgency', type: 'enum', options: ['safety_critical', 'construction_blocking', 'standard', 'information_only'], required: true },
+        { key: 'project_name', label: 'Project name', type: 'string', placeholder: 'Karoo Solar PV1' },
+        { key: 'tq_number', label: 'TQ number', type: 'string', placeholder: 'TQ-042' },
+        { key: 'drawing_ref', label: 'Drawing reference', type: 'string', placeholder: 'C-204 Rev B' },
+        { key: 'specification_ref', label: 'Specification reference', type: 'string', placeholder: 'SANS 10100-1' },
+        { key: 'proposed_solution', label: 'Proposed solution', type: 'string', placeholder: 'Adopt 125mm spacing per spec; revise as-built.' },
+        { key: 'contractor_ref', label: 'Contractor reference', type: 'string', placeholder: 'CTR-2026-0117' },
+        { key: 'floor_structural_safety', label: 'Structural safety floor', type: 'boolean' },
+        { key: 'floor_ie_notification_required', label: 'IE notification required floor', type: 'boolean' },
+      ],
+    },
   },
   {
     key: 'site_instruction',
@@ -8163,7 +8384,24 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'value', label: 'Instructed value', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New Site instruction',
+      path: '/api/ipp-site-instruction',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj-kakamas-500mw' },
+        { key: 'instruction_type', label: 'Instruction Type', type: 'enum', options: ['safety_directive', 'variation_instruction', 'defect_rectification', 'design_clarification', 'testing_instruction', 'administrative'], required: true },
+        { key: 'issued_date', label: 'Issued Date', type: 'date', required: true, placeholder: '2026-06-16' },
+        { key: 'description', label: 'Description', type: 'string', required: true, placeholder: 'Rectify non-compliant mounting structure welds identified in NCR-2026-018' },
+        { key: 'project_name', label: 'Project Name', type: 'string', placeholder: 'Kakamas 500MW Solar' },
+        { key: 'si_ref', label: 'SI Reference', type: 'string', placeholder: 'SI-2026-013' },
+        { key: 'scope_narrative', label: 'Scope Narrative', type: 'string', placeholder: 'Full re-weld of Row G tracker frames 1-7.' },
+        { key: 'work_location', label: 'Work Location', type: 'string', placeholder: 'Row G — tracker mounting frames 1–7' },
+        { key: 'ie_signatory', label: 'IE Signatory', type: 'string', placeholder: 'Prof. A. Naidoo (IE)' },
+        { key: 'contractor_signatory', label: 'Contractor Signatory', type: 'string', placeholder: 'M. van Wyk (Contractor PM)' },
+        { key: 'is_safety_directive', label: 'Is Safety Directive', type: 'boolean' },
+        { key: 'value_zar', label: 'Variation Value', type: 'number', unit: 'ZAR' },
+      ],
+    },
   },
   {
     key: 'ipp_final_completion',
@@ -8221,7 +8459,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'retention', label: 'Retention held', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New Final completion',
+      path: '/api/ipp-final-completion',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_demo_solar_01' },
+        { key: 'contract_value_zar', label: 'Contract Value', type: 'number', unit: 'ZAR', required: true },
+        { key: 'retention_amount_zar', label: 'Retention Amount', type: 'number', unit: 'ZAR', required: true },
+        { key: 'practical_completion_date', label: 'Practical Completion Date', type: 'date', placeholder: '2026-05-01' },
+        { key: 'dlp_end_date', label: 'Defects Liability Period End Date', type: 'date', placeholder: '2027-05-01' },
+        { key: 'description', label: 'Description', type: 'string', placeholder: 'Final completion certificate application for 50MW solar PV plant' },
+      ],
+    },
   },
   {
     key: 'ipp_om_handover',
@@ -8278,7 +8527,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open handovers', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New O&M handover',
+      path: '/api/ipp-om-handover',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'ip_004' },
+        { key: 'capacity_mw', label: 'Plant Capacity', type: 'number', unit: 'MW', required: true },
+        { key: 'category', label: 'Handover Category', type: 'enum', options: ['hs_file', 'om_manual', 'as_built', 'equipment_data', 'warranties', 'commissioning', 'training', 'full_pack'], required: true },
+        { key: 'title', label: 'Pack Title', type: 'string', required: true, placeholder: 'De Aar 75MW — Full O&M + H&S Handover Pack' },
+        { key: 'document_count', label: 'Document Count', type: 'number' },
+        { key: 'description', label: 'Description', type: 'string', placeholder: 'Complete handover: H&S file, O&M manuals, as-builts, equipment data, warranties, commissioning records, training' },
+      ],
+    },
   },
   {
     key: 'ipp_payment_cert',
@@ -8338,7 +8598,19 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'claimed', label: 'Claimed value', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New Payment certificate',
+      path: '/api/ipp-payment-cert',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_demo_001' },
+        { key: 'claim_type', label: 'Claim Type', type: 'enum', options: ['progress', 'retention_release', 'final_account', 'variation', 'dayworks', 'loss_and_expense', 'advance_payment'], required: true },
+        { key: 'claimed_value_zar', label: 'Claimed Value', type: 'number', unit: 'ZAR', required: true },
+        { key: 'cert_number', label: 'Certificate Number', type: 'string', placeholder: 'PC-001' },
+        { key: 'period_from', label: 'Period From', type: 'date', placeholder: '2026-05-01' },
+        { key: 'period_to', label: 'Period To', type: 'date', placeholder: '2026-05-31' },
+        { key: 'description', label: 'Description', type: 'string', placeholder: 'May 2026 progress claim — civils and foundations' },
+      ],
+    },
   },
 
   // ── Batch 10 — IPP project_controls + construction ──────────────────────
@@ -9362,7 +9634,24 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open submissions', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New MRV verification',
+      path: '/api/carbon-registry/mrv/submissions',
+      fields: [
+        { key: 'project_id', label: 'Carbon Project', type: 'string', required: true, placeholder: 'ip_001' },
+        { key: 'reporting_period_start', label: 'Reporting Period Start', type: 'date', required: true, placeholder: '2026-01-01' },
+        { key: 'reporting_period_end', label: 'Reporting Period End', type: 'date', required: true, placeholder: '2026-12-31' },
+        { key: 'claimed_reductions_tco2e', label: 'Claimed Reductions', type: 'number', unit: 'tCO2e', required: true },
+        { key: 'monitoring_methodology', label: 'Monitoring Methodology', type: 'string', placeholder: 'VCS-VM0007' },
+        { key: 'monitoring_plan_r2_key', label: 'Monitoring Plan (evidence)', type: 'evidence' },
+        { key: 'activity_data_r2_key', label: 'Activity Data (evidence)', type: 'evidence' },
+        { key: 'emission_factors', label: 'Emission Factors (JSON object)', type: 'string', placeholder: '{"grid_ef":0.95}' },
+        { key: 'baseline_methodology', label: 'Baseline Methodology', type: 'string', placeholder: 'VCS-ACM0002' },
+        { key: 'baseline_emissions_tco2e', label: 'Baseline Emissions', type: 'number', unit: 'tCO2e' },
+        { key: 'project_emissions_tco2e', label: 'Project Emissions', type: 'number', unit: 'tCO2e' },
+        { key: 'leakage_tco2e', label: 'Leakage', type: 'number', unit: 'tCO2e' },
+      ],
+    },
   },
   {
     key: 'certificate_bundle',
@@ -10023,7 +10312,22 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'cost', label: 'Total cost', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New Work order',
+      path: '/api/esums/work-orders',
+      fields: [
+        { key: 'site_id', label: 'Site', type: 'string', required: true, placeholder: 'omsite_demo_solar_1' },
+        { key: 'category', label: 'Category', type: 'enum', options: ['corrective', 'preventive', 'inspection', 'cleaning', 'installation', 'upgrade'], required: true },
+        { key: 'priority', label: 'Priority', type: 'enum', options: ['critical', 'high', 'medium', 'low'], required: true },
+        { key: 'title', label: 'Title', type: 'string', required: true, placeholder: 'Inverter 3 fault - no AC output' },
+        { key: 'wo_number', label: 'WO Number', type: 'string', placeholder: 'WO-2026-AB12' },
+        { key: 'fault_id', label: 'Linked Fault', type: 'string', placeholder: 'omflt_demo_1' },
+        { key: 'assigned_to', label: 'Assigned Technician', type: 'string', placeholder: 'omtech_demo_1' },
+        { key: 'description', label: 'Description', type: 'string', placeholder: 'String 3.2 offline since 09:00' },
+        { key: 'sla_response_minutes', label: 'SLA Response (mins)', type: 'number', unit: 'minutes' },
+        { key: 'sla_resolve_hours', label: 'SLA Resolve (hours)', type: 'number', unit: 'hours' },
+      ],
+    },
   },
   {
     key: 'service_contract',
@@ -11635,7 +11939,17 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open studies', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New BFS study',
+      path: '/api/ipp-bfs',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'trigger_category', label: 'Trigger Category', type: 'enum', options: ['scope_change', 'component_substitution', 'tariff_rebid', 'resource_update', 'periodic_refresh', 'lender_request'], required: true },
+        { key: 'capacity_mw', label: 'Capacity', type: 'number', unit: 'MW', required: true },
+        { key: 'ie_firm_name', label: 'Independent Engineer Firm', type: 'string', placeholder: 'Aurecon' },
+        { key: 'bfs_reference', label: 'BFS Reference', type: 'string', placeholder: 'BFS/2026/SPV/001' },
+      ],
+    },
   },
 
   // W166 — IPP Connection Cost Contribution (CCC) negotiation (INVERTED SLA by ccc_amount_zar).
@@ -11682,7 +11996,17 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'exposure', label: 'CCC at stake', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New Connection cost contribution',
+      path: '/api/ipp-ccc',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'ccc_category', label: 'CCC Category', type: 'enum', options: ['line_extension', 'substation_upgrade', 'protection_relay', 'reactive_compensation', 'metering_telecoms', 'combined'], required: true },
+        { key: 'ccc_amount_zar', label: 'CCC Amount', type: 'number', unit: 'ZAR', required: true },
+        { key: 'network_operator', label: 'Network Operator', type: 'string', required: true, placeholder: 'Eskom Transmission' },
+        { key: 'grid_connection_ref', label: 'Grid Connection Reference', type: 'string', placeholder: 'GCA/2024/WEC/KW001' },
+      ],
+    },
   },
 
   // W180 — IPP REIPPPP Community Equity Participation (CEP) compliance (INVERTED SLA by project_mw).
@@ -11729,7 +12053,21 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'distributions', label: 'Distributions', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New Community equity participation',
+      path: '/api/ipp-cep-compliance',
+      fields: [
+        { key: 'project_ref', label: 'Project Reference', type: 'string', required: true, placeholder: 'SOLAR-COM-NC-001' },
+        { key: 'compliance_year', label: 'Compliance Year', type: 'number', required: true },
+        { key: 'project_mw', label: 'Project Capacity', type: 'number', unit: 'MW', required: true },
+        { key: 'cep_equity_pct', label: 'Community Equity Stake', type: 'number', unit: '%' },
+        { key: 'structure_type', label: 'Community Structure Type', type: 'enum', options: ['community_trust', 'npc', 'spv', 'direct_equity', 'blended'] },
+        { key: 'distribution_amount_zar', label: 'Annual Distribution Amount', type: 'number', unit: 'ZAR' },
+        { key: 'community_dev_spend_zar', label: 'Community Development Spend', type: 'number', unit: 'ZAR' },
+        { key: 'trustee_name', label: 'Trustee Name', type: 'string', placeholder: 'Chairperson: M. Dlamini' },
+        { key: 'notes', label: 'Notes', type: 'string', placeholder: 'REIPPPP Implementation Agreement signed; CEP obligation triggered.' },
+      ],
+    },
   },
 
   // W161 — IPP Environmental Compliance Audit (ECO annual report) (INVERTED SLA by capacity_mw).
@@ -11874,7 +12212,19 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open closures', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New Environmental closure',
+      path: '/api/ipp-env-closure',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_demo_solar_1' },
+        { key: 'disturbed_area_ha', label: 'Disturbed Area', type: 'number', unit: 'ha', required: true },
+        { key: 'eia_category', label: 'EIA Category', type: 'enum', options: ['basic_assessment', 'scoping_eir', 'amendments', 'exemption'] },
+        { key: 'ea_reference', label: 'Environmental Authorisation Reference', type: 'string', placeholder: 'EA-2024-00123' },
+        { key: 'emp_reference', label: 'EMP Reference', type: 'string', placeholder: 'EMP-2024-0045' },
+        { key: 'auditor_firm', label: 'Auditor Firm', type: 'string', placeholder: 'GreenAudit (Pty) Ltd' },
+        { key: 'description', label: 'Description', type: 'string', placeholder: 'Decommissioning closure audit for solar PV plant' },
+      ],
+    },
   },
 
   // W176 — IPP DFI Environmental & Social Monitoring Report (ESMR) (INVERTED SLA by loan_size_zar).
@@ -11926,7 +12276,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'exposure', label: 'Loan exposure', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New E&S monitoring report',
+      path: '/api/ipp-esmr',
+      fields: [
+        { key: 'project_ref', label: 'Project Reference', type: 'string', required: true, placeholder: 'WIND-COM-NW-001' },
+        { key: 'reporting_period', label: 'Reporting Period', type: 'string', required: true, placeholder: 'H1-2026' },
+        { key: 'loan_size_zar', label: 'DFI Loan Size', type: 'number', unit: 'ZAR', required: true },
+        { key: 'dfi_names', label: 'DFI Names', type: 'string', placeholder: 'DBSA,IFC' },
+        { key: 'lender_ta_ref', label: 'Lender Technical Advisor Reference', type: 'string', placeholder: 'TA-2026-002' },
+        { key: 'notes', label: 'Notes', type: 'string', placeholder: 'H1-2026 ESMR reporting period opened.' },
+      ],
+    },
   },
 
   // W158 — IPP Force Majeure Declaration & Relief (URGENT SLA by lost_generation_mwh).
@@ -12058,7 +12419,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'value', label: 'Milestone value', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New IE milestone certification',
+      path: '/api/ipp-ie-cert',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj-demo-001' },
+        { key: 'milestone_value_zar', label: 'Milestone Disbursement Value', type: 'number', unit: 'ZAR', required: true },
+        { key: 'milestone_category', label: 'Milestone Category', type: 'enum', options: ['financial_close', 'construction_start', 'pac', 'cod', 'fac', 'loan_drawdown'] },
+        { key: 'ie_firm', label: 'Independent Engineer Firm', type: 'string', placeholder: 'Mott MacDonald' },
+        { key: 'lender_reference', label: 'Lender Reference', type: 'string', placeholder: 'LMA-FAC-2026-014' },
+        { key: 'description', label: 'Description', type: 'string', placeholder: 'COD milestone certification for 75MW solar PV' },
+      ],
+    },
   },
 
   // ───────── IPP COMPLIANCE — PHASE E BATCH 2 ─────────
@@ -12195,7 +12567,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open applications', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New TPA / wheeling',
+      path: '/api/ipp-tpa',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_nxt_solar_001' },
+        { key: 'wheeling_capacity_mw', label: 'Wheeling Capacity', type: 'number', unit: 'MW', required: true },
+        { key: 'tpa_category', label: 'TPA Category', type: 'enum', options: ['eskom_transmission', 'eskom_distribution', 'municipality', 'private_network'] },
+        { key: 'network_owner', label: 'Network Owner', type: 'string', placeholder: 'Eskom Distribution — GP' },
+        { key: 'offtaker_reference', label: 'Off-taker Reference', type: 'string', placeholder: 'OFT-NBF-2024-001' },
+        { key: 'description', label: 'Description', type: 'string', placeholder: '20MW PV — Eskom Distribution TPA wheeling application' },
+      ],
+    },
   },
 
   // W157 — IPP Project Refinancing & Debt Restructuring (NERSA §35 + SARB ExCon; INVERTED SLA by debt quantum).
@@ -12246,7 +12629,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'exposure', label: 'Debt quantum', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New Refinancing',
+      path: '/api/ipp-refinancing',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj-wind-north-001' },
+        { key: 'debt_quantum_zar', label: 'Debt Quantum', type: 'number', unit: 'ZAR', required: true },
+        { key: 'refinancing_type', label: 'Refinancing Type', type: 'enum', options: ['term_loan_refinancing', 'bond_issuance', 'green_bond', 'refinancing_with_equity_release', 'debt_restructuring', 'lender_substitution'], required: true },
+        { key: 'sarb_approval_required', label: 'SARB Exchange Control Approval Required', type: 'boolean' },
+        { key: 'lender_name', label: 'Lender / Arranger Name', type: 'string', placeholder: 'Standard Bank Project Finance' },
+        { key: 'description', label: 'Description', type: 'string', placeholder: 'R800M term loan refinancing to extend tenor at improved JIBAR margin.' },
+      ],
+    },
   },
 
   // W162 — IPP Lender's Technical Advisor (LTA) Drawdown Certificate (LMA + SARB Reg.23; INVERTED SLA by drawdown).
@@ -12293,7 +12687,17 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'value', label: 'Drawdown value', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New LTA drawdown certificate',
+      path: '/api/ipp-lta-certificate',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_001' },
+        { key: 'drawdown_amount_zar', label: 'Drawdown Amount (ZAR)', type: 'number', unit: 'ZAR', required: true },
+        { key: 'certificate_category', label: 'Certificate Category', type: 'enum', options: ['construction_progress', 'completion_certificate', 'cost_to_complete', 'change_order_approval', 'commissioning_readiness'], required: true },
+        { key: 'drawdown_reference', label: 'Drawdown Reference', type: 'string', placeholder: 'DD-2024-001' },
+        { key: 'lta_firm_name', label: 'LTA Firm Name', type: 'string', placeholder: 'Aurecon (Pty) Ltd' },
+      ],
+    },
   },
 
   // W177 — IPP Independent Engineer Annual Performance Review (REIPPPP + Equator; INVERTED SLA by project_mw).
@@ -12339,7 +12743,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'open', label: 'Open reviews', compute: 'count' },
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New IE annual review',
+      path: '/api/ipp-ie-annual-reviews',
+      fields: [
+        { key: 'project_ref', label: 'Project Reference', type: 'string', required: true, placeholder: 'SOLAR-COM-EC-001' },
+        { key: 'review_year', label: 'Review Year', type: 'number', unit: 'year', required: true },
+        { key: 'project_mw', label: 'Project Capacity', type: 'number', unit: 'MW', required: true },
+        { key: 'focus_area', label: 'Review Focus Area', type: 'enum', options: ['technical_performance', 'financial_model', 'om_compliance', 'grid_code', 'insurance_bonds', 'comprehensive'] },
+        { key: 'ie_firm', label: 'Independent Engineer Firm', type: 'string', placeholder: 'WSP' },
+        { key: 'notes', label: 'Notes', type: 'string', placeholder: '2026 annual IE review cycle triggered per REIPPPP Schedule 5 covenant.' },
+      ],
+    },
   },
 
   // W178 — IPP Annual Insurance Renewal & Coverage Confirmation (REIPPPP PPA Sch.8; INVERTED SLA by premium).
@@ -12389,7 +12804,20 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'premium', label: 'Annual premium', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New Insurance renewal',
+      path: '/api/ipp-insurance-renewals',
+      fields: [
+        { key: 'project_ref', label: 'Project Reference', type: 'string', required: true, placeholder: 'SOLAR-COM-EC-001' },
+        { key: 'renewal_year', label: 'Renewal Year', type: 'number', required: true },
+        { key: 'annual_premium_zar', label: 'Annual Premium (ZAR)', type: 'number', unit: 'ZAR', required: true },
+        { key: 'insured_value_zar', label: 'Insured Value (ZAR)', type: 'number', unit: 'ZAR' },
+        { key: 'line_type', label: 'Insurance Line Type', type: 'enum', options: ['contractors_all_risk', 'operational_all_risk', 'third_party_liability', 'business_interruption', 'directors_officers', 'environmental_impairment', 'comprehensive_package'] },
+        { key: 'policy_expiry_date', label: 'Policy Expiry Date', type: 'date', placeholder: '2026-09-30' },
+        { key: 'broker_name', label: 'Broker Name', type: 'string', placeholder: 'Aon South Africa' },
+        { key: 'notes', label: 'Notes', type: 'string', placeholder: '2026 renewal cycle triggered 90 days before policy expiry.' },
+      ],
+    },
   },
 
   // W181 — IPP REIPPPP Socio-Economic Development (SED) Annual Spend (REIPPPP Bid Conditions; INVERTED SLA by revenue).
@@ -12436,7 +12864,20 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       { key: 'breached', label: 'SLA breached', compute: 'count_breached' },
       { key: 'revenue', label: 'Annual revenue', compute: 'sum_quantum' },
     ],
-    initiation: null,
+    initiation: {
+      label: 'New SED annual spend',
+      path: '/api/ipp-sed-compliance',
+      fields: [
+        { key: 'project_ref', label: 'Project Reference', type: 'string', required: true, placeholder: 'REIPPPP-BW4-SOLAR-012' },
+        { key: 'compliance_year', label: 'Compliance Year', type: 'number', unit: 'year', required: true },
+        { key: 'annual_revenue_zar', label: 'Annual Revenue (ZAR)', type: 'number', unit: 'ZAR', required: true },
+        { key: 'sed_spend_zar', label: 'SED Spend (ZAR)', type: 'number', unit: 'ZAR' },
+        { key: 'sed_spend_pct', label: 'SED Spend (% of revenue)', type: 'number', unit: '%' },
+        { key: 'focus_area', label: 'SED Focus Area', type: 'enum', options: ['education', 'healthcare', 'infrastructure', 'skills_development', 'enterprise_development', 'environmental', 'comprehensive'] },
+        { key: 'auditor_name', label: 'Independent Auditor', type: 'string', placeholder: 'Deloitte SA' },
+        { key: 'notes', label: 'Notes', type: 'string', placeholder: 'Annual SED cycle for host communities' },
+      ],
+    },
   },
 
   // W221 — Esums Grid Export Curtailment & Compensation Claim (IEC 61724 + Grid Code §CSC-2; URGENT SLA).
@@ -13283,6 +13724,17 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: null,
     lanes: { ipp_developer: 'regulatory_risk' },
     eventsTable: null, eventsFk: null,
+    initiation: {
+      label: 'New Community trust report',
+      path: '/api/ipp-community-trust',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_demo_solar_1' },
+        { key: 'trust_category', label: 'Trust Category', type: 'enum', options: ['equity_dividend', 'socio_economic_development', 'enterprise_development', 'education_bursary', 'infrastructure_upliftment'], required: true },
+        { key: 'reporting_year', label: 'Reporting Year', type: 'number', required: true },
+        { key: 'disbursement_amount_zar', label: 'Disbursement Amount', type: 'number', unit: 'ZAR', required: true },
+        { key: 'trust_name', label: 'Trust Name', type: 'string', placeholder: 'Karoo Community Trust' },
+      ],
+    },
     actions: [
       { action: 'submit_to_dtic', label: 'Submit to DTIC', tone: 'primary',
         method: 'PUT', path: '/api/ipp-community-trust/:id/action',
@@ -13413,6 +13865,19 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: 'transferee_name',
     lanes: { ipp_developer: 'finance' },
     eventsTable: null, eventsFk: null,
+    initiation: {
+      label: 'New Equity transfer',
+      path: '/api/ipp-equity-transfer',
+      fields: [
+        { key: 'project_ref', label: 'Project Reference', type: 'string', required: true, placeholder: 'PROJ-WIND-001' },
+        { key: 'transfer_type', label: 'Transfer Type', type: 'enum', options: ['secondary_sale', 'community_equity', 'dfi_exit', 'sponsor_reorg', 'debt_equity_swap'], required: true },
+        { key: 'equity_quantum_zar', label: 'Equity Quantum', type: 'number', unit: 'ZAR', required: true },
+        { key: 'transferor_name', label: 'Transferor Name', type: 'string', placeholder: 'Acme Development Pty Ltd' },
+        { key: 'transferee_name', label: 'Transferee Name', type: 'string', placeholder: 'Infrastructure Capital Fund III' },
+        { key: 'equity_pct', label: 'Equity Percentage', type: 'number', unit: '%' },
+        { key: 'notes', label: 'Notes', type: 'string', placeholder: 'Secondary sale of dev equity to infra fund' },
+      ],
+    },
     actions: [
       { action: 'commence_nersa_review', label: 'Commence NERSA review', tone: 'primary',
         method: 'POST', path: '/api/ipp-equity-transfer/:id/action',
@@ -13455,6 +13920,17 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: null,
     lanes: { ipp_developer: 'safety_grid' },
     eventsTable: null, eventsFk: null,
+    initiation: {
+      label: 'New Grid compliance',
+      path: '/api/ipp-grid-compliance',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'compliance_category', label: 'Compliance Category', type: 'enum', options: ['power_quality', 'protection_relay', 'fault_ride_through', 'reactive_power', 'frequency_response', 'earthing_bonding'], required: true },
+        { key: 'assessment_year', label: 'Assessment Year', type: 'number', required: true },
+        { key: 'capacity_mw', label: 'Installed Capacity', type: 'number', unit: 'MW', required: true },
+        { key: 'nersa_reference', label: 'NERSA Reference', type: 'string', placeholder: 'GCC/2025/SPV/001' },
+      ],
+    },
     actions: [
       { action: 'submit_to_nersa', label: 'Submit to NERSA', tone: 'primary',
         method: 'PUT', path: '/api/ipp-grid-compliance/:id/action',
@@ -13489,6 +13965,17 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: 'counterparty_name',
     lanes: { ipp_developer: 'regulatory_risk' },
     eventsTable: null, eventsFk: null,
+    initiation: {
+      label: 'New Land amendment',
+      path: '/api/ipp-land-amendment',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'amendment_category', label: 'Amendment Category', type: 'enum', options: ['lease_amendment', 'servitude_registration', 'servitude_extension', 'wayleave_grant', 'wayleave_extension', 'right_of_way'], required: true },
+        { key: 'land_area_hectares', label: 'Land Area', type: 'number', unit: 'hectares', required: true },
+        { key: 'counterparty_name', label: 'Counterparty Name', type: 'string', required: true, placeholder: 'eThekwini Municipality' },
+        { key: 'deeds_office_reference', label: 'Deeds Office Reference', type: 'string', placeholder: 'T12345/2024' },
+      ],
+    },
     actions: [
       { action: 'submit_application', label: 'Submit application', tone: 'primary',
         method: 'PUT', path: '/api/ipp-land-amendment/:id/action',
@@ -13523,6 +14010,19 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: 'agent_bank',
     lanes: { ipp_developer: 'finance' },
     eventsTable: null, eventsFk: null,
+    initiation: {
+      label: 'New Lender reporting',
+      path: '/api/ipp-lender-reporting',
+      fields: [
+        { key: 'project_ref', label: 'Project Reference', type: 'string', required: true, placeholder: 'SOLAR-COM-NC-001' },
+        { key: 'report_period', label: 'Reporting Period', type: 'string', required: true, placeholder: 'Q1 2026' },
+        { key: 'lender_count', label: 'Number of Lenders', type: 'number', unit: 'lenders', required: true },
+        { key: 'report_type', label: 'Report Type', type: 'enum', options: ['quarterly_report', 'semi_annual_report', 'annual_report', 'special_purpose_report', 'drawdown_report'] },
+        { key: 'agent_bank', label: 'Agent Bank', type: 'string', placeholder: 'Nedbank CIB (Agent Bank)' },
+        { key: 'due_date', label: 'Contractual Due Date', type: 'date', placeholder: '2026-05-15' },
+        { key: 'notes', label: 'Notes', type: 'string', placeholder: 'Q1 2026 lender reporting cycle triggered.' },
+      ],
+    },
     actions: [
       { action: 'submit_to_agent_bank', label: 'Submit to agent bank', tone: 'primary',
         method: 'PUT', path: '/api/ipp-lender-reporting/:id/action',
@@ -13565,6 +14065,19 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: null,
     lanes: { ipp_developer: 'construction' },
     eventsTable: null, eventsFk: null,
+    initiation: {
+      label: 'New Milestone certification',
+      path: '/api/ipp-milestone-certs',
+      fields: [
+        { key: 'project_ref', label: 'Project Reference', type: 'string', required: true, placeholder: 'REIPPPP-BW5-SOLAR-042' },
+        { key: 'milestone_type', label: 'Milestone Type', type: 'enum', options: ['financial_close', 'construction_start', 'test_cod', 'cod', 'grid_connection', 'commissioning_complete', 'performance_test_complete'], required: true },
+        { key: 'project_mw', label: 'Project Capacity', type: 'number', unit: 'MW', required: true },
+        { key: 'energy_type', label: 'Energy Type', type: 'enum', options: ['solar_pv', 'wind_onshore', 'wind_offshore', 'biomass', 'small_hydro', 'csp', 'battery_storage'] },
+        { key: 'scheduled_date', label: 'Scheduled Date', type: 'date', placeholder: '2026-09-30' },
+        { key: 'ie_report_ref', label: 'Independent Engineer Report Ref', type: 'string', placeholder: 'IE-RPT-2026-0042' },
+        { key: 'notes', label: 'Notes', type: 'string', placeholder: 'Financial close milestone for BW5 solar project' },
+      ],
+    },
     actions: [
       { action: 'commence_final_review', label: 'Commence final review', tone: 'primary',
         method: 'PUT', path: '/api/ipp-milestone-certs/:id/action',
@@ -13609,6 +14122,17 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: 'contractor_name',
     lanes: { ipp_developer: 'finance' },
     eventsTable: null, eventsFk: null,
+    initiation: {
+      label: 'New O&M contract',
+      path: '/api/ipp-om-contract',
+      fields: [
+        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'om_contract_category', label: 'O&M Contract Category', type: 'enum', options: ['full_om', 'maintenance_only', 'operations_only', 'asset_management', 'specialist_equipment', 'novation'], required: true },
+        { key: 'annual_om_value_zar', label: 'Annual O&M Value', type: 'number', unit: 'ZAR', required: true },
+        { key: 'contractor_name', label: 'Contractor Name', type: 'string', required: true, placeholder: 'SolarEdge O&M Services' },
+        { key: 'contract_expiry_date', label: 'Contract Expiry Date', type: 'date', placeholder: '2025-06-30' },
+      ],
+    },
     actions: [
       { action: 'select_preferred_bidder', label: 'Select preferred bidder', tone: 'primary',
         method: 'PUT', path: '/api/ipp-om-contract/:id/action',
@@ -13826,6 +14350,24 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: null,
     lanes: { ipp_developer: 'regulatory_risk' },
     eventsTable: null, eventsFk: null,
+    initiation: {
+      label: 'New Quarterly generation report',
+      path: '/api/ipp-quarterly-gen-reports',
+      fields: [
+        { key: 'quarter', label: 'Reporting Quarter', type: 'string', required: true, placeholder: 'Q1 2026' },
+        { key: 'report_period_start', label: 'Report Period Start', type: 'date', required: true, placeholder: '2026-01-01' },
+        { key: 'report_period_end', label: 'Report Period End', type: 'date', required: true, placeholder: '2026-03-31' },
+        { key: 'project_mw', label: 'Project Capacity', type: 'number', unit: 'MW', required: true },
+        { key: 'project_id', label: 'Project', type: 'string', placeholder: 'proj_demo_001' },
+        { key: 'mwh_contracted', label: 'MWh Contracted (qtr)', type: 'number', unit: 'MWh' },
+        { key: 'mwh_actual', label: 'MWh Actual (qtr)', type: 'number', unit: 'MWh' },
+        { key: 'availability_pct', label: 'Availability', type: 'number', unit: '%' },
+        { key: 'capacity_factor_pct', label: 'Capacity Factor', type: 'number', unit: '%' },
+        { key: 'ed_spend_qtd_zar', label: 'ED Spend QTD', type: 'number', unit: 'ZAR' },
+        { key: 'sed_spend_qtd_zar', label: 'SED Spend QTD', type: 'number', unit: 'ZAR' },
+        { key: 'notes', label: 'Notes', type: 'string', placeholder: 'Q1 generation report' },
+      ],
+    },
     actions: [
       { action: 'submit_to_ipp_office', label: 'Submit to IPP Office', tone: 'primary',
         method: 'PUT', path: '/api/ipp-quarterly-gen-reports/:id/action',
@@ -14495,6 +15037,18 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     counterpartyCol: 'beneficiary_community',
     lanes: { ipp_developer: 'regulatory_risk', support: 'platform_ops', regulator: 'licensing' },
     eventsTable: null, eventsFk: null,
+    initiation: {
+      label: 'New CBT/SED annual report',
+      path: '/api/ipp/cbt-sed/open',
+      fields: [
+        { key: 'ipp_id', label: 'IPP / Generator (user id)', type: 'string', required: true, placeholder: 'ipp' },
+        { key: 'project_name', label: 'REIPPPP Project Name', type: 'string', required: true, placeholder: 'Karusa Wind Farm' },
+        { key: 'reipppp_bid_window', label: 'REIPPPP Bid Window', type: 'enum', options: ['BW1', 'BW2', 'BW3', 'BW4', 'BW5', 'BW6'], required: true },
+        { key: 'reporting_year', label: 'Reporting Year', type: 'number', required: true },
+        { key: 'annual_cbt_disbursement_zar', label: 'Annual CBT Disbursement', type: 'number', unit: 'ZAR', required: true },
+        { key: 'reason', label: 'Opening Reason / Note', type: 'string', placeholder: 'Annual DMRE reporting window opened' },
+      ],
+    },
     actions: [
       { action: 'submit_report', label: 'Submit to DMRE', tone: 'primary',
         method: 'POST', path: '/api/ipp/cbt-sed/:id/action',

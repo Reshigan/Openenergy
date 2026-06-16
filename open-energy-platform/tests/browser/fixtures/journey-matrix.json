@@ -1,7 +1,7 @@
 {
   "generatedFrom": "MERIDIAN_CHAINS",
   "total": 207,
-  "withInitiation": 76,
+  "withInitiation": 118,
   "rows": [
     {
       "key": "covenant_certificate",
@@ -3173,9 +3173,15 @@
           {
             "key": "gate_index",
             "label": "Gate index (DG0–DG4)",
-            "type": "number",
+            "type": "enum",
             "required": true,
-            "options": null,
+            "options": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4"
+            ],
             "unit": null
           },
           {
@@ -7709,8 +7715,90 @@
       "lanes": [
         "carbon_fund"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Registry transfer",
+        "path": "/api/carbon-registry-transfers",
+        "fields": [
+          {
+            "key": "quantity_tco2e",
+            "label": "Quantity (tCO2e)",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "tCO2e"
+          },
+          {
+            "key": "transfer_type",
+            "label": "Transfer Type",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "domestic",
+              "international_art6",
+              "corsia",
+              "voluntary_crossregistry"
+            ],
+            "unit": null
+          },
+          {
+            "key": "counterparty_id",
+            "label": "Counterparty (transferee)",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "vintage_year",
+            "label": "Vintage Year",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "project_id",
+            "label": "Linked Carbon Project",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "methodology",
+            "label": "Methodology",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "source_registry",
+            "label": "Source Registry",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "destination_registry",
+            "label": "Destination Registry",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "serial_range_start",
+            "label": "Serial Range Start",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "authorize",
@@ -7843,8 +7931,90 @@
       "lanes": [
         "carbon_fund"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Methodology amendment",
+        "path": "/api/methodology-amendments",
+        "fields": [
+          {
+            "key": "methodology_id",
+            "label": "Methodology ID",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "deviation_description",
+            "label": "Deviation Description",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "amendment_tier",
+            "label": "Amendment Tier",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "minor_parameter",
+              "moderate_change",
+              "major_change",
+              "article6_itmo"
+            ],
+            "unit": null
+          },
+          {
+            "key": "project_ref",
+            "label": "Carbon Project Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "methodology_version",
+            "label": "Methodology Version",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "deviation_type",
+            "label": "Deviation Type",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "estimated_impact_tco2e",
+            "label": "Estimated Impact",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "tCO2e"
+          },
+          {
+            "key": "reason",
+            "label": "Reason / Notes",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "participant_id",
+            "label": "Participant (admin/support only)",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "classify_major",
@@ -14114,8 +14284,83 @@
       "lanes": [
         "regulator"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Enforcement action",
+        "path": "/api/regulator/enforcement-action-s35/chain",
+        "fields": [
+          {
+            "key": "respondent_party_id",
+            "label": "Respondent Party ID",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "respondent_party_label",
+            "label": "Respondent Name",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "triggering_event_type",
+            "label": "Triggering Event Type",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "inspection_finding",
+              "complaint",
+              "sla_breach_referral",
+              "regulator_initiated",
+              "criminal_intelligence"
+            ],
+            "unit": null
+          },
+          {
+            "key": "triggering_reason_summary_text",
+            "label": "Reason Summary",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "sanction_quantum_zar",
+            "label": "Proposed Sanction Quantum",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "sanction_quantum_zar_floor",
+            "label": "Sanction Quantum Floor",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "enforcement_floor_flag_licence_revocation_proposed",
+            "label": "Licence Revocation Proposed",
+            "type": "boolean",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "title",
+            "label": "Case Title",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "issue-notice",
@@ -14231,8 +14476,113 @@
       "lanes": [
         "support"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Warranty claim",
+        "path": "/api/esums/warranty-claims",
+        "fields": [
+          {
+            "key": "asset_label",
+            "label": "Asset",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "oem_name",
+            "label": "OEM / Manufacturer",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "subject",
+            "label": "Claim Subject",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "severity",
+            "label": "Severity",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "safety",
+              "performance",
+              "cosmetic"
+            ],
+            "unit": null
+          },
+          {
+            "key": "description",
+            "label": "Description",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "fault_code",
+            "label": "Fault Code",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "failure_mode",
+            "label": "Failure Mode",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "warranty_ref",
+            "label": "Warranty Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "asset_id",
+            "label": "Asset ID",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "oem_id",
+            "label": "OEM ID",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "site_id",
+            "label": "Site ID",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "tenant_id",
+            "label": "Tenant ID",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit",
@@ -15750,8 +16100,81 @@
       "lanes": [
         "support"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Service request",
+        "path": "/api/support/service-request/chain",
+        "fields": [
+          {
+            "key": "catalog_item_label",
+            "label": "Catalog Item",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "catalog_category",
+            "label": "Catalog Category",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "business_justification",
+            "label": "Business Justification",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "urgency_requested",
+            "label": "Urgency",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "low",
+              "normal",
+              "high"
+            ],
+            "unit": null
+          },
+          {
+            "key": "severity_zar",
+            "label": "Severity (ZAR impact)",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "requested_for_party_label",
+            "label": "Requested For",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "title",
+            "label": "Title",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "regulator_relevant",
+            "label": "Regulator Relevant",
+            "type": "boolean",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "approve",
@@ -15843,8 +16266,107 @@
       "lanes": [
         "support"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Site commissioning",
+        "path": "/api/esums/sites",
+        "fields": [
+          {
+            "key": "name",
+            "label": "Site name",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "capacity_mw",
+            "label": "Capacity (MW)",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "MW"
+          },
+          {
+            "key": "technology",
+            "label": "Technology",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "solar",
+              "wind",
+              "battery",
+              "hydro",
+              "biomass"
+            ],
+            "unit": null
+          },
+          {
+            "key": "capacity_kwp",
+            "label": "Capacity (kWp)",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "kWp"
+          },
+          {
+            "key": "province",
+            "label": "Province",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "latitude",
+            "label": "Latitude",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "longitude",
+            "label": "Longitude",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "commissioning_date",
+            "label": "Commissioning date",
+            "type": "date",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "ppa_tariff_zar_mwh",
+            "label": "PPA tariff (ZAR/MWh)",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "ZAR/MWh"
+          },
+          {
+            "key": "status",
+            "label": "Site status",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "planned",
+              "construction",
+              "commissioning",
+              "operational",
+              "maintenance",
+              "decommissioned",
+              "suspended"
+            ],
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "energise",
@@ -18436,8 +18958,122 @@
         "ipp_developer",
         "epc_contractor"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Method statement",
+        "path": "/api/ipp-method-statement",
+        "fields": [
+          {
+            "key": "ms_title",
+            "label": "Method statement title",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "work_type",
+            "label": "Work type",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "risk_tier",
+            "label": "Risk tier",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "high_risk",
+              "medium_risk",
+              "low_risk",
+              "routine"
+            ],
+            "unit": null
+          },
+          {
+            "key": "scope_of_work",
+            "label": "Scope of work",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "project_name",
+            "label": "Project name",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "ms_number",
+            "label": "MS number",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "work_area",
+            "label": "Work area",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "scheduled_start_date",
+            "label": "Scheduled start date",
+            "type": "date",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "scheduled_duration_days",
+            "label": "Scheduled duration",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "days"
+          },
+          {
+            "key": "is_critical_lift",
+            "label": "Critical lift",
+            "type": "boolean",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "is_confined_space",
+            "label": "Confined space",
+            "type": "boolean",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "is_live_electrical",
+            "label": "Live electrical work",
+            "type": "boolean",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_for_review",
@@ -18625,8 +19261,104 @@
         "ipp_developer",
         "epc_contractor"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Site diary",
+        "path": "/api/ipp-diary",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "diary_date",
+            "label": "Diary Date",
+            "type": "date",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "day_type",
+            "label": "Day Type",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "critical_delay",
+              "daily_operational",
+              "shutdown_partial",
+              "no_work"
+            ],
+            "unit": null
+          },
+          {
+            "key": "diary_ref",
+            "label": "Contractor Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "weather_am",
+            "label": "Weather AM",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "clear",
+              "overcast",
+              "rain",
+              "thunder",
+              "high_wind"
+            ],
+            "unit": null
+          },
+          {
+            "key": "workforce_total",
+            "label": "Workforce Total",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "persons"
+          },
+          {
+            "key": "progress_narrative",
+            "label": "Progress Narrative",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "work_stoppages_minutes",
+            "label": "Work Stoppages",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "minutes"
+          },
+          {
+            "key": "contractor_signatory",
+            "label": "Contractor Signatory",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "floor_has_safety_incident",
+            "label": "Safety Incident Occurred",
+            "type": "boolean",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_diary",
@@ -21092,8 +21824,74 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New AEL application",
+        "path": "/api/ipp-ael",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "trigger_category",
+            "label": "Trigger Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "new_installation",
+              "capacity_increase",
+              "fuel_change",
+              "technology_substitution",
+              "renewal",
+              "amendment"
+            ],
+            "unit": null
+          },
+          {
+            "key": "ael_category",
+            "label": "AEL Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "category_1_major",
+              "category_2_minor",
+              "s21_listed_activity",
+              "point_source",
+              "fugitive_emission"
+            ],
+            "unit": null
+          },
+          {
+            "key": "capacity_mw",
+            "label": "Capacity",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "MW"
+          },
+          {
+            "key": "authority_reference",
+            "label": "Authority Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "emissions_consultant",
+            "label": "Emissions Consultant",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_application",
@@ -21251,8 +22049,74 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Heritage assessment",
+        "path": "/api/ipp-hra",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "trigger_category",
+            "label": "Trigger Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "new_development",
+              "scope_change",
+              "layout_modification",
+              "access_road",
+              "substation_addition",
+              "transmission_line"
+            ],
+            "unit": null
+          },
+          {
+            "key": "hra_category",
+            "label": "HRA Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "phase_1_desktop",
+              "phase_2_field",
+              "phase_3_excavation",
+              "heritage_impact",
+              "mitigation_plan"
+            ],
+            "unit": null
+          },
+          {
+            "key": "capacity_mw",
+            "label": "Capacity (MW)",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "MW"
+          },
+          {
+            "key": "sahra_reference",
+            "label": "SAHRA Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "heritage_consultant",
+            "label": "Heritage Consultant",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_hra",
@@ -21410,8 +22274,73 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Water-use licence",
+        "path": "/api/ipp-wul",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "trigger_category",
+            "label": "Trigger Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "new_application",
+              "renewal",
+              "amendment",
+              "transfer",
+              "rectification"
+            ],
+            "unit": null
+          },
+          {
+            "key": "section21_category",
+            "label": "Section 21 Water Use Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "s21_a_diversion",
+              "s21_b_storage",
+              "s21_c_impeding_flow",
+              "s21_g_discharge",
+              "s21_h_disposal"
+            ],
+            "unit": null
+          },
+          {
+            "key": "capacity_mw",
+            "label": "Generation Capacity",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "MW"
+          },
+          {
+            "key": "dws_reference",
+            "label": "DWS Reference Number",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "water_consultant",
+            "label": "Water Consultant",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_application",
@@ -21568,8 +22497,114 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Environmental monitoring",
+        "path": "/api/ipp-env-monitoring",
+        "fields": [
+          {
+            "key": "monitoring_title",
+            "label": "Monitoring Title",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "monitoring_category",
+            "label": "Monitoring Category",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "monitoring_tier",
+            "label": "Monitoring Tier",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "critical",
+              "regular",
+              "routine",
+              "baseline"
+            ],
+            "unit": null
+          },
+          {
+            "key": "project_name",
+            "label": "Project Name",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "monitoring_ref",
+            "label": "Monitoring Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "eia_condition_ref",
+            "label": "EIA Condition Ref",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "sampling_location",
+            "label": "Sampling Location",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "parameter_name",
+            "label": "Parameter",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "measurement_unit",
+            "label": "Measurement Unit",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "permit_limit_max",
+            "label": "Permit Limit Max",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "ug/m3"
+          },
+          {
+            "key": "is_near_sensitive_receptor",
+            "label": "Near Sensitive Receptor",
+            "type": "boolean",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "start_sampling",
@@ -21784,8 +22819,82 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New RFI",
+        "path": "/api/ipp/rfis/chain",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "rfi_class",
+            "label": "RFI Class",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "clarification",
+              "coordination",
+              "construction_blocking",
+              "emergency_safety"
+            ],
+            "unit": null
+          },
+          {
+            "key": "question_short",
+            "label": "Question (short)",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "discipline",
+            "label": "Discipline",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "contractor_name",
+            "label": "Contractor",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "cost_impact_zar",
+            "label": "Cost Impact",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "schedule_impact_days",
+            "label": "Schedule Impact",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "days"
+          },
+          {
+            "key": "safety_hazard_identified",
+            "label": "Safety Hazard Identified",
+            "type": "boolean",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit",
@@ -21903,8 +23012,82 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Submittal",
+        "path": "/api/ipp/submittals/chain",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "submittal_class",
+            "label": "Submittal Class",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "om_manual",
+              "material_approval",
+              "shop_drawing",
+              "critical_safety"
+            ],
+            "unit": null
+          },
+          {
+            "key": "project_name",
+            "label": "Project Name",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "project_capacity_mw",
+            "label": "Project Capacity",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "MW"
+          },
+          {
+            "key": "submittal_type",
+            "label": "Submittal Type",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "discipline",
+            "label": "Discipline",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "contractor_name",
+            "label": "Contractor",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "long_lead_item",
+            "label": "Long-Lead Item",
+            "type": "boolean",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit",
@@ -22021,8 +23204,132 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Technical query",
+        "path": "/api/ipp-tq",
+        "fields": [
+          {
+            "key": "tq_title",
+            "label": "TQ title",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "query_description",
+            "label": "Query description",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "discipline",
+            "label": "Discipline",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "civil",
+              "structural",
+              "electrical",
+              "mechanical",
+              "instrumentation",
+              "process",
+              "fire_protection",
+              "geotechnical",
+              "environmental"
+            ],
+            "unit": null
+          },
+          {
+            "key": "query_urgency",
+            "label": "Query urgency",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "safety_critical",
+              "construction_blocking",
+              "standard",
+              "information_only"
+            ],
+            "unit": null
+          },
+          {
+            "key": "project_name",
+            "label": "Project name",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "tq_number",
+            "label": "TQ number",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "drawing_ref",
+            "label": "Drawing reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "specification_ref",
+            "label": "Specification reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "proposed_solution",
+            "label": "Proposed solution",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "contractor_ref",
+            "label": "Contractor reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "floor_structural_safety",
+            "label": "Structural safety floor",
+            "type": "boolean",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "floor_ie_notification_required",
+            "label": "IE notification required floor",
+            "type": "boolean",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "allocate_to_designer",
@@ -22147,8 +23454,116 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Site instruction",
+        "path": "/api/ipp-site-instruction",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "instruction_type",
+            "label": "Instruction Type",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "safety_directive",
+              "variation_instruction",
+              "defect_rectification",
+              "design_clarification",
+              "testing_instruction",
+              "administrative"
+            ],
+            "unit": null
+          },
+          {
+            "key": "issued_date",
+            "label": "Issued Date",
+            "type": "date",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "description",
+            "label": "Description",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "project_name",
+            "label": "Project Name",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "si_ref",
+            "label": "SI Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "scope_narrative",
+            "label": "Scope Narrative",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "work_location",
+            "label": "Work Location",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "ie_signatory",
+            "label": "IE Signatory",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "contractor_signatory",
+            "label": "Contractor Signatory",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "is_safety_directive",
+            "label": "Is Safety Directive",
+            "type": "boolean",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "value_zar",
+            "label": "Variation Value",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "ZAR"
+          }
+        ]
+      },
       "actions": [
         {
           "action": "issue_instruction",
@@ -22290,8 +23705,61 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Final completion",
+        "path": "/api/ipp-final-completion",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "contract_value_zar",
+            "label": "Contract Value",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "retention_amount_zar",
+            "label": "Retention Amount",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "practical_completion_date",
+            "label": "Practical Completion Date",
+            "type": "date",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "dlp_end_date",
+            "label": "Defects Liability Period End Date",
+            "type": "date",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "description",
+            "label": "Description",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "schedule_inspection",
@@ -22425,8 +23893,70 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New O&M handover",
+        "path": "/api/ipp-om-handover",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "capacity_mw",
+            "label": "Plant Capacity",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "MW"
+          },
+          {
+            "key": "category",
+            "label": "Handover Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "hs_file",
+              "om_manual",
+              "as_built",
+              "equipment_data",
+              "warranties",
+              "commissioning",
+              "training",
+              "full_pack"
+            ],
+            "unit": null
+          },
+          {
+            "key": "title",
+            "label": "Pack Title",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "document_count",
+            "label": "Document Count",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "description",
+            "label": "Description",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_for_internal_review",
@@ -22560,8 +24090,77 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Payment certificate",
+        "path": "/api/ipp-payment-cert",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "claim_type",
+            "label": "Claim Type",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "progress",
+              "retention_release",
+              "final_account",
+              "variation",
+              "dayworks",
+              "loss_and_expense",
+              "advance_payment"
+            ],
+            "unit": null
+          },
+          {
+            "key": "claimed_value_zar",
+            "label": "Claimed Value",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "cert_number",
+            "label": "Certificate Number",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "period_from",
+            "label": "Period From",
+            "type": "date",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "period_to",
+            "label": "Period To",
+            "type": "date",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "description",
+            "label": "Description",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_claim",
@@ -25980,8 +27579,109 @@
       "lanes": [
         "carbon_fund"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New MRV verification",
+        "path": "/api/carbon-registry/mrv/submissions",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Carbon Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "reporting_period_start",
+            "label": "Reporting Period Start",
+            "type": "date",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "reporting_period_end",
+            "label": "Reporting Period End",
+            "type": "date",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "claimed_reductions_tco2e",
+            "label": "Claimed Reductions",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "tCO2e"
+          },
+          {
+            "key": "monitoring_methodology",
+            "label": "Monitoring Methodology",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "monitoring_plan_r2_key",
+            "label": "Monitoring Plan (evidence)",
+            "type": "evidence",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "activity_data_r2_key",
+            "label": "Activity Data (evidence)",
+            "type": "evidence",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "emission_factors",
+            "label": "Emission Factors (JSON object)",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "baseline_methodology",
+            "label": "Baseline Methodology",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "baseline_emissions_tco2e",
+            "label": "Baseline Emissions",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "tCO2e"
+          },
+          {
+            "key": "project_emissions_tco2e",
+            "label": "Project Emissions",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "tCO2e"
+          },
+          {
+            "key": "leakage_tco2e",
+            "label": "Leakage",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "tCO2e"
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit",
@@ -28011,8 +29711,105 @@
       "lanes": [
         "support"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Work order",
+        "path": "/api/esums/work-orders",
+        "fields": [
+          {
+            "key": "site_id",
+            "label": "Site",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "category",
+            "label": "Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "corrective",
+              "preventive",
+              "inspection",
+              "cleaning",
+              "installation",
+              "upgrade"
+            ],
+            "unit": null
+          },
+          {
+            "key": "priority",
+            "label": "Priority",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "critical",
+              "high",
+              "medium",
+              "low"
+            ],
+            "unit": null
+          },
+          {
+            "key": "title",
+            "label": "Title",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "wo_number",
+            "label": "WO Number",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "fault_id",
+            "label": "Linked Fault",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "assigned_to",
+            "label": "Assigned Technician",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "description",
+            "label": "Description",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "sla_response_minutes",
+            "label": "SLA Response (mins)",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "minutes"
+          },
+          {
+            "key": "sla_resolve_hours",
+            "label": "SLA Resolve (hours)",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "hours"
+          }
+        ]
+      },
       "actions": [
         {
           "action": "assign",
@@ -30490,7 +32287,7 @@
           "action": "commence_trial_balance",
           "label": "Commence trial balance",
           "path": "/api/ipp-annual-audits/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30505,7 +32302,7 @@
           "action": "process_year_end_journals",
           "label": "Process year-end journals",
           "path": "/api/ipp-annual-audits/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30520,7 +32317,7 @@
           "action": "commence_audit_fieldwork",
           "label": "Commence audit fieldwork",
           "path": "/api/ipp-annual-audits/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30535,7 +32332,7 @@
           "action": "present_management_accounts",
           "label": "Present management accounts",
           "path": "/api/ipp-annual-audits/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30550,7 +32347,7 @@
           "action": "resolve_audit_queries",
           "label": "Resolve audit queries",
           "path": "/api/ipp-annual-audits/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30565,7 +32362,7 @@
           "action": "review_draft_opinion",
           "label": "Review draft opinion",
           "path": "/api/ipp-annual-audits/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30580,7 +32377,7 @@
           "action": "obtain_board_approval",
           "label": "Obtain board approval",
           "path": "/api/ipp-annual-audits/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30595,7 +32392,7 @@
           "action": "submit_to_cipc",
           "label": "Submit to CIPC",
           "path": "/api/ipp-annual-audits/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30610,7 +32407,7 @@
           "action": "complete_audit",
           "label": "Complete audit",
           "path": "/api/ipp-annual-audits/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30625,7 +32422,7 @@
           "action": "issue_qualified_opinion",
           "label": "Issue qualified opinion",
           "path": "/api/ipp-annual-audits/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30640,7 +32437,7 @@
           "action": "declare_lapsed",
           "label": "Declare lapsed",
           "path": "/api/ipp-annual-audits/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30931,7 +32728,7 @@
           "action": "commence_collection",
           "label": "Commence collection",
           "path": "/api/ipp-lc-reports/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30946,7 +32743,7 @@
           "action": "submit_for_verification",
           "label": "Submit for verification",
           "path": "/api/ipp-lc-reports/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30961,7 +32758,7 @@
           "action": "prepare_report",
           "label": "Prepare report",
           "path": "/api/ipp-lc-reports/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30976,7 +32773,7 @@
           "action": "submit_report",
           "label": "Submit report",
           "path": "/api/ipp-lc-reports/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -30991,7 +32788,7 @@
           "action": "accept_for_review",
           "label": "Accept for review",
           "path": "/api/ipp-lc-reports/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31006,7 +32803,7 @@
           "action": "request_clarification",
           "label": "Request clarification",
           "path": "/api/ipp-lc-reports/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31021,7 +32818,7 @@
           "action": "submit_clarification",
           "label": "Submit clarification",
           "path": "/api/ipp-lc-reports/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31036,7 +32833,7 @@
           "action": "commence_technical_assessment",
           "label": "Commence technical assessment",
           "path": "/api/ipp-lc-reports/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31051,7 +32848,7 @@
           "action": "confirm_compliant",
           "label": "Confirm compliant",
           "path": "/api/ipp-lc-reports/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31066,7 +32863,7 @@
           "action": "confirm_non_compliance",
           "label": "Confirm non-compliance",
           "path": "/api/ipp-lc-reports/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31081,7 +32878,7 @@
           "action": "grant_conditional_compliance",
           "label": "Grant conditional compliance",
           "path": "/api/ipp-lc-reports/:id/action",
-          "method": "POST",
+          "method": "PUT",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31352,9 +33149,15 @@
           {
             "key": "obligation_class",
             "label": "Obligation class",
-            "type": "string",
+            "type": "enum",
             "required": true,
-            "options": null,
+            "options": [
+              "security_of_supply",
+              "environmental",
+              "financial",
+              "technical",
+              "administrative"
+            ],
             "unit": null
           },
           {
@@ -31589,9 +33392,15 @@
           {
             "key": "cp_tier",
             "label": "CP tier",
-            "type": "string",
+            "type": "enum",
             "required": true,
-            "options": null,
+            "options": [
+              "operational",
+              "commercial",
+              "financial",
+              "regulatory",
+              "strategic"
+            ],
             "unit": null
           },
           {
@@ -31633,7 +33442,7 @@
           "action": "document_cp",
           "label": "Document CP",
           "path": "/api/ipp-cp-tracker/:id/action",
-          "method": "PUT",
+          "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31648,7 +33457,7 @@
           "action": "submit_for_verification",
           "label": "Submit for verification",
           "path": "/api/ipp-cp-tracker/:id/action",
-          "method": "PUT",
+          "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31663,7 +33472,7 @@
           "action": "conditional_pass",
           "label": "Conditional pass",
           "path": "/api/ipp-cp-tracker/:id/action",
-          "method": "PUT",
+          "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31678,7 +33487,7 @@
           "action": "flag_outstanding",
           "label": "Flag outstanding",
           "path": "/api/ipp-cp-tracker/:id/action",
-          "method": "PUT",
+          "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31693,7 +33502,7 @@
           "action": "serve_notice",
           "label": "Serve notice",
           "path": "/api/ipp-cp-tracker/:id/action",
-          "method": "PUT",
+          "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31708,7 +33517,7 @@
           "action": "commence_cure",
           "label": "Commence cure",
           "path": "/api/ipp-cp-tracker/:id/action",
-          "method": "PUT",
+          "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31723,7 +33532,7 @@
           "action": "satisfy_cp",
           "label": "Satisfy CP",
           "path": "/api/ipp-cp-tracker/:id/action",
-          "method": "PUT",
+          "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31738,7 +33547,7 @@
           "action": "waive_cp",
           "label": "Waive CP",
           "path": "/api/ipp-cp-tracker/:id/action",
-          "method": "PUT",
+          "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31753,7 +33562,7 @@
           "action": "expire_cp",
           "label": "Expire CP",
           "path": "/api/ipp-cp-tracker/:id/action",
-          "method": "PUT",
+          "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
@@ -31768,7 +33577,7 @@
           "action": "reject_cp",
           "label": "Reject CP",
           "path": "/api/ipp-cp-tracker/:id/action",
-          "method": "PUT",
+          "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
@@ -32485,107 +34294,80 @@
       },
       "actions": [
         {
-          "action": "upload_drawing",
-          "label": "Upload drawing",
-          "path": "/api/ipp/document-control/chain/:id/action",
-          "method": "POST",
-          "roles": [
-            "admin",
-            "ipp_developer"
-          ],
-          "body": {
-            "action": "upload_drawing"
-          },
-          "tone": "primary",
-          "fields": []
-        },
-        {
           "action": "index_metadata",
           "label": "Index metadata",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/index-metadata",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "index_metadata"
-          },
+          "body": null,
           "tone": null,
           "fields": []
         },
         {
           "action": "open_revision",
           "label": "Open revision",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/open-revision",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "open_revision"
-          },
+          "body": null,
           "tone": null,
           "fields": []
         },
         {
           "action": "assign_IDC",
           "label": "Assign IDC",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/assign-idc",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "assign_IDC"
-          },
+          "body": null,
           "tone": null,
           "fields": []
         },
         {
           "action": "transmit",
           "label": "Transmit",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/transmit",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "transmit"
-          },
+          "body": null,
           "tone": null,
           "fields": []
         },
         {
           "action": "start_review",
           "label": "Start review",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/start-review",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "start_review"
-          },
+          "body": null,
           "tone": null,
           "fields": []
         },
         {
           "action": "comment",
           "label": "Comment",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/comment",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "comment"
-          },
+          "body": null,
           "tone": null,
           "fields": [
             {
@@ -32601,90 +34383,78 @@
         {
           "action": "revise",
           "label": "Revise",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/revise",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "revise"
-          },
+          "body": null,
           "tone": null,
           "fields": []
         },
         {
           "action": "approve",
           "label": "Approve",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/approve",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "approve"
-          },
+          "body": null,
           "tone": "primary",
           "fields": []
         },
         {
           "action": "issue_for_construction",
           "label": "Issue for construction",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/issue-for-construction",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "issue_for_construction"
-          },
+          "body": null,
           "tone": null,
           "fields": []
         },
         {
           "action": "finalise_as_built",
           "label": "Finalise as-built",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/finalise-as-built",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "finalise_as_built"
-          },
+          "body": null,
           "tone": null,
           "fields": []
         },
         {
           "action": "archive",
           "label": "Archive",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/archive",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "archive"
-          },
+          "body": null,
           "tone": "primary",
           "fields": []
         },
         {
           "action": "reject",
           "label": "Reject",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/reject",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "reject"
-          },
+          "body": null,
           "tone": "oxide",
           "fields": [
             {
@@ -32700,15 +34470,13 @@
         {
           "action": "withdraw",
           "label": "Withdraw",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/withdraw",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "withdraw"
-          },
+          "body": null,
           "tone": "oxide",
           "fields": [
             {
@@ -32724,15 +34492,13 @@
         {
           "action": "hold",
           "label": "Hold",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/hold",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "hold"
-          },
+          "body": null,
           "tone": "oxide",
           "fields": [
             {
@@ -32748,15 +34514,13 @@
         {
           "action": "resume",
           "label": "Resume",
-          "path": "/api/ipp/document-control/chain/:id/action",
+          "path": "/api/ipp/document-control/chain/:id/resume",
           "method": "POST",
           "roles": [
             "admin",
             "ipp_developer"
           ],
-          "body": {
-            "action": "resume"
-          },
+          "body": null,
           "tone": null,
           "fields": []
         }
@@ -33493,8 +35257,60 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New BFS study",
+        "path": "/api/ipp-bfs",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "trigger_category",
+            "label": "Trigger Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "scope_change",
+              "component_substitution",
+              "tariff_rebid",
+              "resource_update",
+              "periodic_refresh",
+              "lender_request"
+            ],
+            "unit": null
+          },
+          {
+            "key": "capacity_mw",
+            "label": "Capacity",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "MW"
+          },
+          {
+            "key": "ie_firm_name",
+            "label": "Independent Engineer Firm",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "bfs_reference",
+            "label": "BFS Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_to_ie",
@@ -33566,8 +35382,60 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Connection cost contribution",
+        "path": "/api/ipp-ccc",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "ccc_category",
+            "label": "CCC Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "line_extension",
+              "substation_upgrade",
+              "protection_relay",
+              "reactive_compensation",
+              "metering_telecoms",
+              "combined"
+            ],
+            "unit": null
+          },
+          {
+            "key": "ccc_amount_zar",
+            "label": "CCC Amount",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "network_operator",
+            "label": "Network Operator",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "grid_connection_ref",
+            "label": "Grid Connection Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "reach_provisional_agreement",
@@ -33654,8 +35522,91 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Community equity participation",
+        "path": "/api/ipp-cep-compliance",
+        "fields": [
+          {
+            "key": "project_ref",
+            "label": "Project Reference",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "compliance_year",
+            "label": "Compliance Year",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "project_mw",
+            "label": "Project Capacity",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "MW"
+          },
+          {
+            "key": "cep_equity_pct",
+            "label": "Community Equity Stake",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "%"
+          },
+          {
+            "key": "structure_type",
+            "label": "Community Structure Type",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "community_trust",
+              "npc",
+              "spv",
+              "direct_equity",
+              "blended"
+            ],
+            "unit": null
+          },
+          {
+            "key": "distribution_amount_zar",
+            "label": "Annual Distribution Amount",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "community_dev_spend_zar",
+            "label": "Community Development Spend",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "trustee_name",
+            "label": "Trustee Name",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "notes",
+            "label": "Notes",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "confirm_distributions_paid",
@@ -34065,8 +36016,74 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Environmental closure",
+        "path": "/api/ipp-env-closure",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "disturbed_area_ha",
+            "label": "Disturbed Area",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ha"
+          },
+          {
+            "key": "eia_category",
+            "label": "EIA Category",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "basic_assessment",
+              "scoping_eir",
+              "amendments",
+              "exemption"
+            ],
+            "unit": null
+          },
+          {
+            "key": "ea_reference",
+            "label": "Environmental Authorisation Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "emp_reference",
+            "label": "EMP Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "auditor_firm",
+            "label": "Auditor Firm",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "description",
+            "label": "Description",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "recommend_closure",
@@ -34162,8 +36179,61 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New E&S monitoring report",
+        "path": "/api/ipp-esmr",
+        "fields": [
+          {
+            "key": "project_ref",
+            "label": "Project Reference",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "reporting_period",
+            "label": "Reporting Period",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "loan_size_zar",
+            "label": "DFI Loan Size",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "dfi_names",
+            "label": "DFI Names",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "lender_ta_ref",
+            "label": "Lender Technical Advisor Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "notes",
+            "label": "Notes",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_report",
@@ -34521,8 +36591,68 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New IE milestone certification",
+        "path": "/api/ipp-ie-cert",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "milestone_value_zar",
+            "label": "Milestone Disbursement Value",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "milestone_category",
+            "label": "Milestone Category",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "financial_close",
+              "construction_start",
+              "pac",
+              "cod",
+              "fac",
+              "loan_drawdown"
+            ],
+            "unit": null
+          },
+          {
+            "key": "ie_firm",
+            "label": "Independent Engineer Firm",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "lender_reference",
+            "label": "Lender Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "description",
+            "label": "Description",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "issue_for_borrower_review",
@@ -34899,8 +37029,66 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New TPA / wheeling",
+        "path": "/api/ipp-tpa",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "wheeling_capacity_mw",
+            "label": "Wheeling Capacity",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "MW"
+          },
+          {
+            "key": "tpa_category",
+            "label": "TPA Category",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "eskom_transmission",
+              "eskom_distribution",
+              "municipality",
+              "private_network"
+            ],
+            "unit": null
+          },
+          {
+            "key": "network_owner",
+            "label": "Network Owner",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "offtaker_reference",
+            "label": "Off-taker Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "description",
+            "label": "Description",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "propose_commercial_terms",
@@ -34988,8 +37176,68 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Refinancing",
+        "path": "/api/ipp-refinancing",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "debt_quantum_zar",
+            "label": "Debt Quantum",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "refinancing_type",
+            "label": "Refinancing Type",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "term_loan_refinancing",
+              "bond_issuance",
+              "green_bond",
+              "refinancing_with_equity_release",
+              "debt_restructuring",
+              "lender_substitution"
+            ],
+            "unit": null
+          },
+          {
+            "key": "sarb_approval_required",
+            "label": "SARB Exchange Control Approval Required",
+            "type": "boolean",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "lender_name",
+            "label": "Lender / Arranger Name",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "description",
+            "label": "Description",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "sign_term_sheet",
@@ -35093,8 +37341,59 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New LTA drawdown certificate",
+        "path": "/api/ipp-lta-certificate",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "drawdown_amount_zar",
+            "label": "Drawdown Amount (ZAR)",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "certificate_category",
+            "label": "Certificate Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "construction_progress",
+              "completion_certificate",
+              "cost_to_complete",
+              "change_order_approval",
+              "commissioning_readiness"
+            ],
+            "unit": null
+          },
+          {
+            "key": "drawdown_reference",
+            "label": "Drawdown Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "lta_firm_name",
+            "label": "LTA Firm Name",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "issue_draft_certificate",
@@ -35181,8 +37480,68 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New IE annual review",
+        "path": "/api/ipp-ie-annual-reviews",
+        "fields": [
+          {
+            "key": "project_ref",
+            "label": "Project Reference",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "review_year",
+            "label": "Review Year",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "year"
+          },
+          {
+            "key": "project_mw",
+            "label": "Project Capacity",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "MW"
+          },
+          {
+            "key": "focus_area",
+            "label": "Review Focus Area",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "technical_performance",
+              "financial_model",
+              "om_compliance",
+              "grid_code",
+              "insurance_bonds",
+              "comprehensive"
+            ],
+            "unit": null
+          },
+          {
+            "key": "ie_firm",
+            "label": "Independent Engineer Firm",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "notes",
+            "label": "Notes",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "issue_report",
@@ -35269,8 +37628,85 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Insurance renewal",
+        "path": "/api/ipp-insurance-renewals",
+        "fields": [
+          {
+            "key": "project_ref",
+            "label": "Project Reference",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "renewal_year",
+            "label": "Renewal Year",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "annual_premium_zar",
+            "label": "Annual Premium (ZAR)",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "insured_value_zar",
+            "label": "Insured Value (ZAR)",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "line_type",
+            "label": "Insurance Line Type",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "contractors_all_risk",
+              "operational_all_risk",
+              "third_party_liability",
+              "business_interruption",
+              "directors_officers",
+              "environmental_impairment",
+              "comprehensive_package"
+            ],
+            "unit": null
+          },
+          {
+            "key": "policy_expiry_date",
+            "label": "Policy Expiry Date",
+            "type": "date",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "broker_name",
+            "label": "Broker Name",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "notes",
+            "label": "Notes",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "place_in_market",
@@ -35366,8 +37802,85 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New SED annual spend",
+        "path": "/api/ipp-sed-compliance",
+        "fields": [
+          {
+            "key": "project_ref",
+            "label": "Project Reference",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "compliance_year",
+            "label": "Compliance Year",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "year"
+          },
+          {
+            "key": "annual_revenue_zar",
+            "label": "Annual Revenue (ZAR)",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "sed_spend_zar",
+            "label": "SED Spend (ZAR)",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "sed_spend_pct",
+            "label": "SED Spend (% of revenue)",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "%"
+          },
+          {
+            "key": "focus_area",
+            "label": "SED Focus Area",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "education",
+              "healthcare",
+              "infrastructure",
+              "skills_development",
+              "enterprise_development",
+              "environmental",
+              "comprehensive"
+            ],
+            "unit": null
+          },
+          {
+            "key": "auditor_name",
+            "label": "Independent Auditor",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "notes",
+            "label": "Notes",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "complete_audit",
@@ -38511,8 +41024,59 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Community trust report",
+        "path": "/api/ipp-community-trust",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "trust_category",
+            "label": "Trust Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "equity_dividend",
+              "socio_economic_development",
+              "enterprise_development",
+              "education_bursary",
+              "infrastructure_upliftment"
+            ],
+            "unit": null
+          },
+          {
+            "key": "reporting_year",
+            "label": "Reporting Year",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "disbursement_amount_zar",
+            "label": "Disbursement Amount",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "trust_name",
+            "label": "Trust Name",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_to_dtic",
@@ -38890,8 +41454,75 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Equity transfer",
+        "path": "/api/ipp-equity-transfer",
+        "fields": [
+          {
+            "key": "project_ref",
+            "label": "Project Reference",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "transfer_type",
+            "label": "Transfer Type",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "secondary_sale",
+              "community_equity",
+              "dfi_exit",
+              "sponsor_reorg",
+              "debt_equity_swap"
+            ],
+            "unit": null
+          },
+          {
+            "key": "equity_quantum_zar",
+            "label": "Equity Quantum",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "transferor_name",
+            "label": "Transferor Name",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "transferee_name",
+            "label": "Transferee Name",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "equity_pct",
+            "label": "Equity Percentage",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "%"
+          },
+          {
+            "key": "notes",
+            "label": "Notes",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "commence_nersa_review",
@@ -38986,8 +41617,60 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Grid compliance",
+        "path": "/api/ipp-grid-compliance",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "compliance_category",
+            "label": "Compliance Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "power_quality",
+              "protection_relay",
+              "fault_ride_through",
+              "reactive_power",
+              "frequency_response",
+              "earthing_bonding"
+            ],
+            "unit": null
+          },
+          {
+            "key": "assessment_year",
+            "label": "Assessment Year",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "capacity_mw",
+            "label": "Installed Capacity",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "MW"
+          },
+          {
+            "key": "nersa_reference",
+            "label": "NERSA Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_to_nersa",
@@ -39065,8 +41748,60 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Land amendment",
+        "path": "/api/ipp-land-amendment",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "amendment_category",
+            "label": "Amendment Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "lease_amendment",
+              "servitude_registration",
+              "servitude_extension",
+              "wayleave_grant",
+              "wayleave_extension",
+              "right_of_way"
+            ],
+            "unit": null
+          },
+          {
+            "key": "land_area_hectares",
+            "label": "Land Area",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "hectares"
+          },
+          {
+            "key": "counterparty_name",
+            "label": "Counterparty Name",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "deeds_office_reference",
+            "label": "Deeds Office Reference",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_application",
@@ -39144,8 +41879,75 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Lender reporting",
+        "path": "/api/ipp-lender-reporting",
+        "fields": [
+          {
+            "key": "project_ref",
+            "label": "Project Reference",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "report_period",
+            "label": "Reporting Period",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "lender_count",
+            "label": "Number of Lenders",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "lenders"
+          },
+          {
+            "key": "report_type",
+            "label": "Report Type",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "quarterly_report",
+              "semi_annual_report",
+              "annual_report",
+              "special_purpose_report",
+              "drawdown_report"
+            ],
+            "unit": null
+          },
+          {
+            "key": "agent_bank",
+            "label": "Agent Bank",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "due_date",
+            "label": "Contractual Due Date",
+            "type": "date",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "notes",
+            "label": "Notes",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_to_agent_bank",
@@ -39241,8 +42043,85 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Milestone certification",
+        "path": "/api/ipp-milestone-certs",
+        "fields": [
+          {
+            "key": "project_ref",
+            "label": "Project Reference",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "milestone_type",
+            "label": "Milestone Type",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "financial_close",
+              "construction_start",
+              "test_cod",
+              "cod",
+              "grid_connection",
+              "commissioning_complete",
+              "performance_test_complete"
+            ],
+            "unit": null
+          },
+          {
+            "key": "project_mw",
+            "label": "Project Capacity",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "MW"
+          },
+          {
+            "key": "energy_type",
+            "label": "Energy Type",
+            "type": "enum",
+            "required": false,
+            "options": [
+              "solar_pv",
+              "wind_onshore",
+              "wind_offshore",
+              "biomass",
+              "small_hydro",
+              "csp",
+              "battery_storage"
+            ],
+            "unit": null
+          },
+          {
+            "key": "scheduled_date",
+            "label": "Scheduled Date",
+            "type": "date",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "ie_report_ref",
+            "label": "Independent Engineer Report Ref",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "notes",
+            "label": "Notes",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "commence_final_review",
@@ -39338,8 +42217,60 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New O&M contract",
+        "path": "/api/ipp-om-contract",
+        "fields": [
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "om_contract_category",
+            "label": "O&M Contract Category",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "full_om",
+              "maintenance_only",
+              "operations_only",
+              "asset_management",
+              "specialist_equipment",
+              "novation"
+            ],
+            "unit": null
+          },
+          {
+            "key": "annual_om_value_zar",
+            "label": "Annual O&M Value",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "contractor_name",
+            "label": "Contractor Name",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "contract_expiry_date",
+            "label": "Contract Expiry Date",
+            "type": "date",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "select_preferred_bidder",
@@ -40040,8 +42971,109 @@
       "lanes": [
         "ipp_developer"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New Quarterly generation report",
+        "path": "/api/ipp-quarterly-gen-reports",
+        "fields": [
+          {
+            "key": "quarter",
+            "label": "Reporting Quarter",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "report_period_start",
+            "label": "Report Period Start",
+            "type": "date",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "report_period_end",
+            "label": "Report Period End",
+            "type": "date",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "project_mw",
+            "label": "Project Capacity",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "MW"
+          },
+          {
+            "key": "project_id",
+            "label": "Project",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "mwh_contracted",
+            "label": "MWh Contracted (qtr)",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "MWh"
+          },
+          {
+            "key": "mwh_actual",
+            "label": "MWh Actual (qtr)",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "MWh"
+          },
+          {
+            "key": "availability_pct",
+            "label": "Availability",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "%"
+          },
+          {
+            "key": "capacity_factor_pct",
+            "label": "Capacity Factor",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "%"
+          },
+          {
+            "key": "ed_spend_qtd_zar",
+            "label": "ED Spend QTD",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "sed_spend_qtd_zar",
+            "label": "SED Spend QTD",
+            "type": "number",
+            "required": false,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "notes",
+            "label": "Notes",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_to_ipp_office",
@@ -42719,8 +45751,68 @@
         "support",
         "regulator"
       ],
-      "hasInitiation": false,
-      "initiation": null,
+      "hasInitiation": true,
+      "initiation": {
+        "label": "New CBT/SED annual report",
+        "path": "/api/ipp/cbt-sed/open",
+        "fields": [
+          {
+            "key": "ipp_id",
+            "label": "IPP / Generator (user id)",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "project_name",
+            "label": "REIPPPP Project Name",
+            "type": "string",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "reipppp_bid_window",
+            "label": "REIPPPP Bid Window",
+            "type": "enum",
+            "required": true,
+            "options": [
+              "BW1",
+              "BW2",
+              "BW3",
+              "BW4",
+              "BW5",
+              "BW6"
+            ],
+            "unit": null
+          },
+          {
+            "key": "reporting_year",
+            "label": "Reporting Year",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": null
+          },
+          {
+            "key": "annual_cbt_disbursement_zar",
+            "label": "Annual CBT Disbursement",
+            "type": "number",
+            "required": true,
+            "options": null,
+            "unit": "ZAR"
+          },
+          {
+            "key": "reason",
+            "label": "Opening Reason / Note",
+            "type": "string",
+            "required": false,
+            "options": null,
+            "unit": null
+          }
+        ]
+      },
       "actions": [
         {
           "action": "submit_report",
