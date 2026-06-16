@@ -196,6 +196,30 @@ function stringFor(key: string): string {
 
 function isAdmin(a: ActionSpec): boolean { return (a.roles || []).includes('admin'); }
 
+// The create response carries the new id under one of three shapes across the 207
+// chains (the convention is NOT standardised — verified ≈50/50):
+//   {data:{id}}             — flat (simpler chains)
+//   {data:{<entity>:{id}}}  — nested under a named key: pack / case / settlement / …
+//   {id}                    — bare (rare)
+// Reading only data.id silently skipped the forward-advance phase for every
+// nested-id chain (id=null → step 5/6 never runs), under-testing ~half the state
+// machines. Dig through all three so the advance phase runs for nested-id chains too.
+function extractCreatedId(body: any): string | null {
+  if (!body || typeof body !== 'object') return null;
+  const data = body.data;
+  if (data && typeof data === 'object') {
+    if (data.id != null) return String(data.id);
+    // First nested object under data that carries an id (pack/case/settlement/…).
+    for (const v of Object.values(data)) {
+      if (v && typeof v === 'object' && (v as Record<string, unknown>).id != null) {
+        return String((v as Record<string, unknown>).id);
+      }
+    }
+  }
+  if (body.id != null) return String(body.id);
+  return null;
+}
+
 // ── One test per initiation chain. ───────────────────────────────────────────
 for (const chain of INIT_CHAINS) {
   const init = chain.initiation!;
@@ -233,7 +257,7 @@ for (const chain of INIT_CHAINS) {
       try { body = await createResp.json(); } catch { /* non-JSON error body */ }
       if (r.createStatus >= 200 && r.createStatus < 300) {
         r.created = true;
-        r.id = body?.data?.id ?? body?.id ?? null;
+        r.id = extractCreatedId(body);
       } else {
         r.note = `create ${r.createStatus}: ${JSON.stringify(body?.error ?? body ?? '').slice(0, 200)}`;
       }
