@@ -27587,7 +27587,7 @@
           {
             "key": "project_id",
             "label": "Carbon Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -34782,8 +34782,8 @@
         "fields": [
           {
             "key": "project_id",
-            "label": "Project ID",
-            "type": "string",
+            "label": "Project",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null

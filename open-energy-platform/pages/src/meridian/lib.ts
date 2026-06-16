@@ -31,8 +31,18 @@ export async function fetchHorizon(role: string): Promise<HorizonData> {
 
 export interface LedgerActionField {
   key: string; label: string;
-  type: 'number' | 'string' | 'date' | 'enum' | 'boolean' | 'evidence';
+  type: 'number' | 'string' | 'date' | 'enum' | 'boolean' | 'evidence' | 'lookup';
   required?: boolean; unit?: string; options?: string[]; placeholder?: string; defaultFrom?: string;
+  // For type:'lookup' — path under /api returning {success,data:[{id,label}]} to populate a picker.
+  source?: string;
+}
+// Option shape returned by a lookup source endpoint.
+export interface LookupOption { id: string; label: string }
+export async function fetchLookup(source: string): Promise<LookupOption[]> {
+  // source is a full '/api/...' path in the registry; strip '/api' to fit the axios baseURL.
+  const r = await api.get(source.replace('/api', ''));
+  if (!r.data?.success) throw new Error(r.data?.error || 'lookup fetch failed');
+  return (r.data.data ?? []) as LookupOption[];
 }
 export interface LedgerRow {
   id: string; ref: string; title: string; status: string;

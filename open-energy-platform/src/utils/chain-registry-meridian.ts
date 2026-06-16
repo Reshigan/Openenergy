@@ -8,12 +8,13 @@ export type HorizonBucket = 'breached' | 'h2' | 'today' | 'h48' | 'week' | 'late
 export interface ActionFieldSpec {
   key: string;
   label: string;
-  type: 'number' | 'string' | 'date' | 'enum' | 'boolean' | 'evidence';
+  type: 'number' | 'string' | 'date' | 'enum' | 'boolean' | 'evidence' | 'lookup';
   required?: boolean;
   unit?: string;
   options?: string[];      // type 'enum'
   placeholder?: string;
   defaultFrom?: string;    // prefill from a case raw-record column
+  source?: string;         // type 'lookup' — full /api path returning {success,data:[{id,label}]}
 }
 
 export interface ChainInitiation {
@@ -9638,7 +9639,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New MRV verification',
       path: '/api/carbon-registry/mrv/submissions',
       fields: [
-        { key: 'project_id', label: 'Carbon Project', type: 'string', required: true, placeholder: 'ip_001' },
+        { key: 'project_id', label: 'Carbon Project', type: 'lookup', source: '/api/ledger/lookup/carbon-projects', required: true },
         { key: 'reporting_period_start', label: 'Reporting Period Start', type: 'date', required: true, placeholder: '2026-01-01' },
         { key: 'reporting_period_end', label: 'Reporting Period End', type: 'date', required: true, placeholder: '2026-12-31' },
         { key: 'claimed_reductions_tco2e', label: 'Claimed Reductions', type: 'number', unit: 'tCO2e', required: true },
@@ -11807,7 +11808,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     initiation: {
       label: 'Register bond', path: '/api/ipp/bonds',
       fields: [
-        { key: 'project_id', label: 'Project ID', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'bond_number', label: 'Bond number', type: 'string', required: true },
         { key: 'bond_type', label: 'Bond type', type: 'enum', required: true, options: ['performance', 'advance_payment', 'retention', 'warranty', 'environmental_rehabilitation', 'parental_guarantee', 'letter_of_credit', 'bank_guarantee'] },
         { key: 'issuer', label: 'Issuer', type: 'string', required: true },

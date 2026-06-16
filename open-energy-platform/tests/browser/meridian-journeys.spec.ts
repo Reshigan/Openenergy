@@ -179,6 +179,17 @@ async function fillForm(composer: ReturnType<Page['locator']>, fields: FieldSpec
       continue;
     }
     if (f.type === 'evidence') { await loc.fill(`${STAMP} synthetic evidence`); continue; }
+    if (f.type === 'lookup') {
+      // <select> populated async from f.source (FK-target list). Wait for the real
+      // options to arrive, then pick the first — guarantees a valid FK so the create
+      // does not 422 on foreign_key_violation.
+      await loc.locator('option:not([disabled])').first()
+        .waitFor({ state: 'attached', timeout: 15000 }).catch(() => {});
+      const vals = await loc.locator('option:not([disabled])').evaluateAll(
+        els => els.map(e => (e as HTMLOptionElement).value).filter(v => v !== ''));
+      if (vals.length) await loc.selectOption(vals[0]);
+      continue;
+    }
     if (!f.required) continue; // only fill required for number/date/enum
     if (f.type === 'enum') { if (f.options && f.options.length) await loc.selectOption(f.options[0]); }
     else if (f.type === 'number') await loc.fill('1000000');
