@@ -25604,7 +25604,7 @@
         {
           "action": "log-cr",
           "label": "Log change request",
-          "path": "/api/ipp-evm/:id/log-cr",
+          "path": "/api/ipp/cost-evm/chain/:id/log-cr",
           "method": "POST",
           "roles": [
             "admin",
@@ -25634,7 +25634,7 @@
         {
           "action": "approve-cr",
           "label": "Approve change request",
-          "path": "/api/ipp-evm/:id/approve-cr",
+          "path": "/api/ipp/cost-evm/chain/:id/approve-cr",
           "method": "POST",
           "roles": [
             "admin",
@@ -25656,7 +25656,7 @@
         {
           "action": "reject-reforecast",
           "label": "Reject reforecast",
-          "path": "/api/ipp-evm/:id/reject-reforecast",
+          "path": "/api/ipp/cost-evm/chain/:id/reject-reforecast",
           "method": "POST",
           "roles": [
             "admin",
@@ -25678,7 +25678,7 @@
         {
           "action": "draft-reforecast",
           "label": "Draft reforecast",
-          "path": "/api/ipp-evm/:id/draft-reforecast",
+          "path": "/api/ipp/cost-evm/chain/:id/draft-reforecast",
           "method": "POST",
           "roles": [
             "admin"
@@ -25715,7 +25715,7 @@
         {
           "action": "draw-contingency",
           "label": "Draw contingency reserve",
-          "path": "/api/ipp-evm/:id/draw-contingency",
+          "path": "/api/ipp/cost-evm/chain/:id/draw-contingency",
           "method": "POST",
           "roles": [
             "admin",
@@ -25737,7 +25737,7 @@
         {
           "action": "submit-to-pm-review",
           "label": "Submit to PM review",
-          "path": "/api/ipp-evm/:id/submit-to-pm-review",
+          "path": "/api/ipp/cost-evm/chain/:id/submit-to-pm-review",
           "method": "POST",
           "roles": [
             "admin",
@@ -25750,7 +25750,7 @@
         {
           "action": "draw-management-reserve",
           "label": "Draw management reserve",
-          "path": "/api/ipp-evm/:id/draw-management-reserve",
+          "path": "/api/ipp/cost-evm/chain/:id/draw-management-reserve",
           "method": "POST",
           "roles": [
             "admin",
