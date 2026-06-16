@@ -558,19 +558,23 @@ pa.post('/usage/snapshot', async (c) => {
        LEFT JOIN participants p ON p.tenant_id = t.id
       GROUP BY t.id`,
   ).all<{ tenant_id: string; participant_count: number; active_count: number }>();
-  let snapshots = 0;
-  for (const r of rs.results || []) {
-    await c.env.DB.prepare(
+  const rows = rs.results || [];
+  // Batch all per-tenant snapshot writes into a single D1 round-trip rather
+  // than one INSERT per tenant (was an N+1 over every tenant).
+  if (rows.length > 0) {
+    const insert = c.env.DB.prepare(
       `INSERT OR REPLACE INTO tenant_usage_snapshots
          (id, tenant_id, snapshot_date, participant_count, active_participant_count, seat_count, api_calls_count, storage_bytes)
        VALUES (?, ?, ?, ?, ?, ?, 0, 0)`,
-    ).bind(
-      genId('tus'), r.tenant_id, today,
-      r.participant_count, r.active_count, r.active_count,
-    ).run();
-    snapshots++;
+    );
+    await c.env.DB.batch(
+      rows.map((r) => insert.bind(
+        genId('tus'), r.tenant_id, today,
+        r.participant_count, r.active_count, r.active_count,
+      )),
+    );
   }
-  return c.json({ success: true, data: { snapshots } });
+  return c.json({ success: true, data: { snapshots: rows.length } });
 });
 
 // ────────────────────────────────────────────────────────────────────────

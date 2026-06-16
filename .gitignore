@@ -23,3 +23,7 @@ open-energy-platform/test-results/
 
 # superpowers brainstorm scratch
 .superpowers/
+
+# CEC valuation deliverables — generated locally, kept out of the repo.
+CEC_*.docx
+build_cec_*.py

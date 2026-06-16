@@ -350,21 +350,6 @@ export function businessDaysBetween(startDate: string, endDate: string): number 
   return count;
 }
 
-// Helper: Add business days to date
-export function addBusinessDays(date: string, days: number): string {
-  const result = new Date(date);
-  let added = 0;
-  
-  while (added < days) {
-    result.setDate(result.getDate() + 1);
-    if (result.getDay() !== 0 && result.getDay() !== 6) {
-      added++;
-    }
-  }
-  
-  return result.toISOString().split('T')[0];
-}
-
 // Helper: Check if module is accessible
 export async function isModuleAccessible(
   env: HonoEnv['Bindings'],

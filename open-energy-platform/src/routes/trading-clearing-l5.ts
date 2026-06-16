@@ -346,7 +346,7 @@ r.get('/mm/performance/:obligation_id', async (c) => {
 
 // ─── Clearing fund + default loss waterfall ────────────────────────────
 r.get('/clearing/funds', async (c) => {
-  const rows = await c.env.DB.prepare(`SELECT * FROM oe_clearing_fund ORDER BY fund_year DESC`).all();
+  const rows = await c.env.DB.prepare(`SELECT * FROM oe_clearing_fund ORDER BY fund_year DESC LIMIT 50`).all();
   return c.json({ success: true, data: rows.results || [] });
 });
 
