@@ -183,6 +183,9 @@ app.post('/', async (c) => {
   const cbTierErr = badEnum('cb_tier', body.cb_tier, ['small', 'medium', 'large', 'major']);
   if (cbTierErr) return c.json({ success: false, error: cbTierErr }, 400);
 
+  const sectorErr = badEnum('sector', body.sector, ['electricity', 'mining', 'manufacturing', 'transport', 'construction', 'waste', 'agriculture', 'other']);
+  if (sectorErr) return c.json({ success: false, error: sectorErr }, 400);
+
   const isAdmin = ['admin', 'carbon_fund', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;
   const tier = body.cb_tier;

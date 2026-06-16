@@ -164,6 +164,13 @@ app.post('/', async (c) => {
   const vcmTierErr = badEnum('vcm_tier', body.vcm_tier, ['micro', 'small', 'large', 'mega']);
   if (vcmTierErr) return c.json({ success: false, error: vcmTierErr }, 400);
 
+  const methErr = badEnum('methodology', body.methodology, ['acm0002', 'ams_i_d', 'gs4gg_re', 'vmr0017', 'gs4gg_poa', 'art64_a6_4', 'custom']);
+  if (methErr) return c.json({ success: false, error: methErr }, 400);
+  const regStdErr = badEnum('registry_standard', body.registry_standard, ['verra_vcs', 'gold_standard', 'cdm_legacy', 'art64', 'dffe_domestic']);
+  if (regStdErr) return c.json({ success: false, error: regStdErr }, 400);
+  const addErr = badEnum('additionality_basis', body.additionality_basis, ['investment_barrier', 'regulatory_surplus', 'common_practice', 'combined']);
+  if (addErr) return c.json({ success: false, error: addErr }, 400);
+
   const isAdmin = ['admin', 'carbon_fund', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;
   const tier = body.vcm_tier;

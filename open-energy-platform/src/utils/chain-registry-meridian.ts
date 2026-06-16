@@ -8668,8 +8668,8 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       fields: [
         { key: 'vcm_tier', label: 'Tier', type: 'enum', required: true, options: ['micro', 'small', 'large', 'mega'] },
         { key: 'project_name', label: 'Project name', type: 'string', required: true },
-        { key: 'methodology', label: 'Methodology', type: 'string', required: true },
-        { key: 'registry_standard', label: 'Registry standard', type: 'string', required: true },
+        { key: 'methodology', label: 'Methodology', type: 'enum', required: true, options: ['acm0002', 'ams_i_d', 'gs4gg_re', 'vmr0017', 'gs4gg_poa', 'art64_a6_4', 'custom'] },
+        { key: 'registry_standard', label: 'Registry standard', type: 'enum', required: true, options: ['verra_vcs', 'gold_standard', 'cdm_legacy', 'art64', 'dffe_domestic'] },
         { key: 'technology', label: 'Technology', type: 'string', required: true },
       ],
     },
@@ -8789,7 +8789,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       path: '/api/certificate-track/bundle',
       fields: [
         { key: 'bundle_tier', label: 'Tier', type: 'enum', required: true, options: ['basic', 'dual', 'comprehensive', 'institutional'] },
-        { key: 'bundle_type', label: 'Bundle type', type: 'string', required: true },
+        { key: 'bundle_type', label: 'Bundle type', type: 'enum', required: true, options: ['rec_only', 'vcm_only', 'carbon_tax_offset', 'rec_vcm_bundled', 'full_cert_bundle'] },
       ],
     },
   },
@@ -8859,7 +8859,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       fields: [
         { key: 'cb_tier', label: 'Tier', type: 'enum', required: true, options: ['small', 'medium', 'large', 'major'] },
         { key: 'facility_name', label: 'Facility', type: 'string', required: true },
-        { key: 'sector', label: 'Sector', type: 'string', required: true },
+        { key: 'sector', label: 'Sector', type: 'enum', required: true, options: ['electricity', 'mining', 'manufacturing', 'transport', 'construction', 'waste', 'agriculture', 'other'] },
         { key: 'annual_threshold_tco2e', label: 'Annual threshold', type: 'number', unit: 'tCO2e', required: true },
       ],
     },

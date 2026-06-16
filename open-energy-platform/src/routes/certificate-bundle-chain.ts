@@ -128,6 +128,11 @@ app.post('/', async (c) => {
   const bundleTierErr = badEnum('bundle_tier', body.bundle_tier, ['basic', 'dual', 'comprehensive', 'institutional']);
   if (bundleTierErr) return c.json({ success: false, error: bundleTierErr }, 400);
 
+  const bundleTypeErr = badEnum('bundle_type', body.bundle_type, ['rec_only', 'vcm_only', 'carbon_tax_offset', 'rec_vcm_bundled', 'full_cert_bundle']);
+  if (bundleTypeErr) return c.json({ success: false, error: bundleTypeErr }, 400);
+  const repFwErr = badEnum('reporting_framework', body.reporting_framework, ['ghg_protocol_scope2', 're100', 'sbti', 'cdp', 'iso14064', 'jse_esg', 'tcfd', 'issb_ifrs_s2', 'gbcsa']);
+  if (repFwErr) return c.json({ success: false, error: repFwErr }, 400);
+
   const isAdmin = ['admin', 'carbon_fund', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;
   const tier = body.bundle_tier;
