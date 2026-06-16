@@ -2,7 +2,7 @@
 // Meridian browser smoke — Horizon board at /horizon.
 //
 // Read-only: we assert the board chrome (bucket header, lanes-or-empty),
-// the duty stream aside and the MERIDIAN wordmark render for the lender
+// the duty stream aside and the CEC brand wordmark render for the lender
 // persona. We do NOT fire duty-stream actions — chain-write coverage lives
 // in the per-wave unit suites.
 //
@@ -78,8 +78,8 @@ test.describe('Meridian Horizon', () => {
     // 25s gives React time to download the chunk and resolve /api/horizon/lender.
     await expect(page.locator('.mer.horizon')).toBeVisible({ timeout: 25_000 });
 
-    // Header chrome.
-    await expect(page.locator('.wordmark')).toHaveText('MERIDIAN');
+    // Header chrome — single CEC brand wordmark (renamed from MERIDIAN).
+    await expect(page.locator('.wordmark')).toHaveText('CEC');
 
     // Board: section[aria-label="Live cases by time to consequence"] with the
     // six-bucket header row; first bucket is BREACHED.
@@ -176,9 +176,12 @@ test.describe('Meridian Horizon', () => {
     await expect(firstHit).toBeVisible();
     await expect(firstHit).toContainText('Covenant');
 
-    // Enter runs the selected hit — a function hit navigates to the lender
-    // workstation tab (a case hit would go to /thread/).
+    // Enter runs the selected hit. Post-consolidation, a function hit routes to
+    // its Meridian surface — /ledger/:chainKey (chain functions), /surface/:key
+    // (non-chain functions), or an explicit f.route — and a case hit to /thread/.
+    // (Old tab-workstation `?tab=` URLs are retired; workstation routes redirect
+    // to /horizon.)
     await page.keyboard.press('Enter');
-    await page.waitForURL(/\?tab=|\/thread\//, { timeout: 15_000 });
+    await page.waitForURL(/\/(ledger|surface|thread)\/|\?tab=/, { timeout: 15_000 });
   });
 });

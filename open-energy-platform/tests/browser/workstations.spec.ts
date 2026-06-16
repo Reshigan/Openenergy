@@ -77,80 +77,24 @@ function isBenign(msg: string): boolean {
   );
 }
 
-type WorkstationCase = {
-  role: string;
-  route: string;
-  title: RegExp;
-  expectedTabs: string[];
-};
-
-const CASES: WorkstationCase[] = [
-  {
-    role: 'trader',
-    route: '/trader-risk/workstation',
-    title: /trader workstation/i,
-    // Trader uses group tabs; default group is 'Trading' — only Trading tabs visible on load.
-    // Post-trade exceptions (Post-trade group) and Margin calls (Risk group) are hidden until
-    // the user switches groups.
-    expectedTabs: ['Open orders', 'Rejections'],
-  },
-  {
-    role: 'ipp_developer',
-    route: '/ipp-lifecycle/workstation',
-    title: /ipp workstation/i,
-    // Default group is 'Project controls'.
-    expectedTabs: ['My projects', 'Milestones', 'Schedule pulse'],
-  },
-  {
-    role: 'offtaker',
-    route: '/offtaker-suite/workstation',
-    title: /offtaker workstation/i,
-    // Default group is 'Contracts'. Sites & groups / Tariffs / RECs are in 'Operations'/'Compliance'.
-    expectedTabs: ['PPA contracts', 'Tariff indexation'],
-  },
-  {
-    role: 'carbon_fund',
-    route: '/carbon-registry/workstation',
-    title: /carbon workstation/i,
-    // Carbon was added in commit b3ca8cb and has 3 tabs.
-    expectedTabs: ['Vintage workflow', 'MRV submissions', 'Retirement certificates'],
-  },
-  {
-    role: 'admin',
-    route: '/admin-platform/workstation',
-    title: /platform admin workstation/i,
-    expectedTabs: [
-      'Tenant lifecycle',
-      'Billing runs',
-      'Flag overrides',
-      'Settlement audit',
-      'Platform audit',
-      'PII access log',
-    ],
-  },
-  {
-    role: 'regulator',
-    route: '/regulator-suite/workstation',
-    title: /regulator workstation/i,
-    expectedTabs: ['Surveillance triage', 'Licence actions', 'Enforcement events', 'Audit & compliance'],
-  },
-  {
-    role: 'grid_operator',
-    route: '/grid-operator/workstation',
-    title: /grid operations workstation/i,
-    // Default group is 'Operations'. Outage responses is in 'Connections' group — not visible on load.
-    expectedTabs: ['Curtailment events', 'Ancillary services'],
-  },
-  {
-    role: 'support',
-    route: '/support/workstation',
-    title: /support workstation/i,
-    expectedTabs: ['Tickets', 'Escalations', 'Cross-tenant access', 'Audit & compliance'],
-  },
+// CEC consolidation: every legacy `/<role>/workstation` route now
+// `<Navigate to="/horizon" replace />`. The tab-based workstation surfaces are
+// retired; WorkstationShell survives only as a reused primitive inside the
+// Meridian surfaces. This suite now asserts the REDIRECT CONTRACT — each
+// retired route lands on the single CEC Horizon board under one header.
+const RETIRED_WORKSTATION_ROUTES: string[] = [
+  '/trader-risk/workstation',
+  '/ipp-lifecycle/workstation',
+  '/offtaker-suite/workstation',
+  '/carbon-registry/workstation',
+  '/admin-platform/workstation',
+  '/regulator-suite/workstation',
+  '/grid-operator/workstation',
+  '/support/workstation',
 ];
 
-for (const c of CASES) {
-  test(`workstation [${c.role}] renders chrome + tabs`, async ({ page, baseURL }) => {
+for (const route of RETIRED_WORKSTATION_ROUTES) {
+  test(`retired workstation [${route}] redirects to the CEC Horizon board`, async ({ page, baseURL }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
     page.on('console', (msg) => { if (msg.type() === 'error') errors.push(`console.error: ${msg.text()}`); });
@@ -164,21 +108,12 @@ for (const c of CASES) {
     });
 
     await seedToken(page);
-    await page.goto(`${baseURL}${c.route}`, { waitUntil: 'load' });
+    await page.goto(`${baseURL}${route}`, { waitUntil: 'load' });
 
-    // Large lazy bundles (offtaker, support) take up to ~15s to render on prod after
-    // load event. Use 25s to give React time to download + render the workstation.
-    await expect(page.getByRole('heading', { name: c.title })).toBeVisible({ timeout: 25_000 });
-
-    for (const label of c.expectedTabs) {
-      await expect(page.getByRole('tab', { name: label })).toBeVisible();
-    }
-
-    // Tab-switch URL contract — only meaningful when there's a second tab.
-    if (c.expectedTabs.length >= 2) {
-      await page.getByRole('tab', { name: c.expectedTabs[1] }).click();
-      await expect.poll(() => page.url(), { timeout: 5_000 }).toMatch(/[?&]tab=/);
-    }
+    // Redirect lands on /horizon; the board + single CEC header chrome render.
+    await page.waitForURL(/\/horizon/, { timeout: 15_000 });
+    await expect(page.locator('.mer.horizon')).toBeVisible({ timeout: 25_000 });
+    await expect(page.locator('header .wordmark')).toHaveText('CEC');
 
     const real = errors.filter((e) => !isBenign(e));
     expect(real, real.join('\n')).toEqual([]);

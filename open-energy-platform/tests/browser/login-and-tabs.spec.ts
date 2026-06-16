@@ -45,7 +45,7 @@ function isBenign(msg: string): boolean {
   );
 }
 
-test('login page renders with LTM partner logo and demo personas', async ({ page, baseURL }) => {
+test('login page boots React and renders the sign-in surface', async ({ page, baseURL }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (msg) => { if (msg.type() === 'error') errors.push(`console.error: ${msg.text()}`); });
@@ -62,28 +62,26 @@ test('login page renders with LTM partner logo and demo personas', async ({ page
   // Sign-in heading
   await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
 
-  // LTM logo (bottom-right). It loads as /ltm-energy-logo.png — we look for
-  // the asset URL on any <img> in the DOM.
-  const ltmImg = page.locator('img[src*="ltm-energy-logo"]');
-  await expect(ltmImg).toHaveCount(1);
-
   // No console-level errors fired during load.
   const real = errors.filter((e) => !isBenign(e));
   expect(real, real.join('\n')).toEqual([]);
 });
 
-test('admin persona logs in, lands on cockpit, navigates to lender suite', async ({ page, baseURL }) => {
+test('admin lands on the CEC Horizon board after auth (legacy launch route redirects)', async ({ page, baseURL }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
 
   // Seed the token instead of submitting the form — the form submit would
   // consume one rate-limit slot (10/5min/IP) and cascade 429s to later specs.
   await seedToken(page);
+  // /launch/:role is a retired legacy route — the CEC consolidation redirects
+  // every launch/workstation path to the single /horizon board.
   await page.goto(`${baseURL}/launch/admin`, { waitUntil: 'load' });
 
-  // Cockpit / launchpad — URL should contain /cockpit or /launch and at
-  // least one shell element is visible (the navigation rail / hamburger menu).
-  await expect(page.locator('button[aria-label="Open navigation menu"], button:has-text("Launchpad")').first()).toBeVisible({ timeout: 15_000 });
+  // Redirect lands on Horizon; the board + single CEC header chrome render.
+  await page.waitForURL(/\/horizon/, { timeout: 15_000 });
+  await expect(page.locator('.mer.horizon')).toBeVisible({ timeout: 25_000 });
+  await expect(page.locator('header .wordmark')).toHaveText('CEC');
 
   // No runtime page errors during the full navigation flow.
   const real = errors.filter((e) => !isBenign(e));
