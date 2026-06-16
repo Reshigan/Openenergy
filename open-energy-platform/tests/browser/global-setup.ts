@@ -24,9 +24,14 @@ import * as crypto from 'crypto';
 const PASSWORD = process.env.DEMO_PASSWORD || 'Demo@2024!';
 const BASE_URL = process.env.BASE || 'https://oe.vantax.co.za';
 
-// Refresh tokens older than this; safely under the 1h access-token TTL so a
-// cached token never expires mid-suite.
-const CACHE_TTL_MS = 45 * 60 * 1000;
+// A cached token is reused ONLY if its own JWT `exp` leaves at least this much
+// runway — enough to outlast a full journey suite (~40min worst case) without
+// expiring mid-run. We validate the token's real `exp`, NOT savedAt: savedAt is
+// rewritten to now() on every save (even when REUSING an old token), so it masks
+// the token's true age. A 76-min-old (already-expired) token once looked "fresh"
+// by savedAt and got replayed all run — every late-suite ledger GET 401'd and the
+// +New button never rendered. Gating on `exp` is the correct, leak-proof check.
+const MIN_TOKEN_LIFE_MS = 50 * 60 * 1000;
 
 const ROLES: Array<{ email: string; envKey: string }> = [
   { email: 'admin@openenergy.co.za',     envKey: 'PLAYWRIGHT_ADMIN_TOKEN' },
@@ -57,13 +62,28 @@ function cachePath(base: string): string {
   return path.join(os.tmpdir(), `oe-pw-tokens-${hash}.json`);
 }
 
+// Remaining JWT life in ms (0 if unparseable). Decodes the standard `exp` claim.
+function tokenLifeMs(tok: string): number {
+  try {
+    const payload = JSON.parse(Buffer.from(tok.split('.')[1], 'base64').toString('utf8'));
+    return (payload.exp ?? 0) * 1000 - Date.now();
+  } catch {
+    return 0;
+  }
+}
+
 function loadCache(base: string): { tokens: Record<string, string>; users: Record<string, unknown> } {
   try {
     const raw = fs.readFileSync(cachePath(base), 'utf8');
     const c = JSON.parse(raw) as TokenCache;
     if (c.base !== base) return { tokens: {}, users: {} };
-    if (Date.now() - c.savedAt > CACHE_TTL_MS) return { tokens: {}, users: {} };
-    return { tokens: c.tokens || {}, users: c.users || {} };
+    // Reuse only tokens with enough real JWT runway to outlast a full suite.
+    // Anything near/at expiry is dropped here so step 2 mints a fresh one.
+    const tokens: Record<string, string> = {};
+    for (const [k, v] of Object.entries(c.tokens || {})) {
+      if (typeof v === 'string' && tokenLifeMs(v) > MIN_TOKEN_LIFE_MS) tokens[k] = v;
+    }
+    return { tokens, users: c.users || {} };
   } catch {
     return { tokens: {}, users: {} };
   }

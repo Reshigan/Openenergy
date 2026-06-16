@@ -87,6 +87,26 @@ const RESULTS: JourneyResult[] = [];
 let SHARED_ADMIN_TOKEN: string | null = null;
 let SHARED_ADMIN_USER: unknown = null;
 
+const ADMIN_EMAIL = 'admin@openenergy.co.za';
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'Demo@2024!';
+// Re-mint the shared admin token when it has less than this much JWT life left.
+// The suite is single-worker/serial (playwright.config: workers:1), so this is a
+// safe place to refresh: at most ~once per ~50min, well inside the 10/5min login
+// limiter. Without this, the 1h JWT freezes at suite start and the /auth/refresh
+// mock keeps replaying it; a >1h run then 401s every late ledger GET and the +New
+// button never renders (mis-recorded as a per-chain create failure).
+const TOKEN_REFRESH_MARGIN_MS = 8 * 60 * 1000;
+
+function tokenLifeMs(tok: string | null): number {
+  if (!tok) return 0;
+  try {
+    const payload = JSON.parse(Buffer.from(tok.split('.')[1], 'base64').toString('utf8'));
+    return (payload.exp ?? 0) * 1000 - Date.now();
+  } catch {
+    return 0;
+  }
+}
+
 test.beforeAll(() => {
   const tok = process.env.PLAYWRIGHT_ADMIN_TOKEN;
   if (!tok) throw new Error('PLAYWRIGHT_ADMIN_TOKEN not set — global-setup may have failed');
@@ -95,7 +115,29 @@ test.beforeAll(() => {
   if (userJson) { try { SHARED_ADMIN_USER = JSON.parse(userJson); } catch { /* fall back to real /auth/me */ } }
 });
 
-async function seedToken(page: Page) {
+// Mint a fresh admin token when the shared one is near expiry. One real login,
+// gated on remaining JWT life so it fires at most once per refresh window.
+async function maybeRefreshToken(page: Page, baseURL?: string) {
+  if (tokenLifeMs(SHARED_ADMIN_TOKEN) > TOKEN_REFRESH_MARGIN_MS) return;
+  try {
+    const url = `${baseURL ?? ''}/api/auth/login`;
+    const r = await page.request.post(url, {
+      data: { email: ADMIN_EMAIL, password: DEMO_PASSWORD },
+      failOnStatusCode: false,
+    });
+    if (r.ok()) {
+      const fresh = (await r.json())?.data?.token;
+      if (fresh) SHARED_ADMIN_TOKEN = fresh;
+    }
+    // Non-ok (429/500): keep the old token — this chain may 401, but we tried,
+    // and the next chain re-attempts once the limiter window drains.
+  } catch {
+    // Network error — keep the old token.
+  }
+}
+
+async function seedToken(page: Page, baseURL?: string) {
+  await maybeRefreshToken(page, baseURL);
   if (!SHARED_ADMIN_TOKEN) throw new Error('shared ADMIN token not initialised');
   const tokenValue = SHARED_ADMIN_TOKEN;
   // AuthContext bootstraps via an httpOnly cookie refresh that isn't available in
@@ -164,7 +206,7 @@ for (const chain of INIT_CHAINS) {
       advanced: false, advanceAction: null, advanceStatus: 0, note: '',
     };
     try {
-      await seedToken(page);
+      await seedToken(page, baseURL);
 
       // 1. Ledger surface.
       await page.goto(`${baseURL}/ledger/${chain.key}`, { waitUntil: 'load' });

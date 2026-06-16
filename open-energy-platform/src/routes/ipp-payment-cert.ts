@@ -162,7 +162,7 @@ app.post('/', async (c) => {
         (id, participant_id, project_id, cert_number, claim_type, value_tier,
          claimed_value_zar, period_from, period_to, description,
          chain_status, sla_due_at, sla_breached, submitted_at, created_at, updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,'draft','draft',?,0,?,?,?)`)
+      VALUES (?,?,?,?,?,?,?,?,?,?,'draft',?,0,?,?,?)`)
     .bind(id, user.id, body.project_id, certNo, body.claim_type, tier,
       body.claimed_value_zar, body.period_from ?? null, body.period_to ?? null,
       body.description ?? null, slaAt, now, now, now)
