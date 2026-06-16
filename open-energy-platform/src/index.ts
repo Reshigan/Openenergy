@@ -140,21 +140,51 @@ mountRoutes(app);
   app.route('/api/admin/cron', cron);
 }
 
+// D1 / SQLite constraint violations are bad-input problems, not server faults.
+// Surfacing them as a raw 500 is wrong: an unknown FK, a duplicate key, a CHECK
+// failure or a missing NOT NULL are all the caller's request being unprocessable.
+// Map them to structured 4xx reason codes (L5 discipline) so no create/advance
+// ever 500s on shape-valid-but-referentially-bad input. Generic messages only —
+// never echo the raw constraint string (it leaks table/column names).
+function classifyConstraint(msg: string): { status: 409 | 422; code: string; message: string } | null {
+  if (!/constraint failed/i.test(msg || '')) return null;
+  if (/FOREIGN KEY/i.test(msg)) return { status: 422, code: 'foreign_key_violation', message: 'A referenced record does not exist.' };
+  if (/UNIQUE/i.test(msg)) return { status: 409, code: 'duplicate_record', message: 'A record with these values already exists.' };
+  if (/NOT NULL/i.test(msg)) return { status: 422, code: 'missing_required_field', message: 'A required field was not provided.' };
+  if (/CHECK/i.test(msg)) return { status: 422, code: 'invalid_field_value', message: 'A field value is not allowed.' };
+  return { status: 422, code: 'constraint_violation', message: 'The request violates a data constraint.' };
+}
+
+// A malformed or empty request body makes `await c.req.json()` throw a SyntaxError
+// (workerd: "Unexpected end of JSON input" / "Unexpected token … is not valid JSON").
+// That is the caller's fault, not ours — map to 400 so no create/advance handler
+// that omits its own body guard ever 500s on shape-invalid input (L5 discipline).
+// Generic message only — never echo the parser's raw position/snippet.
+function classifyParseError(err: Error): { status: 400; code: string; message: string } | null {
+  if ((err?.name || '') !== 'SyntaxError') return null;
+  if (!/JSON|Unexpected (end|token|non-whitespace)/i.test(err?.message || '')) return null;
+  return { status: 400, code: 'invalid_json', message: 'Request body must be valid JSON.' };
+}
+
 app.onError((err, c) => {
   const reqId = (c.get('requestId') as string | undefined) ||
     `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
   const auth = c.get('auth') as { user?: { id?: string }; tenant_id?: string } | undefined;
   const appErr = err instanceof AppError ? err : null;
-  const status = appErr?.statusCode ?? 500;
+  // Order: parse errors (400) take precedence over constraint heuristics (409/422).
+  const classified = appErr ? null : (classifyParseError(err as Error) ?? classifyConstraint((err as Error).message || ''));
+  const status = appErr?.statusCode ?? classified?.status ?? 500;
   const outgoingBody: Record<string, unknown> = appErr
     ? { error: appErr.code, message: appErr.message, req_id: reqId }
+    : classified
+    ? { success: false, error: classified.code, message: classified.message, req_id: reqId }
     : { error: 'Internal Server Error', message: 'An unexpected error occurred', req_id: reqId };
 
-  const severity = appErr && status < 500 ? 'warn' : 'error';
+  const severity = (appErr || classified) && status < 500 ? 'warn' : 'error';
   if (severity === 'error') {
     logger.error('unhandled_error', { req_id: reqId, route: c.req.path, method: c.req.method, participant_id: auth?.user?.id, tenant_id: auth?.tenant_id, error_name: (err as Error).name, error_message: err.message, error_stack: (err as Error).stack });
   } else {
-    logger.warn('handled_error', { req_id: reqId, route: c.req.path, method: c.req.method, status, code: appErr!.code, participant_id: auth?.user?.id });
+    logger.warn('handled_error', { req_id: reqId, route: c.req.path, method: c.req.method, status, code: appErr?.code ?? classified?.code, participant_id: auth?.user?.id });
   }
 
   if (status >= 500) try {
@@ -165,7 +195,7 @@ app.onError((err, c) => {
     c.executionCtx?.waitUntil?.(Promise.resolve(write).catch(() => {}));
   } catch { /* swallow — never fail the error handler */ }
 
-  return c.json(outgoingBody, status as 401 | 403 | 404 | 409 | 400 | 500);
+  return c.json(outgoingBody, status as 401 | 403 | 404 | 409 | 400 | 422 | 500);
 });
 
 app.notFound(async (c) => {

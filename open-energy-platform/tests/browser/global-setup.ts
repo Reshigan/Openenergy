@@ -158,4 +158,15 @@ export default async function globalSetup(): Promise<void> {
     `[global-setup] ${Object.keys(tokens).length}/${ROLES.length} tokens ` +
     `(${fromCache} cached, ${loggedIn} fresh), ${Object.keys(users).length} /auth/me bodies for ${BASE_URL}`,
   );
+
+  // 5. Stabilise the journey-matrix run id and clear the per-run result log ONCE,
+  //    here in the main process — BEFORE any Playwright worker spawns. This is
+  //    load-bearing: a test FAILURE (timeout/crash) tears down the worker, which
+  //    re-imports the spec module and resets module-level RUN + in-memory RESULTS.
+  //    Pinning JOURNEY_RUN in the env (propagated to every forked/restarted worker)
+  //    keeps synthetic keys stable across restarts, and the journey spec appends
+  //    each outcome to this JSONL so the summary survives any worker restart.
+  if (!process.env.JOURNEY_RUN) process.env.JOURNEY_RUN = Date.now().toString(36);
+  const jsonl = path.join(process.cwd(), 'tests', 'browser', 'fixtures', 'journey-results.jsonl');
+  try { fs.rmSync(jsonl, { force: true }); } catch { /* nothing to clear */ }
 }
