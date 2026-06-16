@@ -547,26 +547,30 @@ gridOps.post('/ancillary/tenders/:id/clear', async (c) => {
     });
   }
 
+  // Ordered batch: award INSERT + bid UPDATE per winner, then the 'lost' sweep
+  // (must run after winners are no longer 'submitted'), then the tender status.
+  const clearStmts: D1PreparedStatement[] = [];
   for (const a of awards) {
     const awardId = genId('awd');
-    await c.env.DB.prepare(
+    clearStmts.push(c.env.DB.prepare(
       `INSERT INTO ancillary_service_awards (id, tender_id, bid_id, awarded_capacity_mw, clearing_price_zar_mw_h, awarded_by)
        VALUES (?, ?, ?, ?, ?, ?)`,
-    ).bind(awardId, tenderId, a.bid_id, a.awarded_capacity, clearingPrice, user.id).run();
-    await c.env.DB.prepare(
+    ).bind(awardId, tenderId, a.bid_id, a.awarded_capacity, clearingPrice, user.id));
+    clearStmts.push(c.env.DB.prepare(
       `UPDATE ancillary_service_bids
           SET status = CASE WHEN awarded_capacity_mw = (SELECT capacity_offered_mw FROM ancillary_service_bids WHERE id = ?) THEN 'awarded_full' ELSE 'awarded_partial' END,
               awarded_capacity_mw = ?,
               awarded_price_zar_mw_h = ?
         WHERE id = ?`,
-    ).bind(a.bid_id, a.awarded_capacity, clearingPrice, a.bid_id).run();
+    ).bind(a.bid_id, a.awarded_capacity, clearingPrice, a.bid_id));
   }
-  await c.env.DB.prepare(
+  clearStmts.push(c.env.DB.prepare(
     `UPDATE ancillary_service_bids SET status = 'lost' WHERE tender_id = ? AND status = 'submitted'`,
-  ).bind(tenderId).run();
-  await c.env.DB.prepare(
+  ).bind(tenderId));
+  clearStmts.push(c.env.DB.prepare(
     `UPDATE ancillary_service_tenders SET status = 'awarded' WHERE id = ?`,
-  ).bind(tenderId).run();
+  ).bind(tenderId));
+  for (let i = 0; i < clearStmts.length; i += 100) await c.env.DB.batch(clearStmts.slice(i, i + 100));
 
   return c.json({
     success: true,

@@ -156,24 +156,25 @@ async function findRecurringFaultOpportunities(env: HonoEnv['Bindings'], siteIds
   if (!siteIds.length) return [];
   const ph = siteIds.map(() => '?').join(',');
   const rows = await env.DB.prepare(`
-    SELECT site_id, device_id, fault_code, COUNT(*) AS occurrences,
-           MAX(hourly_loss_zar) AS max_hourly_loss,
-           SUM(total_loss_zar) AS total_loss_to_date
-    FROM om_faults
-    WHERE site_id IN (${ph})
-      AND device_id IS NOT NULL
-      AND detected_at >= date('now', '-30 days')
-    GROUP BY site_id, device_id, fault_code
+    SELECT f.site_id, f.device_id, f.fault_code, COUNT(*) AS occurrences,
+           MAX(f.hourly_loss_zar) AS max_hourly_loss,
+           SUM(f.total_loss_zar) AS total_loss_to_date,
+           d.manufacturer AS dev_manufacturer, d.model AS dev_model,
+           d.warranty_expiry AS dev_warranty_expiry
+    FROM om_faults f
+    LEFT JOIN om_devices d ON d.id = f.device_id
+    WHERE f.site_id IN (${ph})
+      AND f.device_id IS NOT NULL
+      AND f.detected_at >= date('now', '-30 days')
+    GROUP BY f.site_id, f.device_id, f.fault_code,
+             d.manufacturer, d.model, d.warranty_expiry
     HAVING COUNT(*) >= 3
   `).bind(...siteIds).all<any>();
   const opps: Opportunity[] = [];
   for (const r of (rows.results || []) as any[]) {
     const site = sitesByID.get(r.site_id);
     if (!site) continue;
-    const dev = await env.DB.prepare(
-      `SELECT manufacturer, model, warranty_expiry FROM om_devices WHERE id = ?`,
-    ).bind(r.device_id).first<any>();
-    const warrantyOk = dev?.warranty_expiry && new Date(dev.warranty_expiry).getTime() > Date.now();
+    const warrantyOk = r.dev_warranty_expiry && new Date(r.dev_warranty_expiry).getTime() > Date.now();
     // Annualised: avoiding catastrophic failure = 1 month of full downtime
     const annualUpside = Number(r.max_hourly_loss || 0) * 24 * 30;
     opps.push({
@@ -182,7 +183,7 @@ async function findRecurringFaultOpportunities(env: HonoEnv['Bindings'], siteIds
       site_id: r.site_id,
       site_name: site.name,
       device_id: r.device_id,
-      title: `${dev?.manufacturer || 'Device'} ${dev?.model || ''} on ${site.name}: ${r.fault_code} ×${r.occurrences} in 30 days`,
+      title: `${r.dev_manufacturer || 'Device'} ${r.dev_model || ''} on ${site.name}: ${r.fault_code} ×${r.occurrences} in 30 days`,
       detail: `Pattern suggests early-stage failure. Proactive replacement before catastrophic event` +
               (warrantyOk ? ' (under warranty — zero parts cost).' : ' avoids R' + Math.round(annualUpside).toLocaleString() + ' downtime loss.'),
       annual_upside_zar: Math.round(annualUpside),

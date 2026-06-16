@@ -176,10 +176,11 @@ r.post('/rum', async (c) => {
   const user = getCurrentUser(c);
   const b = await c.req.json().catch(() => ({} as any));
   const events: any[] = Array.isArray(b.events) ? b.events : [b];
-  let written = 0;
+  const ua = (c.req.header('user-agent') || '').slice(0, 300);
+  const rumStmts: D1PreparedStatement[] = [];
   for (const e of events) {
     if (!e.metric || !e.page_path) continue;
-    await c.env.DB.prepare(`
+    rumStmts.push(c.env.DB.prepare(`
       INSERT INTO oe_rum_events
         (id, participant_id, session_id, page_path, metric, value,
          user_agent, network_type, device_category)
@@ -188,12 +189,11 @@ r.post('/rum', async (c) => {
       genId('rum'), user.id, e.session_id || null,
       String(e.page_path).slice(0, 200), String(e.metric),
       e.value != null ? Number(e.value) : null,
-      (c.req.header('user-agent') || '').slice(0, 300),
-      e.network_type || null, e.device_category || null,
-    ).run();
-    written += 1;
+      ua, e.network_type || null, e.device_category || null,
+    ));
   }
-  return c.json({ success: true, data: { written } });
+  for (let i = 0; i < rumStmts.length; i += 100) await c.env.DB.batch(rumStmts.slice(i, i + 100));
+  return c.json({ success: true, data: { written: rumStmts.length } });
 });
 
 r.get('/rum/summary', async (c) => {

@@ -674,16 +674,19 @@ export async function carbonIssuanceSlaSweep(env: HonoEnv['Bindings']): Promise<
   ).bind(nowIso).all<IssuanceRow>();
 
   const rows = rs.results || [];
-  let breached = 0;
+  // Collect per-row UPDATE + event INSERT into one atomic batch; fireCascade runs
+  // afterwards in its own loop (it is a multi-stage fan-out, not a D1 statement).
+  const stmts: D1PreparedStatement[] = [];
+  const toCascade: IssuanceRow[] = [];
   for (const row of rows) {
-    await env.DB.prepare(
+    stmts.push(env.DB.prepare(
       `UPDATE oe_carbon_issuances
        SET last_sla_breach_at = ?, escalation_level = escalation_level + 1, updated_at = ?
        WHERE id = ?`,
-    ).bind(nowIso, nowIso, row.id).run();
+    ).bind(nowIso, nowIso, row.id));
 
     const evtId = `cis_evt_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;
-    await env.DB.prepare(
+    stmts.push(env.DB.prepare(
       'INSERT INTO oe_carbon_issuances_events (id, issuance_id, event_type, from_status, to_status, actor_id, actor_party, notes, payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     ).bind(
       evtId,
@@ -696,25 +699,28 @@ export async function carbonIssuanceSlaSweep(env: HonoEnv['Bindings']): Promise<
       `Auto-breach: ${row.chain_status} past SLA (tier ${row.issuance_tier})`,
       JSON.stringify({ sla_deadline_at: row.sla_deadline_at }),
       nowIso,
-    ).run();
+    ));
 
-    if (slaBreachCrossesIntoRegulator(row.issuance_tier)) {
-      await fireCascade({
-        event: 'carbon_issuance.sla_breached',
-        actor_id: 'system',
-        entity_type: 'carbon_issuance',
-        entity_id: row.id,
-        data: {
-          ...row,
-          crosses_into_regulator: true,
-        },
-        env,
-      });
-    }
-
-    breached++;
+    if (slaBreachCrossesIntoRegulator(row.issuance_tier)) toCascade.push(row);
   }
-  return { scanned: rows.length, breached };
+
+  if (stmts.length) await env.DB.batch(stmts);
+
+  for (const row of toCascade) {
+    await fireCascade({
+      event: 'carbon_issuance.sla_breached',
+      actor_id: 'system',
+      entity_type: 'carbon_issuance',
+      entity_id: row.id,
+      data: {
+        ...row,
+        crosses_into_regulator: true,
+      },
+      env,
+    });
+  }
+
+  return { scanned: rows.length, breached: rows.length };
 }
 
 export default app;

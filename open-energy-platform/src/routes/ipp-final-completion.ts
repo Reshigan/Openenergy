@@ -34,11 +34,13 @@ export async function ippFinalCompletionSlaSweep(env: HonoEnv['Bindings']): Prom
                 AND sla_due_at <= ?`)
     .bind(now)
     .all<{ id: string; contract_tier: string }>();
-  for (const row of breaches.results ?? []) {
-    await env.DB
-      .prepare(`UPDATE oe_ipp_final_completion SET sla_breached=1, updated_at=? WHERE id=?`)
-      .bind(now, row.id)
-      .run();
+  const rows = breaches.results ?? [];
+  const stmts: D1PreparedStatement[] = rows.map((row) =>
+    env.DB.prepare(`UPDATE oe_ipp_final_completion SET sla_breached=1, updated_at=? WHERE id=?`)
+      .bind(now, row.id));
+  for (let i = 0; i < stmts.length; i += 100) await env.DB.batch(stmts.slice(i, i + 100));
+
+  for (const row of rows) {
     await fireCascade({ event: 'ipp_fcc.sla_breached', actor_id: 'system',
       entity_type: 'ipp_final_completion', entity_id: row.id,
       data: { contract_tier: row.contract_tier }, env });

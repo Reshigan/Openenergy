@@ -1067,17 +1067,19 @@ export async function ippChangeOrderSlaSweep(env: HonoEnv['Bindings']): Promise<
   ).bind(nowIso).all<IcoRow>();
 
   const rows = rs.results || [];
-  let breached = 0;
-  for (const row of rows) {
-    await env.DB.prepare(
-      `UPDATE oe_ipp_change_order
+  // Build per-row UPDATE + event INSERT, then commit in one atomic batch. fireCascade
+  // is a multi-stage fan-out (not a D1 statement) so it runs afterwards, off the batch.
+  const stmts: D1PreparedStatement[] = [];
+  const toCascade: IcoRow[] = [];
+  const mkUpdate = (row: IcoRow) => env.DB.prepare(
+    `UPDATE oe_ipp_change_order
        SET last_sla_breach_at = ?, sla_breached = 1,
            escalation_level = escalation_level + 1, updated_at = ?
        WHERE id = ?`,
-    ).bind(nowIso, nowIso, row.id).run();
-
+  ).bind(nowIso, nowIso, row.id);
+  const mkEvent = (row: IcoRow) => {
     const evtId = `ipp_change_order_evt_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;
-    await env.DB.prepare(
+    return env.DB.prepare(
       'INSERT INTO oe_ipp_change_order_events (id, change_order_id, event_type, from_status, to_status, actor_id, actor_party, notes, payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     ).bind(
       evtId,
@@ -1090,25 +1092,38 @@ export async function ippChangeOrderSlaSweep(env: HonoEnv['Bindings']): Promise<
       `Auto-breach: ${row.chain_status} past SLA (tier ${row.current_tier})`,
       JSON.stringify({ sla_deadline_at: row.sla_deadline_at }),
       nowIso,
-    ).run();
-
-    if (slaBreachCrossesIntoRegulator(row.current_tier)) {
-      await fireCascade({
-        event: 'ipp_change_order_sla_breached',
-        actor_id: 'system',
-        entity_type: 'ipp_change_order',
-        entity_id: row.id,
-        data: {
-          ...row,
-          crosses_into_regulator: true,
-        },
-        env,
-      });
-    }
-
-    breached++;
+    );
+  };
+  for (const row of rows) {
+    stmts.push(mkUpdate(row), mkEvent(row));
+    if (slaBreachCrossesIntoRegulator(row.current_tier)) toCascade.push(row);
   }
-  return { scanned: rows.length, breached };
+
+  if (stmts.length) {
+    try {
+      await env.DB.batch(stmts);
+    } catch {
+      // Best-effort fallback: a single bad row must not block the rest of the sweep.
+      for (const row of rows) {
+        await mkUpdate(row).run().catch(() => {});
+        await mkEvent(row).run().catch(() => {});
+      }
+    }
+  }
+
+  await Promise.allSettled(toCascade.map(row => fireCascade({
+    event: 'ipp_change_order_sla_breached',
+    actor_id: 'system',
+    entity_type: 'ipp_change_order',
+    entity_id: row.id,
+    data: {
+      ...row,
+      crosses_into_regulator: true,
+    },
+    env,
+  })));
+
+  return { scanned: rows.length, breached: rows.length };
 }
 
 // ─── Cron: nightly cumulative CR-value-pct recompute (00:40 UTC) ──────────

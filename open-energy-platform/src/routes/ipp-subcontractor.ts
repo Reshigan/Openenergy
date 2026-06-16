@@ -138,32 +138,51 @@ app.get('/', async (c) => {
   const user = getCurrentUser(c);
   if (!READ_ROLES.has(user.role)) return c.json({ error: 'Forbidden' }, 403);
 
+  // Static literal status fragment — never derived from request input.
+  const ACTIVE_SQL =
+    "chain_status IN ('registered','pre_qualification','inducted','mobilized','performing','under_review','good_standing','work_complete','demobilized')";
+
+  // Dashboard aggregates computed in SQL over the full table (not the paged rows below).
+  const agg = await c.env.DB.prepare(
+    `SELECT
+       COUNT(*) AS total_count,
+       SUM(CASE WHEN ${ACTIVE_SQL} THEN 1 ELSE 0 END) AS active_count,
+       SUM(CASE WHEN chain_status = 'suspended' THEN 1 ELSE 0 END) AS suspended_count,
+       SUM(CASE WHEN chain_status = 'terminated' THEN 1 ELSE 0 END) AS terminated_count,
+       SUM(CASE WHEN ${ACTIVE_SQL} AND subcontractor_tier = 'critical_trade' THEN 1 ELSE 0 END) AS critical_trade_count,
+       SUM(CASE WHEN COALESCE(sla_breached,0) <> 0 THEN 1 ELSE 0 END) AS sla_breached_count,
+       SUM(CASE WHEN (COALESCE(floor_ohsa_notification,0) <> 0 AND ${ACTIVE_SQL}) OR chain_status = 'suspended' THEN 1 ELSE 0 END) AS ohsa_notification_count,
+       SUM(CASE WHEN chain_status IN ('performing','under_review','good_standing') THEN COALESCE(performance_score,0) ELSE 0 END) AS perf_sum,
+       SUM(CASE WHEN chain_status IN ('performing','under_review','good_standing') THEN 1 ELSE 0 END) AS perf_count
+     FROM oe_ipp_subcontractors`,
+  ).first<{
+    total_count: number; active_count: number; suspended_count: number; terminated_count: number;
+    critical_trade_count: number; sla_breached_count: number; ohsa_notification_count: number;
+    perf_sum: number; perf_count: number;
+  }>();
+
+  const perfCount = agg?.perf_count ?? 0;
+  const avgScore = perfCount > 0 ? (agg!.perf_sum ?? 0) / perfCount : null;
+
+  // Bounded row set for the listing (dashboard counts above stay whole-table accurate).
+  const limit = Math.min(Math.max(parseInt(c.req.query('limit') ?? '200', 10) || 200, 1), 500);
+  const offset = Math.max(parseInt(c.req.query('offset') ?? '0', 10) || 0, 0);
   const rows = await c.env.DB.prepare(
-    'SELECT * FROM oe_ipp_subcontractors ORDER BY created_at DESC',
-  ).all<SubcontractorRow>();
+    'SELECT * FROM oe_ipp_subcontractors ORDER BY created_at DESC LIMIT ? OFFSET ?',
+  ).bind(limit, offset).all<SubcontractorRow>();
 
   const now = new Date();
   const data = (rows.results ?? []).map(r => decorateLiveFields(r, now));
 
-  const activeRows = data.filter(r => ACTIVE_STATUSES.has(r.chain_status));
-  const performingRows = data.filter(r =>
-    r.chain_status === 'performing' ||
-    r.chain_status === 'under_review' ||
-    r.chain_status === 'good_standing',
-  );
-  const avgScore = performingRows.length > 0
-    ? performingRows.reduce((sum, r) => sum + (r.performance_score ?? 0), 0) / performingRows.length
-    : null;
-
   const dashboard = {
     subcontractors: {
-      total_count:            data.length,
-      active_count:           activeRows.length,
-      suspended_count:        data.filter(r => r.chain_status === 'suspended').length,
-      terminated_count:       data.filter(r => r.chain_status === 'terminated').length,
-      critical_trade_count:   activeRows.filter(r => r.subcontractor_tier === 'critical_trade').length,
-      sla_breached_count:     data.filter(r => r.sla_breached).length,
-      ohsa_notification_count: data.filter(r => r.floor_ohsa_notification && ACTIVE_STATUSES.has(r.chain_status) || r.chain_status === 'suspended').length,
+      total_count:            agg?.total_count ?? 0,
+      active_count:           agg?.active_count ?? 0,
+      suspended_count:        agg?.suspended_count ?? 0,
+      terminated_count:       agg?.terminated_count ?? 0,
+      critical_trade_count:   agg?.critical_trade_count ?? 0,
+      sla_breached_count:     agg?.sla_breached_count ?? 0,
+      ohsa_notification_count: agg?.ohsa_notification_count ?? 0,
       avg_performance_score:  avgScore !== null ? Math.round(avgScore * 10) / 10 : null,
     },
   };

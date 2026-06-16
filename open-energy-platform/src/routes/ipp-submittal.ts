@@ -1045,17 +1045,20 @@ export async function ippSubmittalSlaSweep(env: HonoEnv['Bindings']): Promise<{ 
   ).bind(nowIso).all<IpsRow>();
 
   const rows = rs.results || [];
-  let breached = 0;
+  // Per-row UPDATE + event INSERT collected and committed in atomic batches of 100;
+  // fireCascade (multi-stage fan-out, not a D1 statement) runs in a separate loop after.
+  const stmts: D1PreparedStatement[] = [];
+  const toCascade: IpsRow[] = [];
   for (const row of rows) {
-    await env.DB.prepare(
+    stmts.push(env.DB.prepare(
       `UPDATE oe_ipp_submittal
        SET last_sla_breach_at = ?, sla_breached = 1,
            escalation_level = escalation_level + 1, updated_at = ?
        WHERE id = ?`,
-    ).bind(nowIso, nowIso, row.id).run();
+    ).bind(nowIso, nowIso, row.id));
 
     const evtId = `ipp_submittal_evt_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;
-    await env.DB.prepare(
+    stmts.push(env.DB.prepare(
       'INSERT INTO oe_ipp_submittal_events (id, submittal_id, event_type, from_status, to_status, stamp_code, cycle_count, actor_id, actor_party, notes, payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     ).bind(
       evtId,
@@ -1070,25 +1073,30 @@ export async function ippSubmittalSlaSweep(env: HonoEnv['Bindings']): Promise<{ 
       `Auto-breach: ${row.chain_status} past SLA (tier ${row.current_tier})`,
       JSON.stringify({ sla_deadline_at: row.sla_deadline_at }),
       nowIso,
-    ).run();
+    ));
 
-    if (slaBreachCrossesIntoRegulator(row.current_tier)) {
-      await fireCascade({
-        event: 'ipp_submittal_sla_breached',
-        actor_id: 'system',
-        entity_type: 'ipp_submittal',
-        entity_id: row.id,
-        data: {
-          ...row,
-          crosses_into_regulator: true,
-        },
-        env,
-      });
-    }
-
-    breached++;
+    if (slaBreachCrossesIntoRegulator(row.current_tier)) toCascade.push(row);
   }
-  return { scanned: rows.length, breached };
+
+  for (let i = 0; i < stmts.length; i += 100) {
+    await env.DB.batch(stmts.slice(i, i + 100));
+  }
+
+  for (const row of toCascade) {
+    await fireCascade({
+      event: 'ipp_submittal_sla_breached',
+      actor_id: 'system',
+      entity_type: 'ipp_submittal',
+      entity_id: row.id,
+      data: {
+        ...row,
+        crosses_into_regulator: true,
+      },
+      env,
+    });
+  }
+
+  return { scanned: rows.length, breached: rows.length };
 }
 
 // ─── Cron: nightly cycle-count + stamp refresh (00:30 UTC) ────────────────

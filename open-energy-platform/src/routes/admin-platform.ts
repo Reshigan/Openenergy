@@ -278,14 +278,14 @@ pa.post('/invoices/run', async (c) => {
     tenant_name: string; vat_number: string | null;
   }>();
 
-  let issued = 0;
+  const invStmts: D1PreparedStatement[] = [];
   for (const s of subs.results || []) {
     if (s.amount_zar <= 0) continue;
     const vat = s.amount_zar * 0.15;
     const total = s.amount_zar + vat;
     const id = genId('tinv');
     const invNum = `OE-${new Date().getFullYear()}-${id.slice(-8).toUpperCase()}`;
-    await c.env.DB.prepare(
+    invStmts.push(c.env.DB.prepare(
       `INSERT INTO tenant_invoices
          (id, tenant_id, subscription_id, invoice_number, period_start, period_end,
           line_items_json, subtotal_zar, vat_rate, vat_zar, total_zar, status, issued_at, due_at)
@@ -294,9 +294,10 @@ pa.post('/invoices/run', async (c) => {
       id, s.tenant_id, s.subscription_id, invNum, periodStart, periodEnd,
       JSON.stringify([{ description: 'Platform subscription', amount_zar: s.amount_zar }]),
       s.amount_zar, vat, total,
-    ).run();
-    issued++;
+    ));
   }
+  for (let i = 0; i < invStmts.length; i += 100) await c.env.DB.batch(invStmts.slice(i, i + 100));
+  const issued = invStmts.length;
 
   if (issued > 0) {
     await fireCascade({

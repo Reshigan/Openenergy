@@ -608,16 +608,19 @@ export async function settlementFailSlaSweep(env: HonoEnv['Bindings']): Promise<
   ).bind(nowIso).all<SfRow>();
 
   const rows = rs.results || [];
-  let breached = 0;
+  // Per-row UPDATE + event INSERT committed in one atomic batch; fireCascade is a
+  // multi-stage fan-out (not a D1 statement) so it runs afterwards, off the batch.
+  const stmts: D1PreparedStatement[] = [];
+  const toCascade: SfRow[] = [];
   for (const row of rows) {
-    await env.DB.prepare(
+    stmts.push(env.DB.prepare(
       `UPDATE oe_settlement_fails
        SET last_sla_breach_at = ?, escalation_level = escalation_level + 1, updated_at = ?
        WHERE id = ?`,
-    ).bind(nowIso, nowIso, row.id).run();
+    ).bind(nowIso, nowIso, row.id));
 
     const evtId = `sf_evt_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;
-    await env.DB.prepare(
+    stmts.push(env.DB.prepare(
       'INSERT INTO oe_settlement_fails_events (id, fail_id, event_type, from_status, to_status, actor_id, actor_party, notes, payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     ).bind(
       evtId,
@@ -630,25 +633,28 @@ export async function settlementFailSlaSweep(env: HonoEnv['Bindings']): Promise<
       `Auto-breach: ${row.chain_status} past SLA (tier ${row.fail_tier})`,
       JSON.stringify({ sla_deadline_at: row.sla_deadline_at }),
       nowIso,
-    ).run();
+    ));
 
-    if (slaBreachCrossesIntoRegulator(row.fail_tier)) {
-      await fireCascade({
-        event: 'settlement_fail.sla_breached',
-        actor_id: 'system',
-        entity_type: 'settlement_fail',
-        entity_id: row.id,
-        data: {
-          ...row,
-          crosses_into_regulator: true,
-        },
-        env,
-      });
-    }
-
-    breached++;
+    if (slaBreachCrossesIntoRegulator(row.fail_tier)) toCascade.push(row);
   }
-  return { scanned: rows.length, breached };
+
+  if (stmts.length) await env.DB.batch(stmts);
+
+  for (const row of toCascade) {
+    await fireCascade({
+      event: 'settlement_fail.sla_breached',
+      actor_id: 'system',
+      entity_type: 'settlement_fail',
+      entity_id: row.id,
+      data: {
+        ...row,
+        crosses_into_regulator: true,
+      },
+      env,
+    });
+  }
+
+  return { scanned: rows.length, breached: rows.length };
 }
 
 export default app;

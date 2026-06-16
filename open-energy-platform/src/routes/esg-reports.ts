@@ -198,7 +198,7 @@ esgReports.get('/:id', async (c) => {
 
   // Gather detailed data
   const emissions = await c.env.DB.prepare(`
-    SELECT * FROM esg_activity_transactions WHERE participant_id = ? ORDER BY period_start DESC
+    SELECT * FROM esg_activity_transactions WHERE participant_id = ? ORDER BY period_start DESC LIMIT 500
   `).bind(participant.id).all().catch(() => ({ results: [] } as any));
 
   return c.json({ success: true, data: { ...report, emissions: emissions.results || [] }, _bridge: L4_BRIDGE });

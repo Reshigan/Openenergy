@@ -125,11 +125,16 @@ async function ingestReadings(
         if (!cur || r.ts > cur) seen.set(r.device_id, r.ts);
       }
     }
+    // last_seen_at refresh is best-effort — never fail ingest on it.
+    const seenStmts: D1PreparedStatement[] = [];
     for (const [deviceId, ts] of seen) {
-      await env.DB.prepare(
+      seenStmts.push(env.DB.prepare(
         'UPDATE om_devices SET last_seen_at = ? WHERE id = ?',
-      ).bind(ts, deviceId).run().catch(() => {});
+      ).bind(ts, deviceId));
     }
+    try {
+      for (let i = 0; i < seenStmts.length; i += 100) await env.DB.batch(seenStmts.slice(i, i + 100));
+    } catch { /* non-critical */ }
   }
 
   return { written, rejected, first_ts: firstTs, last_ts: lastTs, first_error: firstError };

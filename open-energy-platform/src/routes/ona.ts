@@ -37,42 +37,25 @@ async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
 ona.get('/sites', async (c) => {
   const user = getCurrentUser(c);
   const scope = await scopedSiteClause(c.env, user);
+  // Single query: rolled-up KPIs via correlated subqueries instead of 3N round-trips.
   const sites = await c.env.DB.prepare(`
     SELECT os.id, os.site_name, os.ona_site_id, os.latitude, os.longitude,
            os.capacity_mw, os.status, os.last_sync_at, os.created_at,
-           os.project_id, p.project_name, p.technology, p.capacity_mw AS project_capacity_mw
+           os.project_id, p.project_name, p.technology, p.capacity_mw AS project_capacity_mw,
+           COALESCE((SELECT COUNT(*) FROM ona_faults
+                     WHERE site_id = os.id AND status IN ('open','investigating')), 0) AS open_faults,
+           COALESCE((SELECT AVG(availability_percentage) FROM ona_forecasts
+                     WHERE site_id = os.id AND forecast_type = 'day_ahead'
+                       AND forecast_date >= date('now','-30 day')), 0) AS availability_30d,
+           COALESCE((SELECT SUM(actual_mwh) FROM ona_nominations
+                     WHERE site_id = os.id AND nomination_date >= date('now','start of year')), 0) AS generation_ytd_mwh
     FROM ona_sites os
     LEFT JOIN ipp_projects p ON p.id = os.project_id
     WHERE ${scope.where}
     ORDER BY os.site_name ASC
   `).bind(...scope.params).all();
 
-  const enriched = [];
-  for (const s of sites.results || []) {
-    const siteId = (s as Record<string, unknown>).id as string;
-    const [openFaults, avail, ytd] = await Promise.all([
-      safe(async () => {
-        const r = await c.env.DB.prepare(
-          `SELECT COUNT(*) AS c FROM ona_faults WHERE site_id = ? AND status IN ('open','investigating')`
-        ).bind(siteId).first();
-        return Number((r as { c?: number } | null)?.c || 0);
-      }, 0),
-      safe(async () => {
-        const r = await c.env.DB.prepare(
-          `SELECT AVG(availability_percentage) AS a FROM ona_forecasts WHERE site_id = ? AND forecast_type = 'day_ahead' AND forecast_date >= date('now','-30 day')`
-        ).bind(siteId).first();
-        return Number((r as { a?: number } | null)?.a || 0);
-      }, 0),
-      safe(async () => {
-        const r = await c.env.DB.prepare(
-          `SELECT SUM(actual_mwh) AS g FROM ona_nominations WHERE site_id = ? AND nomination_date >= date('now','start of year')`
-        ).bind(siteId).first();
-        return Number((r as { g?: number } | null)?.g || 0);
-      }, 0),
-    ]);
-    enriched.push({ ...s, open_faults: openFaults, availability_30d: avail, generation_ytd_mwh: ytd });
-  }
-  return c.json({ success: true, data: enriched });
+  return c.json({ success: true, data: sites.results || [] });
 });
 
 // GET /api/ona/summary — portfolio rollup for O&M hero tiles.

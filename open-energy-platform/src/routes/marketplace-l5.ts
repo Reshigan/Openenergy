@@ -140,6 +140,7 @@ r.post('/rfqs/:id/close-quotes', async (c) => {
   // Score quotes
   const quotes = await c.env.DB.prepare(`SELECT * FROM oe_rfq_quotes WHERE rfq_id = ? AND status = 'submitted'`).bind(id).all<any>();
   const weights = row.scoring_weights_json ? JSON.parse(row.scoring_weights_json) : { price: 1.0 };
+  const scoreStmts: D1PreparedStatement[] = [];
   for (const q of (quotes.results || []) as any[]) {
     let score = 0;
     if (row.scoring_method === 'price_only') {
@@ -149,8 +150,9 @@ r.post('/rfqs/:id/close-quotes', async (c) => {
             + (weights.bbbee || 0.2) * (Number(q.bbbee_level || 8) <= 4 ? 1 : 0.5)
             + (weights.carbon || 0.2) * (Number(q.carbon_intensity_g_co2_kwh || 1000) < 200 ? 1 : 0.5);
     }
-    await c.env.DB.prepare(`UPDATE oe_rfq_quotes SET score = ?, status = 'shortlisted' WHERE id = ?`).bind(score, q.id).run();
+    scoreStmts.push(c.env.DB.prepare(`UPDATE oe_rfq_quotes SET score = ?, status = 'shortlisted' WHERE id = ?`).bind(score, q.id));
   }
+  for (let i = 0; i < scoreStmts.length; i += 100) await c.env.DB.batch(scoreStmts.slice(i, i + 100));
   await c.env.DB.prepare(`UPDATE oe_rfqs SET status = 'evaluation' WHERE id = ?`).bind(id).run();
   await fireCascade({
     event: 'marketplace.rfq_evaluation_started',

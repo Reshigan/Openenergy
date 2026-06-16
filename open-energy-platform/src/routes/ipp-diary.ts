@@ -448,11 +448,14 @@ export async function ippDiarySlaSweep(
       AND datetime(diary_date, '+72 hours') > datetime(?)
   `).bind(now, now).all<{ id: string; diary_date: string; day_type: DiaryDayType; project_id: string }>();
 
-  for (const r of lateRows.results ?? []) {
-    await env.DB.prepare(
+  const lateList = lateRows.results ?? [];
+  const lateStmts: D1PreparedStatement[] = lateList.map((r) =>
+    env.DB.prepare(
       `UPDATE oe_ipp_construction_diary SET chain_status='late_submission', late_submission_at=?, updated_at=? WHERE id=?`
-    ).bind(now, now, r.id).run();
-    flaggedLate++;
+    ).bind(now, now, r.id));
+  for (let i = 0; i < lateStmts.length; i += 100) await env.DB.batch(lateStmts.slice(i, i + 100));
+  flaggedLate = lateList.length;
+  for (const r of lateList) {
     await fireCascade({
       event: 'ipp_diary.flag_late',
       actor_id: 'cron',
@@ -471,15 +474,20 @@ export async function ippDiarySlaSweep(
       AND datetime(diary_date, '+72 hours') <= datetime(?)
   `).bind(now).all<{ id: string; diary_date: string; day_type: DiaryDayType; project_id: string }>();
 
-  for (const r of missedRows.results ?? []) {
-    const regulatorRef = `W143-DIARY-MISSED-${new Date().getFullYear()}-${r.id.slice(-6).toUpperCase()}`;
-    await env.DB.prepare(
+  const missedList = (missedRows.results ?? []).map((r) => ({
+    r,
+    regulatorRef: `W143-DIARY-MISSED-${new Date().getFullYear()}-${r.id.slice(-6).toUpperCase()}`,
+  }));
+  const missedStmts: D1PreparedStatement[] = missedList.map(({ r, regulatorRef }) =>
+    env.DB.prepare(
       `UPDATE oe_ipp_construction_diary
        SET chain_status='missed', missed_at=?, sla_breached=1, sla_breach_count=sla_breach_count+1,
            is_reportable=1, regulator_ref=COALESCE(regulator_ref,?), updated_at=?
        WHERE id=?`
-    ).bind(now, regulatorRef, now, r.id).run();
-    flaggedMissed++;
+    ).bind(now, regulatorRef, now, r.id));
+  for (let i = 0; i < missedStmts.length; i += 100) await env.DB.batch(missedStmts.slice(i, i + 100));
+  flaggedMissed = missedList.length;
+  for (const { r, regulatorRef } of missedList) {
     await fireCascade({
       event: 'ipp_diary.miss_diary',
       actor_id: 'cron',
@@ -493,23 +501,16 @@ export async function ippDiarySlaSweep(
     });
   }
 
-  // SLA breach for non-terminal diaries past their deadline (not yet missed)
-  const breachRows = await env.DB.prepare(`
-    SELECT id FROM oe_ipp_construction_diary
+  // SLA breach for non-terminal diaries past their deadline (not yet missed) — set-based, no cascade
+  const breachUpd = await env.DB.prepare(`
+    UPDATE oe_ipp_construction_diary
+    SET sla_breached=1, sla_breach_count=sla_breach_count+1, updated_at=?
     WHERE chain_status NOT IN ('archived','missed','voided')
       AND sla_breached = 0
       AND sla_deadline_at IS NOT NULL
       AND datetime(sla_deadline_at) <= datetime(?)
-  `).bind(now).all<{ id: string }>();
-
-  for (const r of breachRows.results ?? []) {
-    await env.DB.prepare(
-      `UPDATE oe_ipp_construction_diary
-       SET sla_breached=1, sla_breach_count=sla_breach_count+1, updated_at=?
-       WHERE id=?`
-    ).bind(now, r.id).run();
-    slaBreached++;
-  }
+  `).bind(now, now).run();
+  slaBreached = breachUpd.meta?.changes ?? 0;
 
   return { flagged_late: flaggedLate, flagged_missed: flaggedMissed, sla_breached: slaBreached };
 }

@@ -135,6 +135,9 @@ r.post('/dispatch/runs/:id/optimize', requireStepUp('grid.dispatch_optimize'), a
   let cleared = 0;
   let marginal = 0;
   const binding: string[] = [];
+  // Merit-order clearing stays sequential (cleared/marginal accumulate); collect
+  // per-offer writes and flush them in a single batch after the solver completes.
+  const offerStmts: D1PreparedStatement[] = [];
   for (const o of (offers.results || []) as any[]) {
     const needed = demandMw - cleared;
     if (needed <= 0) break;
@@ -151,20 +154,21 @@ r.post('/dispatch/runs/:id/optimize', requireStepUp('grid.dispatch_optimize'), a
       }
     }
     if (blocked) {
-      await c.env.DB.prepare(`UPDATE oe_dispatch_offers SET status = 'curtailed' WHERE id = ?`).bind(o.id).run();
+      offerStmts.push(c.env.DB.prepare(`UPDATE oe_dispatch_offers SET status = 'curtailed' WHERE id = ?`).bind(o.id));
       continue;
     }
-    await c.env.DB.prepare(`
+    offerStmts.push(c.env.DB.prepare(`
       UPDATE oe_dispatch_offers SET awarded_mw = ?, awarded_price_zar_mwh = ?, status = ? WHERE id = ?
-    `).bind(award, o.offer_price_zar_mwh, award === Number(o.offer_mw) ? 'fully_cleared' : 'partially_cleared', o.id).run();
+    `).bind(award, o.offer_price_zar_mwh, award === Number(o.offer_mw) ? 'fully_cleared' : 'partially_cleared', o.id));
     cleared += award;
     marginal = Number(o.offer_price_zar_mwh);
   }
-  await c.env.DB.prepare(`
+  offerStmts.push(c.env.DB.prepare(`
     UPDATE oe_dispatch_runs
     SET status = 'optimized', total_supply_mw = ?, marginal_price_zar = ?, active_constraints = ?, optimization_seconds = ?
     WHERE id = ?
-  `).bind(cleared, marginal, JSON.stringify([...new Set(binding)]), (Date.now() - t0) / 1000, id).run();
+  `).bind(cleared, marginal, JSON.stringify([...new Set(binding)]), (Date.now() - t0) / 1000, id));
+  for (let i = 0; i < offerStmts.length; i += 100) await c.env.DB.batch(offerStmts.slice(i, i + 100));
   await fireCascade({
     event: 'grid.dispatch_run_optimized',
     actor_id: user.id,

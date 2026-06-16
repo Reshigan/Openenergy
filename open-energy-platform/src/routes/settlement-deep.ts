@@ -179,10 +179,11 @@ r.post('/cycles/:id/settle', requireStepUp('settlement.transfer'), async (c) => 
   if (!cycle || cycle.status !== 'novated') return c.json({ success: false, error: 'cycle not in novated state' }, 409);
   // Emit settlement instructions for every net leg
   const legs = await c.env.DB.prepare(`SELECT * FROM oe_settlement_net_legs WHERE cycle_id = ?`).bind(id).all<any>();
-  let queued = 0;
-  for (const leg of (legs.results || []) as any[]) {
+  const legList = (legs.results || []) as any[];
+  const settleStmts: D1PreparedStatement[] = [];
+  for (const leg of legList) {
     // Debit instruction for the payer
-    await c.env.DB.prepare(`
+    settleStmts.push(c.env.DB.prepare(`
       INSERT INTO oe_settlement_instructions
         (id, net_leg_id, participant_id, direction, amount_zar, bank, bank_account_ref, reference, status)
       VALUES (?,?,?,?,?,?,?,?,?)
@@ -191,9 +192,9 @@ r.post('/cycles/:id/settle', requireStepUp('settlement.transfer'), async (c) => 
       Number(leg.net_value_zar), 'TBD', 'TBD',
       `OE-SETTLE-${id.slice(-6)}-${leg.id.slice(-4)}`,
       'queued',
-    ).run();
+    ));
     // Credit instruction for the payee
-    await c.env.DB.prepare(`
+    settleStmts.push(c.env.DB.prepare(`
       INSERT INTO oe_settlement_instructions
         (id, net_leg_id, participant_id, direction, amount_zar, bank, bank_account_ref, reference, status)
       VALUES (?,?,?,?,?,?,?,?,?)
@@ -202,11 +203,12 @@ r.post('/cycles/:id/settle', requireStepUp('settlement.transfer'), async (c) => 
       Number(leg.net_value_zar), 'TBD', 'TBD',
       `OE-SETTLE-${id.slice(-6)}-${leg.id.slice(-4)}`,
       'queued',
-    ).run();
-    await c.env.DB.prepare(`UPDATE oe_settlement_net_legs SET status = 'settled', settled_at = datetime('now') WHERE id = ?`).bind(leg.id).run();
-    queued += 2;
+    ));
+    settleStmts.push(c.env.DB.prepare(`UPDATE oe_settlement_net_legs SET status = 'settled', settled_at = datetime('now') WHERE id = ?`).bind(leg.id));
   }
-  await c.env.DB.prepare(`UPDATE oe_settlement_cycles SET status = 'settled', settled_at = datetime('now') WHERE id = ?`).bind(id).run();
+  settleStmts.push(c.env.DB.prepare(`UPDATE oe_settlement_cycles SET status = 'settled', settled_at = datetime('now') WHERE id = ?`).bind(id));
+  for (let i = 0; i < settleStmts.length; i += 100) await c.env.DB.batch(settleStmts.slice(i, i + 100));
+  const queued = legList.length * 2;
   await fireCascade({
     event: 'settlement.cycle_settled',
     actor_id: user.id,

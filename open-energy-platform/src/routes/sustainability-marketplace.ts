@@ -161,7 +161,7 @@ app.get('/browse', async (c) => {
     sort === 'quantity_desc'  ? '(quantity_listed - COALESCE(quantity_reserved,0) - COALESCE(quantity_sold,0)) DESC' :
     /* newest */                'created_at DESC';
 
-  sql += ` ORDER BY ${orderClause}`;
+  sql += ` ORDER BY ${orderClause} LIMIT 500`;
 
   const rows = await c.env.DB.prepare(sql).bind(...bind).all<Record<string, unknown>>();
   const listings = rows.results ?? [];

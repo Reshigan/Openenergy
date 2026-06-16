@@ -31,23 +31,30 @@ export async function sprSlaSweep(env: any) {
     .bind(now)
     .all<Record<string, unknown>>();
 
-  for (const row of overdue.results ?? []) {
-    await (env.DB as D1Database)
-      .prepare(`UPDATE oe_sla_performance_reports SET sla_breached = 1, updated_at = ? WHERE id = ?`)
-      .bind(now, row.id).run();
-
+  const rows = overdue.results ?? [];
+  const db = env.DB as D1Database;
+  const stmts: D1PreparedStatement[] = [];
+  for (const row of rows) {
+    stmts.push(
+      db.prepare(`UPDATE oe_sla_performance_reports SET sla_breached = 1, updated_at = ? WHERE id = ?`)
+        .bind(now, row.id),
+    );
     if (sprSlaBreachCrossesIntoRegulator(row.report_tier as SprTier)) {
-      await (env.DB as D1Database)
-        .prepare(`INSERT INTO regulator_inbox (id,entity_type,entity_id,event_type,summary,participant_id,created_at)
-                  VALUES (?,?,?,?,?,?,?)`)
-        .bind(
-          crypto.randomUUID(), 'sla_performance_report', row.id,
-          'spr_sla_breach',
-          `SLA performance report overdue — ${row.report_tier} — ${row.reporting_period}`,
-          row.participant_id, now,
-        ).run().catch(() => {});
+      stmts.push(
+        db.prepare(`INSERT INTO regulator_inbox (id,entity_type,entity_id,event_type,summary,participant_id,created_at)
+                    VALUES (?,?,?,?,?,?,?)`)
+          .bind(
+            crypto.randomUUID(), 'sla_performance_report', row.id,
+            'spr_sla_breach',
+            `SLA performance report overdue — ${row.report_tier} — ${row.reporting_period}`,
+            row.participant_id, now,
+          ),
+      );
     }
+  }
+  for (let i = 0; i < stmts.length; i += 100) await db.batch(stmts.slice(i, i + 100));
 
+  for (const row of rows) {
     await fireCascade({
       event: 'spr_sla_breach' as EventType,
       actor_id: 'system', entity_type: 'sla_performance_report', entity_id: row.id as string,
@@ -55,7 +62,7 @@ export async function sprSlaSweep(env: any) {
       env: env as any,
     }).catch(() => {});
   }
-  return { swept: overdue.results?.length ?? 0 };
+  return { swept: rows.length };
 }
 
 // ─── GET / ────────────────────────────────────────────────────────────────────

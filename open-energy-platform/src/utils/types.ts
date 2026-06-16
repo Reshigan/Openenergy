@@ -350,33 +350,3 @@ export function businessDaysBetween(startDate: string, endDate: string): number 
   return count;
 }
 
-// Helper: Check if module is accessible
-export async function isModuleAccessible(
-  env: HonoEnv['Bindings'],
-  userRole: ParticipantRole,
-  moduleKey: string
-): Promise<boolean> {
-  const module = await env.KV.get(`module:${moduleKey}`, 'json') as Module | null;
-  
-  if (!module || module.enabled !== 1) {
-    return false;
-  }
-  
-  if (!module.required_role) {
-    return true;
-  }
-  
-  return module.required_role === userRole || userRole === 'admin';
-}
-
-// Helper: Get enabled modules for user
-export async function getUserModules(
-  env: HonoEnv['Bindings'],
-  userRole: ParticipantRole
-): Promise<string[]> {
-  const allModules = await env.DB.prepare('SELECT module_key, required_role, enabled FROM modules').all() as any;
-  
-  return allModules.results
-    ?.filter((m: Module) => m.enabled === 1 && (!m.required_role || m.required_role === userRole || userRole === 'admin'))
-    .map((m: Module) => m.module_key) || [];
-}

@@ -454,15 +454,12 @@ r.post('/clearing/loss-events', requireStepUp('clearing.waterfall.high'), async 
     ).bind(b.fund_id, def.participant_id).all<any>();
     const totalSurviving = (others.results || []).reduce((s: number, r: any) => s + Number(r.amount_zar || 0), 0);
     if (totalSurviving > 0) {
-      for (const o of (others.results || []) as any[]) {
-        // share = (Number(o.amount_zar) / totalSurviving) * mutualised;
-        // Status update marks the contribution as partially used;
-        // detailed per-member loss apportionment goes into a separate
-        // table in a follow-up.
-        await c.env.DB.prepare(
-          `UPDATE oe_clearing_contributions SET status = 'partially_used' WHERE fund_id = ? AND participant_id = ?`,
-        ).bind(b.fund_id, o.participant_id).run();
-      }
+      // Mark every surviving held contribution partially used in one statement;
+      // detailed per-member loss apportionment goes into a separate table in a
+      // follow-up. Same predicate as the `others` SELECT above → same row set.
+      await c.env.DB.prepare(
+        `UPDATE oe_clearing_contributions SET status = 'partially_used' WHERE fund_id = ? AND participant_id != ? AND status = 'held'`,
+      ).bind(b.fund_id, def.participant_id).run();
     }
   }
   await fireCascade({
