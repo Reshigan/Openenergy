@@ -15,7 +15,7 @@
 
 import http from 'k6/http';
 import { sleep, check } from 'k6';
-import { BASE, login, authHeaders } from './lib/login.js';
+import { BASE, mintTokenBundle, authHeaders, tokenForVU } from './lib/login.js';
 
 const MUTATE = __ENV.MUTATE !== '0';
 
@@ -40,11 +40,13 @@ export const options = {
   },
 };
 
-let TOKEN = null;
+export function setup() {
+  // Single offtaker login, once — shared across all 50 VUs.
+  return { tokens: mintTokenBundle(['offtaker@openenergy.co.za']) };
+}
 
-export default function () {
-  if (!TOKEN) TOKEN = login('offtaker@openenergy.co.za');
-  const headers = authHeaders(TOKEN);
+export default function (data) {
+  const headers = authHeaders(tokenForVU(data.tokens, __VU));
 
   // 1) Fetch incoming invoices.
   const r = http.get(`${BASE}/api/settlement/invoices?direction=incoming`, {

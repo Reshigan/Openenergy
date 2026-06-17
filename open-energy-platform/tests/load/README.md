@@ -13,8 +13,10 @@ brew install k6                       # macOS
 ## Run
 
 ```sh
-# Set once per shell session (the harness logs each VU in independently;
-# the BASE+PASSWORD pair is the only thing that has to come from the env).
+# Set once per shell session. Each scenario mints its persona tokens ONCE in
+# k6's setup() (≤9 logins total) and shares them across all VUs, so even a
+# 200-VU run never trips the 10/5-min/IP sensitive-route auth limiter. The
+# BASE+PASSWORD pair is the only thing that has to come from the env.
 export BASE=https://oe.vantax.co.za
 export DEMO_PASSWORD='Demo@2024!'
 
