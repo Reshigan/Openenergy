@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { assembleHorizon, type ChainRows } from '../src/routes/horizon';
-import { MERIDIAN_CHAINS } from '../src/utils/chain-registry-meridian';
+import { assembleHorizon, laneRoleFor, type ChainRows } from '../src/routes/horizon';
+import { MERIDIAN_CHAINS, chainsForRole } from '../src/utils/chain-registry-meridian';
 
 const NOW = Date.parse('2026-06-12T09:40:00Z');
 const cov = MERIDIAN_CHAINS.find(d => d.key === 'covenant_certificate')!;
@@ -35,5 +35,22 @@ describe('assembleHorizon', () => {
   });
   it('caps duty stream at 8', () => {
     expect(h.duty.length).toBeLessThanOrEqual(8);
+  });
+});
+
+describe('laneRoleFor — esums_owner shares ESCO lanes', () => {
+  it('re-points esums_owner to esco for lane resolution', () => {
+    expect(laneRoleFor('esums_owner')).toBe('esco');
+  });
+  it('leaves every other role untouched', () => {
+    for (const r of ['lender', 'ipp_developer', 'esco', 'admin', 'regulator']) {
+      expect(laneRoleFor(r)).toBe(r);
+    }
+  });
+  it('the registry carries esco lanes but no esums_owner lanes (why the mapping exists)', () => {
+    expect(chainsForRole('esco').length).toBeGreaterThan(0);
+    expect(chainsForRole('esums_owner')).toHaveLength(0);
+    // After normalization an esums_owner user resolves to ESCO's non-empty lane set.
+    expect(chainsForRole(laneRoleFor('esums_owner')).length).toBeGreaterThan(0);
   });
 });

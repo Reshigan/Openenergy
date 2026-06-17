@@ -23,6 +23,14 @@ import {
 
 export interface ChainRows { chain: ChainDescriptor; rows: Record<string, unknown>[] }
 
+// esums_owner is a registerable O&M role that shares ESCO's chain lanes — the
+// MERIDIAN_CHAINS registry only carries `esco` lane keys (the same mapping the
+// frontend surfaceRole applies for Atlas/CommandPalette). Lane resolution must
+// re-point esums_owner → esco or its Horizon resolves to zero chains. The 403
+// guard still gates on the caller's real role; this only affects lane lookup.
+export const laneRoleFor = (role: string): string =>
+  role === 'esums_owner' ? 'esco' : role;
+
 export interface HorizonCase {
   chain: string; wave: number; id: string; ref: string; title: string;
   status: string; deadline_at: string | null; bucket: HorizonBucket;
@@ -78,7 +86,8 @@ horizon.get('/:role', async (c) => {
   if (user.role !== role && user.role !== 'admin') {
     return c.json({ success: false, error: 'forbidden' }, 403);
   }
-  const chains = chainsForRole(role);
+  const laneRole = laneRoleFor(role);
+  const chains = chainsForRole(laneRole);
   if (!chains.length) return c.json({ success: true, data: { lanes: [], duty: [], counts: { total: 0, breached: 0 } } });
 
   // One D1 round-trip for all chains. Table/column names come from the static
@@ -96,7 +105,7 @@ horizon.get('/:role', async (c) => {
   const data: ChainRows[] = chains.map((chain, i) => ({
     chain, rows: (results[i].results ?? []) as Record<string, unknown>[],
   }));
-  return c.json({ success: true, data: assembleHorizon(data, role, Date.now()) });
+  return c.json({ success: true, data: assembleHorizon(data, laneRole, Date.now()) });
 });
 
 export default horizon;
