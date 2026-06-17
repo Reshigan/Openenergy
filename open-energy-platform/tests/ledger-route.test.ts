@@ -47,8 +47,10 @@ describe('lookup field wiring', () => {
     }
   });
   it('every LOOKUP_SOURCES SQL is a static SELECT (no bound input)', () => {
+    // Optional WHERE filters a role/type to a SINGLE-QUOTED CODE LITERAL (e.g.
+    // role = 'ipp_developer') — still 100% static; no request input reaches SQL.
     for (const [key, sql] of Object.entries(LOOKUP_SOURCES)) {
-      expect(sql, key).toMatch(/^SELECT id, \w+ AS label FROM \w+ ORDER BY \w+ LIMIT \d+$/);
+      expect(sql, key).toMatch(/^SELECT id, \w+ AS label FROM \w+( WHERE \w+ = '\w+')? ORDER BY \w+ LIMIT \d+$/);
       expect(sql, key).not.toContain('?'); // no parameter binds → no request input in identifiers
     }
   });

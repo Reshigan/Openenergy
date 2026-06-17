@@ -73,6 +73,19 @@ export const LOOKUP_SOURCES: Record<string, string> = {
     'SELECT id, project_name AS label FROM carbon_projects ORDER BY project_name LIMIT 500',
   'ipp-projects':
     'SELECT id, project_name AS label FROM ipp_projects ORDER BY project_name LIMIT 500',
+  // O&M sites (NXT Energy Goldrush portfolio + others) — id + display name.
+  'om-sites':
+    'SELECT id, name AS label FROM om_sites ORDER BY name LIMIT 500',
+  // Party pickers off the participants register (role values are the suffixed
+  // forms: ipp_developer, grid_operator, carbon_fund). label = display name.
+  'participants':
+    'SELECT id, name AS label FROM participants ORDER BY name LIMIT 500',
+  'ipp-developers':
+    "SELECT id, name AS label FROM participants WHERE role = 'ipp_developer' ORDER BY name LIMIT 500",
+  'offtakers':
+    "SELECT id, name AS label FROM participants WHERE role = 'offtaker' ORDER BY name LIMIT 500",
+  'lenders':
+    "SELECT id, name AS label FROM participants WHERE role = 'lender' ORDER BY name LIMIT 500",
 };
 
 ledger.get('/lookup/:source', async (c) => {

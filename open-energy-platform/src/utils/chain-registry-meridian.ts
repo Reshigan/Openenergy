@@ -691,8 +691,8 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Open cost report',
       path: '/api/lender/construction-cost-report',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true },
-        { key: 'ipp_id', label: 'IPP', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
+        { key: 'ipp_id', label: 'IPP', type: 'lookup', source: '/api/ledger/lookup/ipp-developers', required: true },
         { key: 'report_month', label: 'Report month', type: 'string', required: true, placeholder: 'YYYY-MM' },
         { key: 'total_project_budget_zar', label: 'Project budget', type: 'number', unit: 'ZAR' },
         { key: 'reason', label: 'Reason', type: 'string' },
@@ -856,7 +856,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Open monitoring period',
       path: '/api/esap-compliance',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'reporting_period', label: 'Reporting period', type: 'string', required: true, placeholder: 'YYYY-MM' },
         { key: 'commitment_tier', label: 'Commitment tier', type: 'enum', required: true, options: ['systemic', 'major', 'significant', 'minor', 'routine'] },
         { key: 'es_monitor_id', label: 'E&S monitor', type: 'string' },
@@ -1850,7 +1850,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       path: '/api/stage-gate',
       fields: [
         { key: 'gate_index', label: 'Gate index (DG0–DG4)', type: 'enum', required: true, options: ['0', '1', '2', '3', '4'] },
-        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'title', label: 'Title', type: 'string' },
         { key: 'capex_zar', label: 'Capex', type: 'number', unit: 'ZAR' },
         { key: 'equator_category', label: 'Equator category', type: 'enum', options: ['cat_a', 'cat_b', 'cat_c'] },
@@ -4181,7 +4181,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         { key: 'transfer_type', label: 'Transfer Type', type: 'enum', options: ['domestic', 'international_art6', 'corsia', 'voluntary_crossregistry'] },
         { key: 'counterparty_id', label: 'Counterparty (transferee)', type: 'string', placeholder: 'offtaker@openenergy.co.za' },
         { key: 'vintage_year', label: 'Vintage Year', type: 'number' },
-        { key: 'project_id', label: 'Linked Carbon Project', type: 'string', placeholder: 'proj-demo-01' },
+        { key: 'project_id', label: 'Linked Carbon Project', type: 'lookup', source: '/api/ledger/lookup/carbon-projects' },
         { key: 'methodology', label: 'Methodology', type: 'string', placeholder: 'VM0042' },
         { key: 'source_registry', label: 'Source Registry', type: 'string', placeholder: 'verra' },
         { key: 'destination_registry', label: 'Destination Registry', type: 'string', placeholder: 'gold_standard' },
@@ -5567,9 +5567,9 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       fields: [
         { key: 'facility_id', label: 'Facility', type: 'string' },
         { key: 'facility_name', label: 'Facility name', type: 'string' },
-        { key: 'borrower_id', label: 'Borrower', type: 'string' },
+        { key: 'borrower_id', label: 'Borrower', type: 'lookup', source: '/api/ledger/lookup/ipp-developers' },
         { key: 'borrower_name', label: 'Borrower name', type: 'string' },
-        { key: 'project_id', label: 'Project ID', type: 'string' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects' },
         { key: 'project_name', label: 'Project', type: 'string' },
         { key: 'facility_amount_zar', label: 'Facility amount', type: 'number', unit: 'ZAR' },
         { key: 'outstanding_debt_zar', label: 'Outstanding debt', type: 'number', unit: 'ZAR' },
@@ -5948,8 +5948,8 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       path: '/api/offtaker/virtual-ppa-settlement/open',
       fields: [
         { key: 'contract_ref', label: 'Contract ref', type: 'string', required: true },
-        { key: 'generator_id', label: 'Generator', type: 'string', required: true },
-        { key: 'offtaker_id', label: 'Offtaker', type: 'string', required: true },
+        { key: 'generator_id', label: 'Generator', type: 'lookup', source: '/api/ledger/lookup/ipp-developers', required: true },
+        { key: 'offtaker_id', label: 'Offtaker', type: 'lookup', source: '/api/ledger/lookup/offtakers', required: true },
         { key: 'settlement_period', label: 'Settlement period', type: 'string', required: true, placeholder: 'e.g. 2026-Q2' },
         { key: 'reference_index', label: 'Reference index', type: 'enum', required: true, options: ['day_ahead_market', 'eskom_megaflex', 'ifrt_reference', 'wholesale_pool'] },
         { key: 'notional_mwh', label: 'Notional volume', type: 'number', required: true, unit: 'MWh' },
@@ -6146,7 +6146,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Issue compliance notice',
       path: '/api/regulator/inbox/compliance-notices',
       fields: [
-        { key: 'licensee_user_id', label: 'Licensee', type: 'string', required: true },
+        { key: 'licensee_user_id', label: 'Licensee', type: 'lookup', source: '/api/ledger/lookup/participants', required: true },
         { key: 'notice_type', label: 'Notice type', type: 'enum', required: true,
           options: ['remediation', 'warning', 'penalty', 'suspension', 'revocation', 'information_request'] },
         { key: 'title', label: 'Title', type: 'string', required: true },
@@ -7045,7 +7045,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         { key: 'warranty_ref', label: 'Warranty Reference', type: 'string', placeholder: 'WAR-2024-00871' },
         { key: 'asset_id', label: 'Asset ID', type: 'string', placeholder: 'asset_demo_01' },
         { key: 'oem_id', label: 'OEM ID', type: 'string', placeholder: 'oem_sungrow' },
-        { key: 'site_id', label: 'Site ID', type: 'string', placeholder: 'site_demo_01' },
+        { key: 'site_id', label: 'Site', type: 'lookup', source: '/api/ledger/lookup/om-sites', placeholder: 'site_demo_01' },
         { key: 'tenant_id', label: 'Tenant ID', type: 'string' },
       ],
     },
@@ -7200,7 +7200,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Raise work order',
       path: '/api/esums/work-orders',
       fields: [
-        { key: 'site_id', label: 'Site', type: 'string', required: true },
+        { key: 'site_id', label: 'Site', type: 'lookup', source: '/api/ledger/lookup/om-sites', required: true },
         { key: 'category', label: 'Category', type: 'enum', required: true,
           options: ['corrective', 'preventive', 'inspection', 'cleaning', 'installation', 'upgrade'] },
         { key: 'priority', label: 'Priority', type: 'enum', required: true,
@@ -8736,7 +8736,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       path: '/api/ipp-ncr',
       fields: [
         { key: 'description', label: 'Description', type: 'evidence', required: true },
-        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'ncr_category', label: 'NCR category', type: 'string', required: true },
         { key: 'ncr_severity', label: 'Severity', type: 'enum', required: true,
           options: ['safety_critical', 'structural', 'functional', 'minor', 'cosmetic'] },
@@ -8770,7 +8770,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       path: '/api/ipp-method-statement',
       fields: [
         { key: 'ms_title', label: 'Method statement title', type: 'string', required: true, placeholder: 'PV array mounting — Block C' },
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj-001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj-001' },
         { key: 'work_type', label: 'Work type', type: 'string', required: true, placeholder: 'mechanical_installation' },
         { key: 'risk_tier', label: 'Risk tier', type: 'enum', options: ['high_risk', 'medium_risk', 'low_risk', 'routine'], required: true },
         { key: 'scope_of_work', label: 'Scope of work', type: 'string', required: true, placeholder: 'Install and torque module mounting rails to ballast feet across rows 1-12.' },
@@ -8866,7 +8866,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Site diary',
       path: '/api/ipp-diary',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj-demo-01' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj-demo-01' },
         { key: 'diary_date', label: 'Diary Date', type: 'date', required: true, placeholder: '2026-06-16' },
         { key: 'day_type', label: 'Day Type', type: 'enum', options: ['critical_delay', 'daily_operational', 'shutdown_partial', 'no_work'] },
         { key: 'diary_ref', label: 'Contractor Reference', type: 'string', placeholder: 'SD-2026-1043' },
@@ -9774,7 +9774,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New AEL application',
       path: '/api/ipp-ael',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj_reipppp_001' },
         { key: 'trigger_category', label: 'Trigger Category', type: 'enum', options: ['new_installation', 'capacity_increase', 'fuel_change', 'technology_substitution', 'renewal', 'amendment'], required: true },
         { key: 'ael_category', label: 'AEL Category', type: 'enum', options: ['category_1_major', 'category_2_minor', 's21_listed_activity', 'point_source', 'fugitive_emission'], required: true },
         { key: 'capacity_mw', label: 'Capacity', type: 'number', unit: 'MW', required: true },
@@ -9846,7 +9846,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Heritage assessment',
       path: '/api/ipp-hra',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj_reipppp_001' },
         { key: 'trigger_category', label: 'Trigger Category', type: 'enum', options: ['new_development', 'scope_change', 'layout_modification', 'access_road', 'substation_addition', 'transmission_line'], required: true },
         { key: 'hra_category', label: 'HRA Category', type: 'enum', options: ['phase_1_desktop', 'phase_2_field', 'phase_3_excavation', 'heritage_impact', 'mitigation_plan'], required: true },
         { key: 'capacity_mw', label: 'Capacity (MW)', type: 'number', unit: 'MW', required: true },
@@ -9918,7 +9918,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Water-use licence',
       path: '/api/ipp-wul',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj_reipppp_001' },
         { key: 'trigger_category', label: 'Trigger Category', type: 'enum', options: ['new_application', 'renewal', 'amendment', 'transfer', 'rectification'], required: true },
         { key: 'section21_category', label: 'Section 21 Water Use Category', type: 'enum', options: ['s21_a_diversion', 's21_b_storage', 's21_c_impeding_flow', 's21_g_discharge', 's21_h_disposal'], required: true },
         { key: 'capacity_mw', label: 'Generation Capacity', type: 'number', unit: 'MW', required: true },
@@ -10008,7 +10008,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       path: '/api/ipp-env-monitoring',
       fields: [
         { key: 'monitoring_title', label: 'Monitoring Title', type: 'string', required: true, placeholder: 'Dust monitoring station A - Q3 2026' },
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'kakamas-500mw' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'kakamas-500mw' },
         { key: 'monitoring_category', label: 'Monitoring Category', type: 'string', required: true, placeholder: 'air_quality' },
         { key: 'monitoring_tier', label: 'Monitoring Tier', type: 'enum', options: ['critical', 'regular', 'routine', 'baseline'], required: true },
         { key: 'project_name', label: 'Project Name', type: 'string', placeholder: 'Kakamas 500MW Solar' },
@@ -10090,7 +10090,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New RFI',
       path: '/api/ipp/rfis/chain',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', placeholder: 'ipp-project-demo-001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', placeholder: 'ipp-project-demo-001' },
         { key: 'rfi_class', label: 'RFI Class', type: 'enum', options: ['clarification', 'coordination', 'construction_blocking', 'emergency_safety'] },
         { key: 'question_short', label: 'Question (short)', type: 'string', placeholder: 'Confirm rebar spec for foundation pour FP-12' },
         { key: 'discipline', label: 'Discipline', type: 'string', placeholder: 'civil' },
@@ -10162,7 +10162,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Submittal',
       path: '/api/ipp/submittals/chain',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', placeholder: 'ipp-proj-001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', placeholder: 'ipp-proj-001' },
         { key: 'submittal_class', label: 'Submittal Class', type: 'enum', options: ['om_manual', 'material_approval', 'shop_drawing', 'critical_safety'] },
         { key: 'project_name', label: 'Project Name', type: 'string', placeholder: 'Aurora Wind Farm' },
         { key: 'project_capacity_mw', label: 'Project Capacity', type: 'number', unit: 'MW' },
@@ -10226,7 +10226,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       path: '/api/ipp-tq',
       fields: [
         { key: 'tq_title', label: 'TQ title', type: 'string', required: true, placeholder: 'Foundation rebar spacing discrepancy at MV switchroom' },
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj-001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj-001' },
         { key: 'query_description', label: 'Query description', type: 'string', required: true, placeholder: 'Drawing C-204 shows 150mm rebar spacing but spec SANS 10100 calls for 125mm; please confirm intent before pour.' },
         { key: 'discipline', label: 'Discipline', type: 'enum', options: ['civil', 'structural', 'electrical', 'mechanical', 'instrumentation', 'process', 'fire_protection', 'geotechnical', 'environmental'], required: true },
         { key: 'query_urgency', label: 'Query urgency', type: 'enum', options: ['safety_critical', 'construction_blocking', 'standard', 'information_only'], required: true },
@@ -10302,7 +10302,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Site instruction',
       path: '/api/ipp-site-instruction',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj-kakamas-500mw' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj-kakamas-500mw' },
         { key: 'instruction_type', label: 'Instruction Type', type: 'enum', options: ['safety_directive', 'variation_instruction', 'defect_rectification', 'design_clarification', 'testing_instruction', 'administrative'], required: true },
         { key: 'issued_date', label: 'Issued Date', type: 'date', required: true, placeholder: '2026-06-16' },
         { key: 'description', label: 'Description', type: 'string', required: true, placeholder: 'Rectify non-compliant mounting structure welds identified in NCR-2026-018' },
@@ -10377,7 +10377,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Final completion',
       path: '/api/ipp-final-completion',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_demo_solar_01' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj_demo_solar_01' },
         { key: 'contract_value_zar', label: 'Contract Value', type: 'number', unit: 'ZAR', required: true },
         { key: 'retention_amount_zar', label: 'Retention Amount', type: 'number', unit: 'ZAR', required: true },
         { key: 'practical_completion_date', label: 'Practical Completion Date', type: 'date', placeholder: '2026-05-01' },
@@ -10445,7 +10445,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New O&M handover',
       path: '/api/ipp-om-handover',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'ip_004' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'ip_004' },
         { key: 'capacity_mw', label: 'Plant Capacity', type: 'number', unit: 'MW', required: true },
         { key: 'category', label: 'Handover Category', type: 'enum', options: ['hs_file', 'om_manual', 'as_built', 'equipment_data', 'warranties', 'commissioning', 'training', 'full_pack'], required: true },
         { key: 'title', label: 'Pack Title', type: 'string', required: true, placeholder: 'De Aar 75MW — Full O&M + H&S Handover Pack' },
@@ -10516,7 +10516,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Payment certificate',
       path: '/api/ipp-payment-cert',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_demo_001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj_demo_001' },
         { key: 'claim_type', label: 'Claim Type', type: 'enum', options: ['progress', 'retention_release', 'final_account', 'variation', 'dayworks', 'loss_and_expense', 'advance_payment'], required: true },
         { key: 'claimed_value_zar', label: 'Claimed Value', type: 'number', unit: 'ZAR', required: true },
         { key: 'cert_number', label: 'Certificate Number', type: 'string', placeholder: 'PC-001' },
@@ -10602,7 +10602,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       path: '/api/ipp-mir',
       fields: [
         { key: 'material_description', label: 'Material', type: 'string', required: true },
-        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'material_category', label: 'Category', type: 'string', required: true },
         { key: 'material_tier', label: 'Tier', type: 'enum', required: true, options: ['critical_structural', 'electrical_mechanical', 'civil', 'general'] },
       ],
@@ -10693,7 +10693,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       path: '/api/ipp-subcontractor',
       fields: [
         { key: 'company_name', label: 'Company', type: 'string', required: true },
-        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'trade_category', label: 'Trade', type: 'string', required: true },
         { key: 'subcontractor_tier', label: 'Tier', type: 'enum', required: true, options: ['critical_trade', 'specialist', 'general_trade', 'labor_only'] },
         { key: 'scope_description', label: 'Scope', type: 'string', required: true },
@@ -10910,7 +10910,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       path: '/api/ipp/wbs-schedule/chain',
       fields: [
         { key: 'title', label: 'Title', type: 'string' },
-        { key: 'project_id', label: 'Project', type: 'string' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects' },
       ],
     },
   },
@@ -11005,7 +11005,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       path: '/api/ipp/cost-evm/chain',
       fields: [
         { key: 'title', label: 'Title', type: 'string' },
-        { key: 'project_id', label: 'Project', type: 'string' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects' },
         { key: 'total_budget_zar', label: 'Total budget', type: 'number', unit: 'ZAR' },
       ],
     },
@@ -11256,7 +11256,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New progress claim',
       path: '/api/ipp-progress-claim',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'claim_amount_zar', label: 'Claim amount', type: 'number', unit: 'ZAR', required: true },
         { key: 'claim_type', label: 'Claim type', type: 'string', required: true },
         { key: 'claim_tier', label: 'Claim tier', type: 'enum', required: true, options: ['major', 'significant', 'standard', 'minor'] },
@@ -11407,7 +11407,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New variation order',
       path: '/api/ipp-variation-order',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'title', label: 'Title', type: 'string', required: true },
         { key: 'variation_type', label: 'Variation type', type: 'enum', required: true, options: ['scope_change', 'time_extension', 'cost_adjustment', 'design_change', 'statutory_change', 'provisional_sum'] },
         { key: 'instructed_value_zar', label: 'Instructed value', type: 'number', unit: 'ZAR' },
@@ -12268,7 +12268,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Work order',
       path: '/api/esums/work-orders',
       fields: [
-        { key: 'site_id', label: 'Site', type: 'string', required: true, placeholder: 'omsite_demo_solar_1' },
+        { key: 'site_id', label: 'Site', type: 'lookup', source: '/api/ledger/lookup/om-sites', required: true, placeholder: 'omsite_demo_solar_1' },
         { key: 'category', label: 'Category', type: 'enum', options: ['corrective', 'preventive', 'inspection', 'cleaning', 'installation', 'upgrade'], required: true },
         { key: 'priority', label: 'Priority', type: 'enum', options: ['critical', 'high', 'medium', 'low'], required: true },
         { key: 'title', label: 'Title', type: 'string', required: true, placeholder: 'Inverter 3 fault - no AC output' },
@@ -13350,7 +13350,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     initiation: {
       label: 'Register obligation', path: '/api/ipp-licence-obligations',
       fields: [
-        { key: 'ipp_id', label: 'IPP ID', type: 'string', required: true },
+        { key: 'ipp_id', label: 'IPP', type: 'lookup', source: '/api/ledger/lookup/ipp-developers', required: true },
         { key: 'licence_number', label: 'Licence number', type: 'string', required: true },
         { key: 'obligation_ref', label: 'Obligation ref', type: 'string', required: true },
         { key: 'obligation_class', label: 'Obligation class', type: 'enum', required: true, options: ['security_of_supply', 'environmental', 'financial', 'technical', 'administrative'] },
@@ -13495,7 +13495,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     initiation: {
       label: 'Log defect', path: '/api/ipp-dlp-defect',
       fields: [
-        { key: 'project_id', label: 'Project ID', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'severity_class', label: 'Severity class', type: 'string', required: true },
         { key: 'description', label: 'Description', type: 'string', required: true },
       ],
@@ -13662,7 +13662,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     initiation: {
       label: 'Register document', path: '/api/ipp/document-control/chain',
       fields: [
-        { key: 'project_id', label: 'Project ID', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'document_number', label: 'Document number', type: 'string', required: true },
         { key: 'document_class', label: 'Document class', type: 'string', required: true },
       ],
@@ -13725,7 +13725,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     initiation: {
       label: 'Trigger EA amendment', path: '/api/ipp-ea-amendment',
       fields: [
-        { key: 'project_id', label: 'Project ID', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'trigger_category', label: 'Trigger category', type: 'enum', required: true, options: ['scope_change', 'technology_substitution', 'capacity_increase', 'access_route_change', 'footprint_expansion', 'component_modification'] },
         { key: 'amendment_category', label: 'Amendment category', type: 'enum', required: true, options: ['basic_assessment', 'scoping_and_eia', 'variation_application', 's24g_rectification', 'exemption_application'] },
         { key: 'capacity_mw', label: 'Capacity MW', type: 'number', required: true, unit: 'MW' },
@@ -13907,7 +13907,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New BFS study',
       path: '/api/ipp-bfs',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj_reipppp_001' },
         { key: 'trigger_category', label: 'Trigger Category', type: 'enum', options: ['scope_change', 'component_substitution', 'tariff_rebid', 'resource_update', 'periodic_refresh', 'lender_request'], required: true },
         { key: 'capacity_mw', label: 'Capacity', type: 'number', unit: 'MW', required: true },
         { key: 'ie_firm_name', label: 'Independent Engineer Firm', type: 'string', placeholder: 'Aurecon' },
@@ -13964,7 +13964,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Connection cost contribution',
       path: '/api/ipp-ccc',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj_reipppp_001' },
         { key: 'ccc_category', label: 'CCC Category', type: 'enum', options: ['line_extension', 'substation_upgrade', 'protection_relay', 'reactive_compensation', 'metering_telecoms', 'combined'], required: true },
         { key: 'ccc_amount_zar', label: 'CCC Amount', type: 'number', unit: 'ZAR', required: true },
         { key: 'network_operator', label: 'Network Operator', type: 'string', required: true, placeholder: 'Eskom Transmission' },
@@ -14119,7 +14119,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New ECO report',
       path: '/api/ipp-eco-report',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'reporting_year', label: 'Reporting year', type: 'number', required: true },
         { key: 'capacity_mw', label: 'Capacity', type: 'number', required: true, unit: 'MW' },
         { key: 'ea_reference', label: 'EA reference', type: 'string' },
@@ -14180,7 +14180,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Environmental closure',
       path: '/api/ipp-env-closure',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_demo_solar_1' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj_demo_solar_1' },
         { key: 'disturbed_area_ha', label: 'Disturbed Area', type: 'number', unit: 'ha', required: true },
         { key: 'eia_category', label: 'EIA Category', type: 'enum', options: ['basic_assessment', 'scoping_eir', 'amendments', 'exemption'] },
         { key: 'ea_reference', label: 'Environmental Authorisation Reference', type: 'string', placeholder: 'EA-2024-00123' },
@@ -14324,7 +14324,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Declare force majeure',
       path: '/api/ipp-force-majeure',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'fm_category', label: 'FM category', type: 'enum', required: true,
           options: ['natural_disaster', 'grid_unavailability', 'political_event', 'change_in_law', 'pandemic', 'civil_unrest'] },
         { key: 'relief_type', label: 'Relief type', type: 'enum', required: true,
@@ -14387,7 +14387,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New IE milestone certification',
       path: '/api/ipp-ie-cert',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj-demo-001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj-demo-001' },
         { key: 'milestone_value_zar', label: 'Milestone Disbursement Value', type: 'number', unit: 'ZAR', required: true },
         { key: 'milestone_category', label: 'Milestone Category', type: 'enum', options: ['financial_close', 'construction_start', 'pac', 'cod', 'fac', 'loan_drawdown'] },
         { key: 'ie_firm', label: 'Independent Engineer Firm', type: 'string', placeholder: 'Mott MacDonald' },
@@ -14478,7 +14478,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New land register update',
       path: '/api/ipp-land-register',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'area_ha', label: 'Area', type: 'number', required: true, unit: 'ha' },
         { key: 'erf_count', label: 'Erf count', type: 'number' },
         { key: 'servitude_count', label: 'Servitude count', type: 'number' },
@@ -14535,7 +14535,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New TPA / wheeling',
       path: '/api/ipp-tpa',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_nxt_solar_001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj_nxt_solar_001' },
         { key: 'wheeling_capacity_mw', label: 'Wheeling Capacity', type: 'number', unit: 'MW', required: true },
         { key: 'tpa_category', label: 'TPA Category', type: 'enum', options: ['eskom_transmission', 'eskom_distribution', 'municipality', 'private_network'] },
         { key: 'network_owner', label: 'Network Owner', type: 'string', placeholder: 'Eskom Distribution — GP' },
@@ -14597,7 +14597,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Refinancing',
       path: '/api/ipp-refinancing',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj-wind-north-001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj-wind-north-001' },
         { key: 'debt_quantum_zar', label: 'Debt Quantum', type: 'number', unit: 'ZAR', required: true },
         { key: 'refinancing_type', label: 'Refinancing Type', type: 'enum', options: ['term_loan_refinancing', 'bond_issuance', 'green_bond', 'refinancing_with_equity_release', 'debt_restructuring', 'lender_substitution'], required: true },
         { key: 'sarb_approval_required', label: 'SARB Exchange Control Approval Required', type: 'boolean' },
@@ -14655,7 +14655,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New LTA drawdown certificate',
       path: '/api/ipp-lta-certificate',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj_001' },
         { key: 'drawdown_amount_zar', label: 'Drawdown Amount (ZAR)', type: 'number', unit: 'ZAR', required: true },
         { key: 'certificate_category', label: 'Certificate Category', type: 'enum', options: ['construction_progress', 'completion_certificate', 'cost_to_complete', 'change_order_approval', 'commissioning_readiness'], required: true },
         { key: 'drawdown_reference', label: 'Drawdown Reference', type: 'string', placeholder: 'DD-2024-001' },
@@ -14932,7 +14932,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       fields: [
         { key: 'curtailment_tier', label: 'Curtailment tier', type: 'enum', options: ['minor', 'moderate', 'significant', 'systemic'] },
         { key: 'curtailment_type', label: 'Curtailment type', type: 'string' },
-        { key: 'site_id', label: 'Site', type: 'string' },
+        { key: 'site_id', label: 'Site', type: 'lookup', source: '/api/ledger/lookup/om-sites' },
         { key: 'meter_id', label: 'Meter', type: 'string' },
         { key: 'so_curtailment_ref', label: 'SO curtailment ref', type: 'string' },
         { key: 'ppa_ref', label: 'PPA ref', type: 'string' },
@@ -15503,7 +15503,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       fields: [
         { key: 'assessment_year', label: 'Assessment year', type: 'number', required: true },
         { key: 'plant_mw', label: 'Plant capacity', type: 'number', required: true, unit: 'MW' },
-        { key: 'project_id', label: 'Project', type: 'string' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects' },
         { key: 'plant_name', label: 'Plant name', type: 'string' },
         { key: 'grid_connection_voltage_kv', label: 'Grid connection voltage', type: 'number', unit: 'kV' },
         { key: 'protection_systems_score', label: 'Protection systems score', type: 'number' },
@@ -15608,7 +15608,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Raise contractor default',
       path: '/api/ipp-contractor-default',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'contract_value_zar', label: 'Contract value', type: 'number', required: true, unit: 'ZAR' },
         { key: 'default_category', label: 'Default category', type: 'enum', required: true,
           options: ['insolvency', 'material_breach', 'programme_delay', 'quality_failure', 'abandonment', 'force_majeure_related'] },
@@ -15678,7 +15678,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Notify change of control',
       path: '/api/ipp-change-of-control',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'capacity_mw', label: 'Capacity', type: 'number', required: true, unit: 'MW' },
         { key: 'transaction_type', label: 'Transaction type', type: 'enum', required: true, options: ['share_transfer', 'asset_acquisition', 'merger_scheme_of_arrangement', 'management_buyout', 'fund_recycling', 'change_of_lender_step_in'] },
         { key: 'acquirer_name', label: 'Acquirer', type: 'string', required: true },
@@ -15704,7 +15704,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Community trust report',
       path: '/api/ipp-community-trust',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_demo_solar_1' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj_demo_solar_1' },
         { key: 'trust_category', label: 'Trust Category', type: 'enum', options: ['equity_dividend', 'socio_economic_development', 'enterprise_development', 'education_bursary', 'infrastructure_upliftment'], required: true },
         { key: 'reporting_year', label: 'Reporting Year', type: 'number', required: true },
         { key: 'disbursement_amount_zar', label: 'Disbursement Amount', type: 'number', unit: 'ZAR', required: true },
@@ -15821,7 +15821,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New EMP compliance report',
       path: '/api/ipp-emp-compliance-reports',
       fields: [
-        { key: 'ipp_id', label: 'IPP', type: 'string', required: true },
+        { key: 'ipp_id', label: 'IPP', type: 'lookup', source: '/api/ledger/lookup/ipp-developers', required: true },
         { key: 'project_name', label: 'Project name', type: 'string', required: true },
         { key: 'plant_mw', label: 'Plant capacity', type: 'number', required: true, unit: 'MW' },
         { key: 'annual_revenue_zar', label: 'Annual revenue', type: 'number', required: true, unit: 'ZAR' },
@@ -15900,7 +15900,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Grid compliance',
       path: '/api/ipp-grid-compliance',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj_reipppp_001' },
         { key: 'compliance_category', label: 'Compliance Category', type: 'enum', options: ['power_quality', 'protection_relay', 'fault_ride_through', 'reactive_power', 'frequency_response', 'earthing_bonding'], required: true },
         { key: 'assessment_year', label: 'Assessment Year', type: 'number', required: true },
         { key: 'capacity_mw', label: 'Installed Capacity', type: 'number', unit: 'MW', required: true },
@@ -15945,7 +15945,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Land amendment',
       path: '/api/ipp-land-amendment',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj_reipppp_001' },
         { key: 'amendment_category', label: 'Amendment Category', type: 'enum', options: ['lease_amendment', 'servitude_registration', 'servitude_extension', 'wayleave_grant', 'wayleave_extension', 'right_of_way'], required: true },
         { key: 'land_area_hectares', label: 'Land Area', type: 'number', unit: 'hectares', required: true },
         { key: 'counterparty_name', label: 'Counterparty Name', type: 'string', required: true, placeholder: 'eThekwini Municipality' },
@@ -16102,7 +16102,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New O&M contract',
       path: '/api/ipp-om-contract',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true, placeholder: 'proj_reipppp_001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true, placeholder: 'proj_reipppp_001' },
         { key: 'om_contract_category', label: 'O&M Contract Category', type: 'enum', options: ['full_om', 'maintenance_only', 'operations_only', 'asset_management', 'specialist_equipment', 'novation'], required: true },
         { key: 'annual_om_value_zar', label: 'Annual O&M Value', type: 'number', unit: 'ZAR', required: true },
         { key: 'contractor_name', label: 'Contractor Name', type: 'string', required: true, placeholder: 'SolarEdge O&M Services' },
@@ -16215,7 +16215,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Request PPA variation',
       path: '/api/ipp-ppa-variation',
       fields: [
-        { key: 'project_id', label: 'Project', type: 'string', required: true },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', required: true },
         { key: 'capacity_mw', label: 'Capacity', type: 'number', required: true, unit: 'MW' },
         { key: 'variation_type', label: 'Variation type', type: 'enum', required: true,
           options: ['capacity_adjustment', 'tariff_revision', 'term_extension', 'offtaker_substitution', 'technical_parameters'] },
@@ -16334,7 +16334,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         { key: 'report_period_start', label: 'Report Period Start', type: 'date', required: true, placeholder: '2026-01-01' },
         { key: 'report_period_end', label: 'Report Period End', type: 'date', required: true, placeholder: '2026-03-31' },
         { key: 'project_mw', label: 'Project Capacity', type: 'number', unit: 'MW', required: true },
-        { key: 'project_id', label: 'Project', type: 'string', placeholder: 'proj_demo_001' },
+        { key: 'project_id', label: 'Project', type: 'lookup', source: '/api/ledger/lookup/ipp-projects', placeholder: 'proj_demo_001' },
         { key: 'mwh_contracted', label: 'MWh Contracted (qtr)', type: 'number', unit: 'MWh' },
         { key: 'mwh_actual', label: 'MWh Actual (qtr)', type: 'number', unit: 'MWh' },
         { key: 'availability_pct', label: 'Availability', type: 'number', unit: '%' },
@@ -16683,7 +16683,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       path: '/api/smart-meter-assets',
       fields: [
         { key: 'meter_serial', label: 'Meter serial', type: 'string', required: true },
-        { key: 'site_id', label: 'Site', type: 'string', required: true },
+        { key: 'site_id', label: 'Site', type: 'lookup', source: '/api/ledger/lookup/om-sites', required: true },
         { key: 'meter_class', label: 'Meter class', type: 'enum', options: ['hv_bulk', 'bulk', 'prepaid', 'post_paid'] },
         { key: 'owner_id', label: 'Owner', type: 'string' },
         { key: 'make_model', label: 'Make / model', type: 'string' },
@@ -17017,7 +17017,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New CBT/SED annual report',
       path: '/api/ipp/cbt-sed/open',
       fields: [
-        { key: 'ipp_id', label: 'IPP / Generator (user id)', type: 'string', required: true, placeholder: 'ipp' },
+        { key: 'ipp_id', label: 'IPP / Generator', type: 'lookup', source: '/api/ledger/lookup/ipp-developers', required: true, placeholder: 'ipp' },
         { key: 'project_name', label: 'REIPPPP Project Name', type: 'string', required: true, placeholder: 'Karusa Wind Farm' },
         { key: 'reipppp_bid_window', label: 'REIPPPP Bid Window', type: 'enum', options: ['BW1', 'BW2', 'BW3', 'BW4', 'BW5', 'BW6'], required: true },
         { key: 'reporting_year', label: 'Reporting Year', type: 'number', required: true },
