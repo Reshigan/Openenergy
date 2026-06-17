@@ -3,8 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { AuthContext, api } from '../context/AuthContext';
 import type { AuthContextType } from '../lib/api';
 import { LocalePicker } from './LocalePicker';
+import { LogoMark } from './Logo';
 import {
-  IonExLogo,
   LaunchpadIcon,
   CockpitIcon,
   ContractsIcon,
@@ -284,8 +284,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <header className="fixed top-0 left-0 right-0 h-[48px] bg-ionex-shell z-50 flex items-center px-4 shadow-[0_1px_0_rgba(255,255,255,0.1)]">
         {/* Logo */}
         <div className="flex items-center gap-2 w-[240px]">
-          <IonExLogo size={28} />
-          <span className="text-white font-semibold text-lg tracking-tight">IonEx</span>
+          <LogoMark size={28} />
+          <span className="text-white font-semibold text-lg tracking-tight">CEC</span>
         </div>
         
         {/* Search */}
