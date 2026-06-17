@@ -1,6 +1,18 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// Full journey audit — covers every role's launch board, workstation, and
-// key suite pages. Captures JS exceptions, console errors, and API 4xx/5xx.
+// Full journey audit — Meridian routing reality.
+//
+// The tab-based workstation chrome was retired in the Meridian cutover: every
+// /launch/:role, every */workstation, /esums, and the legacy listing routes
+// (/admin /trading /settlement /carbon /projects /grid /contracts) now redirect
+// to the per-role Horizon workspace at /horizon. The seven role-suite landings
+// (/trader-risk, /ipp-lifecycle, /offtaker-suite, /carbon-registry, /lender-suite,
+// /regulator-suite, /grid-operator) and the standalone pages still render.
+//
+// Horizon renders the board + duty stream ONLY after GET /api/horizon/:role
+// succeeds (needs a REAL token). A fake placeholder token 401s and Horizon shows
+// its error state ("Horizon failed to load."). Per-role strict assertions are
+// therefore gated on a real token; the universal assertion only proves the
+// HorizonPage mounted (one of its three states is on screen).
 //
 // Run locally:
 //   BASE=http://localhost:3000 \
@@ -13,6 +25,7 @@
 //     PLAYWRIGHT_CARBON_TOKEN=<tok> \
 //     PLAYWRIGHT_REGULATOR_TOKEN=<tok> \
 //     PLAYWRIGHT_SUPPORT_TOKEN=<tok> \
+//     PLAYWRIGHT_ESCO_TOKEN=<tok> \
 //     npx playwright test tests/browser/full-journey-audit.spec.ts
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -36,7 +49,21 @@ const ROLE_MAP: Record<string, string> = {
   regulator: 'regulator',
   grid: 'grid_operator',
   support: 'support',
+  esco: 'esco',
 };
+
+// Whichever of HorizonPage's three states is on screen, one of these strings is
+// visible: success → "DUTY STREAM" (duty-stream <h2>); loading → "Computing
+// horizon…"; error (fake/expired token) → "Horizon failed to load.". Matching
+// any of them proves routing + auth-gate + HorizonPage mount, independent of
+// whether a real token was available to fetch live board data.
+const HORIZON_STATE = /DUTY STREAM|Computing horizon|Horizon failed to load/i;
+
+// A real token (not the fake placeholder) was provided by global-setup for this
+// short role name → Horizon can fetch live data and reach its success branch.
+function hasRealToken(tokenRole: string): boolean {
+  return !!process.env[`PLAYWRIGHT_${tokenRole.toUpperCase()}_TOKEN`];
+}
 
 // ── Error capture helpers ────────────────────────────────────────────────────
 function isNoise(msg: string): boolean {
@@ -136,22 +163,9 @@ async function seedToken(page: Page, tokenRole: string): Promise<void> {
       marketing: false,
       at: new Date().toISOString(),
     }));
-    // Pre-dismiss all workstation product tours so the tour tooltip
-    // (which has pointerEvents:all) doesn't intercept clicks
-    const tourIds = [
-      'trader-workstation-v1',
-      'ipp-workstation-v1',
-      'offtaker-workstation-v1',
-      'carbon-workstation-v1',
-      'admin-workstation-v1',
-      'regulator-workstation-v1',
-      'grid-workstation-v1',
-      'support-workstation-v1',
-      'lender-workstation-v1',
-    ];
-    for (const id of tourIds) {
-      localStorage.setItem(`oe-tour-done-${id}`, '1');
-    }
+    // Pre-open the duty stream so collapse-regression tests start from a known
+    // state (Horizon persists the operator's last choice in this key).
+    localStorage.setItem('mer.duty.collapsed', '0');
   }, { token: tokenValue });
 }
 
@@ -159,78 +173,23 @@ async function goTo(page: Page, baseURL: string | undefined, path: string): Prom
   await page.goto(`${baseURL}${path}`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
 }
 
-// ── Launch board cases ───────────────────────────────────────────────────────
-const LAUNCH_BOARD_CASES: Array<{ role: string; tokenRole: string; expectText: RegExp }> = [
-  { role: 'admin',         tokenRole: 'admin',     expectText: /system health|platform|admin/i },
-  { role: 'trader',        tokenRole: 'trader',    expectText: /trader|order book|position/i },
-  { role: 'ipp_developer', tokenRole: 'ipp',       expectText: /ipp|project|lifecycle/i },
-  { role: 'grid_operator', tokenRole: 'grid',      expectText: /grid|dispatch|operator/i },
-  { role: 'offtaker',      tokenRole: 'offtaker',  expectText: /offtaker|ppa|contract/i },
-  { role: 'lender',        tokenRole: 'lender',    expectText: /lender|loan|portfolio/i },
-  { role: 'carbon_fund',   tokenRole: 'carbon',    expectText: /carbon|credit|registry/i },
-  { role: 'regulator',     tokenRole: 'regulator', expectText: /regulator|surveillance|licence/i },
-  { role: 'support',       tokenRole: 'support',   expectText: /support|ticket|escalat/i },
+// ── Horizon per-role workspace (replaces the retired workstation tab chrome) ──
+// `role` is only the test label; the board role comes from the mocked /auth/me
+// role (= ROLE_MAP[tokenRole]). All 10 live roles, incl. esco (O&M operator).
+const HORIZON_CASES: Array<{ role: string; tokenRole: string }> = [
+  { role: 'admin',         tokenRole: 'admin' },
+  { role: 'trader',        tokenRole: 'trader' },
+  { role: 'ipp_developer', tokenRole: 'ipp' },
+  { role: 'grid_operator', tokenRole: 'grid' },
+  { role: 'offtaker',      tokenRole: 'offtaker' },
+  { role: 'lender',        tokenRole: 'lender' },
+  { role: 'carbon_fund',   tokenRole: 'carbon' },
+  { role: 'regulator',     tokenRole: 'regulator' },
+  { role: 'support',       tokenRole: 'support' },
+  { role: 'esco',          tokenRole: 'esco' },
 ];
 
-// ── Workstation cases ────────────────────────────────────────────────────────
-const WORKSTATION_CASES: Array<{ role: string; tokenRole: string; path: string; titlePattern: RegExp; tabs: string[] }> = [
-  {
-    role: 'trader', tokenRole: 'trader',
-    path: '/trader-risk/workstation',
-    titlePattern: /trader workstation/i,
-    tabs: ['Open orders', 'Rejections'],
-  },
-  {
-    role: 'ipp_developer', tokenRole: 'ipp',
-    path: '/ipp-lifecycle/workstation',
-    titlePattern: /ipp workstation/i,
-    tabs: ['My projects', 'Milestones'],
-  },
-  {
-    role: 'offtaker', tokenRole: 'offtaker',
-    path: '/offtaker-suite/workstation',
-    titlePattern: /offtaker workstation/i,
-    tabs: ['PPA contracts', 'Tariff indexation'],
-  },
-  {
-    role: 'carbon_fund', tokenRole: 'carbon',
-    path: '/carbon-registry/workstation',
-    titlePattern: /carbon workstation/i,
-    tabs: ['Vintage workflow', 'Project registration'],
-  },
-  {
-    role: 'admin', tokenRole: 'admin',
-    path: '/admin-platform/workstation',
-    titlePattern: /platform admin workstation/i,
-    tabs: ['Tenant lifecycle', 'Billing runs', 'Flag overrides', 'Settlement audit'],
-  },
-  {
-    role: 'regulator', tokenRole: 'regulator',
-    path: '/regulator-suite/workstation',
-    titlePattern: /regulator workstation/i,
-    tabs: ['Surveillance triage', 'Licence actions', 'Enforcement events'],
-  },
-  {
-    role: 'grid_operator', tokenRole: 'grid',
-    path: '/grid-operator/workstation',
-    titlePattern: /grid operations workstation/i,
-    tabs: ['Curtailment events', 'Ancillary services'],
-  },
-  {
-    role: 'support', tokenRole: 'support',
-    path: '/support/workstation',
-    titlePattern: /support workstation/i,
-    tabs: ['Tickets', 'Escalations', 'Cross-tenant access'],
-  },
-  {
-    role: 'lender', tokenRole: 'lender',
-    path: '/lender-suite/workstation',
-    titlePattern: /lender workstation/i,
-    tabs: ['Facilities', 'Credit origination'],
-  },
-];
-
-// ── Suite page cases (non-workstation suite views) ───────────────────────────
+// ── Suite landing pages (still render via <Layout>; /esums now redirects) ─────
 const SUITE_CASES: Array<{ name: string; tokenRole: string; path: string; expectText: RegExp }> = [
   { name: 'Trader risk suite',    tokenRole: 'trader',    path: '/trader-risk',       expectText: /trader risk|positions|credit|margin|collateral/i },
   { name: 'IPP lifecycle suite',  tokenRole: 'ipp',       path: '/ipp-lifecycle',     expectText: /project|milestone|lifecycle/i },
@@ -239,12 +198,10 @@ const SUITE_CASES: Array<{ name: string; tokenRole: string; path: string; expect
   { name: 'Lender suite',         tokenRole: 'lender',    path: '/lender-suite',      expectText: /loan|portfolio|covenant|lender/i },
   { name: 'Regulator suite',      tokenRole: 'regulator', path: '/regulator-suite',   expectText: /surveillance|licence|inbox|regulator/i },
   { name: 'Grid operator suite',  tokenRole: 'grid',      path: '/grid-operator',     expectText: /dispatch|curtailment|grid|operator/i },
-  { name: 'Esums O&M suite',      tokenRole: 'support',   path: '/esums',             expectText: /site|fault|station|esums|solar/i },
 ];
 
-// ── Admin-only pages ─────────────────────────────────────────────────────────
+// ── Standalone pages still rendering after the Meridian cutover ───────────────
 const ADMIN_PAGE_CASES: Array<{ name: string; path: string; expectText: RegExp }> = [
-  { name: 'Admin root',          path: '/admin',                    expectText: /admin|platform|tenant/i },
   { name: 'Admin monitoring',    path: '/admin/monitoring',         expectText: /monitoring|health|error/i },
   { name: 'Admin revenue',       path: '/admin/revenue',            expectText: /revenue|fee|billing/i },
   { name: 'National dashboard',  path: '/dashboard',                expectText: /national|dashboard|platform/i },
@@ -252,14 +209,9 @@ const ADMIN_PAGE_CASES: Array<{ name: string; path: string; expectText: RegExp }
   { name: 'Intelligence',        path: '/intelligence',             expectText: /intelligence|insight|AI/i },
   { name: 'Briefing',            path: '/briefing',                 expectText: /briefing|update|summary/i },
   { name: 'POPIA',               path: '/popia',                    expectText: /popia|privacy|access/i },
-  { name: 'Trading',             path: '/trading',                  expectText: /trading|order|market/i },
-  { name: 'Settlement',          path: '/settlement',               expectText: /settlement|invoice|payment/i },
-  // Carbon legacy and Projects legacy paths removed — they load via workstation tests instead
   { name: 'ESG',                 path: '/esg',                      expectText: /esg|disclosure|sustainability/i },
-  { name: 'Grid (legacy)',        path: '/grid',                     expectText: /grid|dispatch|operator/i },
-  { name: 'Contracts',           path: '/contracts',                expectText: /contract|agreement|ppa/i },
   { name: 'Marketplace',         path: '/marketplace',              expectText: /marketplace|listing|offer/i },
-  { name: 'Support (legacy)',     path: '/support',                  expectText: /support|ticket|help/i },
+  { name: 'Support (legacy)',    path: '/support',                  expectText: /support|ticket|help/i },
 ];
 
 // ── Public pages ─────────────────────────────────────────────────────────────
@@ -269,48 +221,50 @@ const PUBLIC_PAGE_CASES: Array<{ name: string; path: string; expectText: RegExp 
   { name: 'Audit page',   path: '/audit',  expectText: /audit|chain|verify|block/i },
 ];
 
+// ── Routes retired in the Meridian cutover — every one redirects to /horizon ──
+const REDIRECT_PATHS: string[] = [
+  // Legacy listing routes
+  '/admin', '/trading', '/settlement', '/carbon', '/projects', '/grid', '/contracts',
+  // Esums O&M shell (folded into the esco Horizon lanes)
+  '/esums',
+  // Sample retired workstation routes
+  '/trader-risk/workstation', '/ipp-lifecycle/workstation', '/support/workstation',
+  // /launch/:role post-login entry (redirects for every role)
+  '/launch/trader', '/launch/esco',
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // TESTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-test.describe('Launch boards — per-role', () => {
-  for (const c of LAUNCH_BOARD_CASES) {
-    test(`launch board [${c.role}] renders without errors`, async ({ page, baseURL }) => {
+test.describe('Horizon — per-role workspace renders', () => {
+  for (const c of HORIZON_CASES) {
+    test(`horizon [${c.role}] mounts and loads its board`, async ({ page, baseURL }) => {
       const errors = collectErrors(page);
       await seedToken(page, c.tokenRole);
-      await goTo(page, baseURL, `/launch/${c.role}`);
-      await expect(page.locator('body')).not.toBeEmpty({ timeout: 20_000 });
-      // Should not show login page
-      await expect(page.locator('input[type=password]')).toHaveCount(0, { timeout: 5_000 });
-      // Check for expected content
-      await expect(page.locator('body')).toContainText(c.expectText, { timeout: 20_000 });
-      const real = errors.filter((e) => !e.startsWith('api.404') && !e.startsWith('api.401') && !e.startsWith('api.403'));
-      expect(real, `Errors on launch/${c.role}:\n${real.join('\n')}`).toEqual([]);
-    });
-  }
-});
+      await goTo(page, baseURL, '/horizon');
 
-test.describe('Workstations — all tabs render', () => {
-  for (const c of WORKSTATION_CASES) {
-    test(`workstation [${c.role}] — chrome + tabs render without errors`, async ({ page, baseURL }) => {
-      const errors = collectErrors(page);
-      await seedToken(page, c.tokenRole);
-      await goTo(page, baseURL, c.path);
-      await expect(page.locator('body')).toContainText(c.titlePattern, { timeout: 30_000 });
-      for (const label of c.tabs) {
-        await expect(page.locator('body')).toContainText(label, { timeout: 15_000 });
+      // Not the login page (ProtectedRoute let us through on the mocked user).
+      await expect(page.locator('input[type=password]')).toHaveCount(0, { timeout: 5_000 });
+      // One of HorizonPage's three states is on screen — proves the page mounted.
+      await expect(page.locator('body')).toContainText(HORIZON_STATE, { timeout: 30_000 });
+
+      if (hasRealToken(c.tokenRole)) {
+        // Real token → GET /api/horizon/:role succeeds → success branch:
+        // the board grid + duty stream render and there is no error state.
+        await expect(
+          page.locator('[aria-label="Live cases by time to consequence"]'),
+        ).toBeVisible({ timeout: 30_000 });
+        await expect(page.locator('body')).toContainText('DUTY STREAM', { timeout: 10_000 });
+        await expect(page.locator('.mer-error')).toHaveCount(0);
+        const real = errors.filter((e) => e.startsWith('api.5'));
+        expect(real, `5xx on /horizon as ${c.role}:\n${real.join('\n')}`).toEqual([]);
+      } else {
+        // No real token this run (e.g. cold setup hit the login rate limit for a
+        // newly-added role). The board needs live data, so only the mount is
+        // asserted above. Flag the skipped strict check so it isn't silent.
+        console.warn(`[horizon] no real token for "${c.tokenRole}" — asserted Meridian mount only`);
       }
-      // Click through each tab and check no errors (force bypasses any transient overlay)
-      // Use filter+hasText instead of getByRole name-match — more resilient when tabs
-      // live in an overflow-x-auto container (getByRole exact-name match can time out).
-      // Keep networkidle timeout short (2s) so tests don't exceed the 30s test timeout
-      // when tabs have background polling that never reaches true idle.
-      for (const label of c.tabs) {
-        await page.locator('[role="tab"]').filter({ hasText: label }).first().click({ force: true });
-        await page.waitForLoadState('networkidle', { timeout: 2_000 }).catch(() => {});
-      }
-      const real = errors.filter((e) => !e.startsWith('api.404') && !e.startsWith('api.403') && !e.startsWith('api.401') && !e.startsWith('api.429'));
-      expect(real, `Errors on workstation ${c.path}:\n${real.join('\n')}`).toEqual([]);
     });
   }
 });
@@ -328,9 +282,9 @@ test.describe('Suite pages — load without errors', () => {
   }
 });
 
-test.describe('Admin pages — load without errors', () => {
+test.describe('Standalone pages — load without errors', () => {
   for (const c of ADMIN_PAGE_CASES) {
-    test(`admin page [${c.name}] loads without 5xx errors`, async ({ page, baseURL }) => {
+    test(`page [${c.name}] loads without 5xx errors`, async ({ page, baseURL }) => {
       const errors = collectErrors(page);
       // Mock the AI-powered briefing endpoint so it doesn't trigger a slow Workers AI
       // call — the component will show the empty state which still contains "briefing".
@@ -373,213 +327,128 @@ test.describe('Auth flows', () => {
   });
 
   test('unauthenticated access to protected route redirects to login', async ({ page, baseURL }) => {
-    // No token seeded — auth refresh returns 401 → ProtectedRoute redirects to /login
+    // No token seeded — auth refresh returns 401. /admin redirects to /horizon,
+    // which is ProtectedRoute-gated → redirects on to /login.
     await page.goto(`${baseURL}/admin`, { waitUntil: 'domcontentloaded' });
-    // Wait for the redirect to complete (auth check is async)
     await page.waitForURL(/\/login/, { timeout: 15_000 }).catch(() => {});
     const url = page.url();
     const isOnLogin = url.includes('/login') || url.includes('/launch');
     expect(isOnLogin, `Expected redirect to /login, got: ${url}`).toBe(true);
   });
 
-  test('invalid role in URL redirects to login', async ({ page, baseURL }) => {
+  test('invalid role in URL does not infinite-loop', async ({ page, baseURL }) => {
     const errors = collectErrors(page);
     await seedToken(page, 'admin');
     await goTo(page, baseURL, '/launch/invalid_role_xyz');
-    // Should redirect to login or show an error — not an infinite loop
+    // Should redirect (to /horizon) or show an error — not hang on the bad path.
     await page.waitForTimeout(3000);
     const url = page.url();
-    // Must not still be on the invalid_role_xyz page
     expect(url).not.toContain('invalid_role_xyz');
-    // Must not have thrown a page error
     const pageErrors = errors.filter((e) => e.startsWith('pageerror'));
     expect(pageErrors, pageErrors.join('\n')).toEqual([]);
   });
 });
 
-test.describe('Core transaction flows', () => {
-  test('trader can see order book and open orders list', async ({ page, baseURL }) => {
-    const errors = collectErrors(page);
-    await seedToken(page, 'trader');
-    await goTo(page, baseURL, '/trader-risk/workstation');
-    await expect(page.locator('body')).toContainText(/trader workstation/i, { timeout: 25_000 });
-    await expect(page.locator('[role="tab"]').filter({ hasText: 'Open orders' }).first()).toBeVisible();
-    await page.locator('[role="tab"]').filter({ hasText: 'Open orders' }).first().click({ force: true });
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-    // Tab panel content rendered (table, empty state, or error state all acceptable)
-    const real = errors.filter((e) => e.startsWith('api.5'));
-    expect(real, real.join('\n')).toEqual([]);
-  });
-
-  test('IPP can see project list', async ({ page, baseURL }) => {
-    const errors = collectErrors(page);
-    await seedToken(page, 'ipp');
-    await goTo(page, baseURL, '/ipp-lifecycle/workstation');
-    await expect(page.locator('body')).toContainText(/ipp workstation/i, { timeout: 25_000 });
-    await expect(page.locator('[role="tab"]').filter({ hasText: 'My projects' }).first()).toBeVisible();
-    await page.locator('[role="tab"]').filter({ hasText: 'My projects' }).first().click({ force: true });
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-    const real = errors.filter((e) => e.startsWith('api.5'));
-    expect(real, real.join('\n')).toEqual([]);
-  });
-
-  test('lender can see loan portfolio', async ({ page, baseURL }) => {
-    const errors = collectErrors(page);
-    await seedToken(page, 'lender');
-    await goTo(page, baseURL, '/lender-suite/workstation');
-    // Lender workstation title
-    await expect(page.locator('body')).toContainText(/lender|loan|portfolio/i, { timeout: 25_000 });
-    const real = errors.filter((e) => e.startsWith('api.5'));
-    expect(real, real.join('\n')).toEqual([]);
-  });
-
-  test('offtaker can see PPA contracts tab', async ({ page, baseURL }) => {
-    const errors = collectErrors(page);
-    await seedToken(page, 'offtaker');
-    await goTo(page, baseURL, '/offtaker-suite/workstation');
-    await expect(page.locator('body')).toContainText(/offtaker workstation/i, { timeout: 25_000 });
-    await expect(page.locator('[role="tab"]').filter({ hasText: 'PPA contracts' }).first()).toBeVisible();
-    await page.locator('[role="tab"]').filter({ hasText: 'PPA contracts' }).first().click({ force: true });
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-    const real = errors.filter((e) => e.startsWith('api.5'));
-    expect(real, real.join('\n')).toEqual([]);
-  });
-
-  test('carbon fund can navigate vintage workflow', async ({ page, baseURL }) => {
-    const errors = collectErrors(page);
-    await seedToken(page, 'carbon');
-    await goTo(page, baseURL, '/carbon-registry/workstation');
-    await expect(page.locator('body')).toContainText(/carbon workstation/i, { timeout: 25_000 });
-    await expect(page.locator('[role="tab"]').filter({ hasText: 'Vintage workflow' }).first()).toBeVisible();
-    await page.locator('[role="tab"]').filter({ hasText: 'Vintage workflow' }).first().click({ force: true });
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-    const real = errors.filter((e) => e.startsWith('api.5'));
-    expect(real, real.join('\n')).toEqual([]);
-  });
-
-  test('regulator can see surveillance triage', async ({ page, baseURL }) => {
-    const errors = collectErrors(page);
-    await seedToken(page, 'regulator');
-    await goTo(page, baseURL, '/regulator-suite/workstation');
-    await expect(page.locator('body')).toContainText(/regulator workstation/i, { timeout: 25_000 });
-    await expect(page.locator('[role="tab"]').filter({ hasText: 'Surveillance triage' }).first()).toBeVisible();
-    const real = errors.filter((e) => e.startsWith('api.5'));
-    expect(real, real.join('\n')).toEqual([]);
-  });
-
-  test('grid operator can see curtailment events', async ({ page, baseURL }) => {
-    const errors = collectErrors(page);
-    await seedToken(page, 'grid');
-    await goTo(page, baseURL, '/grid-operator/workstation');
-    await expect(page.locator('body')).toContainText(/grid operations workstation/i, { timeout: 25_000 });
-    await expect(page.locator('[role="tab"]').filter({ hasText: 'Curtailment events' }).first()).toBeVisible();
-    const real = errors.filter((e) => e.startsWith('api.5'));
-    expect(real, real.join('\n')).toEqual([]);
-  });
-
-  test('support can see ticket queue', async ({ page, baseURL }) => {
-    const errors = collectErrors(page);
-    await seedToken(page, 'support');
-    await goTo(page, baseURL, '/support/workstation');
-    await expect(page.locator('body')).toContainText(/support workstation/i, { timeout: 25_000 });
-    await expect(page.locator('[role="tab"]').filter({ hasText: 'Tickets' }).first()).toBeVisible();
-    await page.locator('[role="tab"]').filter({ hasText: 'Tickets' }).first().click({ force: true });
-    await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {});
-    const real = errors.filter((e) => e.startsWith('api.5'));
-    expect(real, real.join('\n')).toEqual([]);
-  });
+test.describe('Legacy + workstation routes redirect to Horizon', () => {
+  for (const path of REDIRECT_PATHS) {
+    test(`retired route [${path}] redirects to /horizon`, async ({ page, baseURL }) => {
+      await seedToken(page, 'admin');
+      await goTo(page, baseURL, path);
+      // The SPA fires <Navigate to="/horizon"> client-side once it mounts.
+      await page.waitForURL(/\/horizon/, { timeout: 15_000 }).catch(() => {});
+      expect(page.url(), `${path} did not redirect to /horizon`).toContain('/horizon');
+      await expect(page.locator('body')).toContainText(HORIZON_STATE, { timeout: 20_000 });
+    });
+  }
 });
 
-test.describe('FioriShell chrome', () => {
-  test('sidebar is visible on desktop viewport', async ({ page, baseURL }) => {
+test.describe('Meridian chrome + duty-stream collapse', () => {
+  // Admin token is reliably cached by global-setup (first/most-used login), so
+  // the success branch (header + board + duty stream) is reachable here.
+  test('renders Meridian chrome, not the old FioriShell rail', async ({ page, baseURL }) => {
+    test.skip(!hasRealToken('admin'), 'needs a real admin token to reach the Horizon success branch');
     const errors = collectErrors(page);
     await page.setViewportSize({ width: 1280, height: 800 });
     await seedToken(page, 'admin');
-    await goTo(page, baseURL, '/admin');
-    await expect(page.locator('body')).toContainText(/admin/i, { timeout: 20_000 });
-    // Sidebar should be visible
-    const sidebar = page.locator('aside.oe-rail, aside.fiori-rail, [class*="rail"]').first();
-    await expect(sidebar).toBeVisible({ timeout: 5_000 });
-    // Sidebar should be visible and main content should have left offset (padding or margin)
-    await expect(sidebar).toBeVisible({ timeout: 5_000 });
-    // Check that content area has left padding/margin from sidebar (FioriShell adds paddingLeft)
-    const main = page.locator('main, [class*="content-area"], [class*="main-content"]').first();
-    const paddingLeft = await main.evaluate(
-      (el) => parseFloat(window.getComputedStyle(el).paddingLeft) || 0,
-    ).catch(() => 0);
-    // On 1280px desktop with sidebar, paddingLeft > 0 OR sidebar pushes content via its own width
-    // Either check is valid evidence the layout isn't broken
-    expect(paddingLeft >= 0).toBe(true); // Soft check — just ensure no negative offset
+    await goTo(page, baseURL, '/horizon');
+
+    // Wait for the board (success branch) before asserting header chrome — the
+    // MeridianHeader only renders alongside the board, not in loading/error.
+    await expect(
+      page.locator('[aria-label="Live cases by time to consequence"]'),
+    ).toBeVisible({ timeout: 30_000 });
+
+    // The retired FioriShell sidebar is gone. NB: match the specific rail classes,
+    // NOT [class*="rail"] — Meridian's own duty-rail would false-positive on that.
+    await expect(page.locator('aside.oe-rail, aside.fiori-rail')).toHaveCount(0);
+
+    // Meridian header chrome is present.
+    await expect(page.locator('nav[aria-label="Platform sections"]')).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator('body')).toContainText(/Atlas — search anything/i, { timeout: 5_000 });
+
     const real = errors.filter((e) => e.startsWith('pageerror'));
     expect(real, real.join('\n')).toEqual([]);
   });
 
-  test('sidebar collapses on mobile viewport', async ({ page, baseURL }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
+  // Regression for the reported "side panel doesn't collapse" bug (fix 38229cfe):
+  // the duty stream collapses to a slim reopen rail and restores, persisted to
+  // localStorage['mer.duty.collapsed'].
+  test('duty stream collapses and restores', async ({ page, baseURL }) => {
+    test.skip(!hasRealToken('admin'), 'needs a real admin token to reach the Horizon success branch');
+    await page.setViewportSize({ width: 1280, height: 800 });
     await seedToken(page, 'admin');
-    await goTo(page, baseURL, '/admin');
-    await expect(page.locator('body')).toContainText(/admin/i, { timeout: 20_000 });
-    // Desktop sidebar should be hidden on mobile
-    const sidebar = page.locator('aside.oe-rail, aside.fiori-rail, [class*="rail"]').first();
-    const visible = await sidebar.isVisible().catch(() => false);
-    // Either hidden or off-screen
-    if (visible) {
-      const box = await sidebar.boundingBox();
-      // If visible, it should be positioned at left: 0 and not overlapping main content
-      expect(box?.x).toBeLessThanOrEqual(0);
-    }
-  });
+    await goTo(page, baseURL, '/horizon');
 
-  test('top shell bar is present on all pages', async ({ page, baseURL }) => {
-    await seedToken(page, 'admin');
-    await goTo(page, baseURL, '/admin');
-    await expect(page.locator('body')).toContainText(/admin/i, { timeout: 20_000 });
-    // Shell bar: header or nav at top
-    const header = page.locator('header, nav[class*="shell"], [class*="shell-header"], .oe-shell').first();
-    await expect(header).toBeVisible({ timeout: 5_000 });
+    await expect(
+      page.locator('[aria-label="Live cases by time to consequence"]'),
+    ).toBeVisible({ timeout: 30_000 });
+
+    // Open state: duty stream visible, collapse control present.
+    await expect(page.locator('aside[aria-label="Duty stream"]')).toBeVisible({ timeout: 5_000 });
+    const collapseBtn = page.locator('button[aria-label="Collapse duty stream"]');
+    await expect(collapseBtn).toBeVisible({ timeout: 5_000 });
+
+    // Collapse → the slim reopen rail (Expand button) appears.
+    await collapseBtn.click();
+    const expandBtn = page.locator('button[aria-label="Expand duty stream"]');
+    await expect(expandBtn).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator('aside.collapsed[aria-label="Duty stream"]')).toHaveCount(1);
+
+    // Restore → collapse control is back.
+    await expandBtn.click();
+    await expect(collapseBtn).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator('aside.collapsed[aria-label="Duty stream"]')).toHaveCount(0);
   });
 });
 
-test.describe('Admin impersonation tabs', () => {
-  const ADMIN_ROLE_TABS = [
-    { label: 'IPP',       path: '/ipp-lifecycle/workstation' },
-    { label: 'Trader',    path: '/trader-risk/workstation' },
-    { label: 'Lender',    path: '/lender-suite/workstation' },
-    { label: 'Offtaker',  path: '/offtaker-suite/workstation' },
-    { label: 'Grid',      path: '/grid-operator/workstation' },
-    { label: 'Carbon',    path: '/carbon-registry/workstation' },
-    { label: 'Regulator', path: '/regulator-suite/workstation' },
-    { label: 'Admin',     path: '/admin' },
-    { label: 'Support',   path: '/support/workstation' },
-  ];
+test.describe('Admin role-switch board', () => {
+  test('admin can switch the board across lane-holding roles', async ({ page, baseURL }) => {
+    test.skip(!hasRealToken('admin'), 'needs a real admin token to reach the Horizon success branch');
+    const errors = collectErrors(page);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await seedToken(page, 'admin');
+    await goTo(page, baseURL, '/horizon');
 
-  for (const tab of ADMIN_ROLE_TABS) {
-    test(`admin tab [${tab.label}] navigates to correct route`, async ({ page, baseURL }) => {
-      const errors = collectErrors(page);
-      await seedToken(page, 'admin');
-      // Start from admin page
-      await goTo(page, baseURL, '/admin');
-      await expect(page.locator('body')).toContainText(/admin/i, { timeout: 20_000 });
-      // Find the role tab in the shell and click it
-      const roleTab = page.getByRole('button', { name: tab.label }).or(
-        page.getByRole('link', { name: tab.label })
-      ).first();
-      if (await roleTab.count() > 0) {
-        await roleTab.click();
-        await page.waitForLoadState('domcontentloaded', { timeout: 15_000 });
-        const url = page.url();
-        expect(url).toContain(tab.path.split('/')[1]);
-      }
-      // If tab not found in shell, navigate directly and check no 404.
-      // ERR_ABORTED (CF bot challenge on prod) causes goto to throw — catch and
-      // treat as a skip: the route exists, CF just interrupted the navigation.
-      const resp = await page.goto(`${baseURL}${tab.path}`, { waitUntil: 'domcontentloaded' }).catch(() => null);
-      if (!resp) return; // CF-aborted navigation — not a missing route
-      expect(resp.status(), `${tab.path} returned ${resp.status()}`).not.toBe(404);
-      const real = errors.filter((e) => e.startsWith('pageerror'));
-      expect(real, real.join('\n')).toEqual([]);
-    });
-  }
+    await expect(
+      page.locator('[aria-label="Live cases by time to consequence"]'),
+    ).toBeVisible({ timeout: 30_000 });
+
+    // The admin-only role switcher renders one button per lane-holding role.
+    const group = page.locator('div.role-switch[role="group"][aria-label="View board as role"]');
+    await expect(group).toBeVisible({ timeout: 5_000 });
+    const buttons = group.locator('button');
+    expect(await buttons.count(), 'role switcher should expose multiple lane roles').toBeGreaterThanOrEqual(8);
+
+    // Switch to a different role's board (resets data → loading → board again).
+    await buttons.nth(1).click();
+    await expect(page.locator('body')).toContainText(HORIZON_STATE, { timeout: 10_000 });
+    await expect(
+      page.locator('[aria-label="Live cases by time to consequence"]'),
+    ).toBeVisible({ timeout: 30_000 });
+
+    const real = errors.filter((e) => e.startsWith('api.5'));
+    expect(real, `5xx after admin role switch:\n${real.join('\n')}`).toEqual([]);
+  });
 });
 
 test.describe('Error states and edge cases', () => {

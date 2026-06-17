@@ -43,6 +43,12 @@ const ROLES: Array<{ email: string; envKey: string }> = [
   { email: 'regulator@openenergy.co.za', envKey: 'PLAYWRIGHT_REGULATOR_TOKEN' },
   { email: 'grid@openenergy.co.za',      envKey: 'PLAYWRIGHT_GRID_TOKEN' },
   { email: 'support@openenergy.co.za',   envKey: 'PLAYWRIGHT_SUPPORT_TOKEN' },
+  // esco (O&M operator, seeded in migration 494) — its own Meridian lanes
+  // (W12/16/24/25/35/51/59/64/71/72 O&M chains) are unreachable without a real
+  // esco token, so the Horizon per-role test would 401 and fall to the error
+  // state. 10 logins on a cold setup sits at the 10/5min limiter ceiling, but a
+  // warm disk cache does zero logins on re-runs, so this stays rate-safe.
+  { email: 'esco@openenergy.co.za',      envKey: 'PLAYWRIGHT_ESCO_TOKEN' },
 ];
 
 interface TokenCache {
