@@ -364,6 +364,10 @@ interface WithdrawBody {
   reason_code?: string;
   notes?: string;
 }
+interface LapseBody {
+  reason_code?: string;
+  notes?: string;
+}
 
 async function transition(
   c: Context<HonoEnv>,
@@ -559,6 +563,18 @@ app.post('/:id/refuse', async (c) => transition(c, 'refuse', (_row, body) => {
 
 app.post('/:id/withdraw', async (c) => transition(c, 'withdraw', (_row, body) => {
   const b = body as Partial<WithdrawBody>;
+  const out: Partial<RenewalRow> = {};
+  if (typeof b.reason_code === 'string') out.reason_code = b.reason_code;
+  return out;
+}));
+
+// Manual lapse: a proponent/carbon-fund declares an un-filed renewal lapsed at
+// crediting-period expiry, rather than waiting for the time-driven sweep below.
+// State machine guards it to renewal_due → lapsed (TRANSITIONS.lapse); transition()
+// auto-stamps lapsed_at via the status→timestamp map. Mirrors withdraw — parity with
+// the W49 licence and W57 SSEG lapse handlers, which the registry already surfaces.
+app.post('/:id/lapse', async (c) => transition(c, 'lapse', (_row, body) => {
+  const b = body as Partial<LapseBody>;
   const out: Partial<RenewalRow> = {};
   if (typeof b.reason_code === 'string') out.reason_code = b.reason_code;
   return out;
