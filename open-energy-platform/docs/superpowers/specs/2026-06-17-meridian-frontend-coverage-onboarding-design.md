@@ -9,6 +9,10 @@ Make **every** backend capability reachable and usable from the Meridian fronten
 
 This is the front-door layer on top of the existing 168-chain backend — no chain rewrites. It exposes, guides, and neatens what already exists.
 
+> **Companion specs (evidence/intent layer):**
+> - [`meridian-ux/`](meridian-ux/README.md) — the **entire intended user experience**, detailed: 8 surfaces, 12 roles (signature journey + full tile/lane inventory), 4 cross-cutting systems (~15.4k lines). Serves "this must be detailed for the entire user experience."
+> - The **navigation + usability resolution plan** (simulated frontend test → per-role fix order, nav+usability as key criteria) is appended below under [Simulated frontend test — nav + usability resolution](#simulated-frontend-test--nav--usability-resolution).
+
 ## Scope decisions (resolved 2026-06-17)
 
 1. **Invisible-chain disposition → best IA.** Owned/initiator chains get an Atlas tile; counterparty-read chains become **Thread-only** (reached from the two-sided Thread, not a flat tile); the 29 `ipp_*` dossier sub-documents group under **one "Project Dossier" surface** with sections, not 29 flat tiles.
@@ -190,6 +194,75 @@ Per-page TSX has zero breakpoints. Verify reflow below 760px for Horizon lanes, 
 ## Sequencing
 
 All P0–P3 before go-live (per decision 3). Suggested build order (refined in the implementation plan): **WS-A6 + A5 first** (integrity guard + deep-link safety lock in the invariants), then **WS-A1–A4** (disposition + dead-tile cleanup) and **WS-C1** (dropdowns) in parallel, then **WS-B** (onboarding, with B6 gated), then **WS-C2–C11 / WS-D / WS-E / WS-F / WS-G**. The CI guard (A6) lands early so every subsequent change is checked.
+
+## Simulated frontend test — nav + usability resolution
+
+> Full detail: [`meridian-ux/RESOLUTION-nav-usability.md`](meridian-ux/RESOLUTION-nav-usability.md). This section is the condensed synthesis carried into the spec; the companion holds the per-role line items, cross-cutting checks, and provenance.
+
+Serves request 2 verbatim — *"a full user simulated test on the frontend and a plan to resolve for all roles and all functionality with navigation and usability the key criteria."*
+
+**Method — two passes, cross-checked.** (1) Deterministic matrix (audit `w08jywqqh`, 22 agents) — static analysis of registry × roleData × SURFACE_REGISTRY → F1–F5 + 12 usability findings (§"Current state"). (2) Behavioral journey sim (`w8msxa32l`, 16 agents, 12 roles + 4 cross-cutting, ~1.42M tokens, 506s, clean run) — each role agent traced the signature journey Horizon → Atlas/⌘K → Ledger → Thread against source, classifying every tile/lane and recording P0–P3 friction.
+
+**Resolution rule (existence, not truthiness).** `AtlasPage.tsx:56` + `CommandPalette.tsx:80` decide reachability with a shallow `!!f.chainKey || !!f.route || SURFACE_REGISTRY[...]` — never verifying `chainKey ∈ MERIDIAN_CHAINS` or that the route is mounted. Tiles split three ways: **REACHABLE** (resolves), **DEAD** (no target → silently hidden), **DANGLING** (target string that doesn't resolve → passes filter, renders clickable, **404s on click** — the worst class).
+
+**12-role matrix (reachability + nav):**
+
+| Role | Tiles | Reachable | Dead | Empty | Lanes | Lane nav? | Label leaks |
+|---|---:|---:|---:|---:|---:|:--:|---:|
+| admin | 33 | 26 | 7 | 0 | 0¹ | ✗ | 3 |
+| trader | 24 | 20 | 4 | 5 | 3 | ✗ | 3 |
+| ipp_developer | 76 | 76² | 0 | 0 | 14 | ✗ | 6 |
+| carbon_fund | 25 | 24 | 1 | 0 | 6 | ✗ | 0 |
+| offtaker | 42 | 40 | 2 | 1 | 5 | ✗ | 0 |
+| lender | 26 | 17 | 9 | 0 | 5 | ✗ | 0 |
+| grid_operator | 39 | 31 | 8 | 0 | 4 | ✗ | 3 |
+| regulator | 24 | 23 | 0 | 0 | 5 | ✗ | 0 |
+| support | 24 | 24 | 0 | 0 | 4 | ✗ | 0 |
+| esco | 35 | 35 | 0 | 0 | 6 | ✗ | 0 |
+| esums_owner | 37 | 37 | 0 | 0 | 6 | ✗ | 0 |
+| epc_contractor | 11 | 9 | 2 | 0 | 3 | ✗ | 0 |
+
+¹ Admin holds no lanes; Horizon gives it a role-switcher. ² **False-positive reachable** — ipp's 76 include dangling chainKeys (`ipp_schedule`, `ipp_evm`, `dfr`, `mir`, …) that 404 on click (audit F5). This *is* the "very difficult for an IPP to go through a journey" complaint.
+
+**Universal nav defect: `Lane nav? = ✗` for all 12 roles.** `HorizonPage.tsx:170` renders each lane label as a collapse/expand `<button>`, never a `Link` to `/ledger/:chainKey`. No role can click a lane header to reach its case list — the single most-repeated friction in the sim.
+
+**Headline complaint → finding → workstream:**
+
+| User said | Finding | Resolved by |
+|---|---|---|
+| "atlas everywhere … roles showing everything" | Header National-Dashboard/Intelligence/Deals quicklinks shown to all roles though endpoints are role-gated server-side | WS-A header role-gating |
+| "pages dont work" | ~39 DEAD + ~6 EMPTY + ~39 DANGLING (404 on click) | WS-A1–A4 + A6 guard |
+| "left part of the screen is just text with w numbers" | snake_case lane labels (`STAGE GATES`, `COST EVM`, `DFR`, `MIR`); `cleanLabel` strips `(W###)` but multi-wave lists still leak `W12` | WS-C labels |
+| "none of the labels are clickable" | **Universal** lane-header collapse-only (all 12 roles) | WS-A lane→Ledger link |
+| "very difficult for an ipp to go through a journey" | dangling chainKeys 404 mid-journey + Ledger-initiation trap (no +New on non-initiable chains) | WS-A5 existence check + +New fallback |
+| "there is no logout" | Sign out **exists** in avatar menu; gap is discoverability + ARIA/keyboard/confirm | WS-C avatar a11y |
+| "text inputs are not drop downs for db fields" | 55+ `*_id`/methodology fields typed `string` though FieldForm already renders `type:'lookup'` as a populated `<select>` | WS-C1 registry dropdown data |
+| "best predictive fault analysis + anomaly detection on O&M" | functional-depth directive | Out of nav+usability scope — Esums-predictive-vs-NTT program (Wave 71) |
+
+**Four universal fixes (land in shared chrome, clear the bulk of the matrix):**
+- **U1** — lane headers navigate to Ledger: wrap `HorizonPage.tsx:170` label in a `Link` to `/ledger/:laneChainKey`, collapse moves to a separate chevron. *(WS-A)*
+- **U2** — Atlas/⌘K reachability becomes an existence check (`chainKey ∈ MERIDIAN_CHAINS ∧ route mounted ∧ surface present`); converts ~39 dangling false-positives from 404-on-click to honest hide/show. *(WS-A5)*
+- **U3** — CI integrity guard: build-time assertion that every tile resolves and every laned chain has a front-door tile; a typo fails CI instead of shipping a clickable 404. Lands first; freezes dead-tile count at zero. *(WS-A6)*
+- **U4** — shared `Dialog` primitive (focus-trap + inert + Escape-on-veil + focus-restore) replaces the 4 independent veils; fixes modal a11y everywhere at once. *(WS-C)*
+
+**Prioritized fix order (navigation first, then usability — the user's two key criteria):**
+
+| # | Fix | Class | Roles | WS |
+|---|---|---|---|---|
+| 1 | U3 CI integrity guard | nav | all | WS-A6 |
+| 2 | U2 Atlas/⌘K existence check | nav | ipp + all | WS-A5 |
+| 3 | U1 lane headers → Ledger links | nav | **all 12** | WS-A |
+| 4 | Header quicklink role-gating | nav | all | WS-A |
+| 5 | Dead/empty/dangling disposition (back or remove): lender 9, grid 8, admin 7, trader 9, epc 2, offtaker 3, carbon 1, regulator 1 | nav | 8 roles | WS-A1–A4 |
+| 6 | Flip 55+ `*_id`/methodology fields to `lookup` | usability | all forms | WS-C1 |
+| 7 | U4 shared Dialog + `--ink3` contrast (4.25:1 → AA 4.5:1) | usability/a11y | all | WS-C |
+| 8 | Label-leak cleanup (friendly lane labels; `cleanLabel` multi-wave + `& AI`) | usability | admin, trader, grid, ipp, esums | WS-C |
+| 9 | Ledger +New fallback for non-initiable chains | nav | ipp, carbon, offtaker | WS-A |
+| 10 | Per-role Thread field-visibility; cross-chain cascade hints; duty-stream busy/confirm | usability | support, esco, all | WS-C/F |
+
+Items 1–5 are **navigation**, 6–10 are **usability** — both stated key criteria, in that priority. All P0–P3 land before go-live (decision 3).
+
+---
 
 ## Open HARD-GATES (do not build autonomously)
 

@@ -1,0 +1,134 @@
+[
+  {
+    "grp": "surfaces",
+    "file": "surfaces/00-meridianframe-meridianheader-global-chrome.md",
+    "title": "Surface: MeridianFrame & MeridianHeader (global chrome)"
+  },
+  {
+    "grp": "surfaces",
+    "file": "surfaces/01-horizon-horizon.md",
+    "title": "Surface: Horizon (/horizon)"
+  },
+  {
+    "grp": "surfaces",
+    "file": "surfaces/02-atlas-atlas-command-palette-k.md",
+    "title": "Surface: Atlas (/atlas) & Command Palette (⌘K)"
+  },
+  {
+    "grp": "surfaces",
+    "file": "surfaces/03-ledger-ledger-chainkey-new-fieldform.md",
+    "title": "Surface: Ledger (/ledger/:chainKey) & +New / FieldForm"
+  },
+  {
+    "grp": "surfaces",
+    "file": "surfaces/04-thread-thread-chainkey-id-two-sided-cross-role-v.md",
+    "title": "Surface: Thread (/thread/:chainKey/:id) — two-sided cross-role view"
+  },
+  {
+    "grp": "surfaces",
+    "file": "surfaces/05-deal-desk-deals-new.md",
+    "title": "Surface: Deal Desk (/deals, /new)"
+  },
+  {
+    "grp": "surfaces",
+    "file": "surfaces/06-surface-key-surface-registry-shared-surfacestate.md",
+    "title": "Surface: /surface/:key (SURFACE_REGISTRY) & shared SurfaceState"
+  },
+  {
+    "grp": "surfaces",
+    "file": "surfaces/07-onboarding-onboard-onboardingwizard.md",
+    "title": "Surface: Onboarding (/onboard) — OnboardingWizard"
+  },
+  {
+    "grp": "roles",
+    "file": "roles/admin.md",
+    "title": "admin",
+    "order": 0
+  },
+  {
+    "grp": "roles",
+    "file": "roles/trader.md",
+    "title": "trader",
+    "order": 1
+  },
+  {
+    "grp": "roles",
+    "file": "roles/ipp_developer.md",
+    "title": "ipp_developer",
+    "order": 2
+  },
+  {
+    "grp": "roles",
+    "file": "roles/carbon_fund.md",
+    "title": "carbon_fund",
+    "order": 3
+  },
+  {
+    "grp": "roles",
+    "file": "roles/offtaker.md",
+    "title": "offtaker",
+    "order": 4
+  },
+  {
+    "grp": "roles",
+    "file": "roles/lender.md",
+    "title": "lender",
+    "order": 5
+  },
+  {
+    "grp": "roles",
+    "file": "roles/grid_operator.md",
+    "title": "grid_operator",
+    "order": 6
+  },
+  {
+    "grp": "roles",
+    "file": "roles/regulator.md",
+    "title": "regulator",
+    "order": 7
+  },
+  {
+    "grp": "roles",
+    "file": "roles/support.md",
+    "title": "support",
+    "order": 8
+  },
+  {
+    "grp": "roles",
+    "file": "roles/esco.md",
+    "title": "esco",
+    "order": 9
+  },
+  {
+    "grp": "roles",
+    "file": "roles/esums_owner.md",
+    "title": "esums_owner",
+    "order": 10
+  },
+  {
+    "grp": "roles",
+    "file": "roles/epc_contractor.md",
+    "title": "epc_contractor",
+    "order": 11
+  },
+  {
+    "grp": "crosscutting",
+    "file": "crosscutting/00-db-backed-dropdowns-string-lookup-lookup-sources.md",
+    "title": "Cross-cutting: DB-backed dropdowns (string → lookup) & LOOKUP_SOURCES"
+  },
+  {
+    "grp": "crosscutting",
+    "file": "crosscutting/01-accessibility-neatening-dialog-primitive-contras.md",
+    "title": "Cross-cutting: Accessibility & neatening (Dialog primitive, contrast, focus, keyboard, labels)"
+  },
+  {
+    "grp": "crosscutting",
+    "file": "crosscutting/02-zar-i18n-locale-responsive-760px-surfacestate-pr.md",
+    "title": "Cross-cutting: ZAR/i18n locale, responsive <760px, SurfaceState, print/export"
+  },
+  {
+    "grp": "crosscutting",
+    "file": "crosscutting/03-full-onboarding-system-per-role-sequences-per-co.md",
+    "title": "Cross-cutting: Full onboarding system — per-role sequences, per-component first-run, provisioning, sandbox, KYC gate"
+  }
+]
