@@ -50,7 +50,14 @@ export function requireStepUp(opType: string) {
         ORDER BY authenticated_at DESC LIMIT 1
       `).bind(user.id, opType).first<any>().catch(() => null);
       if (row) {
-        const age = (Date.now() - new Date(row.authenticated_at).getTime()) / 1000;
+        // SQLite's `datetime('now')` default stores `YYYY-MM-DD HH:MM:SS` in UTC
+        // with no zone marker; `new Date()` would parse that as *local* time and
+        // skew the freshness window by the host's UTC offset. Normalise to an
+        // explicit UTC instant so the gate is correct regardless of timezone
+        // (Workers run UTC; dev/test machines may not).
+        const ts = String(row.authenticated_at);
+        const iso = /[TZ]/.test(ts) ? ts : ts.replace(' ', 'T') + 'Z';
+        const age = (Date.now() - new Date(iso).getTime()) / 1000;
         if (age <= grace) return next();
       }
     }

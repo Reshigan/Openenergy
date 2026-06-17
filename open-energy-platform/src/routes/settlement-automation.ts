@@ -34,8 +34,14 @@ function genId(p: string) { return `${p}_${Date.now().toString(36)}${Math.random
 
 // ─── Settlement runs ───────────────────────────────────────────────────────
 // All settlement endpoints require auth.
-sa.use('/runs*', authMiddleware);
-sa.use('/dlq*', authMiddleware);
+// NOTE: Hono's `use('/runs*')` glob matches neither the bare `/runs` nor
+// `/runs/:id` — so the prior `*` form left these routes unauthenticated and
+// `getCurrentUser()` then threw (500 for every caller). Register the exact
+// path AND the subtree wildcard explicitly.
+sa.use('/runs', authMiddleware);
+sa.use('/runs/*', authMiddleware);
+sa.use('/dlq', authMiddleware);
+sa.use('/dlq/*', authMiddleware);
 
 sa.post('/runs', async (c) => {
   const user = getCurrentUser(c);
@@ -225,8 +231,11 @@ sa.post('/dlq/:id/resolve', async (c) => {
 
 // ─── Meter ingest ──────────────────────────────────────────────────────────
 // Channel config requires auth; the /push endpoint uses HMAC-only auth.
-sa.use('/ingest/channels*', authMiddleware);
-sa.use('/ingest/health*', authMiddleware);
+// Exact + subtree forms (see the /runs note above) — the `*` glob misses the
+// bare path. `/ingest/push` stays intentionally unguarded for HMAC webhooks.
+sa.use('/ingest/channels', authMiddleware);
+sa.use('/ingest/channels/*', authMiddleware);
+sa.use('/ingest/health', authMiddleware);
 
 sa.post('/ingest/channels', async (c) => {
   const user = getCurrentUser(c);
