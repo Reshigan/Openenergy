@@ -53,8 +53,11 @@ const READ_ROLES = new Set([
   'regulator',
   'trader', 'marketmaker',
 ]);
+// 'regulator' is the live FSCA/compliance-desk persona; 'compliance' is a legacy
+// alias with no seeded login. READ_ROLES already lists both — align WRITE so the
+// regulator can actually fire the enforcement actions its Horizon buttons offer.
 const COMPLIANCE_WRITE_ROLES = new Set([
-  'admin', 'support', 'compliance',
+  'admin', 'support', 'compliance', 'regulator',
 ]);
 const TRADER_WRITE_ROLES = new Set([
   'admin', 'support', 'compliance',

@@ -74,10 +74,12 @@ import {
 
 const READ_ROLES = new Set([
   'admin', 'support',
-  'ipp_developer', 'offtaker', 'trader', 'regulator', 'lender', 'grid_operator', 'carbon_fund',
+  'ipp_developer', 'offtaker', 'trader', 'regulator', 'lender', 'grid_operator', 'carbon_fund', 'esco',
 ]);
 
-const WRITE_ROLES = new Set(['admin', 'support']);
+// esco is the live Esums/O&M operator persona (seed 494); 'support' was the
+// pre-persona placeholder. Both write so the laned esco Horizon is functional.
+const WRITE_ROLES = new Set(['admin', 'support', 'esco']);
 
 interface BsohRow {
   id: string;

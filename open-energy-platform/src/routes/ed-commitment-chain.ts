@@ -48,8 +48,11 @@ const READ_ROLES = new Set([
   'esums', 'esums_om',
   'lender',
 ]);
+// 'regulator' is the live IPPO/compliance-desk persona; 'compliance' is a legacy
+// alias with no seeded login. READ_ROLES already lists both — align WRITE so the
+// regulator can fire the cure/penalty/escalation actions its Horizon buttons offer.
 const WRITE_ROLES = new Set([
-  'admin', 'support', 'compliance',
+  'admin', 'support', 'compliance', 'regulator',
   'ipp_developer',
 ]);
 

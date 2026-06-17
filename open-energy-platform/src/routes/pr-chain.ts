@@ -33,15 +33,18 @@ import {
   type PrTier,
 } from '../utils/pr-chain-spec';
 
+// esco is the live O&M operator persona (seed 494); esums/esums_om are legacy
+// aliases with no seeded login. esco owns PR underperformance like its siblings
+// (W59 pm-compliance keeps esco in both sets). Added to READ + WRITE.
 const READ_ROLES = new Set([
   'admin', 'support',
-  'esums', 'esums_om',
+  'esums', 'esums_om', 'esco',
   'ipp', 'ipp_developer', 'wind',
   'regulator',
 ]);
 const WRITE_ROLES = new Set([
   'admin', 'support',
-  'esums', 'esums_om',
+  'esums', 'esums_om', 'esco',
   'ipp', 'ipp_developer', 'wind',
 ]);
 

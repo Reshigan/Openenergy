@@ -579,16 +579,16 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     
-      { action: "begin-documentation", label: "Begin documentation", path: "/api/security-perfection/chain/:id/begin-documentation", method: 'POST', roles: ['admin'], cascadeHint: "Advances the security perfection chain to documentation pending.", fields: [{ key: "documentation_basis", label: "Documentation basis", type: 'string' }, { key: "document_ref", label: "Document ref", type: 'string' }, { key: "secured_value_zar", label: "Secured value (ZAR)", type: 'number' }, { key: "perfection_critical", label: "Perfection critical", type: 'boolean' }] },
-      { action: "execute-security", label: "Execute security", path: "/api/security-perfection/chain/:id/execute-security", method: 'POST', roles: ['admin'], cascadeHint: "Advances the security perfection chain to executed.", fields: [{ key: "execution_basis", label: "Execution basis", type: 'string' }, { key: "document_ref", label: "Document ref", type: 'string' }] },
-      { action: "lodge-registration", label: "Lodge registration", path: "/api/security-perfection/chain/:id/lodge-registration", method: 'POST', roles: ['admin'], cascadeHint: "Advances the security perfection chain to lodged for registration.", fields: [{ key: "lodgement_basis", label: "Lodgement basis", type: 'string' }, { key: "lodgement_ref", label: "Lodgement ref", type: 'string' }] },
-      { action: "confirm-registration", label: "Confirm registration", tone: "primary", path: "/api/security-perfection/chain/:id/confirm-registration", method: 'POST', roles: ['admin'], cascadeHint: "Advances the security perfection chain to registered.", fields: [{ key: "registration_basis", label: "Registration basis", type: 'string' }, { key: "registration_ref", label: "Registration ref", type: 'string' }] },
-      { action: "reject-registration", label: "Reject registration", tone: "oxide", path: "/api/security-perfection/chain/:id/reject-registration", method: 'POST', roles: ['admin'], cascadeHint: "Advances the security perfection chain to defective.", fields: [{ key: "defect_basis", label: "Defect basis", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
-      { action: "begin-perfection-review", label: "Begin perfection review", path: "/api/security-perfection/chain/:id/begin-perfection-review", method: 'POST', roles: ['admin'], cascadeHint: "Advances the security perfection chain to perfection review.", fields: [{ key: "perfection_basis", label: "Perfection basis", type: 'string' }, { key: "legal_opinion_ref", label: "Legal opinion ref", type: 'string' }] },
-      { action: "flag-overdue", label: "Flag overdue", tone: "ghost", path: "/api/security-perfection/chain/:id/flag-overdue", method: 'POST', roles: ['admin'], cascadeHint: "Advances the security perfection chain to perfection overdue.", fields: [{ key: "overdue_basis", label: "Overdue basis", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
-      { action: "cure-overdue", label: "Cure overdue", tone: "ghost", path: "/api/security-perfection/chain/:id/cure-overdue", method: 'POST', roles: ['admin'], cascadeHint: "Advances the security perfection chain to lodged for registration.", fields: [{ key: "lodgement_basis", label: "Lodgement basis", type: 'string' }, { key: "lodgement_ref", label: "Lodgement ref", type: 'string' }, { key: "resolution_summary", label: "Resolution summary", type: 'evidence' }] },
-      { action: "release-security", label: "Release security", tone: "primary", path: "/api/security-perfection/chain/:id/release-security", method: 'POST', roles: ['admin'], cascadeHint: "Advances the security perfection chain to released.", fields: [{ key: "release_basis", label: "Release basis", type: 'string' }, { key: "release_ref", label: "Release ref", type: 'string' }, { key: "resolution_summary", label: "Resolution summary", type: 'evidence' }] },
-      { action: "withdraw", label: "Withdraw", tone: "oxide", path: "/api/security-perfection/chain/:id/withdraw", method: 'POST', roles: ['admin'], cascadeHint: "Advances the security perfection chain to withdrawn.", fields: [{ key: "reason_code", label: "Reason code", type: 'evidence' }, { key: "resolution_summary", label: "Resolution summary", type: 'evidence' }] }
+      { action: "begin-documentation", label: "Begin documentation", path: "/api/security-perfection/chain/:id/begin-documentation", method: 'POST', roles: ['admin', 'lender'], cascadeHint: "Advances the security perfection chain to documentation pending.", fields: [{ key: "documentation_basis", label: "Documentation basis", type: 'string' }, { key: "document_ref", label: "Document ref", type: 'string' }, { key: "secured_value_zar", label: "Secured value (ZAR)", type: 'number' }, { key: "perfection_critical", label: "Perfection critical", type: 'boolean' }] },
+      { action: "execute-security", label: "Execute security", path: "/api/security-perfection/chain/:id/execute-security", method: 'POST', roles: ['admin', 'ipp_developer'], cascadeHint: "Advances the security perfection chain to executed.", fields: [{ key: "execution_basis", label: "Execution basis", type: 'string' }, { key: "document_ref", label: "Document ref", type: 'string' }] },
+      { action: "lodge-registration", label: "Lodge registration", path: "/api/security-perfection/chain/:id/lodge-registration", method: 'POST', roles: ['admin', 'lender'], cascadeHint: "Advances the security perfection chain to lodged for registration.", fields: [{ key: "lodgement_basis", label: "Lodgement basis", type: 'string' }, { key: "lodgement_ref", label: "Lodgement ref", type: 'string' }] },
+      { action: "confirm-registration", label: "Confirm registration", tone: "primary", path: "/api/security-perfection/chain/:id/confirm-registration", method: 'POST', roles: ['admin', 'lender'], cascadeHint: "Advances the security perfection chain to registered.", fields: [{ key: "registration_basis", label: "Registration basis", type: 'string' }, { key: "registration_ref", label: "Registration ref", type: 'string' }] },
+      { action: "reject-registration", label: "Reject registration", tone: "oxide", path: "/api/security-perfection/chain/:id/reject-registration", method: 'POST', roles: ['admin', 'lender'], cascadeHint: "Advances the security perfection chain to defective.", fields: [{ key: "defect_basis", label: "Defect basis", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
+      { action: "begin-perfection-review", label: "Begin perfection review", path: "/api/security-perfection/chain/:id/begin-perfection-review", method: 'POST', roles: ['admin', 'lender'], cascadeHint: "Advances the security perfection chain to perfection review.", fields: [{ key: "perfection_basis", label: "Perfection basis", type: 'string' }, { key: "legal_opinion_ref", label: "Legal opinion ref", type: 'string' }] },
+      { action: "flag-overdue", label: "Flag overdue", tone: "ghost", path: "/api/security-perfection/chain/:id/flag-overdue", method: 'POST', roles: ['admin', 'lender'], cascadeHint: "Advances the security perfection chain to perfection overdue.", fields: [{ key: "overdue_basis", label: "Overdue basis", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
+      { action: "cure-overdue", label: "Cure overdue", tone: "ghost", path: "/api/security-perfection/chain/:id/cure-overdue", method: 'POST', roles: ['admin', 'lender'], cascadeHint: "Advances the security perfection chain to lodged for registration.", fields: [{ key: "lodgement_basis", label: "Lodgement basis", type: 'string' }, { key: "lodgement_ref", label: "Lodgement ref", type: 'string' }, { key: "resolution_summary", label: "Resolution summary", type: 'evidence' }] },
+      { action: "release-security", label: "Release security", tone: "primary", path: "/api/security-perfection/chain/:id/release-security", method: 'POST', roles: ['admin', 'lender'], cascadeHint: "Advances the security perfection chain to released.", fields: [{ key: "release_basis", label: "Release basis", type: 'string' }, { key: "release_ref", label: "Release ref", type: 'string' }, { key: "resolution_summary", label: "Resolution summary", type: 'evidence' }] },
+      { action: "withdraw", label: "Withdraw", tone: "oxide", path: "/api/security-perfection/chain/:id/withdraw", method: 'POST', roles: ['admin', 'lender'], cascadeHint: "Advances the security perfection chain to withdrawn.", fields: [{ key: "reason_code", label: "Reason code", type: 'evidence' }, { key: "resolution_summary", label: "Resolution summary", type: 'evidence' }] }
     ],
     filters: [
       { key: 'documenting', label: 'Documenting', statuses: ['identified', 'documentation_pending', 'executed'] },
@@ -1062,7 +1062,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     terminal: ['cured', 'escalated', 'false_alarm'],
     counterpartyCol: 'trader_party',
-    lanes: { trader: 'risk_margin' },
+    lanes: { trader: 'risk_margin', regulator: 'enforcement_regulator' },
     eventsTable: 'oe_poslimit_events', eventsFk: 'poslimit_id',
     actions: [
       { action: 'begin-reduction', label: 'Begin reduction',
@@ -1074,7 +1074,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ] },
       { action: 'issue-margin-call', label: 'Issue margin call',
         path: '/api/poslimit/chain/:id/issue-margin-call',
-        roles: ['admin', 'support', 'compliance'],
+        roles: ['admin', 'support', 'regulator'],
         cascadeHint: 'Demands a ZAR collateral top-up from the trading member; crosses FSCA inbox for prop and market_maker tiers.',
         fields: [
           { key: 'margin_called_zar', label: 'Margin called', type: 'number', unit: 'ZAR' },
@@ -1082,19 +1082,19 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ] },
       { action: 'force-liquidate', label: 'Force liquidate', tone: 'oxide',
         path: '/api/poslimit/chain/:id/force-liquidate',
-        roles: ['admin', 'support', 'compliance'],
+        roles: ['admin', 'support', 'regulator'],
         cascadeHint: 'Escalates to forced position liquidation; crosses regulator inbox for every tier (W29 universal hard line).',
         fields: [
           { key: 'liquidation_order_ref', label: 'Liquidation order ref', type: 'evidence' },
           { key: 'rod_notes', label: 'Notes', type: 'string' },
         ] },
     
-      { action: "raise-warning", label: "Raise warning", path: "/api/poslimit/chain/:id/raise-warning", method: 'POST', roles: ['admin', 'support', 'compliance'], cascadeHint: "Records the raise warning action." },
-      { action: "escalate-intraday", label: "Escalate intraday", path: "/api/poslimit/chain/:id/escalate-intraday", method: 'POST', roles: ['admin', 'support', 'compliance'], cascadeHint: "Records the escalate intraday action." },
-      { action: "escalate-overnight", label: "Escalate overnight", path: "/api/poslimit/chain/:id/escalate-overnight", method: 'POST', roles: ['admin', 'support', 'compliance'], cascadeHint: "Records the escalate overnight action.", fields: [{ key: "fsca_ref", label: "Fsca ref", type: 'string' }] },
-      { action: "require-reduction", label: "Require reduction", path: "/api/poslimit/chain/:id/require-reduction", method: 'POST', roles: ['admin', 'support', 'compliance'], cascadeHint: "Records the require reduction action.", fields: [{ key: "reduction_target_mw", label: "Reduction target (MW)", type: 'number' }] },
-      { action: "accept-cure", label: "Accept cure", tone: "primary", path: "/api/poslimit/chain/:id/accept-cure", method: 'POST', roles: ['admin', 'support', 'compliance'], cascadeHint: "Records the accept cure action.", fields: [{ key: "rod_notes", label: "Rod notes", type: 'evidence' }] },
-      { action: "mark-false-alarm", label: "Mark false alarm", tone: "ghost", path: "/api/poslimit/chain/:id/mark-false-alarm", method: 'POST', roles: ['admin', 'support', 'compliance'], cascadeHint: "Records the mark false alarm action.", fields: [{ key: "rod_notes", label: "Rod notes", type: 'evidence' }] }
+      { action: "raise-warning", label: "Raise warning", path: "/api/poslimit/chain/:id/raise-warning", method: 'POST', roles: ['admin', 'support', 'regulator'], cascadeHint: "Records the raise warning action." },
+      { action: "escalate-intraday", label: "Escalate intraday", path: "/api/poslimit/chain/:id/escalate-intraday", method: 'POST', roles: ['admin', 'support', 'regulator'], cascadeHint: "Records the escalate intraday action." },
+      { action: "escalate-overnight", label: "Escalate overnight", path: "/api/poslimit/chain/:id/escalate-overnight", method: 'POST', roles: ['admin', 'support', 'regulator'], cascadeHint: "Records the escalate overnight action.", fields: [{ key: "fsca_ref", label: "Fsca ref", type: 'string' }] },
+      { action: "require-reduction", label: "Require reduction", path: "/api/poslimit/chain/:id/require-reduction", method: 'POST', roles: ['admin', 'support', 'regulator'], cascadeHint: "Records the require reduction action.", fields: [{ key: "reduction_target_mw", label: "Reduction target (MW)", type: 'number' }] },
+      { action: "accept-cure", label: "Accept cure", tone: "primary", path: "/api/poslimit/chain/:id/accept-cure", method: 'POST', roles: ['admin', 'support', 'regulator'], cascadeHint: "Records the accept cure action.", fields: [{ key: "rod_notes", label: "Rod notes", type: 'evidence' }] },
+      { action: "mark-false-alarm", label: "Mark false alarm", tone: "ghost", path: "/api/poslimit/chain/:id/mark-false-alarm", method: 'POST', roles: ['admin', 'support', 'regulator'], cascadeHint: "Records the mark false alarm action.", fields: [{ key: "rod_notes", label: "Rod notes", type: 'evidence' }] }
     ],
     filters: [
       { key: 'warning', label: 'Warning', statuses: ['warning'] },
@@ -2041,12 +2041,12 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     terminal: ['closed'],
     counterpartyCol: 'regulator_authority',
-    lanes: { ipp_developer: 'regulatory_risk' },
+    lanes: { ipp_developer: 'regulatory_risk', regulator: 'enforcement_regulator' },
     eventsTable: 'oe_ed_commitment_events', eventsFk: 'commitment_id',
     actions: [
       { action: 'submit-cure-plan', label: 'Submit cure plan', tone: 'primary',
         path: '/api/ed/commitment-chain/:id/submit-cure-plan',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'ipp_developer'],
         cascadeHint: 'Files the IPPO cure plan for the under-performing commitment and starts the cure-execution clock.',
         fields: [
           { key: 'cure_plan_summary', label: 'Cure plan', type: 'evidence', required: true,
@@ -2055,7 +2055,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'verify-compliance', label: 'Verify compliant',
         path: '/api/ed/commitment-chain/:id/verify-compliance',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'regulator', 'ipp_developer'],
         cascadeHint: 'Confirms the commitment is back within the variance threshold after cure execution.',
         fields: [
           { key: 'remediation_summary', label: 'Remediation summary', type: 'evidence' },
@@ -2065,7 +2065,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'issue-penalty', label: 'Issue penalty', tone: 'oxide',
         path: '/api/ed/commitment-chain/:id/issue-penalty',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'regulator', 'ipp_developer'],
         cascadeHint: 'Records the DMRE penalty for the failed cure; crosses the regulator inbox and may escalate to DTI.',
         fields: [
           { key: 'penalty_amount_zar', label: 'Penalty amount', type: 'number', unit: 'ZAR', required: true },
@@ -2076,7 +2076,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'activate-monitoring', label: 'Activate monitoring', tone: 'primary',
         path: '/api/ed/commitment-chain/:id/activate-monitoring',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'regulator', 'ipp_developer'],
         cascadeHint: 'Locks the ED baseline and starts the quarterly monitoring cadence for the commitment.',
         fields: [
           { key: 'notes', label: 'Notes', type: 'evidence' },
@@ -2084,7 +2084,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'detect-variance', label: 'Flag variance', tone: 'oxide',
         path: '/api/ed/commitment-chain/:id/detect-variance',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'regulator', 'ipp_developer'],
         cascadeHint: 'Flags an under-performing commitment against the variance threshold and opens the cure pathway.',
         fields: [
           { key: 'current_value', label: 'Current value', type: 'number' },
@@ -2093,7 +2093,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'require-cure-plan', label: 'Require cure plan', tone: 'oxide',
         path: '/api/ed/commitment-chain/:id/require-cure-plan',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'regulator', 'ipp_developer'],
         cascadeHint: 'Directs the IPP to file an IPPO cure plan; high-scoring commitments cross the regulator inbox.',
         fields: [
           { key: 'regulator_authority', label: 'Regulator authority', type: 'string',
@@ -2103,7 +2103,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'approve-cure-plan', label: 'Approve cure plan', tone: 'primary',
         path: '/api/ed/commitment-chain/:id/approve-cure-plan',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'regulator', 'ipp_developer'],
         cascadeHint: 'Approves the filed cure plan and starts the cure-execution remediation clock.',
         fields: [
           { key: 'linked_wo_id', label: 'Linked work order', type: 'string' },
@@ -2111,7 +2111,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'close-compliant', label: 'Close compliant', tone: 'primary',
         path: '/api/ed/commitment-chain/:id/close-compliant',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'regulator', 'ipp_developer'],
         cascadeHint: 'Closes the commitment as compliant after verification within the variance threshold.',
         fields: [
           { key: 'closure_notes', label: 'Closure notes', type: 'evidence' },
@@ -2119,7 +2119,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'close-with-penalty', label: 'Close with penalty', tone: 'primary',
         path: '/api/ed/commitment-chain/:id/close-with-penalty',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'regulator', 'ipp_developer'],
         cascadeHint: 'Closes the commitment after the DMRE penalty has been issued and the appeal window has passed.',
         fields: [
           { key: 'closure_notes', label: 'Closure notes', type: 'evidence' },
@@ -2127,7 +2127,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'escalate', label: 'Escalate to DTI', tone: 'oxide',
         path: '/api/ed/commitment-chain/:id/escalate',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'regulator', 'ipp_developer'],
         cascadeHint: 'Refers the failed commitment to the DTI Codes Council; always crosses the regulator inbox.',
         fields: [
           { key: 'notes', label: 'Notes', type: 'evidence' },
@@ -2135,7 +2135,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'close-escalated', label: 'Close escalated', tone: 'primary',
         path: '/api/ed/commitment-chain/:id/close-escalated',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'regulator', 'ipp_developer'],
         cascadeHint: 'Closes the commitment after the DTI escalation has been resolved.',
         fields: [
           { key: 'closure_notes', label: 'Closure notes', type: 'evidence' },
@@ -2143,7 +2143,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'mark-false-alarm', label: 'Mark false alarm', tone: 'oxide',
         path: '/api/ed/commitment-chain/:id/mark-false-alarm',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'regulator', 'ipp_developer'],
         cascadeHint: 'Reconciles a stale-data variance as a false alarm and routes to closure.',
         fields: [
           { key: 'closure_notes', label: 'Reconciliation notes', type: 'evidence' },
@@ -2151,7 +2151,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'close-false-alarm', label: 'Close false alarm', tone: 'primary',
         path: '/api/ed/commitment-chain/:id/close-false-alarm',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'regulator', 'ipp_developer'],
         cascadeHint: 'Closes the commitment after a variance was reconciled as a false alarm.',
         fields: [
           { key: 'closure_notes', label: 'Closure notes', type: 'evidence' },
@@ -2184,7 +2184,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     actions: [
       { action: 'accept-cost', label: 'Accept cost estimate', tone: 'primary',
         path: '/api/gca/connection-chain/:id/accept-cost',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'ipp_developer'],
         cascadeHint: 'IPP accepts the connection cost estimate; SO proceeds to draft the UNGCA.',
         fields: [
           { key: 'cost_accepted_zar', label: 'Accepted cost', type: 'number', unit: 'ZAR', required: true,
@@ -2193,7 +2193,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'execute-agreement', label: 'Execute agreement',
         path: '/api/gca/connection-chain/:id/execute-agreement',
-        roles: ['admin', 'support', 'compliance', 'ipp_developer'],
+        roles: ['admin', 'support', 'ipp_developer'],
         cascadeHint: 'IPP executes the UNGCA; unlocks connection construction and feeds the W20 COD energisation gate.',
         fields: [
           { key: 'ungca_ref', label: 'UNGCA reference', type: 'evidence', required: true,
@@ -2205,7 +2205,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'energise', label: 'Energise connection',
         path: '/api/gca/connection-chain/:id/energise',
-        roles: ['admin', 'support', 'compliance', 'grid_operator'],
+        roles: ['admin', 'support', 'grid_operator'],
         cascadeHint: 'SO energises the point of connection after construction; arms commissioning toward in-service.',
         fields: [
           { key: 'energisation_date_actual', label: 'Actual energisation date', type: 'date',
@@ -2214,7 +2214,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'reject', label: 'Reject application', tone: 'oxide',
         path: '/api/gca/connection-chain/:id/reject',
-        roles: ['admin', 'support', 'compliance', 'grid_operator'],
+        roles: ['admin', 'support', 'grid_operator'],
         cascadeHint: 'SO denies the connection on grid-stability or load grounds; closes the case and notifies NERSA for transmission tier.',
         fields: [
           { key: 'rod_reason', label: 'Reason for rejection', type: 'evidence', required: true,
@@ -2222,13 +2222,13 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     
-      { action: "request-studies", label: "Request studies", path: "/api/gca/connection-chain/:id/request-studies", method: 'POST', roles: ['admin', 'support', 'compliance', 'ipp_developer'], cascadeHint: "Records the request studies action." },
-      { action: "begin-studies", label: "Begin studies", path: "/api/gca/connection-chain/:id/begin-studies", method: 'POST', roles: ['admin', 'support', 'compliance', 'ipp_developer'], cascadeHint: "Records the begin studies action.", fields: [{ key: "gia_ref", label: "Gia ref", type: 'string' }] },
-      { action: "issue-cost-estimate", label: "Issue cost estimate", tone: "primary", path: "/api/gca/connection-chain/:id/issue-cost-estimate", method: 'POST', roles: ['admin', 'support', 'compliance', 'ipp_developer'], cascadeHint: "Records the issue cost estimate action.", fields: [{ key: "cost_estimate_zar", label: "Cost estimate (ZAR)", type: 'number' }, { key: "gia_ref", label: "Gia ref", type: 'string' }] },
-      { action: "draft-agreement", label: "Draft agreement", path: "/api/gca/connection-chain/:id/draft-agreement", method: 'POST', roles: ['admin', 'support', 'compliance', 'ipp_developer'], cascadeHint: "Records the draft agreement action." },
-      { action: "begin-construction", label: "Begin construction", path: "/api/gca/connection-chain/:id/begin-construction", method: 'POST', roles: ['admin', 'support', 'compliance', 'ipp_developer'], cascadeHint: "Records the begin construction action." },
-      { action: "commission", label: "Commission", path: "/api/gca/connection-chain/:id/commission", method: 'POST', roles: ['admin', 'support', 'compliance', 'ipp_developer'], cascadeHint: "Records the commission action.", fields: [{ key: "closure_notes", label: "Closure notes", type: 'evidence' }] },
-      { action: "withdraw", label: "Withdraw", tone: "oxide", path: "/api/gca/connection-chain/:id/withdraw", method: 'POST', roles: ['admin', 'support', 'compliance', 'ipp_developer'], cascadeHint: "Records the withdraw action.", fields: [{ key: "withdrawal_reason", label: "Withdrawal reason", type: 'evidence' }] }
+      { action: "request-studies", label: "Request studies", path: "/api/gca/connection-chain/:id/request-studies", method: 'POST', roles: ['admin', 'support', 'grid_operator'], cascadeHint: "Records the request studies action." },
+      { action: "begin-studies", label: "Begin studies", path: "/api/gca/connection-chain/:id/begin-studies", method: 'POST', roles: ['admin', 'support', 'grid_operator'], cascadeHint: "Records the begin studies action.", fields: [{ key: "gia_ref", label: "Gia ref", type: 'string' }] },
+      { action: "issue-cost-estimate", label: "Issue cost estimate", tone: "primary", path: "/api/gca/connection-chain/:id/issue-cost-estimate", method: 'POST', roles: ['admin', 'support', 'grid_operator'], cascadeHint: "Records the issue cost estimate action.", fields: [{ key: "cost_estimate_zar", label: "Cost estimate (ZAR)", type: 'number' }, { key: "gia_ref", label: "Gia ref", type: 'string' }] },
+      { action: "draft-agreement", label: "Draft agreement", path: "/api/gca/connection-chain/:id/draft-agreement", method: 'POST', roles: ['admin', 'support', 'grid_operator'], cascadeHint: "Records the draft agreement action." },
+      { action: "begin-construction", label: "Begin construction", path: "/api/gca/connection-chain/:id/begin-construction", method: 'POST', roles: ['admin', 'support', 'ipp_developer'], cascadeHint: "Records the begin construction action." },
+      { action: "commission", label: "Commission", path: "/api/gca/connection-chain/:id/commission", method: 'POST', roles: ['admin', 'support', 'grid_operator'], cascadeHint: "Records the commission action.", fields: [{ key: "closure_notes", label: "Closure notes", type: 'evidence' }] },
+      { action: "withdraw", label: "Withdraw", tone: "oxide", path: "/api/gca/connection-chain/:id/withdraw", method: 'POST', roles: ['admin', 'support', 'ipp_developer'], cascadeHint: "Records the withdraw action.", fields: [{ key: "withdrawal_reason", label: "Withdrawal reason", type: 'evidence' }] }
     ],
     filters: [
       { key: 'studies', label: 'Studies', statuses: ['application_filed', 'studies_required', 'studies_executing'] },
@@ -2614,11 +2614,11 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     
-      { action: "close-year", label: "Close year", path: "/api/take-or-pay/chain/:id/close-year", method: 'POST', roles: ['admin'], cascadeHint: "Records the close year action." },
-      { action: "issue-statement", label: "Issue statement", tone: "primary", path: "/api/take-or-pay/chain/:id/issue-statement", method: 'POST', roles: ['admin'], cascadeHint: "Records the issue statement action." },
-      { action: "request-evidence", label: "Request evidence", path: "/api/take-or-pay/chain/:id/request-evidence", method: 'POST', roles: ['admin'], cascadeHint: "Records the request evidence action." },
-      { action: "submit-evidence", label: "Submit evidence", path: "/api/take-or-pay/chain/:id/submit-evidence", method: 'POST', roles: ['admin'], cascadeHint: "Records the submit evidence action.", fields: [{ key: "evidence_findings", label: "Evidence findings", type: 'evidence' }, { key: "evidence_ref", label: "Evidence ref", type: 'string' }] },
-      { action: "waive", label: "Waive", path: "/api/take-or-pay/chain/:id/waive", method: 'POST', roles: ['admin'], cascadeHint: "Records the waive action.", fields: [{ key: "waiver_basis", label: "Waiver basis", type: 'string' }, { key: "waiver_minute_ref", label: "Waiver minute ref", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }, { key: "rod_notes", label: "Rod notes", type: 'evidence' }] }
+      { action: "close-year", label: "Close year", path: "/api/take-or-pay/chain/:id/close-year", method: 'POST', roles: ['admin', 'support', 'offtaker'], cascadeHint: "Records the close year action." },
+      { action: "issue-statement", label: "Issue statement", tone: "primary", path: "/api/take-or-pay/chain/:id/issue-statement", method: 'POST', roles: ['admin', 'support', 'offtaker'], cascadeHint: "Records the issue statement action." },
+      { action: "request-evidence", label: "Request evidence", path: "/api/take-or-pay/chain/:id/request-evidence", method: 'POST', roles: ['admin', 'support', 'offtaker'], cascadeHint: "Records the request evidence action." },
+      { action: "submit-evidence", label: "Submit evidence", path: "/api/take-or-pay/chain/:id/submit-evidence", method: 'POST', roles: ['admin', 'support', 'ipp_developer'], cascadeHint: "Records the submit evidence action.", fields: [{ key: "evidence_findings", label: "Evidence findings", type: 'evidence' }, { key: "evidence_ref", label: "Evidence ref", type: 'string' }] },
+      { action: "waive", label: "Waive", path: "/api/take-or-pay/chain/:id/waive", method: 'POST', roles: ['admin', 'support', 'offtaker'], cascadeHint: "Records the waive action.", fields: [{ key: "waiver_basis", label: "Waiver basis", type: 'string' }, { key: "waiver_minute_ref", label: "Waiver minute ref", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }, { key: "rod_notes", label: "Rod notes", type: 'evidence' }] }
     ],
     filters: [
       { key: 'open', label: 'Open', statuses: ['accrual_open', 'year_end', 'statement_issued', 'evidence_required', 'evidence_submitted'] },
@@ -3131,14 +3131,14 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     
-      { action: "begin-eligibility-review", label: "Begin eligibility review", path: "/api/rec-lifecycle/chain/:id/begin-eligibility-review", method: 'POST', roles: ['admin'], cascadeHint: "Advances the rec lifecycle chain to eligibility review.", fields: [{ key: "eligibility_basis", label: "Eligibility basis", type: 'string' }, { key: "eligibility_ref", label: "Eligibility ref", type: 'string' }, { key: "mwh_represented", label: "Mwh represented", type: 'number' }, { key: "compliance_critical", label: "Compliance critical", type: 'boolean' }] },
-      { action: "reject-issuance", label: "Reject issuance", tone: "oxide", path: "/api/rec-lifecycle/chain/:id/reject-issuance", method: 'POST', roles: ['admin'], cascadeHint: "Advances the rec lifecycle chain to rejected.", fields: [{ key: "rejection_basis", label: "Rejection basis", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
-      { action: "list-for-transfer", label: "List for transfer", path: "/api/rec-lifecycle/chain/:id/list-for-transfer", method: 'POST', roles: ['admin'], cascadeHint: "Advances the rec lifecycle chain to listed for transfer.", fields: [{ key: "transfer_basis", label: "Transfer basis", type: 'string' }] },
-      { action: "transfer-certificate", label: "Transfer certificate", path: "/api/rec-lifecycle/chain/:id/transfer-certificate", method: 'POST', roles: ['admin'], cascadeHint: "Advances the rec lifecycle chain to transferred.", fields: [{ key: "transfer_basis", label: "Transfer basis", type: 'string' }, { key: "transfer_ref", label: "Transfer ref", type: 'string' }, { key: "holder_id", label: "Holder id", type: 'string' }, { key: "holder_name", label: "Holder name", type: 'string' }] },
-      { action: "raise-dispute", label: "Raise dispute", path: "/api/rec-lifecycle/chain/:id/raise-dispute", method: 'POST', roles: ['admin'], cascadeHint: "Advances the rec lifecycle chain to disputed.", fields: [{ key: "dispute_basis", label: "Dispute basis", type: 'string' }, { key: "dispute_ref", label: "Dispute ref", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
-      { action: "resolve-dispute", label: "Resolve dispute", tone: "primary", path: "/api/rec-lifecycle/chain/:id/resolve-dispute", method: 'POST', roles: ['admin'], cascadeHint: "Advances the rec lifecycle chain to allocated.", fields: [{ key: "dispute_basis", label: "Dispute basis", type: 'string' }, { key: "resolution_summary", label: "Resolution summary", type: 'evidence' }] },
-      { action: "cancel-certificate", label: "Cancel certificate", tone: "oxide", path: "/api/rec-lifecycle/chain/:id/cancel-certificate", method: 'POST', roles: ['admin'], cascadeHint: "Advances the rec lifecycle chain to cancelled.", fields: [{ key: "reason_code", label: "Reason code", type: 'evidence' }, { key: "resolution_summary", label: "Resolution summary", type: 'evidence' }] },
-      { action: "expire-certificate", label: "Expire certificate", tone: "ghost", path: "/api/rec-lifecycle/chain/:id/expire-certificate", method: 'POST', roles: ['admin'], cascadeHint: "Advances the rec lifecycle chain to expired.", fields: [{ key: "reason_code", label: "Reason code", type: 'evidence' }, { key: "resolution_summary", label: "Resolution summary", type: 'evidence' }] }
+      { action: "begin-eligibility-review", label: "Begin eligibility review", path: "/api/rec-lifecycle/chain/:id/begin-eligibility-review", method: 'POST', roles: ['admin', 'ipp_developer'], cascadeHint: "Advances the rec lifecycle chain to eligibility review.", fields: [{ key: "eligibility_basis", label: "Eligibility basis", type: 'string' }, { key: "eligibility_ref", label: "Eligibility ref", type: 'string' }, { key: "mwh_represented", label: "Mwh represented", type: 'number' }, { key: "compliance_critical", label: "Compliance critical", type: 'boolean' }] },
+      { action: "reject-issuance", label: "Reject issuance", tone: "oxide", path: "/api/rec-lifecycle/chain/:id/reject-issuance", method: 'POST', roles: ['admin', 'ipp_developer'], cascadeHint: "Advances the rec lifecycle chain to rejected.", fields: [{ key: "rejection_basis", label: "Rejection basis", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
+      { action: "list-for-transfer", label: "List for transfer", path: "/api/rec-lifecycle/chain/:id/list-for-transfer", method: 'POST', roles: ['admin', 'ipp_developer'], cascadeHint: "Advances the rec lifecycle chain to listed for transfer.", fields: [{ key: "transfer_basis", label: "Transfer basis", type: 'string' }] },
+      { action: "transfer-certificate", label: "Transfer certificate", path: "/api/rec-lifecycle/chain/:id/transfer-certificate", method: 'POST', roles: ['admin', 'ipp_developer'], cascadeHint: "Advances the rec lifecycle chain to transferred.", fields: [{ key: "transfer_basis", label: "Transfer basis", type: 'string' }, { key: "transfer_ref", label: "Transfer ref", type: 'string' }, { key: "holder_id", label: "Holder id", type: 'string' }, { key: "holder_name", label: "Holder name", type: 'string' }] },
+      { action: "raise-dispute", label: "Raise dispute", path: "/api/rec-lifecycle/chain/:id/raise-dispute", method: 'POST', roles: ['admin', 'offtaker'], cascadeHint: "Advances the rec lifecycle chain to disputed.", fields: [{ key: "dispute_basis", label: "Dispute basis", type: 'string' }, { key: "dispute_ref", label: "Dispute ref", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
+      { action: "resolve-dispute", label: "Resolve dispute", tone: "primary", path: "/api/rec-lifecycle/chain/:id/resolve-dispute", method: 'POST', roles: ['admin', 'ipp_developer'], cascadeHint: "Advances the rec lifecycle chain to allocated.", fields: [{ key: "dispute_basis", label: "Dispute basis", type: 'string' }, { key: "resolution_summary", label: "Resolution summary", type: 'evidence' }] },
+      { action: "cancel-certificate", label: "Cancel certificate", tone: "oxide", path: "/api/rec-lifecycle/chain/:id/cancel-certificate", method: 'POST', roles: ['admin', 'ipp_developer'], cascadeHint: "Advances the rec lifecycle chain to cancelled.", fields: [{ key: "reason_code", label: "Reason code", type: 'evidence' }, { key: "resolution_summary", label: "Resolution summary", type: 'evidence' }] },
+      { action: "expire-certificate", label: "Expire certificate", tone: "ghost", path: "/api/rec-lifecycle/chain/:id/expire-certificate", method: 'POST', roles: ['admin', 'ipp_developer'], cascadeHint: "Advances the rec lifecycle chain to expired.", fields: [{ key: "reason_code", label: "Reason code", type: 'evidence' }, { key: "resolution_summary", label: "Resolution summary", type: 'evidence' }] }
     ],
     filters: [
       { key: 'issuance', label: 'Issuance', statuses: ['issuance_requested', 'eligibility_review', 'issued'] },
@@ -4327,7 +4327,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'next_sla_due_at',
     terminal: ['closed', 'nomination_rejected', 'closed_disputed'],
     counterpartyCol: 'participant_id',
-    lanes: { grid_operator: 'operations_grid' },
+    lanes: { grid_operator: 'operations_grid', regulator: 'enforcement_regulator' },
     eventsTable: 'oe_dispatch_nomination_events', eventsFk: 'nomination_id',
     actions: [
       { action: 'accept', label: 'Accept nomination',
@@ -4444,14 +4444,14 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     
-      { action: "start-curtailment", label: "Start curtailment", path: "/api/load-curtailment/chain/:id/start-curtailment", method: 'POST', roles: ['admin'], cascadeHint: "Records the start curtailment action." },
-      { action: "report-target-achieved", label: "Report target achieved", path: "/api/load-curtailment/chain/:id/report-target-achieved", method: 'POST', roles: ['admin'], cascadeHint: "Records the report target achieved action.", fields: [{ key: "actual_shed_mw", label: "Actual shed (MW)", type: 'number' }] },
-      { action: "report-partial", label: "Report partial", path: "/api/load-curtailment/chain/:id/report-partial", method: 'POST', roles: ['admin'], cascadeHint: "Records the report partial action.", fields: [{ key: "actual_shed_mw", label: "Actual shed (MW)", type: 'number' }, { key: "partial_basis", label: "Partial basis", type: 'string' }, { key: "partial_ref", label: "Partial ref", type: 'string' }, { key: "penalty_zar", label: "Penalty (ZAR)", type: 'number' }, { key: "penalty_basis", label: "Penalty basis", type: 'string' }] },
-      { action: "reconcile", label: "Reconcile", path: "/api/load-curtailment/chain/:id/reconcile", method: 'POST', roles: ['admin'], cascadeHint: "Records the reconcile action.", fields: [{ key: "metering_reconcile_ref", label: "Metering reconcile ref", type: 'string' }, { key: "actual_shed_mw", label: "Actual shed (MW)", type: 'number' }] },
-      { action: "open-post-mortem", label: "Open post mortem", path: "/api/load-curtailment/chain/:id/open-post-mortem", method: 'POST', roles: ['admin'], cascadeHint: "Records the open post mortem action.", fields: [{ key: "post_mortem_ref", label: "Post mortem ref", type: 'string' }] },
-      { action: "close-post-mortem", label: "Close post mortem", path: "/api/load-curtailment/chain/:id/close-post-mortem", method: 'POST', roles: ['admin'], cascadeHint: "Records the close post mortem action.", fields: [{ key: "post_mortem_findings", label: "Post mortem findings", type: 'evidence' }, { key: "reason_code", label: "Reason code", type: 'evidence' }, { key: "rod_notes", label: "Rod notes", type: 'evidence' }] },
-      { action: "close", label: "Close", tone: "primary", path: "/api/load-curtailment/chain/:id/close", method: 'POST', roles: ['admin'], cascadeHint: "Records the close action.", fields: [{ key: "reason_code", label: "Reason code", type: 'evidence' }, { key: "rod_notes", label: "Rod notes", type: 'evidence' }] },
-      { action: "withdraw", label: "Withdraw", tone: "oxide", path: "/api/load-curtailment/chain/:id/withdraw", method: 'POST', roles: ['admin'], cascadeHint: "Records the withdraw action.", fields: [{ key: "withdrawal_basis", label: "Withdrawal basis", type: 'string' }, { key: "withdrawal_ref", label: "Withdrawal ref", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] }
+      { action: "start-curtailment", label: "Start curtailment", path: "/api/load-curtailment/chain/:id/start-curtailment", method: 'POST', roles: ['admin', 'support', 'ipp_developer'], cascadeHint: "Records the start curtailment action." },
+      { action: "report-target-achieved", label: "Report target achieved", path: "/api/load-curtailment/chain/:id/report-target-achieved", method: 'POST', roles: ['admin', 'support', 'ipp_developer'], cascadeHint: "Records the report target achieved action.", fields: [{ key: "actual_shed_mw", label: "Actual shed (MW)", type: 'number' }] },
+      { action: "report-partial", label: "Report partial", path: "/api/load-curtailment/chain/:id/report-partial", method: 'POST', roles: ['admin', 'support', 'ipp_developer'], cascadeHint: "Records the report partial action.", fields: [{ key: "actual_shed_mw", label: "Actual shed (MW)", type: 'number' }, { key: "partial_basis", label: "Partial basis", type: 'string' }, { key: "partial_ref", label: "Partial ref", type: 'string' }, { key: "penalty_zar", label: "Penalty (ZAR)", type: 'number' }, { key: "penalty_basis", label: "Penalty basis", type: 'string' }] },
+      { action: "reconcile", label: "Reconcile", path: "/api/load-curtailment/chain/:id/reconcile", method: 'POST', roles: ['admin', 'support', 'grid_operator'], cascadeHint: "Records the reconcile action.", fields: [{ key: "metering_reconcile_ref", label: "Metering reconcile ref", type: 'string' }, { key: "actual_shed_mw", label: "Actual shed (MW)", type: 'number' }] },
+      { action: "open-post-mortem", label: "Open post mortem", path: "/api/load-curtailment/chain/:id/open-post-mortem", method: 'POST', roles: ['admin', 'support', 'grid_operator'], cascadeHint: "Records the open post mortem action.", fields: [{ key: "post_mortem_ref", label: "Post mortem ref", type: 'string' }] },
+      { action: "close-post-mortem", label: "Close post mortem", path: "/api/load-curtailment/chain/:id/close-post-mortem", method: 'POST', roles: ['admin', 'support', 'grid_operator'], cascadeHint: "Records the close post mortem action.", fields: [{ key: "post_mortem_findings", label: "Post mortem findings", type: 'evidence' }, { key: "reason_code", label: "Reason code", type: 'evidence' }, { key: "rod_notes", label: "Rod notes", type: 'evidence' }] },
+      { action: "close", label: "Close", tone: "primary", path: "/api/load-curtailment/chain/:id/close", method: 'POST', roles: ['admin', 'support', 'grid_operator'], cascadeHint: "Records the close action.", fields: [{ key: "reason_code", label: "Reason code", type: 'evidence' }, { key: "rod_notes", label: "Rod notes", type: 'evidence' }] },
+      { action: "withdraw", label: "Withdraw", tone: "oxide", path: "/api/load-curtailment/chain/:id/withdraw", method: 'POST', roles: ['admin', 'support', 'grid_operator'], cascadeHint: "Records the withdraw action.", fields: [{ key: "withdrawal_basis", label: "Withdrawal basis", type: 'string' }, { key: "withdrawal_ref", label: "Withdrawal ref", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] }
     ],
     filters: [
       { key: 'awaiting_ack', label: 'Awaiting acknowledgement', statuses: ['instruction_issued'] },
@@ -4842,17 +4842,17 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     actions: [
       { action: "start-security-assessment", label: "Start security assessment", tone: "primary",
         path: "/api/grid/transmission-outage/chain/:id/start-security-assessment", method: 'POST',
-        roles: ["admin"],
+        roles: ['admin', 'grid_operator'],
         cascadeHint: "Begins the system-security study for the requested transmission outage window.",
         fields: [{ key: "assessment_window_start_at", label: "Study window start", type: "date" }, { key: "notes", label: "Note", type: "string" }] },
       { action: "reject-outage", label: "Reject outage", tone: "oxide",
         path: "/api/grid/transmission-outage/chain/:id/reject-outage", method: 'POST',
-        roles: ["admin"],
+        roles: ['admin', 'grid_operator'],
         cascadeHint: "Rejects the outage request — grid security or coordination conflict.",
         fields: [{ key: "rejection_reason_code", label: "Rejection reason code", type: "string", required: true }, { key: "rejection_narrative", label: "Rejection narrative", type: "evidence" }] },
       { action: "withdraw", label: "Withdraw request", tone: "oxide",
         path: "/api/grid/transmission-outage/chain/:id/withdraw", method: 'POST',
-        roles: ["admin"],
+        roles: ['admin', 'grid_operator'],
         cascadeHint: "Applicant withdraws the outage request before approval.",
         fields: [{ key: "withdraw_reason", label: "Withdrawal reason", type: "string", required: true }] },
       { action: 'approve-outage', label: 'Approve outage', tone: 'primary',
@@ -5902,7 +5902,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         fields: [{ key: "cancellation_reason", label: "Cancellation reason", type: "evidence" }] },
       { action: 'issue_statement', label: 'Issue statement', tone: 'primary',
         path: '/api/offtaker/virtual-ppa-settlement/:id/action', method: 'POST', body: { action: 'issue_statement' },
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'offtaker', 'ipp_developer'],
         cascadeHint: 'Issues the differential settlement statement to both parties; arms acknowledgement and the payment window.' },
       { action: 'acknowledge', label: 'Acknowledge',
         path: '/api/offtaker/virtual-ppa-settlement/:id/action', method: 'POST', body: { action: 'acknowledge' },
@@ -5926,7 +5926,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'write_off', label: 'Write off', tone: 'oxide',
         path: '/api/offtaker/virtual-ppa-settlement/:id/action', method: 'POST', body: { action: 'write_off' },
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'offtaker', 'ipp_developer'],
         cascadeHint: 'Writes off an uncollectable differential; terminates the chain.',
         fields: [
           { key: 'reason_detail', label: 'Write-off note', type: 'string', required: true },
@@ -6264,13 +6264,13 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     
-      { action: "check-completeness", label: "Check completeness", tone: "primary", path: "/api/licence/renewal/chain/:id/check-completeness", method: 'POST', roles: ['admin'], cascadeHint: "Records the check completeness action.", fields: [{ key: "completeness_findings", label: "Completeness findings", type: 'evidence' }, { key: "completeness_ref", label: "Completeness ref", type: 'string' }] },
-      { action: "open-consultation", label: "Open consultation", path: "/api/licence/renewal/chain/:id/open-consultation", method: 'POST', roles: ['admin'], cascadeHint: "Records the open consultation action.", fields: [{ key: "consultation_notice_ref", label: "Consultation notice ref", type: 'string' }] },
-      { action: "start-evaluation", label: "Start evaluation", path: "/api/licence/renewal/chain/:id/start-evaluation", method: 'POST', roles: ['admin'], cascadeHint: "Records the start evaluation action.", fields: [{ key: "technical_findings", label: "Technical findings", type: 'evidence' }, { key: "technical_evaluation_ref", label: "Technical evaluation ref", type: 'string' }, { key: "financial_findings", label: "Financial findings", type: 'evidence' }, { key: "financial_evaluation_ref", label: "Financial evaluation ref", type: 'string' }] },
-      { action: "draft-decision", label: "Draft decision", path: "/api/licence/renewal/chain/:id/draft-decision", method: 'POST', roles: ['admin'], cascadeHint: "Records the draft decision action.", fields: [{ key: "decision_rod_ref", label: "Decision rod ref", type: 'string' }] },
-      { action: "council-vote", label: "Council vote", path: "/api/licence/renewal/chain/:id/council-vote", method: 'POST', roles: ['admin'], cascadeHint: "Records the council vote action.", fields: [{ key: "council_meeting_ref", label: "Council meeting ref", type: 'string' }, { key: "council_vote_outcome", label: "Council vote outcome", type: 'string' }] },
-      { action: "amend", label: "Amend", path: "/api/licence/renewal/chain/:id/amend", method: 'POST', roles: ['admin'], cascadeHint: "Records the amend action.", fields: [{ key: "granted_expiry_date", label: "Granted expiry date", type: 'date' }, { key: "conditions_attached", label: "Conditions attached", type: 'string' }, { key: "amendment_summary", label: "Amendment summary", type: 'evidence' }] },
-      { action: "withdraw", label: "Withdraw", tone: "oxide", path: "/api/licence/renewal/chain/:id/withdraw", method: 'POST', roles: ['admin'], cascadeHint: "Records the withdraw action.", fields: [{ key: "withdrawal_basis", label: "Withdrawal basis", type: 'string' }, { key: "withdrawal_minute_ref", label: "Withdrawal minute ref", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] }
+      { action: "check-completeness", label: "Check completeness", tone: "primary", path: "/api/licence/renewal/chain/:id/check-completeness", method: 'POST', roles: ['admin', 'support', 'regulator'], cascadeHint: "Records the check completeness action.", fields: [{ key: "completeness_findings", label: "Completeness findings", type: 'evidence' }, { key: "completeness_ref", label: "Completeness ref", type: 'string' }] },
+      { action: "open-consultation", label: "Open consultation", path: "/api/licence/renewal/chain/:id/open-consultation", method: 'POST', roles: ['admin', 'support', 'regulator'], cascadeHint: "Records the open consultation action.", fields: [{ key: "consultation_notice_ref", label: "Consultation notice ref", type: 'string' }] },
+      { action: "start-evaluation", label: "Start evaluation", path: "/api/licence/renewal/chain/:id/start-evaluation", method: 'POST', roles: ['admin', 'support', 'regulator'], cascadeHint: "Records the start evaluation action.", fields: [{ key: "technical_findings", label: "Technical findings", type: 'evidence' }, { key: "technical_evaluation_ref", label: "Technical evaluation ref", type: 'string' }, { key: "financial_findings", label: "Financial findings", type: 'evidence' }, { key: "financial_evaluation_ref", label: "Financial evaluation ref", type: 'string' }] },
+      { action: "draft-decision", label: "Draft decision", path: "/api/licence/renewal/chain/:id/draft-decision", method: 'POST', roles: ['admin', 'support', 'regulator'], cascadeHint: "Records the draft decision action.", fields: [{ key: "decision_rod_ref", label: "Decision rod ref", type: 'string' }] },
+      { action: "council-vote", label: "Council vote", path: "/api/licence/renewal/chain/:id/council-vote", method: 'POST', roles: ['admin', 'support', 'regulator'], cascadeHint: "Records the council vote action.", fields: [{ key: "council_meeting_ref", label: "Council meeting ref", type: 'string' }, { key: "council_vote_outcome", label: "Council vote outcome", type: 'string' }] },
+      { action: "amend", label: "Amend", path: "/api/licence/renewal/chain/:id/amend", method: 'POST', roles: ['admin', 'support', 'regulator'], cascadeHint: "Records the amend action.", fields: [{ key: "granted_expiry_date", label: "Granted expiry date", type: 'date' }, { key: "conditions_attached", label: "Conditions attached", type: 'string' }, { key: "amendment_summary", label: "Amendment summary", type: 'evidence' }] },
+      { action: "withdraw", label: "Withdraw", tone: "oxide", path: "/api/licence/renewal/chain/:id/withdraw", method: 'POST', roles: ['admin', 'support', 'ipp_developer'], cascadeHint: "Records the withdraw action.", fields: [{ key: "withdrawal_basis", label: "Withdrawal basis", type: 'string' }, { key: "withdrawal_minute_ref", label: "Withdrawal minute ref", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] }
     ],
     filters: [
       { key: 'filing', label: 'Filing', statuses: ['renewal_initiated', 'application_filed', 'completeness_check'] },
@@ -7479,7 +7479,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     actions: [
       { action: 'submit-claim', label: 'Submit claim',
         path: '/api/warranty-recovery/chain/:id/submit-claim',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Submits the cost-recovery claim to the OEM; the acknowledgement window opens.',
         fields: [
           { key: 'submission_basis', label: 'Submission basis', type: 'evidence' },
@@ -7490,7 +7490,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'complete-assessment', label: 'Complete assessment',
         path: '/api/warranty-recovery/chain/:id/complete-assessment',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Records the OEM defect assessment; crosses the regulator queue for every tier when the defect class is systemic (W63 signature).',
         fields: [
           { key: 'assessment_basis', label: 'Assessment basis', type: 'evidence' },
@@ -7505,7 +7505,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'approve-recovery', label: 'Approve recovery',
         path: '/api/warranty-recovery/chain/:id/approve-recovery',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'OEM accepts liability for the claim; recovery initiation follows.',
         fields: [
           { key: 'approval_basis', label: 'Approval basis', type: 'evidence' },
@@ -7516,7 +7516,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'confirm-recovery', label: 'Confirm recovery', tone: 'primary',
         path: '/api/warranty-recovery/chain/:id/confirm-recovery',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Confirms the recovered amount received — the happy-path recovered terminal.',
         fields: [
           { key: 'confirmation_ref', label: 'Confirmation reference', type: 'string' },
@@ -7526,7 +7526,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'write-off', label: 'Write off', tone: 'oxide',
         path: '/api/warranty-recovery/chain/:id/write-off',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Abandons the claim as uncollectable to the written_off terminal.',
         fields: [
           { key: 'writeoff_basis', label: 'Write-off basis', type: 'evidence' },
@@ -7537,7 +7537,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'acknowledge', label: 'Acknowledge claim',
         path: '/api/warranty-recovery/chain/:id/acknowledge',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'OEM acknowledges receipt of the claim; the assessment window opens.',
         fields: [
           { key: 'acknowledgement_ref', label: 'Acknowledgement reference', type: 'string' },
@@ -7546,7 +7546,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'begin-assessment', label: 'Begin assessment',
         path: '/api/warranty-recovery/chain/:id/begin-assessment',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'OEM begins the defect assessment of the acknowledged claim.',
         fields: [
           { key: 'assessment_ref', label: 'Assessment reference', type: 'string' },
@@ -7555,7 +7555,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'reject-claim', label: 'Reject claim', tone: 'oxide',
         path: '/api/warranty-recovery/chain/:id/reject-claim',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'OEM rejects liability — the rejected terminal.',
         fields: [
           { key: 'reason_code', label: 'Reason code', type: 'string', placeholder: 'e.g. out_of_warranty' },
@@ -7564,7 +7564,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'dispute', label: 'Raise dispute', tone: 'oxide',
         path: '/api/warranty-recovery/chain/:id/dispute',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Raises a dispute over the assessment or recovery; resolution or write-off follows.',
         fields: [
           { key: 'dispute_ref', label: 'Dispute reference', type: 'string' },
@@ -7573,7 +7573,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'resolve-dispute', label: 'Resolve dispute',
         path: '/api/warranty-recovery/chain/:id/resolve-dispute',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Resolves the dispute back to approved so recovery can proceed.',
         fields: [
           { key: 'resolution_ref', label: 'Resolution reference', type: 'string' },
@@ -7582,7 +7582,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'initiate-recovery', label: 'Initiate recovery',
         path: '/api/warranty-recovery/chain/:id/initiate-recovery',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Initiates the agreed recovery from the OEM; confirmation of receipt follows.',
         fields: [
           { key: 'recovery_method', label: 'Recovery method', type: 'string', placeholder: 'e.g. credit note / parts / cash' },
@@ -7592,7 +7592,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'withdraw', label: 'Withdraw claim', tone: 'oxide',
         path: '/api/warranty-recovery/chain/:id/withdraw',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Withdraws the claim before a decision — the withdrawn terminal.',
         fields: [
           { key: 'reason_code', label: 'Reason code', type: 'string', placeholder: 'e.g. claim_abandoned' },
@@ -7627,7 +7627,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     actions: [
       { action: 'raise-requisition', label: 'Raise requisition',
         path: '/api/spare-parts-provisioning/chain/:id/raise-requisition',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Raises the parts requisition from demand; approval and PO issue follow.',
         fields: [
           { key: 'requisition_basis', label: 'Requisition basis', type: 'evidence' },
@@ -7637,7 +7637,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'issue-po', label: 'Issue PO',
         path: '/api/spare-parts-provisioning/chain/:id/issue-po',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Issues the purchase order to the supplier; the lead-time clock starts.',
         fields: [
           { key: 'po_basis', label: 'PO basis', type: 'evidence' },
@@ -7650,7 +7650,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'receive-goods', label: 'Receive goods',
         path: '/api/spare-parts-provisioning/chain/:id/receive-goods',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Books the delivery in at the warehouse; the QA inspection gate opens.',
         fields: [
           { key: 'receipt_ref', label: 'Receipt reference', type: 'string' },
@@ -7659,7 +7659,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'issue-part', label: 'Issue part', tone: 'primary',
         path: '/api/spare-parts-provisioning/chain/:id/issue-part',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Issues the reserved part to the work order — the happy-path issued terminal.',
         fields: [
           { key: 'issue_basis', label: 'Issue basis', type: 'evidence' },
@@ -7668,7 +7668,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'cancel-provisioning', label: 'Cancel provisioning', tone: 'oxide',
         path: '/api/spare-parts-provisioning/chain/:id/cancel-provisioning',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Cancels the provisioning line; crosses the regulator queue for vital parts at high or catastrophic stockout impact.',
         fields: [
           { key: 'cancellation_basis', label: 'Cancellation basis', type: 'evidence' },
@@ -7678,13 +7678,13 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     
-      { action: "approve-requisition", label: "Approve requisition", tone: "primary", path: "/api/spare-parts-provisioning/chain/:id/approve-requisition", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Records the approve requisition action.", fields: [{ key: "approval_basis", label: "Approval basis", type: 'string' }, { key: "approval_ref", label: "Approval ref", type: 'string' }] },
-      { action: "flag-backorder", label: "Flag backorder", tone: "ghost", path: "/api/spare-parts-provisioning/chain/:id/flag-backorder", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Records the flag backorder action.", fields: [{ key: "backorder_basis", label: "Backorder basis", type: 'string' }, { key: "backorder_ref", label: "Backorder ref", type: 'string' }, { key: "stockout_impact_zar", label: "Stockout impact (ZAR)", type: 'number' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
-      { action: "expedite-backorder", label: "Expedite backorder", path: "/api/spare-parts-provisioning/chain/:id/expedite-backorder", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Records the expedite backorder action.", fields: [{ key: "expedite_basis", label: "Expedite basis", type: 'string' }, { key: "expedite_ref", label: "Expedite ref", type: 'string' }] },
-      { action: "confirm-shipment", label: "Confirm shipment", tone: "primary", path: "/api/spare-parts-provisioning/chain/:id/confirm-shipment", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Records the confirm shipment action.", fields: [{ key: "shipment_basis", label: "Shipment basis", type: 'string' }, { key: "shipment_ref", label: "Shipment ref", type: 'string' }] },
-      { action: "pass-inspection", label: "Pass inspection", path: "/api/spare-parts-provisioning/chain/:id/pass-inspection", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Records the pass inspection action.", fields: [{ key: "inspection_basis", label: "Inspection basis", type: 'string' }, { key: "inspection_ref", label: "Inspection ref", type: 'string' }, { key: "qty_on_hand", label: "Qty on hand", type: 'number' }] },
-      { action: "reject-inspection", label: "Reject inspection", tone: "oxide", path: "/api/spare-parts-provisioning/chain/:id/reject-inspection", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Records the reject inspection action.", fields: [{ key: "rejection_basis", label: "Rejection basis", type: 'string' }, { key: "rejection_ref", label: "Rejection ref", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
-      { action: "reserve-stock", label: "Reserve stock", path: "/api/spare-parts-provisioning/chain/:id/reserve-stock", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Records the reserve stock action.", fields: [{ key: "reservation_basis", label: "Reservation basis", type: 'string' }, { key: "reservation_ref", label: "Reservation ref", type: 'string' }, { key: "reserved_for_wo", label: "Reserved for wo", type: 'string' }] }
+      { action: "approve-requisition", label: "Approve requisition", tone: "primary", path: "/api/spare-parts-provisioning/chain/:id/approve-requisition", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Records the approve requisition action.", fields: [{ key: "approval_basis", label: "Approval basis", type: 'string' }, { key: "approval_ref", label: "Approval ref", type: 'string' }] },
+      { action: "flag-backorder", label: "Flag backorder", tone: "ghost", path: "/api/spare-parts-provisioning/chain/:id/flag-backorder", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Records the flag backorder action.", fields: [{ key: "backorder_basis", label: "Backorder basis", type: 'string' }, { key: "backorder_ref", label: "Backorder ref", type: 'string' }, { key: "stockout_impact_zar", label: "Stockout impact (ZAR)", type: 'number' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
+      { action: "expedite-backorder", label: "Expedite backorder", path: "/api/spare-parts-provisioning/chain/:id/expedite-backorder", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Records the expedite backorder action.", fields: [{ key: "expedite_basis", label: "Expedite basis", type: 'string' }, { key: "expedite_ref", label: "Expedite ref", type: 'string' }] },
+      { action: "confirm-shipment", label: "Confirm shipment", tone: "primary", path: "/api/spare-parts-provisioning/chain/:id/confirm-shipment", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Records the confirm shipment action.", fields: [{ key: "shipment_basis", label: "Shipment basis", type: 'string' }, { key: "shipment_ref", label: "Shipment ref", type: 'string' }] },
+      { action: "pass-inspection", label: "Pass inspection", path: "/api/spare-parts-provisioning/chain/:id/pass-inspection", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Records the pass inspection action.", fields: [{ key: "inspection_basis", label: "Inspection basis", type: 'string' }, { key: "inspection_ref", label: "Inspection ref", type: 'string' }, { key: "qty_on_hand", label: "Qty on hand", type: 'number' }] },
+      { action: "reject-inspection", label: "Reject inspection", tone: "oxide", path: "/api/spare-parts-provisioning/chain/:id/reject-inspection", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Records the reject inspection action.", fields: [{ key: "rejection_basis", label: "Rejection basis", type: 'string' }, { key: "rejection_ref", label: "Rejection ref", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
+      { action: "reserve-stock", label: "Reserve stock", path: "/api/spare-parts-provisioning/chain/:id/reserve-stock", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Records the reserve stock action.", fields: [{ key: "reservation_basis", label: "Reservation basis", type: 'string' }, { key: "reservation_ref", label: "Reservation ref", type: 'string' }, { key: "reserved_for_wo", label: "Reserved for wo", type: 'string' }] }
     ],
     filters: [
       { key: 'procuring', label: 'Procuring', statuses: ['demand_identified', 'requisition_raised', 'requisition_approved', 'po_issued', 'backordered'] },
@@ -7954,22 +7954,24 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     terminal: ['closed'],
     counterpartyCol: null, // operator-recorded fleet case; no contractual counterparty column
-    // esco lane intentionally absent: pr-chain READ_ROLES (src/routes/pr-chain.ts)
-    // exclude esco — the route would 403 it. support has READ + WRITE.
-    lanes: { support: 'field_operations' },
+    // esco is the live O&M operator persona (seed 494; the esums/esums_om aliases
+    // have no seeded login). PR underperformance is core O&M asset health, so esco
+    // owns it like its siblings (W59 pm_compliance, W71 prognostics). esco wired
+    // through pr-chain.ts READ+WRITE and every action below.
+    lanes: { support: 'field_operations', esco: 'asset_health' },
     eventsTable: 'oe_pr_chain_events', eventsFk: 'case_id',
     actions: [
       { action: 'start-warning', label: 'Start warning',
         path: '/api/esums/pr-chain/:id/start-warning',
-        roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind'],
+        roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind', 'esco'],
         cascadeHint: 'Opens the sustained-PR warning window; the investigation SLA clock starts.' },
       { action: 'begin-investigation', label: 'Begin investigation',
         path: '/api/esums/pr-chain/:id/begin-investigation',
-        roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind'],
+        roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind', 'esco'],
         cascadeHint: 'Opens the root-cause investigation on the underperforming site.' },
       { action: 'dispatch-intervention', label: 'Dispatch intervention',
         path: '/api/esums/pr-chain/:id/dispatch-intervention',
-        roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind'],
+        roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind', 'esco'],
         cascadeHint: 'Dispatches the corrective O&M intervention against the identified root cause.',
         fields: [
           { key: 'linked_wo_id', label: 'Linked work-order id', type: 'string' },
@@ -7978,7 +7980,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'verify-recovery', label: 'Verify recovery', tone: 'primary',
         path: '/api/esums/pr-chain/:id/verify-recovery',
-        roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind'],
+        roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind', 'esco'],
         cascadeHint: 'Verifies the PR has recovered above threshold; closure follows.',
         fields: [
           { key: 'observed_pr', label: 'Observed PR', type: 'number' },
@@ -7987,7 +7989,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'escalate', label: 'Escalate', tone: 'oxide',
         path: '/api/esums/pr-chain/:id/escalate',
-        roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind'],
+        roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind', 'esco'],
         cascadeHint: 'Escalates a non-recovering case out of routine O&M handling.',
         fields: [
           { key: 'linked_warranty_claim_id', label: 'Linked warranty-claim id', type: 'string' },
@@ -7995,11 +7997,11 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     
-      { action: "complete-rca", label: "Complete rca", tone: "primary", path: "/api/esums/pr-chain/:id/complete-rca", method: 'POST', roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind'], cascadeHint: "Records the complete rca action.", fields: [{ key: "primary_cause", label: "Primary cause", type: 'string' }, { key: "rca_summary", label: "Rca summary", type: 'evidence' }, { key: "action_plan", label: "Action plan", type: 'string' }] },
-      { action: "close", label: "Close", tone: "primary", path: "/api/esums/pr-chain/:id/close", method: 'POST', roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind'], cascadeHint: "Records the close action.", fields: [{ key: "closure_notes", label: "Closure notes", type: 'evidence' }, { key: "revenue_loss_zar", label: "Revenue loss (ZAR)", type: 'number' }] },
-      { action: "close-escalated", label: "Close escalated", path: "/api/esums/pr-chain/:id/close-escalated", method: 'POST', roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind'], cascadeHint: "Records the close escalated action.", fields: [{ key: "closure_notes", label: "Closure notes", type: 'evidence' }, { key: "revenue_loss_zar", label: "Revenue loss (ZAR)", type: 'number' }] },
-      { action: "mark-false-alarm", label: "Mark false alarm", tone: "ghost", path: "/api/esums/pr-chain/:id/mark-false-alarm", method: 'POST', roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind'], cascadeHint: "Records the mark false alarm action.", fields: [{ key: "closure_notes", label: "Closure notes", type: 'evidence' }] },
-      { action: "close-false-alarm", label: "Close false alarm", tone: "ghost", path: "/api/esums/pr-chain/:id/close-false-alarm", method: 'POST', roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind'], cascadeHint: "Records the close false alarm action.", fields: [{ key: "closure_notes", label: "Closure notes", type: 'evidence' }] }
+      { action: "complete-rca", label: "Complete rca", tone: "primary", path: "/api/esums/pr-chain/:id/complete-rca", method: 'POST', roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind', 'esco'], cascadeHint: "Records the complete rca action.", fields: [{ key: "primary_cause", label: "Primary cause", type: 'string' }, { key: "rca_summary", label: "Rca summary", type: 'evidence' }, { key: "action_plan", label: "Action plan", type: 'string' }] },
+      { action: "close", label: "Close", tone: "primary", path: "/api/esums/pr-chain/:id/close", method: 'POST', roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind', 'esco'], cascadeHint: "Records the close action.", fields: [{ key: "closure_notes", label: "Closure notes", type: 'evidence' }, { key: "revenue_loss_zar", label: "Revenue loss (ZAR)", type: 'number' }] },
+      { action: "close-escalated", label: "Close escalated", path: "/api/esums/pr-chain/:id/close-escalated", method: 'POST', roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind', 'esco'], cascadeHint: "Records the close escalated action.", fields: [{ key: "closure_notes", label: "Closure notes", type: 'evidence' }, { key: "revenue_loss_zar", label: "Revenue loss (ZAR)", type: 'number' }] },
+      { action: "mark-false-alarm", label: "Mark false alarm", tone: "ghost", path: "/api/esums/pr-chain/:id/mark-false-alarm", method: 'POST', roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind', 'esco'], cascadeHint: "Records the mark false alarm action.", fields: [{ key: "closure_notes", label: "Closure notes", type: 'evidence' }] },
+      { action: "close-false-alarm", label: "Close false alarm", tone: "ghost", path: "/api/esums/pr-chain/:id/close-false-alarm", method: 'POST', roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind', 'esco'], cascadeHint: "Records the close false alarm action.", fields: [{ key: "closure_notes", label: "Closure notes", type: 'evidence' }] }
     ],
     filters: [
       { key: 'monitoring', label: 'Monitoring', statuses: ['monitoring', 'warning'] },
@@ -8956,7 +8958,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     actions: [
       { action: 'activate-monitoring', label: 'Activate monitoring',
         path: '/api/bess-soh/chain/:id/activate-monitoring',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Starts state-of-health monitoring for the battery programme; degradation tracking begins.',
         fields: [
           { key: 'current_soh_pct', label: 'Current SoH (%)', type: 'number' },
@@ -8967,7 +8969,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'require-augmentation', label: 'Require augmentation', tone: 'oxide',
         path: '/api/bess-soh/chain/:id/require-augmentation',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Flags state-of-health below the contracted floor; opens the augmentation planning window.',
         fields: [
           { key: 'current_soh_pct', label: 'Current SoH (%)', type: 'number' },
@@ -8982,7 +8984,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'plan-augmentation', label: 'Plan augmentation',
         path: '/api/bess-soh/chain/:id/plan-augmentation',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Records the augmentation works plan; the works window opens.',
         fields: [
           { key: 'augmentation_works_ref', label: 'Augmentation works reference', type: 'evidence' },
@@ -8993,7 +8995,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'complete-works', label: 'Complete works',
         path: '/api/bess-soh/chain/:id/complete-works',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Records completed augmentation works and restored capacity; recommissioning follows.',
         fields: [
           { key: 'augmentation_completed_mwh', label: 'Augmentation completed', type: 'number', unit: 'MWh' },
@@ -9004,7 +9006,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'recommission', label: 'Recommission', tone: 'primary',
         path: '/api/bess-soh/chain/:id/recommission',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Recommissions the augmented battery programme to the recommissioned terminal.',
         fields: [
           { key: 'current_soh_pct', label: 'Current SoH (%)', type: 'number' },
@@ -9014,7 +9016,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'raise-dispute', label: 'Raise dispute', tone: 'oxide',
         path: '/api/bess-soh/chain/:id/raise-dispute',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Disputes the state-of-health or augmentation assessment; opens the dispute track.',
         fields: [
           { key: 'dispute_ground', label: 'Dispute ground', type: 'string' },
@@ -9025,7 +9027,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'decommission', label: 'Decommission', tone: 'oxide',
         path: '/api/bess-soh/chain/:id/decommission',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Decommissions the battery programme to the decommissioned terminal.',
         fields: [
           { key: 'current_soh_pct', label: 'Current SoH (%)', type: 'number' },
@@ -9035,11 +9037,11 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     
-      { action: "detect-drift", label: "Detect drift", path: "/api/bess-soh/chain/:id/detect-drift", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the bess soh chain to drift detected.", fields: [{ key: "current_soh_pct", label: "Current soh (%)", type: 'number' }, { key: "total_throughput_mwh", label: "Total throughput (MWh)", type: 'number' }] },
-      { action: "assess-cause", label: "Assess cause", path: "/api/bess-soh/chain/:id/assess-cause", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the bess soh chain to assessment pending.", fields: [{ key: "current_soh_pct", label: "Current soh (%)", type: 'number' }, { key: "cycle_fade_attribution_pct", label: "Cycle fade attribution (%)", type: 'number' }] },
-      { action: "start-works", label: "Start works", path: "/api/bess-soh/chain/:id/start-works", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the bess soh chain to augmentation in progress.", fields: [{ key: "augmentation_works_ref", label: "Augmentation works ref", type: 'string' }] },
-      { action: "resolve-dispute", label: "Resolve dispute", tone: "primary", path: "/api/bess-soh/chain/:id/resolve-dispute", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the bess soh chain to assessment pending.", fields: [{ key: "dispute_resolution_ref", label: "Dispute resolution ref", type: 'string' }, { key: "current_soh_pct", label: "Current soh (%)", type: 'number' }] },
-      { action: "cancel-programme", label: "Cancel programme", tone: "oxide", path: "/api/bess-soh/chain/:id/cancel-programme", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the bess soh chain to cancelled." }
+      { action: "detect-drift", label: "Detect drift", path: "/api/bess-soh/chain/:id/detect-drift", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the bess soh chain to drift detected.", fields: [{ key: "current_soh_pct", label: "Current soh (%)", type: 'number' }, { key: "total_throughput_mwh", label: "Total throughput (MWh)", type: 'number' }] },
+      { action: "assess-cause", label: "Assess cause", path: "/api/bess-soh/chain/:id/assess-cause", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the bess soh chain to assessment pending.", fields: [{ key: "current_soh_pct", label: "Current soh (%)", type: 'number' }, { key: "cycle_fade_attribution_pct", label: "Cycle fade attribution (%)", type: 'number' }] },
+      { action: "start-works", label: "Start works", path: "/api/bess-soh/chain/:id/start-works", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the bess soh chain to augmentation in progress.", fields: [{ key: "augmentation_works_ref", label: "Augmentation works ref", type: 'string' }] },
+      { action: "resolve-dispute", label: "Resolve dispute", tone: "primary", path: "/api/bess-soh/chain/:id/resolve-dispute", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the bess soh chain to assessment pending.", fields: [{ key: "dispute_resolution_ref", label: "Dispute resolution ref", type: 'string' }, { key: "current_soh_pct", label: "Current soh (%)", type: 'number' }] },
+      { action: "cancel-programme", label: "Cancel programme", tone: "oxide", path: "/api/bess-soh/chain/:id/cancel-programme", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the bess soh chain to cancelled." }
     ],
     filters: [
       { key: 'monitoring', label: 'Monitoring', statuses: ['baseline_set', 'monitoring_active', 'drift_detected', 'assessment_pending'] },
@@ -9069,7 +9071,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     actions: [
       { action: 'run-reconciliation', label: 'Run reconciliation',
         path: '/api/generation-revenue-assurance/chain/:id/run-reconciliation',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Reconciles settled revenue against expected generation; quantifies any variance.',
         fields: [
           { key: 'reconciliation_basis', label: 'Reconciliation basis', type: 'evidence' },
@@ -9083,7 +9085,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'flag-variance', label: 'Flag variance', tone: 'oxide',
         path: '/api/generation-revenue-assurance/chain/:id/flag-variance',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Flags a material revenue variance for recovery; the recovery window opens.',
         fields: [
           { key: 'reconciliation_basis', label: 'Reconciliation basis', type: 'evidence' },
@@ -9094,7 +9096,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'issue-recovery-claim', label: 'Issue recovery claim',
         path: '/api/generation-revenue-assurance/chain/:id/issue-recovery-claim',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Issues a recovery claim to the counterparty for the flagged variance.',
         fields: [
           { key: 'recovery_basis', label: 'Recovery basis', type: 'evidence' },
@@ -9106,7 +9108,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'confirm-recovery', label: 'Confirm recovery', tone: 'primary',
         path: '/api/generation-revenue-assurance/chain/:id/confirm-recovery',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Confirms recovered revenue to the recovered terminal.',
         fields: [
           { key: 'recovery_basis', label: 'Recovery basis', type: 'evidence' },
@@ -9117,7 +9119,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'raise-dispute', label: 'Raise dispute', tone: 'oxide',
         path: '/api/generation-revenue-assurance/chain/:id/raise-dispute',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Disputes the variance with the counterparty; opens the dispute track.',
         fields: [
           { key: 'dispute_basis', label: 'Dispute basis', type: 'evidence' },
@@ -9128,7 +9130,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'write-off', label: 'Write off', tone: 'oxide',
         path: '/api/generation-revenue-assurance/chain/:id/write-off',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Writes off the unrecoverable variance to the written-off terminal.',
         fields: [
           { key: 'writeoff_basis', label: 'Write-off basis', type: 'evidence' },
@@ -9139,13 +9141,13 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     
-      { action: "ingest-data", label: "Ingest data", path: "/api/generation-revenue-assurance/chain/:id/ingest-data", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the generation revenue assurance chain to data ingested.", fields: [{ key: "ingest_basis", label: "Ingest basis", type: 'string' }, { key: "ingest_ref", label: "Ingest ref", type: 'string' }, { key: "metered_generation_mwh", label: "Metered generation (MWh)", type: 'number' }, { key: "settled_generation_mwh", label: "Settled generation (MWh)", type: 'number' }, { key: "invoiced_generation_mwh", label: "Invoiced generation (MWh)", type: 'number' }, { key: "data_cutoff_date", label: "Data cutoff date", type: 'date' }] },
-      { action: "close-clean", label: "Close clean", path: "/api/generation-revenue-assurance/chain/:id/close-clean", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the generation revenue assurance chain to closed clean.", fields: [{ key: "reconciliation_basis", label: "Reconciliation basis", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
-      { action: "open-investigation", label: "Open investigation", path: "/api/generation-revenue-assurance/chain/:id/open-investigation", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the generation revenue assurance chain to investigating.", fields: [{ key: "investigation_basis", label: "Investigation basis", type: 'string' }, { key: "investigation_ref", label: "Investigation ref", type: 'string' }] },
-      { action: "classify-leakage", label: "Classify leakage", path: "/api/generation-revenue-assurance/chain/:id/classify-leakage", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the generation revenue assurance chain to classified.", fields: [{ key: "classification_basis", label: "Classification basis", type: 'string' }, { key: "classification_ref", label: "Classification ref", type: 'string' }, { key: "leakage_category", label: "Leakage category", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
-      { action: "resolve-dispute-recovered", label: "Resolve dispute recovered", tone: "primary", path: "/api/generation-revenue-assurance/chain/:id/resolve-dispute-recovered", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the generation revenue assurance chain to recovered.", fields: [{ key: "resolution_basis", label: "Resolution basis", type: 'string' }, { key: "resolution_ref", label: "Resolution ref", type: 'string' }, { key: "recovered_zar", label: "Recovered (ZAR)", type: 'number' }, { key: "reviewer_name", label: "Reviewer name", type: 'string' }] },
-      { action: "resolve-dispute-writeoff", label: "Resolve dispute writeoff", tone: "oxide", path: "/api/generation-revenue-assurance/chain/:id/resolve-dispute-writeoff", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the generation revenue assurance chain to written off.", fields: [{ key: "resolution_basis", label: "Resolution basis", type: 'string' }, { key: "writeoff_basis", label: "Writeoff basis", type: 'string' }, { key: "writeoff_ref", label: "Writeoff ref", type: 'string' }, { key: "written_off_zar", label: "Written off (ZAR)", type: 'number' }, { key: "reviewer_name", label: "Reviewer name", type: 'string' }] },
-      { action: "cancel-reconciliation", label: "Cancel reconciliation", tone: "oxide", path: "/api/generation-revenue-assurance/chain/:id/cancel-reconciliation", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the generation revenue assurance chain to cancelled.", fields: [{ key: "cancellation_basis", label: "Cancellation basis", type: 'string' }, { key: "cancellation_ref", label: "Cancellation ref", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] }
+      { action: "ingest-data", label: "Ingest data", path: "/api/generation-revenue-assurance/chain/:id/ingest-data", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the generation revenue assurance chain to data ingested.", fields: [{ key: "ingest_basis", label: "Ingest basis", type: 'string' }, { key: "ingest_ref", label: "Ingest ref", type: 'string' }, { key: "metered_generation_mwh", label: "Metered generation (MWh)", type: 'number' }, { key: "settled_generation_mwh", label: "Settled generation (MWh)", type: 'number' }, { key: "invoiced_generation_mwh", label: "Invoiced generation (MWh)", type: 'number' }, { key: "data_cutoff_date", label: "Data cutoff date", type: 'date' }] },
+      { action: "close-clean", label: "Close clean", path: "/api/generation-revenue-assurance/chain/:id/close-clean", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the generation revenue assurance chain to closed clean.", fields: [{ key: "reconciliation_basis", label: "Reconciliation basis", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
+      { action: "open-investigation", label: "Open investigation", path: "/api/generation-revenue-assurance/chain/:id/open-investigation", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the generation revenue assurance chain to investigating.", fields: [{ key: "investigation_basis", label: "Investigation basis", type: 'string' }, { key: "investigation_ref", label: "Investigation ref", type: 'string' }] },
+      { action: "classify-leakage", label: "Classify leakage", path: "/api/generation-revenue-assurance/chain/:id/classify-leakage", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the generation revenue assurance chain to classified.", fields: [{ key: "classification_basis", label: "Classification basis", type: 'string' }, { key: "classification_ref", label: "Classification ref", type: 'string' }, { key: "leakage_category", label: "Leakage category", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] },
+      { action: "resolve-dispute-recovered", label: "Resolve dispute recovered", tone: "primary", path: "/api/generation-revenue-assurance/chain/:id/resolve-dispute-recovered", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the generation revenue assurance chain to recovered.", fields: [{ key: "resolution_basis", label: "Resolution basis", type: 'string' }, { key: "resolution_ref", label: "Resolution ref", type: 'string' }, { key: "recovered_zar", label: "Recovered (ZAR)", type: 'number' }, { key: "reviewer_name", label: "Reviewer name", type: 'string' }] },
+      { action: "resolve-dispute-writeoff", label: "Resolve dispute writeoff", tone: "oxide", path: "/api/generation-revenue-assurance/chain/:id/resolve-dispute-writeoff", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the generation revenue assurance chain to written off.", fields: [{ key: "resolution_basis", label: "Resolution basis", type: 'string' }, { key: "writeoff_basis", label: "Writeoff basis", type: 'string' }, { key: "writeoff_ref", label: "Writeoff ref", type: 'string' }, { key: "written_off_zar", label: "Written off (ZAR)", type: 'number' }, { key: "reviewer_name", label: "Reviewer name", type: 'string' }] },
+      { action: "cancel-reconciliation", label: "Cancel reconciliation", tone: "oxide", path: "/api/generation-revenue-assurance/chain/:id/cancel-reconciliation", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the generation revenue assurance chain to cancelled.", fields: [{ key: "cancellation_basis", label: "Cancellation basis", type: 'string' }, { key: "cancellation_ref", label: "Cancellation ref", type: 'string' }, { key: "reason_code", label: "Reason code", type: 'evidence' }] }
     ],
     filters: [
       { key: 'reconciling', label: 'Reconciling', statuses: ['period_open', 'data_ingested', 'reconciled', 'variance_flagged'] },
@@ -9175,7 +9177,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     actions: [
       { action: 'measure-soiling', label: 'Measure soiling',
         path: '/api/esums/soiling-audit/chain/:id/measure-soiling',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Records the measured soiling ratio against baseline; the loss assessment begins.',
         fields: [
           { key: 'soiling_ratio_pct', label: 'Soiling ratio (%)', type: 'number' },
@@ -9194,7 +9196,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'assess-economics', label: 'Assess economics',
         path: '/api/esums/soiling-audit/chain/:id/assess-economics',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Assesses the cleaning cost against the recoverable energy; the cleaning decision follows.',
         fields: [
           { key: 'cleaning_method', label: 'Cleaning method', type: 'string' },
@@ -9208,7 +9210,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'authorize-cleaning', label: 'Authorize cleaning',
         path: '/api/esums/soiling-audit/chain/:id/authorize-cleaning',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Authorizes the cleaning contractor to mobilise; the works window opens.',
         fields: [
           { key: 'cleaning_contractor_id', label: 'Cleaning contractor ID', type: 'string' },
@@ -9219,7 +9221,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'measure-post-clean', label: 'Measure post-clean',
         path: '/api/esums/soiling-audit/chain/:id/measure-post-clean',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Records the post-clean performance ratio to verify recovered energy.',
         fields: [
           { key: 'post_clean_pr_pct', label: 'Post-clean PR (%)', type: 'number' },
@@ -9229,7 +9231,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'settle-audit', label: 'Settle audit', tone: 'primary',
         path: '/api/esums/soiling-audit/chain/:id/settle-audit',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Settles the soiling audit to the settled terminal.',
         fields: [
           { key: 'result_text', label: 'Result', type: 'evidence' },
@@ -9239,7 +9241,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       },
       { action: 'raise-dispute', label: 'Raise dispute', tone: 'oxide',
         path: '/api/esums/soiling-audit/chain/:id/raise-dispute',
-        roles: ['admin', 'support'],
+        roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Disputes the soiling measurement or cleaning economics; opens the dispute track.',
         fields: [
           { key: 'disputed_reason', label: 'Dispute reason', type: 'string' },
@@ -9249,13 +9251,13 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         ],
       },
     
-      { action: "schedule-inspection", label: "Schedule inspection", path: "/api/esums/soiling-audit/chain/:id/schedule-inspection", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the soiling audit chain to inspection scheduled.", fields: [{ key: "inspection_method", label: "Inspection method", type: 'string' }] },
-      { action: "record-inspection", label: "Record inspection", path: "/api/esums/soiling-audit/chain/:id/record-inspection", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the soiling audit chain to field inspected.", fields: [{ key: "inspection_method", label: "Inspection method", type: 'string' }] },
-      { action: "start-cleaning", label: "Start cleaning", path: "/api/esums/soiling-audit/chain/:id/start-cleaning", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the soiling audit chain to cleaning in progress." },
-      { action: "complete-cleaning", label: "Complete cleaning", tone: "primary", path: "/api/esums/soiling-audit/chain/:id/complete-cleaning", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the soiling audit chain to post clean measured.", fields: [{ key: "water_consumption_m3", label: "Water consumption m3", type: 'number' }] },
-      { action: "validate-gain", label: "Validate gain", path: "/api/esums/soiling-audit/chain/:id/validate-gain", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the soiling audit chain to settled." },
-      { action: "resolve-dispute", label: "Resolve dispute", tone: "primary", path: "/api/esums/soiling-audit/chain/:id/resolve-dispute", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the soiling audit chain to economic assessment done." },
-      { action: "cancel-audit", label: "Cancel audit", tone: "oxide", path: "/api/esums/soiling-audit/chain/:id/cancel-audit", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Advances the soiling audit chain to cancelled.", fields: [{ key: "cancelled_reason", label: "Cancelled reason", type: 'evidence' }] }
+      { action: "schedule-inspection", label: "Schedule inspection", path: "/api/esums/soiling-audit/chain/:id/schedule-inspection", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the soiling audit chain to inspection scheduled.", fields: [{ key: "inspection_method", label: "Inspection method", type: 'string' }] },
+      { action: "record-inspection", label: "Record inspection", path: "/api/esums/soiling-audit/chain/:id/record-inspection", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the soiling audit chain to field inspected.", fields: [{ key: "inspection_method", label: "Inspection method", type: 'string' }] },
+      { action: "start-cleaning", label: "Start cleaning", path: "/api/esums/soiling-audit/chain/:id/start-cleaning", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the soiling audit chain to cleaning in progress." },
+      { action: "complete-cleaning", label: "Complete cleaning", tone: "primary", path: "/api/esums/soiling-audit/chain/:id/complete-cleaning", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the soiling audit chain to post clean measured.", fields: [{ key: "water_consumption_m3", label: "Water consumption m3", type: 'number' }] },
+      { action: "validate-gain", label: "Validate gain", path: "/api/esums/soiling-audit/chain/:id/validate-gain", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the soiling audit chain to settled." },
+      { action: "resolve-dispute", label: "Resolve dispute", tone: "primary", path: "/api/esums/soiling-audit/chain/:id/resolve-dispute", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the soiling audit chain to economic assessment done." },
+      { action: "cancel-audit", label: "Cancel audit", tone: "oxide", path: "/api/esums/soiling-audit/chain/:id/cancel-audit", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Advances the soiling audit chain to cancelled.", fields: [{ key: "cancelled_reason", label: "Cancelled reason", type: 'evidence' }] }
     ],
     filters: [
       { key: 'measuring', label: 'Measuring', statuses: ['soiling_period_open', 'inspection_scheduled', 'field_inspected', 'soiling_measured', 'economic_assessment_done'] },
@@ -10944,7 +10946,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         fields: [{ key: "reforecast_rejection_reason", label: "Rejection reason", type: "evidence", required: true }] },
       { action: "draft-reforecast", label: "Draft reforecast", tone: "primary",
         path: "/api/ipp/cost-evm/chain/:id/draft-reforecast", method: 'POST',
-        roles: ["admin"],
+        roles: ['admin', 'ipp_developer'],
         cascadeHint: "Drafts a revised EAC/ETC reforecast for review.",
         fields: [{ key: "eac_zar", label: "Estimate at completion", type: "number", unit: "ZAR" }, { key: "etc_zar", label: "Estimate to complete", type: "number", unit: "ZAR" }, { key: "reforecast_narrative", label: "Reforecast narrative", type: "evidence" }] },
       { action: "draw-contingency", label: "Draw contingency reserve", tone: "primary",
@@ -11524,7 +11526,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'doe_due_at',
     terminal: ['doe_opinion_adverse', 'doe_opinion_disclaimer', 'cra_rejected', 'issued', 'withdrawn'],
     counterpartyCol: 'doe_assignee_id',
-    lanes: { carbon_fund: 'mrv_verification' },
+    lanes: { carbon_fund: 'mrv_verification', regulator: 'data_reporting' },
     eventsTable: 'oe_mrv_chain_events', eventsFk: 'submission_id',
     actions: [
       { action: 'submit', label: 'Submit',
@@ -12217,7 +12219,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline',
     terminal: ['closed', 'cancelled'],
     counterpartyCol: 'contractor_id',
-    lanes: { support: 'field_operations' },
+    lanes: { support: 'field_operations', esco: 'work_orders' },
     eventsTable: 'om_wo_chain_events', eventsFk: 'wo_id',
     actions: [
       { action: 'assign', label: 'Assign',
@@ -12295,38 +12297,38 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     eventsTable: 'oe_service_contract_events', eventsFk: 'contract_id',
     actions: [
       { action: 'issue_quote', label: 'Issue quote',
-        path: '/api/service-contract/chain/:id/issue-quote', roles: ['admin', 'support'],
+        path: '/api/service-contract/chain/:id/issue-quote', roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Issues the AMC quote.' },
       { action: 'accept_quote', label: 'Accept quote',
-        path: '/api/service-contract/chain/:id/accept-quote', roles: ['admin', 'support'],
+        path: '/api/service-contract/chain/:id/accept-quote', roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Records customer acceptance.' },
       { action: 'activate_coverage', label: 'Activate coverage', tone: 'primary',
-        path: '/api/service-contract/chain/:id/activate-coverage', roles: ['admin', 'support'],
+        path: '/api/service-contract/chain/:id/activate-coverage', roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Activates the contract coverage.' },
       { action: 'open_renewal', label: 'Open renewal',
-        path: '/api/service-contract/chain/:id/open-renewal', roles: ['admin', 'support'],
+        path: '/api/service-contract/chain/:id/open-renewal', roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Opens the renewal cycle.' },
       { action: 'issue_renewal_quote', label: 'Issue renewal quote',
-        path: '/api/service-contract/chain/:id/issue-renewal-quote', roles: ['admin', 'support'],
+        path: '/api/service-contract/chain/:id/issue-renewal-quote', roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Issues the renewal quote.' },
       { action: 'confirm_renewal', label: 'Confirm renewal', tone: 'primary',
-        path: '/api/service-contract/chain/:id/confirm-renewal', roles: ['admin', 'support'],
+        path: '/api/service-contract/chain/:id/confirm-renewal', roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Confirms the renewal — extends the term.' },
       { action: 'suspend_coverage', label: 'Suspend coverage', tone: 'oxide',
-        path: '/api/service-contract/chain/:id/suspend-coverage', roles: ['admin', 'support'],
+        path: '/api/service-contract/chain/:id/suspend-coverage', roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Suspends coverage.',
         fields: [{ key: 'suspend_reason', label: 'Reason', type: 'evidence' }] },
       { action: 'expire_coverage', label: 'Expire', tone: 'oxide',
-        path: '/api/service-contract/chain/:id/expire-coverage', roles: ['admin', 'support'],
+        path: '/api/service-contract/chain/:id/expire-coverage', roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Expires the contract — terminal.' },
       { action: 'cancel_contract', label: 'Cancel', tone: 'oxide',
-        path: '/api/service-contract/chain/:id/cancel-contract', roles: ['admin', 'support'],
+        path: '/api/service-contract/chain/:id/cancel-contract', roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Cancels the contract — terminal.',
         fields: [{ key: 'reason_code', label: 'Reason', type: 'evidence' }] },
     
-      { action: "begin-negotiation", label: "Begin negotiation", path: "/api/service-contract/chain/:id/begin-negotiation", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Records the begin negotiation action.", fields: [{ key: "negotiation_basis", label: "Negotiation basis", type: 'string' }, { key: "negotiation_ref", label: "Negotiation ref", type: 'string' }] },
-      { action: "enter-grace", label: "Enter grace", path: "/api/service-contract/chain/:id/enter-grace", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Records the enter grace action.", fields: [{ key: "grace_basis", label: "Grace basis", type: 'string' }, { key: "grace_ref", label: "Grace ref", type: 'string' }] },
-      { action: "reinstate-coverage", label: "Reinstate coverage", tone: "primary", path: "/api/service-contract/chain/:id/reinstate-coverage", method: 'POST', roles: ['admin', 'support'], cascadeHint: "Records the reinstate coverage action.", fields: [{ key: "reinstatement_basis", label: "Reinstatement basis", type: 'string' }, { key: "reinstatement_ref", label: "Reinstatement ref", type: 'string' }] }
+      { action: "begin-negotiation", label: "Begin negotiation", path: "/api/service-contract/chain/:id/begin-negotiation", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Records the begin negotiation action.", fields: [{ key: "negotiation_basis", label: "Negotiation basis", type: 'string' }, { key: "negotiation_ref", label: "Negotiation ref", type: 'string' }] },
+      { action: "enter-grace", label: "Enter grace", path: "/api/service-contract/chain/:id/enter-grace", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Records the enter grace action.", fields: [{ key: "grace_basis", label: "Grace basis", type: 'string' }, { key: "grace_ref", label: "Grace ref", type: 'string' }] },
+      { action: "reinstate-coverage", label: "Reinstate coverage", tone: "primary", path: "/api/service-contract/chain/:id/reinstate-coverage", method: 'POST', roles: ['admin', 'support', 'esco'], cascadeHint: "Records the reinstate coverage action.", fields: [{ key: "reinstatement_basis", label: "Reinstatement basis", type: 'string' }, { key: "reinstatement_ref", label: "Reinstatement ref", type: 'string' }] }
     ],
     filters: [
       { key: 'onboarding', label: 'Onboarding', statuses: ['draft', 'quoted', 'pending_activation'] },
@@ -12354,7 +12356,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'unfccc_posted_at',
     terminal: ['unfccc_ledger', 'blocked'],
     counterpartyCol: null,
-    lanes: { carbon_fund: 'article6_compliance', trader: 'compliance_reporting' },
+    lanes: { carbon_fund: 'article6_compliance', trader: 'compliance_reporting', regulator: 'data_reporting' },
     eventsTable: null, eventsFk: null,
     actions: [
       { action: 'submit_dffe', label: 'Submit to DFFE', tone: 'primary',
@@ -12692,25 +12694,25 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         cascadeHint: "CFO recasts an acknowledged pack with material corrections; crosses regulator inbox for quarterly + annual tiers.",
         fields: [{ key: "restate_reason", label: "Restatement basis", type: "evidence" }, { key: "parent_pack_id", label: "Parent pack ID", type: "string" }, { key: "notes", label: "Notes", type: "evidence" }] },
       { action: 'select_blocks', label: 'Select blocks',
-        path: '/api/regulator-exports/:id/select-blocks', roles: ['admin'],
+        path: '/api/regulator-exports/:id/select-blocks', roles: ['admin', 'regulator'],
         cascadeHint: 'Selects the audit-chain blocks to include in the pack.' },
       { action: 'filter_leaves', label: 'Filter leaves',
-        path: '/api/regulator-exports/:id/filter-leaves', roles: ['admin'],
+        path: '/api/regulator-exports/:id/filter-leaves', roles: ['admin', 'regulator'],
         cascadeHint: 'Filters the leaves down to the regulator-relevant scope.' },
       { action: 'assemble_xbrl', label: 'Assemble XBRL',
-        path: '/api/regulator-exports/:id/assemble-xbrl', roles: ['admin'],
+        path: '/api/regulator-exports/:id/assemble-xbrl', roles: ['admin', 'regulator'],
         cascadeHint: 'Assembles the XBRL document from filtered leaves.' },
       { action: 'attach_narratives', label: 'Attach narratives',
-        path: '/api/regulator-exports/:id/attach-narratives', roles: ['admin'],
+        path: '/api/regulator-exports/:id/attach-narratives', roles: ['admin', 'regulator'],
         cascadeHint: 'Attaches the supporting narratives.' },
       { action: 'run_internal_qa', label: 'Run internal QA',
-        path: '/api/regulator-exports/:id/run-internal-qa', roles: ['admin'],
+        path: '/api/regulator-exports/:id/run-internal-qa', roles: ['admin', 'regulator'],
         cascadeHint: 'Runs internal QA over the assembled pack.' },
       { action: 'package', label: 'Package', tone: 'primary',
-        path: '/api/regulator-exports/:id/package', roles: ['admin'],
+        path: '/api/regulator-exports/:id/package', roles: ['admin', 'regulator'],
         cascadeHint: 'Packages the QA-passed pack for lodgement.' },
       { action: 'lodge_via_api', label: 'Lodge via API', tone: 'primary',
-        path: '/api/regulator-exports/:id/lodge-via-api', roles: ['admin'],
+        path: '/api/regulator-exports/:id/lodge-via-api', roles: ['admin', 'regulator'],
         cascadeHint: 'Lodges the countersigned pack with the regulator.' },
       { action: 'record_acknowledgement', label: 'Record acknowledgement',
         path: '/api/regulator-exports/:id/record-acknowledgement', roles: ['admin', 'regulator'],
@@ -12723,7 +12725,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         cascadeHint: 'Regulator rejects the lodged pack — terminal.',
         fields: [{ key: 'reason', label: 'Reason', type: 'evidence', required: true }] },
       { action: 'withdraw', label: 'Withdraw', tone: 'oxide',
-        path: '/api/regulator-exports/:id/withdraw', roles: ['admin'],
+        path: '/api/regulator-exports/:id/withdraw', roles: ['admin', 'regulator'],
         cascadeHint: 'Withdraws the pack before lodgement — terminal.',
         fields: [{ key: 'reason', label: 'Reason', type: 'evidence', required: true }] },
     
@@ -16703,7 +16705,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     actions: [
       { action: "verify_metering_data", label: "Verify metering data", tone: "primary",
         path: "/api/unserved-energy-claims/:id/action", method: 'POST', body: { action: "verify_metering_data" },
-        roles: ["admin"],
+        roles: ['admin', 'grid_operator'],
         cascadeHint: "Platform validates meter readings against NRS 048-2 standard; triggers liability assessment phase.",
         fields: [{ key: "reason", label: "Verification notes", type: "evidence" }] },
       { action: "assess_liability", label: "Assess liability", tone: "primary",
@@ -16723,7 +16725,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         fields: [{ key: "reason", label: "Negotiation basis", type: "evidence" }] },
       { action: "commence_adjudication", label: "Commence adjudication",
         path: "/api/unserved-energy-claims/:id/action", method: 'POST', body: { action: "commence_adjudication" },
-        roles: ["admin"],
+        roles: ['admin', 'offtaker', 'grid_operator'],
         cascadeHint: "Admin opens formal adjudication phase when parties cannot reach bilateral agreement; crosses into regulator inbox for all customer tiers.",
         fields: [{ key: "reason", label: "Adjudication initiation reason", type: "evidence", required: true }] },
       { action: 'submit_grid_response', label: 'Submit grid response', tone: 'primary',

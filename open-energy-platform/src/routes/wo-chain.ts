@@ -28,7 +28,10 @@ import {
   type WoPriority,
 } from '../utils/wo-chain-spec';
 
-const READ_ROLES  = new Set(['admin', 'om', 'esums', 'ipp', 'ipp_developer', 'support', 'regulator']);
+// esco is the live O&M operator persona (seed 494). It was in WRITE_ROLES but
+// missing from READ_ROLES — the only role that could advance a WO it could not
+// list. Sibling pm-compliance-chain.ts keeps esco in both. Aligned here.
+const READ_ROLES  = new Set(['admin', 'om', 'esums', 'ipp', 'ipp_developer', 'support', 'regulator', 'esco']);
 const WRITE_ROLES = new Set(['admin', 'support', 'om', 'esums', 'esco']);
 
 const app = new Hono<HonoEnv>();

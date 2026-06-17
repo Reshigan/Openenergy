@@ -55,7 +55,8 @@ const READ_ROLES = new Set([
 
 // SINGLE-PARTY write — the support / O&M desk owns the whole record. actor_party
 // is functional attribution only (planner / buyer / warehouse / supplier).
-const WRITE_ROLES = new Set(['admin', 'support']);
+// esco is the live O&M operator persona (seed 494) and is laned here, so it writes too.
+const WRITE_ROLES = new Set(['admin', 'support', 'esco']);
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);

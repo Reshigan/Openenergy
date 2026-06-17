@@ -55,11 +55,13 @@ import {
 // All nine personas may read the revenue-assurance register.
 const READ_ROLES = new Set([
   'admin',
-  'support', 'offtaker', 'lender', 'regulator', 'grid_operator', 'ipp_developer', 'carbon_fund', 'trader',
+  'support', 'offtaker', 'lender', 'regulator', 'grid_operator', 'ipp_developer', 'carbon_fund', 'trader', 'esco',
 ]);
 
-// Single write: the Esums revenue-assurance desk operates the chain.
-const WRITE_ROLES = new Set(['admin', 'support']);
+// Single write: the Esums revenue-assurance desk operates the chain. esco is the
+// live Esums/O&M operator persona (seed 494); 'support' was the pre-persona
+// placeholder. Both write so the laned esco Horizon is functional.
+const WRITE_ROLES = new Set(['admin', 'support', 'esco']);
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
