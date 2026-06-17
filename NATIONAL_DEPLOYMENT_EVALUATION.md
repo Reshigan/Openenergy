@@ -7,6 +7,22 @@
 
 ---
 
+## 0a. UPDATE — June 17, 2026 (current truth)
+
+The May-10 block (§0) and the April baseline below remain the canonical architecture/scalability narrative. Material changes since May 10:
+
+| Domain | May 10 | June 17 |
+|---|---|---|
+| Backend surface | 491 routes across 51 modules | **347 route modules · 360 `app.route` mounts** (now aggregated in `src/routes/mount-routes.ts`) |
+| Migrations | 37 applied, 204 tables | **508 numbered migrations** (highest `508_add_carbon_chain_tier_columns.sql`); irregular 019–048 band still force-applied out-of-band, CI skips it |
+| Unit tests | 474 | **8167 green** (240 files, 0 fail — reproduced this session) |
+| State-machine depth | 4 rebuilt suites | **Waves 1–76** L4/L5 chains (settlement atomic DvP, grid dispatch/curtailment/capacity, regulator SLA escalation, carbon Article 6, ITIL) |
+| Journey coverage | 6 cross-role flows | Full registry-driven E2E: 118 create-journeys + 89 advance-journeys; cross-role advance probe 86/89, **0 server errors** |
+
+**Readiness verdict (June 17): ~58% — NO-GO national / hard launch; CONDITIONAL-GO for a capped soft-launch only.** The April "Critical Gaps for National Deployment" (§4) — real-time market data, settlement-engine correctness at scale, grid-code compliance, multi-region data — remain the binding constraints, and they are now joined by operational gates that are unproven rather than merely incomplete: load proof at SA grid peak, independent pen-test (+ exposed Cloudflare key rotation, CSRF, admin 2FA), DR restore drill for the irregular migration band, national metering shard binding (currently commented out in `wrangler.toml`), and POPIA data-residency substantiation. The April §6 "6–9 months to national" framing on the infrastructure items remains the right order of magnitude. See `GO_LIVE_READINESS.md` (current-truth header) for the live blocker ledger and the ordered pre-launch must-dos.
+
+---
+
 ## 0. UPDATE — May 10, 2026
 
 The April baseline below remains the canonical architecture/scalability assessment. Material changes since then:

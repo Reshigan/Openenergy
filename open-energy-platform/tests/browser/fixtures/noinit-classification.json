@@ -1,0 +1,4099 @@
+{
+  "classified": [
+    {
+      "family": "lender",
+      "chains": [
+        {
+          "key": "covenant_certificate",
+          "classification": "SEED_ONLY",
+          "initialStatus": "certificate_due",
+          "firstAdvanceAction": "begin-review",
+          "seedTable": "oe_covenant_certificates",
+          "seedNotNullColumns": [
+            {
+              "col": "certificate_number",
+              "exampleValue": "COVCERT-2026-0001"
+            },
+            {
+              "col": "borrower_party_id",
+              "exampleValue": "spv_redstone"
+            },
+            {
+              "col": "borrower_party_name",
+              "exampleValue": "Redstone Solar Thermal Power (RF) (Pty) Ltd"
+            },
+            {
+              "col": "facility_name",
+              "exampleValue": "Redstone CSP Senior Facility"
+            },
+            {
+              "col": "facility_tier",
+              "exampleValue": "senior_secured"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "certificate_due"
+            },
+            {
+              "col": "certificate_due_at",
+              "exampleValue": "2026-06-30 23:59:00"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_lender_001"
+            }
+          ],
+          "notes": "Covenant_certificate rows represent the ongoing compliance-certificate lifecycle \u2014 they are seeded with test data in migrations/167_covenant_certificate_chain_seed.sql. No POST/ endpoint creates them (src/routes/covenant-certificate-chain.ts has only GET, POST/:id transition routes). Not cascade-born. Must be seeded as external/upstream facility-monitoring reality from the lender."
+        },
+        {
+          "key": "drawdown",
+          "classification": "SEED_ONLY",
+          "initialStatus": "requested",
+          "firstAdvanceAction": "approve",
+          "seedTable": "oe_drawdown_chain",
+          "seedNotNullColumns": [
+            {
+              "col": "drawdown_number",
+              "exampleValue": "DD-2026-0001"
+            },
+            {
+              "col": "participant_id",
+              "exampleValue": "p_kathu_ii_ipp"
+            },
+            {
+              "col": "lender_id",
+              "exampleValue": "p_lender_standard_bank"
+            },
+            {
+              "col": "project_name",
+              "exampleValue": "Kathu II Solar 150MW"
+            },
+            {
+              "col": "tranche_label",
+              "exampleValue": "tranche_1"
+            },
+            {
+              "col": "amount_zar",
+              "exampleValue": "362500000"
+            },
+            {
+              "col": "tranche_tier",
+              "exampleValue": "senior"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "requested"
+            },
+            {
+              "col": "requested_at",
+              "exampleValue": "2026-05-25T08:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "system_seed"
+            }
+          ],
+          "notes": "Drawdown rows represent W21 tranches \u2014 they are seeded in migrations/133_drawdown_chain_seed.sql. No POST/ endpoint creates them. Not cascade-born. Rows must be seeded to reflect the IPP's drawdown requests against a lender facility."
+        },
+        {
+          "key": "disbursement_case",
+          "classification": "SEED_ONLY",
+          "initialStatus": "tranche_released",
+          "firstAdvanceAction": "close-reconciliation",
+          "seedTable": "oe_disbursement_cases",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "DISB-2026-001"
+            },
+            {
+              "col": "lender_party",
+              "exampleValue": "Standard Bank"
+            },
+            {
+              "col": "borrower_party",
+              "exampleValue": "SPV Borrower Co"
+            },
+            {
+              "col": "facility_ref",
+              "exampleValue": "fac_kathu_ii_senior"
+            },
+            {
+              "col": "tranche_tier",
+              "exampleValue": "senior_a"
+            },
+            {
+              "col": "tranche_amount_zar",
+              "exampleValue": "362500000"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "tranche_released"
+            },
+            {
+              "col": "tranche_released_at",
+              "exampleValue": "2026-05-25T08:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "system_seed"
+            }
+          ],
+          "notes": "Disbursement UoP cases (W30) are seeded in migrations/151_disbursement_chain_seed.sql. No POST/ endpoint creates them. Not cascade-born. Rows must be seeded to represent actual tranche releases awaiting reconciliation."
+        },
+        {
+          "key": "loan_default",
+          "classification": "CASCADE_BORN",
+          "initialStatus": "default_flagged",
+          "firstAdvanceAction": "accelerate",
+          "parentChain": "reserve_account",
+          "birthTrigger": "reserve_account.breached",
+          "notes": "Loan default rows are AUTO-CREATED by the reserve_account.breached cascade event (src/cascade-rules/lifecycle-sequencing.ts:268, rule ID 'lifecycle.reserve_breach_to_loan_default'). The cascade inserts a row with status='default_flagged' and source_entity_type='reserve_account', auto-deriving facility_name, borrower_party_id/name from the reserve account row."
+        },
+        {
+          "key": "credit_facility_application",
+          "classification": "SEED_ONLY",
+          "initialStatus": "application_received",
+          "firstAdvanceAction": "screen",
+          "seedTable": "oe_credit_facility_applications",
+          "seedNotNullColumns": [
+            {
+              "col": "application_number",
+              "exampleValue": "APP-2026-0001"
+            },
+            {
+              "col": "applicant_party_id",
+              "exampleValue": "p_kathu_ii_ipp"
+            },
+            {
+              "col": "applicant_party_name",
+              "exampleValue": "Kathu II SPV"
+            },
+            {
+              "col": "facility_tier",
+              "exampleValue": "major"
+            },
+            {
+              "col": "facility_name",
+              "exampleValue": "Kathu II Senior Facility"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "application_received"
+            },
+            {
+              "col": "application_received_at",
+              "exampleValue": "2026-05-25T08:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "system_seed"
+            }
+          ],
+          "notes": "Credit facility applications (W53) are seeded in migrations/197_credit_origination_chain_seed.sql. No POST/ endpoint creates them (src/routes/credit-origination-chain.ts has only GET and transition routes). Not cascade-born. Rows must be seeded to represent credit origination applications."
+        },
+        {
+          "key": "loan_transfer",
+          "classification": "SEED_ONLY",
+          "initialStatus": "transfer_requested",
+          "firstAdvanceAction": "approve-transfer",
+          "seedTable": "oe_loan_transfers",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "LNTR-2026-0001"
+            },
+            {
+              "col": "transferor_party_id",
+              "exampleValue": "p_lender_standard_bank"
+            },
+            {
+              "col": "transferor_party_name",
+              "exampleValue": "Standard Bank"
+            },
+            {
+              "col": "transferee_party_id",
+              "exampleValue": "p_lender_new_buyer"
+            },
+            {
+              "col": "transferee_party_name",
+              "exampleValue": "New Lender Fund"
+            },
+            {
+              "col": "agent_party_id",
+              "exampleValue": "p_lender_facility_agent"
+            },
+            {
+              "col": "agent_party_name",
+              "exampleValue": "Facility Agent Bank"
+            },
+            {
+              "col": "obligor_party_id",
+              "exampleValue": "p_kathu_ii_ipp"
+            },
+            {
+              "col": "obligor_party_name",
+              "exampleValue": "Kathu II SPV"
+            },
+            {
+              "col": "facility_name",
+              "exampleValue": "Kathu II Senior Facility"
+            },
+            {
+              "col": "transfer_type",
+              "exampleValue": "assignment"
+            },
+            {
+              "col": "transfer_zar_m",
+              "exampleValue": "100"
+            },
+            {
+              "col": "transfer_tier",
+              "exampleValue": "major"
+            },
+            {
+              "col": "transferee_residency",
+              "exampleValue": "resident"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "transfer_requested"
+            },
+            {
+              "col": "transfer_requested_at",
+              "exampleValue": "2026-05-25T08:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "system_seed"
+            }
+          ],
+          "notes": "Loan transfer cases (W61) are seeded in migrations/213_loan_transfer_chain_seed.sql. No POST/ endpoint creates them. Not cascade-born. Rows must be seeded to represent secondary-market loan participation transfers."
+        },
+        {
+          "key": "security_perfection",
+          "classification": "SEED_ONLY",
+          "initialStatus": "identified",
+          "firstAdvanceAction": "confirm-perfection",
+          "seedTable": "oe_security_perfection",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "SPF-2026-0001"
+            },
+            {
+              "col": "borrower_id",
+              "exampleValue": "p_kathu_ii_ipp"
+            },
+            {
+              "col": "borrower_name",
+              "exampleValue": "Kathu II SPV"
+            },
+            {
+              "col": "security_type",
+              "exampleValue": "mortgage_bond"
+            },
+            {
+              "col": "severity_tier",
+              "exampleValue": "major"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "identified"
+            },
+            {
+              "col": "identified_at",
+              "exampleValue": "2026-05-25T08:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "system_seed"
+            }
+          ],
+          "notes": "Security perfection items (W69) are seeded in migrations/229_security_perfection_chain_seed.sql. No POST/ endpoint creates them. Not cascade-born. Rows must be seeded to represent the lender's security package items (mortgages, pledges, etc.)."
+        },
+        {
+          "key": "dscr_monitoring",
+          "classification": "SEED_ONLY",
+          "initialStatus": "period_open",
+          "firstAdvanceAction": "compute-ratios",
+          "seedTable": "oe_dscr_monitoring",
+          "seedNotNullColumns": [
+            {
+              "col": "monitoring_number",
+              "exampleValue": "DSCR-2026-Q1-001"
+            },
+            {
+              "col": "facility_id",
+              "exampleValue": "fac_kathu_ii_senior"
+            },
+            {
+              "col": "facility_name",
+              "exampleValue": "Kathu II Senior Facility"
+            },
+            {
+              "col": "project_id",
+              "exampleValue": "proj_kathu_ii"
+            },
+            {
+              "col": "project_name",
+              "exampleValue": "Kathu II Solar 150MW"
+            },
+            {
+              "col": "borrower_id",
+              "exampleValue": "p_kathu_ii_ipp"
+            },
+            {
+              "col": "borrower_name",
+              "exampleValue": "Kathu II SPV"
+            },
+            {
+              "col": "lender_agent_id",
+              "exampleValue": "p_lender_standard_bank"
+            },
+            {
+              "col": "lender_agent_name",
+              "exampleValue": "Standard Bank"
+            },
+            {
+              "col": "test_period_label",
+              "exampleValue": "2026-Q1"
+            },
+            {
+              "col": "test_period_start",
+              "exampleValue": "2026-01-01"
+            },
+            {
+              "col": "test_period_end",
+              "exampleValue": "2026-03-31"
+            },
+            {
+              "col": "test_date",
+              "exampleValue": "2026-04-15"
+            },
+            {
+              "col": "dscr_tier",
+              "exampleValue": "minor"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "period_open"
+            },
+            {
+              "col": "period_open_at",
+              "exampleValue": "2026-04-01T08:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "system_seed"
+            }
+          ],
+          "notes": "DSCR monitoring test cases (W86) are seeded in migrations/263_dscr_monitoring_chain_seed.sql. No POST/ endpoint creates them. Not cascade-born. Rows must be seeded to represent each test period's ratio monitoring on a facility."
+        },
+        {
+          "key": "reserve_account",
+          "classification": "SEED_ONLY",
+          "initialStatus": "reserve_required",
+          "firstAdvanceAction": "confirm-funding",
+          "seedTable": "oe_reserve_account_chain",
+          "seedNotNullColumns": [
+            {
+              "col": "reserve_number",
+              "exampleValue": "DSRA-2026-0001"
+            },
+            {
+              "col": "lender_name",
+              "exampleValue": "Standard Bank"
+            },
+            {
+              "col": "borrower_name",
+              "exampleValue": "Kathu II SPV"
+            },
+            {
+              "col": "target_amount_zar",
+              "exampleValue": "150000000"
+            },
+            {
+              "col": "reserve_tier",
+              "exampleValue": "major"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "reserve_required"
+            },
+            {
+              "col": "reserve_required_at",
+              "exampleValue": "2026-05-25T08:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "system_seed"
+            }
+          ],
+          "notes": "Reserve account obligations (W77 \u2014 DSRA/MRA) are seeded in migrations/245_reserve_account_chain_seed.sql. No POST/ endpoint creates them. Not cascade-born (though reserve breaches fire cascades TO other chains \u2014 loan_default). Rows must be seeded to represent the lender's reserve-account requirements on each facility."
+        },
+        {
+          "key": "sll_kpi",
+          "classification": "SEED_ONLY",
+          "initialStatus": "kpi_period_open",
+          "firstAdvanceAction": "attest-kpi",
+          "seedTable": "oe_sll_kpi_compliance",
+          "seedNotNullColumns": [
+            {
+              "col": "compliance_number",
+              "exampleValue": "SLL-2026-0001"
+            },
+            {
+              "col": "borrower_party_id",
+              "exampleValue": "p_kathu_ii_ipp"
+            },
+            {
+              "col": "materiality_class",
+              "exampleValue": "climate_kpi"
+            },
+            {
+              "col": "kpi_code",
+              "exampleValue": "CO2_INTENSITY"
+            },
+            {
+              "col": "compliance_tier",
+              "exampleValue": "minor"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "kpi_period_open"
+            },
+            {
+              "col": "kpi_period_open_at",
+              "exampleValue": "2026-01-01T00:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "system_seed"
+            }
+          ],
+          "notes": "SLL KPI compliance cases (W95) are seeded in migrations/281_sll_kpi_chain_seed.sql. No POST/ endpoint creates them. Not cascade-born. Rows must be seeded to represent the ESG KPI monitoring periods on sustainability-linked loans."
+        }
+      ]
+    },
+    {
+      "family": "trader",
+      "chains": [
+        {
+          "key": "poslimit_case",
+          "classification": "SEED_ONLY",
+          "initialStatus": "within_limit",
+          "firstAdvanceAction": "raise_warning",
+          "seedTable": "oe_poslimit_cases",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "PL-PROP-2026-0001"
+            },
+            {
+              "col": "trader_party",
+              "exampleValue": "Standard Bank Group Securities"
+            },
+            {
+              "col": "trader_user_id",
+              "exampleValue": "trader_sbg_01"
+            },
+            {
+              "col": "trader_tier",
+              "exampleValue": "prop"
+            },
+            {
+              "col": "fsca_license_ref",
+              "exampleValue": "FSCA-CAT2A-00142"
+            },
+            {
+              "col": "instrument",
+              "exampleValue": "ENERGY_FWD_2026Q3_BL"
+            },
+            {
+              "col": "instrument_class",
+              "exampleValue": "energy_fwd"
+            },
+            {
+              "col": "tenor",
+              "exampleValue": "2026Q3"
+            },
+            {
+              "col": "cap_mw",
+              "exampleValue": "500"
+            },
+            {
+              "col": "position_mw",
+              "exampleValue": "385"
+            },
+            {
+              "col": "utilisation_pct",
+              "exampleValue": "77.0"
+            },
+            {
+              "col": "cap_zar",
+              "exampleValue": "5000000000"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "within_limit"
+            },
+            {
+              "col": "detected_at",
+              "exampleValue": "2026-05-28T08:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "compliance_officer"
+            }
+          ],
+          "notes": "Position limit cases are seeded via migration 148_poslimit_chain.sql + 149_poslimit_chain_seed.sql. No API endpoint creates them; they represent external compliance-detected breaches of trader position caps against FSCA Section 41 limits. Initial state is within_limit; first admin action is raise_warning when telemetry detects a threshold crossing."
+        },
+        {
+          "key": "best_execution",
+          "classification": "SEED_ONLY",
+          "initialStatus": "rfq_received",
+          "firstAdvanceAction": "solicit_quotes",
+          "seedTable": "oe_best_execution",
+          "seedNotNullColumns": [
+            {
+              "col": "rfq_number",
+              "exampleValue": "RFQ-2026-0001"
+            },
+            {
+              "col": "desk_party_id",
+              "exampleValue": "oe_desk"
+            },
+            {
+              "col": "desk_party_name",
+              "exampleValue": "Open Energy Exchange Desk"
+            },
+            {
+              "col": "client_party_id",
+              "exampleValue": "client_drakenstein"
+            },
+            {
+              "col": "client_party_name",
+              "exampleValue": "Drakenstein Local Municipality"
+            },
+            {
+              "col": "client_tier",
+              "exampleValue": "retail"
+            },
+            {
+              "col": "instrument",
+              "exampleValue": "Day-ahead baseload buy"
+            },
+            {
+              "col": "quotes_count",
+              "exampleValue": "0"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "rfq_received"
+            },
+            {
+              "col": "rfq_received_at",
+              "exampleValue": "2026-05-28T06:05:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_trader_001"
+            }
+          ],
+          "notes": "Best-execution RFQs are seeded via migration 162_best_execution_chain.sql + 163_best_execution_chain_seed.sql. Represents FSCA Conduct Standard 1/2020 compliance on each client RFQ lifecycle. No API creates them; they are fixtures representing external client inquiries the desk must manage end-to-end. Initial state rfq_received; first action solicit_quotes."
+        },
+        {
+          "key": "trade_report",
+          "classification": "SEED_ONLY",
+          "initialStatus": "report_due",
+          "firstAdvanceAction": "generate_report",
+          "seedTable": "oe_trade_reports",
+          "seedNotNullColumns": [
+            {
+              "col": "report_number",
+              "exampleValue": "TR-2026-0001"
+            },
+            {
+              "col": "desk_party_id",
+              "exampleValue": "oe_desk"
+            },
+            {
+              "col": "desk_party_name",
+              "exampleValue": "Open Energy Exchange Desk"
+            },
+            {
+              "col": "report_class",
+              "exampleValue": "otc_derivative"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "report_due"
+            },
+            {
+              "col": "report_due_at",
+              "exampleValue": "2026-05-29T12:00:00Z"
+            },
+            {
+              "col": "is_reportable",
+              "exampleValue": "1"
+            },
+            {
+              "col": "resubmission_count",
+              "exampleValue": "0"
+            },
+            {
+              "col": "escalation_level",
+              "exampleValue": "0"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "reporting_ops"
+            }
+          ],
+          "notes": "Trade reports are seeded via migration 178_trade_reporting_chain.sql + 179_trade_reporting_chain_seed.sql. Represents FMA 2012 FSCA OTC Derivatives Reporting post-trade regulatory obligation. No API creates them; they are created automatically by back-office when trades execute. Initial state report_due; first action generate_report. src/routes/trade-reporting-chain.ts:1-65 documents the FMA Article 5 reporting flow."
+        },
+        {
+          "key": "market_abuse_case",
+          "classification": "SEED_ONLY",
+          "initialStatus": "alert_raised",
+          "firstAdvanceAction": "triage",
+          "seedTable": "oe_market_abuse_cases",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "MAB-2026-0001"
+            },
+            {
+              "col": "subject_party_id",
+              "exampleValue": "trader_subject_id"
+            },
+            {
+              "col": "subject_party_name",
+              "exampleValue": "Subject Trader Firm"
+            },
+            {
+              "col": "surveillance_party_id",
+              "exampleValue": "compliance_officer"
+            },
+            {
+              "col": "surveillance_party_name",
+              "exampleValue": "Compliance Surveillance"
+            },
+            {
+              "col": "abuse_tier",
+              "exampleValue": "standard"
+            },
+            {
+              "col": "typology",
+              "exampleValue": "layering"
+            },
+            {
+              "col": "dispute_round",
+              "exampleValue": "0"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "alert_raised"
+            },
+            {
+              "col": "alert_raised_at",
+              "exampleValue": "2026-05-28T10:00:00Z"
+            },
+            {
+              "col": "is_reportable",
+              "exampleValue": "1"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "compliance_officer"
+            }
+          ],
+          "notes": "Market abuse cases are seeded via migration 194_market_abuse_chain.sql + 195_market_abuse_chain_seed.sql. Represents FMA Chapter X + STOR suspicious transaction reporting. No API creates them; surveillance system detects alerts. Initial state alert_raised; first action triage. Trader role is read-only; write is admin/regulator only per src/routes/market-abuse-chain.ts:51-64."
+        },
+        {
+          "key": "algo_certification",
+          "classification": "SEED_ONLY",
+          "initialStatus": "registration_submitted",
+          "firstAdvanceAction": "begin_review",
+          "seedTable": "oe_algo_certifications",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "ACO-2026-0001"
+            },
+            {
+              "col": "firm_party_id",
+              "exampleValue": "firm_algo_provider"
+            },
+            {
+              "col": "firm_party_name",
+              "exampleValue": "Algo Trading Firm"
+            },
+            {
+              "col": "authority_party_id",
+              "exampleValue": "regulator_authority"
+            },
+            {
+              "col": "authority_party_name",
+              "exampleValue": "FSCA Authority"
+            },
+            {
+              "col": "system_name",
+              "exampleValue": "AutoQuote-Pro-v3"
+            },
+            {
+              "col": "system_type",
+              "exampleValue": "order_routing"
+            },
+            {
+              "col": "authorised_notional_zar_m",
+              "exampleValue": "50000"
+            },
+            {
+              "col": "algo_tier",
+              "exampleValue": "standard"
+            },
+            {
+              "col": "kill_switch_present",
+              "exampleValue": "1"
+            },
+            {
+              "col": "price_collars_present",
+              "exampleValue": "1"
+            },
+            {
+              "col": "throttles_present",
+              "exampleValue": "1"
+            },
+            {
+              "col": "max_order_size_present",
+              "exampleValue": "1"
+            },
+            {
+              "col": "conformance_test_passed",
+              "exampleValue": "0"
+            },
+            {
+              "col": "controls_validated",
+              "exampleValue": "0"
+            }
+          ],
+          "notes": "Algo certifications are seeded via migration 210_algo_cert_chain.sql + 211_algo_cert_chain_seed.sql. Represents FMA/FSCA MiFID RTS-6 pre-deployment governance gate. No API creates them. Initial state registration_submitted; first action begin_review. Trader role read-only per src/routes/algo-cert-chain.ts:58-70."
+        },
+        {
+          "key": "counterparty_margin",
+          "classification": "SEED_ONLY",
+          "initialStatus": "limit_active",
+          "firstAdvanceAction": "issue_warning",
+          "seedTable": "oe_counterparty_margin",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "CCM-2026-0001"
+            },
+            {
+              "col": "counterparty_id",
+              "exampleValue": "member_clearing_id"
+            },
+            {
+              "col": "counterparty_name",
+              "exampleValue": "Clearing Member"
+            },
+            {
+              "col": "systemically_important",
+              "exampleValue": "1"
+            },
+            {
+              "col": "severity_tier",
+              "exampleValue": "standard"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "limit_active"
+            },
+            {
+              "col": "limit_active_at",
+              "exampleValue": "2026-05-28T09:00:00Z"
+            },
+            {
+              "col": "cure_round",
+              "exampleValue": "0"
+            },
+            {
+              "col": "is_reportable",
+              "exampleValue": "0"
+            },
+            {
+              "col": "escalation_level",
+              "exampleValue": "0"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "risk_management"
+            }
+          ],
+          "notes": "Counterparty margin cases are seeded via migration 226_counterparty_margin_chain.sql + 227_counterparty_margin_chain_seed.sql. Represents CPMI-IOSCO PFMI margin management. Initial state limit_active; first action issue_warning. No API creates them; they track clearing member collateral adequacy."
+        },
+        {
+          "key": "trade_allocation",
+          "classification": "SEED_ONLY",
+          "initialStatus": "executed",
+          "firstAdvanceAction": "prepare_allocation",
+          "seedTable": "oe_trade_allocations",
+          "seedNotNullColumns": [
+            {
+              "col": "allocation_number",
+              "exampleValue": "ALLOC-2026-0001"
+            },
+            {
+              "col": "executing_party",
+              "exampleValue": "desk_trading"
+            },
+            {
+              "col": "counterparty_name",
+              "exampleValue": "Counterparty Client"
+            },
+            {
+              "col": "notional_zar",
+              "exampleValue": "1000000"
+            },
+            {
+              "col": "notional_tier",
+              "exampleValue": "standard"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "executed"
+            },
+            {
+              "col": "executed_at",
+              "exampleValue": "2026-05-28T14:30:00Z"
+            },
+            {
+              "col": "is_reportable",
+              "exampleValue": "1"
+            },
+            {
+              "col": "escalation_level",
+              "exampleValue": "0"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_trader"
+            }
+          ],
+          "notes": "Trade allocations are seeded via migration 242_trade_allocation_chain.sql + 243_trade_allocation_chain_seed.sql. Represents DTCC-ITP post-execution institutional trade allocation. Initial state executed; first action prepare_allocation. No API creates them directly; they are born when a block trade executes and requires per-account breakdown."
+        },
+        {
+          "key": "benchmark_transition",
+          "classification": "SEED_ONLY",
+          "initialStatus": "inventoried",
+          "firstAdvanceAction": "assess_impact",
+          "seedTable": "oe_benchmark_transitions",
+          "seedNotNullColumns": [
+            {
+              "col": "transition_number",
+              "exampleValue": "BT-2026-0001"
+            },
+            {
+              "col": "trade_ref",
+              "exampleValue": "TRADE-REF-0001"
+            },
+            {
+              "col": "instrument_type",
+              "exampleValue": "irs"
+            },
+            {
+              "col": "legacy_benchmark",
+              "exampleValue": "jibar_3m"
+            },
+            {
+              "col": "counterparty_id",
+              "exampleValue": "counterparty_bank"
+            },
+            {
+              "col": "counterparty_name",
+              "exampleValue": "Counterparty Bank"
+            },
+            {
+              "col": "counterparty_interbank",
+              "exampleValue": "1"
+            },
+            {
+              "col": "counterparty_nav_zar",
+              "exampleValue": "50000000"
+            },
+            {
+              "col": "notional_zar",
+              "exampleValue": "5000000"
+            },
+            {
+              "col": "remaining_years",
+              "exampleValue": "2.5"
+            },
+            {
+              "col": "cessation_date",
+              "exampleValue": "2026-12-31"
+            },
+            {
+              "col": "zaronia_overnight",
+              "exampleValue": "1"
+            },
+            {
+              "col": "isda_spread_bps",
+              "exampleValue": "10.5"
+            },
+            {
+              "col": "pv01_zar",
+              "exampleValue": "2500"
+            },
+            {
+              "col": "value_transfer_zar",
+              "exampleValue": "125000"
+            }
+          ],
+          "notes": "Benchmark transitions are seeded via migration 270_benchmark_transition_chain.sql + 271_benchmark_transition_chain_seed.sql. Represents ISDA-protocol + bilateral amendment for legacy benchmark cessation. Initial state inventoried; first action assess_impact. No API creates them; sourced from legacy derivative portfolio inventory."
+        },
+        {
+          "key": "settlement_fail",
+          "classification": "SEED_ONLY",
+          "initialStatus": "instruction_pending",
+          "firstAdvanceAction": "record_fail",
+          "seedTable": "oe_settlement_fails",
+          "seedNotNullColumns": [
+            {
+              "col": "fail_number",
+              "exampleValue": "FAIL-2026-0001"
+            },
+            {
+              "col": "trader_desk_id",
+              "exampleValue": "desk_trading"
+            },
+            {
+              "col": "trader_desk_name",
+              "exampleValue": "Trading Desk"
+            },
+            {
+              "col": "counterparty_id",
+              "exampleValue": "settlement_counterparty"
+            },
+            {
+              "col": "counterparty_name",
+              "exampleValue": "Settlement Counterparty"
+            },
+            {
+              "col": "instrument_class",
+              "exampleValue": "bond"
+            },
+            {
+              "col": "systemic_instrument_flag",
+              "exampleValue": "0"
+            },
+            {
+              "col": "instructed_settlement_date",
+              "exampleValue": "2026-05-29"
+            },
+            {
+              "col": "fail_quantity",
+              "exampleValue": "1000"
+            },
+            {
+              "col": "fail_price_zar",
+              "exampleValue": "1050"
+            },
+            {
+              "col": "fail_value_zar",
+              "exampleValue": "1050000"
+            },
+            {
+              "col": "fail_tier",
+              "exampleValue": "standard"
+            },
+            {
+              "col": "is_systemic_carrier",
+              "exampleValue": "0"
+            },
+            {
+              "col": "fail_age_days",
+              "exampleValue": "0"
+            },
+            {
+              "col": "accrued_penalty_zar",
+              "exampleValue": "0"
+            }
+          ],
+          "notes": "Settlement fails are seeded via migration 260_settlement_fail_chain.sql + 261_settlement_fail_chain_seed.sql. Represents JSE-STRATE CSDR settlement failure tracking and buy-in initiation. Initial state instruction_pending; first action record_fail when settlement fails. No API creates them; they are detected by settlement ops."
+        }
+      ]
+    },
+    {
+      "family": "ipp",
+      "chains": [
+        {
+          "key": "procurement_rfp",
+          "classification": "SEED_ONLY",
+          "initialStatus": "draft",
+          "firstAdvanceAction": "publish",
+          "notes": "Wave 19 procurement RFP chain. Table oe_procurement_rfps requires: id, rfp_number, project_id, participant_id, title, category, capex_estimate_zar (all NOT NULL per migration 128). Seeded via migration 129 with 12 test RFPs. No route POST /create \u2014 rows exist only via seed migration.",
+          "seedTable": "oe_procurement_rfps",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "rfp_001"
+            },
+            {
+              "col": "rfp_number",
+              "exampleValue": "RFP-2026-001"
+            },
+            {
+              "col": "project_id",
+              "exampleValue": "proj_001"
+            },
+            {
+              "col": "participant_id",
+              "exampleValue": "ipp@openenergy.co.za"
+            },
+            {
+              "col": "title",
+              "exampleValue": "EPC for Kathu Solar PV 100MW expansion"
+            },
+            {
+              "col": "category",
+              "exampleValue": "epc"
+            },
+            {
+              "col": "capex_estimate_zar",
+              "exampleValue": "1850000000"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_ipp_001"
+            }
+          ]
+        },
+        {
+          "key": "cod_chain",
+          "classification": "SEED_ONLY",
+          "initialStatus": "draft",
+          "firstAdvanceAction": "sign-epc",
+          "notes": "Wave 20 Construction-to-COD chain. Table oe_cod_chain (migration 130) requires: id, cod_number, project_id, participant_id, project_name, capacity_mw (all NOT NULL). Seeded via migration 131 with 10 test COD projects spanning all states + tiers. No route POST /create.",
+          "seedTable": "oe_cod_chain",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "cod_001"
+            },
+            {
+              "col": "cod_number",
+              "exampleValue": "COD-2026-001"
+            },
+            {
+              "col": "project_id",
+              "exampleValue": "proj_solar_001"
+            },
+            {
+              "col": "participant_id",
+              "exampleValue": "ip_001"
+            },
+            {
+              "col": "project_name",
+              "exampleValue": "Kathu II Solar 150MW"
+            },
+            {
+              "col": "capacity_mw",
+              "exampleValue": "150"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_ipp_001"
+            }
+          ]
+        },
+        {
+          "key": "insurance_claim",
+          "classification": "SEED_ONLY",
+          "initialStatus": "notified",
+          "firstAdvanceAction": "agree-quantum",
+          "notes": "Wave 23 Insurance claim chain (FSCA Section 38). Table oe_insurance_claim_chain (migration 136) requires: id, claim_number, participant_id, insurer_name, policy_number, cover_type, incident_type, incident_date, asset_description, claim_value_zar, claim_value_tier (all NOT NULL). Seeded via migration 137 with 10 claims spanning all states + tiers. No create POST.",
+          "seedTable": "oe_insurance_claim_chain",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "clm_001"
+            },
+            {
+              "col": "claim_number",
+              "exampleValue": "CLM-2026-0001"
+            },
+            {
+              "col": "participant_id",
+              "exampleValue": "p_ipp_mainstream"
+            },
+            {
+              "col": "insurer_name",
+              "exampleValue": "Santam Re"
+            },
+            {
+              "col": "policy_number",
+              "exampleValue": "PD-BI-2026-MS-0017"
+            },
+            {
+              "col": "cover_type",
+              "exampleValue": "pd_bi"
+            },
+            {
+              "col": "incident_type",
+              "exampleValue": "lightning"
+            },
+            {
+              "col": "incident_date",
+              "exampleValue": "2026-05-22"
+            },
+            {
+              "col": "asset_description",
+              "exampleValue": "Inverter station 3"
+            },
+            {
+              "col": "claim_value_zar",
+              "exampleValue": "4200000"
+            },
+            {
+              "col": "claim_value_tier",
+              "exampleValue": "minor"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "p_ipp_mainstream"
+            }
+          ]
+        },
+        {
+          "key": "ed_commitment",
+          "classification": "SEED_ONLY",
+          "initialStatus": "baseline_locked",
+          "firstAdvanceAction": "activate-monitoring",
+          "notes": "Wave 27 REIPPPP ED commitment monitoring. Table oe_ed_commitments (migration 144) requires: id, case_number, project_id, project_name, bid_window, commitment_type, commitment_label, baseline_value, baseline_unit (all NOT NULL). Seeded via migration 145 with 11 ED commitments spanning all states + tiers. No create POST.",
+          "seedTable": "oe_ed_commitments",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "ed_001"
+            },
+            {
+              "col": "case_number",
+              "exampleValue": "ED-BW6-2026-0001"
+            },
+            {
+              "col": "project_id",
+              "exampleValue": "prj_kruisvallei"
+            },
+            {
+              "col": "project_name",
+              "exampleValue": "Kruisvallei 75MW Wind"
+            },
+            {
+              "col": "bid_window",
+              "exampleValue": "BW6"
+            },
+            {
+              "col": "commitment_type",
+              "exampleValue": "community_trust"
+            },
+            {
+              "col": "commitment_label",
+              "exampleValue": "Community trust beneficiary distribution"
+            },
+            {
+              "col": "baseline_value",
+              "exampleValue": "4500"
+            },
+            {
+              "col": "baseline_unit",
+              "exampleValue": "count"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "ipp@openenergy.co.za"
+            }
+          ]
+        },
+        {
+          "key": "project_change_order",
+          "classification": "SEED_ONLY",
+          "initialStatus": "draft",
+          "firstAdvanceAction": "submit",
+          "notes": "Wave 81 Project Change-Order / P6 Variation Control. Table oe_project_change_orders (migration 252) requires: id, co_number, project_name, variation_tier (all NOT NULL). Seeded via migration 253 with 10 change orders spanning all states + tiers + reportability classes. No create POST \u2014 rows only via seed.",
+          "seedTable": "oe_project_change_orders",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "pco_001"
+            },
+            {
+              "col": "co_number",
+              "exampleValue": "CO-2026-0001"
+            },
+            {
+              "col": "project_name",
+              "exampleValue": "Karoo Solar One"
+            },
+            {
+              "col": "variation_tier",
+              "exampleValue": "minor"
+            },
+            {
+              "col": "change_type",
+              "exampleValue": "design_change"
+            },
+            {
+              "col": "title",
+              "exampleValue": "Inverter pad re-grading"
+            },
+            {
+              "col": "cost_impact_zar",
+              "exampleValue": "650000"
+            },
+            {
+              "col": "schedule_impact_days",
+              "exampleValue": "3"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_ipp_001"
+            }
+          ]
+        },
+        {
+          "key": "project_risk",
+          "classification": "SEED_ONLY",
+          "initialStatus": "identified",
+          "firstAdvanceAction": "assess",
+          "notes": "Wave 92 Project Risk Register & P6 Schedule-Risk Analysis. Table oe_project_risks (migration 274) requires: id, risk_number, project_name, risk_tier (all NOT NULL). Seeded via migration 275 with 10 risks spanning all states + tiers + classes. No create POST.",
+          "seedTable": "oe_project_risks",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "prj_risk_001"
+            },
+            {
+              "col": "risk_number",
+              "exampleValue": "RISK-2026-001"
+            },
+            {
+              "col": "project_name",
+              "exampleValue": "Mogalakwena Wind"
+            },
+            {
+              "col": "risk_class",
+              "exampleValue": "site_conditions"
+            },
+            {
+              "col": "risk_category",
+              "exampleValue": "technical"
+            },
+            {
+              "col": "risk_title",
+              "exampleValue": "Geotech variance"
+            },
+            {
+              "col": "risk_tier",
+              "exampleValue": "moderate"
+            },
+            {
+              "col": "probability_pct",
+              "exampleValue": "35"
+            },
+            {
+              "col": "worst_case_cost_impact_zar",
+              "exampleValue": "2500000"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_ipp_001"
+            }
+          ]
+        },
+        {
+          "key": "submittal_rfi",
+          "classification": "SEED_ONLY",
+          "initialStatus": "drafted",
+          "firstAdvanceAction": "submit",
+          "notes": "Wave 96 IPP Submittal Log & RFI Register / P6 document control. Table oe_submittal_rfi (migration 282) requires: id, submittal_rfi_number, project_id, project_name, workflow_class, priority_class (all NOT NULL). Seeded via migration 283 with 10 submittals spanning all states + tiers + classes. No create POST.",
+          "seedTable": "oe_submittal_rfi",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "sub_001"
+            },
+            {
+              "col": "submittal_rfi_number",
+              "exampleValue": "SUB-2026-001"
+            },
+            {
+              "col": "project_id",
+              "exampleValue": "proj_scatec_kenhardt"
+            },
+            {
+              "col": "project_name",
+              "exampleValue": "Scatec Kenhardt Solar+BESS"
+            },
+            {
+              "col": "workflow_class",
+              "exampleValue": "submittal_design"
+            },
+            {
+              "col": "priority_class",
+              "exampleValue": "critical"
+            },
+            {
+              "col": "document_type",
+              "exampleValue": "shop_drawing"
+            },
+            {
+              "col": "title",
+              "exampleValue": "HV substation grounding design"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "admin@openenergy.co.za"
+            }
+          ]
+        },
+        {
+          "key": "dfr",
+          "classification": "SEED_ONLY",
+          "initialStatus": "drafted",
+          "firstAdvanceAction": "open",
+          "notes": "Wave 97 IPP Daily Field Report / Progress Diary / P6 construction day record. Table oe_dfr (migration 284) requires: id, dfr_number, project_id, project_name, workflow_class, priority_class (all NOT NULL). Seeded via migration 285 with 10 DFRs spanning all states + tiers + workflow classes. No create POST.",
+          "seedTable": "oe_dfr",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "dfr_001"
+            },
+            {
+              "col": "dfr_number",
+              "exampleValue": "DFR-2026-001"
+            },
+            {
+              "col": "project_id",
+              "exampleValue": "proj_scatec_kenhardt"
+            },
+            {
+              "col": "project_name",
+              "exampleValue": "Scatec Kenhardt Solar+BESS"
+            },
+            {
+              "col": "workflow_class",
+              "exampleValue": "routine_daily"
+            },
+            {
+              "col": "priority_class",
+              "exampleValue": "low"
+            },
+            {
+              "col": "report_date",
+              "exampleValue": "2026-05-30"
+            },
+            {
+              "col": "title",
+              "exampleValue": "Routine progress Block A PV mounting"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "admin@openenergy.co.za"
+            }
+          ]
+        },
+        {
+          "key": "handover_dossier",
+          "classification": "SEED_ONLY",
+          "initialStatus": "dossier_compiled",
+          "firstAdvanceAction": "submit",
+          "notes": "Wave 100 Mechanical/Electrical Handover Dossier & Turnover-to-Operations / P6. Table oe_handover_dossier (migration 290) requires: id, dossier_number, project_id, project_name, workflow_class, priority_class (all NOT NULL). Seeded via migration 291 with 10 dossiers spanning all states + tiers + classes. No create POST.",
+          "seedTable": "oe_handover_dossier",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "hndvr_001"
+            },
+            {
+              "col": "dossier_number",
+              "exampleValue": "HND-2026-001"
+            },
+            {
+              "col": "project_id",
+              "exampleValue": "proj_scatec_kenhardt"
+            },
+            {
+              "col": "project_name",
+              "exampleValue": "Scatec Kenhardt Solar+BESS"
+            },
+            {
+              "col": "workflow_class",
+              "exampleValue": "training_documentation_pack"
+            },
+            {
+              "col": "priority_class",
+              "exampleValue": "low"
+            },
+            {
+              "col": "title",
+              "exampleValue": "Block A training and docs pack compiled"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "admin@openenergy.co.za"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "family": "ipp_grid",
+      "chains": [
+        {
+          "key": "gca_connection",
+          "classification": "SEED_ONLY",
+          "initialStatus": "application_filed",
+          "firstAdvanceAction": "request_studies",
+          "seedTable": "oe_gca_connections",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "gca_001"
+            },
+            {
+              "col": "case_number",
+              "exampleValue": "GCA-TX-2026-0001"
+            },
+            {
+              "col": "project_id",
+              "exampleValue": "proj_jeffreys_bay_2"
+            },
+            {
+              "col": "project_name",
+              "exampleValue": "Mainstream Jeffreys Bay 2 Wind 200MW"
+            },
+            {
+              "col": "ipp_party",
+              "exampleValue": "Mainstream RE SA"
+            },
+            {
+              "col": "network_party",
+              "exampleValue": "Eskom_Transmission"
+            },
+            {
+              "col": "connection_tier",
+              "exampleValue": "transmission"
+            },
+            {
+              "col": "voltage_kv",
+              "exampleValue": "400"
+            },
+            {
+              "col": "poc_substation",
+              "exampleValue": "Grassridge MTS"
+            },
+            {
+              "col": "capacity_mw",
+              "exampleValue": "200"
+            },
+            {
+              "col": "technology",
+              "exampleValue": "wind"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "application_filed"
+            },
+            {
+              "col": "application_filed_at",
+              "exampleValue": "2026-05-15T08:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "ipp_developer"
+            }
+          ],
+          "notes": "W28 Grid Connection Agreement (UNGCA) \u2014 no standalone POST CREATE endpoint found in src/routes/gca-chain.ts; all routes are /:id/action. No cascade birth (no INSERT into oe_gca_connections found in cascade.ts or other route handlers). Rows seeded only via migration 147_gca_chain_seed.sql. Initial status application_filed; first forward action request_studies (grid_operator only). See src/routes/gca-chain.ts:426\u2013490, migrations/146_gca_chain.sql, migrations/147_gca_chain_seed.sql."
+        },
+        {
+          "key": "planned_outage",
+          "classification": "SEED_ONLY",
+          "initialStatus": "draft",
+          "firstAdvanceAction": "submit",
+          "seedTable": "oe_planned_outages",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "pln_out_001"
+            },
+            {
+              "col": "outage_number",
+              "exampleValue": "OUT-2026-001"
+            },
+            {
+              "col": "participant_id",
+              "exampleValue": "demo_ipp_001"
+            },
+            {
+              "col": "category",
+              "exampleValue": "maintenance"
+            },
+            {
+              "col": "severity",
+              "exampleValue": "high"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "draft"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "ipp_developer"
+            }
+          ],
+          "notes": "W18 Planned Outage (NERSA Grid Code) \u2014 no standalone POST CREATE endpoint in src/routes/planned-outage-chain.ts; all routes are /:id/action (first is submit at line 287). No cascade birth. Rows seeded only via migration 127_planned_outage_chain_seed.sql. Initial status draft; first action submit (ipp/wind/grid roles). See src/routes/planned-outage-chain.ts:287\u2013329, migrations/126_planned_outage_chain.sql, migrations/127_planned_outage_chain_seed.sql."
+        },
+        {
+          "key": "grid_code_compliance",
+          "classification": "SEED_ONLY",
+          "initialStatus": "monitoring",
+          "firstAdvanceAction": "raise_non_conformance",
+          "seedTable": "oe_grid_code_compliance",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "gcc_001"
+            },
+            {
+              "col": "case_number",
+              "exampleValue": "GCC-2026-0001"
+            },
+            {
+              "col": "facility_id",
+              "exampleValue": "fac_aurora_pv"
+            },
+            {
+              "col": "facility_name",
+              "exampleValue": "Aurora Solar PV"
+            },
+            {
+              "col": "breach_class",
+              "exampleValue": "power_quality"
+            },
+            {
+              "col": "severity_tier",
+              "exampleValue": "minor"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "monitoring"
+            },
+            {
+              "col": "monitoring_started_at",
+              "exampleValue": "2026-05-01T06:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "grid"
+            }
+          ],
+          "notes": "W67 Grid Code Compliance Monitoring & Non-Conformance \u2014 no standalone POST CREATE endpoint in src/routes/grid-code-compliance-chain.ts; first endpoint is /:id/raise-non-conformance at line 282. No cascade birth (INSERT statements found at lines 419, 582 are into events table only, not main). Rows seeded only via migration 225_grid_code_compliance_chain_seed.sql. Initial status monitoring; first action raise_non_conformance (grid_operator only). See src/routes/grid-code-compliance-chain.ts:193\u2013594, migrations/224_grid_code_compliance_chain.sql, migrations/225_grid_code_compliance_chain_seed.sql."
+        },
+        {
+          "key": "connection_energization",
+          "classification": "SEED_ONLY",
+          "initialStatus": "connection_ready",
+          "firstAdvanceAction": "submit_program",
+          "seedTable": "oe_connection_energization",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "cen_001"
+            },
+            {
+              "col": "energization_number",
+              "exampleValue": "CEN-2026-0001"
+            },
+            {
+              "col": "facility_id",
+              "exampleValue": "fac_karoo_rooftop"
+            },
+            {
+              "col": "facility_name",
+              "exampleValue": "Karoo Rooftop Solar SPV"
+            },
+            {
+              "col": "connection_capacity_mw",
+              "exampleValue": "0.5"
+            },
+            {
+              "col": "connection_tier",
+              "exampleValue": "embedded"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "connection_ready"
+            },
+            {
+              "col": "connection_ready_at",
+              "exampleValue": "2026-05-20 08:00:00"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_grid_001"
+            }
+          ],
+          "notes": "W75 Grid Connection Energization & Commissioning \u2014 no standalone POST CREATE endpoint in src/routes/connection-energization-chain.ts; first endpoint is /:id/submit-program at line 443. No cascade birth (INSERT statements found in same file are into events table only). Rows seeded only via migration 241_connection_energization_chain_seed.sql. Initial status connection_ready (set in W75 by W58 capacity allocation or W28 GCA completion); first action submit_program (ipp_developer). See src/routes/connection-energization-chain.ts:193\u2013564, migrations/240_connection_energization_chain.sql, migrations/241_connection_energization_chain_seed.sql."
+        }
+      ]
+    },
+    {
+      "family": "offtaker",
+      "chains": [
+        {
+          "key": "ppa_obligation",
+          "classification": "SEED_ONLY",
+          "initialStatus": "pending",
+          "firstAdvanceAction": "cure",
+          "seedTable": "oe_offtaker_ppa_obligations",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "obl_001"
+            },
+            {
+              "col": "ppa_id",
+              "exampleValue": "ppa_demo_001"
+            },
+            {
+              "col": "participant_id",
+              "exampleValue": "demo_offtaker_001"
+            },
+            {
+              "col": "period_month",
+              "exampleValue": "2026-04"
+            },
+            {
+              "col": "contracted_mwh",
+              "exampleValue": "16500.0"
+            },
+            {
+              "col": "delivered_mwh",
+              "exampleValue": "14200.0"
+            },
+            {
+              "col": "threshold_pct",
+              "exampleValue": "95.0"
+            },
+            {
+              "col": "status",
+              "exampleValue": "shortfall"
+            }
+          ],
+          "notes": "Seed data in migration 105_offtaker_p6_seed.sql. Three demo rows: obl_demo_1 (delivered), obl_demo_2 (shortfall in cure window), obl_demo_3 (take_or_pay expired). Initial status varies by seed. First action 'cure' only valid from 'shortfall' status (src/utils/chain-registry-meridian.ts:1772-1805, migrations/104_offtaker_p6.sql, migrations/105_offtaker_p6_seed.sql)."
+        },
+        {
+          "key": "ppa_contract_chain",
+          "classification": "ADD_INITIATION",
+          "initialStatus": "draft",
+          "firstAdvanceAction": "execute",
+          "createPath": "/api/rbac/invitations/:token/accept",
+          "createMethod": "POST",
+          "createRequiredFields": [
+            {
+              "key": "token",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "email",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "password",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "full_name",
+              "type": "string",
+              "required": true
+            }
+          ],
+          "notes": "Created as side-effect of offtaker accepting invitation via seedRoleScaffold (src/routes/rbac.ts:627-652, line 640-651 INSERT OR IGNORE). Called from POST /api/rbac/invitations/:token/accept handler (lines 180-204). Initial status 'draft' (line 644). First admin action 'execute' requires board_approval_ref + legal_counterparty_ref (src/utils/chain-registry-meridian.ts:1809-1854, line 1820-1829)."
+        },
+        {
+          "key": "ppa_take_or_pay",
+          "classification": "SEED_ONLY",
+          "initialStatus": "accrual_open",
+          "firstAdvanceAction": "propose-quantum",
+          "seedTable": "oe_top_cases",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "top_001"
+            },
+            {
+              "col": "case_number",
+              "exampleValue": "TOP-2026-Y2026-0001"
+            },
+            {
+              "col": "ppa_contract_id",
+              "exampleValue": "ppa_002"
+            },
+            {
+              "col": "ipp_party_id",
+              "exampleValue": "ipp_camden"
+            },
+            {
+              "col": "ipp_party_name",
+              "exampleValue": "Camden CCGT Holdings (Pty) Ltd"
+            },
+            {
+              "col": "offtaker_party_id",
+              "exampleValue": "eskom"
+            },
+            {
+              "col": "offtaker_party_name",
+              "exampleValue": "Eskom Holdings SOC Ltd"
+            },
+            {
+              "col": "reconciliation_year",
+              "exampleValue": "2026"
+            },
+            {
+              "col": "contracted_mwh",
+              "exampleValue": "1500000"
+            },
+            {
+              "col": "delivered_mwh",
+              "exampleValue": "480000"
+            },
+            {
+              "col": "severity_tier",
+              "exampleValue": "catastrophic"
+            },
+            {
+              "col": "top_rate_per_mwh",
+              "exampleValue": "1135.00"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "accrual_open"
+            }
+          ],
+          "notes": "Seed data in migration 155_take_or_pay_chain_seed.sql. 10 demo cases across 10 states. Initial statuses vary (accrual_open, year_end, statement_issued, etc.). First action 'propose-quantum' from various starting states (src/utils/chain-registry-meridian.ts:1859-1907, migrations/155_take_or_pay_chain_seed.sql)."
+        },
+        {
+          "key": "tariff_indexation",
+          "classification": "SEED_ONLY",
+          "initialStatus": "pending_agreement",
+          "firstAdvanceAction": "agree-tariff",
+          "seedTable": "oe_tariff_indexation",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "tidx_001"
+            },
+            {
+              "col": "indexation_number",
+              "exampleValue": "TIDX-2026-0001"
+            },
+            {
+              "col": "ppa_id",
+              "exampleValue": "ppa_002"
+            },
+            {
+              "col": "project_name",
+              "exampleValue": "Roggeveld Wind Farm"
+            },
+            {
+              "col": "seller_party_id",
+              "exampleValue": "ipp_roggeveld"
+            },
+            {
+              "col": "seller_party_name",
+              "exampleValue": "Roggeveld Wind (Pty) Ltd"
+            },
+            {
+              "col": "annual_contract_value_zar",
+              "exampleValue": "1204560000"
+            },
+            {
+              "col": "indexation_method",
+              "exampleValue": "cpi"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "pending_agreement"
+            }
+          ],
+          "notes": "Seed data in migrations 169_tariff_indexation_chain_seed.sql and 499_seed_all_remaining_chains.sql. Multiple demo rows in various states. Initial status pending_agreement. First action 'agree-tariff' (src/utils/chain-registry-meridian.ts:1924-1977)."
+        },
+        {
+          "key": "curtailment_claim",
+          "classification": "SEED_ONLY",
+          "initialStatus": "curtailment_logged",
+          "firstAdvanceAction": "submit-claim",
+          "seedTable": "oe_curtailment_claims",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "cec_001"
+            },
+            {
+              "col": "claim_number",
+              "exampleValue": "CEC-2026-0001"
+            },
+            {
+              "col": "seller_party_id",
+              "exampleValue": "spv_kangnas"
+            },
+            {
+              "col": "seller_party_name",
+              "exampleValue": "Kangnas Wind Farm (RF) (Pty) Ltd"
+            },
+            {
+              "col": "facility_name",
+              "exampleValue": "Kangnas Wind Farm"
+            },
+            {
+              "col": "facility_tier",
+              "exampleValue": "utility_scale"
+            },
+            {
+              "col": "contracted_capacity_mw",
+              "exampleValue": "140.0"
+            },
+            {
+              "col": "tariff_per_mwh",
+              "exampleValue": "985.40"
+            },
+            {
+              "col": "curtailment_type",
+              "exampleValue": "economic"
+            },
+            {
+              "col": "deemed_energy_mwh",
+              "exampleValue": "1218.0"
+            },
+            {
+              "col": "claimed_amount",
+              "exampleValue": "1200217.20"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "curtailment_logged"
+            }
+          ],
+          "notes": "Seed data in migrations 183_curtailment_claim_chain_seed.sql and 499_seed_all_remaining_chains.sql. 10 demo cases across 10+ states. Initial status curtailment_logged. First action 'submit-claim' (src/utils/chain-registry-meridian.ts:1980-2043)."
+        },
+        {
+          "key": "ppa_payment_security",
+          "classification": "SEED_ONLY",
+          "initialStatus": "draft",
+          "firstAdvanceAction": "submit-instrument",
+          "seedTable": "oe_ppa_payment_securities",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "sec_001"
+            },
+            {
+              "col": "security_number",
+              "exampleValue": "PSEC-2026-0001"
+            },
+            {
+              "col": "ppa_id",
+              "exampleValue": "ppa_002"
+            },
+            {
+              "col": "instrument_type",
+              "exampleValue": "letter_of_credit"
+            },
+            {
+              "col": "instrument_name",
+              "exampleValue": "LC from Standard Bank"
+            },
+            {
+              "col": "seller_party_id",
+              "exampleValue": "ipp_dev_001"
+            },
+            {
+              "col": "seller_party_name",
+              "exampleValue": "GreenSpark IPP (Pty) Ltd"
+            },
+            {
+              "col": "secured_amount_zar_m",
+              "exampleValue": "50.0"
+            },
+            {
+              "col": "issuer_name",
+              "exampleValue": "Standard Bank South Africa"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "draft"
+            }
+          ],
+          "notes": "Seed data in migrations 199_payment_security_chain_seed.sql and 499_seed_all_remaining_chains.sql. Multiple demo rows. Initial status draft. First action 'submit-instrument' (src/utils/chain-registry-meridian.ts:2046-2121)."
+        },
+        {
+          "key": "ppa_termination",
+          "classification": "SEED_ONLY",
+          "initialStatus": "notice_pending",
+          "firstAdvanceAction": "serve-notice",
+          "seedTable": "oe_ppa_terminations",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "pter_001"
+            },
+            {
+              "col": "case_number",
+              "exampleValue": "PTER-2026-0001"
+            },
+            {
+              "col": "offtaker_party_id",
+              "exampleValue": "offtaker_001"
+            },
+            {
+              "col": "offtaker_party_name",
+              "exampleValue": "Large Offtaker Corp"
+            },
+            {
+              "col": "seller_party_id",
+              "exampleValue": "ipp_dev_001"
+            },
+            {
+              "col": "seller_party_name",
+              "exampleValue": "IPP Developer Ltd"
+            },
+            {
+              "col": "ppa_name",
+              "exampleValue": "PPA-2022-PROJ001"
+            },
+            {
+              "col": "termination_ground",
+              "exampleValue": "seller_default"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "notice_pending"
+            }
+          ],
+          "notes": "Seed data in migrations 215_ppa_termination_chain_seed.sql and 499_seed_all_remaining_chains.sql. Multiple demo rows. Initial status notice_pending. First action 'serve-notice' (src/utils/chain-registry-meridian.ts:2123-2191)."
+        },
+        {
+          "key": "rec_lifecycle",
+          "classification": "SEED_ONLY",
+          "initialStatus": "pending_issuance",
+          "firstAdvanceAction": "approve-issuance",
+          "seedTable": "oe_rec_lifecycle",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "rec_001"
+            },
+            {
+              "col": "case_number",
+              "exampleValue": "REC-2026-0001"
+            },
+            {
+              "col": "offtaker_id",
+              "exampleValue": "offtaker_001"
+            },
+            {
+              "col": "offtaker_name",
+              "exampleValue": "Large Offtaker Corp"
+            },
+            {
+              "col": "project_name",
+              "exampleValue": "Solar Project A"
+            },
+            {
+              "col": "certificate_standard",
+              "exampleValue": "i_rec"
+            },
+            {
+              "col": "certificate_quantity_mwh",
+              "exampleValue": "50000"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "pending_issuance"
+            }
+          ],
+          "notes": "Seed data in migrations 231_rec_lifecycle_chain_seed.sql and 499_seed_all_remaining_chains.sql. Multiple demo rows. Initial status pending_issuance. First action 'approve-issuance' (src/utils/chain-registry-meridian.ts:2193-2257)."
+        },
+        {
+          "key": "ppa_annual_recon",
+          "classification": "SEED_ONLY",
+          "initialStatus": "reconciliation_pending",
+          "firstAdvanceAction": "reconcile",
+          "seedTable": "oe_ppa_annual_recon",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "recon_001"
+            },
+            {
+              "col": "recon_number",
+              "exampleValue": "RECON-2026-Y2025-001"
+            },
+            {
+              "col": "ppa_id",
+              "exampleValue": "ppa_002"
+            },
+            {
+              "col": "ppa_name",
+              "exampleValue": "PPA-2022-PROJ001"
+            },
+            {
+              "col": "contract_year",
+              "exampleValue": "2025"
+            },
+            {
+              "col": "seller_party_id",
+              "exampleValue": "ipp_dev_001"
+            },
+            {
+              "col": "seller_party_name",
+              "exampleValue": "IPP Developer Ltd"
+            },
+            {
+              "col": "offtaker_party_id",
+              "exampleValue": "offtaker_001"
+            },
+            {
+              "col": "offtaker_party_name",
+              "exampleValue": "Large Offtaker Corp"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "reconciliation_pending"
+            }
+          ],
+          "notes": "Seed data in migrations 293_ppa_annual_recon_chain_seed.sql and 499_seed_all_remaining_chains.sql. Multiple demo rows. Initial status reconciliation_pending. First action 'reconcile' (src/utils/chain-registry-meridian.ts:4321-4390)."
+        },
+        {
+          "key": "ppa_change_in_law",
+          "classification": "SEED_ONLY",
+          "initialStatus": "claim_submitted",
+          "firstAdvanceAction": "submit-claim",
+          "seedTable": "oe_ppa_change_in_law",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "cil_001"
+            },
+            {
+              "col": "cil_number",
+              "exampleValue": "CIL-2026-0001"
+            },
+            {
+              "col": "generator_name",
+              "exampleValue": "IPP Developer Ltd"
+            },
+            {
+              "col": "offtaker_name",
+              "exampleValue": "Large Offtaker Corp"
+            },
+            {
+              "col": "claim_quantum_zar_m",
+              "exampleValue": "50.0"
+            },
+            {
+              "col": "change_in_law_tier",
+              "exampleValue": "major"
+            },
+            {
+              "col": "legal_basis",
+              "exampleValue": "Carbon Tax Act amendment"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "claim_submitted"
+            }
+          ],
+          "notes": "Seed data in migrations 247_ppa_change_in_law_chain_seed.sql. Multiple demo rows. Initial status claim_submitted. First action 'submit-claim' (src/utils/chain-registry-meridian.ts:4392-4470)."
+        },
+        {
+          "key": "ppa_nomination",
+          "classification": "SEED_ONLY",
+          "initialStatus": "da_nomination_pending",
+          "firstAdvanceAction": "submit-da-nomination",
+          "seedTable": "oe_ppa_nominations",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "nom_001"
+            },
+            {
+              "col": "nomination_number",
+              "exampleValue": "NOM-2026-0001"
+            },
+            {
+              "col": "ppa_id",
+              "exampleValue": "ppa_002"
+            },
+            {
+              "col": "ppa_reference",
+              "exampleValue": "PPA-2022-PROJ001"
+            },
+            {
+              "col": "offtaker_id",
+              "exampleValue": "offtaker_001"
+            },
+            {
+              "col": "offtaker_name",
+              "exampleValue": "Large Offtaker Corp"
+            },
+            {
+              "col": "seller_id",
+              "exampleValue": "ipp_dev_001"
+            },
+            {
+              "col": "seller_name",
+              "exampleValue": "IPP Developer Ltd"
+            },
+            {
+              "col": "delivery_year",
+              "exampleValue": "2026"
+            },
+            {
+              "col": "deviation_mwh",
+              "exampleValue": "100.0"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "da_nomination_pending"
+            }
+          ],
+          "notes": "Seed data in migrations 265_ppa_nomination_chain_seed.sql. Multiple demo rows. Initial status da_nomination_pending. First action 'submit-da-nomination' (src/utils/chain-registry-meridian.ts:4472-4540)."
+        }
+      ]
+    },
+    {
+      "family": "grid",
+      "chains": [
+        {
+          "key": "oe_dispatch_nominations",
+          "classification": "SEED_ONLY",
+          "initialStatus": "nominated",
+          "firstAdvanceAction": "accept",
+          "seedTable": "oe_dispatch_nominations",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "disp_nom_001"
+            },
+            {
+              "col": "participant_id",
+              "exampleValue": "demo_ipp_001"
+            },
+            {
+              "col": "trading_day",
+              "exampleValue": "2026-06-16"
+            },
+            {
+              "col": "nomination_status",
+              "exampleValue": "nominated"
+            },
+            {
+              "col": "nominated_at",
+              "exampleValue": "2026-06-16T10:00:00Z"
+            }
+          ],
+          "notes": "Wave 13 dispatch nomination chain. Table has source_event/source_entity_type/source_entity_id columns (prepared for CASCADE_BORN), but currently rows are SEEDED only via migrations/117_dispatch_nomination_seed.sql. No API create endpoint exists. Initial status 'nominated' with first action 'accept' (path /api/grid/dispatch-nominations/:id/accept). READ: migrations/116_dispatch_nomination_chain.sql:29-68, migrations/117_dispatch_nomination_seed.sql (demo insert pattern)"
+        },
+        {
+          "key": "load_curtailment",
+          "classification": "SEED_ONLY",
+          "initialStatus": "instruction_issued",
+          "firstAdvanceAction": "acknowledge",
+          "seedTable": "oe_load_curtailment",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "lc_001"
+            },
+            {
+              "col": "case_number",
+              "exampleValue": "LC-2026-0001"
+            },
+            {
+              "col": "so_party_id",
+              "exampleValue": "so_eskom"
+            },
+            {
+              "col": "so_party_name",
+              "exampleValue": "Eskom System Operator"
+            },
+            {
+              "col": "customer_party_id",
+              "exampleValue": "ethekwini_metro"
+            },
+            {
+              "col": "customer_party_name",
+              "exampleValue": "eThekwini Metropolitan Municipality"
+            },
+            {
+              "col": "customer_category",
+              "exampleValue": "distribution"
+            },
+            {
+              "col": "load_shed_stage",
+              "exampleValue": "stage_1_2"
+            },
+            {
+              "col": "national_shed_gw",
+              "exampleValue": "1.5"
+            },
+            {
+              "col": "target_mw",
+              "exampleValue": "120"
+            },
+            {
+              "col": "duration_hours",
+              "exampleValue": "2.0"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "instruction_issued"
+            },
+            {
+              "col": "instruction_issued_at",
+              "exampleValue": "2026-05-28T14:00:00Z"
+            }
+          ],
+          "notes": "Wave 34 load curtailment chain. Table has source_event/source_entity_type/source_entity_id columns prepared for CASCADE_BORN, but currently SEEDED only via migrations/159_load_curtailment_chain_seed.sql. No API create endpoint (routes all use :id/action pattern). Initial status 'instruction_issued' with first action 'acknowledge' (path /api/load-curtailment/chain/:id/acknowledge). READ: migrations/158_load_curtailment_chain.sql:16-81, migrations/159_load_curtailment_chain_seed.sql (demo insert pattern)"
+        },
+        {
+          "key": "reserve_activation",
+          "classification": "SEED_ONLY",
+          "initialStatus": "activation_issued",
+          "firstAdvanceAction": "acknowledge",
+          "seedTable": "oe_reserve_activations",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "res_001"
+            },
+            {
+              "col": "activation_number",
+              "exampleValue": "RES-2026-0001"
+            },
+            {
+              "col": "so_party_id",
+              "exampleValue": "so_eskom"
+            },
+            {
+              "col": "so_party_name",
+              "exampleValue": "Eskom System Operator"
+            },
+            {
+              "col": "provider_party_id",
+              "exampleValue": "demo_ipp_001"
+            },
+            {
+              "col": "provider_party_name",
+              "exampleValue": "Demo IPP Generator"
+            },
+            {
+              "col": "reserve_tier",
+              "exampleValue": "instantaneous_reserve"
+            },
+            {
+              "col": "provider_type",
+              "exampleValue": "generator"
+            },
+            {
+              "col": "service_name",
+              "exampleValue": "Frequency response service"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "activation_issued"
+            }
+          ],
+          "notes": "Wave 50 reserve activation chain. Table has source_event/source_entity_type/source_entity_id columns prepared for CASCADE_BORN, but currently SEEDED only via migrations/191_reserve_activation_chain_seed.sql. No API create endpoint. Initial status 'activation_issued' with first action 'acknowledge' (path /api/reserve-activation/chain/:id/acknowledge). READ: migrations/190_reserve_activation_chain.sql:36-80, migrations/191_reserve_activation_chain_seed.sql (demo insert pattern)"
+        },
+        {
+          "key": "rez_capacity",
+          "classification": "SEED_ONLY",
+          "initialStatus": "application_received",
+          "firstAdvanceAction": "issue-offer",
+          "seedTable": "oe_grid_capacity_allocations",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "gcap_001"
+            },
+            {
+              "col": "allocation_number",
+              "exampleValue": "GCAP-2026-0001"
+            },
+            {
+              "col": "applicant_party_id",
+              "exampleValue": "demo_ipp_001"
+            },
+            {
+              "col": "applicant_party_name",
+              "exampleValue": "Demo IPP Developer"
+            },
+            {
+              "col": "operator_party_id",
+              "exampleValue": "grid_operator"
+            },
+            {
+              "col": "operator_party_name",
+              "exampleValue": "NTCSA Grid Operator"
+            },
+            {
+              "col": "capacity_tier",
+              "exampleValue": "small"
+            },
+            {
+              "col": "connection_type",
+              "exampleValue": "generation"
+            },
+            {
+              "col": "project_name",
+              "exampleValue": "Demo Solar Farm"
+            },
+            {
+              "col": "requested_capacity_mw",
+              "exampleValue": "50"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "application_received"
+            }
+          ],
+          "notes": "Wave 58 grid capacity allocation chain. Table has source_event/source_entity_type/source_entity_id columns prepared for CASCADE_BORN, but currently SEEDED only via migrations/207_grid_capacity_allocation_chain_seed.sql. No API create endpoint. Initial status 'application_received' with first action 'issue-offer' (path /api/grid-capacity/chain/:id/issue-offer). READ: migrations/206_grid_capacity_allocation_chain.sql:50-85, migrations/207_grid_capacity_allocation_chain_seed.sql"
+        },
+        {
+          "key": "black_start",
+          "classification": "SEED_ONLY",
+          "initialStatus": "needs_assessed",
+          "firstAdvanceAction": "award-contract",
+          "seedTable": "oe_black_start_capabilities",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "bsc_001"
+            },
+            {
+              "col": "capability_number",
+              "exampleValue": "BSC-2026-0001"
+            },
+            {
+              "col": "system_operator_id",
+              "exampleValue": "so_eskom"
+            },
+            {
+              "col": "system_operator_name",
+              "exampleValue": "Eskom System Operator"
+            },
+            {
+              "col": "voltage_class",
+              "exampleValue": "transmission"
+            },
+            {
+              "col": "restoration_role",
+              "exampleValue": "cranking_anchor"
+            },
+            {
+              "col": "cranking_source",
+              "exampleValue": "hydro"
+            },
+            {
+              "col": "black_start_capacity_mw",
+              "exampleValue": "100"
+            },
+            {
+              "col": "capability_tier",
+              "exampleValue": "material"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "needs_assessed"
+            }
+          ],
+          "notes": "Wave 84 black-start capability contracting chain. Table has source_event/source_entity_type/source_entity_id columns prepared for CASCADE_BORN, but currently SEEDED only via migrations/259_black_start_chain_seed.sql. No API create endpoint. Chain descriptor has 'initiation: null' at line 3597 of chain-registry. Initial status 'needs_assessed' with first action 'award-contract' (path /api/black-start/chain/:id/award-contract). READ: migrations/258_black_start_chain.sql:31-80, migrations/259_black_start_chain_seed.sql, chain-registry-meridian.ts:3526-3598"
+        },
+        {
+          "key": "tariff_determination",
+          "classification": "SEED_ONLY",
+          "initialStatus": "application_received",
+          "firstAdvanceAction": "open-consultation",
+          "seedTable": "oe_tariff_determinations",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "tdet_001"
+            },
+            {
+              "col": "determination_number",
+              "exampleValue": "TDET-2026-0001"
+            },
+            {
+              "col": "applicant_party_id",
+              "exampleValue": "eskom"
+            },
+            {
+              "col": "applicant_party_name",
+              "exampleValue": "Eskom Holdings SOC Ltd"
+            },
+            {
+              "col": "regulator_party_id",
+              "exampleValue": "nersa"
+            },
+            {
+              "col": "regulator_party_name",
+              "exampleValue": "National Energy Regulator of South Africa"
+            },
+            {
+              "col": "tariff_entity",
+              "exampleValue": "Eskom Transmission"
+            },
+            {
+              "col": "determination_class",
+              "exampleValue": "multi_year"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "application_received"
+            }
+          ],
+          "notes": "Wave 43 NERSA tariff determination (MYPD) chain. Table has source_event/source_entity_type/source_entity_id columns prepared for CASCADE_BORN, but currently SEEDED only via migrations/177_tariff_determination_chain_seed.sql. No API create endpoint. Initial status 'application_received' with first action 'open-consultation' (path /api/tariff-determination/chain/:id/open-consultation). READ: migrations/176_tariff_determination_chain.sql:37-80, migrations/177_tariff_determination_chain_seed.sql"
+        },
+        {
+          "key": "gcc_ncr",
+          "classification": "SEED_ONLY",
+          "initialStatus": "non_conformance_raised",
+          "firstAdvanceAction": "begin-assessment",
+          "seedTable": "oe_grid_code_compliance",
+          "seedNotNullColumns": [
+            {
+              "col": "id",
+              "exampleValue": "gcc_001"
+            },
+            {
+              "col": "case_number",
+              "exampleValue": "GCC-2026-0001"
+            },
+            {
+              "col": "facility_id",
+              "exampleValue": "facility_001"
+            },
+            {
+              "col": "facility_name",
+              "exampleValue": "Demo Wind Farm A"
+            },
+            {
+              "col": "breach_class",
+              "exampleValue": "frequency_response"
+            },
+            {
+              "col": "severity_tier",
+              "exampleValue": "material"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "non_conformance_raised"
+            }
+          ],
+          "notes": "Wave 67 grid-code compliance non-conformance chain. Table has source_event/source_entity_type/source_entity_id columns prepared for CASCADE_BORN, but currently SEEDED only via migrations/225_grid_code_compliance_chain_seed.sql. No API create endpoint. Initial status 'non_conformance_raised' with first action 'begin-assessment' (path /api/grid-code-compliance/chain/:id/begin-assessment, though 'raise-non-conformance' action exists from monitoring state). READ: migrations/224_grid_code_compliance_chain.sql:44-85, migrations/225_grid_code_compliance_chain_seed.sql, chain-registry-meridian.ts:10937-11019"
+        }
+      ]
+    },
+    {
+      "family": "regulator",
+      "chains": [
+        {
+          "key": "regulator_inbox",
+          "classification": "CASCADE_BORN",
+          "initialStatus": "pending",
+          "firstAdvanceAction": "ack",
+          "parentChain": null,
+          "birthTrigger": "regulator.surveillance_alert_raised (and 35+ other events matched by regulatorInboxSpec)",
+          "notes": "Materializes from cascade events through rule regulator_inbox.materialize (src/cascade-rules/regulator-inbox.ts:23). Event-agnostic rule matches via regulatorInboxSpec(). No POST create route exists. Initial status 'pending' set at INSERT; first action 'ack' advances to 'acknowledged'.",
+          "createPath": null,
+          "createMethod": null,
+          "createRequiredFields": []
+        },
+        {
+          "key": "disposition",
+          "classification": "SEED_ONLY",
+          "initialStatus": "received",
+          "firstAdvanceAction": "triage",
+          "parentChain": null,
+          "birthTrigger": null,
+          "seedTable": "oe_disposition_cases",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "DISP-2026-0001"
+            },
+            {
+              "col": "notice_subject",
+              "exampleValue": "Critical outage Camden Unit 6 \u2014 380MW unplanned mobilisation"
+            },
+            {
+              "col": "severity_tier",
+              "exampleValue": "critical"
+            },
+            {
+              "col": "received_at",
+              "exampleValue": "2026-05-27T22:15:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "system"
+            }
+          ],
+          "notes": "No create route (src/routes/disposition-chain.ts has only POST transitions). No cascade birth. Seeded with 10 W31 cases in migrations/153_disposition_chain_seed.sql. Default chain_status='received', regulator_authority='NERSA' per migrations/152_disposition_chain.sql. Test can load fresh row via seed migration.",
+          "createPath": null,
+          "createMethod": null,
+          "createRequiredFields": []
+        },
+        {
+          "key": "licence_renewal",
+          "classification": "SEED_ONLY",
+          "initialStatus": "renewal_initiated",
+          "firstAdvanceAction": "file-application",
+          "parentChain": null,
+          "birthTrigger": null,
+          "seedTable": "oe_licence_renewals",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "LREN-2026-0001"
+            },
+            {
+              "col": "licence_type",
+              "exampleValue": "generation"
+            },
+            {
+              "col": "licence_class",
+              "exampleValue": "generation_utility"
+            },
+            {
+              "col": "applicant_party_id",
+              "exampleValue": "demo_ipp_001"
+            },
+            {
+              "col": "applicant_party_name",
+              "exampleValue": "Solara IPP"
+            },
+            {
+              "col": "current_expiry_date",
+              "exampleValue": "2027-06-30T00:00:00Z"
+            },
+            {
+              "col": "initiated_at",
+              "exampleValue": "2026-05-01T08:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_regulator_001"
+            }
+          ],
+          "notes": "Seeded in migrations/499_seed_all_remaining_chains.sql (also auto-created on licence_application.licence_issued per src/cascade-rules/lifecycle-sequencing.ts:180-193, but seed takes priority for test execution). W33 NERSA licence renewal under ERA \u00a714-16. No POST create route in src/routes/licence-renewal-chain.ts (only transitions). Use seeded rows for test.",
+          "createPath": null,
+          "createMethod": null,
+          "createRequiredFields": []
+        },
+        {
+          "key": "compliance_inspection",
+          "classification": "SEED_ONLY",
+          "initialStatus": "inspection_scheduled",
+          "firstAdvanceAction": "issue-findings",
+          "parentChain": null,
+          "birthTrigger": null,
+          "seedTable": "oe_compliance_inspections",
+          "seedNotNullColumns": [
+            {
+              "col": "inspection_number",
+              "exampleValue": "OE-CINSP-2026-001"
+            },
+            {
+              "col": "respondent_party_id",
+              "exampleValue": "demo_ipp_001"
+            },
+            {
+              "col": "respondent_party_name",
+              "exampleValue": "Solara IPP (Pty) Ltd"
+            },
+            {
+              "col": "penalty_amount_zar",
+              "exampleValue": "500000"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "inspection_scheduled"
+            },
+            {
+              "col": "inspection_scheduled_at",
+              "exampleValue": "2026-02-10T09:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_regulator_001"
+            }
+          ],
+          "notes": "Seeded in migrations/497_seed_carbon_lender_grid_regulator.sql with 2 rows starting at line 987. W40 NERSA compliance inspection under ERA \u00a710 + \u00a734/\u00a735. No POST create route (src/routes/compliance-inspection-chain.ts has only transitions). Initial status 'inspection_scheduled' can transition to 'findings_issued' via issue-findings action.",
+          "createPath": null,
+          "createMethod": null,
+          "createRequiredFields": []
+        },
+        {
+          "key": "licence_application",
+          "classification": "SEED_ONLY",
+          "initialStatus": "application_received",
+          "firstAdvanceAction": "begin-review",
+          "parentChain": null,
+          "birthTrigger": null,
+          "seedTable": "oe_licence_applications",
+          "seedNotNullColumns": [
+            {
+              "col": "application_number",
+              "exampleValue": "NERSA-LIC-2026-0001"
+            },
+            {
+              "col": "applicant_party_id",
+              "exampleValue": "app_redrock"
+            },
+            {
+              "col": "applicant_party_name",
+              "exampleValue": "Red Rock Renewable Power (Pty) Ltd"
+            },
+            {
+              "col": "licence_class",
+              "exampleValue": "major_licence"
+            },
+            {
+              "col": "licence_type",
+              "exampleValue": "generation"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "application_received"
+            },
+            {
+              "col": "application_received_at",
+              "exampleValue": "2026-05-24T08:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_regulator_001"
+            }
+          ],
+          "notes": "Seeded in migrations/189_licence_application_chain_seed.sql with 10 cases (line 18+). W49 NERSA initial licence application under ERA \u00a7\u00a78-11. No POST create route (src/routes/licence-application-chain.ts has only transitions). Triggers levy_assessment and licence_renewal on licence_issued event (src/cascade-rules/lifecycle-sequencing.ts:161-193).",
+          "createPath": null,
+          "createMethod": null,
+          "createRequiredFields": []
+        },
+        {
+          "key": "sseg_registration",
+          "classification": "SEED_ONLY",
+          "initialStatus": "registration_received",
+          "firstAdvanceAction": "approve-registration",
+          "parentChain": null,
+          "birthTrigger": null,
+          "seedTable": "oe_sseg_registrations",
+          "seedNotNullColumns": [
+            {
+              "col": "registration_number",
+              "exampleValue": "SSEG-2026-0001"
+            },
+            {
+              "col": "applicant_party_id",
+              "exampleValue": "demo_ipp_001"
+            },
+            {
+              "col": "applicant_party_name",
+              "exampleValue": "Solara IPP"
+            },
+            {
+              "col": "facility_name",
+              "exampleValue": "Small Solar Array"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "registration_received"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_regulator_001"
+            }
+          ],
+          "notes": "Seeded in migrations/499_seed_all_remaining_chains.sql (line 1350+). W57 SSEG / Schedule 2 embedded-generation registration under ERA Schedule 2 (light-touch sibling of W49 licence_application). No POST create route (src/routes/sseg-registration-chain.ts has only transitions). First action approve-registration or approve-with-conditions.",
+          "createPath": null,
+          "createMethod": null,
+          "createRequiredFields": []
+        },
+        {
+          "key": "complaint_resolution",
+          "classification": "SEED_ONLY",
+          "initialStatus": "complaint_lodged",
+          "firstAdvanceAction": "screen-admissibility",
+          "parentChain": null,
+          "birthTrigger": null,
+          "seedTable": "oe_regulator_complaints",
+          "seedNotNullColumns": [
+            {
+              "col": "complaint_number",
+              "exampleValue": "COMP-2026-0001"
+            },
+            {
+              "col": "respondent_name",
+              "exampleValue": "Solara IPP"
+            },
+            {
+              "col": "complainant_name",
+              "exampleValue": "Customer X"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "complaint_lodged"
+            },
+            {
+              "col": "complaint_lodged_at",
+              "exampleValue": "2026-05-01T10:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_regulator_001"
+            }
+          ],
+          "notes": "Seeded in migrations/499_seed_all_remaining_chains.sql (line 1386+). W66 ERA \u00a730 complaint resolution; REACTIVE external-party complaint engine. No POST create route (src/routes/complaint-resolution-chain.ts has only transitions). Initial 'complaint_lodged' -> first action 'screen-admissibility' gates jurisdiction and merit.",
+          "createPath": null,
+          "createMethod": null,
+          "createRequiredFields": []
+        },
+        {
+          "key": "levy_assessment",
+          "classification": "CASCADE_BORN",
+          "initialStatus": "levy_assessed",
+          "firstAdvanceAction": "issue-invoice",
+          "parentChain": "licence_application",
+          "birthTrigger": "licence_application.licence_issued",
+          "notes": "Auto-created on licence_application.licence_issued event via registerCascadeRule in src/cascade-rules/lifecycle-sequencing.ts (line 142-152). W74 NERSA levy assessment under NERA Act \u00a75B. No POST create route (src/routes/levy-assessment-chain.ts has only transitions). Cascade INSERT sets chain_status='levy_assessed', lever_basis='turnover_based', levy_tier='micro'. Initial status 'levy_assessed' -> first action 'issue-invoice'.",
+          "createPath": null,
+          "createMethod": null,
+          "createRequiredFields": []
+        },
+        {
+          "key": "enforcement_action",
+          "classification": "SEED_ONLY",
+          "initialStatus": "case_opened",
+          "firstAdvanceAction": "draft_allegations",
+          "parentChain": null,
+          "birthTrigger": null,
+          "seedTable": "oe_enforcement_actions",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "EA-2026-001"
+            },
+            {
+              "col": "respondent_party_id",
+              "exampleValue": "party_khanyisa_coal"
+            },
+            {
+              "col": "respondent_party_name",
+              "exampleValue": "Khanyisa Coal IPP (Pty) Ltd"
+            },
+            {
+              "col": "allegation_class",
+              "exampleValue": "tariff_non_compliance"
+            },
+            {
+              "col": "penalty_tier",
+              "exampleValue": "material"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "case_opened"
+            },
+            {
+              "col": "case_opened_at",
+              "exampleValue": "2026-02-15T09:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_admin_001"
+            }
+          ],
+          "notes": "Seeded in migrations/277_enforcement_action_chain_seed.sql with 10 cases (line 16+). W93 NERSA ERA \u00a735 administrative-penalty proceedings (the enforcement-teeth layer). No POST create route (src/routes/enforcement-action-chain.ts has only transitions). Initial 'case_opened' -> first action 'draft_allegations' -> 'allegations_served' (SIGNATURE: safety_violation / repeat_offender / systemic_market_abuse floor-at-severe).",
+          "createPath": null,
+          "createMethod": null,
+          "createRequiredFields": []
+        }
+      ]
+    },
+    {
+      "family": "support",
+      "chains": [
+        {
+          "key": "problem_record",
+          "classification": "SEED_ONLY",
+          "initialStatus": "problem_logged",
+          "firstAdvanceAction": "categorize",
+          "seedTable": "oe_problem_records",
+          "seedNotNullColumns": [
+            {
+              "col": "problem_number",
+              "exampleValue": "PRB-2026-0001"
+            },
+            {
+              "col": "owner_party_id",
+              "exampleValue": "oe_ops"
+            },
+            {
+              "col": "owner_party_name",
+              "exampleValue": "Open Energy Platform Operations"
+            },
+            {
+              "col": "service_name",
+              "exampleValue": "Trading \u2014 OrderBook matching"
+            },
+            {
+              "col": "problem_priority",
+              "exampleValue": "major_problem"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "problem_logged"
+            },
+            {
+              "col": "problem_logged_at",
+              "exampleValue": "2026-05-26T07:30:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_support_001"
+            }
+          ],
+          "notes": "Wave 41 ITIL Problem Management. No standalone create POST endpoint. Rows created via migration 173 seed data. src/routes/problem-management-chain.ts has only /:id transitions. Initial status 'problem_logged', first action 'categorize' \u2192 'categorized'. NOT NULL cols from migration 172: problem_number, owner_party_id, owner_party_name, service_name, problem_priority, chain_status, problem_logged_at, created_by."
+        },
+        {
+          "key": "change_request",
+          "classification": "SEED_ONLY",
+          "initialStatus": "change_requested",
+          "firstAdvanceAction": "assess",
+          "seedTable": "oe_change_requests",
+          "seedNotNullColumns": [
+            {
+              "col": "change_number",
+              "exampleValue": "RFC-2026-0042"
+            },
+            {
+              "col": "owner_party_id",
+              "exampleValue": "oe_ops"
+            },
+            {
+              "col": "owner_party_name",
+              "exampleValue": "Open Energy Platform Operations"
+            },
+            {
+              "col": "service_name",
+              "exampleValue": "CI/CD \u2014 D1 remote migrations"
+            },
+            {
+              "col": "change_class",
+              "exampleValue": "normal"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "change_requested"
+            },
+            {
+              "col": "change_requested_at",
+              "exampleValue": "2026-04-28T09:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_support_001"
+            }
+          ],
+          "notes": "Wave 47 Change Enablement / RFC Lifecycle. No standalone create POST. Seeded via migration 185. src/routes/change-enablement-chain.ts all routes are /:id transitions. Initial 'change_requested', first action 'assess'. NOT NULL from migration 184: change_number, owner_party_id, owner_party_name, service_name, change_class, chain_status, change_requested_at, created_by."
+        },
+        {
+          "key": "security_remediation",
+          "classification": "SEED_ONLY",
+          "initialStatus": "advisory_received",
+          "firstAdvanceAction": "triage",
+          "seedTable": "oe_security_remediations",
+          "seedNotNullColumns": [
+            {
+              "col": "remediation_number",
+              "exampleValue": "SEC-2026-0001"
+            },
+            {
+              "col": "cve_id",
+              "exampleValue": "CVE-2026-0001"
+            },
+            {
+              "col": "severity_tier",
+              "exampleValue": "critical"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "advisory_received"
+            },
+            {
+              "col": "advisory_received_at",
+              "exampleValue": "2026-06-01T10:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_support_001"
+            }
+          ],
+          "notes": "Wave 55 OT Firmware/Security-Patch Vulnerability Remediation. No create POST. Seeded via migration 201. src/routes/security-remediation-chain.ts all routes /:id transitions. Initial 'advisory_received', first action 'triage'. NOT NULL from migration 200: remediation_number, severity_tier, chain_status, advisory_received_at, created_by."
+        },
+        {
+          "key": "warranty_recovery",
+          "classification": "SEED_ONLY",
+          "initialStatus": "claim_drafted",
+          "firstAdvanceAction": "submit-claim",
+          "seedTable": "oe_warranty_recoveries",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "WR-2026-0001"
+            },
+            {
+              "col": "claimant_party_id",
+              "exampleValue": "support_ops"
+            },
+            {
+              "col": "claimant_party_name",
+              "exampleValue": "Support Operations"
+            },
+            {
+              "col": "oem_party_id",
+              "exampleValue": "oem_siemens"
+            },
+            {
+              "col": "oem_party_name",
+              "exampleValue": "Siemens AG"
+            },
+            {
+              "col": "defect_class",
+              "exampleValue": "isolated"
+            },
+            {
+              "col": "recovery_zar_m",
+              "exampleValue": "0.5"
+            },
+            {
+              "col": "recovery_tier",
+              "exampleValue": "minor"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "claim_drafted"
+            },
+            {
+              "col": "claim_drafted_at",
+              "exampleValue": "2026-06-01T08:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_support_001"
+            }
+          ],
+          "notes": "Wave 63 Warranty Cost-Recovery / Supplier-Recovery Claim. No create POST. Seeded via migration 216. src/routes/warranty-recovery-chain.ts all routes /:id transitions. Initial 'claim_drafted', first action 'submit-claim'. NOT NULL from migration 216: case_number, claimant_party_id, claimant_party_name, oem_party_id, oem_party_name, defect_class, recovery_zar_m, recovery_tier, chain_status, claim_drafted_at, created_by."
+        },
+        {
+          "key": "spare_parts_provisioning",
+          "classification": "SEED_ONLY",
+          "initialStatus": "demand_identified",
+          "firstAdvanceAction": "raise-requisition",
+          "seedTable": "oe_spare_parts_provisioning",
+          "seedNotNullColumns": [
+            {
+              "col": "line_number",
+              "exampleValue": "SPP-2026-0001"
+            },
+            {
+              "col": "part_number",
+              "exampleValue": "IGBT-MODULE-X500"
+            },
+            {
+              "col": "demand_source",
+              "exampleValue": "manual"
+            },
+            {
+              "col": "criticality",
+              "exampleValue": "vital"
+            },
+            {
+              "col": "qty_required",
+              "exampleValue": "2"
+            },
+            {
+              "col": "stockout_impact_zar",
+              "exampleValue": "150000"
+            },
+            {
+              "col": "provisioning_tier",
+              "exampleValue": "critical"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "demand_identified"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_support_001"
+            }
+          ],
+          "notes": "Wave 72 Spare-Parts Provisioning & Replenishment. No create POST. Seeded via migration 234. src/routes/spare-parts-provisioning-chain.ts all routes /:id transitions. Initial 'demand_identified', first action 'raise-requisition'. NOT NULL from migration 234: line_number, part_number, demand_source, criticality, stockout_impact_zar, provisioning_tier, chain_status, created_by."
+        },
+        {
+          "key": "asset_prognostics",
+          "classification": "SEED_ONLY",
+          "initialStatus": "predicted",
+          "firstAdvanceAction": "triage-prediction",
+          "seedTable": "oe_asset_prognostics",
+          "seedNotNullColumns": [
+            {
+              "col": "site_id",
+              "exampleValue": "site_canary_001"
+            },
+            {
+              "col": "asset_label",
+              "exampleValue": "Inverter Unit A"
+            },
+            {
+              "col": "status",
+              "exampleValue": "predicted"
+            },
+            {
+              "col": "tier",
+              "exampleValue": "major"
+            },
+            {
+              "col": "created_at",
+              "exampleValue": "2026-06-01T12:00:00Z"
+            }
+          ],
+          "notes": "Wave 71 Predictive Asset Health & Prognostics. No create POST. Seeded via migration 233. src/routes/asset-prognostics-chain.ts all routes /:id transitions. Initial 'predicted', first action 'triage-prediction'. NOT NULL from migration 232: site_id, status, tier, created_at."
+        },
+        {
+          "key": "pr_underperformance",
+          "classification": "SEED_ONLY",
+          "initialStatus": "monitoring",
+          "firstAdvanceAction": "start-warning",
+          "seedTable": "oe_pr_chain",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "PR-2026-0001"
+            },
+            {
+              "col": "site_id",
+              "exampleValue": "site_goldrush_001"
+            },
+            {
+              "col": "site_name",
+              "exampleValue": "Goldrush C&I Solar"
+            },
+            {
+              "col": "technology",
+              "exampleValue": "solar_pv"
+            },
+            {
+              "col": "capacity_mw",
+              "exampleValue": "2.5"
+            },
+            {
+              "col": "capacity_tier",
+              "exampleValue": "ci"
+            },
+            {
+              "col": "baseline_pr",
+              "exampleValue": "0.85"
+            },
+            {
+              "col": "observed_pr",
+              "exampleValue": "0.71"
+            },
+            {
+              "col": "pr_shortfall",
+              "exampleValue": "0.14"
+            },
+            {
+              "col": "window_days",
+              "exampleValue": "7"
+            },
+            {
+              "col": "detected_at",
+              "exampleValue": "2026-06-01T06:00:00Z"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "monitoring"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_support_001"
+            }
+          ],
+          "notes": "Wave 24 Esums PR Sustained-Underperformance Chain. No create POST. Seeded via migration 139. src/routes/pr-chain.ts all routes /:id transitions. Initial 'monitoring', first action 'start-warning'. NOT NULL from migration 138: case_number, site_id, site_name, technology, capacity_mw, capacity_tier, baseline_pr, observed_pr, pr_shortfall, window_days, detected_at, chain_status, created_by."
+        },
+        {
+          "key": "oem_fco",
+          "classification": "SEED_ONLY",
+          "initialStatus": "draft",
+          "firstAdvanceAction": "submit_for_review",
+          "seedTable": "oe_oem_field_change_orders",
+          "seedNotNullColumns": [
+            {
+              "col": "campaign_number",
+              "exampleValue": "FCO-2026-0001"
+            },
+            {
+              "col": "oem_id",
+              "exampleValue": "oem_siemens"
+            },
+            {
+              "col": "oem_name",
+              "exampleValue": "Siemens AG"
+            },
+            {
+              "col": "product_family",
+              "exampleValue": "IGBT Modules"
+            },
+            {
+              "col": "product_model",
+              "exampleValue": "X500 Series"
+            },
+            {
+              "col": "campaign_title",
+              "exampleValue": "X500 Thermal Runaway Fix"
+            },
+            {
+              "col": "change_class",
+              "exampleValue": "normal"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "draft"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_support_001"
+            }
+          ],
+          "notes": "Wave 89 OEM Field-Change Order Campaign. No create POST. Seeded via migration 269. src/routes/oem-fco-chain.ts all routes /:id transitions. Initial 'draft', first action 'submit_for_review'. NOT NULL from migration 268: campaign_number, oem_id, oem_name, product_family, product_model, campaign_title, change_class, chain_status, created_by."
+        },
+        {
+          "key": "service_contract",
+          "classification": "SEED_ONLY",
+          "initialStatus": "draft",
+          "firstAdvanceAction": "issue_quote",
+          "seedTable": "oe_service_contracts",
+          "seedNotNullColumns": [
+            {
+              "col": "contract_number",
+              "exampleValue": "SVC-2026-0001"
+            },
+            {
+              "col": "customer_name",
+              "exampleValue": "NXT Energy Ops"
+            },
+            {
+              "col": "coverage_tier",
+              "exampleValue": "standard"
+            },
+            {
+              "col": "annual_value_zar",
+              "exampleValue": "250000"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "draft"
+            },
+            {
+              "col": "draft_at",
+              "exampleValue": "2026-06-01T09:00:00Z"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_support_001"
+            }
+          ],
+          "notes": "Wave 80 Service Contract lifecycle. No create POST. Seeded via migration 251. src/routes/service-contract-chain.ts all routes /:id transitions. Initial 'draft', first action 'issue_quote'. NOT NULL from migration 250: contract_number, customer_name, coverage_tier, annual_value_zar, chain_status, draft_at, created_by."
+        },
+        {
+          "key": "cyber_incident",
+          "classification": "SEED_ONLY",
+          "initialStatus": "detected",
+          "firstAdvanceAction": "triage",
+          "seedTable": "oe_cyber_incidents",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "CYB-2026-0001"
+            },
+            {
+              "col": "asset_scope",
+              "exampleValue": "trading-vpn"
+            },
+            {
+              "col": "affected_system",
+              "exampleValue": "Trading API Cluster"
+            },
+            {
+              "col": "detected_at",
+              "exampleValue": "2026-06-01T14:30:00Z"
+            },
+            {
+              "col": "reported_at",
+              "exampleValue": "2026-06-01T14:45:00Z"
+            },
+            {
+              "col": "reported_by",
+              "exampleValue": "soc_analyst_001"
+            },
+            {
+              "col": "incident_type",
+              "exampleValue": "unauthorised_access"
+            },
+            {
+              "col": "incident_tier",
+              "exampleValue": "major"
+            },
+            {
+              "col": "threat_vector",
+              "exampleValue": "spear-phishing"
+            },
+            {
+              "col": "chain_status",
+              "exampleValue": "detected"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "demo_support_001"
+            }
+          ],
+          "notes": "Wave 26 Cyber Incident (POPIA s22 + Cybercrimes Act s54). No create POST. Seeded via migration 143. src/routes/cyber-incident-chain.ts all routes /:id transitions. Initial 'detected', first action 'triage'. NOT NULL from migration 142: case_number, asset_scope, affected_system, detected_at, reported_at, reported_by, incident_type, incident_tier, threat_vector, chain_status, created_by."
+        }
+      ]
+    },
+    {
+      "family": "esco_epc",
+      "chains": [
+        {
+          "key": "hse_incident",
+          "classification": "SEED_ONLY",
+          "initialStatus": "reported",
+          "firstAdvanceAction": "triage",
+          "seedTable": "oe_hse_incidents",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "HSE-2026-0001"
+            },
+            {
+              "col": "site_id",
+              "exampleValue": "site_brackenfell_ci"
+            },
+            {
+              "col": "site_name",
+              "exampleValue": "Brackenfell C&I Rooftop"
+            },
+            {
+              "col": "occurred_at",
+              "exampleValue": "2026-05-28T07:15:00Z"
+            },
+            {
+              "col": "reported_at",
+              "exampleValue": "2026-05-28T07:45:00Z"
+            },
+            {
+              "col": "reported_by",
+              "exampleValue": "sup_brackenfell"
+            },
+            {
+              "col": "incident_type",
+              "exampleValue": "near_miss"
+            },
+            {
+              "col": "incident_tier",
+              "exampleValue": "near_miss"
+            },
+            {
+              "col": "location_description",
+              "exampleValue": "East rooftop near inverter"
+            },
+            {
+              "col": "created_by",
+              "exampleValue": "sup_brackenfell"
+            }
+          ],
+          "notes": "Rows seeded via migration 141; no POST / route. Must INSERT via SQL. Initial='reported'; first action='triage' (src/utils/hse-incident-chain-spec.ts:72)."
+        },
+        {
+          "key": "vendor_escalation",
+          "classification": "SEED_ONLY",
+          "initialStatus": "filed",
+          "firstAdvanceAction": "triage",
+          "seedTable": "oe_vendor_escalation",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "VE-2026-0001"
+            },
+            {
+              "col": "operator_party_id",
+              "exampleValue": "op_esums_om"
+            },
+            {
+              "col": "operator_party_name",
+              "exampleValue": "Esums O&M (Pty) Ltd"
+            },
+            {
+              "col": "vendor_party_id",
+              "exampleValue": "vendor_123"
+            },
+            {
+              "col": "vendor_party_name",
+              "exampleValue": "Vendor Name"
+            },
+            {
+              "col": "component_type",
+              "exampleValue": "inverter"
+            },
+            {
+              "col": "defect_class",
+              "exampleValue": "fleet_systemic"
+            },
+            {
+              "col": "filed_at",
+              "exampleValue": "2026-05-28T08:00:00Z"
+            }
+          ],
+          "notes": "Rows seeded via migration 161; no POST / route. Must INSERT via SQL. Initial='filed'; first action='triage' (src/utils/vendor-escalation-spec.ts)."
+        },
+        {
+          "key": "availability_guarantee",
+          "classification": "SEED_ONLY",
+          "initialStatus": "period_open",
+          "firstAdvanceAction": "submit_measurement",
+          "seedTable": "oe_availability_guarantees",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "AG-2026-0001"
+            },
+            {
+              "col": "owner_party_id",
+              "exampleValue": "own_kathu"
+            },
+            {
+              "col": "owner_party_name",
+              "exampleValue": "Kathu Solar Park"
+            },
+            {
+              "col": "contractor_party_id",
+              "exampleValue": "om_vestas"
+            },
+            {
+              "col": "contractor_party_name",
+              "exampleValue": "Vestas O&M"
+            },
+            {
+              "col": "site_name",
+              "exampleValue": "Kathu Solar"
+            }
+          ],
+          "notes": "Rows seeded via migration 193; no POST / route. Must INSERT via SQL. Initial='period_open'; first action='submit_measurement' (chain-registry:6386)."
+        },
+        {
+          "key": "pm_compliance",
+          "classification": "SEED_ONLY",
+          "initialStatus": "pm_scheduled",
+          "firstAdvanceAction": "assign_work",
+          "seedTable": "oe_pm_compliance",
+          "seedNotNullColumns": [
+            {
+              "col": "case_number",
+              "exampleValue": "PMC-2026-0001"
+            },
+            {
+              "col": "owner_party_id",
+              "exampleValue": "own_kathu"
+            },
+            {
+              "col": "owner_party_name",
+              "exampleValue": "Kathu Solar"
+            },
+            {
+              "col": "contractor_party_id",
+              "exampleValue": "cont_001"
+            },
+            {
+              "col": "contractor_party_name",
+              "exampleValue": "Contractor Name"
+            },
+            {
+              "col": "site_name",
+              "exampleValue": "Kathu Site"
+            },
+            {
+              "col": "criticality_tier",
+              "exampleValue": "critical"
+            }
+          ],
+          "notes": "Rows seeded via migration 209; no POST / route. Must INSERT via SQL. Initial='pm_scheduled'; first action='assign_work' (chain-registry:6470)."
+        },
+        {
+          "key": "permit_to_work",
+          "classification": "SEED_ONLY",
+          "initialStatus": "permit_requested",
+          "firstAdvanceAction": "verify_isolation",
+          "seedTable": "oe_permit_to_work",
+          "seedNotNullColumns": [
+            {
+              "col": "permit_number",
+              "exampleValue": "PTW-2026-0001"
+            },
+            {
+              "col": "holder_party_name",
+              "exampleValue": "Work Crew"
+            },
+            {
+              "col": "authority_party_name",
+              "exampleValue": "Site Authority"
+            },
+            {
+              "col": "work_class",
+              "exampleValue": "electrical"
+            },
+            {
+              "col": "hazard_tier",
+              "exampleValue": "high"
+            }
+          ],
+          "notes": "Rows seeded via migration 219; no POST / route. Must INSERT via SQL. Initial='permit_requested'; first action='verify_isolation' (chain-registry:6553)."
+        },
+        {
+          "key": "itp",
+          "classification": "SEED_ONLY",
+          "initialStatus": "itp_drafted",
+          "firstAdvanceAction": "submit",
+          "seedTable": "oe_itp_inspection",
+          "seedNotNullColumns": [
+            {
+              "col": "itp_number",
+              "exampleValue": "ITP-2026-001"
+            },
+            {
+              "col": "project_id",
+              "exampleValue": "proj_scatec_kenhardt"
+            },
+            {
+              "col": "workflow_class",
+              "exampleValue": "itp_civil_foundation"
+            },
+            {
+              "col": "priority_class",
+              "exampleValue": "low"
+            },
+            {
+              "col": "current_tier",
+              "exampleValue": "standard"
+            }
+          ],
+          "notes": "Rows seeded via migration 289; no POST / route. Must INSERT via SQL. Initial='itp_drafted'; first action='submit' (chain-registry:6638)."
+        },
+        {
+          "key": "punch_list",
+          "classification": "SEED_ONLY",
+          "initialStatus": "identified",
+          "firstAdvanceAction": "assess",
+          "seedTable": "oe_punch_list",
+          "seedNotNullColumns": [
+            {
+              "col": "punch_number",
+              "exampleValue": "PNCH-2026-001"
+            },
+            {
+              "col": "project_id",
+              "exampleValue": "proj_scatec_kenhardt"
+            },
+            {
+              "col": "workflow_class",
+              "exampleValue": "punch_cosmetic"
+            },
+            {
+              "col": "priority_class",
+              "exampleValue": "low"
+            },
+            {
+              "col": "current_tier",
+              "exampleValue": "low"
+            }
+          ],
+          "notes": "Rows seeded via migration 287; no POST / route. Must INSERT via SQL. Initial='identified'; first action='assess' (chain-registry:6716)."
+        },
+        {
+          "key": "bess_soh",
+          "classification": "SEED_ONLY",
+          "initialStatus": "baseline_set",
+          "firstAdvanceAction": "activate_monitoring",
+          "seedTable": "oe_bess_soh",
+          "seedNotNullColumns": [
+            {
+              "col": "programme_number",
+              "exampleValue": "BSOH-2026-001"
+            },
+            {
+              "col": "bess_id",
+              "exampleValue": "bess_redstone_1"
+            },
+            {
+              "col": "bess_reference",
+              "exampleValue": "BESS-REDSTONE-100MW4HR"
+            },
+            {
+              "col": "site_id",
+              "exampleValue": "site_redstone"
+            },
+            {
+              "col": "site_name",
+              "exampleValue": "Redstone CSP+Storage"
+            },
+            {
+              "col": "owner_id",
+              "exampleValue": "own_acwa_power"
+            },
+            {
+              "col": "owner_name",
+              "exampleValue": "ACWA Power"
+            },
+            {
+              "col": "operator_id",
+              "exampleValue": "op_esums_om"
+            },
+            {
+              "col": "operator_name",
+              "exampleValue": "Esums O&M"
+            },
+            {
+              "col": "commissioning_date",
+              "exampleValue": "2026-05-15"
+            }
+          ],
+          "notes": "Rows seeded via migration 267; no POST / route. Must INSERT via SQL. Initial='baseline_set'; first action='activate_monitoring' (chain-registry:7114). initiation=null (line 7206)."
+        },
+        {
+          "key": "generation_revenue_assurance",
+          "classification": "SEED_ONLY",
+          "initialStatus": "period_open",
+          "firstAdvanceAction": "run_reconciliation",
+          "seedTable": "oe_generation_revenue_assurance",
+          "seedNotNullColumns": [
+            {
+              "col": "gra_number",
+              "exampleValue": "GRA-2026-0001"
+            },
+            {
+              "col": "site_name",
+              "exampleValue": "Karoo Solar Park"
+            },
+            {
+              "col": "revenue_assurance_tier",
+              "exampleValue": "minor"
+            }
+          ],
+          "notes": "Rows seeded via migration 249; no POST / route. Must INSERT via SQL. Initial='period_open'; first action='run_reconciliation' (chain-registry:7221). initiation=null (line 7304)."
+        },
+        {
+          "key": "soiling_audit",
+          "classification": "SEED_ONLY",
+          "initialStatus": "soiling_period_open",
+          "firstAdvanceAction": "measure_soiling",
+          "seedTable": "oe_soiling_audit",
+          "seedNotNullColumns": [
+            {
+              "col": "audit_number",
+              "exampleValue": "SOIL-2026-UPINGTON-Q1"
+            },
+            {
+              "col": "facility_id",
+              "exampleValue": "fac-upington-pv"
+            }
+          ],
+          "notes": "Rows seeded via migration 295; no POST / route. Must INSERT via SQL. Initial='soiling_period_open'; first action='measure_soiling' (chain-registry:7319). initiation=null (line 7406)."
+        }
+      ]
+    }
+  ],
+  "plan": {
+    "tallies": {
+      "ADD_INITIATION": 1,
+      "CASCADE_BORN": 3,
+      "SEED_ONLY": 85,
+      "ALREADY_TESTABLE": 0
+    },
+    "addInitiation": [
+      {
+        "key": "ppa_contract_chain",
+        "createPath": "/api/rbac/invitations/:token/accept",
+        "requiredFields": [
+          "token",
+          "email",
+          "password",
+          "full_name"
+        ]
+      }
+    ],
+    "cascadeBorn": [
+      {
+        "key": "loan_default",
+        "parentChain": "reserve_account",
+        "birthTrigger": "reserve_account.breached"
+      },
+      {
+        "key": "regulator_inbox",
+        "parentChain": "(event-agnostic \u2014 any chain firing a regulatorInboxSpec-matched event, e.g. regulator.surveillance_alert_raised + 35 others)",
+        "birthTrigger": "regulator_inbox.materialize (regulatorInboxSpec() != null)"
+      },
+      {
+        "key": "levy_assessment",
+        "parentChain": "licence_application",
+        "birthTrigger": "licence_application.licence_issued"
+      }
+    ],
+    "seedOnly": [
+      {
+        "key": "covenant_certificate",
+        "seedTable": "oe_covenant_certificates",
+        "firstAdvanceAction": "begin-review"
+      },
+      {
+        "key": "drawdown",
+        "seedTable": "oe_drawdown_chain",
+        "firstAdvanceAction": "approve"
+      },
+      {
+        "key": "disbursement_case",
+        "seedTable": "oe_disbursement_cases",
+        "firstAdvanceAction": "close-reconciliation"
+      },
+      {
+        "key": "credit_facility_application",
+        "seedTable": "oe_credit_facility_applications",
+        "firstAdvanceAction": "screen"
+      },
+      {
+        "key": "loan_transfer",
+        "seedTable": "oe_loan_transfers",
+        "firstAdvanceAction": "approve-transfer"
+      },
+      {
+        "key": "security_perfection",
+        "seedTable": "oe_security_perfection",
+        "firstAdvanceAction": "confirm-perfection"
+      },
+      {
+        "key": "dscr_monitoring",
+        "seedTable": "oe_dscr_monitoring",
+        "firstAdvanceAction": "compute-ratios"
+      },
+      {
+        "key": "reserve_account",
+        "seedTable": "oe_reserve_account_chain",
+        "firstAdvanceAction": "confirm-funding"
+      },
+      {
+        "key": "sll_kpi",
+        "seedTable": "oe_sll_kpi_compliance",
+        "firstAdvanceAction": "attest-kpi"
+      },
+      {
+        "key": "poslimit_case",
+        "seedTable": "oe_poslimit_cases",
+        "firstAdvanceAction": "raise_warning"
+      },
+      {
+        "key": "best_execution",
+        "seedTable": "oe_best_execution",
+        "firstAdvanceAction": "solicit_quotes"
+      },
+      {
+        "key": "trade_report",
+        "seedTable": "oe_trade_reports",
+        "firstAdvanceAction": "generate_report"
+      },
+      {
+        "key": "market_abuse_case",
+        "seedTable": "oe_market_abuse_cases",
+        "firstAdvanceAction": "triage"
+      },
+      {
+        "key": "algo_certification",
+        "seedTable": "oe_algo_certifications",
+        "firstAdvanceAction": "begin_review"
+      },
+      {
+        "key": "counterparty_margin",
+        "seedTable": "oe_counterparty_margin",
+        "firstAdvanceAction": "issue_warning"
+      },
+      {
+        "key": "trade_allocation",
+        "seedTable": "oe_trade_allocations",
+        "firstAdvanceAction": "prepare_allocation"
+      },
+      {
+        "key": "benchmark_transition",
+        "seedTable": "oe_benchmark_transitions",
+        "firstAdvanceAction": "assess_impact"
+      },
+      {
+        "key": "settlement_fail",
+        "seedTable": "oe_settlement_fails",
+        "firstAdvanceAction": "record_fail"
+      },
+      {
+        "key": "procurement_rfp",
+        "seedTable": "oe_procurement_rfps",
+        "firstAdvanceAction": "publish"
+      },
+      {
+        "key": "cod_chain",
+        "seedTable": "oe_cod_chain",
+        "firstAdvanceAction": "sign-epc"
+      },
+      {
+        "key": "insurance_claim",
+        "seedTable": "oe_insurance_claim_chain",
+        "firstAdvanceAction": "agree-quantum"
+      },
+      {
+        "key": "ed_commitment",
+        "seedTable": "oe_ed_commitments",
+        "firstAdvanceAction": "activate-monitoring"
+      },
+      {
+        "key": "project_change_order",
+        "seedTable": "oe_project_change_orders",
+        "firstAdvanceAction": "submit"
+      },
+      {
+        "key": "project_risk",
+        "seedTable": "oe_project_risks",
+        "firstAdvanceAction": "assess"
+      },
+      {
+        "key": "submittal_rfi",
+        "seedTable": "oe_submittal_rfi",
+        "firstAdvanceAction": "submit"
+      },
+      {
+        "key": "dfr",
+        "seedTable": "oe_dfr",
+        "firstAdvanceAction": "open"
+      },
+      {
+        "key": "handover_dossier",
+        "seedTable": "oe_handover_dossier",
+        "firstAdvanceAction": "submit"
+      },
+      {
+        "key": "gca_connection",
+        "seedTable": "oe_gca_connections",
+        "firstAdvanceAction": "request_studies"
+      },
+      {
+        "key": "planned_outage",
+        "seedTable": "oe_planned_outages",
+        "firstAdvanceAction": "submit"
+      },
+      {
+        "key": "grid_code_compliance",
+        "seedTable": "oe_grid_code_compliance",
+        "firstAdvanceAction": "raise_non_conformance"
+      },
+      {
+        "key": "connection_energization",
+        "seedTable": "oe_connection_energization",
+        "firstAdvanceAction": "submit_program"
+      },
+      {
+        "key": "ppa_obligation",
+        "seedTable": "oe_offtaker_ppa_obligations",
+        "firstAdvanceAction": "cure"
+      },
+      {
+        "key": "ppa_take_or_pay",
+        "seedTable": "oe_top_cases",
+        "firstAdvanceAction": "propose-quantum"
+      },
+      {
+        "key": "tariff_indexation",
+        "seedTable": "oe_tariff_indexation",
+        "firstAdvanceAction": "agree-tariff"
+      },
+      {
+        "key": "curtailment_claim",
+        "seedTable": "oe_curtailment_claims",
+        "firstAdvanceAction": "submit-claim"
+      },
+      {
+        "key": "ppa_payment_security",
+        "seedTable": "oe_ppa_payment_securities",
+        "firstAdvanceAction": "submit-instrument"
+      },
+      {
+        "key": "ppa_termination",
+        "seedTable": "oe_ppa_terminations",
+        "firstAdvanceAction": "serve-notice"
+      },
+      {
+        "key": "rec_lifecycle",
+        "seedTable": "oe_rec_lifecycle",
+        "firstAdvanceAction": "approve-issuance"
+      },
+      {
+        "key": "ppa_annual_recon",
+        "seedTable": "oe_ppa_annual_recon",
+        "firstAdvanceAction": "reconcile"
+      },
+      {
+        "key": "ppa_change_in_law",
+        "seedTable": "oe_ppa_change_in_law",
+        "firstAdvanceAction": "submit-claim"
+      },
+      {
+        "key": "ppa_nomination",
+        "seedTable": "oe_ppa_nominations",
+        "firstAdvanceAction": "submit-da-nomination"
+      },
+      {
+        "key": "oe_dispatch_nominations",
+        "seedTable": "oe_dispatch_nominations",
+        "firstAdvanceAction": "accept"
+      },
+      {
+        "key": "load_curtailment",
+        "seedTable": "oe_load_curtailment",
+        "firstAdvanceAction": "acknowledge"
+      },
+      {
+        "key": "reserve_activation",
+        "seedTable": "oe_reserve_activations",
+        "firstAdvanceAction": "acknowledge"
+      },
+      {
+        "key": "rez_capacity",
+        "seedTable": "oe_grid_capacity_allocations",
+        "firstAdvanceAction": "issue-offer"
+      },
+      {
+        "key": "black_start",
+        "seedTable": "oe_black_start_capabilities",
+        "firstAdvanceAction": "award-contract"
+      },
+      {
+        "key": "tariff_determination",
+        "seedTable": "oe_tariff_determinations",
+        "firstAdvanceAction": "open-consultation"
+      },
+      {
+        "key": "gcc_ncr",
+        "seedTable": "oe_grid_code_compliance",
+        "firstAdvanceAction": "begin-assessment"
+      },
+      {
+        "key": "disposition",
+        "seedTable": "oe_disposition_cases",
+        "firstAdvanceAction": "triage"
+      },
+      {
+        "key": "licence_renewal",
+        "seedTable": "oe_licence_renewals",
+        "firstAdvanceAction": "file-application"
+      },
+      {
+        "key": "compliance_inspection",
+        "seedTable": "oe_compliance_inspections",
+        "firstAdvanceAction": "issue-findings"
+      },
+      {
+        "key": "licence_application",
+        "seedTable": "oe_licence_applications",
+        "firstAdvanceAction": "begin-review"
+      },
+      {
+        "key": "sseg_registration",
+        "seedTable": "oe_sseg_registrations",
+        "firstAdvanceAction": "approve-registration"
+      },
+      {
+        "key": "complaint_resolution",
+        "seedTable": "oe_regulator_complaints",
+        "firstAdvanceAction": "screen-admissibility"
+      },
+      {
+        "key": "enforcement_action",
+        "seedTable": "oe_enforcement_actions",
+        "firstAdvanceAction": "draft_allegations"
+      },
+      {
+        "key": "problem_record",
+        "seedTable": "oe_problem_records",
+        "firstAdvanceAction": "categorize"
+      },
+      {
+        "key": "change_request",
+        "seedTable": "oe_change_requests",
+        "firstAdvanceAction": "assess"
+      },
+      {
+        "key": "security_remediation",
+        "seedTable": "oe_security_remediations",
+        "firstAdvanceAction": "triage"
+      },
+      {
+        "key": "warranty_recovery",
+        "seedTable": "oe_warranty_recoveries",
+        "firstAdvanceAction": "submit-claim"
+      },
+      {
+        "key": "spare_parts_provisioning",
+        "seedTable": "oe_spare_parts_provisioning",
+        "firstAdvanceAction": "raise-requisition"
+      },
+      {
+        "key": "asset_prognostics",
+        "seedTable": "oe_asset_prognostics",
+        "firstAdvanceAction": "triage-prediction"
+      },
+      {
+        "key": "pr_underperformance",
+        "seedTable": "oe_pr_chain",
+        "firstAdvanceAction": "start-warning"
+      },
+      {
+        "key": "oem_fco",
+        "seedTable": "oe_oem_field_change_orders",
+        "firstAdvanceAction": "submit_for_review"
+      },
+      {
+        "key": "service_contract",
+        "seedTable": "oe_service_contracts",
+        "firstAdvanceAction": "issue_quote"
+      },
+      {
+        "key": "cyber_incident",
+        "seedTable": "oe_cyber_incidents",
+        "firstAdvanceAction": "triage"
+      },
+      {
+        "key": "hse_incident",
+        "seedTable": "oe_hse_incidents",
+        "firstAdvanceAction": "triage"
+      },
+      {
+        "key": "vendor_escalation",
+        "seedTable": "oe_vendor_escalation",
+        "firstAdvanceAction": "triage"
+      },
+      {
+        "key": "availability_guarantee",
+        "seedTable": "oe_availability_guarantees",
+        "firstAdvanceAction": "submit_measurement"
+      },
+      {
+        "key": "pm_compliance",
+        "seedTable": "oe_pm_compliance",
+        "firstAdvanceAction": "assign_work"
+      },
+      {
+        "key": "permit_to_work",
+        "seedTable": "oe_permit_to_work",
+        "firstAdvanceAction": "verify_isolation"
+      },
+      {
+        "key": "itp",
+        "seedTable": "oe_itp_inspection",
+        "firstAdvanceAction": "submit"
+      },
+      {
+        "key": "punch_list",
+        "seedTable": "oe_punch_list",
+        "firstAdvanceAction": "assess"
+      },
+      {
+        "key": "bess_soh",
+        "seedTable": "oe_bess_soh",
+        "firstAdvanceAction": "activate_monitoring"
+      },
+      {
+        "key": "generation_revenue_assurance",
+        "seedTable": "oe_generation_revenue_assurance",
+        "firstAdvanceAction": "run_reconciliation"
+      },
+      {
+        "key": "soiling_audit",
+        "seedTable": "oe_soiling_audit",
+        "firstAdvanceAction": "measure_soiling"
+      }
+    ],
+    "cascadePairs": [
+      {
+        "parent": "reserve_account",
+        "child": "loan_default",
+        "note": "Seed an oe_reserve_account_chain row (reserve_required), advance via confirm-funding then through to a breach action that fires reserve_account.breached; assert a oe_loan_default row is auto-INSERTed with status=default_flagged + source_entity_type=reserve_account; then advance loan_default via accelerate. Rule: lifecycle.reserve_breach_to_loan_default (lifecycle-sequencing.ts:266)."
+      },
+      {
+        "parent": "licence_application",
+        "child": "levy_assessment",
+        "note": "Seed an oe_licence_applications row (application_received), advance begin-review \u2192 ... \u2192 licence_issued so licence_application.licence_issued fires; assert oe_regulator_levies row born with chain_status=levy_assessed, levy_basis=turnover_based, levy_tier=micro; then advance levy_assessment via issue-invoice. Same event also births licence_renewal (seed takes priority for that chain's own test). Rule: lifecycle.licence_issued_to_levy_and_renewal (lifecycle-sequencing.ts:123)."
+      },
+      {
+        "parent": "(any chain firing a regulator-spec event)",
+        "child": "regulator_inbox",
+        "note": "Event-agnostic materializer; not a fixed parent. Drive ONE representative producer (e.g. seed+advance market_abuse_case to file_stor, or trade_report to a reportable transition) so a regulatorInboxSpec-matched event fires, then assert a regulator_inbox row materialized with chain_status=pending and advance via ack. Rule: regulator_inbox.materialize (regulator-inbox.ts:23). Do NOT model as a per-parent pair \u2014 pick one deterministic producer."
+      }
+    ],
+    "executionOrder": [
+      "1. Add 1 initiation descriptor (ppa_contract_chain) \u2014 but treat it as a SPECIAL CASE, NOT a fold into the generic create-via-+New harness. Its create path /api/rbac/invitations/:token/accept is a side-effect of RBAC invitation acceptance (seedRoleScaffold INSERT OR IGNORE oe_ppa_contract_chain, rbac.ts:641), requires a live invitation token + new-account credentials, and is NOT a chain '+ New' button. Either (a) add a bespoke journey: POST create invitation (admin) \u2192 accept (token+email+password+full_name) \u2192 assert oe_ppa_contract_chain draft row born \u2192 advance via execute (needs board_approval_ref + legal_counterparty_ref); or (b) reclassify it to the seedOnly path by seeding an oe_ppa_contract_chain draft row directly. Recommend (a) since it exercises the only real create path; keep it out of INIT_CHAINS matrix-row filtering.",
+      "2. Build a SQL seed fixture module tests/browser/fixtures/no-init-seed.sql (or a TS builder) that INSERTs one fresh, uniquely-keyed row per the 73 distinct seedOnly seedTables (85 seedOnly chains collapse onto ~73 tables \u2014 note gca-style sharing: grid_code_compliance + gcc_ncr both target oe_grid_code_compliance, so seed two rows differing by chain_status=monitoring vs non_conformance_raised). Populate every NOT NULL column from each chain's seedNotNullColumns example values; suffix all natural keys (case_number/number/id) with a test-run nonce to avoid collisions with existing migration seed rows and across re-runs.",
+      "3. Apply the seed fixture against the target DB BEFORE the Playwright run: for BASE=local dev use `wrangler d1 execute open-energy-db --local --file tests/browser/fixtures/no-init-seed.sql`; for prod-smoke, gate behind a dedicated admin seed endpoint or skip prod (see risks). Wire this into global-setup so it runs once per suite, reusing the single ADMIN token (rate-limit discipline).",
+      "4. Extend the meridian-journeys harness with a SECOND data-driven mode 'seed-and-advance' that reads the seedOnly list (parallel to INIT_CHAINS): for each seeded chain, the test (a) reuses the ADMIN token via seedToken(), (b) opens the chain's ledger/thread for the seeded row id (resolve id by querying GET list endpoint filtered to the nonce-suffixed key, since there is no '+ New' create step), (c) asserts the row renders in the Meridian ledger UI, (d) fires the chain's firstAdvanceAction through the Thread actbar (use the explicit firstAdvanceAction from seedOnly rather than the forward-biased verb guesser, because several first actions are role-gated \u2014 see risks), (e) records create=seeded/advanced into the same journey matrix + 5xx gate.",
+      "5. Add 2 deterministic cross-chain cascade journeys for the fixed parent->child pairs: (reserve_account\u2192loan_default) and (licence_application\u2192levy_assessment). Each: seed parent row \u2192 advance parent through to the birth-firing transition \u2192 poll GET child-list for the auto-born child (assert born + correct initial chain_status + source linkage) \u2192 advance child via its firstAdvanceAction. These need multi-step parent advancement (not just firstAdvanceAction) to reach the birth event, so encode the explicit action path to licence_issued / reserve breach.",
+      "6. Add 1 representative materializer journey for regulator_inbox: pick a single deterministic producer (recommend market_abuse_case advanced to file_stor, or trade_report to a reportable transition) \u2192 assert a regulator_inbox row materialized (chain_status=pending) \u2192 advance via ack. Document that regulator_inbox is event-agnostic and intentionally tested through one producer, not enumerated per parent.",
+      "7. Run the combined suite against BASE=http://localhost:8787 first (seed + INIT_CHAINS + seed-and-advance + 3 cascade/materializer journeys), confirm the 5xx summary gate stays green and that advanced-count covers all 89 no-init chains (85 seed + 1 init special + 3 cascade-born). Then evaluate prod-smoke applicability (likely local/staging-only because prod has no SQL seed hook).",
+      "8. Update the journey matrix summary assertion to expect 89 no-init chains accounted for (seeded|created|cascade-born) and to flag any chain that neither rendered nor advanced, so a future schema/route drift fails loudly."
+    ],
+    "risks": [
+      "ppa_contract_chain has NO chain '+ New' create button \u2014 its only create path is an RBAC invitation-acceptance side-effect (seedRoleScaffold, rbac.ts:641) requiring a live token + brand-new account credentials. It cannot fold into the generic INIT_CHAINS matrix; mis-treating it as an initiation row will produce a phantom failing journey. Plus it burns the auth rate-limit (account creation = a login-class op).",
+      "Many firstAdvanceAction transitions are role-gated, not admin-universal: grid chains require grid_operator (gca request_studies, grid_code_compliance raise_non_conformance, connection_energization submit_program is ipp_developer), market_abuse_case / algo_certification write is admin/regulator only with trader read-only, hse_incident/permit_to_work etc. are esco/esums roles. The harness today reuses ONE admin token; if admin is not in WRITE_ROLES for a given chain the first action returns 403 and the chain looks un-advanceable. Either confirm admin sees all lanes/has write on every chain, or seed per-role tokens (which multiplies logins and risks the 10/5min/IP limiter).",
+      "No SQL seed hook exists on prod \u2014 seedOnly rows can only be INSERTed via `wrangler d1 execute --local/--remote` or a migration. The seed-and-advance mode is therefore local/staging-only unless a gated admin seed endpoint is added; prod-smoke would skip 85 of 89 chains. Re-running --remote seeds risks polluting prod data.",
+      "Two seedOnly chains share a table (grid_code_compliance + gcc_ncr both on oe_grid_code_compliance with different initial chain_status). A single seed row cannot satisfy both journeys; must seed two rows and the harness must select by chain_status, or the second journey will pick up the wrong row.",
+      "regulator_inbox is event-agnostic (matches 36+ events via regulatorInboxSpec). There is no single parent; picking the wrong producer event (one whose advance is itself role-gated or invalid-from-state) yields no materialization and a false-negative. The chosen producer must be a transition admin can actually fire end-to-end.",
+      "Natural-key collisions: migration seeds already occupy case_number/number/id values (e.g. APP-2026-0001, GCA-TX-2026-0001). Re-using example values in the test fixture will hit UNIQUE constraints or pick up stale rows. Every fixture key must carry a per-run nonce, and the harness must resolve the row id by that nonce (GET list filter), since there is no create-response id to capture.",
+      "FK / parent depth: cascade-born children derive parent fields by JOIN at INSERT time (loan_default reads facility/borrower from the reserve account row; levy_assessment reads from licence_application). If the seeded parent row omits the columns the cascade reads, the child is born malformed or the INSERT silently no-ops. Parent seed rows for the 2 cascade pairs must populate the cascade-read columns, not just the table's NOT NULL set.",
+      "Cascade timing: births fire through fireCascade fan-out (queues/async stages). The cross-chain journeys must poll the child-list with a bounded retry, not assert synchronously, or the child will appear absent on a fast assertion.",
+      "Reaching the birth event requires multi-step parent advancement (licence_application must reach licence_issued; reserve_account must reach a breach). Each intermediate transition may be role-gated or require fields, so the explicit action+payload path must be hard-coded, not left to the forward-biased verb guesser, which could terminal-close the parent before it births the child.",
+      "Some advance actions require body fields (ppa_contract_chain execute needs board_approval_ref + legal_counterparty_ref; several -quantum/-tariff actions likely need numeric inputs). The current best-effort advancer only fires no-field actions; field-required first actions will 422 and show as un-advanced unless the harness supplies minimal valid payloads per action."
+    ]
+  }
+}

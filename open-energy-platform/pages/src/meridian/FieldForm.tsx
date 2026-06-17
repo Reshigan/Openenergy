@@ -3,7 +3,8 @@
 // client-side, coerces values to declared types, and calls onSubmit with a plain values
 // object. Used by the Thread action drawer and the Ledger "+ New" drawer.
 import React from 'react';
-import type { LedgerActionField } from './lib';
+import type { LedgerActionField, LookupOption } from './lib';
+import { fetchLookup } from './lib';
 
 export function FieldForm({ fields, prefill, submitLabel, cascadeHint, ariaLabel, onSubmit, onCancel }: {
   fields: LedgerActionField[];
@@ -26,8 +27,25 @@ export function FieldForm({ fields, prefill, submitLabel, cascadeHint, ariaLabel
   const [missing, setMissing] = React.useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = React.useState(false);
   const [err, setErr] = React.useState<string | null>(null);
+  // Lookup-field options keyed by field key; '' value while loading, [] on error.
+  const [lookups, setLookups] = React.useState<Record<string, LookupOption[] | undefined>>({});
+  const [lookupErr, setLookupErr] = React.useState<Record<string, string>>({});
 
   const set = (key: string, v: unknown) => setValues(prev => ({ ...prev, [key]: v }));
+
+  // Populate lookup pickers on mount from each field's source endpoint.
+  React.useEffect(() => {
+    let live = true;
+    for (const f of fields) {
+      if (f.type !== 'lookup' || !f.source) continue;
+      fetchLookup(f.source)
+        .then(opts => { if (live) setLookups(prev => ({ ...prev, [f.key]: opts })); })
+        .catch(() => { if (live) { setLookups(prev => ({ ...prev, [f.key]: [] })); setLookupErr(prev => ({ ...prev, [f.key]: 'Could not load options' })); } });
+    }
+    return () => { live = false; };
+    // fields is a stable per-render schema; key off its keys to avoid re-fetch loops.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fields.map(f => `${f.key}:${f.source ?? ''}`).join('|')]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -108,6 +126,21 @@ export function FieldForm({ fields, prefill, submitLabel, cascadeHint, ariaLabel
                         value={(values[f.key] as string) ?? ''}
                         placeholder={f.placeholder}
                         onChange={e => set(f.key, e.target.value)} {...errProps} />
+            )}
+            {f.type === 'lookup' && (
+              <select id={id} value={(values[f.key] as string) ?? ''}
+                      onChange={e => set(f.key, e.target.value)}
+                      disabled={lookups[f.key] === undefined} {...errProps}>
+                <option value="" disabled>
+                  {lookups[f.key] === undefined ? 'Loading…' : 'Select…'}
+                </option>
+                {(lookups[f.key] ?? []).map(o => (
+                  <option key={o.id} value={o.id}>{o.label}</option>
+                ))}
+              </select>
+            )}
+            {f.type === 'lookup' && lookupErr[f.key] && (
+              <span className="mono field-required">{lookupErr[f.key]}</span>
             )}
             {flag && <span id={errId} className="mono field-required">required</span>}
           </div>

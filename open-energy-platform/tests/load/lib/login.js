@@ -36,6 +36,26 @@ export function authHeaders(token) {
   return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
 
+// Mint a bundle of tokens ONCE, from k6's setup(). setup() runs a single time
+// and k6 hands its return value to every VU, so a handful of logins here covers
+// the whole fleet for the run. This is the only way a 100+-VU run can avoid
+// firing one login per VU and tripping the 10/5-min/IP sensitive-route limiter
+// (which would also break each scenario's `auth_429: count==0` SLO). Keep the
+// email list at or under the limiter window (<=9 personas). JWT TTL is 1 h;
+// every scenario finishes well inside that, so the tokens stay valid all run.
+export function mintTokenBundle(emails) {
+  const tokens = {};
+  for (const email of emails) tokens[email] = login(email);
+  return tokens;
+}
+
+// Deterministic per-VU token pick from a setup() bundle keyed by email.
+// __VU is 1-indexed; spread VUs evenly across the available personas.
+export function tokenForVU(bundle, vu) {
+  const emails = Object.keys(bundle);
+  return bundle[emails[(vu - 1) % emails.length]];
+}
+
 // Pick one of the 9 demo personas. Used by mixed-load scenarios to spread
 // requests across roles instead of hammering everything as admin.
 export const PERSONAS = [

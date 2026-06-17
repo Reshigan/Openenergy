@@ -18,7 +18,7 @@
 import http from 'k6/http';
 import { sleep, check } from 'k6';
 import { Counter, Trend } from 'k6/metrics';
-import { BASE, login, authHeaders } from './lib/login.js';
+import { BASE, mintTokenBundle, authHeaders, tokenForVU } from './lib/login.js';
 
 const authBlocked = new Counter('auth_429');
 const orderPostLatency = new Trend('order_post_latency_ms', true);
@@ -52,21 +52,17 @@ const TRADER_EMAILS = [
 ];
 
 export function setup() {
-  // One pre-flight login per persona to seed the token cache and surface
-  // auth issues before the run kicks off. Cached at the VU level below.
-  return { ts: Date.now() };
+  // Mint every token ONCE here (2 logins) rather than one-per-VU. With 100 VUs
+  // ramping in, per-VU login would fire ~100 logins from a single IP and trip
+  // the 10/5-min/IP limiter — which would also break the auth_429 SLO below.
+  return { tokens: mintTokenBundle(TRADER_EMAILS) };
 }
 
-let TOKEN = null;
 let MY_OPEN_ORDER_IDS = [];
 
-export default function () {
-  // VU-local token cache. __VU is k6's VU number (1-indexed).
-  if (!TOKEN) {
-    const email = TRADER_EMAILS[__VU % TRADER_EMAILS.length];
-    TOKEN = login(email);
-  }
-  const headers = authHeaders(TOKEN);
+export default function (data) {
+  // Token picked from the setup() bundle — no per-VU login. __VU is 1-indexed.
+  const headers = authHeaders(tokenForVU(data.tokens, __VU));
 
   // 1) Orderbook read — ~50% of all traffic in this scenario.
   const ob = http.get(`${BASE}/api/trading/orderbook?energy_type=solar`, {

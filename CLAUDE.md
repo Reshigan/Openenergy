@@ -22,7 +22,7 @@ npm run check              # backend tsc --noEmit
 npm run check:pages        # SPA tsc --noEmit
 
 # Test
-npm test                   # vitest — 474 unit tests; backend logic, matching, guards
+npm test                   # vitest — 8167 unit tests; backend logic, matching, guards
 npx vitest run path/to/file.test.ts          # single file
 npx vitest run -t "describe substring"       # by name pattern
 npm run test:browser       # Playwright against BASE (defaults to prod)
@@ -55,7 +55,7 @@ A legacy Cloudflare Pages project still exists in the account; the deploy workfl
 
 ### Routes
 
-51 modules in [src/routes/](open-energy-platform/src/routes/), all mounted via `app.route('/api/<prefix>', module)` in [src/index.ts](open-energy-platform/src/index.ts). Auth middleware is applied per-module (`module.use('*', authMiddleware)`), not globally — that's why some routes have an explicit `authMiddleware` import and most don't. Public routes (`/api/auth/login`, `/api/health`) don't run it.
+347 modules in [src/routes/](open-energy-platform/src/routes/), all mounted via `app.route('/api/<prefix>', module)` (360 mounts, now aggregated in [src/routes/mount-routes.ts](open-energy-platform/src/routes/mount-routes.ts) and wired into [src/index.ts](open-energy-platform/src/index.ts)). Auth middleware is applied per-module (`module.use('*', authMiddleware)`), not globally — that's why some routes have an explicit `authMiddleware` import and most don't. Public routes (`/api/auth/login`, `/api/health`) don't run it.
 
 Key cross-cutting helpers in [src/utils/](open-energy-platform/src/utils/):
 - `cascade.ts` — every mutation that matters calls `fireCascade({event, actor_id, entity_type, entity_id, data, env})`. Cascades fan out to action queues, audit chains, briefings, notifications, webhooks with DLQ + retry per stage.
@@ -70,7 +70,7 @@ Key cross-cutting helpers in [src/utils/](open-energy-platform/src/utils/):
 
 ### Migrations
 
-56 numbered migrations in [migrations/](open-energy-platform/migrations/). `wrangler.toml::migrations_dir` wires them in.
+508 numbered migrations in [migrations/](open-energy-platform/migrations/) (highest `508_add_carbon_chain_tier_columns.sql`). `wrangler.toml::migrations_dir` wires them in.
 
 **Migration discipline** (this is non-obvious and load-bearing):
 - 001–018 are clean and idempotent. Apply normally.
@@ -79,7 +79,7 @@ Key cross-cutting helpers in [src/utils/](open-energy-platform/src/utils/):
 - 050 had a CREATE INDEX referencing columns that 020 was supposed to add but didn't. CI reconciles 050 column-by-column with `ALTER TABLE ADD COLUMN` and `duplicate column name` treated as a benign already-applied signal.
 - 051+ apply normally and are idempotent.
 
-`wrangler d1 migrations list ... --remote` will always show 049–056 as "to be applied" because we use `wrangler d1 execute --file` rather than `migrations apply` for the irregular band. This is intentional; don't try to "fix" the ledger.
+`wrangler d1 migrations list ... --remote` will always show 049–508 as "to be applied" because we use `wrangler d1 execute --file` rather than `migrations apply` for the irregular band. This is intentional; don't try to "fix" the ledger.
 
 ### Cron triggers
 

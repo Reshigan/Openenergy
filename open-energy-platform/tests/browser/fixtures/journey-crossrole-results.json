@@ -1,0 +1,1697 @@
+{
+  "total": 89,
+  "advanced": 86,
+  "advanced_via_owning_role": 86,
+  "advanced_via_admin_support_fallback": 0,
+  "all_terminal": 2,
+  "action_hint_gaps": 1,
+  "server_errors": 0,
+  "gaps": [
+    {
+      "key": "oe_dispatch_nominations",
+      "wave": 13,
+      "nonTerminal": 4,
+      "lastReject": "409 raise-dispute/trader: {\"success\":false,\"error\":\"invalid_transition\"}"
+    }
+  ],
+  "cross_role_advances": [
+    {
+      "key": "dfr",
+      "via": "admin",
+      "action": "approve"
+    },
+    {
+      "key": "handover_dossier",
+      "via": "admin",
+      "action": "schedule-witnessed-acceptance"
+    },
+    {
+      "key": "project_risk",
+      "via": "admin",
+      "action": "begin_monitoring"
+    },
+    {
+      "key": "regulator_inbox",
+      "via": "admin",
+      "action": "ack"
+    },
+    {
+      "key": "planned_outage",
+      "via": "admin",
+      "action": "commence"
+    },
+    {
+      "key": "procurement_rfp",
+      "via": "admin",
+      "action": "begin-evaluation"
+    },
+    {
+      "key": "cod_chain",
+      "via": "admin",
+      "action": "mobilize"
+    },
+    {
+      "key": "drawdown",
+      "via": "admin",
+      "action": "fund"
+    },
+    {
+      "key": "ppa_contract_chain",
+      "via": "admin",
+      "action": "lock-terms"
+    },
+    {
+      "key": "insurance_claim",
+      "via": "admin",
+      "action": "assign-adjuster"
+    },
+    {
+      "key": "pr_underperformance",
+      "via": "admin",
+      "action": "close"
+    },
+    {
+      "key": "hse_incident",
+      "via": "admin",
+      "action": "begin-investigation"
+    },
+    {
+      "key": "cyber_incident",
+      "via": "admin",
+      "action": "contain"
+    },
+    {
+      "key": "ed_commitment",
+      "via": "admin",
+      "action": "activate-monitoring"
+    },
+    {
+      "key": "gca_connection",
+      "via": "admin",
+      "action": "commission"
+    },
+    {
+      "key": "poslimit_case",
+      "via": "admin",
+      "action": "escalate-overnight"
+    },
+    {
+      "key": "disbursement_case",
+      "via": "admin",
+      "action": "request-invoices"
+    },
+    {
+      "key": "disposition",
+      "via": "admin",
+      "action": "require-action"
+    },
+    {
+      "key": "ppa_take_or_pay",
+      "via": "admin",
+      "action": "issue-statement"
+    },
+    {
+      "key": "licence_renewal",
+      "via": "admin",
+      "action": "check-completeness"
+    },
+    {
+      "key": "load_curtailment",
+      "via": "admin",
+      "action": "open-post-mortem"
+    },
+    {
+      "key": "vendor_escalation",
+      "via": "admin",
+      "action": "oem-investigate"
+    },
+    {
+      "key": "best_execution",
+      "via": "admin",
+      "action": "evaluate"
+    },
+    {
+      "key": "carbon_registration",
+      "via": "admin",
+      "action": "draft-pdd"
+    },
+    {
+      "key": "covenant_certificate",
+      "via": "admin",
+      "action": "request-waiver"
+    },
+    {
+      "key": "tariff_indexation",
+      "via": "admin",
+      "action": "calculate-escalation"
+    },
+    {
+      "key": "compliance_inspection",
+      "via": "admin",
+      "action": "begin-inspection"
+    },
+    {
+      "key": "problem_record",
+      "via": "admin",
+      "action": "begin-investigation"
+    },
+    {
+      "key": "carbon_reversal",
+      "via": "admin",
+      "action": "close"
+    },
+    {
+      "key": "tariff_determination",
+      "via": "admin",
+      "action": "implement"
+    },
+    {
+      "key": "trade_report",
+      "via": "admin",
+      "action": "reconcile"
+    },
+    {
+      "key": "loan_default",
+      "via": "admin",
+      "action": "reserve-rights"
+    },
+    {
+      "key": "curtailment_claim",
+      "via": "admin",
+      "action": "begin-validation"
+    },
+    {
+      "key": "change_request",
+      "via": "admin",
+      "action": "schedule"
+    },
+    {
+      "key": "carbon_offset_claim",
+      "via": "admin",
+      "action": "screen-eligibility"
+    },
+    {
+      "key": "licence_application",
+      "via": "admin",
+      "action": "request-info"
+    },
+    {
+      "key": "reserve_activation",
+      "via": "admin",
+      "action": "settle-penalty"
+    },
+    {
+      "key": "availability_guarantee",
+      "via": "admin",
+      "action": "submit-measurement"
+    },
+    {
+      "key": "market_abuse_case",
+      "via": "admin",
+      "action": "open-investigation"
+    },
+    {
+      "key": "credit_facility_application",
+      "via": "admin",
+      "action": "assess"
+    },
+    {
+      "key": "ppa_payment_security",
+      "via": "admin",
+      "action": "begin-verification"
+    },
+    {
+      "key": "security_remediation",
+      "via": "admin",
+      "action": "assess-impact"
+    },
+    {
+      "key": "crediting_period_renewal",
+      "via": "admin",
+      "action": "resubmit"
+    },
+    {
+      "key": "sseg_registration",
+      "via": "admin",
+      "action": "determine-exemption"
+    },
+    {
+      "key": "rez_capacity",
+      "via": "admin",
+      "action": "withdraw"
+    },
+    {
+      "key": "pm_compliance",
+      "via": "admin",
+      "action": "approve-deferral"
+    },
+    {
+      "key": "algo_certification",
+      "via": "admin",
+      "action": "start-conformance"
+    },
+    {
+      "key": "loan_transfer",
+      "via": "admin",
+      "action": "resubmit-screening"
+    },
+    {
+      "key": "ppa_termination",
+      "via": "admin",
+      "action": "resolve-dispute"
+    },
+    {
+      "key": "warranty_recovery",
+      "via": "admin",
+      "action": "submit-claim"
+    },
+    {
+      "key": "permit_to_work",
+      "via": "admin",
+      "action": "approve-isolation-plan"
+    },
+    {
+      "key": "carbon_erpa",
+      "via": "admin",
+      "action": "schedule-delivery"
+    },
+    {
+      "key": "complaint_resolution",
+      "via": "admin",
+      "action": "settle-at-licensee"
+    },
+    {
+      "key": "grid_code_compliance",
+      "via": "admin",
+      "action": "confirm-compliance"
+    },
+    {
+      "key": "gcc_ncr",
+      "via": "admin",
+      "action": "begin-remediation"
+    },
+    {
+      "key": "counterparty_margin",
+      "via": "admin",
+      "action": "draw-default-fund"
+    },
+    {
+      "key": "security_perfection",
+      "via": "admin",
+      "action": "execute-security"
+    },
+    {
+      "key": "rec_lifecycle",
+      "via": "admin",
+      "action": "transfer-certificate"
+    },
+    {
+      "key": "asset_prognostics",
+      "via": "admin",
+      "action": "raise-work-order"
+    },
+    {
+      "key": "spare_parts_provisioning",
+      "via": "admin",
+      "action": "issue-po"
+    },
+    {
+      "key": "poa_cpa_inclusion",
+      "via": "admin",
+      "action": "check-methodology"
+    },
+    {
+      "key": "levy_assessment",
+      "via": "admin",
+      "action": "issue-invoice"
+    },
+    {
+      "key": "connection_energization",
+      "via": "admin",
+      "action": "conduct-inspection"
+    },
+    {
+      "key": "trade_allocation",
+      "via": "admin",
+      "action": "issue-confirmation"
+    },
+    {
+      "key": "reserve_account",
+      "via": "admin",
+      "action": "commence-funding"
+    },
+    {
+      "key": "ppa_change_in_law",
+      "via": "admin",
+      "action": "confirm-eligible"
+    },
+    {
+      "key": "generation_revenue_assurance",
+      "via": "admin",
+      "action": "open-investigation"
+    },
+    {
+      "key": "service_contract",
+      "via": "admin",
+      "action": "accept_quote"
+    },
+    {
+      "key": "project_change_order",
+      "via": "admin",
+      "action": "begin-screening"
+    },
+    {
+      "key": "carbon_issuance",
+      "via": "admin",
+      "action": "verify-against-mrv"
+    },
+    {
+      "key": "black_start",
+      "via": "admin",
+      "action": "award-contract"
+    },
+    {
+      "key": "settlement_fail",
+      "via": "admin",
+      "action": "write-off"
+    },
+    {
+      "key": "dscr_monitoring",
+      "via": "admin",
+      "action": "validate-cure"
+    },
+    {
+      "key": "ppa_nomination",
+      "via": "admin",
+      "action": "resolve-dispute"
+    },
+    {
+      "key": "bess_soh",
+      "via": "admin",
+      "action": "recommission"
+    },
+    {
+      "key": "oem_fco",
+      "via": "admin",
+      "action": "approve_campaign"
+    },
+    {
+      "key": "benchmark_transition",
+      "via": "admin",
+      "action": "raise-dispute"
+    },
+    {
+      "key": "ccp_assessment",
+      "via": "admin",
+      "action": "resume"
+    },
+    {
+      "key": "enforcement_action",
+      "via": "admin",
+      "action": "open-representations"
+    },
+    {
+      "key": "sll_kpi",
+      "via": "admin",
+      "action": "start-verification"
+    },
+    {
+      "key": "submittal_rfi",
+      "via": "admin",
+      "action": "incorporate"
+    },
+    {
+      "key": "punch_list",
+      "via": "admin",
+      "action": "assess"
+    },
+    {
+      "key": "itp",
+      "via": "admin",
+      "action": "release-for-use"
+    },
+    {
+      "key": "ppa_annual_recon",
+      "via": "admin",
+      "action": "compute-top-residual"
+    },
+    {
+      "key": "soiling_audit",
+      "via": "admin",
+      "action": "start-cleaning"
+    },
+    {
+      "key": "esg_disclosure",
+      "via": "admin",
+      "action": "submit-for-review"
+    }
+  ],
+  "rows": [
+    {
+      "key": "dfr",
+      "wave": 0,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "approve",
+      "advanceRowId": "dfr_005",
+      "viaFallback": false,
+      "attempts": 10,
+      "lastReject": "403 start_review/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced under_review via admin → approve"
+    },
+    {
+      "key": "handover_dossier",
+      "wave": 0,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "schedule-witnessed-acceptance",
+      "advanceRowId": "hndvr_005",
+      "viaFallback": false,
+      "attempts": 25,
+      "lastReject": "422 revise-and-resubmit/support: {\"success\":false,\"error\":\"Invalid transition: approved -> revise_and_resubmit\"}",
+      "note": "advanced approved via admin → schedule-witnessed-acceptance"
+    },
+    {
+      "key": "project_risk",
+      "wave": 0,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "begin_monitoring",
+      "advanceRowId": "prj_risk_005",
+      "viaFallback": false,
+      "attempts": 13,
+      "lastReject": "403 execute_response/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced response_active via admin → begin_monitoring"
+    },
+    {
+      "key": "regulator_inbox",
+      "wave": 5,
+      "ledgerRows": 200,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "ack",
+      "advanceRowId": "id_mpoisyclbqihtpz",
+      "viaFallback": false,
+      "attempts": 1,
+      "lastReject": null,
+      "note": "advanced escalated via admin → ack"
+    },
+    {
+      "key": "ppa_obligation",
+      "wave": 7,
+      "ledgerRows": 3,
+      "nonTerminal": 0,
+      "advanced": false,
+      "advancedVia": null,
+      "advanceAction": null,
+      "advanceRowId": null,
+      "viaFallback": false,
+      "attempts": 0,
+      "lastReject": null,
+      "note": "all rows terminal — data-state gap"
+    },
+    {
+      "key": "oe_dispatch_nominations",
+      "wave": 13,
+      "ledgerRows": 13,
+      "nonTerminal": 4,
+      "advanced": false,
+      "advancedVia": null,
+      "advanceAction": null,
+      "advanceRowId": null,
+      "viaFallback": false,
+      "attempts": 40,
+      "lastReject": "409 raise-dispute/trader: {\"success\":false,\"error\":\"invalid_transition\"}",
+      "note": "no registry action valid from any non-terminal row across any lane (40 attempts) — action-hint gap"
+    },
+    {
+      "key": "carbon_retirement",
+      "wave": 17,
+      "ledgerRows": 16,
+      "nonTerminal": 0,
+      "advanced": false,
+      "advancedVia": null,
+      "advanceAction": null,
+      "advanceRowId": null,
+      "viaFallback": false,
+      "attempts": 0,
+      "lastReject": null,
+      "note": "all rows terminal — data-state gap"
+    },
+    {
+      "key": "planned_outage",
+      "wave": 18,
+      "ledgerRows": 13,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "commence",
+      "advanceRowId": "pln_out_007",
+      "viaFallback": false,
+      "attempts": 17,
+      "lastReject": "403 notify/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced notified via admin → commence"
+    },
+    {
+      "key": "procurement_rfp",
+      "wave": 19,
+      "ledgerRows": 14,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "begin-evaluation",
+      "advanceRowId": "rfp_009",
+      "viaFallback": false,
+      "attempts": 52,
+      "lastReject": "409 close-bids/ipp: {\"success\":false,\"error\":\"invalid_transition\"}",
+      "note": "advanced bid_closed via admin → begin-evaluation"
+    },
+    {
+      "key": "cod_chain",
+      "wave": 20,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "mobilize",
+      "advanceRowId": "cod_003",
+      "viaFallback": false,
+      "attempts": 13,
+      "lastReject": "409 issue-ntp/ipp: {\"success\":false,\"error\":\"invalid_transition\"}",
+      "note": "advanced ntp_issued via admin → mobilize"
+    },
+    {
+      "key": "drawdown",
+      "wave": 21,
+      "ledgerRows": 10,
+      "nonTerminal": 3,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "fund",
+      "advanceRowId": "dd_006",
+      "viaFallback": false,
+      "attempts": 19,
+      "lastReject": "409 resume/ipp: {\"success\":false,\"error\":\"invalid_transition\"}",
+      "note": "advanced approved via admin → fund"
+    },
+    {
+      "key": "ppa_contract_chain",
+      "wave": 22,
+      "ledgerRows": 13,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "lock-terms",
+      "advanceRowId": "ppa_002",
+      "viaFallback": false,
+      "attempts": 10,
+      "lastReject": "409 begin-negotiation/offtaker: {\"success\":false,\"error\":\"invalid_transition\"}",
+      "note": "advanced in_negotiation via admin → lock-terms"
+    },
+    {
+      "key": "insurance_claim",
+      "wave": 23,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "assign-adjuster",
+      "advanceRowId": "clm_002",
+      "viaFallback": false,
+      "attempts": 13,
+      "lastReject": "422 begin-assessment/ipp: {\"success\":false,\"error\":\"Invalid transition: assessing → begin_assessment\"}",
+      "note": "advanced assessing via admin → assign-adjuster"
+    },
+    {
+      "key": "pr_underperformance",
+      "wave": 24,
+      "ledgerRows": 9,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "close",
+      "advanceRowId": "pr_006",
+      "viaFallback": false,
+      "attempts": 19,
+      "lastReject": "422 complete-rca/ipp: {\"success\":false,\"error\":\"Invalid transition: verified → complete_rca\"}",
+      "note": "advanced verified via admin → close"
+    },
+    {
+      "key": "hse_incident",
+      "wave": 25,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "begin-investigation",
+      "advanceRowId": "hse_003",
+      "viaFallback": false,
+      "attempts": 7,
+      "lastReject": "422 notify-authority/ipp: {\"success\":false,\"error\":\"Invalid transition: notified_authority → notify_authority\"}",
+      "note": "advanced notified_authority via admin → begin-investigation"
+    },
+    {
+      "key": "cyber_incident",
+      "wave": 26,
+      "ledgerRows": 12,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "contain",
+      "advanceRowId": "cyb_002",
+      "viaFallback": false,
+      "attempts": 4,
+      "lastReject": "403 triage/compliance: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced triaged via admin → contain"
+    },
+    {
+      "key": "ed_commitment",
+      "wave": 27,
+      "ledgerRows": 12,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "activate-monitoring",
+      "advanceRowId": "ed_001",
+      "viaFallback": false,
+      "attempts": 13,
+      "lastReject": "422 issue-penalty/ipp_developer: {\"success\":false,\"error\":\"Invalid transition: baseline_locked → issue_penalty\"}",
+      "note": "advanced baseline_locked via admin → activate-monitoring"
+    },
+    {
+      "key": "gca_connection",
+      "wave": 28,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "commission",
+      "advanceRowId": "gca_009",
+      "viaFallback": false,
+      "attempts": 33,
+      "lastReject": "422 begin-construction/ipp_developer: {\"success\":false,\"error\":\"Invalid transition: energised → begin_construction\"}",
+      "note": "advanced energised via admin → commission"
+    },
+    {
+      "key": "poslimit_case",
+      "wave": 29,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "escalate-overnight",
+      "advanceRowId": "pos_003",
+      "viaFallback": false,
+      "attempts": 17,
+      "lastReject": "403 escalate-intraday/compliance: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced soft_breach via admin → escalate-overnight"
+    },
+    {
+      "key": "disbursement_case",
+      "wave": 30,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "request-invoices",
+      "advanceRowId": "dsb_001",
+      "viaFallback": false,
+      "attempts": 4,
+      "lastReject": "404 close-reconciliation/lender: {\"success\":false,\"error\":\"Not found\"}",
+      "note": "advanced tranche_released via admin → request-invoices"
+    },
+    {
+      "key": "disposition",
+      "wave": 31,
+      "ledgerRows": 11,
+      "nonTerminal": 3,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "require-action",
+      "advanceRowId": "disp_004",
+      "viaFallback": false,
+      "attempts": 4,
+      "lastReject": "422 triage/regulator: {\"success\":false,\"error\":\"Invalid transition: investigating → triage\"}",
+      "note": "advanced investigating via admin → require-action"
+    },
+    {
+      "key": "ppa_take_or_pay",
+      "wave": 32,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "issue-statement",
+      "advanceRowId": "top_002",
+      "viaFallback": false,
+      "attempts": 15,
+      "lastReject": "422 close-year/support: {\"success\":false,\"error\":\"Invalid transition: year_end → close_year\"}",
+      "note": "advanced year_end via admin → issue-statement"
+    },
+    {
+      "key": "licence_renewal",
+      "wave": 33,
+      "ledgerRows": 12,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "check-completeness",
+      "advanceRowId": "lr_002",
+      "viaFallback": false,
+      "attempts": 11,
+      "lastReject": "422 grant/regulator: {\"success\":false,\"error\":\"Invalid transition: application_filed → grant\"}",
+      "note": "advanced application_filed via admin → check-completeness"
+    },
+    {
+      "key": "load_curtailment",
+      "wave": 34,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "open-post-mortem",
+      "advanceRowId": "lc_007",
+      "viaFallback": false,
+      "attempts": 19,
+      "lastReject": "422 reconcile/support: {\"success\":false,\"error\":\"Invalid transition: reconciled → reconcile\"}",
+      "note": "advanced reconciled via admin → open-post-mortem"
+    },
+    {
+      "key": "vendor_escalation",
+      "wave": 35,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "oem-investigate",
+      "advanceRowId": "vesc_004",
+      "viaFallback": false,
+      "attempts": 16,
+      "lastReject": "422 issue-recall/ipp_developer: {\"success\":false,\"error\":\"Invalid transition: escalated_to_oem → issue_recall\"}",
+      "note": "advanced escalated_to_oem via admin → oem-investigate"
+    },
+    {
+      "key": "best_execution",
+      "wave": 36,
+      "ledgerRows": 12,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "evaluate",
+      "advanceRowId": "bex_002",
+      "viaFallback": false,
+      "attempts": 13,
+      "lastReject": "422 record-quotes/trader: {\"success\":false,\"error\":\"Invalid transition: quotes_received → record_quotes\"}",
+      "note": "advanced quotes_received via admin → evaluate"
+    },
+    {
+      "key": "carbon_registration",
+      "wave": 37,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "draft-pdd",
+      "advanceRowId": "creg_001",
+      "viaFallback": false,
+      "attempts": 7,
+      "lastReject": "422 register/carbon_fund: {\"success\":false,\"error\":\"Invalid transition: pin_submitted → register\"}",
+      "note": "advanced pin_submitted via admin → draft-pdd"
+    },
+    {
+      "key": "covenant_certificate",
+      "wave": 38,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "request-waiver",
+      "advanceRowId": "covcert_006",
+      "viaFallback": false,
+      "attempts": 19,
+      "lastReject": "422 flag-non-submission/lender: {\"success\":false,\"error\":\"Invalid transition: breach_identified → flag_non_submission\"}",
+      "note": "advanced breach_identified via admin → request-waiver"
+    },
+    {
+      "key": "tariff_indexation",
+      "wave": 39,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "calculate-escalation",
+      "advanceRowId": "tidx_002",
+      "viaFallback": false,
+      "attempts": 13,
+      "lastReject": "422 publish-index/ipp_developer: {\"success\":false,\"error\":\"Invalid transition: index_published → publish_index\"}",
+      "note": "advanced index_published via admin → calculate-escalation"
+    },
+    {
+      "key": "compliance_inspection",
+      "wave": 40,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "begin-inspection",
+      "advanceRowId": "cinsp_001",
+      "viaFallback": false,
+      "attempts": 18,
+      "lastReject": "422 impose-penalty/regulator: {\"success\":false,\"error\":\"Invalid transition: inspection_scheduled → impose_penalty\"}",
+      "note": "advanced inspection_scheduled via admin → begin-inspection"
+    },
+    {
+      "key": "problem_record",
+      "wave": 41,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "begin-investigation",
+      "advanceRowId": "prob_001",
+      "viaFallback": false,
+      "attempts": 3,
+      "lastReject": "422 categorize/support: {\"success\":false,\"error\":\"Invalid transition: categorized → categorize\"}",
+      "note": "advanced categorized via admin → begin-investigation"
+    },
+    {
+      "key": "carbon_reversal",
+      "wave": 42,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "close",
+      "advanceRowId": "crev_008",
+      "viaFallback": false,
+      "attempts": 22,
+      "lastReject": "422 verify-replacement/carbon_fund: {\"success\":false,\"error\":\"Invalid transition: replacement_verified → verify_replacement\"}",
+      "note": "advanced replacement_verified via admin → close"
+    },
+    {
+      "key": "tariff_determination",
+      "wave": 43,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "implement",
+      "advanceRowId": "tdet_006",
+      "viaFallback": false,
+      "attempts": 27,
+      "lastReject": "422 table-for-council/regulator: {\"success\":false,\"error\":\"Invalid transition: reconsideration_requested → table_for_council\"}",
+      "note": "advanced reconsideration_requested via admin → implement"
+    },
+    {
+      "key": "trade_report",
+      "wave": 44,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "reconcile",
+      "advanceRowId": "trpt_006",
+      "viaFallback": false,
+      "attempts": 13,
+      "lastReject": "422 acknowledge/trader: {\"success\":false,\"error\":\"Invalid transition: break_resolved → acknowledge\"}",
+      "note": "advanced break_resolved via admin → reconcile"
+    },
+    {
+      "key": "loan_default",
+      "wave": 45,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "reserve-rights",
+      "advanceRowId": "ldef_002",
+      "viaFallback": false,
+      "attempts": 10,
+      "lastReject": "422 begin-review/lender: {\"success\":false,\"error\":\"Invalid transition: under_review → begin_review\"}",
+      "note": "advanced under_review via admin → reserve-rights"
+    },
+    {
+      "key": "curtailment_claim",
+      "wave": 46,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "begin-validation",
+      "advanceRowId": "cec_003",
+      "viaFallback": false,
+      "attempts": 16,
+      "lastReject": "422 begin-classification/offtaker: {\"success\":false,\"error\":\"Invalid transition: claim_submitted → begin_classification\"}",
+      "note": "advanced claim_submitted via admin → begin-validation"
+    },
+    {
+      "key": "change_request",
+      "wave": 47,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "schedule",
+      "advanceRowId": "chg_004",
+      "viaFallback": false,
+      "attempts": 11,
+      "lastReject": "422 roll-back/support: {\"success\":false,\"error\":\"Invalid transition: approved → roll_back\"}",
+      "note": "advanced approved via admin → schedule"
+    },
+    {
+      "key": "carbon_offset_claim",
+      "wave": 48,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "screen-eligibility",
+      "advanceRowId": "coc_001",
+      "viaFallback": false,
+      "attempts": 10,
+      "lastReject": "403 claw-back/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced claim_drafted via admin → screen-eligibility"
+    },
+    {
+      "key": "licence_application",
+      "wave": 49,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "request-info",
+      "advanceRowId": "lapp_002",
+      "viaFallback": false,
+      "attempts": 18,
+      "lastReject": "422 begin-review/regulator: {\"success\":false,\"error\":\"Invalid transition: completeness_review → begin_review\"}",
+      "note": "advanced completeness_review via admin → request-info"
+    },
+    {
+      "key": "reserve_activation",
+      "wave": 50,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "settle-penalty",
+      "advanceRowId": "ra_009",
+      "viaFallback": false,
+      "attempts": 29,
+      "lastReject": "422 verify-performance/grid_operator: {\"success\":false,\"error\":\"Invalid transition: non_performance → verify_performance\"}",
+      "note": "advanced non_performance via admin → settle-penalty"
+    },
+    {
+      "key": "availability_guarantee",
+      "wave": 51,
+      "ledgerRows": 20,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "submit-measurement",
+      "advanceRowId": "avg_001",
+      "viaFallback": false,
+      "attempts": 1,
+      "lastReject": null,
+      "note": "advanced period_open via admin → submit-measurement"
+    },
+    {
+      "key": "market_abuse_case",
+      "wave": 52,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "open-investigation",
+      "advanceRowId": "mac_002",
+      "viaFallback": false,
+      "attempts": 10,
+      "lastReject": "403 triage/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced triaged via admin → open-investigation"
+    },
+    {
+      "key": "credit_facility_application",
+      "wave": 53,
+      "ledgerRows": 12,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "assess",
+      "advanceRowId": "ca_002",
+      "viaFallback": false,
+      "attempts": 7,
+      "lastReject": "422 screen/lender: {\"success\":false,\"error\":\"Invalid transition: screening → screen\"}",
+      "note": "advanced screening via admin → assess"
+    },
+    {
+      "key": "ppa_payment_security",
+      "wave": 54,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "begin-verification",
+      "advanceRowId": "ps_007",
+      "viaFallback": false,
+      "attempts": 13,
+      "lastReject": "422 forfeit/ipp_developer: {\"success\":false,\"error\":\"Invalid transition: instrument_submitted → forfeit\"}",
+      "note": "advanced instrument_submitted via admin → begin-verification"
+    },
+    {
+      "key": "security_remediation",
+      "wave": 55,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "assess-impact",
+      "advanceRowId": "srm_002",
+      "viaFallback": false,
+      "attempts": 11,
+      "lastReject": "422 roll-back/support: {\"success\":false,\"error\":\"Invalid transition: triaged → roll_back\"}",
+      "note": "advanced triaged via admin → assess-impact"
+    },
+    {
+      "key": "crediting_period_renewal",
+      "wave": 56,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "resubmit",
+      "advanceRowId": "cpr_009",
+      "viaFallback": false,
+      "attempts": 13,
+      "lastReject": "403 request-revision/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced revision_requested via admin → resubmit"
+    },
+    {
+      "key": "sseg_registration",
+      "wave": 57,
+      "ledgerRows": 21,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "determine-exemption",
+      "advanceRowId": "sseg_004",
+      "viaFallback": false,
+      "attempts": 19,
+      "lastReject": "422 begin-verification/regulator: {\"success\":false,\"error\":\"Invalid transition: technical_verification → begin_verification\"}",
+      "note": "advanced technical_verification via admin → determine-exemption"
+    },
+    {
+      "key": "rez_capacity",
+      "wave": 58,
+      "ledgerRows": 11,
+      "nonTerminal": 3,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "withdraw",
+      "advanceRowId": "gcap_002",
+      "viaFallback": false,
+      "attempts": 17,
+      "lastReject": "422 reject-application/grid_operator: {\"success\":false,\"error\":\"Invalid transition: completeness_screening → reject_application\"}",
+      "note": "advanced completeness_screening via admin → withdraw"
+    },
+    {
+      "key": "pm_compliance",
+      "wave": 59,
+      "ledgerRows": 10,
+      "nonTerminal": 3,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "approve-deferral",
+      "advanceRowId": "pmc_010",
+      "viaFallback": false,
+      "attempts": 10,
+      "lastReject": "422 close-pm/ipp_developer: {\"success\":false,\"error\":\"Invalid transition: deferral_requested → close_pm\"}",
+      "note": "advanced deferral_requested via admin → approve-deferral"
+    },
+    {
+      "key": "algo_certification",
+      "wave": 60,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "start-conformance",
+      "advanceRowId": "aco_002",
+      "viaFallback": false,
+      "attempts": 11,
+      "lastReject": "403 begin-review/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced documentation_review via admin → start-conformance"
+    },
+    {
+      "key": "loan_transfer",
+      "wave": 61,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "resubmit-screening",
+      "advanceRowId": "ltr_003",
+      "viaFallback": false,
+      "attempts": 10,
+      "lastReject": "422 request-remediation/lender: {\"success\":false,\"error\":\"Invalid transition: screening_remediation → request_remediation\"}",
+      "note": "advanced screening_remediation via admin → resubmit-screening"
+    },
+    {
+      "key": "ppa_termination",
+      "wave": 62,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "resolve-dispute",
+      "advanceRowId": "pter_008",
+      "viaFallback": false,
+      "attempts": 25,
+      "lastReject": "403 open-eta-assessment/ipp_developer: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced disputed via admin → resolve-dispute"
+    },
+    {
+      "key": "warranty_recovery",
+      "wave": 63,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "submit-claim",
+      "advanceRowId": "wrec_001",
+      "viaFallback": false,
+      "attempts": 25,
+      "lastReject": "422 withdraw/support: {\"success\":false,\"error\":\"Invalid transition: approved → withdraw\"}",
+      "note": "advanced claim_drafted via admin → submit-claim"
+    },
+    {
+      "key": "permit_to_work",
+      "wave": 64,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "approve-isolation-plan",
+      "advanceRowId": "ptw_002",
+      "viaFallback": false,
+      "attempts": 16,
+      "lastReject": "422 begin-assessment/ipp_developer: {\"success\":false,\"error\":\"Invalid transition: hazard_assessment → begin_assessment\"}",
+      "note": "advanced hazard_assessment via admin → approve-isolation-plan"
+    },
+    {
+      "key": "carbon_erpa",
+      "wave": 65,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "schedule-delivery",
+      "advanceRowId": "erpa_001",
+      "viaFallback": false,
+      "attempts": 13,
+      "lastReject": "403 execute-erpa/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced erpa_executed via admin → schedule-delivery"
+    },
+    {
+      "key": "complaint_resolution",
+      "wave": 66,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "settle-at-licensee",
+      "advanceRowId": "cmp_003",
+      "viaFallback": false,
+      "attempts": 13,
+      "lastReject": "403 refer-to-licensee/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced referred_to_licensee via admin → settle-at-licensee"
+    },
+    {
+      "key": "grid_code_compliance",
+      "wave": 67,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "confirm-compliance",
+      "advanceRowId": "gcc_006",
+      "viaFallback": false,
+      "attempts": 25,
+      "lastReject": "422 initiate-retest/grid_operator: {\"success\":false,\"error\":\"Invalid transition: compliance_retest → initiate_retest\"}",
+      "note": "advanced compliance_retest via admin → confirm-compliance"
+    },
+    {
+      "key": "gcc_ncr",
+      "wave": 67,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "begin-remediation",
+      "advanceRowId": "gcc_004",
+      "viaFallback": false,
+      "attempts": 13,
+      "lastReject": "422 approve-cap/grid_operator: {\"success\":false,\"error\":\"Invalid transition: cap_approved → approve_cap\"}",
+      "note": "advanced cap_approved via admin → begin-remediation"
+    },
+    {
+      "key": "counterparty_margin",
+      "wave": 68,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "draw-default-fund",
+      "advanceRowId": "ccm_008",
+      "viaFallback": false,
+      "attempts": 22,
+      "lastReject": "403 begin-close-out/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced close_out via admin → draw-default-fund"
+    },
+    {
+      "key": "security_perfection",
+      "wave": 69,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "execute-security",
+      "advanceRowId": "spf_002",
+      "viaFallback": false,
+      "attempts": 9,
+      "lastReject": "403 begin-documentation/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced documentation_pending via admin → execute-security"
+    },
+    {
+      "key": "rec_lifecycle",
+      "wave": 70,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "transfer-certificate",
+      "advanceRowId": "rec_004",
+      "viaFallback": false,
+      "attempts": 17,
+      "lastReject": "403 list-for-transfer/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced listed_for_transfer via admin → transfer-certificate"
+    },
+    {
+      "key": "asset_prognostics",
+      "wave": 71,
+      "ledgerRows": 10,
+      "nonTerminal": 3,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "raise-work-order",
+      "advanceRowId": "aprog_004",
+      "viaFallback": false,
+      "attempts": 3,
+      "lastReject": "422 triage-prediction/support: {\"success\":false,\"error\":\"Invalid transition: action_planned → triage_prediction\"}",
+      "note": "advanced action_planned via admin → raise-work-order"
+    },
+    {
+      "key": "spare_parts_provisioning",
+      "wave": 72,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "issue-po",
+      "advanceRowId": "spp_002",
+      "viaFallback": false,
+      "attempts": 3,
+      "lastReject": "422 raise-requisition/support: {\"success\":false,\"error\":\"Invalid transition: requisition_approved → raise_requisition\"}",
+      "note": "advanced requisition_approved via admin → issue-po"
+    },
+    {
+      "key": "poa_cpa_inclusion",
+      "wave": 73,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "check-methodology",
+      "advanceRowId": "poa_002",
+      "viaFallback": false,
+      "attempts": 10,
+      "lastReject": "403 exclude-cpa/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced eligibility_screening via admin → check-methodology"
+    },
+    {
+      "key": "levy_assessment",
+      "wave": 74,
+      "ledgerRows": 12,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "issue-invoice",
+      "advanceRowId": "levy_002",
+      "viaFallback": false,
+      "attempts": 1,
+      "lastReject": null,
+      "note": "advanced assessment_review via admin → issue-invoice"
+    },
+    {
+      "key": "connection_energization",
+      "wave": 75,
+      "ledgerRows": 11,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "conduct-inspection",
+      "advanceRowId": "cen_003",
+      "viaFallback": false,
+      "attempts": 16,
+      "lastReject": "422 approve-program/grid_operator: {\"success\":false,\"error\":\"Invalid transition: program_approved → approve_program\"}",
+      "note": "advanced program_approved via admin → conduct-inspection"
+    },
+    {
+      "key": "trade_allocation",
+      "wave": 76,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "issue-confirmation",
+      "advanceRowId": "alloc_009",
+      "viaFallback": false,
+      "attempts": 19,
+      "lastReject": "403 accept-give-up/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced break_review via admin → issue-confirmation"
+    },
+    {
+      "key": "reserve_account",
+      "wave": 77,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "commence-funding",
+      "advanceRowId": "res_002",
+      "viaFallback": false,
+      "attempts": 19,
+      "lastReject": "403 schedule-funding/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced funding_scheduled via admin → commence-funding"
+    },
+    {
+      "key": "ppa_change_in_law",
+      "wave": 78,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "confirm-eligible",
+      "advanceRowId": "cil_002",
+      "viaFallback": false,
+      "attempts": 16,
+      "lastReject": "403 open-eligibility-review/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced eligibility_review via admin → confirm-eligible"
+    },
+    {
+      "key": "generation_revenue_assurance",
+      "wave": 79,
+      "ledgerRows": 20,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "open-investigation",
+      "advanceRowId": "gra_004",
+      "viaFallback": false,
+      "attempts": 17,
+      "lastReject": "422 close-clean/support: {\"success\":false,\"error\":\"Invalid transition: variance_flagged → close_clean\"}",
+      "note": "advanced variance_flagged via admin → open-investigation"
+    },
+    {
+      "key": "service_contract",
+      "wave": 80,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "accept_quote",
+      "advanceRowId": "svc_001",
+      "viaFallback": false,
+      "attempts": 3,
+      "lastReject": "422 issue_quote/support: {\"success\":false,\"error\":\"Invalid transition: quoted → issue_quote\"}",
+      "note": "advanced quoted via admin → accept_quote"
+    },
+    {
+      "key": "project_change_order",
+      "wave": 81,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "begin-screening",
+      "advanceRowId": "pco_002",
+      "viaFallback": false,
+      "attempts": 16,
+      "lastReject": "403 raise_dispute/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced submitted via admin → begin-screening"
+    },
+    {
+      "key": "carbon_issuance",
+      "wave": 82,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "verify-against-mrv",
+      "advanceRowId": "cis_002",
+      "viaFallback": false,
+      "attempts": 4,
+      "lastReject": "403 begin-screening/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced screening via admin → verify-against-mrv"
+    },
+    {
+      "key": "black_start",
+      "wave": 84,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "award-contract",
+      "advanceRowId": "bsc_003",
+      "viaFallback": false,
+      "attempts": 1,
+      "lastReject": null,
+      "note": "advanced bid_evaluation via admin → award-contract"
+    },
+    {
+      "key": "settlement_fail",
+      "wave": 85,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "write-off",
+      "advanceRowId": "sf_002",
+      "viaFallback": false,
+      "attempts": 7,
+      "lastReject": "422 close-resolved/trader: {\"success\":false,\"error\":\"Invalid transition: fail_recorded -> close_resolved\"}",
+      "note": "advanced fail_recorded via admin → write-off"
+    },
+    {
+      "key": "dscr_monitoring",
+      "wave": 86,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "validate-cure",
+      "advanceRowId": "dscr_008",
+      "viaFallback": false,
+      "attempts": 31,
+      "lastReject": "403 execute-cure/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced cure_in_progress via admin → validate-cure"
+    },
+    {
+      "key": "ppa_nomination",
+      "wave": 87,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "resolve-dispute",
+      "advanceRowId": "ppn_008",
+      "viaFallback": false,
+      "attempts": 28,
+      "lastReject": "403 complete-delivery/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced dispute_raised via admin → resolve-dispute"
+    },
+    {
+      "key": "bess_soh",
+      "wave": 88,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "recommission",
+      "advanceRowId": "bsoh_007",
+      "viaFallback": false,
+      "attempts": 9,
+      "lastReject": "422 complete-works/support: {\"success\":false,\"error\":\"Invalid transition: augmentation_complete -> complete_works\"}",
+      "note": "advanced augmentation_complete via admin → recommission"
+    },
+    {
+      "key": "oem_fco",
+      "wave": 89,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "approve_campaign",
+      "advanceRowId": "fco_002",
+      "viaFallback": false,
+      "attempts": 3,
+      "lastReject": "422 submit_for_review/support: {\"success\":false,\"error\":\"Invalid transition: under_review -> submit_for_review\"}",
+      "note": "advanced under_review via admin → approve_campaign"
+    },
+    {
+      "key": "benchmark_transition",
+      "wave": 90,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "raise-dispute",
+      "advanceRowId": "bxt_005",
+      "viaFallback": false,
+      "attempts": 19,
+      "lastReject": "403 complete-transition/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced responded via admin → raise-dispute"
+    },
+    {
+      "key": "ccp_assessment",
+      "wave": 91,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "resume",
+      "advanceRowId": "ccp_009",
+      "viaFallback": false,
+      "attempts": 25,
+      "lastReject": "403 place-on-hold/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced on_hold via admin → resume"
+    },
+    {
+      "key": "enforcement_action",
+      "wave": 93,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "open-representations",
+      "advanceRowId": "enf_002",
+      "viaFallback": false,
+      "attempts": 22,
+      "lastReject": "403 lodge_appeal/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced allegations_served via admin → open-representations"
+    },
+    {
+      "key": "sll_kpi",
+      "wave": 95,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "start-verification",
+      "advanceRowId": "sll_003",
+      "viaFallback": false,
+      "attempts": 19,
+      "lastReject": "403 collect-measurement/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced measurement_collected via admin → start-verification"
+    },
+    {
+      "key": "submittal_rfi",
+      "wave": 96,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "incorporate",
+      "advanceRowId": "sub_009",
+      "viaFallback": false,
+      "attempts": 16,
+      "lastReject": "403 distribute_for_construction/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced distributed_for_construction via admin → incorporate"
+    },
+    {
+      "key": "punch_list",
+      "wave": 98,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "assess",
+      "advanceRowId": "punch_001",
+      "viaFallback": false,
+      "attempts": 1,
+      "lastReject": null,
+      "note": "advanced identified via admin → assess"
+    },
+    {
+      "key": "itp",
+      "wave": 99,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "release-for-use",
+      "advanceRowId": "itp_007",
+      "viaFallback": false,
+      "attempts": 34,
+      "lastReject": "403 re-inspect/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced passed via admin → release-for-use"
+    },
+    {
+      "key": "ppa_annual_recon",
+      "wave": 101,
+      "ledgerRows": 10,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "compute-top-residual",
+      "advanceRowId": "par-008",
+      "viaFallback": false,
+      "attempts": 22,
+      "lastReject": "403 classify-variance/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced variance_classified via admin → compute-top-residual"
+    },
+    {
+      "key": "soiling_audit",
+      "wave": 102,
+      "ledgerRows": 12,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "start-cleaning",
+      "advanceRowId": "soil-007",
+      "viaFallback": false,
+      "attempts": 17,
+      "lastReject": "422 record-inspection/support: {\"success\":false,\"error\":\"Invalid transition: cleaning_authorized -> record_inspection\"}",
+      "note": "advanced cleaning_authorized via admin → start-cleaning"
+    },
+    {
+      "key": "esg_disclosure",
+      "wave": 103,
+      "ledgerRows": 17,
+      "nonTerminal": 4,
+      "advanced": true,
+      "advancedVia": "admin",
+      "advanceAction": "submit-for-review",
+      "advanceRowId": "seed_esg_002_offtaker001_fy2025",
+      "viaFallback": false,
+      "attempts": 25,
+      "lastReject": "403 compile-draft/support: {\"success\":false,\"error\":\"Forbidden\"}",
+      "note": "advanced draft_compiled via admin → submit-for-review"
+    }
+  ]
+}

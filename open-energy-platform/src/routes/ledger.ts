@@ -62,6 +62,27 @@ export function assembleLedger(chain: ChainDescriptor, rows: Record<string, unkn
 const ledger = new Hono<HonoEnv>();
 ledger.use('*', authMiddleware);
 
+// ─── Lookup pickers for initiation fields of type 'lookup' ──────────────────
+// Resolves a FK-target reference list (id + display label) so the SPA can render
+// a dropdown instead of a free-text id that 422s on foreign_key_violation.
+// SECURITY: :source is matched against this static whitelist; the SQL string for
+// each entry is a code literal (no request input ever reaches an identifier).
+// Returns ALL rows (admin-visible reference data), not developer-scoped.
+export const LOOKUP_SOURCES: Record<string, string> = {
+  'carbon-projects':
+    'SELECT id, project_name AS label FROM carbon_projects ORDER BY project_name LIMIT 500',
+  'ipp-projects':
+    'SELECT id, project_name AS label FROM ipp_projects ORDER BY project_name LIMIT 500',
+};
+
+ledger.get('/lookup/:source', async (c) => {
+  const sql = LOOKUP_SOURCES[c.req.param('source')];
+  if (!sql) return c.json({ success: false, error: 'unknown lookup source' }, 404);
+  const res = await c.env.DB.prepare(sql).all();
+  const rows = (res.results ?? []) as { id: string; label: string }[];
+  return c.json({ success: true, data: rows });
+});
+
 ledger.get('/:chainKey', async (c) => {
   const chain = getChain(c.req.param('chainKey'));
   if (!chain) return c.json({ success: false, error: 'unknown chain' }, 404);

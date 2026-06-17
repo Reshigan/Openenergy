@@ -9,7 +9,7 @@
 
 import http from 'k6/http';
 import { sleep, check } from 'k6';
-import { BASE, login, authHeaders, PERSONAS } from './lib/login.js';
+import { BASE, mintTokenBundle, authHeaders, tokenForVU, PERSONAS } from './lib/login.js';
 
 export const options = {
   scenarios: {
@@ -46,14 +46,13 @@ const ENDPOINTS = [
   '/api/marketplace/summary',
 ];
 
-let TOKEN = null;
+export function setup() {
+  // 7 logins once, not one per VU (200 VUs would obliterate the auth limiter).
+  return { tokens: mintTokenBundle(PERSONAS) };
+}
 
-export default function () {
-  if (!TOKEN) {
-    const email = PERSONAS[__VU % PERSONAS.length];
-    TOKEN = login(email);
-  }
-  const headers = authHeaders(TOKEN);
+export default function (data) {
+  const headers = authHeaders(tokenForVU(data.tokens, __VU));
   const path = ENDPOINTS[Math.floor(Math.random() * ENDPOINTS.length)];
   const r = http.get(`${BASE}${path}`, { headers, tags: { name: path.replace(/[^a-z]/gi, '_').slice(0, 40) } });
   check(r, {
