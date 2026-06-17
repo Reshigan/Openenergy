@@ -7,7 +7,7 @@
 // registry action path (api baseURL '/api', so the /api prefix is stripped).
 import React from 'react';
 import './meridian.css';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { fetchLedger, fmtZar, type LedgerData } from './lib';
 import { MeridianHeader } from './MeridianHeader';
@@ -17,6 +17,10 @@ import { FuseBar } from './components';
 export default function LedgerPage() {
   const { chainKey = '' } = useParams();
   const nav = useNavigate();
+  // The "New transaction" picker (NewPage) deep-links here with ?compose=1 so the
+  // operator lands straight in the initiation form — the IPP-journey entry point.
+  const [sp, setSp] = useSearchParams();
+  const wantCompose = sp.get('compose') === '1';
   const [data, setData] = React.useState<LedgerData | null>(null);
   const [err, setErr] = React.useState<string | null>(null);            // load failure — replaces the page
   const [status, setStatus] = React.useState<string | undefined>(undefined); // active filter key
@@ -32,6 +36,15 @@ export default function LedgerPage() {
     return () => { live = false; };
   }, [chainKey, status]);
   React.useEffect(() => load(), [load]);
+
+  // Honor ?compose=1 once data confirms the role can initiate — then strip the param
+  // so a reload or back-nav doesn't reopen the drawer. If the role can't initiate this
+  // chain, the param is dropped silently and the operator sees the existing case list.
+  React.useEffect(() => {
+    if (!wantCompose || !data) return;
+    if (data.initiation) setComposeOpen(true);
+    setSp(prev => { const next = new URLSearchParams(prev); next.delete('compose'); return next; }, { replace: true });
+  }, [wantCompose, data, setSp]);
 
   // Escape-to-dismiss + focus-restore for the +New veil (DealDeskPage idiom).
   React.useEffect(() => {

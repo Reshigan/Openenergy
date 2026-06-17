@@ -33,6 +33,7 @@ const ActivityFeedShell     = React.lazy(() => import('./components/ActivityFeed
 const HorizonPage           = React.lazy(() => import('./meridian/HorizonPage'));
 const ThreadPage            = React.lazy(() => import('./meridian/ThreadPage'));
 const AtlasPage             = React.lazy(() => import('./meridian/AtlasPage'));
+const NewPage               = React.lazy(() => import('./meridian/NewPage'));
 const LedgerPage            = React.lazy(() => import('./meridian/LedgerPage'));
 const DealDeskPage          = React.lazy(() => import('./meridian/DealDeskPage'));
 const MeridianSurfacePage   = React.lazy(() => import('./meridian/MeridianSurfacePage'));
@@ -605,6 +606,7 @@ function AppRoutes() {
       <Route path="/horizon" element={<ProtectedRoute><HorizonPage /></ProtectedRoute>} />
       <Route path="/thread/:chainKey/:id" element={<ProtectedRoute><ThreadPage /></ProtectedRoute>} />
       <Route path="/atlas" element={<ProtectedRoute><AtlasPage /></ProtectedRoute>} />
+      <Route path="/new" element={<ProtectedRoute><NewPage /></ProtectedRoute>} />
       <Route path="/ledger/:chainKey" element={<ProtectedRoute><LedgerPage /></ProtectedRoute>} />
       {/* One parametric route for every non-chain Meridian surface (master-data CRUD,
           settings, analytics/ML panels, connectors). Resolves SURFACE_REGISTRY by

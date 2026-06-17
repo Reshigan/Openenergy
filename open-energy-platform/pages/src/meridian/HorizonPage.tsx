@@ -154,7 +154,7 @@ export default function HorizonPage() {
       <div className={dutyCollapsed ? 'main duty-collapsed' : 'main'}>
         <section className="board" aria-label="Live cases by time to consequence">
           <div className="board-head">
-            <div />
+            <Link to="/new" className="board-new" title="Start a new transaction">+ New transaction</Link>
             {BUCKETS.map(b => (
               <div key={b.key} className={b.key === 'breached' ? 'bucket-h breach' : 'bucket-h'}>
                 {b.label}
@@ -194,7 +194,9 @@ export default function HorizonPage() {
 
           {data.lanes.length === 0 && (
             <div className="board-empty">
-              No live cases. Initiate work from <Link to="/atlas">Atlas</Link>.
+              <p>No live cases yet.</p>
+              <Link to="/new" className="btn pri">+ Start a transaction</Link>
+              <p className="board-empty-sub">or browse every function in <Link to="/atlas">Atlas</Link>.</p>
             </div>
           )}
         </section>

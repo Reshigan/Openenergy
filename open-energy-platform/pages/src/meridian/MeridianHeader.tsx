@@ -43,6 +43,7 @@ export function MeridianHeader({ ctx }: { ctx?: React.ReactNode }) {
         <Link to="/dashboard">National</Link>
       </nav>
       <div className="clock mono">{clock}</div>
+      <Link className="head-new" to="/new" title="Start a new transaction">+ New</Link>
       <Link className="kbd-hint" to="/atlas">Atlas — search anything <kbd>⌘K</kbd></Link>
       <div className="avatar-wrap">
         <button type="button" className="avatar" aria-haspopup="menu" aria-expanded={menuOpen}
