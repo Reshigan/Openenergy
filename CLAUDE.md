@@ -102,13 +102,19 @@ HS256 JWT, 1-hour TTL. Token in `Authorization: Bearer` and (for the SPA) `local
 
 Demo personas all use password `Demo@2024!`. Emails: `admin / trader / ipp / wind / offtaker / lender / carbon / regulator / grid / support @openenergy.co.za`.
 
-### Frontend chrome
+### Frontend chrome — Meridian
 
-The SPA has two parallel chrome systems:
-- `<StitchPage>` ([pages/src/components/StitchPage.tsx](open-energy-platform/pages/src/components/StitchPage.tsx)) — the new pattern. ~4 pages use it.
-- Per-page ad-hoc chrome — the older pattern. ~30 pages still use this.
+The SPA is **Meridian** — one full-canvas chrome (`MeridianFrame`, [pages/src/meridian/MeridianFrame.tsx](open-energy-platform/pages/src/meridian/MeridianFrame.tsx)) wrapping every authed page. The older systems (StitchPage, FioriShell, `LaunchBoardShell`/`WorkstationShell`, `/launch/:role`, `/cockpit`, per-domain `/{role}/workstation`) were retired in **Phase E**; those paths now `<Navigate to="/horizon">`.
 
-The post-login redirect goes to `/launch/:role` (not `/cockpit` — see `LaunchRedirect` in [App.tsx](open-energy-platform/pages/src/App.tsx)). Each role has a [LaunchBoardShell](open-energy-platform/pages/src/components/launch/LaunchBoardShell.tsx) home page hydrated from `/api/launch/:role`. From there, role workstations live at `/{role-prefix}/workstation` and reuse the shared [WorkstationShell](open-energy-platform/pages/src/components/launch/WorkstationShell.tsx) primitive — every L4 workstation page is ~150-250 lines of tab/listing/action-modal config against the existing endpoints.
+Post-login, `LaunchRedirect` ([App.tsx](open-energy-platform/pages/src/App.tsx)) calls `GET /api/onboarding/state` → `/onboard` (first visit) or `/horizon` (returning). The Meridian surfaces:
+- **Horizon** (`/horizon`) — per-role live workspace; lanes are the non-terminal chain cases visible to the role (`GET /api/horizon/:role`, [src/routes/horizon.ts](open-energy-platform/src/routes/horizon.ts)). `laneRoleFor` re-points `esums_owner`→`esco`.
+- **Atlas** (`/atlas`, ⌘K) — function library / discovery. Tiles come from `getRoleConfig(role).domains→features` in [roleData.ts](open-energy-platform/pages/src/ux-alternatives/launchpad-nav/roleData.ts); each must resolve to a chain Ledger (`f.chainKey`), a `route`, or a registered `/surface` — otherwise the tile is structurally hidden.
+- **Ledger** (`/ledger/:chainKey`) — per-chain list + schema-driven `+New` initiation.
+- **Thread** (`/thread/:chainKey/:id`) — two-sided cross-role transaction detail.
+- **Deal Desk** (`/deals`) — author/track deals; `/new` is the transaction picker (deep-links Ledger `?compose=1`).
+- **`/surface/:key`** — one parametric route renders `SURFACE_REGISTRY['<role>:<key>']` (static allow-list in [surfaces.tsx](open-energy-platform/pages/src/meridian/surfaces.tsx)) for non-chain surfaces (master-data CRUD, settings, analytics/ML, connectors).
+
+The chain registry [src/utils/chain-registry-meridian.ts](open-energy-platform/src/utils/chain-registry-meridian.ts) (`MERIDIAN_CHAINS`) is the source of truth for every chain's table/columns/lanes/actions. **Security invariant:** those SQL identifiers come exclusively from that static literal, never from request input; request values only ever bind to `?` placeholders.
 
 ### Feature-depth rubric (load-bearing for any new work)
 

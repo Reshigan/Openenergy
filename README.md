@@ -29,27 +29,31 @@ A unified energy exchange for South Africa — power trading, carbon markets, IP
 | Path | What it is |
 |---|---|
 | `open-energy-platform/src/index.ts` | Hono entry point with all `app.route()` mounts and the `scheduled()` cron dispatcher |
-| `open-energy-platform/src/routes/` | 51 route modules (`auth`, `cockpit`, `contracts`, `trading`, `carbon`, `funder`, `procurement`, `ona`, `regulator-suite`, …) |
+| `open-energy-platform/src/routes/` | 347 route modules aggregated in [mount-routes.ts](open-energy-platform/src/routes/mount-routes.ts) (`auth`, `horizon`, `ledger`, `onboarding`, `ona`, plus one module per chain — `covenant-certificate`, `take-or-pay`, `reserve-activation`, …) |
 | `open-energy-platform/src/middleware/auth.ts` | `authMiddleware` + `optionalAuth` + `requireRole` + `getCurrentUser`. Sets `c.get('auth').user`. |
 | `open-energy-platform/src/utils/` | Shared: `cascade.ts`, `ai.ts`, `tenant.ts`, `asoba.ts` (ASOBA Cloud client), matching engine helpers |
 | `open-energy-platform/src/do/` | Durable Object classes (OrderBook is the only one currently bound) |
-| `open-energy-platform/migrations/` | 33 numbered migrations + 4 schema-alignment migrations (034–037). The migrations dir is wired via `wrangler.toml::migrations_dir`. |
-| `open-energy-platform/pages/` | The Vite/React SPA. `pages/src/components/pages/` holds the 35 page components; `pages/src/components/StitchPage.tsx` is the shared chrome primitive. |
+| `open-energy-platform/migrations/` | 508 numbered migrations (highest `508_add_carbon_chain_tier_columns.sql`), wired via `wrangler.toml::migrations_dir`. The 019–050 band is irregular — see "Migration discipline" in [CLAUDE.md](CLAUDE.md). |
+| `open-energy-platform/pages/` | The **Meridian** Vite/React SPA. `pages/src/meridian/` holds the surfaces (Horizon, Atlas, Ledger, Thread, Deal Desk); `pages/src/meridian/MeridianFrame.tsx` is the single chrome wrapper. |
 | `open-energy-platform/wrangler.toml` | Worker name, [assets] binding, D1/R2/KV/AI bindings, custom domain `oe.vantax.co.za`, cron triggers |
 
 ## Roles & landing pages
 
-| Role | Demo email (`Demo@2024!`) | Landing |
+Every role logs into the same **Meridian** chrome. Post-login goes to `/onboard` on first visit, then `/horizon` (the role's computed live workspace) thereafter; `/atlas` (⌘K) is the function library. Legacy per-role paths (`/cockpit`, `/trading`, `/projects`, `/om`, `/carbon`, `/procurement`, `/grid`, `/regulator-suite`, …) now redirect to `/horizon`.
+
+| Role | Demo email (`Demo@2024!`) | Lands on |
 |---|---|---|
-| `admin` | `admin@openenergy.co.za` | `/cockpit` → full surface + `/admin` |
-| `trader` | `trader@openenergy.co.za` | `/cockpit` → `/trading` |
-| `ipp_developer` | `ipp@openenergy.co.za` · `wind@openenergy.co.za` | `/projects` + `/om` (with ASOBA Live) |
-| `carbon_fund` | `carbon@openenergy.co.za` | `/carbon` |
-| `offtaker` | `offtaker@openenergy.co.za` | `/procurement` |
-| `lender` | `lender@openenergy.co.za` | `/funds` |
-| `grid_operator` | `grid@openenergy.co.za` | `/grid` + `/grid-operator` workbench |
-| `regulator` | `regulator@openenergy.co.za` (seeded) | `/regulator-suite` |
-| `support` | `support@openenergy.co.za` (seeded) | `/support` |
+| `admin` | `admin@openenergy.co.za` | `/horizon` (all-role oversight) |
+| `trader` | `trader@openenergy.co.za` | `/horizon` |
+| `ipp_developer` | `ipp@openenergy.co.za` · `wind@openenergy.co.za` | `/horizon` |
+| `carbon_fund` | `carbon@openenergy.co.za` | `/horizon` |
+| `offtaker` | `offtaker@openenergy.co.za` | `/horizon` |
+| `lender` | `lender@openenergy.co.za` | `/horizon` |
+| `grid_operator` | `grid@openenergy.co.za` | `/horizon` |
+| `regulator` | `regulator@openenergy.co.za` | `/horizon` |
+| `support` | `support@openenergy.co.za` | `/horizon` |
+
+ESCO/O&M (`esums_owner`, which shares ESCO lanes via `laneRoleFor`) and `epc_contractor` are also live Meridian roles.
 
 ## Local development
 
@@ -93,7 +97,7 @@ wrangler secret put BACKUP_TOKEN
 
 ## ASOBA Cloud integration
 
-Live solar IPP telemetry + OODA fault detection is wired into the O&M cockpit (`/om` → ASOBA Live tab):
+Live solar IPP telemetry + OODA fault detection is wired into the ESCO/O&M Meridian surfaces (and the `/api/ona/*` endpoints below):
 
 - `src/utils/asoba.ts` — Worker-compatible HTTP client wrapping the documented telemetry/inverter, telemetry/site, telemetry/data-period, ooda/terminal, ooda/site, ooda/data-period endpoints with `fetch + x-api-key`. The official `@asoba/ona-sdk` package targets Node and uses `require('https')`, so it's not bundleable into a Worker.
 - `src/routes/ona.ts` — exposes `/api/ona/asoba/status`, `/sites/:id/data-period`, `/sites/:id/telemetry`, `/sites/:id/inverter/:asset/telemetry`, `/sites/:id/alerts`, `/sites/:id/alerts/:terminal`, `/sites/:id/sync`. The `sync` action persists 24h of telemetry + critical alerts into D1 and promotes high/critical OODA alerts into `ona_faults` with `source='asoba'`, firing the `ona.fault_created` cascade.
