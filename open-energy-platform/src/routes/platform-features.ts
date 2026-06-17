@@ -19,6 +19,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { assertSafeWebhookUrl } from '../utils/url-safety';
+import { requireStepUp } from '../middleware/step-up';
 
 const platform = new Hono<HonoEnv>();
 platform.use('*', authMiddleware);
@@ -61,7 +62,7 @@ platform.get('/api-keys', async (c) => {
   return c.json({ success: true, data: safe });
 });
 
-platform.post('/api-keys', async (c) => {
+platform.post('/api-keys', requireStepUp('api_key.create'), async (c) => {
   const user = getCurrentUser(c);
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.name) return c.json({ success: false, error: 'name required' }, 400);
@@ -191,7 +192,7 @@ platform.get('/webhooks/subscriptions', async (c) => {
   return c.json({ success: true, data: rows.results || [] });
 });
 
-platform.post('/webhooks/subscriptions', async (c) => {
+platform.post('/webhooks/subscriptions', requireStepUp('webhook.create'), async (c) => {
   const user = getCurrentUser(c);
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.target_url || !b.events || !Array.isArray(b.events)) {
