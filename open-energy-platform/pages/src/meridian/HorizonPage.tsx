@@ -2,7 +2,7 @@
 // Markup mirrors mockups/meridian/01-horizon.html (header / .main { .board + aside } / .wire);
 // styling comes verbatim from meridian.css (scoped under .mer). Data from GET /api/horizon/:role.
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import './meridian.css';
 import { fetchHorizon, BUCKETS, fmtZar, type Bucket, type HorizonData, type MerCase } from './lib';
 import { CaseTile } from './components';
@@ -53,7 +53,6 @@ export default function HorizonPage() {
   const [data, setData] = React.useState<HorizonData | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
   const [actErr, setActErr] = React.useState<string | null>(null);
-  const nav = useNavigate();
 
   // Duty-stream collapse — persisted so the operator's choice survives a reload
   // and the 60s board refresh. The aside is a fixed 348px grid column; collapsed,
@@ -237,9 +236,9 @@ export default function HorizonPage() {
                         {a.label}
                       </button>
                     ))}
-                    <button type="button" className="btn ghost" onClick={() => nav(`/thread/${c.chain}/${c.id}`)}>
+                    <Link className="btn ghost" to={`/thread/${c.chain}/${c.id}`}>
                       Open thread
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>

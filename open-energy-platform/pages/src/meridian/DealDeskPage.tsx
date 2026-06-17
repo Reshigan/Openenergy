@@ -30,20 +30,31 @@ export default function DealDeskPage() {
   const [compose, setCompose] = React.useState<ComposeState | null>(null);
   const [compare, setCompare] = React.useState<CompareState | null>(null);
   const [actErr, setActErr] = React.useState<string | null>(null);
+  const [loaded, setLoaded] = React.useState(false);                 // first load settled (skeleton gate)
+  const [loadErr, setLoadErr] = React.useState<string | null>(null); // initial-load failure (retryable)
 
   // Liveness guard shared by mount fetches and the async handlers below: a late
   // resolve after unmount must not setState. Set false in the mount cleanup.
   const live = React.useRef(true);
   React.useEffect(() => { live.current = true; return () => { live.current = false; }; }, []);
 
+  // Post-mutation refresh — keep the last-good list if it transiently fails (a
+  // failed reload shouldn't blank a desk the operator was just working on).
   const refetch = React.useCallback(() => {
     fetchMyDeals().then(d => { if (live.current) setDeals(d); }).catch(() => { /* keep last good list */ });
   }, []);
 
-  React.useEffect(() => {
-    refetch();
-    fetchDealTypes().then(t => { if (live.current) setTypes(t); }).catch(() => { if (live.current) setTypes([]); });
-  }, [refetch]);
+  // Initial load of both deals + types together: on failure surface a retry banner
+  // instead of misleading empty lanes (looks like "no deals" when the fetch died).
+  const loadAll = React.useCallback(() => {
+    setLoadErr(null);
+    Promise.all([fetchMyDeals(), fetchDealTypes()])
+      .then(([d, t]) => { if (live.current) { setDeals(d); setTypes(t); } })
+      .catch((e: any) => { if (live.current) setLoadErr(errOf(e)); })
+      .finally(() => { if (live.current) setLoaded(true); });
+  }, []);
+
+  React.useEffect(() => { loadAll(); }, [loadAll]);
 
   // The deal-type info for a request/offer's type, used to derive the rail kind.
   const infoFor = (t: string): DealTypeInfo | undefined => types.find(i => i.deal_type === t);
@@ -110,6 +121,13 @@ export default function DealDeskPage() {
         <span className="counts mono">{requests.length} requests · {offers.length} offers</span>
       </>} />
 
+      {loadErr && (
+        <div className="act-error" role="alert">
+          <span>Couldn't load the deal desk. {loadErr}</span>
+          <button type="button" className="btn ghost" onClick={loadAll}>Retry</button>
+        </div>
+      )}
+
       {actErr && (
         <div className="act-error" role="alert">
           <span>{actErr}</span>
@@ -117,6 +135,10 @@ export default function DealDeskPage() {
         </div>
       )}
 
+      {!loaded ? (
+        <div className="mer-loading" aria-busy="true">Loading deal desk…</div>
+      ) : (
+       <>
       {/* AUTHOR bar — one chip per capability the role holds on each deal type. */}
       <div className="author-bar" aria-label="Author a deal">
         {types.map(t => (
@@ -196,6 +218,8 @@ export default function DealDeskPage() {
           ))}
         </section>
       </div>
+       </>
+      )}
 
       {/* Compose veil — schema-driven publish form. */}
       {compose && (

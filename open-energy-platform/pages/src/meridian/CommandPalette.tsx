@@ -5,7 +5,7 @@
 // on open so closed palettes cost nothing. Renders null when signed out / unknown role.
 import React from 'react';
 import './meridian.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { useAuth } from '../lib/useAuth';
 import { SURFACE_REGISTRY } from './surfaces';
@@ -17,25 +17,35 @@ interface Hit { type: 'function' | 'case'; label: string; sub: string; go: () =>
 // esums_owner shares ESCO's surfaces; the registry only carries `esco:*` keys.
 const surfaceRole = (r: string) => (r === 'esums_owner' ? 'esco' : r);
 
+// Non-Meridian chrome: the standalone UX prototypes (/apex, /ux-prototype/*) run
+// their own command surfaces. Mounting the Meridian palette there is the
+// "Atlas everywhere" complaint — ⌘K must not hijack keys outside Meridian.
+const EXCLUDED_PREFIXES = ['/apex', '/ux-prototype'];
+const isExcludedPath = (p: string) => EXCLUDED_PREFIXES.some(x => p === x || p.startsWith(x + '/'));
+
 export default function CommandPalette() {
   const [open, setOpen] = React.useState(false);
   const [q, setQ] = React.useState('');
   const [sel, setSel] = React.useState(0);
   const [cases, setCases] = React.useState<MerCase[]>([]);
   const nav = useNavigate();
+  const { pathname } = useLocation();
   // Hooks run unconditionally; the !cfg bail-out below handles signed-out states.
   const { user } = useAuth();
   const role = user?.role ?? '';
   const cfg = getRoleConfig(role);
-  // Ref so the global key listener (registered once) always sees the latest cfg
-  // without re-binding each render. ⌘K must not hijack keys for signed-out users
-  // or roles with no Meridian config — that's the "Atlas everywhere" complaint.
+  // Refs so the global key listener (registered once) always sees the latest cfg
+  // and path without re-binding each render. ⌘K must not hijack keys for
+  // signed-out users, roles with no Meridian config, or non-Meridian chrome
+  // (/apex, /ux-prototype/*) — that's the "Atlas everywhere" complaint.
   const cfgRef = React.useRef(cfg);
   cfgRef.current = cfg;
+  const excludedRef = React.useRef(false);
+  excludedRef.current = isExcludedPath(pathname);
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!cfgRef.current) return;
+      if (!cfgRef.current || excludedRef.current) return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setOpen(o => !o); setQ(''); setSel(0); }
       if (e.key === 'Escape') setOpen(false);
     };
@@ -61,7 +71,7 @@ export default function CommandPalette() {
     if (open) document.querySelector('.mer .pal-hits .hit.sel')?.scrollIntoView({ block: 'nearest' });
   }, [open, sel]);
 
-  if (!open || !cfg) return null;
+  if (!open || !cfg || isExcludedPath(pathname)) return null;
   const ql = q.toLowerCase();
   // Same destination contract + reachability predicate as AtlasPage: chain → Ledger,
   // standalone page → its route, else per-role Meridian surface. A function with no

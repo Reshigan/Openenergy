@@ -7,7 +7,7 @@
 // registry action path (api baseURL '/api', so the /api prefix is stripped).
 import React from 'react';
 import './meridian.css';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { fetchLedger, fmtZar, type LedgerData } from './lib';
 import { MeridianHeader } from './MeridianHeader';
@@ -25,6 +25,7 @@ export default function LedgerPage() {
   const [err, setErr] = React.useState<string | null>(null);            // load failure — replaces the page
   const [status, setStatus] = React.useState<string | undefined>(undefined); // active filter key
   const [composeOpen, setComposeOpen] = React.useState(false);          // +New drawer
+  const [notice, setNotice] = React.useState<string | null>(null);      // non-blocking compose advisory
 
   // Liveness-guard load (ThreadPage/AtlasPage idiom): a late resolve after unmount —
   // or after chainKey/status changes — must not setState with a stale result.
@@ -43,6 +44,9 @@ export default function LedgerPage() {
   React.useEffect(() => {
     if (!wantCompose || !data) return;
     if (data.initiation) setComposeOpen(true);
+    // Role can view the chain but isn't an initiator here — say so instead of a
+    // silent no-op, so the operator understands why no form opened.
+    else setNotice(`Your role can review ${data.chain.title} but can't start a new case here.`);
     setSp(prev => { const next = new URLSearchParams(prev); next.delete('compose'); return next; }, { replace: true });
   }, [wantCompose, data, setSp]);
 
@@ -72,9 +76,16 @@ export default function LedgerPage() {
 
   return (
     <div className="mer ledger">
-      <MeridianHeader ctx={<><b>{data.chain.title}</b><span>W{data.chain.wave} · {data.rows.length} shown</span></>} />
+      <MeridianHeader ctx={<><b>{data.chain.title}</b><span>{data.rows.length} shown</span></>} />
 
       <main className="ledger-body">
+        <Link to="/horizon" className="ledger-back">← Horizon</Link>
+        {notice && (
+          <div className="ledger-notice" role="status">
+            {notice}{' '}
+            <Link to="/atlas">Browse what you can start →</Link>
+          </div>
+        )}
         {/* KPI strip */}
         {data.kpis.length > 0 && (
           <div className="kpis">
