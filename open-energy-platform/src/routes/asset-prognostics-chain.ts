@@ -64,6 +64,11 @@ import {
   type PrognosticTier,
   type SymptomVector,
 } from '../utils/asset-prognostics-spec';
+import {
+  mlAnomalyFusion,
+  survivalRul,
+  faultPosterior,
+} from '../utils/ml-prognostics';
 
 // All nine personas may read the fleet prognostics register.
 const READ_ROLES = new Set([
@@ -310,11 +315,21 @@ app.post('/compute', async (c) => {
     rulDays: rul.rulDays,
   });
 
+  // ── ML layer (training-free / online-fit) — additive over the statistical
+  // engine above. Fuse Spectral-Residual + Isolation-Forest into the ensemble
+  // for an 8-method anomaly confidence; add a calibrated Wiener/IG survival RUL
+  // band and a Bayesian posterior over the physics fault modes. None of these
+  // persist; all degrade gracefully on short windows (see ml-prognostics.ts).
+  const fusedAnomaly = mlAnomalyFusion(series, { score: anomaly.score, confidence: anomaly.confidence });
+  const survival = survivalRul(series, failureThreshold, dir);
+  const posterior = faultPosterior(ranking);
+  // Health uses the FUSED anomaly score (≥ the statistical-only score) so a
+  // contextual anomaly the control chart missed still lowers the health pillar.
   const safety = top?.safety ?? false;
   const tier = prognosticTier(revenue, safety);
   const health = healthScore({
     performanceRatio: pr,
-    anomalyScore: anomaly.score,
+    anomalyScore: Math.max(anomaly.score, fusedAnomaly.fusedScore),
     faultModeConfidence: top?.confidence,
     rulDays: rul.rulDays,
   });
@@ -334,6 +349,11 @@ app.post('/compute', async (c) => {
       recommended_tier: tier,
       health_score: health,
       is_reportable: isReportable(tier, safety),
+      ml: {
+        fused_anomaly: fusedAnomaly,
+        survival_rul: survival,
+        fault_posterior: posterior,
+      },
     },
   });
 });
