@@ -7,6 +7,7 @@ import { authMiddleware, getCurrentUser, hashPassword, invalidateTenantCache } f
 import { invalidateRoleRosterCache, fireCascade } from '../utils/cascade';
 import { createPasswordResetToken, randomOpaqueToken, revokeAllSessionsForParticipant } from '../utils/auth-tokens';
 import { logPiiAccessBatch, inferAccessType } from '../utils/popia-access';
+import { requireStepUp } from '../middleware/step-up';
 
 function genId(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).substring(2, 8)}`;
@@ -85,9 +86,12 @@ admin.get('/users', async (c) => {
   return c.json({ success: true, data: rows.results || [] });
 });
 
-admin.put('/users/:id', async (c) => {
+admin.put('/users/:id', requireStepUp('admin.role_change'), async (c) => {
   const user = getCurrentUser(c);
-  const id = c.req.param('id');
+  // Inserting the step-up middleware selects Hono's multi-handler overload,
+  // which widens `c.req.param('id')` to `string | undefined`. The route only
+  // matches with `:id` present, so assert it.
+  const id = c.req.param('id') as string;
   const body = await c.req.json().catch(() => ({} as Record<string, unknown>));
   const { status, role, subscription_tier, bbbee_level } = body as Record<string, any>;
   const updates: string[] = [];

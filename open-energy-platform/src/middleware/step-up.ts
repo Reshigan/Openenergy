@@ -11,8 +11,13 @@
 // returns 401 with a `step_up_required` body the SPA uses to mount the
 // re-auth challenge dialog.
 //
-// "High" thresholds (op_type names ending in `.high`) ALWAYS demand a
-// fresh challenge regardless of grace — used for irrevocable money moves.
+// High-risk ops (listed in HIGH_RISK_OPS — irrevocable money moves, security-
+// surface mutations) demand a RECENT fresh challenge: a tight, fixed
+// HIGH_RISK_GRACE_SECONDS window that ignores the role's generous normal
+// grace. It must be > 0 — a literal zero window can never be satisfied (even a
+// challenge completed the same instant fails `age <= 0`), which would brick
+// the gated endpoint permanently. 120s is short enough to force a re-auth per
+// sensitive action while leaving the SPA's challenge→retry round-trip room.
 // ════════════════════════════════════════════════════════════════════════
 
 import { Context, Next } from 'hono';
@@ -32,6 +37,9 @@ const HIGH_RISK_OPS = new Set([
   'participant.delete',
 ]);
 
+/** Fresh-challenge window (seconds) for HIGH_RISK_OPS. Must stay > 0. */
+export const HIGH_RISK_GRACE_SECONDS = 120;
+
 export function requireStepUp(opType: string) {
   return async (c: Context<HonoEnv>, next: Next) => {
     const user = getCurrentUser(c);
@@ -39,7 +47,7 @@ export function requireStepUp(opType: string) {
       `SELECT step_up_grace_seconds FROM oe_mfa_policies WHERE role = ?`,
     ).bind(user.role).first<{ step_up_grace_seconds: number }>().catch(() => null);
     const grace = HIGH_RISK_OPS.has(opType)
-      ? 0
+      ? HIGH_RISK_GRACE_SECONDS
       : Number(policyRow?.step_up_grace_seconds || 900);
 
     if (grace > 0) {
