@@ -243,9 +243,22 @@ for (const chain of INIT_CHAINS) {
     try {
       await seedToken(page, baseURL);
 
-      // 1. Ledger surface.
-      await page.goto(`${baseURL}/ledger/${chain.key}`, { waitUntil: 'load' });
+      // 1. Ledger surface. A single slow prod ledger paint (the GET resolving past
+      //    the visibility deadline) once failed wheeling_access with createStatus 0
+      //    even though POST /api/wheeling-access returns 201 — i.e. a transient blip
+      //    masquerading as a coverage gap. Try once, and if the +New button hasn't
+      //    painted, reload and wait on the longer deadline before treating it as a
+      //    real UI gap. Two attempts absorb the blip without hiding a true miss.
       const newBtn = page.getByRole('button', { name: init.label, exact: true });
+      await page.goto(`${baseURL}/ledger/${chain.key}`, { waitUntil: 'load' });
+      if (!(await newBtn.isVisible().catch(() => false))) {
+        const painted = await newBtn.waitFor({ state: 'visible', timeout: 12_000 })
+          .then(() => true).catch(() => false);
+        if (!painted) {
+          r.note = '[ledger-reload]';
+          await page.goto(`${baseURL}/ledger/${chain.key}`, { waitUntil: 'load' });
+        }
+      }
       await expect(newBtn, `"+ New" button (${init.label}) should render on /ledger/${chain.key}`)
         .toBeVisible({ timeout: 20_000 });
 
