@@ -3389,7 +3389,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     terminal: ['archived', 'cancelled'],
     counterpartyCol: 'reporting_entity_name',
-    lanes: { carbon_fund: 'article6_compliance' },
+    lanes: { carbon_fund: 'article6_compliance', offtaker: 'compliance_offtaker', regulator: 'data_reporting' },
     eventsTable: 'oe_esg_disclosure_events', eventsFk: 'disclosure_id',
     actions: [
       { action: 'engage-assurance', label: 'Engage assurance',
@@ -3544,7 +3544,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline',
     terminal: ['disclosure_filed', 'assurance_qualified', 'withdrawn'],
     counterpartyCol: 'entity_name',
-    lanes: { carbon_fund: 'article6_compliance' },
+    lanes: { carbon_fund: 'article6_compliance', offtaker: 'compliance_offtaker' },
     eventsTable: null, eventsFk: null,
     initiation: {
       label: 'Open Scope 3 disclosure',
@@ -3812,7 +3812,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     terminal: ['reconciled', 'rejected', 'clawed_back', 'withdrawn'],
     counterpartyCol: 'sars_office_name',
-    lanes: { carbon_fund: 'retirement_offset' },
+    lanes: { carbon_fund: 'retirement_offset', offtaker: 'compliance_offtaker' },
     eventsTable: 'oe_carbon_offset_claims_events', eventsFk: 'claim_id',
     actions: [
       { action: 'submit-claim', label: 'Submit claim', tone: 'primary',
@@ -4752,7 +4752,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     terminal: ['recertified', 'contract_terminated'],
     counterpartyCol: 'bsc_provider_name',
-    lanes: { grid_operator: 'operations_grid' },
+    lanes: { grid_operator: 'operations_grid', trader: 'compliance_reporting' },
     eventsTable: 'oe_black_start_capabilities_events', eventsFk: 'capability_id',
     actions: [
       { action: 'award-contract', label: 'Award contract', tone: 'primary',
@@ -7029,7 +7029,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     // fulfilled stays LIVE: warranty-claim-spec TERMINAL=['closed'], close acts from fulfilled
     terminal: ['closed'],
     counterpartyCol: 'oem_name',
-    lanes: { support: 'oem_supply_chain' },
+    lanes: { support: 'oem_supply_chain', ipp_developer: 'safety_grid', esco: 'supply_chain' },
     eventsTable: 'oe_warranty_claim_events', eventsFk: 'claim_id',
     initiation: {
       label: 'New Warranty claim',
@@ -7137,7 +7137,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline',
     terminal: ['closed', 'cancelled'],
     counterpartyCol: null, // assigned_to is a technician id, not a contractual counterparty
-    lanes: { support: 'field_operations' },
+    lanes: { support: 'field_operations', esco: 'work_orders' },
     eventsTable: null, eventsFk: null,
     actions: [
       { action: "acknowledge", label: "Acknowledge",
@@ -7790,7 +7790,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'commissioning_due_at',
     terminal: ['in_om', 'commissioning_failed', 'decommissioned'],
     counterpartyCol: null, // the operator's own site record; no contractual counterparty column
-    lanes: { support: 'field_operations' },
+    lanes: { support: 'field_operations', esco: 'work_orders' },
     eventsTable: 'oe_site_commissioning_events', eventsFk: 'site_id',
     initiation: {
       label: 'New Site commissioning',
@@ -7881,7 +7881,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline',
     terminal: ['resolved', 'dismissed', 'auto_suppressed', 'expired', 'confirmed_failure'],
     counterpartyCol: null, // operator-side prediction record; no contractual counterparty column
-    lanes: { support: 'field_operations' },
+    lanes: { support: 'field_operations', esco: 'asset_health' },
     eventsTable: 'oe_asset_prognostics_events', eventsFk: 'prognostic_id',
     actions: [
       { action: 'triage-prediction', label: 'Triage prediction',
@@ -8179,7 +8179,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     terminal: ['settled', 'dispute_resolved', 'withdrawn'],
     counterpartyCol: 'contractor_party_name',
-    lanes: { esco: 'asset_health' },
+    lanes: { esco: 'asset_health', grid_operator: 'compliance_grid' },
     eventsTable: 'oe_availability_guarantee_events', eventsFk: 'guarantee_id',
     actions: [
       { action: 'submit-measurement', label: 'Submit measurement',
@@ -9608,7 +9608,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     terminal: ['closed'],
     counterpartyCol: null,
-    lanes: { support: 'itil_service_mgmt', regulator: 'enforcement_regulator' },
+    lanes: { support: 'itil_service_mgmt', regulator: 'enforcement_regulator', ipp_developer: 'safety_grid' },
     eventsTable: 'oe_cyber_incident_events', eventsFk: 'incident_id',
     actions: [
       { action: 'triage', label: 'Triage incident',
@@ -11992,7 +11992,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     terminal: ['archived', 'deficient'],
     counterpartyCol: null,
-    lanes: { admin: 'compliance_admin' },
+    lanes: { admin: 'compliance_admin', regulator: 'data_reporting' },
     eventsTable: 'oe_control_environment_audit_events', eventsFk: 'control_id',
     actions: [
       { action: "plan-tod-test", label: "Plan ToD test", tone: "primary",
@@ -12291,7 +12291,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     terminal: ['renewed', 'expired', 'cancelled'],
     counterpartyCol: 'customer_party_id',
-    lanes: { support: 'platform_ops' },
+    lanes: { support: 'platform_ops', esco: 'site_portfolio' },
     eventsTable: 'oe_service_contract_events', eventsFk: 'contract_id',
     actions: [
       { action: 'issue_quote', label: 'Issue quote',
@@ -12354,7 +12354,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'unfccc_posted_at',
     terminal: ['unfccc_ledger', 'blocked'],
     counterpartyCol: null,
-    lanes: { carbon_fund: 'article6_compliance' },
+    lanes: { carbon_fund: 'article6_compliance', trader: 'compliance_reporting' },
     eventsTable: null, eventsFk: null,
     actions: [
       { action: 'submit_dffe', label: 'Submit to DFFE', tone: 'primary',
@@ -12673,7 +12673,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     deadlineCol: 'sla_deadline_at',
     terminal: ['archived', 'rejected_by_regulator', 'withdrawn'],
     counterpartyCol: 'regulator_target',
-    lanes: { admin: 'compliance_admin' },
+    lanes: { admin: 'compliance_admin', regulator: 'levies' },
     eventsTable: 'oe_regulator_export_pack_events', eventsFk: 'pack_id',
     actions: [
       { action: "countersign", label: "Countersign pack", tone: "primary",
