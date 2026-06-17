@@ -1036,7 +1036,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Request amendment',
       path: '/api/facility-amendments',
       fields: [
-        { key: 'facility_id', label: 'Facility', type: 'string', required: true },
+        { key: 'facility_id', label: 'Facility', type: 'lookup', source: '/api/ledger/lookup/lender-facilities', required: true },
         { key: 'amendment_class', label: 'Amendment class', type: 'enum', required: true, options: ['unanimous_consent', 'majority_consent', 'technical_amendment', 'administrative_amendment', 'clerical_correction'] },
         { key: 'amendment_ref', label: 'Amendment ref', type: 'string' },
         { key: 'amendment_type', label: 'Amendment type', type: 'string' },
@@ -4179,7 +4179,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       fields: [
         { key: 'quantity_tco2e', label: 'Quantity (tCO2e)', type: 'number', unit: 'tCO2e', required: true },
         { key: 'transfer_type', label: 'Transfer Type', type: 'enum', options: ['domestic', 'international_art6', 'corsia', 'voluntary_crossregistry'] },
-        { key: 'counterparty_id', label: 'Counterparty (transferee)', type: 'string', placeholder: 'offtaker@openenergy.co.za' },
+        { key: 'counterparty_id', label: 'Counterparty (transferee)', type: 'lookup', source: '/api/ledger/lookup/participants' },
         { key: 'vintage_year', label: 'Vintage Year', type: 'number' },
         { key: 'project_id', label: 'Linked Carbon Project', type: 'lookup', source: '/api/ledger/lookup/carbon-projects' },
         { key: 'methodology', label: 'Methodology', type: 'string', placeholder: 'VM0042' },
@@ -4259,7 +4259,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         { key: 'deviation_type', label: 'Deviation Type', type: 'string', placeholder: 'monitoring_parameter' },
         { key: 'estimated_impact_tco2e', label: 'Estimated Impact', type: 'number', unit: 'tCO2e' },
         { key: 'reason', label: 'Reason / Notes', type: 'string', placeholder: 'Initial deviation logged by project developer' },
-        { key: 'participant_id', label: 'Participant (admin/support only)', type: 'string' },
+        { key: 'participant_id', label: 'Participant (admin/support only)', type: 'lookup', source: '/api/ledger/lookup/participants' },
       ],
     },
     actions: [
@@ -5565,7 +5565,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Trigger restructure',
       path: '/api/lender/loan-restructure/chain',
       fields: [
-        { key: 'facility_id', label: 'Facility', type: 'string' },
+        { key: 'facility_id', label: 'Facility', type: 'lookup', source: '/api/ledger/lookup/lender-facilities' },
         { key: 'facility_name', label: 'Facility name', type: 'string' },
         { key: 'borrower_id', label: 'Borrower', type: 'lookup', source: '/api/ledger/lookup/ipp-developers' },
         { key: 'borrower_name', label: 'Borrower name', type: 'string' },
@@ -12473,7 +12473,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Open carbon tax return',
       path: '/api/carbon-tax-returns',
       fields: [
-        { key: 'participant_id', label: 'Participant ID', type: 'string', required: true },
+        { key: 'participant_id', label: 'Participant', type: 'lookup', source: '/api/ledger/lookup/participants', required: true },
         { key: 'tax_period', label: 'Tax period', type: 'string', required: true },
         { key: 'fiscal_year', label: 'Fiscal year', type: 'string', required: true },
       ],
@@ -12658,7 +12658,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Open KYC verification',
       path: '/api/kyc-verifications',
       fields: [
-        { key: 'participant_id', label: 'Participant ID', type: 'string', required: true },
+        { key: 'participant_id', label: 'Participant', type: 'lookup', source: '/api/ledger/lookup/participants', required: true },
       ],
     },
   },
@@ -12825,7 +12825,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Open CSAT record',
       path: '/api/csat-records',
       fields: [
-        { key: 'participant_id', label: 'Participant', type: 'string' },
+        { key: 'participant_id', label: 'Participant', type: 'lookup', source: '/api/ledger/lookup/participants' },
         { key: 'ticket_id', label: 'Ticket', type: 'string' },
         { key: 'support_tier', label: 'Support tier', type: 'enum',
           options: ['p1_critical', 'p2_high', 'p3_medium', 'p4_low'] },
@@ -13094,7 +13094,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
     initiation: {
       label: 'Open audit cycle', path: '/api/ipp-annual-audits',
       fields: [
-        { key: 'participant_id', label: 'Participant ID', type: 'string', required: true },
+        { key: 'participant_id', label: 'Participant', type: 'lookup', source: '/api/ledger/lookup/participants', required: true },
         { key: 'financial_year', label: 'Financial year', type: 'string', required: true },
         { key: 'year_end_date', label: 'Year end date', type: 'date', required: true },
         { key: 'annual_revenue_zar', label: 'Annual revenue', type: 'number', required: true, unit: 'ZAR' },
@@ -15404,7 +15404,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Open ISDA negotiation',
       path: '/api/trader/isda-agreement',
       fields: [
-        { key: 'counterparty_id', label: 'Counterparty ID', type: 'string', required: true },
+        { key: 'counterparty_id', label: 'Counterparty', type: 'lookup', source: '/api/ledger/lookup/participants', required: true },
         { key: 'counterparty_name', label: 'Counterparty name', type: 'string', required: true },
         { key: 'counterparty_type', label: 'Counterparty type', type: 'enum', required: true, options: ['domestic_bank', 'foreign_bank', 'broker_dealer', 'ccpcentral', 'corporate', 'sfp'] },
         { key: 'agreement_type', label: 'Agreement type', type: 'enum', required: true, options: ['isda_2002', 'isda_2018', 'isda_csa', 'credit_support_annex'] },
@@ -16472,7 +16472,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       path: '/api/trader/pretrade-credit/chain',
       fields: [
         { key: 'order_ref', label: 'Order ref', type: 'string' },
-        { key: 'counterparty_id', label: 'Counterparty ID', type: 'string' },
+        { key: 'counterparty_id', label: 'Counterparty', type: 'lookup', source: '/api/ledger/lookup/participants' },
         { key: 'counterparty_name', label: 'Counterparty name', type: 'string' },
         { key: 'energy_type', label: 'Energy type', type: 'string' },
         { key: 'side', label: 'Side', type: 'enum', options: ['buy', 'sell'] },

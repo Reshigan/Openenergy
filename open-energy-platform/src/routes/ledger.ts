@@ -86,6 +86,9 @@ export const LOOKUP_SOURCES: Record<string, string> = {
     "SELECT id, name AS label FROM participants WHERE role = 'offtaker' ORDER BY name LIMIT 500",
   'lenders':
     "SELECT id, name AS label FROM participants WHERE role = 'lender' ORDER BY name LIMIT 500",
+  // Lender credit facilities (W53 origination) — picker for facility_id fields.
+  'lender-facilities':
+    'SELECT id, facility_name AS label FROM oe_credit_facility_applications ORDER BY facility_name LIMIT 500',
 };
 
 ledger.get('/lookup/:source', async (c) => {
