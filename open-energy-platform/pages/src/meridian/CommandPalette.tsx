@@ -26,9 +26,15 @@ export default function CommandPalette() {
   const { user } = useAuth();
   const role = user?.role ?? '';
   const cfg = getRoleConfig(role);
+  // Ref so the global key listener (registered once) always sees the latest cfg
+  // without re-binding each render. ⌘K must not hijack keys for signed-out users
+  // or roles with no Meridian config — that's the "Atlas everywhere" complaint.
+  const cfgRef = React.useRef(cfg);
+  cfgRef.current = cfg;
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (!cfgRef.current) return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setOpen(o => !o); setQ(''); setSel(0); }
       if (e.key === 'Escape') setOpen(false);
     };

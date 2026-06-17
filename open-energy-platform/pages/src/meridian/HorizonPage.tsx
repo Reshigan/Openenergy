@@ -7,6 +7,7 @@ import './meridian.css';
 import { fetchHorizon, BUCKETS, fmtZar, type Bucket, type HorizonData, type MerCase } from './lib';
 import { CaseTile } from './components';
 import { MeridianHeader } from './MeridianHeader';
+import { cleanLabel } from './labels';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/useAuth';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
@@ -64,6 +65,22 @@ export default function HorizonPage() {
     setDutyCollapsed(prev => {
       const next = !prev;
       try { localStorage.setItem('mer.duty.collapsed', next ? '1' : '0'); } catch { /* non-fatal */ }
+      return next;
+    });
+  }, []);
+
+  // Per-lane collapse — a role like ipp_developer holds 14 lanes; collapsing tames
+  // the wall to the lanes the operator is working. Persisted as a key list so the
+  // choice survives reload and the 60s refresh (same idiom as dutyCollapsed).
+  const [collapsedLanes, setCollapsedLanes] = React.useState<Set<string>>(() => {
+    try { return new Set<string>(JSON.parse(localStorage.getItem('mer.lanes.collapsed') || '[]')); }
+    catch { return new Set<string>(); }
+  });
+  const toggleLane = React.useCallback((key: string) => {
+    setCollapsedLanes(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      try { localStorage.setItem('mer.lanes.collapsed', JSON.stringify([...next])); } catch { /* non-fatal */ }
       return next;
     });
   }, []);
@@ -147,16 +164,26 @@ export default function HorizonPage() {
           </div>
 
           {data.lanes.map(lane => {
-            const waves = Array.from(new Set(lane.cases.map(c => c.wave))).sort((a, b) => a - b);
+            const collapsed = collapsedLanes.has(lane.key);
+            const breached = lane.cases.filter(c => c.bucket === 'breached').length;
             return (
               <div className="lane-row" key={lane.key}>
-                <div className="lane-label">
-                  {laneLabel(lane.key).toUpperCase()}
+                <button type="button"
+                        className={collapsed ? 'lane-label collapsed' : 'lane-label'}
+                        aria-expanded={!collapsed}
+                        title={collapsed ? 'Expand lane' : 'Collapse lane'}
+                        onClick={() => toggleLane(lane.key)}>
+                  <span className="lane-chev" aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
+                  {cleanLabel(laneLabel(lane.key)).toUpperCase()}
                   <span className="n">
-                    {waves.map(w => `W${w}`).join(' · ')}{waves.length ? ' · ' : ''}{lane.cases.length} live
+                    {lane.cases.length} live{breached ? ` · ${breached} breached` : ''}
                   </span>
-                </div>
-                {BUCKETS.map(b => (
+                </button>
+                {collapsed ? (
+                  <button type="button" className="lane-collapsed-summary" onClick={() => toggleLane(lane.key)}>
+                    {lane.cases.length} case{lane.cases.length === 1 ? '' : 's'}{breached ? ` · ${breached} breached` : ''} — click to expand
+                  </button>
+                ) : BUCKETS.map(b => (
                   <div className="cell" key={b.key}>
                     {lane.cases.filter(c => c.bucket === b.key).map(c => <CaseTile key={`${c.chain}-${c.id}`} c={c} />)}
                   </div>
