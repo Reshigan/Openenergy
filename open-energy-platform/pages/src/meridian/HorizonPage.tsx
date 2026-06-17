@@ -54,6 +54,20 @@ export default function HorizonPage() {
   const [actErr, setActErr] = React.useState<string | null>(null);
   const nav = useNavigate();
 
+  // Duty-stream collapse — persisted so the operator's choice survives a reload
+  // and the 60s board refresh. The aside is a fixed 348px grid column; collapsed,
+  // it yields a slim reopen rail and gives the board the full width.
+  const [dutyCollapsed, setDutyCollapsed] = React.useState(
+    () => localStorage.getItem('mer.duty.collapsed') === '1',
+  );
+  const toggleDuty = React.useCallback(() => {
+    setDutyCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem('mer.duty.collapsed', next ? '1' : '0'); } catch { /* non-fatal */ }
+      return next;
+    });
+  }, []);
+
   React.useEffect(() => {
     if (!boardRole) return undefined;
     let live = true;
@@ -120,7 +134,7 @@ export default function HorizonPage() {
 
       {roleSwitcher}
 
-      <div className="main">
+      <div className={dutyCollapsed ? 'main duty-collapsed' : 'main'}>
         <section className="board" aria-label="Live cases by time to consequence">
           <div className="board-head">
             <div />
@@ -158,8 +172,10 @@ export default function HorizonPage() {
           )}
         </section>
 
-        <aside aria-label="Duty stream">
+        <aside className={dutyCollapsed ? 'collapsed' : undefined} aria-label="Duty stream">
           <div className="duty-head">
+            <button type="button" className="duty-collapse" onClick={toggleDuty}
+                    aria-label="Collapse duty stream" title="Collapse duty stream">›</button>
             <h2>DUTY STREAM</h2>
             <p>Computed {now.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })} — ranked by ZAR at risk × time remaining</p>
           </div>
@@ -204,6 +220,15 @@ export default function HorizonPage() {
             )}
           </div>
         </aside>
+
+        {dutyCollapsed && (
+          <button type="button" className="duty-rail" onClick={toggleDuty}
+                  aria-label="Expand duty stream" title="Expand duty stream">
+            <span className="chev" aria-hidden="true">‹</span>
+            <span className="lbl">DUTY STREAM</span>
+            {data.counts.breached > 0 && <span className="dot" aria-hidden="true" />}
+          </button>
+        )}
       </div>
 
       {data.duty.length > 0 && (
