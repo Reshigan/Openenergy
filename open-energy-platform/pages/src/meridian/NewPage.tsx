@@ -11,6 +11,7 @@ import './meridian.css';
 import { Link } from 'react-router-dom';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { useAuth } from '../lib/useAuth';
+import { MeridianHeader } from './MeridianHeader';
 import { cleanLabel } from './labels';
 import { fetchHorizon, type HorizonData } from './lib';
 
@@ -46,11 +47,10 @@ export default function NewPage() {
 
   return (
     <div className="mer atlas new-txn">
-      <header className="mer-head">
-        <Link to="/horizon" className="back">← Horizon</Link>
-        <span className="wordmark">START A TRANSACTION — {cfg.label.toUpperCase()}</span>
+      <MeridianHeader ctx={<>
+        <b>START A TRANSACTION — {cfg.label.toUpperCase()}</b>
         <span className="counts mono">{total} workflows</span>
-      </header>
+      </>} />
       <main className="domains">
         {total === 0 ? (
           <div className="board-empty">

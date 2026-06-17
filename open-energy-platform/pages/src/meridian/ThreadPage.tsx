@@ -11,6 +11,7 @@ import { fmtZar, type LedgerActionField } from './lib';
 import { FieldForm } from './FieldForm';
 import { FuseBar } from './components';
 import { cleanLabel } from './labels';
+import { MeridianHeader } from './MeridianHeader';
 
 interface ThreadData {
   chain: { key: string; wave: number; title: string };
@@ -74,15 +75,13 @@ export default function ThreadPage() {
 
   return (
     <div className="mer thread">
-      <header className="mer-head">
-        <Link to="/horizon" className="back">← Horizon</Link>
+      <MeridianHeader ctx={<>
         <Link to={`/ledger/${chainKey}`} className="back crumb" title={`All ${cleanLabel(t.chain.title)} cases`}>
           {cleanLabel(t.chain.title)}
         </Link>
         <span className="mono ref">{t.case.ref}</span>
-        <span className="spacer" />
         <span className="mono zar m3">{fmtZar(t.case.quantum_zar)}</span>
-      </header>
+      </>} />
 
       <main className="mer-main">
         <section className="case-body">

@@ -8,8 +8,10 @@ import './meridian.css';
 import { Link } from 'react-router-dom';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { useAuth } from '../lib/useAuth';
+import { MeridianHeader } from './MeridianHeader';
 import { SURFACE_REGISTRY } from './surfaces';
 import { fetchHorizon, fetchDealTypes, dealLabel, type HorizonData, type DealTypeInfo } from './lib';
+import { cleanLabel } from './labels';
 
 // esums_owner is a legacy registerable role that shares ESCO's domains + surfaces;
 // the surface registry only carries `esco:*` keys, so resolve it to esco for lookup.
@@ -57,11 +59,10 @@ export default function AtlasPage() {
 
   return (
     <div className="mer atlas">
-      <header className="mer-head">
-        <Link to="/horizon" className="back">← Horizon</Link>
-        <span className="wordmark">ATLAS — {cfg.label.toUpperCase()}</span>
+      <MeridianHeader ctx={<>
+        <b>ATLAS — {cleanLabel(cfg.label).toUpperCase()}</b>
         <span className="counts mono">{fnCount} functions · {h?.counts.total ?? 0} live · {h?.counts.breached ?? 0} breached</span>
-      </header>
+      </>} />
       <main className="domains">
         {transactable.length > 0 && (
           <section className="domain">
@@ -84,7 +85,7 @@ export default function AtlasPage() {
           if (reachable.length === 0) return null;
           return (
           <section className="domain" key={d.key}>
-            <h2>{d.label.toUpperCase()}</h2>
+            <h2>{cleanLabel(d.label).toUpperCase()}</h2>
             {reachable.map(f => {
               const live = f.chainKey ? liveByChain.get(f.chainKey) : undefined;
               // Chain-backed functions open their Meridian Ledger; functions with a
@@ -93,7 +94,7 @@ export default function AtlasPage() {
               const to = f.chainKey ? `/ledger/${f.chainKey}` : f.route ? f.route : `/surface/${f.key}`;
               return (
                 <Link key={f.key} className="fn" to={to}>
-                  <span className="name">{f.label}</span>
+                  <span className="name">{cleanLabel(f.label)}</span>
                   {live && <span className="live mono">{live.live} live</span>}
                   {live && live.breached > 0 && <span className="breach mono">{live.breached} ⚠</span>}
                 </Link>

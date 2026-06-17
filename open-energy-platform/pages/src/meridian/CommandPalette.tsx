@@ -10,6 +10,7 @@ import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { useAuth } from '../lib/useAuth';
 import { SURFACE_REGISTRY } from './surfaces';
 import { fetchHorizon, type MerCase } from './lib';
+import { cleanLabel } from './labels';
 
 interface Hit { type: 'function' | 'case'; label: string; sub: string; go: () => void }
 
@@ -70,10 +71,10 @@ export default function CommandPalette() {
     f.chainKey ? `/ledger/${f.chainKey}` : f.route ? f.route : surfaceFor(f.key) ? `/surface/${f.key}` : null;
   const hits: Hit[] = [
     ...cfg.domains.flatMap(d => d.features
-      .filter(f => f.label.toLowerCase().includes(ql))
+      .filter(f => cleanLabel(f.label).toLowerCase().includes(ql))
       .map(f => ({ f, to: targetFor(f) }))
       .filter((x): x is { f: typeof x.f; to: string } => x.to !== null)
-      .map(({ f, to }) => ({ type: 'function' as const, label: f.label, sub: d.label,
+      .map(({ f, to }) => ({ type: 'function' as const, label: cleanLabel(f.label), sub: cleanLabel(d.label),
         go: () => nav(to) }))),
     ...cases
       .filter(c => `${c.ref} ${c.title} ${c.counterparty ?? ''}`.toLowerCase().includes(ql))

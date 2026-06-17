@@ -32,7 +32,7 @@ export function MeridianHeader({ ctx }: { ctx?: React.ReactNode }) {
 
   return (
     <header>
-      <div className="wordmark">CEC</div>
+      <Link to="/horizon" className="wordmark">CEC</Link>
       {ctx && <div className="ctx">{ctx}</div>}
       <div className="spacer" />
       <nav className="quicklinks" aria-label="Platform sections">

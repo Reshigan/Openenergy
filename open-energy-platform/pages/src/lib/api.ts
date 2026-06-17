@@ -9,7 +9,13 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api';
 // In-memory access token — never written to localStorage.
 // XSS cannot steal it; session survives page reload via cookie-based refresh.
 let _accessToken: string | null = null;
-export function setAuthToken(t: string | null): void { _accessToken = t; }
+export function setAuthToken(t: string | null): void {
+  _accessToken = t;
+  // Clearing the in-memory token must also drop any seeded localStorage['token']
+  // (Playwright suites seed it via addInitScript), else the request interceptor's
+  // localStorage fallback keeps re-authenticating after logout/refresh-failure.
+  if (t === null) { try { localStorage.removeItem('token'); } catch { /* non-fatal */ } }
+}
 export function getAuthToken(): string | null { return _accessToken; }
 
 export const api = axios.create({
@@ -89,7 +95,7 @@ api.interceptors.response.use(
         (original.headers as Record<string, string>).Authorization = `Bearer ${newToken}`;
         return api.request(original);
       }
-      _accessToken = null;
+      setAuthToken(null); // clears in-memory token AND any seeded localStorage['token']
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }

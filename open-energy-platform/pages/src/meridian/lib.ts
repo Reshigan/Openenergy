@@ -144,6 +144,14 @@ export function dealLabel(t: string): string {
   return t.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
+// De-snake a raw registry/URL key for display. titleCase=false keeps it lowercase
+// (used as a secondary tag — title-casing would mangle acronyms like ipp/cod/mrv/ppa);
+// titleCase=true is for headings where word keys (master_data → Master Data) read better.
+export function humanizeKey(key: string, titleCase = false): string {
+  const spaced = key.replace(/_/g, ' ').trim();
+  return titleCase ? spaced.replace(/\b\w/g, c => c.toUpperCase()) : spaced;
+}
+
 // pipeline stage of a request, for DealProcessRail
 export type DealStage = 'offer' | 'match' | 'evaluate' | 'accept' | 'track';
 export function dealStage(r: DealRequestSummary): DealStage {

@@ -17,6 +17,10 @@
   --oxide: oklch(0.50 0.18 30);
   --oxide-tint: oklch(0.95 0.02 30);
   --moss: oklch(0.55 0.09 150);
+  /* Darker moss for TEXT only — lighter --moss reads ~3.3:1 on --raised paper
+     (fails WCAG AA 4.5:1). L≈0.46 lifts contrast to ~6.5:1 → clears AA. Dots/fills
+     keep --moss; .sweet text and any small moss copy uses --moss-deep. */
+  --moss-deep: oklch(0.46 0.085 150);
   --ease: cubic-bezier(0.23, 1, 0.32, 1);
   font-family: 'Archivo', 'IBM Plex Sans', sans-serif;
   background: var(--paper); color: var(--ink);
@@ -105,6 +109,7 @@
   padding:6px 11px; border-radius:6px; transition:background 140ms var(--ease), color 140ms;
 }
 .mer .quicklinks a:hover { background:var(--paper); color:var(--petrol); }
+.mer .quicklinks a:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
 .mer .avatar-wrap { position:relative; }
 .mer .avatar {
   width:32px; height:32px; border-radius:50%; background:var(--petrol); color:white;
@@ -134,7 +139,7 @@
 .mer .avatar-item.danger:hover { background:color-mix(in oklch, var(--oxide) 10%, transparent); color:var(--oxide); }
 
 /* ── Layout ──────────────────────────────── */
-.mer .main { flex:1; display:grid; grid-template-columns:1fr 348px; min-height:0; }
+.mer .main { flex:1; display:grid; grid-template-columns:1fr 348px; min-height:0; position:relative; overflow-x:clip; transition:grid-template-columns 300ms var(--ease); }
 .mer .main.duty-collapsed { grid-template-columns:1fr 38px; }
 
 /* ── Horizon board ───────────────────────── */
@@ -198,17 +203,35 @@
 .mer .chip.ox { background:var(--oxide-tint); color:var(--oxide); border:1px solid var(--oxide); }
 .mer .fuse { height:3px; border-radius:2px; background:var(--line); margin-top:8px; overflow:hidden; }
 .mer .fuse > i { display:block; height:100%; border-radius:2px; background:var(--petrol); }
-.mer .fuse.warn > i { background:var(--amber-deep); }
-.mer .fuse.dead > i { background:var(--oxide); width:100% !important; }
+/* Non-color cue (a11y): warn/dead aren't distinguishable by hue alone, so layer a
+   stripe over the fill. Warn = sparse forward hatch; dead = dense back hatch — the
+   two states read differently even without colour vision. */
+.mer .fuse.warn > i {
+  background:
+    repeating-linear-gradient(45deg, oklch(1 0 0 / 0.45) 0 2px, transparent 2px 5px),
+    var(--amber-deep);
+}
+.mer .fuse.dead > i {
+  width:100% !important;
+  background:
+    repeating-linear-gradient(-45deg, oklch(1 0 0 / 0.55) 0 2px, transparent 2px 4px),
+    var(--oxide);
+}
 .mer .breach-note { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--oxide); font-weight:700; margin-top:6px; }
 
 /* ── Duty Stream ─────────────────────────── */
 .mer aside {
   border-left:1px solid var(--line); background:var(--raised); display:flex;
   flex-direction:column; min-height:0; box-shadow:-1px 0 0 oklch(0.21 0.012 85 / 0.04);
+  overflow:hidden; transition:transform 300ms var(--ease), opacity 220ms var(--ease);
 }
-.mer aside.collapsed { display:none; }
+/* Collapse is a slide-out, not a snap: aside stays mounted and translates off the
+   right edge (clipped by .main overflow-x:clip) while the grid column eases to 38px.
+   The reopen rail slides in from the same edge. */
+.mer aside.collapsed { transform:translateX(100%); opacity:0; pointer-events:none; }
 .mer .duty-rail {
+  position:absolute; top:0; right:0; bottom:0; width:38px; z-index:2;
+  animation:mer-rail-in 300ms var(--ease);
   border-left:1px solid var(--line); background:var(--raised); cursor:pointer;
   display:flex; flex-direction:column; align-items:center; gap:12px; padding:16px 0;
   color:var(--ink2); font:inherit; box-shadow:-1px 0 0 oklch(0.21 0.012 85 / 0.04);
@@ -246,7 +269,11 @@
 @media (max-width:1080px) {
   .mer .main, .mer .main.duty-collapsed { grid-template-columns:1fr; }
   .mer aside { border-left:none; border-top:1px solid var(--line); box-shadow:none; max-height:55vh; }
+  /* Stacked layout: a horizontal off-canvas slide would leave a gap in the column
+     flow, so collapse snaps here and the rail returns to normal flow as a bar. */
+  .mer aside.collapsed { display:none; transform:none; opacity:1; }
   .mer .duty-rail {
+    position:static; width:auto; animation:none;
     flex-direction:row; justify-content:center; gap:10px;
     border-left:none; border-top:1px solid var(--line); padding:10px 0;
   }
@@ -389,6 +416,11 @@
   background:transparent; color:var(--ink); font-family:'Archivo',sans-serif; font-size:17px; font-weight:500;
 }
 .mer .palette input::placeholder { color:var(--ink3); }
+/* The base rule kills the native outline; restore a visible focus ring (a11y).
+   Inset box-shadow keeps the rounded panel edge clean. */
+.mer .palette input:focus-visible {
+  box-shadow:inset 0 -2px 0 0 var(--petrol), inset 0 0 0 2px oklch(0.40 0.075 200 / 0.25);
+}
 .mer .pal-hits { padding:10px 8px; max-height:52vh; overflow-y:auto; }
 .mer .hit {
   display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:8px; cursor:pointer;
@@ -426,8 +458,12 @@
 /* Offer-compare list inside the veil; the .veil-body cap above gives it its scroll. */
 .mer .ocard-grid { display:flex; flex-direction:column; }
 
+@keyframes mer-rail-in { from { transform:translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
 @media (prefers-reduced-motion:reduce) {
   .mer.veil, .mer .palette, .mer .veil-body { animation-name:mer-veil-in; }
+  .mer .main { transition:none; }
+  .mer aside { transition:none; }
+  .mer .duty-rail { animation:none; }
 }
 
 /* ── Deal Desk ───────────────────────────── */
@@ -494,7 +530,7 @@
 .mer .ocard.best { border-left:3px solid var(--petrol); }
 .mer .ocard .metric { font-family:'JetBrains Mono',monospace; font-weight:700; font-size:18px; letter-spacing:-0.01em; color:var(--petrol-deep); }
 .mer .ocard .est { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink2); }
-.mer .ocard .sweet { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--moss); font-weight:600; }
+.mer .ocard .sweet { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--moss-deep); font-weight:600; }
 .mer .ocard .why { font-size:11.5px; color:var(--ink2); margin-top:7px; line-height:1.45; }
 .mer .ocard-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .mer .ocard-top b { font-size:13.5px; font-weight:600; line-height:1.35; }
@@ -503,7 +539,7 @@
 /* "▸ sweeteners" collapsible — grid-rows/opacity ease, eased with var(--ease); never JS. */
 .mer .sweet-toggle {
   margin-top:8px; padding:0; border:none; background:transparent; cursor:pointer;
-  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; color:var(--moss);
+  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; color:var(--moss-deep);
 }
 .mer .sweet-reveal {
   display:grid; grid-template-rows:0fr; opacity:0; overflow:hidden;
@@ -524,9 +560,13 @@
 .mer .composer input, .mer .composer select {
   width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:6px; outline:none;
   background:var(--paper); color:var(--ink); font-family:'Archivo',sans-serif; font-size:13px;
-  transition:border-color 140ms var(--ease);
+  transition:border-color 140ms var(--ease), box-shadow 140ms var(--ease);
 }
 .mer .composer input:focus, .mer .composer select:focus { border-color:var(--petrol); }
+/* Visible focus ring (a11y): petrol halo, distinct from the oxide error halo below. */
+.mer .composer input:focus-visible, .mer .composer select:focus-visible {
+  border-color:var(--petrol); box-shadow:0 0 0 3px oklch(0.40 0.075 200 / 0.25);
+}
 .mer .composer .preview {
   font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--ink2);
   background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:11px 13px;
@@ -538,9 +578,20 @@
 }
 /* Checkboxes opt out of the full-width input rule — intrinsic size, left-aligned. */
 .mer .composer input[type=checkbox] { width:auto; align-self:flex-start; }
-/* Required-field error idiom (oxide border + inline 'required' hint), keyed off aria-invalid. */
+/* Required-field error idiom (oxide border + inline 'required' hint), keyed off aria-invalid.
+   Oxide halo keeps the error legible even at rest; a focused-invalid field then layers
+   an inset petrol ring (rule below) so "focused" and "invalid" stay independently readable. */
 .mer .composer .field.flag input, .mer .composer .field.flag select,
-.mer .composer input[aria-invalid=true], .mer .composer select[aria-invalid=true] { border-color:var(--oxide); }
+.mer .composer input[aria-invalid=true], .mer .composer select[aria-invalid=true] {
+  border-color:var(--oxide); box-shadow:0 0 0 3px oklch(0.50 0.18 30 / 0.20);
+}
+/* Focused AND invalid: oxide error halo (outer) + petrol focus ring (inner inset) so the
+   two states are visually distinct — without this the error border alone wins on focus. */
+.mer .composer .field.flag input:focus-visible, .mer .composer .field.flag select:focus-visible,
+.mer .composer input[aria-invalid=true]:focus-visible, .mer .composer select[aria-invalid=true]:focus-visible {
+  border-color:var(--oxide);
+  box-shadow:0 0 0 3px oklch(0.50 0.18 30 / 0.20), inset 0 0 0 2px var(--petrol);
+}
 .mer .composer .field-required { font-size:11px; color:var(--oxide); }
 
 /* Emil motion: reduced-motion users get opacity-only — no transforms. */
@@ -604,4 +655,87 @@
 @media (prefers-reduced-motion:reduce) {
   .mer.ledger .lcard, .mer.ledger .lcard:hover, .mer.ledger .lcard:active,
   .mer.ledger .pill:active { transform:none; transition:opacity 160ms var(--ease), border-color 160ms; }
+}
+
+/* ════════ Mobile / responsive floor (≤760px phones) ════════ */
+/* Additive only — desktop grid (≥761px) and the 1080/900px tablet rules above are
+   untouched. Goal: the 7-column board and the 60px header must NOT clip or scroll
+   horizontally, and the avatar (only logout path) must stay on-screen. */
+@media (max-width:760px) {
+  /* ── Board: collapse the fixed 7-col grid to stacked, labeled sections ──
+     .board-head + .lane-row use grid-template-columns:148px 1.15fr …×6.
+     On phones we drop to block flow so each bucket renders as a full-width
+     vertical section — no horizontal scroll. */
+  .mer .board { padding:8px 0 8px 0; }
+  /* Bucket column headers are meaningless once stacked — the per-cell ::before labels
+     below restore the bucket name. The board-new "+ New" link lives in .board-head, but
+     the header's .head-new "+ New" stays visible on mobile, so the entry isn't lost. */
+  .mer .board-head { display:none; }
+  .mer .lane-row { display:block; }
+  .mer .lane-label {
+    padding:14px 18px 8px; border-top:1px solid var(--line);
+    background:var(--paper); position:sticky; top:0; z-index:2;
+  }
+  .mer .lane-label .n { padding-left:0; }
+  /* Each bucket cell becomes a labelled full-width band. The 6 cells in a .lane-row
+     render in fixed BUCKETS order (lib.ts: breached · <2h · today · 48h · this week ·
+     later), after the .lane-label <button>. Since the cells are the only <div>s in the
+     row, :nth-of-type(1..6) maps 1:1 to those buckets — so we can restore the bucket
+     name (the .board-head headers are hidden when stacked) without touching the JSX. */
+  .mer .cell {
+    border-left:none; border-top:1px solid var(--line); min-height:0;
+    padding:10px 18px; gap:10px;
+  }
+  .mer .cell:empty { display:none; } /* don't print empty bucket bands on mobile */
+  .mer .cell:not(:empty)::before {
+    display:block; margin-bottom:2px;
+    font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--ink3); font-variation-settings:'wdth' 110;
+  }
+  .mer .cell:nth-of-type(1):not(:empty)::before { content:'BREACHED'; color:var(--oxide); }
+  .mer .cell:nth-of-type(2):not(:empty)::before { content:'< 2H'; }
+  .mer .cell:nth-of-type(3):not(:empty)::before { content:'TODAY'; }
+  .mer .cell:nth-of-type(4):not(:empty)::before { content:'48H'; }
+  .mer .cell:nth-of-type(5):not(:empty)::before { content:'THIS WEEK'; }
+  .mer .cell:nth-of-type(6):not(:empty)::before { content:'LATER'; }
+  .mer .lane-collapsed-summary { display:block; padding:10px 18px; }
+
+  /* ── Header: wrap to two rows; never clip the avatar (logout) off-screen ──
+     The fixed-height single-row bar can't fit everything on a phone, so let it
+     wrap and hide the lowest-priority chrome. Avatar always stays visible. */
+  .mer header {
+    height:auto; min-height:56px; flex-wrap:wrap; gap:10px 14px;
+    padding:8px 16px;
+  }
+  .mer .clock { display:none; }                   /* lowest-priority — drop the clock on phones */
+  /* kbd-hint is the only Atlas/search entry, so keep it but compact: drop the ⌘K
+     chip (no keyboard on a phone anyway) and tighten padding rather than hiding it. */
+  .mer .kbd-hint { padding:8px 10px; gap:4px; flex-shrink:0; }
+  .mer .kbd-hint kbd { display:none; }
+  /* quicklinks wrap to their own full-width row beneath the primary controls. */
+  .mer .quicklinks { order:5; flex-basis:100%; flex-wrap:wrap; gap:4px; }
+  .mer .spacer { flex:1 1 auto; }
+  .mer .avatar-wrap { flex-shrink:0; }            /* logout path — must never be pushed off */
+  .mer .avatar-menu { right:0; }
+  .mer .head-new { flex-shrink:0; }
+
+  /* ── Touch targets: ≥44px hit-area on phones (WCAG 2.5.5 / Apple HIG) ── */
+  .mer .quicklinks a { min-height:44px; display:inline-flex; align-items:center; padding:8px 12px; }
+  .mer .avatar { width:44px; height:44px; font-size:14px; }
+  .mer .duty-collapse { width:44px; height:44px; font-size:16px; }
+  .mer .board-new { min-height:44px; align-self:center; padding:8px 12px; }
+  .mer .pill { min-height:44px; display:inline-flex; align-items:center; padding:8px 16px; }
+  .mer .btn { min-height:44px; padding:10px 16px; }
+}
+
+/* ════════ Coarse-pointer touch targets (touch/stylus, any width) ════════ */
+/* Belt-and-braces with the ≤760px block: any coarse pointer (tablets, touch
+   laptops) also gets ≥44px hit-areas without changing the desktop look on mouse. */
+@media (pointer:coarse) {
+  .mer .quicklinks a { min-height:44px; display:inline-flex; align-items:center; }
+  .mer .avatar { min-width:44px; min-height:44px; }
+  .mer .duty-collapse { min-width:44px; min-height:44px; }
+  .mer .board-new { min-height:44px; }
+  .mer .pill { min-height:44px; display:inline-flex; align-items:center; }
+  .mer .btn { min-height:44px; }
 }

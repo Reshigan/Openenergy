@@ -2,7 +2,7 @@
 // which is ported verbatim from mockups/meridian/01-horizon.html: fuse fill is `.fuse > i`,
 // tile children are .ref / .title / .zar / .meta).
 import { Link } from 'react-router-dom';
-import { fmtZar, zarMagnitudeClass, fuseFraction, type MerCase } from './lib';
+import { fmtZar, zarMagnitudeClass, fuseFraction, humanizeKey, type MerCase } from './lib';
 
 export function FuseBar({ deadline }: { deadline: string | null }) {
   const f = fuseFraction(deadline);
@@ -26,7 +26,7 @@ export function CaseTile({ c }: { c: MerCase }) {
       className={breached ? 'tile breached' : 'tile'}
       data-bucket={c.bucket}
     >
-      <div className="ref">{c.ref} · {c.chain}</div>
+      <div className="ref">{c.ref} · {humanizeKey(c.chain)}</div>
       <div className="title">{c.title}</div>
       {c.quantum_zar != null && (
         <div className={`zar ${zarMagnitudeClass(c.quantum_zar)}`}>{fmtZar(c.quantum_zar)}</div>

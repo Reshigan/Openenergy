@@ -9,6 +9,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth';
 import { MeridianFrame } from './MeridianFrame';
 import { SURFACE_REGISTRY } from './surfaces';
+import { humanizeKey } from './lib';
 
 export default function MeridianSurfacePage() {
   const { key = '' } = useParams();
@@ -31,7 +32,7 @@ export default function MeridianSurfacePage() {
   }
 
   return (
-    <MeridianFrame ctx={<b>{key}</b>}>
+    <MeridianFrame ctx={<b>{humanizeKey(key, true)}</b>}>
       <React.Suspense fallback={<div className="mer mer-loading" aria-busy="true">Loading…</div>}>
         <Comp role={role} />
       </React.Suspense>
