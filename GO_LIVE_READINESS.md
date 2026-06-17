@@ -1,8 +1,10 @@
 # Go-Live Readiness Assessment
 
-> **Current verdict (2026-06-17): ~58% ready. NO-GO for national/hard launch. CONDITIONAL-GO for a tightly-scoped soft-launch** (internal users, regulator demos, 1–2 pilot tenants, capped data, no settlement-of-record money movement) — and only after pre-launch items 1–3 below are closed.
+> **Current verdict (2026-06-17): NO-GO for national/hard launch. CONDITIONAL-GO for a tightly-scoped soft-launch** (internal users, regulator demos, 1–2 pilot tenants, capped data, no settlement-of-record money movement). The remaining gates are now **operational/external** (load proof, independent pen-test, key rotation, DR drill, human sign-off) — **not missing application controls**, which a 2026-06-17 code audit found present (see the security correction below).
 >
 > Assessed against `https://oe.vantax.co.za` — `GET /api/health` → `200 {"status":"healthy"}` verified.
+>
+> **2026-06-17 security correction.** An earlier draft listed "no CSRF, no admin 2FA, per-IP-only login limit" as open blockers. A code audit (file:line evidence below) found these controls **already present**: per-account login lockout, refresh-endpoint rate-limiting, admin/regulator MFA-required policies + a step-up gate, and a Bearer-token (non-cookie-credential) auth model. The step-up gate had a `grace=0` footgun that bricked high-risk ops; **repaired in PR #66 (`HIGH_RISK_GRACE_SECONDS=120`)**. Genuinely-still-open security items are narrower: independent pen-test, exposed Cloudflare Global API key rotation, `JWT_SECRET` rotation, at-rest PII encryption.
 >
 > **§§1–6 below are the 2026-05-10 baseline, retained for history.** Several 500s they list are already fixed in current code (e.g. `/api/cockpit/kpis` now uses `matched_volume_mwh`; `/api/esg/decarbonisation` falls back to `esg_decarbonisation_pathways`). Treat the baseline numbers (37 migrations / 51 modules / 35 pages / 204 tables) as superseded by the current-truth figures here.
 
@@ -14,7 +16,7 @@
 |---|---|---|
 | Migrations | 37 | **508** (highest `508_add_carbon_chain_tier_columns.sql`) |
 | Route modules | 51 | **347** (360 `app.route` mounts) |
-| Unit tests | 474 | **8167** green (240 files, 0 fail — reproduced this session) |
+| Unit tests | 474 | **8180** green (242 files, 0 fail — reproduced this session) |
 | State-machine chains | suites only | **Waves 1–76** L4/L5 (settlement atomic DvP, grid dispatch/curtailment/capacity, regulator SLA escalation, carbon Article 6, ITIL) |
 
 ### What is genuinely strong (not vaporware)
@@ -24,18 +26,18 @@
 - KV used only as cache/rate-limiter; R2 document vault real; scheduled D1→R2 gzip backups; CI encodes the irregular 019–048 migration band.
 
 ### Blockers that actually gate a regulator-grade financial exchange (all P1 unless noted)
-1. **PR #65 unmerged** → `main` lacks the latest journey work; what prod serves vs. source is unconfirmed.
+1. ~~PR #65 unmerged~~ **RESOLVED** — PR #65 (journey work) **and** PR #66 (step-up security repair) both merged to `main`; `deploy.yml` shipped them. `GET /api/health` → healthy confirmed post-deploy. What prod serves now matches `main`.
 2. **No load proof at SA grid peak** — k6 scenarios exist but zero recorded P95/P99. Single Worker (~50 req/s ceiling) + single D1.
-3. **No independent pen-test.** Named gaps: no CSRF on state-changing ops; no at-rest PII encryption; no admin 2FA; per-IP-only login rate limit; **exposed Cloudflare Global API key must be rotated**.
+3. **No independent pen-test** (still open) — the external engagement has not run. **Correction to an earlier draft:** the application controls it listed as missing are in fact present — admin/regulator MFA-required (`oe_mfa_policies`, `migrations/061_depth.sql`) + step-up gate (repaired, PR #66); per-account login lockout (5 fails/15min → 15min, `auth.ts:95-103`, `auth-tokens.ts:209-226`) on top of per-IP 10/5min; refresh endpoint rate-limited; CSRF mitigated by architecture (Bearer-token auth from memory, not an ambient cookie credential — `api.ts`, `auth.ts:223-227`; httpOnly cookie is fallback only, so confirm `SameSite` on it to fully close cookie-only cross-origin POST). **Genuinely open security items:** exposed Cloudflare Global API key **must be rotated**; `JWT_SECRET` rotation; at-rest PII encryption; the independent pen-test itself.
 4. **Prod schema not reproducible from migrations** (019–048 force-applied out-of-band); no DR restore drill proving the band replays.
 5. **Single-region D1 10GB ceiling**; national metering shards NOT bound (`METERING_DB_CURRENT` / `esums-telemetry` commented out in `wrangler.toml`).
 6. **E2E not verifiably run on the current build**; settlement double-settle / netting-race correctness unproven by live tests.
 7. (P2) **No compliance/exec/CISO sign-off**; POPIA data-residency unsubstantiated (D1 region is Cloudflare-controlled, not pinned to a ZA region).
 
 ### Pre-launch must-dos (ordered)
-1. Merge PR #65; confirm exactly what prod serves.
+1. ~~Merge PR #65; confirm what prod serves.~~ **DONE** — #65 + #66 merged, deploy green, health confirmed.
 2. Re-run full E2E on staging with the token cache; capture a recorded PASS.
-3. Pen-test + rotate the exposed Cloudflare key + `JWT_SECRET`; add CSRF, admin 2FA, admin-write-gate checks.
+3. Commission the independent pen-test + rotate the exposed Cloudflare key + `JWT_SECRET`. (CSRF posture, admin/regulator MFA, per-account login lockout, refresh rate-limit, and the high-risk step-up gate are already in code — verify `SameSite` on the fallback auth cookie and add at-rest PII encryption.)
 4. k6 at SA peak + national metering volume; record P95/P99; bind metering shards if needed.
 5. Real DR restore drill proving 019–048 replays from scratch.
 6. Settlement correctness tests live + the 130-case per-role UAT matrix.

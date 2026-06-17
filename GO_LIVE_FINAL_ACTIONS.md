@@ -1,15 +1,16 @@
 # Go-Live Final Actions — Gated Runbook
 
 Companion to [GO_LIVE_READINESS.md](GO_LIVE_READINESS.md). That doc is the
-honest ledger (**~58% ready, NO-GO national, CONDITIONAL-GO capped soft-launch**).
-This doc is the **execution runbook for the actions an agent must not fire
+honest ledger (**NO-GO national, CONDITIONAL-GO capped soft-launch**). This doc
+is the **execution runbook for the actions an agent must not fire
 autonomously** — each one is outward-facing, irreversible, billable, or requires
 a human signer. They are teed up here with exact steps so an operator can run
 them deliberately.
 
-**Standing constraint:** PR #65 stays a PR, not an auto-merge — merging to `main`
-triggers the prod deploy workflow ([deploy.yml](.github/workflows/deploy.yml)).
-That is a gated action; this runbook does not perform it.
+**2026-06-17 update:** PR #65 (journey work) and PR #66 (step-up security
+repair) are now **both merged to `main`**, the prod deploy workflow shipped
+them, and `GET /api/health` is healthy on the deployed SHA. §1 below is
+therefore **closed**. The remaining gated actions are §§2–7.
 
 ---
 
@@ -27,29 +28,20 @@ blockers 1–7.
 
 ---
 
-## 1. Merge PR #65 → confirm prod (readiness must-do #1, blocker #1)
+## 1. Merge PR #65 + #66 → confirm prod (readiness must-do #1, blocker #1) — ✅ CLOSED
 
-**Gate:** merging to `main` fires `deploy.yml` (SPA build → vitest → migration
-band → `wrangler deploy` → Pages mirror). Outward + deploys prod.
+**Status (2026-06-17): DONE.** PR #65 (journey work) and PR #66 (step-up
+security repair, `HIGH_RISK_GRACE_SECONDS=120`) are both merged to `main`.
+`deploy.yml` ran (SPA build → vitest → migration band → `wrangler deploy` →
+Pages mirror) and `GET /api/health` returns `{"status":"healthy"}` on the
+deployed SHA. No action remaining here.
+
+Verification commands (for the record / future merges):
 
 ```bash
-# Pre-merge sanity (safe, read-only):
-gh pr view 65 --json mergeable,mergeStateStatus,statusCheckRollup
-gh pr checks 65
-
-# Merge (gated — operator decision):
-gh pr merge 65 --squash --delete-branch=false
-
-# Watch the deploy:
-gh run watch "$(gh run list --workflow deploy.yml --limit 1 --json databaseId -q '.[0].databaseId')"
-
-# Confirm what prod actually serves AFTER deploy:
+gh run list --workflow deploy.yml --limit 3 --json headSha,status,conclusion
 curl -s https://oe.vantax.co.za/api/health    # expect {"status":"healthy"}
-# Spot-check a route touched by #65's journey work and diff the served SPA
-# bundle hash against the build artifact.
 ```
-
-If any check is red, do **not** merge — fix on the branch first.
 
 ---
 
@@ -96,14 +88,27 @@ wrangler secret put JWT_SECRET       # paste a fresh 256-bit random value
 # window or accept a forced re-login for all users.
 ```
 
-**Pen-test scope to commission** (named gaps from the readiness doc):
-- No CSRF protection on state-changing ops → add CSRF tokens / double-submit.
-- No at-rest PII encryption.
-- No admin 2FA → add for `admin` / `regulator` roles.
-- Per-IP-only login rate limit → add per-account throttling.
+**Pen-test scope to commission.** A 2026-06-17 code audit corrected the
+earlier "named gaps" list — several listed controls are in fact **already
+present**, so the pen-test should _validate_ them rather than assume they are
+missing:
+- **CSRF** — auth is Bearer-token from JS memory (`api.ts`), not an ambient
+  cookie credential, so classic cross-origin CSRF does not apply to state-change
+  endpoints. The httpOnly cookie is a fallback only. _Pen-test task:_ confirm
+  `SameSite` on that fallback cookie and that no state-change path is satisfiable
+  by cookie alone.
+- **Admin 2FA** — present: `oe_mfa_policies` seeds `admin`/`regulator`
+  `required=1` (`migrations/061_depth.sql`); step-up gate repaired in PR #66.
+  _Pen-test task:_ confirm enforcement end-to-end.
+- **Login rate limiting** — present at two layers: per-IP 10/5min **and**
+  per-account lockout 5-fails/15min → 15min (`auth.ts:95-103`). _Pen-test task:_
+  confirm lockout cannot be bypassed by IP rotation.
+- **At-rest PII encryption** — **genuinely open**; still to be added.
 
-Do not soft-launch with money movement until 3a is done and the CSRF + admin-2FA
-gaps are closed.
+Do not soft-launch with money movement until **3a (Cloudflare key rotation)** is
+done. The CSRF / admin-2FA / rate-limit controls the earlier draft flagged are
+already in code; the residual security work is key rotation + at-rest PII
+encryption + the independent pen-test.
 
 ---
 
@@ -164,10 +169,11 @@ pinned to a ZA region — get the residency story in writing or pin the region).
 ## Suggested order
 
 `3a (rotate Cloudflare key — do now, independent of launch)` →
-`1 (merge #65, confirm prod)` →
+~~`1 (merge #65, confirm prod)` — ✅ done~~ →
 `5 (E2E PASS)` → `2 (k6 record)` → `4 (DR drill)` →
 `3 (pen-test + remaining security)` → `6 (sign-off)` → `7 (housekeeping)`.
 
-Soft-launch gate per readiness doc = items 1–3 closed. National hard-launch
+Soft-launch gate per readiness doc = items 1–3 closed (1 done; 2–3 remain).
+National hard-launch
 remains 6–9 months on the architectural items (single-region D1, single Worker)
 per [NATIONAL_DEPLOYMENT_EVALUATION.md](NATIONAL_DEPLOYMENT_EVALUATION.md).
