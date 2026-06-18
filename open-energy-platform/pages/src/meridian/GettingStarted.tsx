@@ -111,7 +111,7 @@ export function GettingStarted() {
     };
     poll();
     return () => { live = false; if (timer) clearTimeout(timer); };
-  }, [user, dismissed, welcome]);
+  }, [user?.id, dismissed, welcome]);
 
   // Visibility gate: nothing until the checklist loads; gone once fully activated
   // or dismissed. Manifest is optional and never gates the card.

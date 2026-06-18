@@ -873,7 +873,7 @@
 .mer .mer-gs-item.done .mer-gs-item-state { color: var(--petrol-deep); }
 
 /* Inline AI next-best-step: a sub-card with its `why` and one primary CTA. The
-   CTA uses a light fill with petrol-deep label for AA contrast on the card. */
+   CTA uses a petrol-deep fill with a paper (white) label for AA contrast. */
 .mer .mer-gs-ai {
   display: flex; align-items: center; gap: 14px; margin-top: 16px;
   padding: 12px 14px; border: 1px solid var(--petrol); border-radius: 8px;
