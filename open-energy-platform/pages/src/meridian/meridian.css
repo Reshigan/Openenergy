@@ -36,6 +36,10 @@
   display: flex; align-items: center; justify-content: center; gap: 12px;
   text-align: center; color: var(--ink2); padding: 24px;
 }
+/* Ledger/Horizon load-failure card: a message line above a row of route-out
+   actions (Retry shows only when retrying could help — see LedgerPage). */
+.mer.mer-error { flex-direction: column; }
+.mer .mer-error-acts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 /* Admin-only compact role switcher (admin holds no lanes; views any role's board). */
 .mer .role-switch {
   display:flex; flex-wrap:wrap; gap:8px; padding:10px 28px;

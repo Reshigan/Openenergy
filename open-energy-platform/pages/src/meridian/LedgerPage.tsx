@@ -9,7 +9,7 @@ import React from 'react';
 import './meridian.css';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
-import { fetchLedger, fmtZar, type LedgerData } from './lib';
+import { fetchLedger, classifyLoadError, fmtZar, type LedgerData, type LoadErrorKind } from './lib';
 import { MeridianHeader } from './MeridianHeader';
 import { FieldForm } from './FieldForm';
 import { FuseBar } from './components';
@@ -22,7 +22,7 @@ export default function LedgerPage() {
   const [sp, setSp] = useSearchParams();
   const wantCompose = sp.get('compose') === '1';
   const [data, setData] = React.useState<LedgerData | null>(null);
-  const [err, setErr] = React.useState<string | null>(null);            // load failure — replaces the page
+  const [err, setErr] = React.useState<LoadErrorKind | null>(null);     // load failure — replaces the page
   const [status, setStatus] = React.useState<string | undefined>(undefined); // active filter key
   const [composeOpen, setComposeOpen] = React.useState(false);          // +New drawer
   const [notice, setNotice] = React.useState<string | null>(null);      // non-blocking compose advisory
@@ -33,7 +33,7 @@ export default function LedgerPage() {
     let live = true;
     fetchLedger(chainKey, status)
       .then(d => { if (live) setData(d); })
-      .catch(e => { if (live) setErr(String(e)); });
+      .catch(e => { if (live) setErr(classifyLoadError(e)); });
     return () => { live = false; };
   }, [chainKey, status]);
   React.useEffect(() => load(), [load]);
@@ -60,10 +60,26 @@ export default function LedgerPage() {
   }, [composeOpen]);
 
   if (err) {
+    // Distinguish why the load failed so the message is honest and a Retry shows
+    // only when retrying could help. A 403/404 won't change on retry — offer a
+    // route out (Atlas / Horizon) instead of a button that re-fails.
+    const msg: Record<LoadErrorKind, string> = {
+      forbidden: "Your role can't access this ledger.",
+      notfound: "This ledger doesn't exist.",
+      network: "Couldn't reach the server — check your connection.",
+      unknown: 'The ledger failed to load.',
+    };
+    const canRetry = err === 'network' || err === 'unknown';
     return (
       <div className="mer mer-error" role="alert">
-        Ledger failed to load.{' '}
-        <button type="button" className="btn ghost" onClick={() => { setErr(null); load(); }}>Retry</button>
+        <p>{msg[err]}</p>
+        <div className="mer-error-acts">
+          {canRetry && (
+            <button type="button" className="btn ghost" onClick={() => { setErr(null); load(); }}>Retry</button>
+          )}
+          <Link to="/atlas" className="btn ghost">Browse Atlas</Link>
+          <Link to="/horizon" className="btn ghost">Back to Horizon</Link>
+        </div>
       </div>
     );
   }
