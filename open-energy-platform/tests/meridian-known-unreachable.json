@@ -1,0 +1,202 @@
+[
+  {
+    "role": "admin",
+    "key": "contracts_admin",
+    "kind": "dead"
+  },
+  {
+    "role": "admin",
+    "key": "cron",
+    "kind": "dead"
+  },
+  {
+    "role": "admin",
+    "key": "esg_admin",
+    "kind": "dead"
+  },
+  {
+    "role": "admin",
+    "key": "market_halt",
+    "kind": "dead"
+  },
+  {
+    "role": "admin",
+    "key": "settlement_admin",
+    "kind": "dead"
+  },
+  {
+    "role": "admin",
+    "key": "trading",
+    "kind": "dead"
+  },
+  {
+    "role": "admin",
+    "key": "users",
+    "kind": "dead"
+  },
+  {
+    "role": "carbon_fund",
+    "key": "carbon_trading",
+    "kind": "dead"
+  },
+  {
+    "role": "epc_contractor",
+    "key": "change-orders",
+    "kind": "dead"
+  },
+  {
+    "role": "epc_contractor",
+    "key": "submittals",
+    "kind": "dead"
+  },
+  {
+    "role": "grid_operator",
+    "key": "interconnection",
+    "kind": "dead"
+  },
+  {
+    "role": "grid_operator",
+    "key": "levy_compliance",
+    "kind": "dead"
+  },
+  {
+    "role": "grid_operator",
+    "key": "market_rules",
+    "kind": "dead"
+  },
+  {
+    "role": "grid_operator",
+    "key": "nersa_reporting",
+    "kind": "dead"
+  },
+  {
+    "role": "lender",
+    "key": "benchmark_lender",
+    "kind": "dead"
+  },
+  {
+    "role": "lender",
+    "key": "carbon_lender",
+    "kind": "dead"
+  },
+  {
+    "role": "lender",
+    "key": "concentrations",
+    "kind": "dead"
+  },
+  {
+    "role": "lender",
+    "key": "covenant_reports",
+    "kind": "dead"
+  },
+  {
+    "role": "lender",
+    "key": "esg_lender",
+    "kind": "dead"
+  },
+  {
+    "role": "lender",
+    "key": "facility_reports",
+    "kind": "dead"
+  },
+  {
+    "role": "lender",
+    "key": "ie_certifications",
+    "kind": "dead"
+  },
+  {
+    "role": "lender",
+    "key": "lender_risk",
+    "kind": "dead"
+  },
+  {
+    "role": "lender",
+    "key": "portfolio",
+    "kind": "dead"
+  },
+  {
+    "role": "offtaker",
+    "key": "annual_reports",
+    "kind": "dead"
+  },
+  {
+    "role": "offtaker",
+    "key": "billing",
+    "kind": "dead"
+  },
+  {
+    "role": "offtaker",
+    "key": "credit_support",
+    "kind": "dead"
+  },
+  {
+    "role": "offtaker",
+    "key": "delivery_reports",
+    "kind": "dead"
+  },
+  {
+    "role": "offtaker",
+    "key": "energy_cost",
+    "kind": "dead"
+  },
+  {
+    "role": "offtaker",
+    "key": "metering",
+    "kind": "dead"
+  },
+  {
+    "role": "offtaker",
+    "key": "ppa_portfolio",
+    "kind": "dead"
+  },
+  {
+    "role": "offtaker",
+    "key": "ppa_variations",
+    "kind": "dead"
+  },
+  {
+    "role": "offtaker",
+    "key": "procurement_options",
+    "kind": "dead"
+  },
+  {
+    "role": "regulator",
+    "key": "stage_gates_view",
+    "kind": "dead"
+  },
+  {
+    "role": "trader",
+    "key": "benchmark_transition",
+    "kind": "dead"
+  },
+  {
+    "role": "trader",
+    "key": "black_start",
+    "kind": "dead"
+  },
+  {
+    "role": "trader",
+    "key": "esg_reports",
+    "kind": "dead"
+  },
+  {
+    "role": "trader",
+    "key": "imbalance",
+    "kind": "dead"
+  },
+  {
+    "role": "trader",
+    "key": "positions",
+    "kind": "dead"
+  },
+  {
+    "role": "trader",
+    "key": "settlement",
+    "kind": "dead"
+  },
+  {
+    "role": "trader",
+    "key": "trades",
+    "kind": "dead"
+  }
+]
