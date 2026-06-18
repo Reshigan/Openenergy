@@ -1085,3 +1085,60 @@
   .mer .mer-kyc-cta, .mer .mer-kyc-retry { transition: none; }
   .mer .mer-kyc-cta:active, .mer .mer-kyc-retry:active { transform: none; }
 }
+
+/* ── First-run guided tour ────────────────── */
+/* GuidedTour: one inline anchored intro card per Meridian surface. Sits in
+   normal document flow at the top of the surface content (NOT position:fixed).
+   Left petrol accent edge reads as "tour"; tokens reused from .mer above. */
+@keyframes mer-tour-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+.mer-tour {
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--petrol);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin: 16px 28px 4px;
+  animation: mer-tour-in 220ms var(--ease);
+}
+.mer-tour-eyebrow {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink3);
+}
+.mer-tour-title {
+  margin-top: 6px; font-size: 15px; font-weight: 700; color: var(--ink);
+}
+/* --ink2 for the body so copy clears WCAG AA 4.5:1 on --raised. */
+.mer-tour-body {
+  margin-top: 4px; font-size: 13px; line-height: 1.55; color: var(--ink2);
+}
+/* Emphasised single next step. --petrol-deep clears AA at this weight/size. */
+.mer-tour-next {
+  margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--petrol-deep);
+}
+.mer-tour-acts {
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 14px;
+}
+.mer-tour-skip {
+  cursor: pointer; border: none; background: none; padding: 6px 8px;
+  font-family: 'Archivo', sans-serif; font-size: 13px; font-weight: 600; color: var(--ink2);
+  border-radius: 6px; transition: color 120ms var(--ease), transform 120ms var(--ease);
+}
+.mer-tour-skip:hover { color: var(--ink); }
+.mer-tour-skip:active { transform: scale(0.97); }
+.mer-tour-skip:focus-visible { outline: 2px solid var(--petrol); outline-offset: 2px; }
+.mer-tour-gotit {
+  cursor: pointer; border: 1px solid var(--petrol); background: var(--petrol); color: white;
+  padding: 7px 16px; border-radius: 6px;
+  font-family: 'Archivo', sans-serif; font-size: 13px; font-weight: 700;
+  transition: background-color 120ms var(--ease), transform 120ms var(--ease);
+}
+.mer-tour-gotit:hover { background: var(--petrol-deep); border-color: var(--petrol-deep); }
+.mer-tour-gotit:active { transform: scale(0.97); }
+.mer-tour-gotit:focus-visible { outline: 2px solid var(--petrol-deep); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mer-tour { animation: none; }
+  .mer-tour-skip, .mer-tour-gotit { transition: none; }
+  .mer-tour-skip:active, .mer-tour-gotit:active { transform: none; }
+}

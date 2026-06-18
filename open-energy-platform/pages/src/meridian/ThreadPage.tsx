@@ -12,6 +12,7 @@ import { FieldForm } from './FieldForm';
 import { FuseBar } from './components';
 import { cleanLabel } from './labels';
 import { MeridianHeader } from './MeridianHeader';
+import { GuidedTour } from './GuidedTour';
 
 interface ThreadData {
   chain: { key: string; wave: number; title: string };
@@ -93,6 +94,8 @@ export default function ThreadPage() {
         <span className="mono ref">{t.case.ref}</span>
         <span className="mono zar m3">{fmtZar(t.case.quantum_zar)}</span>
       </>} />
+
+      <GuidedTour surface="thread" />
 
       <main className="mer-main">
         <section className="case-body">

@@ -18,6 +18,7 @@ import { DealProcessRail } from './DealProcessRail';
 import { OfferCompareGrid } from './OfferCompareGrid';
 import { DealOfferComposer } from './DealOfferComposer';
 import { MeridianHeader } from './MeridianHeader';
+import { GuidedTour } from './GuidedTour';
 
 // Active composer veil: which deal type, and offer vs request.
 interface ComposeState { info: DealTypeInfo; mode: 'offer' | 'request' }
@@ -120,6 +121,8 @@ export default function DealDeskPage() {
         <b>DEAL DESK</b>
         <span className="counts mono">{requests.length} requests · {offers.length} offers</span>
       </>} />
+
+      <GuidedTour surface="deals" />
 
       {loadErr && (
         <div className="act-error" role="alert">

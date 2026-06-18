@@ -8,6 +8,7 @@ import { fetchHorizon, singleChainOf, BUCKETS, fmtZar, type Bucket, type Horizon
 import { CaseTile } from './components';
 import { MeridianHeader } from './MeridianHeader';
 import { GettingStarted } from './GettingStarted';
+import { GuidedTour } from './GuidedTour';
 import { cleanLabel } from './labels';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/useAuth';
@@ -161,6 +162,8 @@ export default function HorizonPage() {
       <MeridianHeader ctx={<><b>{cleanLabel(cfg?.label ?? boardRole)}</b><span>{data.counts.total} live · {data.counts.breached} breached</span></>} />
 
       <GettingStarted />
+
+      <GuidedTour surface="horizon" />
 
       {roleSwitcher}
 

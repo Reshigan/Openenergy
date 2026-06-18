@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { useAuth } from '../lib/useAuth';
 import { MeridianHeader } from './MeridianHeader';
+import { GuidedTour } from './GuidedTour';
 import { SURFACE_REGISTRY } from './surfaces';
 import { isTileReachable, tileTarget } from './reachability';
 import { fetchHorizon, fetchDealTypes, dealLabel, type HorizonData, type DealTypeInfo } from './lib';
@@ -61,6 +62,7 @@ export default function AtlasPage() {
         <b>ATLAS — {cleanLabel(cfg.label).toUpperCase()}</b>
         <span className="counts mono">{fnCount} functions · {h?.counts.total ?? 0} live · {h?.counts.breached ?? 0} breached</span>
       </>} />
+      <GuidedTour surface="atlas" />
       <main className="domains">
         {transactable.length > 0 && (
           <section className="domain">

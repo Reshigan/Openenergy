@@ -11,6 +11,7 @@ import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { api } from '../lib/api';
 import { fetchLedger, classifyLoadError, fmtZar, type LedgerData, type LoadErrorKind } from './lib';
 import { MeridianHeader } from './MeridianHeader';
+import { GuidedTour } from './GuidedTour';
 import { FieldForm } from './FieldForm';
 import { FuseBar } from './components';
 
@@ -103,6 +104,8 @@ export default function LedgerPage() {
   return (
     <div className="mer ledger">
       <MeridianHeader ctx={<><b>{data.chain.title}</b><span>{data.rows.length} shown</span></>} />
+
+      <GuidedTour surface="ledger" />
 
       <main className="ledger-body">
         <Link to="/horizon" className="ledger-back">← Horizon</Link>
