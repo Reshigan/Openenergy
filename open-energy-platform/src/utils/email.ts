@@ -132,6 +132,15 @@ export async function sendEmail(env: HonoBindings, input: SendEmailInput): Promi
     `INSERT INTO oe_email_outbox (id, to_addr, template, payload, status) VALUES (?, ?, ?, ?, 'queued')`,
   ).bind(id, input.to, input.template, payload).run();
 
+  // Runtime guard: the template field is a typed union at compile time, but a
+  // bad caller could still pass an unknown key. Reject it here (before the gate
+  // decision) so neither the no-op nor the live path can send a blank email.
+  if (!Object.prototype.hasOwnProperty.call(TEMPLATES, input.template)) {
+    const msg = `unknown template: ${String(input.template)}`.slice(0, ERROR_MAX_LEN);
+    await markStatus(env, id, 'failed', msg);
+    return { id, status: 'failed' };
+  }
+
   const live = env.ENVIRONMENT === 'production' && !!env.EMAIL_FROM;
 
   if (!live) {
@@ -145,7 +154,7 @@ export async function sendEmail(env: HonoBindings, input: SendEmailInput): Promi
   const value = tpl ? tpl.body(input.data ?? {}) : '';
 
   try {
-    await fetch(MAILCHANNELS_ENDPOINT, {
+    const response = await fetch(MAILCHANNELS_ENDPOINT, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -155,9 +164,14 @@ export async function sendEmail(env: HonoBindings, input: SendEmailInput): Promi
         content: [{ type: 'text/plain', value }],
       }),
     });
-    // Any non-throwing response counts as a delivery attempt accepted by the
-    // edge transport. We do not inspect response.ok further; a 4xx/5xx still
-    // recorded the intent and never breaks the calling request.
+    // Inspect the resolved response: a 4xx/5xx is a real delivery failure and
+    // must NOT be recorded as 'sent', or the audit log would lie. Only an ok
+    // (2xx) response counts as accepted by the edge transport.
+    if (!response.ok) {
+      const msg = `MailChannels HTTP ${response.status}`.slice(0, ERROR_MAX_LEN);
+      await markStatus(env, id, 'failed', msg);
+      return { id, status: 'failed' };
+    }
     await markStatus(env, id, 'sent', null);
     return { id, status: 'sent' };
   } catch (err) {

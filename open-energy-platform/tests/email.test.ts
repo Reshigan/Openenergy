@@ -81,4 +81,36 @@ describe('sendEmail - live gate open', () => {
     expect(row.status).toBe('sent');
     expect(row.error).toBeNull();
   });
+
+  it('records failed when MailChannels returns a non-2xx response', async () => {
+    globalThis.fetch = (async () => ({ ok: false, status: 500 }) as unknown as Response) as typeof fetch;
+    const res = await sendEmail(liveEnv() as unknown as HonoBindings, {
+      to: 'i@j.co',
+      template: 'verify',
+      data: { token: 't-err' },
+    });
+    expect(res.status).toBe('failed');
+    const row = outboxRow(res.id);
+    expect(row.status).toBe('failed');
+    expect(row.error).toBeTruthy();
+    expect(typeof row.error).toBe('string');
+    expect(String(row.error)).toContain('500');
+  });
+});
+
+describe('sendEmail - unknown template', () => {
+  it('records failed for an unknown template without throwing', async () => {
+    // Use the gate-closed env so we prove the guard fires before the gate.
+    const res = await sendEmail(env as unknown as HonoBindings, {
+      to: 'x@y.co',
+      template: 'bogus' as any,
+      data: {},
+    });
+    expect(res.status).toBe('failed');
+    const row = outboxRow(res.id);
+    expect(row).toBeTruthy();
+    expect(row.status).toBe('failed');
+    expect(row.error).toBeTruthy();
+    expect(String(row.error)).toContain('bogus');
+  });
 });
