@@ -96,6 +96,21 @@ export const LOOKUP_SOURCES: Record<string, string> = {
   // Support tickets — backs CSAT ticket_id. ticket_number is UNIQUE NOT NULL.
   'support-tickets':
     'SELECT id, ticket_number AS label FROM support_tickets ORDER BY ticket_number LIMIT 500',
+  // O&M work orders — backs linked_wo_id / work_order_id across the Esums + HSE
+  // chains. wo_number is UNIQUE NOT NULL (058_esums_om.sql).
+  'om-work-orders':
+    'SELECT id, wo_number AS label FROM om_work_orders ORDER BY wo_number LIMIT 500',
+  // O&M fault register — backs work_order initiation fault_id (058_esums_om.sql).
+  'om-faults':
+    'SELECT id, fault_code AS label FROM om_faults ORDER BY fault_code LIMIT 500',
+  // Substation assets (W211 lifecycle) — backs transmission_outage asset_id.
+  // asset_number is the UNIQUE utility asset tag (457_w211_substation_asset_lifecycle.sql).
+  'substation-assets':
+    'SELECT id, asset_number AS label FROM oe_substation_assets ORDER BY asset_number LIMIT 500',
+  // Warranty claims (W15/W120) — backs pr_underperformance linked_warranty_claim_id.
+  // claim_number is UNIQUE NOT NULL (120_warranty_claim_chain.sql).
+  'warranty-claims':
+    'SELECT id, claim_number AS label FROM oe_warranty_claims ORDER BY claim_number LIMIT 500',
 };
 
 ledger.get('/lookup/:source', async (c) => {

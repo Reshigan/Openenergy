@@ -109,8 +109,9 @@ describe('registry schema extensions', () => {
       }
       for (const a of d.actions) {
         for (const fld of a.fields ?? []) {
-          expect(['number','string','date','enum','boolean','evidence']).toContain(fld.type);
+          expect(['number','string','date','enum','boolean','evidence','lookup']).toContain(fld.type);
           if (fld.type === 'enum') expect((fld.options ?? []).length).toBeGreaterThan(0);
+          if (fld.type === 'lookup') expect(typeof (fld as { source?: string }).source).toBe('string');
         }
       }
     }

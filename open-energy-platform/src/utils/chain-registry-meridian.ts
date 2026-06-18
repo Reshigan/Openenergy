@@ -2106,7 +2106,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'support', 'regulator', 'ipp_developer'],
         cascadeHint: 'Approves the filed cure plan and starts the cure-execution remediation clock.',
         fields: [
-          { key: 'linked_wo_id', label: 'Linked work order', type: 'string' },
+          { key: 'linked_wo_id', label: 'Linked work order', type: 'lookup', source: '/api/ledger/lookup/om-work-orders' },
         ],
       },
       { action: 'close-compliant', label: 'Close compliant', tone: 'primary',
@@ -4914,7 +4914,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Request transmission outage',
       path: '/api/grid/transmission-outage/chain',
       fields: [
-        { key: 'asset_id', label: 'Asset', type: 'string', required: true },
+        { key: 'asset_id', label: 'Asset', type: 'lookup', source: '/api/ledger/lookup/substation-assets', required: true },
         { key: 'asset_label', label: 'Asset label', type: 'string' },
         { key: 'transmission_voltage_kv', label: 'Voltage', type: 'number' },
         { key: 'corridor_name', label: 'Corridor', type: 'string' },
@@ -7903,7 +7903,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'support', 'esco'],
         cascadeHint: 'Hands the planned intervention to the W16 work-order dispatch chain as a linked WO.',
         fields: [
-          { key: 'work_order_id', label: 'Linked work-order id', type: 'string' },
+          { key: 'work_order_id', label: 'Linked work-order id', type: 'lookup', source: '/api/ledger/lookup/om-work-orders' },
           { key: 'assigned_to', label: 'Assigned to', type: 'string' },
           { key: 'notes', label: 'Notes', type: 'string' },
         ],
@@ -7974,7 +7974,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind', 'esco'],
         cascadeHint: 'Dispatches the corrective O&M intervention against the identified root cause.',
         fields: [
-          { key: 'linked_wo_id', label: 'Linked work-order id', type: 'string' },
+          { key: 'linked_wo_id', label: 'Linked work-order id', type: 'lookup', source: '/api/ledger/lookup/om-work-orders' },
           { key: 'notes', label: 'Notes', type: 'string' },
         ],
       },
@@ -7992,7 +7992,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'support', 'esums', 'esums_om', 'ipp', 'ipp_developer', 'wind', 'esco'],
         cascadeHint: 'Escalates a non-recovering case out of routine O&M handling.',
         fields: [
-          { key: 'linked_warranty_claim_id', label: 'Linked warranty-claim id', type: 'string' },
+          { key: 'linked_warranty_claim_id', label: 'Linked warranty-claim id', type: 'lookup', source: '/api/ledger/lookup/warranty-claims' },
           { key: 'notes', label: 'Notes', type: 'string' },
         ],
       },
@@ -8051,7 +8051,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         roles: ['admin', 'support', 'ipp', 'ipp_developer', 'wind', 'esums', 'esums_om', 'esco'],
         cascadeHint: 'Dispatches corrective actions against the identified root cause.',
         fields: [
-          { key: 'linked_wo_id', label: 'Linked work-order id', type: 'string' },
+          { key: 'linked_wo_id', label: 'Linked work-order id', type: 'lookup', source: '/api/ledger/lookup/om-work-orders' },
           { key: 'notes', label: 'Notes', type: 'string' },
         ],
       },
@@ -12273,7 +12273,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         { key: 'priority', label: 'Priority', type: 'enum', options: ['critical', 'high', 'medium', 'low'], required: true },
         { key: 'title', label: 'Title', type: 'string', required: true, placeholder: 'Inverter 3 fault - no AC output' },
         { key: 'wo_number', label: 'WO Number', type: 'string', placeholder: 'WO-2026-AB12' },
-        { key: 'fault_id', label: 'Linked Fault', type: 'string', placeholder: 'omflt_demo_1' },
+        { key: 'fault_id', label: 'Linked Fault', type: 'lookup', source: '/api/ledger/lookup/om-faults' },
         { key: 'assigned_to', label: 'Assigned Technician', type: 'string', placeholder: 'omtech_demo_1' },
         { key: 'description', label: 'Description', type: 'string', placeholder: 'String 3.2 offline since 09:00' },
         { key: 'sla_response_minutes', label: 'SLA Response (mins)', type: 'number', unit: 'minutes' },
