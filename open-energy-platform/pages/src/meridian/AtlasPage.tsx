@@ -10,12 +10,9 @@ import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { useAuth } from '../lib/useAuth';
 import { MeridianHeader } from './MeridianHeader';
 import { SURFACE_REGISTRY } from './surfaces';
+import { isTileReachable, tileTarget } from './reachability';
 import { fetchHorizon, fetchDealTypes, dealLabel, type HorizonData, type DealTypeInfo } from './lib';
 import { cleanLabel } from './labels';
-
-// esums_owner is a legacy registerable role that shares ESCO's domains + surfaces;
-// the surface registry only carries `esco:*` keys, so resolve it to esco for lookup.
-const surfaceRole = (r: string) => (r === 'esums_owner' ? 'esco' : r);
 
 export default function AtlasPage() {
   // Same source LaunchRedirect uses (App.tsx) — the signed-in user from AuthContext.
@@ -53,8 +50,9 @@ export default function AtlasPage() {
   if (!cfg) return <div className="mer mer-error" role="alert">Unknown role.</div>;
   // A function is reachable iff it resolves to a chain (/ledger), a mounted page
   // (route), or a per-role Meridian surface — same predicate the render loop uses.
+  const hasSurface = (k: string) => !!SURFACE_REGISTRY[k];
   const isReachable = (f: { chainKey?: string; route?: string; key: string }) =>
-    !!(f.chainKey || f.route || SURFACE_REGISTRY[`${surfaceRole(role)}:${f.key}`]);
+    isTileReachable(role, f, hasSurface);
   const fnCount = cfg.domains.reduce((n, d) => n + d.features.filter(isReachable).length, 0);
 
   return (
@@ -91,7 +89,7 @@ export default function AtlasPage() {
               // Chain-backed functions open their Meridian Ledger; functions with a
               // standalone page open that route; everything else opens its per-role
               // Meridian surface (/surface/:key, resolved via SURFACE_REGISTRY).
-              const to = f.chainKey ? `/ledger/${f.chainKey}` : f.route ? f.route : `/surface/${f.key}`;
+              const to = tileTarget(role, f, hasSurface) ?? '#';
               return (
                 <Link key={f.key} className="fn" to={to}>
                   <span className="name">{cleanLabel(f.label)}</span>

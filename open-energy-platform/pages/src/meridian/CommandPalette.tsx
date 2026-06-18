@@ -9,13 +9,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { useAuth } from '../lib/useAuth';
 import { SURFACE_REGISTRY } from './surfaces';
+import { tileTarget } from './reachability';
 import { fetchHorizon, type MerCase } from './lib';
 import { cleanLabel } from './labels';
 
 interface Hit { type: 'function' | 'case'; label: string; sub: string; go: () => void }
-
-// esums_owner shares ESCO's surfaces; the registry only carries `esco:*` keys.
-const surfaceRole = (r: string) => (r === 'esums_owner' ? 'esco' : r);
 
 // Non-Meridian chrome: the standalone UX prototypes (/apex, /ux-prototype/*) run
 // their own command surfaces. Mounting the Meridian palette there is the
@@ -76,9 +74,9 @@ export default function CommandPalette() {
   // Same destination contract + reachability predicate as AtlasPage: chain → Ledger,
   // standalone page → its route, else per-role Meridian surface. A function with no
   // resolvable destination (never-built prototype tile) is omitted from the palette.
-  const surfaceFor = (key: string) => SURFACE_REGISTRY[`${surfaceRole(role)}:${key}`];
+  const hasSurface = (key: string) => !!SURFACE_REGISTRY[key];
   const targetFor = (f: { chainKey?: string; route?: string; key: string }) =>
-    f.chainKey ? `/ledger/${f.chainKey}` : f.route ? f.route : surfaceFor(f.key) ? `/surface/${f.key}` : null;
+    tileTarget(role, f, hasSurface);
   const hits: Hit[] = [
     ...cfg.domains.flatMap(d => d.features
       .filter(f => cleanLabel(f.label).toLowerCase().includes(ql))
