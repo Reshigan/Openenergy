@@ -39,8 +39,9 @@
 | `migrations/511_email_outbox.sql` | 2 | `oe_email_outbox` audit table (every send logged) |
 | `src/routes/onboarding-kyc.ts` | 3 | **New** — user-facing KYC submission + evidence upload + status read |
 | `src/cascade-rules/kyc-gate.ts` | 3 | **New** — `kyc.submitted`/`kyc.decided` cascade → admin inbox + market-access flag |
-| `migrations/512_kyc_submissions.sql` | 3 | `oe_kyc_submissions` + `oe_kyc_evidence` tables. **HARD-GATE: PII-at-rest encryption design needs sign-off** |
-| `migrations/513_market_access_flag.sql` | 3 | `participants.market_access` flag (gates trading/deal endpoints) |
+| `migrations/512_kyc_submission_columns.sql` | 3 | ALTER existing `oe_kyc_submissions` ADD `tenant_id` + `reason_code` (no new table). B6 AEAD-at-rest applied to PII columns via `crypto-aead.ts` |
+| `src/utils/crypto-aead.ts` | 3 | **New** — AES-256-GCM field encryption (`v1:<iv>:<ct>`), key from `env.KYC_ENC_KEY` Worker secret; dev/test no-op (plaintext) like the email seam |
+| ~~`migrations/513_market_access_flag.sql`~~ | 3 | **DROPPED** — `participant_market_access` (`full_trading\|certificate_only\|read_only`, migration 472) already exists and is the gate |
 | `src/utils/pre-trade-guards.ts` | 3 | Add `marketAccessGuard` to the order-rejection composition |
 | `pages/src/components/onboarding/KycSubmission.tsx` | 3 | **New** — evidence upload UI + status timeline |
 
@@ -133,71 +134,49 @@ git commit -m "feat(onboarding): provisioning manifest column (test + migration)
 
 ---
 
-### Task 1.2: Provision a first entity for all 9 roles
+### Task 1.2: Seed offtaker first entity + confirm every role lands non-empty (graphify-resolved)
 
 **Files:**
 - Modify: `src/cascade-rules/onboarding-provisioning.ts`
+- Modify: `src/cascade-rules/onboarding-manifest.ts` (offtaker `roleActions` deep-link)
 - Test: `tests/onboarding-provisioning.test.ts`
 
-Today the rule handles `esums_owner` (→ `om_sites`) and `ipp_developer` (→ `ipp_projects`); everything else returns `kind:'none'`. Extend to a per-role provisioning table so every role gets a meaningful, tenant-scoped first entity + a manifest entry. Use the wizard's collected `onboarding_data` (passed verbatim in `ctx.data`) to seed real values; fall back to sensible defaults.
+**Graphify-first resolution (2026-06-18) — supersedes the original "9 new tables" table.** Ran the discovery the plan mandated. Result: **no new `oe_*` tables, no migration 510.** Every role the plan wanted to give a new table already has a canonical node, and the plan's proposed tables (`oe_trader_entities`, `oe_lender_funds`, `oe_offtaker_profiles`, `oe_carbon_registry_links`, `oe_grid_authorities`, `oe_regulator_bodies`, `oe_support_orgs`) would have **duplicated existing nodes** — forbidden by the graphify-first rule. Findings:
 
-Per-role first entity (each row also pushes one manifest entity `{entity_type,label,href}`):
+| role | plan's table | graphify finding | decision |
+|---|---|---|---|
+| `esums_owner` | `om_sites` | exists (`058_esums_om.sql`) | **seed** (unchanged) |
+| `ipp_developer` | `ipp_projects` | exists (`002_domain.sql`) | **seed** (unchanged) |
+| `trader` | `oe_trader_entities` (new) | canonical = `oe_position_limits` (`062`) — already seeded; new table duplicates | **keep `oe_position_limits`** (unchanged); plan's `oe_trader_entities` rejected |
+| `offtaker` | `oe_offtaker_profiles` (new) | canonical = `off_ppa_portfolio` — owned operating object, **not** a Meridian chain | **seed `off_ppa_portfolio`** (NEW work — the one genuine win) |
+| `lender` | `oe_lender_funds` (new) | wizard collects fund-level profile data; `loan_facilities` is facility-level + fronted by W53 origination chain | **manifest-only** (regulated/no clean seed) |
+| `carbon_fund` | `oe_carbon_registry_links` (new) | `carbon_projects` exists but project registration is regulated chain W37 (`oe_carbon_registration`) | **manifest-only** (would pre-empt regulated registration) |
+| `grid_operator` | `oe_grid_authorities` (new) | oversight role; owns no draft operating object | **manifest-only** |
+| `regulator` | `oe_regulator_bodies` (new) | `regulatory_bodies` is reference data, not per-participant; oversight role | **manifest-only** |
+| `support` | `oe_support_orgs` (new) | reactive role; real artifacts are tickets/work-orders (chain cases) | **manifest-only** |
 
-| role | kind | table | seeded from wizard data | default |
-|---|---|---|---|---|
-| `esums_owner` | `om_site` | `om_sites` | `installed_capacity_kw` | 0, status `planned` |
-| `ipp_developer` | `ipp_project` | `ipp_projects` | `installed_capacity_mw`, `technology` | 10MW solar, `development` |
-| `trader` | `trader_entity` | `oe_trader_entities` | `lei`, `fsca_ref` | draft entity, limits unset |
-| `lender` | `lender_fund` | `oe_lender_funds` | `fund_size_zar`, `coverage` | draft fund |
-| `offtaker` | `offtaker_profile` | `oe_offtaker_profiles` | `ppa_prefs` | draft profile |
-| `carbon_fund` | `carbon_registry_link` | `oe_carbon_registry_links` | `registry`, `methodology` | draft link |
-| `grid_operator` | `grid_authority` | `oe_grid_authorities` | `grid_zone`, `managed_mw` | draft authority |
-| `regulator` | `regulator_body` | `oe_regulator_bodies` | `jurisdiction`, `licence_classes` | draft body |
-| `support` | `support_org` | `oe_support_orgs` | `oem_brands`, `sla_tiers` | draft org |
+This keeps the module's existing, sound seed-vs-manifest rationale (seed a row ONLY for a persistent OPERATING object the participant owns and the wizard populated; regulated chain cases + oversight roles get a manifest only) and **extends the seed set from 3 → 4** by adding offtaker, whose `off_ppa_portfolio` is exactly such an owned operating object and directly serves the documented offtaker procurement pattern. All 9 roles already produce a complete, role-tailored manifest (`buildOnboardingManifest` handles every role; `baseActions` routes are all universally valid → no dead links).
 
-> Before adding any new target table, `/graphify query "<role> first entity table"` to confirm whether a canonical table already exists (e.g. trader entities may already live in a risk/limits table). Prefer the existing table; only create a new `oe_*` table (in new migration `510_onboarding_first_entities.sql`) if none exists. **Do not duplicate an existing node.**
+`off_ppa_portfolio` schema (bind these): `id` PK, `participant_id` NOT NULL, `tenant_id` NOT NULL default `'default'`, `counterparty_name` NOT NULL, `technology`, `capacity_mw`, `status` CHECK in (`negotiating`,`signed`,`active`,`expired`,`terminated`), `created_at` default. Seed a **draft procurement-intent** row: `counterparty_name='To be selected'`, `technology` from `data.preferred_technology` (fallback `'solar_pv'`), `capacity_mw` derived from `data.peak_demand_mw` (else null), `status='negotiating'`, `tenant_id` resolved from the participant row.
 
-- [ ] **Step 1: Write failing tests** — one per role, asserting (a) a row created in the right table within the participant's tenant, (b) manifest entity present, (c) re-running the cascade is idempotent (no second row). Table-driven:
+- [ ] **Step 1: Write failing tests** in `tests/onboarding-provisioning.test.ts`. Use the same harness style as `tests/onboarding-routes.test.ts` (`createTestDb({applyMigrations:true})`, drive the cascade via the registered rule). Assert:
+  - **offtaker (new):** after `onboarding.completed` fires for an offtaker participant, exactly **one** `off_ppa_portfolio` row exists for that participant, scoped to the participant's `tenant_id`, `status='negotiating'`; the log row has `kind='ppa_portfolio'` and `JSON.parse(manifest).next_actions.length > 0`; re-firing the cascade creates **no** second row (idempotent via `alreadyProvisioned`).
+  - **manifest-only roles (lender, carbon_fund, grid_operator, regulator, support):** after the cascade, **no** domain row is fabricated, the log row has `kind='manifest'`, and `JSON.parse(manifest).next_actions.length > 0` (every role lands non-empty).
 
-```ts
-const CASES = [
-  { role: 'trader',        kind: 'trader_entity',        table: 'oe_trader_entities' },
-  { role: 'lender',        kind: 'lender_fund',          table: 'oe_lender_funds' },
-  { role: 'offtaker',      kind: 'offtaker_profile',     table: 'oe_offtaker_profiles' },
-  { role: 'carbon_fund',   kind: 'carbon_registry_link', table: 'oe_carbon_registry_links' },
-  { role: 'grid_operator', kind: 'grid_authority',       table: 'oe_grid_authorities' },
-  { role: 'regulator',     kind: 'regulator_body',       table: 'oe_regulator_bodies' },
-  { role: 'support',       kind: 'support_org',          table: 'oe_support_orgs' },
-];
-for (const tc of CASES) {
-  it(`provisions a first ${tc.kind} for ${tc.role} (idempotent)`, async () => {
-    const ctx = { event: 'onboarding.completed', actor_id: `par_${tc.role}`, entity_type: 'participants',
-                  entity_id: `par_${tc.role}`, data: { role: tc.role } };
-    await runProvisioning(env, ctx);
-    await runProvisioning(env, ctx); // second run — must be a no-op
-    const rows = db.prepare(`SELECT * FROM ${tc.table} WHERE participant_id = ?`).all(`par_${tc.role}`);
-    expect(rows.length).toBe(1);
-    const log = db.prepare(`SELECT kind, manifest FROM oe_onboarding_provisioning_log WHERE participant_id = ?`).get(`par_${tc.role}`) as any;
-    expect(log.kind).toBe(tc.kind);
-    expect(JSON.parse(log.manifest).entities.length).toBeGreaterThan(0);
-  });
-}
-```
-
-- [ ] **Step 2: Run — expect FAIL** (`kind:'none'`, no rows).
+- [ ] **Step 2: Run — expect FAIL** (offtaker currently falls through to manifest-only, so no `off_ppa_portfolio` row + log kind is `manifest` not `ppa_portfolio`).
 Run: `npx vitest run tests/onboarding-provisioning.test.ts`
 
-- [ ] **Step 3: Implement** the per-role provisioning map in `onboarding-provisioning.ts`. Keep the existing `alreadyProvisioned()` idempotency guard. Resolve tenant from the participant row (`SELECT tenant_id FROM participants WHERE id = ?`), default `'default'`. Each branch INSERTs one draft row + builds `manifest = { entities: [{ entity_type, label, href }] }`, then writes the log row with `kind` + `manifest`. For any new `oe_*` tables (only where graphify found no canonical table), add their `CREATE TABLE IF NOT EXISTS` to new migration `510_onboarding_first_entities.sql` and apply it locally.
+- [ ] **Step 3: Implement.** Add an `else if (role === 'offtaker')` branch to `onboarding-provisioning.ts` that resolves `tenant_id` from the participant row (default `'default'`), INSERTs the draft `off_ppa_portfolio` row described above, and sets `ref = { kind: 'ppa_portfolio', entityType: 'off_ppa_portfolio', entityId: <id>, detail: {...} }`. Keep the `alreadyProvisioned()` guard and the existing 3 branches untouched. Update the module doc comment to record that offtaker now seeds and WHY the other 5 stay manifest-only (cite graphify resolution). In `onboarding-manifest.ts`, add an offtaker entry to `roleActions` with a universally-valid route (`/horizon`, label "Review your procurement portfolio") so the card reads bespoke without risking a dead link (`off_ppa_portfolio` is not a Meridian chain route).
 
-- [ ] **Step 4: Run — expect PASS** (all roles + idempotency).
+- [ ] **Step 4: Run — expect PASS** (offtaker seeds; manifest-only roles unchanged; idempotency holds). Then `npm run check`.
 Run: `npx vitest run tests/onboarding-provisioning.test.ts`
 
 - [ ] **Step 5: Commit.**
 ```bash
-git add src/cascade-rules/onboarding-provisioning.ts migrations/510_onboarding_first_entities.sql tests/onboarding-provisioning.test.ts
-git commit -m "feat(onboarding): provision a first entity + manifest for all 9 roles"
+git add src/cascade-rules/onboarding-provisioning.ts src/cascade-rules/onboarding-manifest.ts tests/onboarding-provisioning.test.ts
+git commit -m "feat(onboarding): seed offtaker procurement-intent first entity; confirm all 9 roles land non-empty"
 ```
-(omit `migrations/510_*` from the `git add` if graphify confirmed every role maps to an existing canonical table and no new migration was needed.)
+No migration: graphify confirmed every role maps to an existing canonical table.
 
 ---
 
@@ -394,68 +373,62 @@ npm run check
 
 **Why third:** activation + acquisition can run before compliance, but market actions (placing orders, accepting deals) must not. An admin-side KYC review state machine already exists ([src/routes/admin.ts](../../../src/routes/admin.ts): `/admin/kyc`, `/admin/kyc/:id`, pending→in_review→approved→rejected, approve→active, audit + notification). What's missing is the **user-facing half**: a way for a participant to *submit* KYC with evidence, see status, and — critically — a **market-access gate** so unverified accounts can browse but not transact. Batch 3 closes the loop into a real L4/L5 compliance gate.
 
-**Batch 3 done when:** a user can submit a KYC pack with document evidence (R2-backed); submission fires a cascade into the existing admin review queue; admin decisions flow back to the user (reusing the existing `/admin/kyc/:id` machine); and trading/deal endpoints reject actors without `market_access` with a structured reason code.
+**Batch 3 done when:** a user can submit a KYC pack with document evidence (R2-backed, AEAD-at-rest); submission fires a cascade into the existing admin review queue and flips `participants.kyc_status='in_review'`; admin decisions flow back to the user (reusing the existing `/admin/kyc/:id` machine); the existing `participant_market_access` flag is driven by the decision; and trading/deal endpoints reject actors without market access with a structured reason code.
+
+> **RE-SCOPE (approved 2026-06-14 "deepen existing infra"):** Batch 3 does NOT build a parallel KYC stack. The live platform already has: per-document `oe_kyc_submissions` (migration 060), the deep-KYC engine `kyc-deep.ts`, the admin inbox `admin.get/put('/kyc'...)`, `participants.kyc_status` (migration 001), the `participant_market_access` flag (`full_trading|certificate_only|read_only`, migration 472), and the `certOnlyGuard` middleware (`src/middleware/cert-only.ts`). Batch 3 DEEPENS these. No new case table, no `oe_kyc_evidence`, no `market_access INTEGER`, no new admin inbox.
 
 ---
 
-### Task 3.1: KYC submission + evidence tables
+### Task 3.1: KYC submission column extension + AEAD crypto helper (B6)
 
 **Files:**
-- Create: `migrations/512_kyc_submissions.sql`
-- Test: covered by 3.2/3.3 route tests
+- Create: `migrations/511_kyc_submission_columns.sql`
+- Create: `src/utils/crypto-aead.ts`
+- Test: `tests/crypto-aead.test.ts`
 
-> **HARD-GATE (B6):** application-level PII-at-rest encryption for the KYC pack + evidence (director IDs, tax/BBBEE certs) needs explicit sign-off before building. This task lands the table schema + plaintext-column structure ONLY as a design placeholder; the encryption strategy (column-level vs envelope vs R2-side) is presented separately and is NOT built autonomously.
+> **B6 (signed off 2026-06-14): Hybrid AEAD + R2 default.** D1 PII columns (`file_name`, reason-bearing PII) are encrypted app-side with AES-256-GCM via WebCrypto, key from a versioned Worker secret (`KYC_ENC_KEY`), ciphertext stored as `v1:<iv>:<ct>`. Evidence blobs rely on R2 default at-rest encryption + tenant-fenced key paths + access audit. The helper is dark-by-default like the email seam: live AEAD only when the secret is configured; dev/test stores plaintext, and the version-prefix dispatch handles both on read. Do NOT add `KYC_ENC_KEY` to wrangler.toml (it is a `wrangler secret`).
 
-- [ ] **Step 1:** Write `512_kyc_submissions.sql`:
+- [ ] **Step 1:** Write `511_kyc_submission_columns.sql` (ALTER the EXISTING table, no new tables):
 ```sql
--- 512_kyc_submissions.sql — user-facing KYC pack + evidence (admin review machine already exists).
-CREATE TABLE IF NOT EXISTS oe_kyc_submissions (
-  id TEXT PRIMARY KEY,
-  participant_id TEXT NOT NULL,
-  tenant_id TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'submitted',   -- submitted | in_review | approved | rejected | info_requested
-  pack TEXT NOT NULL DEFAULT '{}',            -- structured answers JSON
-  reason_code TEXT,                           -- structured decision reason
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
-);
-CREATE TABLE IF NOT EXISTS oe_kyc_evidence (
-  id TEXT PRIMARY KEY,
-  submission_id TEXT NOT NULL,
-  participant_id TEXT NOT NULL,
-  doc_type TEXT NOT NULL,                     -- reg_cert | director_id | proof_address | tax_clearance | bbbee_cert
-  r2_key TEXT NOT NULL,
-  filename TEXT, content_type TEXT, size_bytes INTEGER,
-  created_at TEXT DEFAULT (datetime('now'))
-);
-CREATE INDEX IF NOT EXISTS idx_kyc_sub_participant ON oe_kyc_submissions(participant_id);
-CREATE INDEX IF NOT EXISTS idx_kyc_evidence_sub ON oe_kyc_evidence(submission_id);
+-- 511_kyc_submission_columns.sql — extend existing per-document oe_kyc_submissions (migration 060)
+-- with a tenant fence + a structured decision reason. Idempotent: deploy.yml column-reconcile
+-- band treats "duplicate column name" as a benign already-applied signal.
+ALTER TABLE oe_kyc_submissions ADD COLUMN tenant_id TEXT;
+ALTER TABLE oe_kyc_submissions ADD COLUMN reason_code TEXT;
+CREATE INDEX IF NOT EXISTS idx_kyc_sub_tenant ON oe_kyc_submissions(tenant_id);
 ```
-- [ ] **Step 2:** `wrangler d1 migrations apply open-energy-db --local`.
-- [ ] **Step 3: Commit.** `git add migrations/512_kyc_submissions.sql && git commit -m "feat(kyc): user-facing submission + evidence tables"`
+- [ ] **Step 2: Failing test** `tests/crypto-aead.test.ts` — `encryptField`/`decryptField` round-trip a string when `env.KYC_ENC_KEY` is set (output starts `v1:`, differs from plaintext, decrypts back); with the key UNSET the helper is a no-op (stores plaintext, `decryptField` returns a plaintext value unchanged); `decryptField` of a `v1:`-prefixed value still decrypts after the key is configured. Bad/garbled ciphertext fails closed (throws or returns null per the helper contract) rather than leaking.
+- [ ] **Step 3: Run — FAIL.** `npx vitest run tests/crypto-aead.test.ts`
+- [ ] **Step 4: Implement `src/utils/crypto-aead.ts`** — `encryptField(env, plaintext): Promise<string>` returns `v1:<base64 iv>:<base64 ct>` via `crypto.subtle` AES-256-GCM with a 96-bit random IV when `env.KYC_ENC_KEY` is set, else returns plaintext unchanged. `decryptField(env, stored): Promise<string>` dispatches on the `v1:` prefix (decrypt) vs no prefix (return as-is). Key import from the secret (base64 32-byte). Every SQL/identifier rule still holds: this helper only transforms VALUES that bind to `?`.
+- [ ] **Step 5: Run — PASS.** Then `wrangler d1 migrations apply open-energy-db --local`.
+- [ ] **Step 6: Commit.**
+```bash
+git add migrations/511_kyc_submission_columns.sql src/utils/crypto-aead.ts tests/crypto-aead.test.ts
+git commit -m "feat(kyc): tenant_id+reason_code columns + AEAD field-encryption helper (B6)"
+```
 
 ---
 
-### Task 3.2: KYC submission route (+ evidence upload to R2)
+### Task 3.2: KYC submission route (+ evidence upload to R2, on the EXISTING table)
 
 **Files:**
 - Create: `src/routes/onboarding-kyc.ts`
 - Modify: `src/routes/mount-routes.ts` (mount `/api/onboarding/kyc`)
 - Test: `tests/onboarding-kyc.test.ts`
 
-Endpoints (all `authMiddleware`, tenant-fenced to the caller):
-- `GET /api/onboarding/kyc` — caller's current submission + evidence list + status.
-- `POST /api/onboarding/kyc` — create/update a `submitted` pack; fires `kyc.submitted` cascade.
-- `POST /api/onboarding/kyc/evidence` — pres* upload: stores the file in R2 under `kyc/<tenant>/<participant>/<id>`, writes `oe_kyc_evidence`. `doc_type` validated against a static allow-list.
+Endpoints (all `authMiddleware`, tenant-fenced to the caller). These write the EXISTING per-document `oe_kyc_submissions` rows (one row per uploaded document), NOT a new case table:
+- `GET /api/onboarding/kyc` — caller's `kyc_status` + their `oe_kyc_submissions` rows (file_name decrypted via `decryptField`), grouped by `document_type`.
+- `POST /api/onboarding/kyc/evidence` — stores the file in R2 under `kyc/<tenant>/<participant>/<id>`, INSERTs an `oe_kyc_submissions` row with `tenant_id` + AEAD-encrypted `file_name`. `document_type` validated against the EXISTING allow-list (`id_document | proof_of_address | company_registration | tax_clearance | bank_confirmation | nersa_licence`).
+- `POST /api/onboarding/kyc/submit` — flips `participants.kyc_status='in_review'` for the caller + fires the `kyc.submitted` cascade.
 
-- [ ] **Step 1: Failing tests** — POST submission creates a `submitted` row scoped to the caller's `participant_id`/tenant + fires `kyc.submitted`; evidence POST writes an R2 object + an `oe_kyc_evidence` row; a second participant cannot read the first's submission (tenant/owner fence).
+- [ ] **Step 1: Failing tests** — evidence POST writes an R2 object + an `oe_kyc_submissions` row scoped to the caller's `participant_id`/`tenant_id` with an AEAD-shaped `file_name` (when key set); submit POST flips the caller's `kyc_status` to `in_review` + fires `kyc.submitted`; a second participant cannot read the first's submissions (tenant/owner fence); an invalid `document_type` is rejected (400) before any R2 write.
 - [ ] **Step 2: Run — FAIL.** `npx vitest run tests/onboarding-kyc.test.ts`
-- [ ] **Step 3: Implement** the route; use the R2 binding from `c.env`. `doc_type` is a bound value validated against the allow-list — never a path/SQL identifier (key path is built from validated ids only).
+- [ ] **Step 3: Implement** the route; use the R2 binding from `c.env`. `document_type` is a bound value validated against the static allow-list — never a path/SQL identifier (the R2 key path is built from validated ids only). Encrypt `file_name` via `encryptField`; decrypt on GET.
 - [ ] **Step 4: Run — PASS.**
 - [ ] **Step 5: Commit.**
 ```bash
 git add src/routes/onboarding-kyc.ts src/routes/mount-routes.ts tests/onboarding-kyc.test.ts
-git commit -m "feat(kyc): user submission + R2 evidence upload route"
+git commit -m "feat(kyc): user submission + R2 evidence upload on existing oe_kyc_submissions"
 ```
 
 ---
@@ -464,18 +437,19 @@ git commit -m "feat(kyc): user submission + R2 evidence upload route"
 
 **Files:**
 - Create: `src/cascade-rules/kyc-gate.ts`
-- Modify: `src/routes/admin.ts` (`/admin/kyc` reads `oe_kyc_submissions`; `/admin/kyc/:id` decision also updates the submission + fires `kyc.decided`), `migrations/513_market_access_flag.sql`
+- Modify: `src/routes/admin.ts` (`PUT /admin/kyc/:id` decision ALSO drives `participant_market_access` + stores `reason_code` + fires `kyc.decided`)
 - Test: `tests/kyc-gate.test.ts`
 
-- [ ] **Step 1: Migration 513** — `ALTER TABLE participants ADD COLUMN market_access INTEGER DEFAULT 0;` (idempotent: tolerate `duplicate column name`; on prod applies via deploy.yml column-reconcile band).
-- [ ] **Step 2: Failing tests** — `kyc.submitted` cascade materialises an item in the admin KYC queue; an admin `approved` decision flips `participants.market_access=1` and fires `kyc.decided`; a `rejected`/`info_requested` decision leaves `market_access=0` and notifies the user with a structured `reason_code`. Re-fire is idempotent.
-- [ ] **Step 3: Run — FAIL.**
-- [ ] **Step 4: Implement** `kyc-gate.ts` (register via `registerCascadeRule`); extend the admin decision handler to update `oe_kyc_submissions.status` + `reason_code` and set `market_access` on approve. Reuse the existing audit + notification writes.
-- [ ] **Step 5: Run — PASS** (+ apply 513 local).
-- [ ] **Step 6: Commit.**
+No migration here: `participant_market_access` already exists (migration 472) and `reason_code` lands in Task 3.1.
+
+- [ ] **Step 1: Failing tests** — `kyc.submitted` cascade surfaces the participant in the existing admin KYC queue; an admin `approved` decision sets `participant_market_access='full_trading'` and fires `kyc.decided`; a `rejected`/`in_review` decision leaves access at `read_only` (or unchanged) and notifies the user with a structured `reason_code`. Re-fire is idempotent. The existing audit_log + notification writes still fire.
+- [ ] **Step 2: Run — FAIL.** `npx vitest run tests/kyc-gate.test.ts`
+- [ ] **Step 3: Implement** `kyc-gate.ts` (register via `registerCascadeRule`); extend the admin decision handler so approve → `participant_market_access='full_trading'`, reject/info → `participant_market_access='read_only'`, persisting `reason_code` and firing `kyc.decided`. Reuse the existing audit + notification writes (do NOT duplicate them).
+- [ ] **Step 4: Run — PASS.**
+- [ ] **Step 5: Commit.**
 ```bash
-git add src/cascade-rules/kyc-gate.ts src/routes/admin.ts migrations/513_market_access_flag.sql tests/kyc-gate.test.ts
-git commit -m "feat(kyc): submission→admin inbox + decision→market-access cascade"
+git add src/cascade-rules/kyc-gate.ts src/routes/admin.ts tests/kyc-gate.test.ts
+git commit -m "feat(kyc): submission->admin inbox + decision->participant_market_access cascade"
 ```
 
 ---
@@ -486,9 +460,9 @@ git commit -m "feat(kyc): submission→admin inbox + decision→market-access ca
 - Modify: `src/utils/pre-trade-guards.ts`
 - Test: `tests/pre-trade-guards.test.ts`
 
-Add `marketAccessGuard` to the existing order-rejection composition (alongside credit/exposure/mark-age/halt/kyc). Reject orders + deal accepts from actors with `market_access=0`, with a structured reason code (e.g. `MARKET_ACCESS_REQUIRED`) explained via the existing `explainRejection` ([src/utils/rejection-explainer.ts](../../../src/utils/)).
+Add `marketAccessGuard` to the existing order-rejection composition (alongside credit/exposure/mark-age/halt/kyc), keyed on `participant_market_access`. Reject orders + deal accepts from actors whose access is `read_only` (or unverified), with a structured reason code (e.g. `MARKET_ACCESS_REQUIRED`) explained via the existing `explainRejection` ([src/utils/rejection-explainer.ts](../../../src/utils/)). This complements the route-level `certOnlyGuard` (which fences `certificate_only`); the pre-trade guard is the order-engine line of defence.
 
-- [ ] **Step 1: Failing test** — an order from a `market_access=0` participant is rejected with `reason_code:'MARKET_ACCESS_REQUIRED'`; a `market_access=1` participant passes the guard. Confirm the guard composes (doesn't short-circuit the others).
+- [ ] **Step 1: Failing test** — an order from a `read_only` participant is rejected with `reason_code:'MARKET_ACCESS_REQUIRED'`; a `full_trading` participant passes the guard. Confirm the guard composes (doesn't short-circuit the others).
 - [ ] **Step 2: Run — FAIL.** `npx vitest run tests/pre-trade-guards.test.ts -t "market access"`
 - [ ] **Step 3: Implement** the guard + register it in the composition.
 - [ ] **Step 4: Run — PASS.**
@@ -500,12 +474,12 @@ Add `marketAccessGuard` to the existing order-rejection composition (alongside c
 
 **Files:**
 - Create: `pages/src/components/onboarding/KycSubmission.tsx`
-- Modify: launch-board / Getting-Started (surface a "Verify your account" item when `market_access=0`)
+- Modify: launch-board / Getting-Started (surface a "Verify your account" item when `kyc_status !== 'approved'`)
 - Test: `pages/tests/browser/onboarding-kyc.spec.ts`
 
-UI rules: evidence upload with per-doc-type slots (label above, helper text, error below; drag threshold; progress on upload — skeleton not spinner if >300ms); a status timeline (submitted → in_review → decided) with state-distinct steps; one primary CTA. When `market_access=0`, the Getting-Started card shows a "Verify to start transacting" item linking here. Reads/writes `GET|POST /api/onboarding/kyc`.
+UI rules: evidence upload with per-doc-type slots (label above, helper text, error below; drag threshold; progress on upload — skeleton not spinner if >300ms); a status timeline (pending → in_review → approved/rejected) driven by `participants.kyc_status`, with state-distinct steps; one primary CTA. When `kyc_status !== 'approved'`, the Getting-Started card shows a "Verify to start transacting" item linking here. Reads `GET /api/onboarding/kyc`; uploads `POST /api/onboarding/kyc/evidence`; submits `POST /api/onboarding/kyc/submit`.
 
-- [ ] **Step 1: Playwright flow** — log in as a freshly-seeded unverified persona, open the KYC surface, fill the pack, attach one evidence file (use a small fixture + intercept the R2-backed POST → 201), submit, assert status shows `submitted`. Assert the Getting-Started "Verify your account" item is present while `market_access=0`.
+- [ ] **Step 1: Playwright flow** — log in as a freshly-seeded unverified persona, open the KYC surface, attach one evidence file (use a small fixture + intercept the R2-backed evidence POST → 201), submit, assert status shows `in_review`. Assert the Getting-Started "Verify your account" item is present while `kyc_status !== 'approved'`.
 - [ ] **Step 2: Run — FAIL.** `BASE=http://localhost:8787 npm run test:browser -- onboarding-kyc`
 - [ ] **Step 3: Build `KycSubmission.tsx`** + the launch-board item.
 - [ ] **Step 4: `npm run check:pages` + spec → PASS.**
@@ -519,7 +493,7 @@ git commit -m "feat(kyc): user submission UI + status timeline + verify-to-trans
 ```bash
 npm test && npm run check && npm run check:pages
 BASE=http://localhost:8787 npm run test:browser -- onboarding-kyc
-# Manual: submit KYC as a test user → appears in /admin/kyc → approve → market_access flips → order accepted.
+# Manual: submit KYC as a test user → appears in /admin/kyc → approve → participant_market_access flips to full_trading → order accepted.
 ```
 
 ---

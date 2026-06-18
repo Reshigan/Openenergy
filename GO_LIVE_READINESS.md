@@ -16,7 +16,7 @@
 |---|---|---|
 | Migrations | 37 | **508** (highest `508_add_carbon_chain_tier_columns.sql`) |
 | Route modules | 51 | **347** (360 `app.route` mounts) |
-| Unit tests | 474 | **8180** green (242 files, 0 fail — reproduced this session) |
+| Unit tests | 474 | **8227** green (246 files, 0 fail — reproduced 2026-06-18) |
 | State-machine chains | suites only | **Waves 1–76** L4/L5 (settlement atomic DvP, grid dispatch/curtailment/capacity, regulator SLA escalation, carbon Article 6, ITIL) |
 
 ### What is genuinely strong (not vaporware)
@@ -31,7 +31,7 @@
 3. **No independent pen-test** (still open) — the external engagement has not run. **Correction to an earlier draft:** the application controls it listed as missing are in fact present — admin/regulator MFA-required (`oe_mfa_policies`, `migrations/061_depth.sql`) + step-up gate (repaired, PR #66); per-account login lockout (5 fails/15min → 15min, `auth.ts:95-103`, `auth-tokens.ts:209-226`) on top of per-IP 10/5min; refresh endpoint rate-limited; CSRF mitigated by architecture (Bearer-token auth from memory, not an ambient cookie credential — `api.ts`, `auth.ts:223-227`; httpOnly cookie is fallback only, so confirm `SameSite` on it to fully close cookie-only cross-origin POST). **Genuinely open security items:** exposed Cloudflare Global API key **must be rotated**; `JWT_SECRET` rotation; at-rest PII encryption; the independent pen-test itself.
 4. **Prod schema not reproducible from migrations** (019–048 force-applied out-of-band); no DR restore drill proving the band replays.
 5. **Single-region D1 10GB ceiling**; national metering shards NOT bound (`METERING_DB_CURRENT` / `esums-telemetry` commented out in `wrangler.toml`).
-6. **E2E not verifiably run on the current build**; settlement double-settle / netting-race correctness unproven by live tests.
+6. **E2E not verifiably run on the current build** (live-run half still open). **Netting-race correctness now CLOSED in code** — the `/settlement/cycles/:id/net` handler wraps its read-check-write in `withLock(settlement:netting:<id>, …, {ttlSeconds:30})` (`settlement-deep.ts`), so a concurrent second netting on the same cycle gets a `409 netting already in progress` instead of double-inserting legs. Guard is unit-proven red-green: `settlement-correctness.test.ts` pre-holds the lock as a different holder, asserts the 409 + zero leg writes + cycle still `open`, releases, then asserts the 200 happy path — the test goes RED if the `withLock` wrapper is removed. The remaining open piece is a *live* E2E PASS against the deployed build (harness serialises D1, so the lock branch is proven by direct lock-hold, not by in-process interleaving).
 7. (P2) **No compliance/exec/CISO sign-off**; POPIA data-residency unsubstantiated (D1 region is Cloudflare-controlled, not pinned to a ZA region).
 
 ### Pre-launch must-dos (ordered)
@@ -40,7 +40,7 @@
 3. Commission the independent pen-test + rotate the exposed Cloudflare key + `JWT_SECRET`. (CSRF posture, admin/regulator MFA, per-account login lockout, refresh rate-limit, and the high-risk step-up gate are already in code — verify `SameSite` on the fallback auth cookie and add at-rest PII encryption.)
 4. k6 at SA peak + national metering volume; record P95/P99; bind metering shards if needed.
 5. Real DR restore drill proving 019–048 replays from scratch.
-6. Settlement correctness tests live + the 130-case per-role UAT matrix.
+6. Settlement correctness tests live + the 130-case per-role UAT matrix. *(Netting-race guard now landed + unit-proven; this item is now the live-run + UAT-matrix remainder only.)*
 7. Exec + compliance + CISO sign-off; substantiate POPIA residency.
 8. Decommission OR re-bless the legacy Pages mirror.
 9. Tail the Worker 24h confirming all 7 cron triggers fire.
