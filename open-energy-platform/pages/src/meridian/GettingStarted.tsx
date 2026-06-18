@@ -130,6 +130,9 @@ export function GettingStarted() {
   // Clamp to [0,1] for the scaleX fill (a degenerate total of 0 reads as full).
   const fraction = total > 0 ? Math.max(0, Math.min(1, done / total)) : 0;
   const next = checklist.next_best_step;
+  // Surface a "Verify to start transacting" gate whenever the caller is not yet
+  // KYC-approved. kyc_status is already on the user object, so no extra fetch.
+  const verifyNeeded = user?.kyc_status !== 'approved';
 
   return (
     <section className="mer-gs" aria-label="Getting started">
@@ -181,6 +184,24 @@ export function GettingStarted() {
             <span className="mer-gs-item-state">{it.done ? 'Done' : 'To do'}</span>
           </li>
         ))}
+        {/* Verify-to-transact gate: only when the caller is not yet KYC-approved.
+            Deep-links to the live /kyc submission surface. */}
+        {verifyNeeded && (
+          <li
+            className="mer-gs-item mer-gs-item-link"
+            role="link"
+            tabIndex={0}
+            onClick={() => navigate('/kyc')}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/kyc'); } }}
+          >
+            <span className="mer-gs-check" aria-hidden="true">○</span>
+            <span className="mer-gs-item-body">
+              <span className="mer-gs-item-label">Verify to start transacting</span>
+              <span className="mer-gs-item-desc">Submit your KYC pack to unlock full trading.</span>
+            </span>
+            <span className="mer-gs-item-state">To do</span>
+          </li>
+        )}
       </ul>
 
       {/* Inline AI next-best-step: its `why` + a single primary "Do this" button

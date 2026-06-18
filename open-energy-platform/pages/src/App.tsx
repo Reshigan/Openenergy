@@ -38,6 +38,7 @@ const LedgerPage            = React.lazy(() => import('./meridian/LedgerPage'));
 const DealDeskPage          = React.lazy(() => import('./meridian/DealDeskPage'));
 const MeridianSurfacePage   = React.lazy(() => import('./meridian/MeridianSurfacePage'));
 const CommandPalette        = React.lazy(() => import('./meridian/CommandPalette'));
+const KycSubmission         = React.lazy(() => import('./components/onboarding/KycSubmission').then(m => ({ default: m.KycSubmission })));
 
 // Core page components
 const NationalDashboard     = React.lazy(() => import('./components/pages/NationalDashboard').then(m => ({ default: m.NationalDashboard })));
@@ -595,6 +596,8 @@ function AppRoutes() {
       <Route path="/portal/:audience/:token" element={<LazyWorkbench><EsumsOmPortalView /></LazyWorkbench>} />
       <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
       <Route path="/settings/security" element={<ProtectedRoute><Layout><Security /></Layout></ProtectedRoute>} />
+      {/* KYC self-service submission - live Meridian surface inside the chrome. */}
+      <Route path="/kyc" element={<ProtectedRoute><Layout><KycSubmission /></Layout></ProtectedRoute>} />
       {/* /cockpit and /launch (no role) both resolve to the signed-in user's
           role-specific board. Cockpit kept as a soft redirect so existing
           bookmarks keep working — but the Launchpad nav now points to
