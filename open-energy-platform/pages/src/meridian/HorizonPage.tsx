@@ -119,7 +119,7 @@ export default function HorizonPage() {
                 className={r === adminRole ? 'btn pri' : 'btn ghost'}
                 aria-pressed={r === adminRole}
                 onClick={() => { if (r !== adminRole) { setAdminRole(r); setData(null); setActErr(null); } }}>
-          {getRoleConfig(r)?.label ?? r.replace(/_/g, ' ')}
+          {cleanLabel(getRoleConfig(r)?.label ?? r.replace(/_/g, ' '))}
         </button>
       ))}
     </div>
@@ -146,7 +146,7 @@ export default function HorizonPage() {
 
   return (
     <div className="mer horizon">
-      <MeridianHeader ctx={<><b>{cfg?.label ?? boardRole}</b><span>{data.counts.total} live · {data.counts.breached} breached</span></>} />
+      <MeridianHeader ctx={<><b>{cleanLabel(cfg?.label ?? boardRole)}</b><span>{data.counts.total} live · {data.counts.breached} breached</span></>} />
 
       {roleSwitcher}
 

@@ -48,7 +48,7 @@ export default function NewPage() {
   return (
     <div className="mer atlas new-txn">
       <MeridianHeader ctx={<>
-        <b>START A TRANSACTION — {cfg.label.toUpperCase()}</b>
+        <b>START A TRANSACTION — {cleanLabel(cfg.label).toUpperCase()}</b>
         <span className="counts mono">{total} workflows</span>
       </>} />
       <main className="domains">
