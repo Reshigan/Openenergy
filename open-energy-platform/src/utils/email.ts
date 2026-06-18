@@ -128,9 +128,16 @@ export async function sendEmail(env: HonoBindings, input: SendEmailInput): Promi
 
   // Record intent first (status 'queued'), so a crash mid-send still leaves a
   // trace. The default status column value is 'queued'; we set it explicitly.
-  await env.DB.prepare(
-    `INSERT INTO oe_email_outbox (id, to_addr, template, payload, status) VALUES (?, ?, ?, ?, 'queued')`,
-  ).bind(id, input.to, input.template, payload).run();
+  // The seam's contract is "never throws": if even this first INSERT fails
+  // (table missing, DB unavailable) we swallow it and report 'failed' rather
+  // than propagating to the caller, who relies on sendEmail being side-channel.
+  try {
+    await env.DB.prepare(
+      `INSERT INTO oe_email_outbox (id, to_addr, template, payload, status) VALUES (?, ?, ?, ?, 'queued')`,
+    ).bind(id, input.to, input.template, payload).run();
+  } catch {
+    return { id, status: 'failed' };
+  }
 
   // Runtime guard: the template field is a typed union at compile time, but a
   // bad caller could still pass an unknown key. Reject it here (before the gate

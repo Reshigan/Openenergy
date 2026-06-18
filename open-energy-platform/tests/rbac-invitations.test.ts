@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// Task 2.3 — invitation email delivery via the sendEmail seam.
+// Task 2.3 - invitation email delivery via the sendEmail seam.
 //
 // POST /me/invitations as an ipp_developer inviting an offtaker must queue an
 // 'invite' oe_email_outbox row whose payload link matches the share-token the

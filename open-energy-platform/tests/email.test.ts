@@ -98,6 +98,22 @@ describe('sendEmail - live gate open', () => {
   });
 });
 
+describe('sendEmail - outbox INSERT failure', () => {
+  it('returns failed without throwing when the initial INSERT cannot run', async () => {
+    // Drop the outbox table so the first INSERT fails. The seam must keep its
+    // "never throws" contract: report failed, do not propagate to the caller.
+    db.prepare('DROP TABLE oe_email_outbox').run();
+    const res = await sendEmail(env as unknown as HonoBindings, {
+      to: 'k@l.co',
+      template: 'verify',
+      data: { token: 't-noinsert' },
+    });
+    expect(res.status).toBe('failed');
+    expect(typeof res.id).toBe('string');
+    expect(res.id.length).toBeGreaterThan(0);
+  });
+});
+
 describe('sendEmail - unknown template', () => {
   it('records failed for an unknown template without throwing', async () => {
     // Use the gate-closed env so we prove the guard fires before the gate.

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// Task 2.3 — password-reset email delivery via the sendEmail seam.
+// Task 2.3 - password-reset email delivery via the sendEmail seam.
 //
 // POST /auth/forgot-password for a real account queues a 'reset' outbox row
 // carrying the reset link, AND creates the password_reset_tokens row, while
