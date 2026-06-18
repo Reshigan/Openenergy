@@ -20,18 +20,29 @@ import { AppError, ErrorCode } from '../utils/types';
 const onboarding = new Hono<HonoEnv>();
 onboarding.use('*', authMiddleware);
 
+// Map AppError to its HTTP status so the sub-router returns structured errors
+// both in tests and in production (the top-level onError also catches these).
+onboarding.onError((err, c) => {
+  if (err instanceof AppError) {
+    return c.json({ error: err.code, message: err.message }, err.statusCode as 400 | 401 | 403 | 404 | 409 | 500);
+  }
+  return c.json({ error: 'INTERNAL_ERROR', message: 'Unexpected error' }, 500);
+});
+
 // ── Step sequences per role ────────────────────────────────────────────────
 const ONBOARDING_STEPS: Record<string, string[]> = {
-  esums_owner:   ['welcome', 'site_setup', 'device_config', 'data_sources', 'alerts', 'complete'],
-  ipp_developer: ['welcome', 'company_profile', 'first_project', 'compliance', 'complete'],
-  trader:        ['welcome', 'entity', 'risk_limits', 'complete'],
-  lender:        ['welcome', 'fund_setup', 'coverage', 'complete'],
-  offtaker:      ['welcome', 'entity', 'ppa_prefs', 'complete'],
-  carbon_fund:   ['welcome', 'registry', 'methodology', 'complete'],
-  grid_operator: ['welcome', 'authority', 'services', 'complete'],
-  regulator:     ['welcome', 'body', 'jurisdiction', 'complete'],
-  support:       ['welcome', 'org', 'sla', 'complete'],
-  admin:         ['welcome', 'complete'],
+  esums_owner:    ['welcome', 'site_setup', 'device_config', 'data_sources', 'alerts', 'complete'],
+  ipp_developer:  ['welcome', 'company_profile', 'first_project', 'compliance', 'complete'],
+  trader:         ['welcome', 'entity', 'risk_limits', 'complete'],
+  lender:         ['welcome', 'fund_setup', 'coverage', 'complete'],
+  offtaker:       ['welcome', 'entity', 'ppa_prefs', 'complete'],
+  carbon_fund:    ['welcome', 'registry', 'methodology', 'complete'],
+  grid_operator:  ['welcome', 'authority', 'services', 'complete'],
+  regulator:      ['welcome', 'body', 'jurisdiction', 'complete'],
+  support:        ['welcome', 'org', 'sla', 'complete'],
+  admin:          ['welcome', 'complete'],
+  esco:           ['welcome', 'org_profile', 'sites', 'complete'],
+  epc_contractor: ['welcome', 'org_profile', 'project_scope', 'complete'],
 };
 
 // ── GET /state ─────────────────────────────────────────────────────────────
@@ -112,10 +123,7 @@ onboarding.post('/step', async (c) => {
     throw new AppError(ErrorCode.VALIDATION_ERROR, 'step is required and must be a string', 400);
   }
 
-  const steps = ONBOARDING_STEPS[user.role];
-  if (!steps) {
-    throw new AppError(ErrorCode.VALIDATION_ERROR, `No onboarding steps configured for role: ${user.role}`, 400);
-  }
+  const steps = ONBOARDING_STEPS[user.role] ?? ['welcome', 'complete'];
 
   if (!steps.includes(step)) {
     throw new AppError(
