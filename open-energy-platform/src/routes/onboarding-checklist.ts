@@ -26,6 +26,7 @@ import { Hono } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { AppError } from '../utils/types';
+import { ask } from '../utils/ai';
 
 const onboardingChecklist = new Hono<HonoEnv>();
 onboardingChecklist.use('*', authMiddleware);
@@ -47,6 +48,10 @@ type ChecklistItemDef = {
   description: string;
   href: string; // LIVE Meridian route only: /horizon, /new, /atlas.
   probe: { sql: string };
+  // One-line static rationale for the inline "next best step" assist. Used as
+  // the deterministic base for `why`; AI text only enriches it when available.
+  // Plain hyphens only, no dashes.
+  whyFallback: string;
 };
 
 // Universal first item for EVERY role. The participants table always exists and
@@ -57,6 +62,7 @@ const COMPLETE_PROFILE: ChecklistItemDef = {
   description: 'Finish the onboarding wizard to set up your workspace.',
   href: '/horizon',
   probe: { sql: `SELECT COUNT(*) AS n FROM participants WHERE id = ? AND onboarding_completed = 1` },
+  whyFallback: 'Finishing your profile unlocks your role workspace and seeds your first entity.',
 };
 
 // ── Static checklist definitions per role ───────────────────────────────────
@@ -76,6 +82,7 @@ const CHECKLISTS: Record<string, ChecklistItemDef[]> = {
       description: 'Your site appears in the commissioning chain.',
       href: '/new',
       probe: { sql: `SELECT COUNT(*) AS n FROM om_sites WHERE participant_id = ?` },
+      whyFallback: 'Registering a site is the entry point to commissioning and live monitoring.',
     },
     {
       key: 'add_meter',
@@ -83,6 +90,7 @@ const CHECKLISTS: Record<string, ChecklistItemDef[]> = {
       description: 'Register a meter so telemetry can flow.',
       href: '/horizon',
       probe: { sql: `SELECT COUNT(*) AS n FROM oe_smart_meter_assets WHERE owner_id = ?` },
+      whyFallback: 'A meter is what lets telemetry and predictive health start flowing.',
     },
   ],
   ipp_developer: [
@@ -93,6 +101,7 @@ const CHECKLISTS: Record<string, ChecklistItemDef[]> = {
       description: 'Start the IPP development lifecycle.',
       href: '/new',
       probe: { sql: `SELECT COUNT(*) AS n FROM ipp_projects WHERE developer_id = ?` },
+      whyFallback: 'Your first project starts the development-to-COD lifecycle you track here.',
     },
     {
       key: 'advance_project',
@@ -100,6 +109,7 @@ const CHECKLISTS: Record<string, ChecklistItemDef[]> = {
       description: 'Move a project into licensing or construction.',
       href: '/horizon',
       probe: { sql: `SELECT COUNT(*) AS n FROM ipp_projects WHERE developer_id = ? AND status != 'development'` },
+      whyFallback: 'Moving a project past development is how it progresses toward financial close.',
     },
   ],
   trader: [
@@ -110,6 +120,7 @@ const CHECKLISTS: Record<string, ChecklistItemDef[]> = {
       description: 'Pre-trade guards activate once limits are configured.',
       href: '/horizon',
       probe: { sql: `SELECT COUNT(*) AS n FROM oe_position_limits WHERE participant_id = ?` },
+      whyFallback: 'Position limits switch on the pre-trade guards that let you trade safely.',
     },
   ],
   offtaker: [
@@ -120,6 +131,7 @@ const CHECKLISTS: Record<string, ChecklistItemDef[]> = {
       description: 'Capture what generation you need.',
       href: '/new',
       probe: { sql: `SELECT COUNT(*) AS n FROM off_ppa_portfolio WHERE participant_id = ?` },
+      whyFallback: 'Capturing your demand is the first step to matching generation.',
     },
     {
       key: 'sign_ppa',
@@ -127,6 +139,7 @@ const CHECKLISTS: Record<string, ChecklistItemDef[]> = {
       description: 'Advance a portfolio entry beyond negotiating.',
       href: '/horizon',
       probe: { sql: `SELECT COUNT(*) AS n FROM off_ppa_portfolio WHERE participant_id = ? AND status != 'negotiating'` },
+      whyFallback: 'Advancing a PPA past negotiation is what converts intent into contracted supply.',
     },
   ],
   // Manifest-only / oversight roles: complete_profile only.
@@ -171,6 +184,43 @@ onboardingChecklist.get('/checklist/:role', async (c) => {
 
   const doneCount = items.filter((i) => i.done).length;
   const total = items.length;
+  const complete = total > 0 && doneCount === total;
+
+  // ── Inline AI "next best step" ────────────────────────────────────────────
+  // The first incomplete item is the one to do next. `why` starts from that
+  // item's static rationale and is only enriched by AI when the binding returns
+  // a real (non-fallback) answer. An AI failure NEVER throws the endpoint - the
+  // static rationale always wins on any error or fallback.
+  let next_best_step: { item_key: string; why: string; action_href: string } | null = null;
+  const firstIncomplete = items.find((i) => !i.done);
+  if (firstIncomplete) {
+    const def = defs.find((d) => d.key === firstIncomplete.key);
+    let why = def?.whyFallback ?? firstIncomplete.description;
+    try {
+      const r = await ask(c.env, {
+        intent: 'generic.ask',
+        role,
+        prompt:
+          'In one short line, explain why this is the best next onboarding step for the user. Be concrete and encouraging.',
+        context: {
+          item_key: firstIncomplete.key,
+          label: firstIncomplete.label,
+          description: firstIncomplete.description,
+          static_rationale: why,
+        },
+      });
+      if (r && !r.fallback && r.text && r.text.trim()) {
+        why = r.text.trim();
+      }
+    } catch {
+      // Keep the static rationale - never surface an AI failure to the caller.
+    }
+    next_best_step = {
+      item_key: firstIncomplete.key,
+      why,
+      action_href: firstIncomplete.href,
+    };
+  }
 
   return c.json({
     success: true,
@@ -178,7 +228,8 @@ onboardingChecklist.get('/checklist/:role', async (c) => {
       role,
       items,
       progress: { done: doneCount, total },
-      complete: total > 0 && doneCount === total,
+      complete,
+      next_best_step,
     },
   });
 });
