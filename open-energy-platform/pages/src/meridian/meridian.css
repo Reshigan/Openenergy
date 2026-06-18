@@ -775,4 +775,51 @@
   .mer .board-new { min-height:44px; }
   .mer .pill { min-height:44px; display:inline-flex; align-items:center; }
   .mer .btn { min-height:44px; }
+  .mer .mer-gs-action { min-height:44px; }
+  .mer .mer-gs-x { min-width:44px; min-height:44px; }
+}
+
+/* ── Getting-Started card (post-onboarding "what next") ──────────────────────
+   Mounts at the top of Horizon for a freshly-onboarded operator. Dismissible,
+   then gone (per-user localStorage). Tokens from .mer above so it sits on-brand
+   with the petrol/amber palette and never clashes with the board below. */
+.mer .mer-gs {
+  margin: 16px 24px 0; padding: 18px 20px;
+  border: 1px solid var(--line); border-left: 3px solid var(--petrol);
+  border-radius: 10px; background: var(--raised);
+  box-shadow: 0 1px 2px oklch(0.21 0.012 85 / 0.04);
+}
+.mer .mer-gs-head { display: flex; align-items: center; justify-content: space-between; }
+.mer .mer-gs-badge {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em;
+  color: var(--petrol-deep); background: var(--petrol-tint);
+  padding: 3px 8px; border-radius: 4px; font-weight: 600;
+}
+.mer .mer-gs-x {
+  border: none; background: none; cursor: pointer; color: var(--ink3);
+  font-size: 22px; line-height: 1; padding: 0 4px; border-radius: 6px;
+}
+.mer .mer-gs-x:hover { color: var(--ink); background: var(--paper); }
+.mer .mer-gs-headline { margin: 10px 0 0; font-size: 16px; font-weight: 600; color: var(--ink); }
+.mer .mer-gs-profile { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.mer .mer-gs-chip {
+  display: inline-flex; gap: 6px; align-items: baseline;
+  border: 1px solid var(--line); border-radius: 6px; padding: 4px 9px;
+  background: var(--paper); font-size: 12px;
+}
+.mer .mer-gs-chip-k { color: var(--ink3); }
+.mer .mer-gs-chip-v { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.mer .mer-gs-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.mer .mer-gs-action {
+  display: flex; flex-direction: column; gap: 2px;
+  text-decoration: none; border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 14px; background: var(--paper); min-width: 180px;
+  transition: border-color .15s var(--ease), transform .15s var(--ease);
+}
+.mer .mer-gs-action:hover { border-color: var(--petrol); transform: translateY(-1px); }
+.mer .mer-gs-action-label { font-weight: 600; color: var(--petrol-deep); font-size: 14px; }
+.mer .mer-gs-action-desc { color: var(--ink2); font-size: 12px; }
+@media (max-width: 640px) {
+  .mer .mer-gs { margin: 12px 12px 0; }
+  .mer .mer-gs-action { min-width: 0; flex: 1 1 100%; }
 }

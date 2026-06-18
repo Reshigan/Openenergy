@@ -7,6 +7,7 @@ import './meridian.css';
 import { fetchHorizon, singleChainOf, BUCKETS, fmtZar, type Bucket, type HorizonData, type MerCase } from './lib';
 import { CaseTile } from './components';
 import { MeridianHeader } from './MeridianHeader';
+import { GettingStarted } from './GettingStarted';
 import { cleanLabel } from './labels';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/useAuth';
@@ -147,6 +148,8 @@ export default function HorizonPage() {
   return (
     <div className="mer horizon">
       <MeridianHeader ctx={<><b>{cleanLabel(cfg?.label ?? boardRole)}</b><span>{data.counts.total} live · {data.counts.breached} breached</span></>} />
+
+      <GettingStarted />
 
       {roleSwitcher}
 

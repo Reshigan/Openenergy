@@ -61,6 +61,27 @@ onboarding.get('/state', async (c) => {
     data = {};
   }
 
+  // The getting-started manifest is written by the onboarding-provisioning
+  // cascade onto oe_onboarding_provisioning_log when onboarding.completed fires.
+  // Surface it here so the SPA can render a real "what next" card. Most recent
+  // row wins; null until the operator has completed onboarding at least once.
+  let manifest: Record<string, unknown> | null = null;
+  const provRow = await c.env.DB.prepare(
+    `SELECT manifest FROM oe_onboarding_provisioning_log
+      WHERE participant_id = ? ORDER BY created_at DESC LIMIT 1`,
+  )
+    .bind(user.id)
+    .first<{ manifest: string | null }>();
+  if (provRow?.manifest) {
+    try {
+      const parsed = JSON.parse(provRow.manifest);
+      // '{}' default (pre-manifest rows) carries no headline — treat as absent.
+      if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) manifest = parsed;
+    } catch {
+      manifest = null;
+    }
+  }
+
   return c.json({
     success: true,
     data: {
@@ -69,6 +90,7 @@ onboarding.get('/state', async (c) => {
       completed: Boolean(row.onboarding_completed),
       skipped: Boolean(row.onboarding_skipped),
       role: user.role,
+      manifest,
     },
   });
 });

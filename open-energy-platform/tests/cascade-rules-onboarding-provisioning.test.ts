@@ -40,7 +40,7 @@ function ctx(participantId: string, role: string) {
 
 describe('onboarding-provisioning rule', () => {
   it('esums_owner with a site name provisions a planned om_sites row owned by the participant', async () => {
-    seedParticipant('p_esums', 'esums_owner', { site_name: 'Rooftop A', installed_capacity_kw: '250' });
+    seedParticipant('p_esums', 'esums_owner', { site_name: 'Rooftop A', site_type: 'rooftop_pv', installed_capacity_kw: '250', location_province: 'Gauteng' });
     await runCascadeRegistry(ctx('p_esums', 'esums_owner'));
 
     const site = db.prepare(
@@ -50,9 +50,18 @@ describe('onboarding-provisioning rule', () => {
     expect(site.capacity_mw).toBeCloseTo(0.25);
 
     const log = db.prepare(
-      `SELECT kind, entity_type FROM oe_onboarding_provisioning_log WHERE participant_id = 'p_esums' AND kind = 'om_site'`,
+      `SELECT kind, entity_type, manifest FROM oe_onboarding_provisioning_log WHERE participant_id = 'p_esums' AND kind = 'om_site'`,
     ).get() as any;
     expect(log).toMatchObject({ kind: 'om_site', entity_type: 'om_sites' });
+
+    // Every provisioning run — seed roles included — writes a getting-started manifest.
+    const manifest = JSON.parse(log.manifest);
+    expect(typeof manifest.headline).toBe('string');
+    expect(manifest.headline.length).toBeGreaterThan(0);
+    expect(manifest.profile_summary.site_name).toBe('Rooftop A');
+    expect(manifest.next_actions.map((a: any) => a.route)).toEqual(
+      expect.arrayContaining(['/horizon', '/new', '/atlas']),
+    );
   });
 
   it('ipp_developer with capacity provisions a development ipp_projects row', async () => {
@@ -77,13 +86,45 @@ describe('onboarding-provisioning rule', () => {
     expect(count.n).toBe(1);
   });
 
-  it('a role with no provisionable data writes a none log row and creates no entities', async () => {
-    seedParticipant('p_trader', 'trader', { entity_name: 'Acme Trading' });
+  it('trader seeds an electricity position-limit config row from the risk-limits step', async () => {
+    seedParticipant('p_trader', 'trader', {
+      trading_desk_name: 'Acme Trading', fsp_number: 'FSP-12345',
+      daily_var_limit_zar: '5000000', max_open_position_mwh: '250',
+    });
     await runCascadeRegistry(ctx('p_trader', 'trader'));
 
+    const limit = db.prepare(
+      `SELECT participant_id, energy_type, net_long_limit_mwh, net_short_limit_mwh, daily_pnl_floor_zar
+         FROM oe_position_limits WHERE participant_id = 'p_trader'`,
+    ).get() as any;
+    expect(limit).toMatchObject({ participant_id: 'p_trader', energy_type: 'electricity' });
+    expect(limit.net_long_limit_mwh).toBeCloseTo(250);
+    expect(limit.net_short_limit_mwh).toBeCloseTo(250);
+    expect(limit.daily_pnl_floor_zar).toBeCloseTo(-5000000); // VaR limit becomes a P&L loss floor
+
     const log = db.prepare(
-      `SELECT kind FROM oe_onboarding_provisioning_log WHERE participant_id = 'p_trader'`,
-    ).get() as { kind: string };
-    expect(log.kind).toBe('none');
+      `SELECT kind, entity_type, manifest FROM oe_onboarding_provisioning_log WHERE participant_id = 'p_trader'`,
+    ).get() as any;
+    expect(log).toMatchObject({ kind: 'position_limit', entity_type: 'oe_position_limits' });
+    expect(JSON.parse(log.manifest).profile_summary.trading_desk_name).toBe('Acme Trading');
+  });
+
+  it('a role with no seedable entity (lender) writes a manifest log row and creates no business entity', async () => {
+    seedParticipant('p_lender', 'lender', {
+      fund_name: 'Helios Infra Fund', aum_zar_m: '4200', target_irr_pct: '15', fund_strategy: 'greenfield',
+    });
+    await runCascadeRegistry(ctx('p_lender', 'lender'));
+
+    const log = db.prepare(
+      `SELECT kind, entity_type, entity_id, manifest FROM oe_onboarding_provisioning_log WHERE participant_id = 'p_lender'`,
+    ).get() as any;
+    expect(log.kind).toBe('manifest');
+    expect(log.entity_type).toBeNull();
+    expect(log.entity_id).toBeNull();
+
+    const manifest = JSON.parse(log.manifest);
+    expect(manifest.headline.length).toBeGreaterThan(0);
+    expect(manifest.profile_summary.fund_name).toBe('Helios Infra Fund');
+    expect(manifest.next_actions.length).toBeGreaterThanOrEqual(3);
   });
 });

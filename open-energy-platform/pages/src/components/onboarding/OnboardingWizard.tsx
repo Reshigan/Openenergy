@@ -190,7 +190,9 @@ export function OnboardingWizard() {
       .then((res: any) => {
         const { completed, step: serverStep, data: serverData } = res.data || {};
         if (completed) {
-          navigate(`/launch/${role}`, { replace: true });
+          // /launch/:role was retired in Phase E (now redirects to Horizon).
+          // Send returning, already-onboarded users straight to their workspace.
+          navigate('/horizon', { replace: true });
           return;
         }
         if (serverStep && serverStep !== 'welcome') {
@@ -222,9 +224,11 @@ export function OnboardingWizard() {
       const { next_step } = (res.data || {}) as { next_step: string | null };
 
       if (!next_step || next_step === null) {
-        // All done — call complete endpoint then navigate
+        // All done — fire complete, then land on Horizon with the welcome flag so
+        // the Getting-Started card shows (the provisioning cascade writes the
+        // manifest async via the queue; the card tolerates it settling).
         await api.post('/onboarding/complete', {});
-        navigate(`/launch/${role}`, { replace: true });
+        navigate('/horizon?welcome=1', { replace: true });
       } else {
         setStep(next_step);
       }
@@ -250,7 +254,7 @@ export function OnboardingWizard() {
       // Best-effort
     } finally {
       setLoading(false);
-      navigate(`/launch/${role}`, { replace: true });
+      navigate('/horizon', { replace: true });
     }
   };
 
