@@ -16,6 +16,8 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { AppError, ErrorCode } from '../utils/types';
+import { sandboxTenantId } from '../utils/tenant';
+import { seedSandboxTenant } from '../cascade-rules/sandbox-seed';
 
 const onboarding = new Hono<HonoEnv>();
 onboarding.use('*', authMiddleware);
@@ -251,6 +253,50 @@ onboarding.post('/skip', async (c) => {
   });
 
   return c.json({ success: true, data: { ok: true } });
+});
+
+// ── POST /sandbox/enter ──────────────────────────────────────────────────────
+// Provision (or reset) an isolated sandbox demo tenant for the CALLER so they
+// can practice transactions without polluting any real tenant. Acts only on the
+// participant resolved from the JWT (getCurrentUser); the sandbox tenant id and
+// participant id bind ONLY through '?' placeholders, never interpolated.
+//
+// The seed runs SYNCHRONOUSLY in the HTTP path (not via the cascade): in
+// production env.QUEUE is provisioned and cascade rules run async, so the demo
+// data must be present in this response. A cascade rule may ALSO re-seed for
+// audit/consistency, but correctness does not depend on it firing.
+onboarding.post('/sandbox/enter', async (c) => {
+  const user = getCurrentUser(c);
+  const tenantId = sandboxTenantId(user.id);
+
+  // Idempotently provision the sandbox tenant row. Only bind the columns that
+  // exist on the base 011 schema (id, slug, display_name, created_at); the
+  // extra nullable columns added by 027 are left to their defaults.
+  await c.env.DB.prepare(
+    `INSERT OR IGNORE INTO tenants (id, slug, display_name, created_at)
+     VALUES (?, ?, ?, datetime('now'))`,
+  )
+    .bind(tenantId, tenantId, 'Sandbox (practice)')
+    .run();
+
+  // Reset on every enter so the demo set stays clean and deterministic with no
+  // duplicate pile-up across re-entries.
+  const { seeded } = await seedSandboxTenant(c.env.DB, user.id, { reset: true });
+
+  // Fire-and-forget audit cascade. Optional; the seed above is authoritative.
+  await fireCascade({
+    event: 'onboarding.sandbox_entered',
+    actor_id: user.id,
+    entity_type: 'participant',
+    entity_id: user.id,
+    data: { sandbox_tenant_id: tenantId, role: user.role },
+    env: c.env,
+  });
+
+  return c.json({
+    success: true,
+    data: { sandbox_tenant_id: tenantId, seeded, reset: true },
+  });
 });
 
 export default onboarding;

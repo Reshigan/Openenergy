@@ -158,6 +158,42 @@ export async function resolveOrCreateTenant(
   return id;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Reserved SANDBOX tenant-id namespace.
+//
+// `sandbox_<participant_id>` is a reserved tenant id that holds isolated DEMO
+// data so a freshly onboarded user can practice transactions without touching
+// any real tenant. Because every read/write is tenant-fenced (see the
+// assert*Tenant helpers above), sandbox rows are invisible to the caller's
+// real tenant and vice-versa.
+//
+// GOLDRUSH INVARIANT: demo / synthetic rows are EVER inserted ONLY into a
+// `sandbox_*` tenant. NEVER into a real tenant ('default', 't_*', or any other
+// non-sandbox id). NXT Energy Goldrush sites and every real tenant must stay
+// untouched. Seed code MUST assert isSandboxTenant() before any INSERT.
+//
+// SECURITY INVARIANT: the participant id binds ONLY through '?' placeholders in
+// SQL, never interpolated into SQL text. sandboxTenantId additionally validates
+// the id charset so the reserved namespace stays clean.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Build the reserved sandbox tenant id for a participant: `sandbox_<id>`.
+ * Validates the participant id charset defensively to keep the namespace clean
+ * (ids already come from getCurrentUser, but we never trust shape).
+ */
+export function sandboxTenantId(participantId: string): string {
+  if (!/^[A-Za-z0-9_-]+$/.test(participantId)) {
+    throw new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid participant id', 400);
+  }
+  return `sandbox_${participantId}`;
+}
+
+/** True iff the tenant id sits in the reserved sandbox namespace. */
+export function isSandboxTenant(tenantId: string | null | undefined): boolean {
+  return !!tenantId && tenantId.startsWith('sandbox_');
+}
+
 /**
  * Returns the set of participant IDs in the caller's tenant. Useful for
  * scoping aggregated list queries when individual per-row checks would be
