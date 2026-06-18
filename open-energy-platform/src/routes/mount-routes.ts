@@ -277,6 +277,7 @@ import esumsManufacturersRoutes from './esums-manufacturers';
 import esumsAccrualsRoutes, { esumsInvoiceRoutes, esumsCreditRoutes } from './esums-accruals';
 import platformFeaturesRoutes from './platform-features';
 import onboardingRoutes from './onboarding';
+import onboardingChecklistRoutes from './onboarding-checklist';
 import {
   mfa as mfaRoutes,
   kyc as kycRoutes,
@@ -686,6 +687,7 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   app.route('/api/documents',           documentsRoutes);
   app.route('/api/print-packs',         printPacksRoutes);
   app.route('/api/onboarding', onboardingRoutes);
+  app.route('/api/onboarding', onboardingChecklistRoutes);
   app.route('/api/kyc-verifications', kycChainRoutes);
   app.route('/api/smart-meter-assets', smartMeterChainRoutes);
   app.route('/api/carbon-tax-returns', carbonTaxChainRoutes);
