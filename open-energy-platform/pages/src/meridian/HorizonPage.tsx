@@ -4,7 +4,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './meridian.css';
-import { fetchHorizon, BUCKETS, fmtZar, type Bucket, type HorizonData, type MerCase } from './lib';
+import { fetchHorizon, singleChainOf, BUCKETS, fmtZar, type Bucket, type HorizonData, type MerCase } from './lib';
 import { CaseTile } from './components';
 import { MeridianHeader } from './MeridianHeader';
 import { cleanLabel } from './labels';
@@ -165,19 +165,41 @@ export default function HorizonPage() {
           {data.lanes.map(lane => {
             const collapsed = collapsedLanes.has(lane.key);
             const breached = lane.cases.filter(c => c.bucket === 'breached').length;
+            // A lane whose cases all belong to one chain gets a clickable label
+            // that deep-links to that chain's Ledger (the headline "labels aren't
+            // clickable" complaint). The chevron splits off into its own toggle so
+            // collapse and navigate are distinct targets. Mixed/empty lanes keep the
+            // single all-button header (no single Ledger to point at).
+            const laneChain = singleChainOf(lane.cases);
+            const laneText = cleanLabel(laneLabel(lane.key)).toUpperCase();
+            const laneCount = `${lane.cases.length} live${breached ? ` · ${breached} breached` : ''}`;
             return (
               <div className="lane-row" key={lane.key}>
-                <button type="button"
-                        className={collapsed ? 'lane-label collapsed' : 'lane-label'}
-                        aria-expanded={!collapsed}
-                        title={collapsed ? 'Expand lane' : 'Collapse lane'}
-                        onClick={() => toggleLane(lane.key)}>
-                  <span className="lane-chev" aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
-                  {cleanLabel(laneLabel(lane.key)).toUpperCase()}
-                  <span className="n">
-                    {lane.cases.length} live{breached ? ` · ${breached} breached` : ''}
-                  </span>
-                </button>
+                {laneChain ? (
+                  <div className={collapsed ? 'lane-label lane-label-split collapsed' : 'lane-label lane-label-split'}>
+                    <button type="button" className="lane-chev-btn"
+                            aria-expanded={!collapsed}
+                            aria-label={collapsed ? 'Expand lane' : 'Collapse lane'}
+                            title={collapsed ? 'Expand lane' : 'Collapse lane'}
+                            onClick={() => toggleLane(lane.key)}>
+                      <span className="lane-chev" aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
+                    </button>
+                    <Link to={`/ledger/${laneChain}`} className="lane-label-link" title={`Open ${laneText} ledger`}>
+                      {laneText}
+                      <span className="n">{laneCount}</span>
+                    </Link>
+                  </div>
+                ) : (
+                  <button type="button"
+                          className={collapsed ? 'lane-label collapsed' : 'lane-label'}
+                          aria-expanded={!collapsed}
+                          title={collapsed ? 'Expand lane' : 'Collapse lane'}
+                          onClick={() => toggleLane(lane.key)}>
+                    <span className="lane-chev" aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
+                    {laneText}
+                    <span className="n">{laneCount}</span>
+                  </button>
+                )}
                 {collapsed ? (
                   <button type="button" className="lane-collapsed-summary" onClick={() => toggleLane(lane.key)}>
                     {lane.cases.length} case{lane.cases.length === 1 ? '' : 's'}{breached ? ` · ${breached} breached` : ''} — click to expand

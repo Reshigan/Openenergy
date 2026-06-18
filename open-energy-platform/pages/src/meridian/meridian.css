@@ -169,6 +169,27 @@
 .mer .lane-label.collapsed { color:var(--ink3); }
 .mer .lane-chev { display:inline-block; width:12px; margin-right:4px; color:var(--ink3); font-weight:400; }
 .mer .lane-label .n { display:block; font-family:'JetBrains Mono',monospace; font-weight:400; font-size:10.5px; color:var(--ink3); letter-spacing:0; margin-top:2px; padding-left:16px; }
+/* Single-chain lane header: chevron toggle (collapse) + clickable Ledger link
+   side by side. Replaces the all-button header so the label navigates and the
+   chevron still collapses — both are real, distinct targets. */
+.mer .lane-label-split { display:flex; align-items:flex-start; gap:0; padding:0; }
+.mer .lane-chev-btn {
+  flex:0 0 auto; background:none; border:none; cursor:pointer; color:var(--ink3);
+  padding:14px 2px 14px 24px; transition:background 120ms var(--ease), color 120ms;
+}
+.mer .lane-chev-btn:hover { background:var(--paper); color:var(--petrol); }
+.mer .lane-chev-btn:focus-visible { outline:2px solid var(--petrol); outline-offset:-2px; }
+.mer .lane-chev-btn .lane-chev { margin-right:0; }
+.mer .lane-label-link {
+  flex:1 1 auto; display:block; text-decoration:none;
+  padding:14px 14px 14px 4px; font-variation-settings:'wdth' 116; font-weight:700;
+  font-size:11px; letter-spacing:0.1em; color:var(--petrol-deep); line-height:1.4;
+  transition:background 120ms var(--ease), color 120ms;
+}
+.mer .lane-label-link:hover { background:var(--paper); color:var(--petrol); text-decoration:underline; }
+.mer .lane-label-link:focus-visible { outline:2px solid var(--petrol); outline-offset:-2px; }
+.mer .lane-label-split.collapsed .lane-label-link { color:var(--ink3); }
+.mer .lane-label-link .n { display:block; font-family:'JetBrains Mono',monospace; font-weight:400; font-size:10.5px; color:var(--ink3); letter-spacing:0; margin-top:2px; padding-left:0; }
 .mer .lane-collapsed-summary {
   grid-column:2 / -1; align-self:center; text-align:left; background:none; border:none; cursor:pointer;
   padding:10px 14px; font-size:11.5px; color:var(--ink3); font-style:italic;
