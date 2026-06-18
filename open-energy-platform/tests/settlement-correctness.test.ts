@@ -10,6 +10,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
 import { createTestDb, envFor, call, testJwtFor } from './helpers/d1-sqlite';
 import { recordStepUpAuth } from '../src/middleware/step-up';
+import { acquireLock, releaseLock } from '../src/utils/locks';
 import sa from '../src/routes/settlement-automation';
 import settlement from '../src/routes/settlement';
 import dvp from '../src/routes/settlement-dvp';
@@ -217,5 +218,77 @@ describe('settlement correctness — money-safety invariants', () => {
     // Closed system: nets sum to zero (no value leaks in or out).
     const sum = [...legNet.values()].reduce((s, v) => s + v, 0);
     expect(sum).toBeCloseTo(0, 2);
+  });
+
+  // ── (e) netting-race guard ─────────────────────────────────────────────
+  // In production two concurrent isolates can both read a cycle's status as
+  // 'open' before either UPDATEs it, both pass the in-handler gate, and both
+  // write a full set of net legs — doubling the settlement obligations. The
+  // advisory lock around the whole read-check-write is what prevents that.
+  //
+  // The unit harness wraps synchronous better-sqlite3, so a Promise.all of two
+  // POSTs does NOT interleave at the DB layer — the first handler runs to
+  // completion (status → 'net_calculated') before the second reads, so the
+  // bare status gate alone already yields 200/409 there. That makes a
+  // fire-both race assertion pass with OR without the lock — it proves nothing.
+  //
+  // So instead we exercise the lock branch deterministically: hold the exact
+  // lock key the handler uses (`settlement:netting:<id>`) as a different
+  // holder, then drive the route. A contended lock MUST reject with 409 and
+  // write nothing; once released the same call MUST succeed. This goes red if
+  // the withLock wrapper is ever removed (an unguarded handler ignores the
+  // held lock and nets straight through).
+  it('rejects netting while the cycle lock is held, and succeeds once released', async () => {
+    const token = await testJwtFor(db, 'u-admin', { role: 'admin' });
+    const X = await participant('p-X');
+    const Y = await participant('p-Y');
+    const Z = await participant('p-Z');
+
+    // Three distinct directed obligations on the cycle trade date — no reversal
+    // cancels, so a single run writes a deterministic, non-zero leg set.
+    const gross = [
+      { id: 'r1', from: X, to: Y, total: 100, createdAt: '2026-06-05 12:00:00' },
+      { id: 'r2', from: Y, to: Z, total: 60, createdAt: '2026-06-05 12:00:00' },
+      { id: 'r3', from: X, to: Z, total: 25, createdAt: '2026-06-05 12:00:00' },
+    ];
+    for (const g of gross) seedInvoice(g);
+
+    db.prepare(`
+      INSERT INTO oe_settlement_cycles (id, trade_date, value_date, status)
+      VALUES ('cyc-race', '2026-06-05', '2026-06-06', 'open')
+    `).run();
+
+    await recordStepUpAuth(env as any, 'u-admin', 'settlement.net', 'totp', 900);
+
+    // Another worker already holds the cycle's netting lock (non-stale TTL).
+    const lockKey = 'settlement:netting:cyc-race';
+    const held = await acquireLock(env as any, lockKey, 'other-worker', 60);
+    expect(held).toBe(true);
+
+    // Contended: the route cannot acquire the lock → 409, and writes nothing.
+    const blocked = await call(deep, env, 'POST', '/cycles/cyc-race/net', { token, body: {} });
+    expect(blocked.status).toBe(409);
+    expect((blocked.json as any).error).toBe('netting already in progress for this cycle');
+
+    const duringHold = db.prepare(
+      `SELECT COUNT(*) n FROM oe_settlement_net_legs WHERE cycle_id = 'cyc-race'`,
+    ).get() as { n: number };
+    expect(duringHold.n).toBe(0);
+    const stillOpen = db.prepare(`SELECT status FROM oe_settlement_cycles WHERE id = 'cyc-race'`).get() as any;
+    expect(stillOpen.status).toBe('open');
+
+    // Lock released → the same call now wins and nets the cycle exactly once.
+    await releaseLock(env as any, lockKey, 'other-worker');
+    const ok = await call(deep, env, 'POST', '/cycles/cyc-race/net', { token, body: {} });
+    expect(ok.status).toBe(200);
+    const legs = (ok.json as any).data.net_legs as number;
+    expect(legs).toBeGreaterThan(0);
+
+    const after = db.prepare(
+      `SELECT COUNT(*) n FROM oe_settlement_net_legs WHERE cycle_id = 'cyc-race'`,
+    ).get() as { n: number };
+    expect(after.n).toBe(legs);
+    const cyc = db.prepare(`SELECT status FROM oe_settlement_cycles WHERE id = 'cyc-race'`).get() as any;
+    expect(cyc.status).toBe('net_calculated');
   });
 });

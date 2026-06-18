@@ -19,6 +19,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { requireStepUp } from '../middleware/step-up';
 import { fireCascade } from '../utils/cascade';
+import { withLock, LockBusyError } from '../utils/locks';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -63,92 +64,115 @@ r.post('/cycles/:id/net', requireStepUp('settlement.net'), async (c) => {
   const user = getCurrentUser(c);
   if (!adminOnly(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
-  const cycle = await c.env.DB.prepare(`SELECT * FROM oe_settlement_cycles WHERE id = ?`).bind(id).first<any>();
-  if (!cycle) return c.json({ success: false, error: 'not found' }, 404);
-  if (cycle.status !== 'open') return c.json({ success: false, error: `cannot net from status ${cycle.status}` }, 409);
-  // Gather raw fills for the trade date — try preferred trade_fills schema
-  // first, fall back to invoices for the demo data model.
-  let fills: Array<{ from: string; to: string; energy_type: string; volume: number; value: number }> = [];
+
+  // Netting is a one-shot open→net_calculated transition that writes a set of
+  // net legs. Two concurrent POSTs on the same cycle would BOTH read status
+  // 'open', both pass the gate, and both INSERT a full set of legs — a TOCTOU
+  // race that doubles the obligations. Serialise the whole read-check-write
+  // under an advisory lock AND re-read the status inside the lock, so the loser
+  // sees 'net_calculated' and bails with 409. A caller that cannot even acquire
+  // the lock (a truly simultaneous run) also gets a 409 via LockBusyError.
   try {
-    const r1 = await c.env.DB.prepare(`
-      SELECT f.buyer_id AS buyer, f.seller_id AS seller, o.energy_type, f.volume_mwh, f.price
-      FROM trade_fills f JOIN trade_orders o ON o.id = f.order_id
-      WHERE date(f.executed_at) = ?
-    `).bind(cycle.trade_date).all<any>();
-    fills = (r1.results || []).map((r: any) => ({
-      from: r.buyer, to: r.seller, energy_type: r.energy_type,
-      volume: Number(r.volume_mwh), value: Number(r.volume_mwh) * Number(r.price),
-    }));
-  } catch { /* fall through */ }
-  if (!fills.length) {
-    const r2 = await c.env.DB.prepare(`
-      SELECT from_participant_id AS from_p, to_participant_id AS to_p, total_amount
-      FROM invoices WHERE date(created_at) = ?
-    `).bind(cycle.trade_date).all<any>();
-    fills = (r2.results || []).map((r: any) => ({
-      from: r.from_p, to: r.to_p, energy_type: 'power',
-      volume: 0, value: Number(r.total_amount),
-    }));
-  }
-  // Compute net per (from, to, energy_type) — bilateral netting
-  const netMap = new Map<string, { from: string; to: string; energy_type: string; volume: number; value: number }>();
-  for (const f of fills) {
-    const key = `${f.from}|${f.to}|${f.energy_type}`;
-    const reverse = `${f.to}|${f.from}|${f.energy_type}`;
-    if (netMap.has(reverse)) {
-      const r = netMap.get(reverse)!;
-      r.volume -= f.volume; r.value -= f.value;
-      if (Math.abs(r.value) < 0.01) netMap.delete(reverse);
-    } else {
-      const cur = netMap.get(key) || { from: f.from, to: f.to, energy_type: f.energy_type, volume: 0, value: 0 };
-      cur.volume += f.volume; cur.value += f.value;
-      netMap.set(key, cur);
+    return await withLock(
+      c.env,
+      `settlement:netting:${id}`,
+      user.id,
+      async (): Promise<Response> => {
+        const cycle = await c.env.DB.prepare(`SELECT * FROM oe_settlement_cycles WHERE id = ?`).bind(id).first<any>();
+        if (!cycle) return c.json({ success: false, error: 'not found' }, 404);
+        if (cycle.status !== 'open') return c.json({ success: false, error: `cannot net from status ${cycle.status}` }, 409);
+        // Gather raw fills for the trade date — try preferred trade_fills schema
+        // first, fall back to invoices for the demo data model.
+        let fills: Array<{ from: string; to: string; energy_type: string; volume: number; value: number }> = [];
+        try {
+          const r1 = await c.env.DB.prepare(`
+            SELECT f.buyer_id AS buyer, f.seller_id AS seller, o.energy_type, f.volume_mwh, f.price
+            FROM trade_fills f JOIN trade_orders o ON o.id = f.order_id
+            WHERE date(f.executed_at) = ?
+          `).bind(cycle.trade_date).all<any>();
+          fills = (r1.results || []).map((r: any) => ({
+            from: r.buyer, to: r.seller, energy_type: r.energy_type,
+            volume: Number(r.volume_mwh), value: Number(r.volume_mwh) * Number(r.price),
+          }));
+        } catch { /* fall through */ }
+        if (!fills.length) {
+          const r2 = await c.env.DB.prepare(`
+            SELECT from_participant_id AS from_p, to_participant_id AS to_p, total_amount
+            FROM invoices WHERE date(created_at) = ?
+          `).bind(cycle.trade_date).all<any>();
+          fills = (r2.results || []).map((r: any) => ({
+            from: r.from_p, to: r.to_p, energy_type: 'power',
+            volume: 0, value: Number(r.total_amount),
+          }));
+        }
+        // Compute net per (from, to, energy_type) — bilateral netting
+        const netMap = new Map<string, { from: string; to: string; energy_type: string; volume: number; value: number }>();
+        for (const f of fills) {
+          const key = `${f.from}|${f.to}|${f.energy_type}`;
+          const reverse = `${f.to}|${f.from}|${f.energy_type}`;
+          if (netMap.has(reverse)) {
+            const rev = netMap.get(reverse)!;
+            rev.volume -= f.volume; rev.value -= f.value;
+            if (Math.abs(rev.value) < 0.01) netMap.delete(reverse);
+          } else {
+            const cur = netMap.get(key) || { from: f.from, to: f.to, energy_type: f.energy_type, volume: 0, value: 0 };
+            cur.volume += f.volume; cur.value += f.value;
+            netMap.set(key, cur);
+          }
+        }
+        // Write net legs
+        let netCount = 0;
+        for (const leg of netMap.values()) {
+          if (Math.abs(leg.value) < 0.01) continue;
+          const direction = leg.value >= 0 ? { from: leg.from, to: leg.to } : { from: leg.to, to: leg.from };
+          const legId = genId('nlg');
+          await c.env.DB.prepare(`
+            INSERT INTO oe_settlement_net_legs
+              (id, cycle_id, from_participant_id, to_participant_id, energy_type,
+               net_volume_mwh, net_value_zar, status)
+            VALUES (?,?,?,?,?,?,?,?)
+          `).bind(
+            legId, id, direction.from, direction.to, leg.energy_type,
+            Math.abs(leg.volume), Math.abs(leg.value), 'pending',
+          ).run();
+          netCount += 1;
+        }
+        const grossVolume = fills.reduce((s, f) => s + f.volume, 0);
+        const grossValue  = fills.reduce((s, f) => s + Math.abs(f.value), 0);
+        const efficiency  = fills.length > 0 ? 1 - (netCount / fills.length) : 0;
+        await c.env.DB.prepare(`
+          UPDATE oe_settlement_cycles
+          SET status = 'net_calculated', total_trades = ?, total_volume_mwh = ?,
+              total_value_zar = ?, net_legs_count = ?, netting_efficiency = ?
+          WHERE id = ?
+        `).bind(fills.length, grossVolume, grossValue, netCount, efficiency, id).run();
+        await fireCascade({
+          event: 'settlement.cycle_netted',
+          actor_id: user.id,
+          entity_type: 'oe_settlement_cycles',
+          entity_id: String(id),
+          data: {
+            gross_trades: fills.length,
+            gross_volume_mwh: grossVolume,
+            gross_value_zar: grossValue,
+            net_legs: netCount,
+            netting_efficiency: efficiency,
+          },
+          env: c.env,
+        });
+        return c.json({
+          success: true,
+          data: { id, gross_trades: fills.length, net_legs: netCount, netting_efficiency: Math.round(efficiency * 1000) / 10 },
+        });
+      },
+      { ttlSeconds: 30 },
+    );
+  } catch (e) {
+    if (e instanceof LockBusyError) {
+      return c.json({ success: false, error: 'netting already in progress for this cycle' }, 409);
     }
+    throw e;
   }
-  // Write net legs
-  let netCount = 0;
-  for (const leg of netMap.values()) {
-    if (Math.abs(leg.value) < 0.01) continue;
-    const direction = leg.value >= 0 ? { from: leg.from, to: leg.to } : { from: leg.to, to: leg.from };
-    const legId = genId('nlg');
-    await c.env.DB.prepare(`
-      INSERT INTO oe_settlement_net_legs
-        (id, cycle_id, from_participant_id, to_participant_id, energy_type,
-         net_volume_mwh, net_value_zar, status)
-      VALUES (?,?,?,?,?,?,?,?)
-    `).bind(
-      legId, id, direction.from, direction.to, leg.energy_type,
-      Math.abs(leg.volume), Math.abs(leg.value), 'pending',
-    ).run();
-    netCount += 1;
-  }
-  const grossVolume = fills.reduce((s, f) => s + f.volume, 0);
-  const grossValue  = fills.reduce((s, f) => s + Math.abs(f.value), 0);
-  const efficiency  = fills.length > 0 ? 1 - (netCount / fills.length) : 0;
-  await c.env.DB.prepare(`
-    UPDATE oe_settlement_cycles
-    SET status = 'net_calculated', total_trades = ?, total_volume_mwh = ?,
-        total_value_zar = ?, net_legs_count = ?, netting_efficiency = ?
-    WHERE id = ?
-  `).bind(fills.length, grossVolume, grossValue, netCount, efficiency, id).run();
-  await fireCascade({
-    event: 'settlement.cycle_netted',
-    actor_id: user.id,
-    entity_type: 'oe_settlement_cycles',
-    entity_id: String(id),
-    data: {
-      gross_trades: fills.length,
-      gross_volume_mwh: grossVolume,
-      gross_value_zar: grossValue,
-      net_legs: netCount,
-      netting_efficiency: efficiency,
-    },
-    env: c.env,
-  });
-  return c.json({
-    success: true,
-    data: { id, gross_trades: fills.length, net_legs: netCount, netting_efficiency: Math.round(efficiency * 1000) / 10 },
-  });
 });
 
 r.post('/cycles/:id/novate', requireStepUp('settlement.novate'), async (c) => {
