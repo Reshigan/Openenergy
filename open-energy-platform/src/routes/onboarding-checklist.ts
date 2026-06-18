@@ -54,6 +54,11 @@ type ChecklistItemDef = {
   whyFallback: string;
 };
 
+// Generic last-resort rationale. Guarantees `next_best_step.why` is never empty
+// even if a definition's whyFallback and the item description were both blank.
+// Plain hyphens only, no dashes.
+const GENERIC_WHY = 'This is the best next step to get your workspace working.';
+
 // Universal first item for EVERY role. The participants table always exists and
 // onboarding_completed is the honest signal that the wizard was finished.
 const COMPLETE_PROFILE: ChecklistItemDef = {
@@ -195,7 +200,8 @@ onboardingChecklist.get('/checklist/:role', async (c) => {
   const firstIncomplete = items.find((i) => !i.done);
   if (firstIncomplete) {
     const def = defs.find((d) => d.key === firstIncomplete.key);
-    let why = def?.whyFallback ?? firstIncomplete.description;
+    let why = (def?.whyFallback || firstIncomplete.description || GENERIC_WHY);
+    if (!why || !why.trim()) why = GENERIC_WHY;
     try {
       const r = await ask(c.env, {
         intent: 'generic.ask',
