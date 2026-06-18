@@ -11,22 +11,7 @@
   },
   {
     "role": "admin",
-    "key": "esg_admin",
-    "kind": "dead"
-  },
-  {
-    "role": "admin",
     "key": "market_halt",
-    "kind": "dead"
-  },
-  {
-    "role": "admin",
-    "key": "settlement_admin",
-    "kind": "dead"
-  },
-  {
-    "role": "admin",
-    "key": "trading",
     "kind": "dead"
   },
   {
@@ -35,28 +20,8 @@
     "kind": "dead"
   },
   {
-    "role": "carbon_fund",
-    "key": "carbon_trading",
-    "kind": "dead"
-  },
-  {
-    "role": "epc_contractor",
-    "key": "change-orders",
-    "kind": "dead"
-  },
-  {
-    "role": "epc_contractor",
-    "key": "submittals",
-    "kind": "dead"
-  },
-  {
     "role": "grid_operator",
     "key": "interconnection",
-    "kind": "dead"
-  },
-  {
-    "role": "grid_operator",
-    "key": "levy_compliance",
     "kind": "dead"
   },
   {
@@ -86,21 +51,6 @@
   },
   {
     "role": "lender",
-    "key": "covenant_reports",
-    "kind": "dead"
-  },
-  {
-    "role": "lender",
-    "key": "esg_lender",
-    "kind": "dead"
-  },
-  {
-    "role": "lender",
-    "key": "facility_reports",
-    "kind": "dead"
-  },
-  {
-    "role": "lender",
     "key": "ie_certifications",
     "kind": "dead"
   },
@@ -112,11 +62,6 @@
   {
     "role": "lender",
     "key": "portfolio",
-    "kind": "dead"
-  },
-  {
-    "role": "offtaker",
-    "key": "annual_reports",
     "kind": "dead"
   },
   {
@@ -155,43 +100,8 @@
     "kind": "dead"
   },
   {
-    "role": "offtaker",
-    "key": "procurement_options",
-    "kind": "dead"
-  },
-  {
-    "role": "regulator",
-    "key": "stage_gates_view",
-    "kind": "dead"
-  },
-  {
-    "role": "trader",
-    "key": "benchmark_transition",
-    "kind": "dead"
-  },
-  {
-    "role": "trader",
-    "key": "black_start",
-    "kind": "dead"
-  },
-  {
-    "role": "trader",
-    "key": "esg_reports",
-    "kind": "dead"
-  },
-  {
-    "role": "trader",
-    "key": "imbalance",
-    "kind": "dead"
-  },
-  {
     "role": "trader",
     "key": "positions",
-    "kind": "dead"
-  },
-  {
-    "role": "trader",
-    "key": "settlement",
     "kind": "dead"
   },
   {

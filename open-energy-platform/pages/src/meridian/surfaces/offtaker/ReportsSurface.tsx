@@ -7,6 +7,7 @@
 // `offtaker:reports` in surfaces.tsx, reached from Atlas (⌘K) via the roleData feature key
 // `reports` (added in E2.6 — the husk reports tab had no roleData feature). Bucket D (report panel).
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import { ReportPanel, type ReportConfig } from '../../../components/launch/ReportPanel';
 
 const OFFTAKER_REPORTS: ReportConfig[] = [
@@ -67,10 +68,20 @@ const OFFTAKER_REPORTS: ReportConfig[] = [
   },
 ];
 
+// One surface serves both the default `reports` tile (full bundle) and the focused
+// `annual_reports` tile (sustainability subset), keyed by the `:key` route param the tile was
+// reached through (MeridianSurfacePage → /surface/:key) — distinct views, not duplicate pages.
+const REPORT_SUBSETS: Record<string, string[]> = {
+  annual_reports: ['Green Tariff Disclosures', 'Scope 2 Emissions'],
+};
+
 export default function ReportsSurface(_props: { role: string }) {
+  const { key = '' } = useParams();
+  const subset = REPORT_SUBSETS[key];
+  const reports = subset ? OFFTAKER_REPORTS.filter((c) => subset.includes(c.title)) : OFFTAKER_REPORTS;
   return (
     <div className="space-y-8">
-      {OFFTAKER_REPORTS.map((cfg) => (
+      {reports.map((cfg) => (
         <div key={cfg.endpoint} className="space-y-2">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{cfg.title}</p>
           <ReportPanel config={cfg} />

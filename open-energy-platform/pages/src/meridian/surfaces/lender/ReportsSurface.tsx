@@ -7,6 +7,7 @@
 // Atlas (⌘K) via the roleData feature key `reports` (added in E2.8e — the husk reports tab had
 // no roleData feature). Bucket D (report panel surface).
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import { ReportPanel, type ReportConfig } from '../../../components/launch/ReportPanel';
 
 const LENDER_REPORTS: ReportConfig[] = [
@@ -65,10 +66,22 @@ const LENDER_REPORTS: ReportConfig[] = [
   },
 ];
 
+// One surface component serves three Atlas tiles. The default `reports` tile shows the full
+// bundle; the focused tiles (`facility_reports`, `covenant_reports`) render a relevant subset so
+// each tile is a distinct view, not a duplicate page. Keyed by the `:key` route param the tile
+// was reached through (MeridianSurfacePage → /surface/:key).
+const REPORT_SUBSETS: Record<string, string[]> = {
+  facility_reports: ['Drawdown Records', 'DSCR Monitoring'],
+  covenant_reports: ['Covenant Certificates', 'EP IV ESAP Monitoring'],
+};
+
 export default function ReportsSurface(_props: { role: string }) {
+  const { key = '' } = useParams();
+  const subset = REPORT_SUBSETS[key];
+  const reports = subset ? LENDER_REPORTS.filter((c) => subset.includes(c.title)) : LENDER_REPORTS;
   return (
     <div className="space-y-8">
-      {LENDER_REPORTS.map((cfg) => (
+      {reports.map((cfg) => (
         <div key={cfg.endpoint} className="space-y-2">
           <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">{cfg.title}</p>
           <ReportPanel config={cfg} />

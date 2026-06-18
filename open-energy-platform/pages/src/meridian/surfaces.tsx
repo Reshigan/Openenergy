@@ -671,6 +671,9 @@ export const SURFACE_REGISTRY: Record<
   'lender:facilities': LenderFacilities,
   'lender:dunning': LenderDunning,
   'lender:reports': LenderReports,
+  // focused report subsets — same surface, key-aware filtering (REPORT_SUBSETS in LenderReports)
+  'lender:facility_reports': LenderReports,
+  'lender:covenant_reports': LenderReports,
   'lender:audit': LenderAuditPanel,
   // admin workstation migration (E2.1) — keys match roleData feature keys emitted by Atlas.
   // settlement_rails / erp_connectors / filing_connectors / anomaly_admin / rul_prediction_admin /
@@ -744,6 +747,8 @@ export const SURFACE_REGISTRY: Record<
   'offtaker:rec_retirement': OfftakerRecs,
   'offtaker:scope2': OfftakerScope2,
   'offtaker:reports': OfftakerReports,
+  // focused sustainability subset — same surface, key-aware filtering (REPORT_SUBSETS in OfftakerReports)
+  'offtaker:annual_reports': OfftakerReports,
   'offtaker:wheeling': OfftakerWheelingCharges,
   'offtaker:obligations': OfftakerObligations,
   'offtaker:audit': OfftakerAuditPanel,
