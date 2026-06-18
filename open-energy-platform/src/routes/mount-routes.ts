@@ -260,6 +260,7 @@ import telemetryRoutes from './telemetry';
 import monitoringRoutes from './monitoring';
 import lookupRoutes from './lookup';
 import adminRevenueRoutes from './admin-revenue';
+import adminMarketHaltRoutes from './admin-market-halt';
 import backupRoutes from './backup';
 import searchRoutes from './search';
 import notificationsRoutes from './notifications';
@@ -626,6 +627,7 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   app.route('/api/lookup', lookupRoutes);
   app.route('/api/admin/monitoring', monitoringRoutes);
   app.route('/api/admin/revenue', adminRevenueRoutes);
+  app.route('/api/admin/market-halt', adminMarketHaltRoutes);
   // Backup routes are deliberately mounted outside /api/admin to avoid being
   // shadowed by the admin sub-app's global authMiddleware.
   app.route('/api/backup', backupRoutes);

@@ -175,6 +175,15 @@ const RegulatorAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.l
 //     as `lender:*` via the connector trio above (roleData features added in E2.8e to reach them).
 const LenderFacilities = React.lazy(() => import('./surfaces/lender/FacilitiesSurface'));
 const LenderReports = React.lazy(() => import('./surfaces/lender/ReportsSurface'));
+// Wave 2 frontend-coverage surfaces (Atlas feature keys: portfolio, lender_risk,
+// ie_certifications, concentrations, benchmark_lender). Read-heavy lender-book views built on
+// the schema-agnostic AutoTable; lender_risk + ie_certifications add ActionModal write paths.
+const LenderPortfolio = React.lazy(() => import('./surfaces/lender/PortfolioSurface'));
+const LenderRisk = React.lazy(() => import('./surfaces/lender/RiskSurface'));
+const LenderIeCerts = React.lazy(() => import('./surfaces/lender/IeCertificationsSurface'));
+const LenderConcentrations = React.lazy(() => import('./surfaces/lender/ConcentrationsSurface'));
+const LenderBenchmark = React.lazy(() => import('./surfaces/lender/BenchmarkSurface'));
+const LenderCarbon = React.lazy(() => import('./surfaces/lender/CarbonLenderSurface'));
 
 // DunningTab is a self-contained no-prop named export; wrap in a lazy adapter that ignores
 // `role` and renders the tab unchanged.
@@ -225,6 +234,10 @@ const AdminCascadeDlq = React.lazy(() => import('./surfaces/admin/CascadeDlqSurf
 const AdminSubscriptionBilling = React.lazy(() => import('./surfaces/admin/SubscriptionBillingSurface'));
 const AdminDataSubjectRequest = React.lazy(() => import('./surfaces/admin/DataSubjectRequestSurface'));
 const AdminReports = React.lazy(() => import('./surfaces/admin/ReportsSurface'));
+const AdminUsers = React.lazy(() => import('./surfaces/admin/UsersSurface'));
+const AdminCron = React.lazy(() => import('./surfaces/admin/CronSurface'));
+const AdminContractTemplates = React.lazy(() => import('./surfaces/admin/ContractTemplatesSurface'));
+const AdminMarketHalt = React.lazy(() => import('./surfaces/admin/MarketHaltSurface'));
 
 // W120 ReconciliationAttestationTab has no MERIDIAN_CHAINS descriptor → Bucket E. Admin sees the
 // operator (non-regulator) view. Named export taking `{ regulatorView? }`.
@@ -344,6 +357,8 @@ const TraderRejections = React.lazy(() => import('./surfaces/trader/RejectionsSu
 const TraderMargin = React.lazy(() => import('./surfaces/trader/MarginSurface'));
 const TraderExceptions = React.lazy(() => import('./surfaces/trader/ExceptionsSurface'));
 const TraderReports = React.lazy(() => import('./surfaces/trader/ReportsSurface'));
+const TraderPositions = React.lazy(() => import('./surfaces/trader/PositionsSurface'));
+const TraderTrades = React.lazy(() => import('./surfaces/trader/TradesSurface'));
 
 // ── Support / OEM surfaces (E2.4 — SupportWorkstationPage migration) ─────────
 // Chain tabs WITH MERIDIAN_CHAINS descriptors → retired to /ledger/:chainKey (deleted from the
@@ -439,6 +454,8 @@ const GridCurtailment = React.lazy(() => import('./surfaces/grid/CurtailmentSurf
 const GridAncillary = React.lazy(() => import('./surfaces/grid/AncillarySurface'));
 const GridOutage = React.lazy(() => import('./surfaces/grid/OutageSurface'));
 const GridReports = React.lazy(() => import('./surfaces/grid/ReportsSurface'));
+const GridNersaReporting = React.lazy(() => import('./surfaces/grid/NersaReportingSurface'));
+const GridMarketRules = React.lazy(() => import('./surfaces/grid/MarketRulesSurface'));
 
 // WheelingChargesTab is an already-imported standalone named export (optional `scope` prop,
 // defaults to 'grid'); wrap in a lazy adapter that ignores `role` and renders the grid view.
@@ -499,6 +516,12 @@ const OfftakerBills = React.lazy(() => import('./surfaces/offtaker/BillsSurface'
 const OfftakerRecs = React.lazy(() => import('./surfaces/offtaker/RecsSurface'));
 const OfftakerScope2 = React.lazy(() => import('./surfaces/offtaker/Scope2Surface'));
 const OfftakerReports = React.lazy(() => import('./surfaces/offtaker/ReportsSurface'));
+const OfftakerBilling = React.lazy(() => import('./surfaces/offtaker/BillingSurface'));
+const OfftakerMetering = React.lazy(() => import('./surfaces/offtaker/MeteringSurface'));
+const OfftakerEnergyCost = React.lazy(() => import('./surfaces/offtaker/EnergyCostSurface'));
+const OfftakerDeliveryReports = React.lazy(() => import('./surfaces/offtaker/DeliveryReportsSurface'));
+const OfftakerPpaPortfolio = React.lazy(() => import('./surfaces/offtaker/PpaPortfolioSurface'));
+const OfftakerCreditSupport = React.lazy(() => import('./surfaces/offtaker/CreditSupportSurface'));
 
 // WheelingChargesTab is an already-imported standalone named export (optional `scope` prop); the
 // husk rendered the offtaker view. ObligationsTab is a self-contained no-prop named export. Wrap
@@ -675,17 +698,28 @@ export const SURFACE_REGISTRY: Record<
   'lender:facility_reports': LenderReports,
   'lender:covenant_reports': LenderReports,
   'lender:audit': LenderAuditPanel,
+  // Wave 2 frontend-coverage surfaces (formerly dead Atlas tiles).
+  'lender:portfolio': LenderPortfolio,
+  'lender:lender_risk': LenderRisk,
+  'lender:ie_certifications': LenderIeCerts,
+  'lender:concentrations': LenderConcentrations,
+  'lender:benchmark_lender': LenderBenchmark,
+  'lender:carbon_lender': LenderCarbon,
   // admin workstation migration (E2.1) — keys match roleData feature keys emitted by Atlas.
   // settlement_rails / erp_connectors / filing_connectors / anomaly_admin / rul_prediction_admin /
   // fault_fingerprint_admin are registered in the connector/ML trio above.
   'admin:tenant_events': AdminTenant,
   'admin:billing': AdminBilling,
   'admin:flags': AdminFlags,
+  'admin:market_halt': AdminMarketHalt,
   'admin:pii_access': AdminPiiAccess,
   'admin:monitoring': AdminCascadeDlq,
   'admin:subscription_billing': AdminSubscriptionBilling,
   'admin:popia': AdminDataSubjectRequest,
   'admin:reports': AdminReports,
+  'admin:users': AdminUsers,
+  'admin:cron': AdminCron,
+  'admin:contracts_admin': AdminContractTemplates,
   'admin:reconciliation_attestation': AdminReconciliationAttestation,
   'admin:settlement_audit': AdminSettlementAuditPanel,
   'admin:platform_audit': AdminPlatformAuditPanel,
@@ -716,6 +750,8 @@ export const SURFACE_REGISTRY: Record<
   // strate-swift / sap-oracle-erp / government-filing already registered in the connector trio
   // above (trader roleData features added in E2.3).
   'trader:orders': TraderOrders,
+  'trader:positions': TraderPositions,
+  'trader:trades': TraderTrades,
   'trader:rejections': TraderRejections,
   'trader:risk': TraderRisk,
   'trader:margin': TraderMargin,
@@ -737,6 +773,8 @@ export const SURFACE_REGISTRY: Record<
   'grid_operator:outage': GridOutage,
   'grid_operator:wheeling_charges': GridWheelingCharges,
   'grid_operator:reports': GridReports,
+  'grid_operator:nersa_reporting': GridNersaReporting,
+  'grid_operator:market_rules': GridMarketRules,
   'grid_operator:audit': GridAuditPanel,
   // offtaker workstation migration (E2.6) — keys match roleData feature keys emitted by Atlas.
   // strate-swift / sap-oracle-erp / government-filing already registered in the connector trio above.
@@ -751,6 +789,12 @@ export const SURFACE_REGISTRY: Record<
   'offtaker:annual_reports': OfftakerReports,
   'offtaker:wheeling': OfftakerWheelingCharges,
   'offtaker:obligations': OfftakerObligations,
+  'offtaker:billing': OfftakerBilling,
+  'offtaker:metering': OfftakerMetering,
+  'offtaker:energy_cost': OfftakerEnergyCost,
+  'offtaker:delivery_reports': OfftakerDeliveryReports,
+  'offtaker:ppa_portfolio': OfftakerPpaPortfolio,
+  'offtaker:credit_support': OfftakerCreditSupport,
   'offtaker:audit': OfftakerAuditPanel,
   // ipp_developer workstation migration (E2.7) — keys match roleData feature keys emitted by Atlas.
   // scada / mqtt-opcua / anomaly-detection / rul-prediction / fault-fingerprint are registered in

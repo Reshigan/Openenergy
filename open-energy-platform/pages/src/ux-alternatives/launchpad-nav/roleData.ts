@@ -349,7 +349,7 @@ const offtakerDomains: Domain[] = [
       { key: 'virtual_ppa_settlement', label: 'Virtual PPA / CfD', chainKey: 'virtual_ppa_settlement', description: 'Contract-for-difference financial PPA settlement (W229).', mockStates: ['period_open','strike_set','settled','disputed','reconciled'], mockState: 'settled' },
       { key: 'slb_kpi', label: 'SLB KPI ratchet', chainKey: 'slb_kpi_ratchet', description: 'Sustainability-linked-bond KPI margin ratchet (W204).', mockStates: ['target_set','measured','verified','ratchet_applied','disputed'], mockState: 'measured' },
       { key: 'procurement_options', label: 'Procurement options', route: '/procurement', description: 'Active RFP responses and LOI pipeline.' },
-      { key: 'ppa_variations', label: 'PPA variations', description: 'Signed PPA amendment register.' },
+      { key: 'ppa_variations', label: 'PPA variations', chainKey: 'ipp_ppavar', description: 'Signed PPA amendment register (W155).', mockStates: ['draft','technical_review','commercial_review','approved','executed','rejected'], mockState: 'commercial_review' },
     ],
   },
   {
@@ -540,7 +540,7 @@ const gridDomains: Domain[] = [
       { key: 'grid_code_ncr', label: 'Grid code NCRs', chainKey: 'gcc_ncr', description: 'Formal non-conformance notifications.' },
       { key: 'wheeling_charges', label: 'Wheeling & TPA charges', description: 'Monthly transmission use-of-system invoices.' },
       { key: 'nersa_reporting', label: 'NERSA statutory reporting', description: 'System operator annual statutory reports.' },
-      { key: 'interconnection', label: 'Interconnection studies', description: 'Fault-level and thermal capacity studies.' },
+      { key: 'interconnection', label: 'Interconnection studies', chainKey: 'gca_connection', description: 'Fault-level and thermal capacity studies.' },
       { key: 'availability_guarantee', label: 'Availability guarantees', chainKey: 'availability_guarantee', description: 'IEC 61724 O&M uptime guarantee (W51).' },
       { key: 'levy_compliance', label: 'Levy compliance', chainKey: 'levy_assessment', description: 'NERSA levy assessment register.' },
       { key: 'market_rules', label: 'Market rule changes', description: 'NERSA market rule consultation log.' },
