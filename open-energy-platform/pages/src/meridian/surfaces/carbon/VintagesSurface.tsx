@@ -38,7 +38,7 @@ export default function VintagesSurface(_props: { role: string }) {
           { key: 'outstanding_tco2e', label: 'Outstanding tCO₂e', align: 'right', render: (r) => Number(r.outstanding_tco2e || 0).toFixed(1) },
           { key: 'updated_at', label: 'Updated', render: (r) => new Date(r.updated_at).toLocaleDateString() },
           { key: '_actions', label: '', render: (r) => (
-            <button type="button" onClick={() => setAdvancing(r)} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">Advance</button>
+            <button type="button" onClick={() => setAdvancing(r)} className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md">Advance</button>
           ) },
         ]}
       />

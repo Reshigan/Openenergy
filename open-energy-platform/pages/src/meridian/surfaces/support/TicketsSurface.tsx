@@ -30,25 +30,25 @@ function FileTicketModal({ onClose, onDone }: { onClose: () => void; onDone: () 
   };
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
-          <h3 className="text-[16px] font-semibold text-[#0f1c2e]">File a ticket</h3>
+      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[var(--line)] flex items-center justify-between">
+          <h3 className="text-[16px] font-semibold text-[var(--ink)]">File a ticket</h3>
           <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-3">
-          {err && <div className="text-[12px] text-red-700">{err}</div>}
+          {err && <div className="text-[12px] text-[var(--oxide-deep)]">{err}</div>}
           <label className="block text-[13px]">
-            <span className="text-[#6b7685]">Subject</span>
-            <input value={subject} onChange={(e) => setSubject(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg" />
+            <span className="text-[var(--ink3)]">Subject</span>
+            <input value={subject} onChange={(e) => setSubject(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[var(--line)] rounded-lg" />
           </label>
           <label className="block text-[13px]">
-            <span className="text-[#6b7685]">Description</span>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
+            <span className="text-[var(--ink3)]">Description</span>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} className="mt-1 w-full px-3 py-2 border border-[var(--line)] rounded-lg resize-none" />
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="block text-[13px]">
-              <span className="text-[#6b7685]">Category</span>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg">
+              <span className="text-[var(--ink3)]">Category</span>
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[var(--line)] rounded-lg">
                 <option value="access">Access</option>
                 <option value="billing">Billing</option>
                 <option value="feature_question">Feature question</option>
@@ -59,8 +59,8 @@ function FileTicketModal({ onClose, onDone }: { onClose: () => void; onDone: () 
               </select>
             </label>
             <label className="block text-[13px]">
-              <span className="text-[#6b7685]">Priority</span>
-              <select value={priority} onChange={(e) => setPriority(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg">
+              <span className="text-[var(--ink3)]">Priority</span>
+              <select value={priority} onChange={(e) => setPriority(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[var(--line)] rounded-lg">
                 <option value="low">Low</option>
                 <option value="normal">Normal</option>
                 <option value="high">High</option>
@@ -69,8 +69,8 @@ function FileTicketModal({ onClose, onDone }: { onClose: () => void; onDone: () 
             </label>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg hover:bg-gray-50">Cancel</button>
-            <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-[oklch(0.46_0.16_55)] text-white rounded-lg disabled:opacity-50">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[var(--line)] rounded-lg hover:bg-[var(--raised)]">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-[var(--petrol)] text-white rounded-lg disabled:opacity-50">
               {saving ? 'Filing…' : 'File ticket'}
             </button>
           </div>
@@ -89,7 +89,7 @@ export default function TicketsSurface(_props: { role: string }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">
           + File ticket
         </button>
       </div>
@@ -109,8 +109,8 @@ export default function TicketsSurface(_props: { role: string }) {
           { key: '_actions', label: '', render: (r) => (
             (r.status !== 'resolved' && r.status !== 'closed') ? (
               <div className="flex gap-1">
-                <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[oklch(0.46_0.16_55)] text-white rounded">Transition</button>
-                <button type="button" onClick={() => setEscalating(r)} className="px-2 py-1 text-[11px] bg-amber-600 text-white rounded">Escalate</button>
+                <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md">Transition</button>
+                <button type="button" onClick={() => setEscalating(r)} className="px-2 py-1 text-[11px] bg-white text-[var(--ink)] rounded-md border border-[var(--line)] hover:border-[var(--petrol)] hover:text-[var(--petrol)]">Escalate</button>
               </div>
             ) : null
           ) },

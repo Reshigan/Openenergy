@@ -61,8 +61,8 @@ export default function ReportsSurface(_props: { role: string }) {
     <div className="space-y-8">
       <div className="flex flex-wrap gap-2 items-center justify-between">
         <div>
-          <p className="text-sm font-semibold text-[#1e2a38]">Export</p>
-          <p className="text-xs text-[#4a5568]">Download trader data for offline analysis or regulatory submission.</p>
+          <p className="text-sm font-semibold text-[var(--ink)]">Export</p>
+          <p className="text-xs text-[var(--ink2)]">Download trader data for offline analysis or regulatory submission.</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -76,14 +76,14 @@ export default function ReportsSurface(_props: { role: string }) {
               a.click();
               document.body.removeChild(a);
             }}
-            className="px-3 py-1.5 text-xs bg-[#c2873a] text-white rounded hover:bg-[#a3702f]"
+            className="px-3 py-1.5 text-xs bg-[var(--petrol)] text-white rounded-md hover:bg-[var(--petrol-deep)]"
           >
             Export CSV
           </button>
           <button
             type="button"
             onClick={() => window.print()}
-            className="px-3 py-1.5 text-xs bg-[#2d3748] text-white rounded hover:bg-[#1e2a38]"
+            className="px-3 py-1.5 text-xs bg-white text-[var(--ink)] rounded-md border border-[var(--line)] hover:border-[var(--petrol)] hover:text-[var(--petrol)]"
           >
             Print / PDF
           </button>
@@ -93,16 +93,16 @@ export default function ReportsSurface(_props: { role: string }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Link
           to="/ledger/pnl_attribution"
-          className="block rounded-lg border border-[#dde4ec] bg-white p-4 hover:border-blue-400 hover:shadow-sm transition-all"
+          className="block rounded-lg border border-[var(--line)] bg-white p-4 hover:border-[var(--petrol)] hover:shadow-sm transition-all"
         >
-          <p className="text-sm font-semibold text-[#1e2a38]">P&amp;L attribution</p>
-          <p className="mt-1 text-xs text-[#4a5568]">Daily P&amp;L attribution by book and strategy. View and manage the P&amp;L attribution chain.</p>
+          <p className="text-sm font-semibold text-[var(--ink)]">P&amp;L attribution</p>
+          <p className="mt-1 text-xs text-[var(--ink2)]">Daily P&amp;L attribution by book and strategy. View and manage the P&amp;L attribution chain.</p>
         </Link>
       </div>
 
       {TRADER_REPORTS.map((cfg) => (
         <div key={cfg.endpoint} className="space-y-2">
-          <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">{cfg.title}</p>
+          <p className="text-xs font-semibold text-[var(--ink2)] uppercase tracking-wide">{cfg.title}</p>
           <ReportPanel config={cfg} />
         </div>
       ))}

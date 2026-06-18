@@ -104,9 +104,9 @@ export default function DataSubjectRequestSurface(_props: { role: string }) {
     <div className="space-y-4">
       <div className="flex gap-3 flex-wrap">
         {statCards.map(s => (
-          <div key={s.label} className="flex-1 min-w-[100px] rounded-xl border border-[var(--oe-surface-container)] bg-[var(--oe-surface-container-lowest)] px-4 py-3">
+          <div key={s.label} className="flex-1 min-w-[100px] rounded-lg border border-[var(--oe-surface-container)] bg-[var(--oe-surface-container-lowest)] px-4 py-3">
             <div className="text-[11px] text-[var(--oe-outline)] uppercase tracking-wide">{s.label}</div>
-            <div className={`text-[22px] font-semibold ${s.label === 'Overdue' && s.value > 0 ? 'text-red-600' : 'text-[var(--oe-on-surface)]'}`}>{s.value}</div>
+            <div className={`text-[22px] font-semibold ${s.label === 'Overdue' && s.value > 0 ? 'text-[var(--oxide-deep)]' : 'text-[var(--oe-on-surface)]'}`}>{s.value}</div>
           </div>
         ))}
       </div>
@@ -142,7 +142,7 @@ export default function DataSubjectRequestSurface(_props: { role: string }) {
                 <td className="py-2 px-2"><Pill tone={dsrStatusTone(row.chain_status)}>{row.chain_status.replace(/_/g, ' ')}</Pill></td>
                 <td className="py-2 px-2">
                   {row.sla_deadline
-                    ? <span className={overdue ? 'text-red-600 font-medium' : 'text-[var(--oe-on-surface-variant)]'}>{new Date(row.sla_deadline).toLocaleDateString()}</span>
+                    ? <span className={overdue ? 'text-[var(--oxide-deep)] font-medium' : 'text-[var(--oe-on-surface-variant)]'}>{new Date(row.sla_deadline).toLocaleDateString()}</span>
                     : <span className="text-[var(--oe-outline)]">—</span>}
                 </td>
                 <td className="py-2 px-2">{row.ir_notified ? <Pill tone="warn">Yes</Pill> : <span className="text-[var(--oe-outline)]">—</span>}</td>
@@ -150,7 +150,7 @@ export default function DataSubjectRequestSurface(_props: { role: string }) {
                   {(DSR_TRANSITIONS[row.chain_status] ?? []).length > 0 && (
                     <button
                       onClick={() => setActionTarget(row)}
-                      className="text-[var(--oe-primary)] hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--oe-primary)] rounded"
+                      className="text-[var(--oe-primary)] hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--oe-primary)] rounded-md"
                     >
                       Action
                     </button>

@@ -71,7 +71,18 @@ export default function ThreadPage() {
       </div>
     );
   }
-  if (!t) return <div className="mer mer-loading" aria-busy="true">Loading thread…</div>;
+  if (!t) return (
+    <div className="mer thread" aria-busy="true" role="status" aria-label="Loading thread">
+      <div style={{ padding: '20px 24px', maxWidth: 880 }}>
+        <div className="skel skel-line lg" style={{ width: '42%', marginBottom: 10 }} />
+        <div className="skel skel-line sm" style={{ width: '26%', marginBottom: 22 }} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="skel skel-card" style={{ height: 200 }} />
+          <div className="skel skel-card" style={{ height: 200 }} />
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="mer thread">

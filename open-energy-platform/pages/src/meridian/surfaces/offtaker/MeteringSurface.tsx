@@ -20,10 +20,10 @@ const num = (v: any, dp = 0) =>
 
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 min-w-[150px]">
-      <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="text-[20px] font-semibold text-slate-900 tabular-nums">{value}</div>
-      {sub && <div className="text-[11px] text-slate-500">{sub}</div>}
+    <div className="rounded-lg border border-[var(--line)] bg-white px-4 py-3 min-w-[150px]">
+      <div className="text-[11px] uppercase tracking-wide text-[var(--ink3)]">{label}</div>
+      <div className="text-[20px] font-semibold text-[var(--ink)] tabular-nums">{value}</div>
+      {sub && <div className="text-[11px] text-[var(--ink3)]">{sub}</div>}
     </div>
   );
 }
@@ -56,10 +56,10 @@ export default function MeteringSurface(_props: { role: string }) {
       </div>
 
       {conns.length > 0 && (
-        <div className="rounded-lg border border-slate-200 overflow-hidden mb-4">
-          <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 bg-slate-50">Per-connection rollup</div>
+        <div className="rounded-lg border border-[var(--line)] overflow-hidden mb-4">
+          <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)] bg-[var(--raised)]">Per-connection rollup</div>
           <table className="w-full text-[12px]">
-            <thead><tr className="text-slate-500 border-b border-slate-200">
+            <thead><tr className="text-[var(--ink3)] border-b border-[var(--line)]">
               <th className="text-left px-4 py-1.5 font-medium">Project</th>
               <th className="text-left px-4 py-1.5 font-medium">Connection</th>
               <th className="text-right px-4 py-1.5 font-medium">Export kWh</th>
@@ -69,13 +69,13 @@ export default function MeteringSurface(_props: { role: string }) {
             </tr></thead>
             <tbody>
               {conns.map((c, i) => (
-                <tr key={c.connection_id ?? i} className="border-b border-slate-100 last:border-0">
+                <tr key={c.connection_id ?? i} className="border-b border-[var(--line)] last:border-0">
                   <td className="px-4 py-1.5">{c.project_name || '—'}</td>
-                  <td className="px-4 py-1.5 text-slate-500">{c.connection_point || c.connection_id || '—'}</td>
+                  <td className="px-4 py-1.5 text-[var(--ink3)]">{c.connection_point || c.connection_id || '—'}</td>
                   <td className="px-4 py-1.5 text-right tabular-nums">{num(c.export_kwh_sum)}</td>
                   <td className="px-4 py-1.5 text-right tabular-nums">{num(c.import_kwh_sum)}</td>
                   <td className="px-4 py-1.5 text-right tabular-nums">{num(c.peak_demand_kw, 1)}</td>
-                  <td className="px-4 py-1.5 text-right tabular-nums text-slate-500">{num(c.readings)}</td>
+                  <td className="px-4 py-1.5 text-right tabular-nums text-[var(--ink3)]">{num(c.readings)}</td>
                 </tr>
               ))}
             </tbody>
@@ -84,8 +84,8 @@ export default function MeteringSurface(_props: { role: string }) {
       )}
 
       <div className="flex items-center justify-between mb-2">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Reading register</div>
-        <label className="flex items-center gap-1.5 text-[12px] text-slate-600">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)]">Reading register</div>
+        <label className="flex items-center gap-1.5 text-[12px] text-[var(--ink2)]">
           <input type="checkbox" checked={validatedOnly} onChange={(e) => setValidatedOnly(e.target.checked)} />
           Validated only
         </label>

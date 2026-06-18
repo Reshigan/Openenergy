@@ -17,7 +17,7 @@ const T = {
   panelBg:  'oklch(0.99 0.002 80)',
   text1:    'oklch(0.17 0.010 250)',
   text2:    'oklch(0.40 0.009 250)',
-  text3:    'oklch(0.60 0.008 250)',
+  text3:    'oklch(0.52 0.008 250)',   /* darkened from 0.60 → clears WCAG AA 4.5:1 on the light panel (used at 9.5–11px) */
   border:   'oklch(0.88 0.006 250)',
   accent:   'oklch(0.46 0.16 55)',
   inputBg:  'oklch(0.97 0.003 250)',

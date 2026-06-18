@@ -101,7 +101,7 @@ export default function CascadeDlqSurface(_props: { role: string }) {
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-4">
-        <p className="text-[12px] leading-relaxed text-[#3d4756] max-w-2xl">
+        <p className="text-[12px] leading-relaxed text-[var(--ink2)] max-w-2xl">
           Cascade stages that fail three retries dead-letter here. <strong>Retry</strong> replays
           the failed stage (audit / notifications / webhooks / registry / analytics / commercial);
           on success the row clears. <strong>Resolve</strong> marks a row handled out-of-band —
@@ -110,25 +110,25 @@ export default function CascadeDlqSurface(_props: { role: string }) {
         </p>
         <button type="button"
           onClick={() => void load()}
-          className="shrink-0 h-8 px-3 rounded-md border border-[#dde4ec] bg-white text-[12px] font-medium text-[#3d4756] hover:bg-[#f8fafc]"
+          className="shrink-0 h-8 px-3 rounded-md border border-[var(--line)] bg-white text-[12px] font-medium text-[var(--ink2)] hover:bg-[var(--raised)]"
         >
           Refresh
         </button>
       </div>
 
       {loading ? (
-        <div className="rounded-xl border border-[#dde4ec] bg-white p-6 text-[12px] text-[#6b7685]">Loading DLQ…</div>
+        <div className="rounded-lg border border-[var(--line)] bg-white p-6 text-[12px] text-[var(--ink3)]">Loading DLQ…</div>
       ) : err ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-[12px] text-red-700">{err}</div>
+        <div className="rounded-lg border border-[var(--oxide)] bg-[var(--oxide-tint)] p-4 text-[12px] text-[var(--oxide-deep)]">{err}</div>
       ) : rows.length === 0 ? (
-        <div className="rounded-xl border border-[#dde4ec] bg-[#f8fafc] p-6 text-center">
-          <div className="text-[13px] font-semibold text-[#0f1c2e]">DLQ is clear</div>
-          <div className="text-[12px] text-[#6b7685] mt-1">No failed cascade stages pending. Nothing to drain.</div>
+        <div className="rounded-lg border border-[var(--line)] bg-[var(--raised)] p-6 text-center">
+          <div className="text-[13px] font-semibold text-[var(--ink)]">DLQ is clear</div>
+          <div className="text-[12px] text-[var(--ink3)] mt-1">No failed cascade stages pending. Nothing to drain.</div>
         </div>
       ) : (
-        <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto text-[#0f1c2e]">
+        <div className="rounded-lg border border-[var(--line)] bg-white overflow-x-auto text-[var(--ink)]">
           <table className="w-full text-[13px] min-w-[760px]">
-            <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+            <thead className="bg-[var(--raised)] text-left text-[10px] uppercase tracking-wide text-[var(--ink3)]">
               <tr>
                 <th className="px-4 py-2">Event</th>
                 <th className="px-4 py-2">Stage</th>
@@ -145,20 +145,20 @@ export default function CascadeDlqSurface(_props: { role: string }) {
                 const isResolving = resolving === r.id;
                 return (
                   <React.Fragment key={r.id}>
-                    <tr className="border-t border-[#e5ebf2] align-top">
+                    <tr className="border-t border-[var(--line)] align-top">
                       <td className="px-4 py-2 font-mono text-[11px]">{r.event}</td>
                       <td className="px-4 py-2"><Pill tone={STAGE_TONE[r.stage] ?? 'info'}>{r.stage}</Pill></td>
-                      <td className="px-4 py-2 text-[11px] text-[#3d4756]">
-                        {r.entity_type}<span className="text-[#9aa6b4]"> · </span>
+                      <td className="px-4 py-2 text-[11px] text-[var(--ink2)]">
+                        {r.entity_type}<span className="text-[var(--ink3)]"> · </span>
                         <span className="font-mono">{(r.entity_id || '').slice(0, 14)}</span>
                       </td>
                       <td className="px-4 py-2">
-                        <span className="block truncate max-w-[260px] text-[11px] text-[#b4453a]" title={r.error_message}>
+                        <span className="block truncate max-w-[260px] text-[11px] text-[var(--oxide-deep)]" title={r.error_message}>
                           {r.error_message || '—'}
                         </span>
                       </td>
                       <td className="px-4 py-2 text-right tabular-nums text-[12px]">{r.attempt_count}</td>
-                      <td className="px-4 py-2 text-[11px] text-[#6b7685] whitespace-nowrap">
+                      <td className="px-4 py-2 text-[11px] text-[var(--ink3)] whitespace-nowrap">
                         {r.created_at ? new Date(r.created_at).toLocaleString() : '—'}
                       </td>
                       <td className="px-4 py-2">
@@ -166,14 +166,14 @@ export default function CascadeDlqSurface(_props: { role: string }) {
                           <button type="button"
                             onClick={() => void retry(r.id)}
                             disabled={rowBusy}
-                            className="text-[11px] font-semibold text-[oklch(0.46_0.16_55)] hover:underline disabled:opacity-40"
+                            className="text-[11px] font-semibold text-[var(--petrol)] hover:underline disabled:opacity-40"
                           >
                             {rowBusy && !isResolving ? 'Retrying…' : 'Retry'}
                           </button>
                           <button type="button"
                             onClick={() => (isResolving ? setResolving(null) : openResolve(r.id))}
                             disabled={rowBusy}
-                            className="text-[11px] font-medium text-[#6b7685] hover:text-[#3d4756] hover:underline disabled:opacity-40"
+                            className="text-[11px] font-medium text-[var(--ink3)] hover:text-[var(--ink2)] hover:underline disabled:opacity-40"
                           >
                             {isResolving ? 'Cancel' : 'Resolve'}
                           </button>
@@ -181,21 +181,21 @@ export default function CascadeDlqSurface(_props: { role: string }) {
                       </td>
                     </tr>
                     {result[r.id] && !isResolving && (
-                      <tr className="border-t border-[#e5ebf2] bg-[#fdf6f5]">
-                        <td colSpan={7} className="px-4 py-2 text-[11px] text-[#b4453a]">{result[r.id]}</td>
+                      <tr className="border-t border-[var(--line)] bg-[var(--oxide-tint)]">
+                        <td colSpan={7} className="px-4 py-2 text-[11px] text-[var(--oxide-deep)]">{result[r.id]}</td>
                       </tr>
                     )}
                     {isResolving && (
-                      <tr className="border-t border-[#e5ebf2] bg-[#f8fafc]">
+                      <tr className="border-t border-[var(--line)] bg-[var(--raised)]">
                         <td colSpan={7} className="px-4 py-3">
                           <div className="flex flex-wrap items-center gap-3">
-                            <span className="text-[11px] uppercase tracking-wide text-[#6b7685]">Mark</span>
-                            <div className="inline-flex rounded-md border border-[#dde4ec] overflow-hidden">
+                            <span className="text-[11px] uppercase tracking-wide text-[var(--ink3)]">Mark</span>
+                            <div className="inline-flex rounded-md border border-[var(--line)] overflow-hidden">
                               {(['abandoned', 'resolved'] as const).map((s) => (
                                 <button type="button"
                                   key={s}
                                   onClick={() => setResolveStatus(s)}
-                                  className={`px-3 h-8 text-[11px] font-medium ${resolveStatus === s ? 'bg-[#c2873a] text-white' : 'bg-white text-[#3d4756] hover:bg-[#eef2f7]'}`}
+                                  className={`px-3 h-8 text-[11px] font-medium ${resolveStatus === s ? 'bg-[var(--petrol)] text-white' : 'bg-white text-[var(--ink2)] hover:bg-[var(--raised)]'}`}
                                 >
                                   {s}
                                 </button>
@@ -205,12 +205,12 @@ export default function CascadeDlqSurface(_props: { role: string }) {
                               value={resolveNote}
                               onChange={(e) => setResolveNote(e.target.value)}
                               placeholder="Optional note for the audit trail"
-                              className="flex-1 min-w-[200px] h-8 px-2 rounded-md border border-[#dde4ec] bg-white text-[12px] text-[#0f1c2e] placeholder:text-[#9aa6b4]"
+                              className="flex-1 min-w-[200px] h-8 px-2 rounded-md border border-[var(--line)] bg-white text-[12px] text-[var(--ink)] placeholder:text-[var(--ink3)]"
                             />
                             <button type="button"
                               onClick={() => void submitResolve(r.id)}
                               disabled={rowBusy}
-                              className="h-8 px-3 rounded-md bg-[#c2873a] text-white text-[11px] font-semibold disabled:opacity-40"
+                              className="h-8 px-3 rounded-md bg-[var(--petrol)] text-white text-[11px] font-semibold disabled:opacity-40"
                             >
                               {rowBusy ? 'Saving…' : 'Confirm'}
                             </button>

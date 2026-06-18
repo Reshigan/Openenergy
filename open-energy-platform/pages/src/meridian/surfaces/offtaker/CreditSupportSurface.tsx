@@ -13,7 +13,7 @@ import { AutoTable } from '../lender/_AutoTable';
 export default function CreditSupportSurface(_props: { role: string }) {
   return (
     <div>
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 mb-3 text-[12px] text-slate-600">
+      <div className="rounded-lg border border-[var(--line)] bg-[var(--raised)] px-4 py-3 mb-3 text-[12px] text-[var(--ink2)]">
         Payment-security instruments backing your PPAs (guarantees, letters of credit, parent-company
         guarantees, cash collateral). Cover months below 1.0 or an instrument near expiry should be
         repapered before the next billing cycle.

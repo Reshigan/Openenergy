@@ -39,10 +39,10 @@ export default function ContractTemplatesSurface(_props: { role: string }) {
   return (
     <div>
       <div className="flex gap-2 mb-3">
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className="h-9 px-2 rounded-md border border-slate-300 text-[12px] bg-white">
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className="h-9 px-2 rounded-md border border-[var(--line)] text-[12px] bg-white">
           {CATEGORY_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-        <select value={docType} onChange={(e) => setDocType(e.target.value)} className="h-9 px-2 rounded-md border border-slate-300 text-[12px] bg-white">
+        <select value={docType} onChange={(e) => setDocType(e.target.value)} className="h-9 px-2 rounded-md border border-[var(--line)] text-[12px] bg-white">
           {DOCTYPE_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </div>
@@ -55,7 +55,7 @@ export default function ContractTemplatesSurface(_props: { role: string }) {
           { key: 'name', label: 'Template', render: (r) => (
             <div className="leading-tight">
               <div className="font-medium">{r.name}</div>
-              <div className="text-[10px] text-slate-500 font-mono">{r.code}{r.version ? ` · v${r.version}` : ''}</div>
+              <div className="text-[10px] text-[var(--ink3)] font-mono">{r.code}{r.version ? ` · v${r.version}` : ''}</div>
             </div>
           ) },
           { key: 'category', label: 'Category', render: (r) => <Pill tone="info">{(r.category || '—').replace(/_/g, ' ')}</Pill> },
@@ -63,7 +63,7 @@ export default function ContractTemplatesSurface(_props: { role: string }) {
           { key: 'jurisdiction', label: 'Jurisdiction', render: (r) => r.jurisdiction || 'ZA' },
           { key: 'governing_law', label: 'Governing law', render: (r) => r.governing_law || '—' },
           { key: 'sa_law_references', label: 'SA-law refs', render: (r) => (
-            <span className="text-[10px] text-slate-500">{Array.isArray(r.sa_law_references) ? r.sa_law_references.join(', ') : (r.sa_law_references || '—')}</span>
+            <span className="text-[10px] text-[var(--ink3)]">{Array.isArray(r.sa_law_references) ? r.sa_law_references.join(', ') : (r.sa_law_references || '—')}</span>
           ) },
         ]}
       />

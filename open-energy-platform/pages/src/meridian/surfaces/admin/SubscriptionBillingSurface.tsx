@@ -113,7 +113,7 @@ export default function SubscriptionBillingSurface(_props: { role: string }) {
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-4">
-        <p className="text-[12px] leading-relaxed text-[#3d4756] max-w-2xl">
+        <p className="text-[12px] leading-relaxed text-[var(--ink2)] max-w-2xl">
           Monthly SaaS invoices run as a billing chain: draft to issued to payment_pending to paid,
           with a cron dunning ladder (overdue, dunning_1, dunning_2, suspended). Admin exits are
           waive, write off, cancel and reactivate. Actions below are limited to those valid from
@@ -122,13 +122,13 @@ export default function SubscriptionBillingSurface(_props: { role: string }) {
         <div className="flex shrink-0 items-center gap-2">
           <button type="button"
             onClick={() => setGenerating(true)}
-            className="h-8 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold hover:bg-[#a3702f]"
+            className="h-8 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold hover:bg-[var(--petrol-deep)]"
           >
             Generate invoice
           </button>
           <button type="button"
             onClick={() => void load()}
-            className="h-8 px-3 rounded-md border border-[#dde4ec] bg-white text-[12px] font-medium text-[#3d4756] hover:bg-[#f8fafc]"
+            className="h-8 px-3 rounded-md border border-[var(--line)] bg-white text-[12px] font-medium text-[var(--ink2)] hover:bg-[var(--raised)]"
           >
             Refresh
           </button>
@@ -136,27 +136,27 @@ export default function SubscriptionBillingSurface(_props: { role: string }) {
       </div>
 
       {stats && (
-        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-[12px] text-[#3d4756]">
-          <span><span className="text-[#6b7685]">Total</span> <span className="tabular-nums font-medium text-[#0f1c2e]">{stats.total}</span></span>
-          <span><span className="text-[#6b7685]">Overdue</span> <span className="tabular-nums font-medium text-[#b4453a]">{stats.overdue}</span></span>
-          <span><span className="text-[#6b7685]">Suspended</span> <span className="tabular-nums font-medium text-[#b4453a]">{stats.suspended}</span></span>
-          <span><span className="text-[#6b7685]">ARR at risk</span> <span className="tabular-nums font-medium text-[#0f1c2e]">{zar(stats.arr_at_risk)}</span></span>
+        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-[12px] text-[var(--ink2)]">
+          <span><span className="text-[var(--ink3)]">Total</span> <span className="tabular-nums font-medium text-[var(--ink)]">{stats.total}</span></span>
+          <span><span className="text-[var(--ink3)]">Overdue</span> <span className="tabular-nums font-medium text-[var(--oxide-deep)]">{stats.overdue}</span></span>
+          <span><span className="text-[var(--ink3)]">Suspended</span> <span className="tabular-nums font-medium text-[var(--oxide-deep)]">{stats.suspended}</span></span>
+          <span><span className="text-[var(--ink3)]">ARR at risk</span> <span className="tabular-nums font-medium text-[var(--ink)]">{zar(stats.arr_at_risk)}</span></span>
         </div>
       )}
 
       {loading ? (
-        <div className="rounded-xl border border-[#dde4ec] bg-white p-6 text-[12px] text-[#6b7685]">Loading invoices…</div>
+        <div className="rounded-lg border border-[var(--line)] bg-white p-6 text-[12px] text-[var(--ink3)]">Loading invoices…</div>
       ) : err ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-[12px] text-red-700">{err}</div>
+        <div className="rounded-lg border border-[var(--oxide)] bg-[var(--oxide-tint)] p-4 text-[12px] text-[var(--oxide-deep)]">{err}</div>
       ) : rows.length === 0 ? (
-        <div className="rounded-xl border border-[#dde4ec] bg-[#f8fafc] p-6 text-center">
-          <div className="text-[13px] font-semibold text-[#0f1c2e]">No invoices yet</div>
-          <div className="text-[12px] text-[#6b7685] mt-1">Generate a monthly subscription invoice to start the billing chain.</div>
+        <div className="rounded-lg border border-[var(--line)] bg-[var(--raised)] p-6 text-center">
+          <div className="text-[13px] font-semibold text-[var(--ink)]">No invoices yet</div>
+          <div className="text-[12px] text-[var(--ink3)] mt-1">Generate a monthly subscription invoice to start the billing chain.</div>
         </div>
       ) : (
-        <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto text-[#0f1c2e]">
+        <div className="rounded-lg border border-[var(--line)] bg-white overflow-x-auto text-[var(--ink)]">
           <table className="w-full text-[13px] min-w-[860px]">
-            <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+            <thead className="bg-[var(--raised)] text-left text-[10px] uppercase tracking-wide text-[var(--ink3)]">
               <tr>
                 <th className="px-4 py-2">Participant</th>
                 <th className="px-4 py-2">Period</th>
@@ -175,7 +175,7 @@ export default function SubscriptionBillingSurface(_props: { role: string }) {
                 const actions = SUB_TRANSITIONS[r.chain_status] ?? [];
                 return (
                   <React.Fragment key={r.id}>
-                    <tr className="border-t border-[#e5ebf2] align-top">
+                    <tr className="border-t border-[var(--line)] align-top">
                       <td className="px-4 py-2 font-mono text-[11px]" title={r.participant_id}>{(r.participant_id || '').slice(0, 14)}</td>
                       <td className="px-4 py-2 text-[12px] tabular-nums">{r.billing_period}</td>
                       <td className="px-4 py-2"><Pill tone="info">{r.subscription_tier}</Pill></td>
@@ -183,27 +183,27 @@ export default function SubscriptionBillingSurface(_props: { role: string }) {
                       <td className="px-4 py-2"><Pill tone={subStatusTone(r.chain_status)}>{r.chain_status.replace(/_/g, ' ')}</Pill></td>
                       <td className="px-4 py-2 text-[11px] whitespace-nowrap">
                         {breached ? (
-                          <span className="text-[#b4453a] font-medium">Breached</span>
+                          <span className="text-[var(--oxide-deep)] font-medium">Breached</span>
                         ) : r.hours_until_sla != null ? (
-                          <span className={r.hours_until_sla < 24 ? 'text-[#b4453a]' : 'text-[#6b7685]'}>{r.hours_until_sla}h left</span>
+                          <span className={r.hours_until_sla < 24 ? 'text-[var(--oxide-deep)]' : 'text-[var(--ink3)]'}>{r.hours_until_sla}h left</span>
                         ) : (
-                          <span className="text-[#9aa6b4]">—</span>
+                          <span className="text-[var(--ink3)]">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-2 text-[11px] text-[#6b7685] whitespace-nowrap">
+                      <td className="px-4 py-2 text-[11px] text-[var(--ink3)] whitespace-nowrap">
                         {r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}
                       </td>
                       <td className="px-4 py-2">
                         <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 whitespace-nowrap">
                           {actions.length === 0 ? (
-                            <span className="text-[11px] text-[#9aa6b4]">Terminal</span>
+                            <span className="text-[11px] text-[var(--ink3)]">Terminal</span>
                           ) : (
                             actions.map((a) => (
                               <button type="button"
                                 key={a}
                                 onClick={() => void act(r.id, a)}
                                 disabled={rowBusy}
-                                className={`text-[11px] font-medium hover:underline disabled:opacity-40 ${a === 'write_off' || a === 'suspend_account' || a === 'cancel' ? 'text-[#b4453a]' : 'text-[oklch(0.46_0.16_55)]'}`}
+                                className={`text-[11px] font-medium hover:underline disabled:opacity-40 ${a === 'write_off' || a === 'suspend_account' || a === 'cancel' ? 'text-[var(--oxide-deep)]' : 'text-[var(--petrol)]'}`}
                               >
                                 {SUB_ACTION_LABELS[a] ?? a}
                               </button>
@@ -213,8 +213,8 @@ export default function SubscriptionBillingSurface(_props: { role: string }) {
                       </td>
                     </tr>
                     {rowErr[r.id] && (
-                      <tr className="border-t border-[#e5ebf2] bg-[#fdf6f5]">
-                        <td colSpan={8} className="px-4 py-2 text-[11px] text-[#b4453a]">{rowErr[r.id]}</td>
+                      <tr className="border-t border-[var(--line)] bg-[var(--oxide-tint)]">
+                        <td colSpan={8} className="px-4 py-2 text-[11px] text-[var(--oxide-deep)]">{rowErr[r.id]}</td>
                       </tr>
                     )}
                   </React.Fragment>

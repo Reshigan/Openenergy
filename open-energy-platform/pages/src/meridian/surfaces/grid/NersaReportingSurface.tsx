@@ -31,27 +31,27 @@ function pickSection(sections: any, name: string): any[] {
 
 function Kpi({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wide text-slate-400">{label}</div>
-      <div className="text-[15px] font-semibold text-slate-800">{value}</div>
+    <div className="rounded-lg border border-[var(--line)] bg-white px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wide text-[var(--ink3)]">{label}</div>
+      <div className="text-[15px] font-semibold text-[var(--ink)]">{value}</div>
     </div>
   );
 }
 
 function MiniTable({ title, rows, cols }: { title: string; rows: any[]; cols: { key: string; label: string; render?: (r: any) => React.ReactNode }[] }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
-      <div className="px-3 py-2 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{title}</div>
+    <div className="rounded-lg border border-[var(--line)] bg-white overflow-hidden">
+      <div className="px-3 py-2 bg-[var(--raised)] text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)]">{title}</div>
       {rows.length === 0 ? (
-        <div className="px-3 py-6 text-center text-[12px] text-slate-400">No rows for this period.</div>
+        <div className="px-3 py-6 text-center text-[12px] text-[var(--ink3)]">No rows for this period.</div>
       ) : (
         <table className="w-full text-[12px]">
-          <thead className="text-slate-400 text-[10px] uppercase">
+          <thead className="text-[var(--ink3)] text-[10px] uppercase">
             <tr>{cols.map((c) => <th key={c.key} className="text-left px-3 py-1.5 font-semibold">{c.label}</th>)}</tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={r.id ?? i} className="border-t border-slate-100">
+              <tr key={r.id ?? i} className="border-t border-[var(--line)]">
                 {cols.map((c) => <td key={c.key} className="px-3 py-1.5">{c.render ? c.render(r) : (r[c.key] ?? '—')}</td>)}
               </tr>
             ))}
@@ -92,8 +92,8 @@ export default function NersaReportingSurface(_props: { role: string }) {
     }
   };
 
-  if (err) return <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-[12px] text-rose-700">{err}</div>;
-  if (!data) return <div className="text-[12px] text-slate-400 px-1 py-6">Loading NERSA report…</div>;
+  if (err) return <div className="rounded-lg border border-[var(--oxide)] bg-[var(--oxide-tint)] px-4 py-3 text-[12px] text-[var(--oxide-deep)]">{err}</div>;
+  if (!data) return <div className="text-[12px] text-[var(--ink3)] px-1 py-6">Loading NERSA report…</div>;
 
   const summary = data.summary ?? {};
   const constraints = pickSection(data.sections, 'constraints');
@@ -102,7 +102,7 @@ export default function NersaReportingSurface(_props: { role: string }) {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] text-slate-400">Generated {data.generated_at ? new Date(data.generated_at).toLocaleString() : '—'}</p>
+        <p className="text-[11px] text-[var(--ink3)]">Generated {data.generated_at ? new Date(data.generated_at).toLocaleString() : '—'}</p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
         <Kpi label="Constraints" value={summary.constraints ?? '—'} />
@@ -114,9 +114,9 @@ export default function NersaReportingSurface(_props: { role: string }) {
       </div>
 
       <div className="flex items-center justify-between">
-        <h3 className="text-[13px] font-semibold text-slate-700">Grid constraints</h3>
+        <h3 className="text-[13px] font-semibold text-[var(--ink2)]">Grid constraints</h3>
         <button type="button" disabled={downloading === 'constraints'} onClick={() => downloadCsv('constraints')}
-          className="px-2 py-1 text-[11px] bg-[oklch(0.46_0.16_55)] text-white rounded disabled:opacity-50">
+          className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md disabled:opacity-50">
           {downloading === 'constraints' ? 'Exporting…' : 'Export CSV'}
         </button>
       </div>
@@ -130,9 +130,9 @@ export default function NersaReportingSurface(_props: { role: string }) {
       ]} />
 
       <div className="flex items-center justify-between">
-        <h3 className="text-[13px] font-semibold text-slate-700">Imbalance settlement</h3>
+        <h3 className="text-[13px] font-semibold text-[var(--ink2)]">Imbalance settlement</h3>
         <button type="button" disabled={downloading === 'imbalance'} onClick={() => downloadCsv('imbalance')}
-          className="px-2 py-1 text-[11px] bg-[oklch(0.46_0.16_55)] text-white rounded disabled:opacity-50">
+          className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md disabled:opacity-50">
           {downloading === 'imbalance' ? 'Exporting…' : 'Export CSV'}
         </button>
       </div>

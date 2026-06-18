@@ -16,12 +16,12 @@ export default function SitesSurface(_props: { role: string }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button type="button" onClick={() => setCreating(true)} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setCreating(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">
           + New site group
         </button>
       </div>
       <div>
-        <h3 className="text-[13px] font-semibold text-[#3d4756] mb-2">Delivery points</h3>
+        <h3 className="text-[13px] font-semibold text-[var(--ink2)] mb-2">Delivery points</h3>
         <ListingTable
           key={`dp-${refreshKey}`}
           endpoint="/offtaker/delivery-points"
@@ -37,7 +37,7 @@ export default function SitesSurface(_props: { role: string }) {
         />
       </div>
       <div>
-        <h3 className="text-[13px] font-semibold text-[#3d4756] mb-2">Site groups</h3>
+        <h3 className="text-[13px] font-semibold text-[var(--ink2)] mb-2">Site groups</h3>
         <ListingTable
           key={`sg-${refreshKey}`}
           endpoint="/offtaker-suite/groups"

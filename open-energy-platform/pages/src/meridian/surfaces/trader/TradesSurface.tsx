@@ -27,7 +27,7 @@ export default function TradesSurface(_props: { role: string }) {
             key={v}
             type="button"
             onClick={() => setView(v)}
-            className={`h-8 px-3 rounded-md text-[12px] font-semibold ${view === v ? 'bg-[oklch(0.46_0.16_55)] text-white' : 'bg-slate-100 text-slate-600'}`}
+            className={`h-8 px-3 rounded-md text-[12px] font-semibold ${view === v ? 'bg-[var(--petrol)] text-white' : 'bg-[var(--raised)] text-[var(--ink2)]'}`}
           >
             {v === 'fills' ? 'My fills' : 'Cleared matches'}
           </button>
@@ -42,11 +42,11 @@ export default function TradesSurface(_props: { role: string }) {
           columns={[
             { key: 'executed_at', label: 'Executed', render: (r) => r.executed_at ? new Date(r.executed_at).toLocaleString() : '—' },
             { key: 'side', label: 'Side', render: (r) => <Pill tone={sideTone(r.side)}>{r.side || '—'}</Pill> },
-            { key: 'shard_key', label: 'Shard', render: (r) => <span className="font-mono text-[10px] text-slate-500">{r.shard_key || '—'}</span> },
+            { key: 'shard_key', label: 'Shard', render: (r) => <span className="font-mono text-[10px] text-[var(--ink3)]">{r.shard_key || '—'}</span> },
             { key: 'volume_mwh', label: 'MWh', align: 'right', render: (r) => num(r.volume_mwh, 1) },
             { key: 'price', label: 'Price', align: 'right', render: (r) => num(r.price) },
-            { key: 'order_id', label: 'Order', render: (r) => <span className="font-mono text-[10px] text-slate-500">{r.order_id || '—'}</span> },
-            { key: 'match_id', label: 'Match', render: (r) => <span className="font-mono text-[10px] text-slate-500">{r.match_id || '—'}</span> },
+            { key: 'order_id', label: 'Order', render: (r) => <span className="font-mono text-[10px] text-[var(--ink3)]">{r.order_id || '—'}</span> },
+            { key: 'match_id', label: 'Match', render: (r) => <span className="font-mono text-[10px] text-[var(--ink3)]">{r.match_id || '—'}</span> },
           ]}
         />
       ) : (

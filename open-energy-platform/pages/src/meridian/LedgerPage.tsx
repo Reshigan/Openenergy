@@ -83,7 +83,17 @@ export default function LedgerPage() {
       </div>
     );
   }
-  if (!data) return <div className="mer mer-loading" aria-busy="true">Loading ledger…</div>;
+  if (!data) return (
+    <div className="mer ledger" aria-busy="true" role="status" aria-label="Loading ledger">
+      <div style={{ padding: '20px 24px', maxWidth: 760 }}>
+        <div className="skel skel-line lg" style={{ width: '34%', marginBottom: 18 }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 22 }}>
+          {[0, 1, 2, 3].map(i => <div key={i} className="skel" style={{ height: 52 }} />)}
+        </div>
+        {[0, 1, 2, 3, 4, 5].map(i => <div key={i} className="skel skel-card" />)}
+      </div>
+    </div>
+  );
 
   const { initiation } = data;
   // ZAR heuristic keys off the kpi key name — the LedgerData kpi shape carries no unit.

@@ -54,7 +54,7 @@ export default function PpaPortfolioSurface(_props: { role: string }) {
     <div>
       <div className="flex items-center justify-end mb-3">
         <button type="button" onClick={() => setAdding(true)}
-          className="h-9 px-4 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[13px] font-semibold">+ Add PPA</button>
+          className="h-9 px-4 rounded-md bg-[var(--petrol)] text-white text-[13px] font-semibold">+ Add PPA</button>
       </div>
 
       <ListingTable

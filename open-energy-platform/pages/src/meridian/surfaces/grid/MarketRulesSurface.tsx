@@ -26,7 +26,7 @@ export default function MarketRulesSurface(_props: { role: string }) {
         { key: 'title', label: 'Consultation', render: (r) => (
           <div className="leading-tight">
             <div className="font-medium">{r.title}</div>
-            <div className="text-[10px] text-slate-500 font-mono">{r.reference_number || '—'}{r.licence_ref ? ` · ${r.licence_ref}` : ''}</div>
+            <div className="text-[10px] text-[var(--ink3)] font-mono">{r.reference_number || '—'}{r.licence_ref ? ` · ${r.licence_ref}` : ''}</div>
           </div>
         ) },
         { key: 'consultation_type', label: 'Type', render: (r) => <Pill tone="info">{(r.consultation_type || '—').replace(/_/g, ' ')}</Pill> },

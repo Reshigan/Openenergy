@@ -26,7 +26,7 @@ function prettify(key: string): string {
 }
 
 function fmt(key: string, v: any): React.ReactNode {
-  if (v == null || v === '') return <span className="text-slate-300">—</span>;
+  if (v == null || v === '') return <span className="text-[var(--ink3)]">—</span>;
   if (typeof v === 'boolean') return <Pill tone={v ? 'good' : 'neutral'}>{v ? 'yes' : 'no'}</Pill>;
   if (/status|tier|severity|rating/.test(key) && typeof v === 'string') {
     const tone = /breach|reject|lapsed|default|overdue|fail/.test(v) ? 'bad'
@@ -44,7 +44,7 @@ function fmt(key: string, v: any): React.ReactNode {
     if (/_pct$/.test(key)) return `${v.toLocaleString('en-ZA', { maximumFractionDigits: 1 })}%`;
     return v.toLocaleString('en-ZA');
   }
-  if (typeof v === 'object') return <span className="text-[10px] text-slate-400">{JSON.stringify(v).slice(0, 40)}…</span>;
+  if (typeof v === 'object') return <span className="text-[10px] text-[var(--ink3)]">{JSON.stringify(v).slice(0, 40)}…</span>;
   return String(v);
 }
 
@@ -77,9 +77,9 @@ export function AutoTable({
     return () => { live = false; };
   }, [endpoint, refreshKey]);
 
-  if (err) return <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-[12px] text-rose-700">{err}</div>;
-  if (rows == null) return <div className="text-[12px] text-slate-400 px-1 py-6">Loading…</div>;
-  if (rows.length === 0) return <div className="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center text-[12px] text-slate-400">{empty}</div>;
+  if (err) return <div className="rounded-lg border border-[var(--oxide)] bg-[var(--oxide-tint)] px-4 py-3 text-[12px] text-[var(--oxide-deep)]">{err}</div>;
+  if (rows == null) return <div className="text-[12px] text-[var(--ink3)] px-1 py-6">Loading…</div>;
+  if (rows.length === 0) return <div className="rounded-lg border border-[var(--line)] bg-white px-4 py-8 text-center text-[12px] text-[var(--ink3)]">{empty}</div>;
 
   const seen = new Set<string>();
   const sample = rows.slice(0, 8);
@@ -92,14 +92,14 @@ export function AutoTable({
   ].slice(0, maxCols);
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+    <div className="overflow-x-auto rounded-lg border border-[var(--line)] bg-white">
       <table className="w-full text-[12px]">
-        <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-wide">
+        <thead className="bg-[var(--raised)] text-[var(--ink3)] text-[10px] uppercase tracking-wide">
           <tr>{ordered.map((k) => <th key={k} className="text-left px-3 py-2 font-semibold">{prettify(k)}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={r.id ?? i} className="border-t border-slate-100">
+            <tr key={r.id ?? i} className="border-t border-[var(--line)]">
               {ordered.map((k) => <td key={k} className="px-3 py-2">{fmt(k, r[k])}</td>)}
             </tr>
           ))}

@@ -22,7 +22,7 @@ const LICENCE_TRANSITIONS = [
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
     <div className="flex justify-end mb-3">
-      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
+      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">
         + {label}
       </button>
     </div>
@@ -52,7 +52,7 @@ export default function LicencesSurface(_props: { role: string }) {
           { key: 'decided_at', label: 'Decided', render: (r) => r.decided_at ? new Date(r.decided_at).toLocaleDateString() : '—' },
           { key: '_actions', label: '', render: (r) => (
             r.status !== 'executed' && r.status !== 'reversed' && (
-              <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[oklch(0.46_0.16_55)] text-white rounded">Transition</button>
+              <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md">Transition</button>
             )
           ) },
         ]}

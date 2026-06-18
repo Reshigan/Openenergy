@@ -33,10 +33,10 @@ function varTone(v?: number): 'good' | 'warn' | 'bad' | 'neutral' {
 
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 min-w-[150px]">
-      <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="text-[20px] font-semibold text-slate-900 tabular-nums">{value}</div>
-      {sub && <div className="text-[11px] text-slate-500">{sub}</div>}
+    <div className="rounded-lg border border-[var(--line)] bg-white px-4 py-3 min-w-[150px]">
+      <div className="text-[11px] uppercase tracking-wide text-[var(--ink3)]">{label}</div>
+      <div className="text-[20px] font-semibold text-[var(--ink)] tabular-nums">{value}</div>
+      {sub && <div className="text-[11px] text-[var(--ink3)]">{sub}</div>}
     </div>
   );
 }
@@ -73,9 +73,9 @@ export default function EnergyCostSurface(_props: { role: string }) {
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <label className="text-[12px] text-slate-600 font-medium">Period</label>
+        <label className="text-[12px] text-[var(--ink2)] font-medium">Period</label>
         <input type="month" value={period} onChange={(e) => setPeriod(e.target.value)}
-          className="h-9 px-3 rounded-md border border-slate-300 text-[13px]" />
+          className="h-9 px-3 rounded-md border border-[var(--line)] text-[13px]" />
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
@@ -85,9 +85,9 @@ export default function EnergyCostSurface(_props: { role: string }) {
           sub={totals.vpct != null && totals.vpct > 0 ? 'over budget' : 'within budget'} />
       </div>
 
-      <div className="rounded-lg border border-slate-200 overflow-hidden">
+      <div className="rounded-lg border border-[var(--line)] overflow-hidden">
         <table className="w-full text-[12px]">
-          <thead><tr className="text-slate-500 border-b border-slate-200 bg-slate-50">
+          <thead><tr className="text-[var(--ink3)] border-b border-[var(--line)] bg-[var(--raised)]">
             <th className="text-left px-4 py-2 font-medium">Cost centre</th>
             <th className="text-left px-4 py-2 font-medium">Delivery point</th>
             <th className="text-right px-4 py-2 font-medium">Budget kWh</th>
@@ -97,14 +97,14 @@ export default function EnergyCostSurface(_props: { role: string }) {
             <th className="text-right px-4 py-2 font-medium">Variance</th>
           </tr></thead>
           <tbody>
-            {loading && <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-400">Loading…</td></tr>}
+            {loading && <tr><td colSpan={7} className="px-4 py-6 text-center text-[var(--ink3)]">Loading…</td></tr>}
             {!loading && (lines ?? []).length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-400">No budget lines for {period}.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-6 text-center text-[var(--ink3)]">No budget lines for {period}.</td></tr>
             )}
             {!loading && (lines ?? []).map((l, i) => (
-              <tr key={l.delivery_point_id ?? `${l.cost_centre}-${i}`} className="border-b border-slate-100 last:border-0">
+              <tr key={l.delivery_point_id ?? `${l.cost_centre}-${i}`} className="border-b border-[var(--line)] last:border-0">
                 <td className="px-4 py-2">{l.cost_centre || l.site_group_id || '—'}</td>
-                <td className="px-4 py-2 text-slate-500">{l.delivery_point_id || '—'}</td>
+                <td className="px-4 py-2 text-[var(--ink3)]">{l.delivery_point_id || '—'}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{num(l.budgeted_kwh)}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{num(l.actual_kwh)}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{zar(l.budgeted_zar)}</td>

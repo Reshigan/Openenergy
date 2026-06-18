@@ -57,7 +57,7 @@ export default function ReportsSurface(_props: { role: string }) {
     <div className="space-y-8">
       {CARBON_REPORTS.map((cfg) => (
         <div key={cfg.endpoint} className="space-y-2">
-          <p className="text-xs font-semibold text-[#4a5568] uppercase tracking-wide">{cfg.title}</p>
+          <p className="text-xs font-semibold text-[var(--ink2)] uppercase tracking-wide">{cfg.title}</p>
           <ReportPanel config={cfg} />
         </div>
       ))}

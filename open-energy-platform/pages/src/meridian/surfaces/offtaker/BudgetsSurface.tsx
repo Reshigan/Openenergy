@@ -18,10 +18,10 @@ export default function BudgetsSurface(_props: { role: string }) {
     <div className="space-y-3">
       <div className="flex justify-between items-end gap-3">
         <label className="block text-[13px]">
-          <span className="text-[#6b7685]">Period (YYYY-MM)</span>
-          <input value={period} onChange={(e) => setPeriod(e.target.value)} placeholder="2026-05" className="mt-1 h-9 px-3 border border-[#dde4ec] rounded-md text-[13px]" />
+          <span className="text-[var(--ink3)]">Period (YYYY-MM)</span>
+          <input value={period} onChange={(e) => setPeriod(e.target.value)} placeholder="2026-05" className="mt-1 h-9 px-3 border border-[var(--line)] rounded-md text-[13px]" />
         </label>
-        <button type="button" onClick={() => setCreating(true)} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setCreating(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">
           + Set budget
         </button>
       </div>

@@ -35,14 +35,14 @@ export default function RiskSurface(_props: { role: string }) {
         <div className="flex gap-1">
           {TABS.map((t) => (
             <button key={t.key} type="button" onClick={() => setView(t.key)}
-              className={`h-8 px-3 rounded-md text-[12px] font-semibold ${view === t.key ? 'bg-[oklch(0.46_0.16_55)] text-white' : 'bg-slate-100 text-slate-600'}`}>
+              className={`h-8 px-3 rounded-md text-[12px] font-semibold ${view === t.key ? 'bg-[var(--petrol)] text-white' : 'bg-[var(--raised)] text-[var(--ink2)]'}`}>
               {t.label}
             </button>
           ))}
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={() => setRecording(true)} className="h-8 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">+ Record action</button>
-          <button type="button" onClick={() => setTransitioning(true)} className="h-8 px-3 rounded-md border border-slate-300 text-slate-700 text-[12px] font-semibold">Transition action</button>
+          <button type="button" onClick={() => setRecording(true)} className="h-8 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">+ Record action</button>
+          <button type="button" onClick={() => setTransitioning(true)} className="h-8 px-3 rounded-md border border-[var(--line)] text-[var(--ink2)] text-[12px] font-semibold">Transition action</button>
         </div>
       </div>
 

@@ -12,7 +12,7 @@ import { ListingTable, Pill } from '../../../components/launch/WorkstationShell'
 export default function PiiAccessSurface(_props: { role: string }) {
   return (
     <div className="space-y-3">
-      <div className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#3d4756]">
+      <div className="rounded-lg border border-[var(--line)] bg-white p-4 text-[12px] text-[var(--ink2)]">
         Every cross-tenant read of personal information is logged here under
         POPIA s.18 (accountability) + s.19 (security safeguards). Each entry
         is also chained on the <span className="font-mono">admin</span> audit

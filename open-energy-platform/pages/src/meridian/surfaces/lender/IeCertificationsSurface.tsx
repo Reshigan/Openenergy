@@ -28,8 +28,8 @@ export default function IeCertificationsSurface(_props: { role: string }) {
   return (
     <div>
       <div className="flex items-center justify-end mb-3 gap-2">
-        <button type="button" onClick={() => setIssuing(true)} className="h-8 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">+ Issue certificate</button>
-        <button type="button" onClick={() => setDeciding(true)} className="h-8 px-3 rounded-md border border-slate-300 text-slate-700 text-[12px] font-semibold">Record decision</button>
+        <button type="button" onClick={() => setIssuing(true)} className="h-8 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">+ Issue certificate</button>
+        <button type="button" onClick={() => setDeciding(true)} className="h-8 px-3 rounded-md border border-[var(--line)] text-[var(--ink2)] text-[12px] font-semibold">Record decision</button>
       </div>
 
       <AutoTable

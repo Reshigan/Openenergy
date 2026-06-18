@@ -44,22 +44,22 @@ function ExplainButton({ id }: { id: string }) {
   };
   return (
     <>
-      <button type="button" onClick={() => { setOpen(true); if (!data) void load(); }} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">AI: why?</button>
+      <button type="button" onClick={() => { setOpen(true); if (!data) void load(); }} className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md">AI: why?</button>
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-5 border-b border-[#e5ebf2]">
-              <h3 className="text-[16px] font-semibold text-[#0f1c2e]">Why was this rejected?</h3>
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-[var(--line)]">
+              <h3 className="text-[16px] font-semibold text-[var(--ink)]">Why was this rejected?</h3>
             </div>
             <div className="p-5 text-[13px] space-y-3">
-              {loading && <div className="text-[#6b7685]">Loading…</div>}
-              {err && <div className="text-red-700">{err}</div>}
+              {loading && <div className="text-[var(--ink3)]">Loading…</div>}
+              {err && <div className="text-[var(--oxide-deep)]">{err}</div>}
               {data && (
                 <>
                   <p className="leading-relaxed">{data.explanation || data.summary || '—'}</p>
                   {Array.isArray(data.remediations) && data.remediations.length > 0 && (
-                    <div className="rounded-lg bg-[#f8fafc] p-3 space-y-1">
-                      <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">Suggested next steps</div>
+                    <div className="rounded-lg bg-[var(--raised)] p-3 space-y-1">
+                      <div className="text-[11px] uppercase tracking-wider text-[var(--ink3)]">Suggested next steps</div>
                       {data.remediations.map((rem: any, i: number) => (
                         <div key={i} className="text-[12px]">• {rem.label || rem.title || rem}</div>
                       ))}

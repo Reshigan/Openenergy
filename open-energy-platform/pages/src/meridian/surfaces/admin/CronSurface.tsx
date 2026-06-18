@@ -39,9 +39,9 @@ export default function CronSurface(_props: { role: string }) {
   };
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+    <div className="overflow-x-auto rounded-lg border border-[var(--line)] bg-white">
       <table className="w-full text-[12px]">
-        <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wide">
+        <thead className="bg-[var(--raised)] text-[var(--ink3)] uppercase text-[10px] tracking-wide">
           <tr>
             <th className="text-left px-3 py-2 font-semibold">Schedule</th>
             <th className="text-left px-3 py-2 font-semibold">Cron</th>
@@ -53,10 +53,10 @@ export default function CronSurface(_props: { role: string }) {
           {SCHEDULES.map((s) => {
             const r = results[s.cron];
             return (
-              <tr key={s.cron} className="border-t border-slate-100">
+              <tr key={s.cron} className="border-t border-[var(--line)]">
                 <td className="px-3 py-2 font-medium">{s.label}</td>
-                <td className="px-3 py-2 font-mono text-[11px] text-slate-600">{s.cron}</td>
-                <td className="px-3 py-2 text-slate-600">
+                <td className="px-3 py-2 font-mono text-[11px] text-[var(--ink2)]">{s.cron}</td>
+                <td className="px-3 py-2 text-[var(--ink2)]">
                   {s.detail}
                   {r && <span className="ml-2"><Pill tone={r.ok ? 'good' : 'bad'}>{r.msg}</Pill></span>}
                 </td>
@@ -65,7 +65,7 @@ export default function CronSurface(_props: { role: string }) {
                     type="button"
                     disabled={running === s.cron}
                     onClick={() => runNow(s.cron)}
-                    className="px-2 py-1 text-[11px] bg-[oklch(0.46_0.16_55)] text-white rounded disabled:opacity-50"
+                    className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md disabled:opacity-50"
                   >
                     {running === s.cron ? 'Running…' : 'Run once'}
                   </button>

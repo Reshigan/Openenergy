@@ -17,7 +17,7 @@ export default function Scope2Surface(_props: { role: string }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">
           + New disclosure
         </button>
       </div>

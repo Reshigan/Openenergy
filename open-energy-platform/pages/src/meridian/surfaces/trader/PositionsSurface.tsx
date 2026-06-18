@@ -30,7 +30,7 @@ export default function PositionsSurface(_props: { role: string }) {
         { key: 'delivery_date', label: 'Delivery', render: (r) => r.delivery_date ? new Date(r.delivery_date).toLocaleDateString() : '—' },
         { key: 'net_volume_mwh', label: 'Net MWh', align: 'right', render: (r) => {
           const n = Number(r.net_volume_mwh);
-          return <span className={n < 0 ? 'text-rose-600' : 'text-emerald-700'}>{num(r.net_volume_mwh, 1)}</span>;
+          return <span className={n < 0 ? 'text-[var(--oxide-deep)]' : 'text-[var(--moss-deep)]'}>{num(r.net_volume_mwh, 1)}</span>;
         } },
         { key: 'avg_entry_price', label: 'Avg entry', align: 'right', render: (r) => num(r.avg_entry_price) },
         { key: 'mark_price', label: 'Mark', align: 'right', render: (r) => num(r.mark_price) },

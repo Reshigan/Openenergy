@@ -14,8 +14,8 @@ export default function InsuranceSurface(_props: { role: string }) {
     <div className="space-y-3">
       <div className="flex items-end gap-3">
         <label className="block text-[13px]">
-          <span className="text-[#6b7685]">Expiring within (days)</span>
-          <select value={withinDays} onChange={(e) => setWithinDays(e.target.value)} className="mt-1 h-9 px-3 border border-[#dde4ec] rounded-md text-[13px]">
+          <span className="text-[var(--ink3)]">Expiring within (days)</span>
+          <select value={withinDays} onChange={(e) => setWithinDays(e.target.value)} className="mt-1 h-9 px-3 border border-[var(--line)] rounded-md text-[13px]">
             <option value="30">30</option><option value="60">60</option>
             <option value="90">90</option><option value="180">180</option>
           </select>
@@ -34,7 +34,7 @@ export default function InsuranceSurface(_props: { role: string }) {
           { key: 'period_end', label: 'Expires', render: (r) => r.period_end },
           { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'active' ? 'good' : 'bad'}>{r.status}</Pill> },
           { key: '_actions', label: '', render: (r) => (
-            <button type="button" onClick={() => setClaiming(r)} className="px-2 py-1 text-[11px] bg-[oklch(0.46_0.16_55)] text-white rounded">File claim</button>
+            <button type="button" onClick={() => setClaiming(r)} className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md">File claim</button>
           ) },
         ]}
       />

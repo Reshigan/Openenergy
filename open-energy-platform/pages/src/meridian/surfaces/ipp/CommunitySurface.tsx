@@ -12,9 +12,9 @@ type Project = { id: string; project_name?: string; name?: string };
 function Card({ label, value }: { label: string; value: number | null | undefined }) {
   const formatted = value != null ? Number(value).toLocaleString('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }) : '—';
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white p-4">
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
-      <div className="text-[20px] font-semibold text-[#0f1c2e] mt-1">{formatted}</div>
+    <div className="rounded-lg border border-[var(--line)] bg-white p-4">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink3)]">{label}</div>
+      <div className="text-[20px] font-semibold text-[var(--ink)] mt-1">{formatted}</div>
     </div>
   );
 }
@@ -46,14 +46,14 @@ export default function CommunitySurface(_props: { role: string }) {
     <div className="space-y-3">
       <div className="flex flex-wrap items-end gap-3 justify-between">
         <label className="block text-[13px]">
-          <span className="text-[#6b7685]">Project</span>
-          <select value={pid} onChange={(e) => setPid(e.target.value)} className="mt-1 h-9 px-3 border border-[#dde4ec] rounded-md text-[13px]">
+          <span className="text-[var(--ink3)]">Project</span>
+          <select value={pid} onChange={(e) => setPid(e.target.value)} className="mt-1 h-9 px-3 border border-[var(--line)] rounded-md text-[13px]">
             {projects.map(p => <option key={p.id} value={p.id}>{p.project_name || p.name || p.id}</option>)}
           </select>
         </label>
         <div className="flex gap-2">
-          <button type="button" onClick={() => setRegistering(true)} className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold">+ Register stakeholder</button>
-          <button type="button" onClick={() => setLogging(true)} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">+ Log engagement</button>
+          <button type="button" onClick={() => setRegistering(true)} className="h-9 px-3 rounded-md bg-white border border-[var(--line)] text-[12px] font-semibold">+ Register stakeholder</button>
+          <button type="button" onClick={() => setLogging(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">+ Log engagement</button>
         </div>
       </div>
       {summary && (

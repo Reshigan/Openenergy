@@ -15,7 +15,7 @@ export default function ConcentrationsSurface(_props: { role: string }) {
   const [view, setView] = useState<'ecl' | 'watchlist'>('ecl');
   return (
     <div>
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 mb-3 text-[12px] text-amber-900">
+      <div className="rounded-lg border border-[var(--amber)] bg-[var(--amber-tint)] px-4 py-3 mb-3 text-[12px] text-[var(--amber-deep)]">
         <span className="font-semibold">SARB single-name concentration limits</span> — exposure to a single
         counterparty is capped at <span className="font-semibold">10%</span> of qualifying capital (large-exposure
         reporting at <span className="font-semibold">10%</span>, hard limit <span className="font-semibold">25%</span>;
@@ -25,7 +25,7 @@ export default function ConcentrationsSurface(_props: { role: string }) {
       <div className="flex gap-1 mb-3">
         {(['ecl', 'watchlist'] as const).map((v) => (
           <button key={v} type="button" onClick={() => setView(v)}
-            className={`h-8 px-3 rounded-md text-[12px] font-semibold ${view === v ? 'bg-[oklch(0.46_0.16_55)] text-white' : 'bg-slate-100 text-slate-600'}`}>
+            className={`h-8 px-3 rounded-md text-[12px] font-semibold ${view === v ? 'bg-[var(--petrol)] text-white' : 'bg-[var(--raised)] text-[var(--ink2)]'}`}>
             {v === 'ecl' ? 'Expected credit loss' : 'Watchlist'}
           </button>
         ))}

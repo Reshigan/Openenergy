@@ -84,16 +84,16 @@ export default function DeliveryReportsSurface(_props: { role: string }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Fulfilment by period</div>
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)]">Fulfilment by period</div>
         <button type="button" onClick={download} disabled={!rows?.length}
-          className="h-8 px-3 rounded-md border border-slate-300 text-[12px] font-semibold text-slate-700 disabled:opacity-50">
+          className="h-8 px-3 rounded-md border border-[var(--line)] text-[12px] font-semibold text-[var(--ink2)] disabled:opacity-50">
           Export CSV
         </button>
       </div>
 
-      <div className="rounded-lg border border-slate-200 overflow-hidden mb-5">
+      <div className="rounded-lg border border-[var(--line)] overflow-hidden mb-5">
         <table className="w-full text-[12px]">
-          <thead><tr className="text-slate-500 border-b border-slate-200 bg-slate-50">
+          <thead><tr className="text-[var(--ink3)] border-b border-[var(--line)] bg-[var(--raised)]">
             <th className="text-left px-4 py-2 font-medium">Period</th>
             <th className="text-right px-4 py-2 font-medium">Contracted MWh</th>
             <th className="text-right px-4 py-2 font-medium">Delivered MWh</th>
@@ -105,7 +105,7 @@ export default function DeliveryReportsSurface(_props: { role: string }) {
             {byPeriod.map(([p, e]) => {
               const pct = e.contracted > 0 ? (e.delivered / e.contracted) * 100 : null;
               return (
-                <tr key={p} className="border-b border-slate-100 last:border-0">
+                <tr key={p} className="border-b border-[var(--line)] last:border-0">
                   <td className="px-4 py-2 font-medium">{p}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{num(e.contracted, 1)}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{num(e.delivered, 1)}</td>
@@ -120,16 +120,16 @@ export default function DeliveryReportsSurface(_props: { role: string }) {
               );
             })}
             {!loading && byPeriod.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-400">No delivery obligations recorded.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-6 text-center text-[var(--ink3)]">No delivery obligations recorded.</td></tr>
             )}
           </tbody>
         </table>
       </div>
 
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2">Obligation register</div>
-      <div className="rounded-lg border border-slate-200 overflow-hidden">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)] mb-2">Obligation register</div>
+      <div className="rounded-lg border border-[var(--line)] overflow-hidden">
         <table className="w-full text-[12px]">
-          <thead><tr className="text-slate-500 border-b border-slate-200 bg-slate-50">
+          <thead><tr className="text-[var(--ink3)] border-b border-[var(--line)] bg-[var(--raised)]">
             <th className="text-left px-4 py-2 font-medium">Period</th>
             <th className="text-left px-4 py-2 font-medium">PPA</th>
             <th className="text-right px-4 py-2 font-medium">Contracted</th>
@@ -139,25 +139,25 @@ export default function DeliveryReportsSurface(_props: { role: string }) {
             <th className="px-4 py-2"></th>
           </tr></thead>
           <tbody>
-            {loading && <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-400">Loading…</td></tr>}
+            {loading && <tr><td colSpan={7} className="px-4 py-6 text-center text-[var(--ink3)]">Loading…</td></tr>}
             {!loading && (rows ?? []).map((o, i) => (
-              <tr key={o.id ?? i} className="border-b border-slate-100 last:border-0">
+              <tr key={o.id ?? i} className="border-b border-[var(--line)] last:border-0">
                 <td className="px-4 py-2">{o.period_month || '—'}</td>
-                <td className="px-4 py-2 font-mono text-[11px] text-slate-500">{o.ppa_id || '—'}</td>
+                <td className="px-4 py-2 font-mono text-[11px] text-[var(--ink3)]">{o.ppa_id || '—'}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{num(o.contracted_mwh, 1)}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{num(o.delivered_mwh, 1)}</td>
-                <td className="px-4 py-2 text-right text-slate-500">{o.cure_deadline_at ? new Date(o.cure_deadline_at).toLocaleDateString() : '—'}</td>
+                <td className="px-4 py-2 text-right text-[var(--ink3)]">{o.cure_deadline_at ? new Date(o.cure_deadline_at).toLocaleDateString() : '—'}</td>
                 <td className="px-4 py-2"><Pill tone={statusTone(o.status)}>{o.status || '—'}</Pill></td>
                 <td className="px-4 py-2 text-right">
                   {canCure(o) && o.id && (
                     <button type="button" onClick={() => setCureId(o.id!)}
-                      className="h-7 px-2 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[11px] font-semibold">Cure</button>
+                      className="h-7 px-2 rounded-md bg-[var(--petrol)] text-white text-[11px] font-semibold">Cure</button>
                   )}
                 </td>
               </tr>
             ))}
             {!loading && (rows ?? []).length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-400">No obligations.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-6 text-center text-[var(--ink3)]">No obligations.</td></tr>
             )}
           </tbody>
         </table>

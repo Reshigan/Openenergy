@@ -16,9 +16,9 @@ type ScheduleRow = {
 function Card({ label, value }: { label: string; value: number | null | undefined }) {
   const formatted = value != null ? Number(value).toLocaleString('en-ZA') : '—';
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white p-4">
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
-      <div className="text-[20px] font-semibold text-[#0f1c2e] mt-1">{formatted}</div>
+    <div className="rounded-lg border border-[var(--line)] bg-white p-4">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink3)]">{label}</div>
+      <div className="text-[20px] font-semibold text-[var(--ink)] mt-1">{formatted}</div>
     </div>
   );
 }
@@ -64,33 +64,33 @@ export default function SchedulePulseSurface(_props: { role: string }) {
 
   return (
     <div className="space-y-3" data-testid="ipp-schedule-pulse">
-      {err && <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{err}</div>}
+      {err && <div className="rounded-md border border-[var(--oxide)] bg-[var(--oxide-tint)] px-3 py-2 text-xs text-[var(--oxide-deep)]">{err}</div>}
       <div className="flex items-center gap-2 text-sm">
-        <label className="text-[#6b7685] text-xs uppercase tracking-wide">Project</label>
-        <select value={pid} onChange={(e) => setPid(e.target.value)} className="border border-[#dde4ec] rounded px-2 py-1 text-sm">
+        <label className="text-[var(--ink3)] text-xs uppercase tracking-wide">Project</label>
+        <select value={pid} onChange={(e) => setPid(e.target.value)} className="border border-[var(--line)] rounded-md px-2 py-1 text-sm">
           {projects.map(p => <option key={p.id} value={p.id}>{p.project_name || p.name || p.id}</option>)}
         </select>
-        {loading && <span className="text-xs text-[#6b7685]">loading…</span>}
+        {loading && <span className="text-xs text-[var(--ink3)]">loading…</span>}
       </div>
       <div className="grid grid-cols-3 gap-3">
         <Card label="Critical activities" value={critical} />
         <Card label="Over-allocations" value={overAlloc} />
         <Card label="Look-ahead (21d)" value={lookAhead.length} />
       </div>
-      <div className="rounded border border-[#dde4ec] bg-white">
-        <div className="px-3 py-2 text-xs uppercase tracking-wide text-[#6b7685]">Next 21 days</div>
+      <div className="rounded-md border border-[var(--line)] bg-white">
+        <div className="px-3 py-2 text-xs uppercase tracking-wide text-[var(--ink3)]">Next 21 days</div>
         {lookAhead.length === 0 ? (
-          <div className="px-3 py-4 text-xs text-[#6b7685]">No activities scheduled in window.</div>
+          <div className="px-3 py-4 text-xs text-[var(--ink3)]">No activities scheduled in window.</div>
         ) : (
           <table className="w-full text-xs">
-            <thead className="bg-[#f6f8fa] text-[#6b7685]">
+            <thead className="bg-[var(--raised)] text-[var(--ink3)]">
               <tr><th className="text-left px-3 py-1.5">WBS</th><th className="text-left px-3 py-1.5">Activity</th><th className="text-left px-3 py-1.5">Start</th><th className="text-left px-3 py-1.5">Finish</th><th className="text-right px-3 py-1.5">TF</th></tr>
             </thead>
             <tbody>
               {lookAhead.slice(0, 20).map(r => (
-                <tr key={r.id} className="border-t border-[#eef1f5]">
+                <tr key={r.id} className="border-t border-[var(--raised)]">
                   <td className="px-3 py-1 font-mono">{r.wbs_code}</td>
-                  <td className="px-3 py-1">{r.name}{r.is_critical ? <span className="ml-1 text-red-600">●</span> : null}</td>
+                  <td className="px-3 py-1">{r.name}{r.is_critical ? <span className="ml-1 text-[var(--oxide-deep)]">●</span> : null}</td>
                   <td className="px-3 py-1 font-mono">{(r.planned_start || r.early_start || '').slice(0, 10)}</td>
                   <td className="px-3 py-1 font-mono">{(r.planned_finish || r.early_finish || '').slice(0, 10)}</td>
                   <td className="px-3 py-1 text-right">{r.total_float ?? '—'}</td>

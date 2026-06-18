@@ -21,9 +21,9 @@ type RecsPortfolio = {
 function Card({ label, value, unit }: { label: string; value: number | null | undefined; unit?: string }) {
   const formatted = value != null ? `${Number(value).toLocaleString()}${unit ? ' ' + unit : ''}` : '—';
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white p-4">
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
-      <div className="text-[20px] font-semibold text-[#0f1c2e] mt-1">{formatted}</div>
+    <div className="rounded-lg border border-[var(--line)] bg-white p-4">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink3)]">{label}</div>
+      <div className="text-[20px] font-semibold text-[var(--ink)] mt-1">{formatted}</div>
     </div>
   );
 }
@@ -43,10 +43,10 @@ export default function RecsSurface(_props: { role: string }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={() => setTransferring(true)} className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold">Transfer certificate</button>
-        <button type="button" onClick={() => setRetiring(true)} className="h-9 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold">Retire certificate</button>
+        <button type="button" onClick={() => setTransferring(true)} className="h-9 px-3 rounded-md bg-white border border-[var(--line)] text-[12px] font-semibold">Transfer certificate</button>
+        <button type="button" onClick={() => setRetiring(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">Retire certificate</button>
       </div>
-      {err && <div className="text-[12px] text-red-700">{err}</div>}
+      {err && <div className="text-[12px] text-[var(--oxide-deep)]">{err}</div>}
       {portfolio && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card label="Active certificates" value={portfolio.active_certificates} />

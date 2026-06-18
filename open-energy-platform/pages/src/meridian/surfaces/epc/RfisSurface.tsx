@@ -16,7 +16,7 @@ export default function RfisSurface(_props: { role: string }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button type="button" onClick={() => setCreatingRfi(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">+ New RFI</button>
+        <button type="button" onClick={() => setCreatingRfi(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">+ New RFI</button>
       </div>
       <ListingTable
         key={`rfis-${bump}`}

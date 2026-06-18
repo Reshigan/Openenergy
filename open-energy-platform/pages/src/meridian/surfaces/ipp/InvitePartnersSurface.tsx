@@ -66,34 +66,34 @@ export default function InvitePartnersSurface(_props: { role: string }) {
   return (
     <div className="space-y-6">
       {/* Send invite form */}
-      <div className="rounded-lg border border-[#dde4ec] bg-white p-5">
-        <h3 className="text-sm font-semibold text-[oklch(0.17_0.010_250)] mb-1">Invite a partner</h3>
-        <p className="text-xs text-[#6b7685] mb-4">
+      <div className="rounded-lg border border-[var(--line)] bg-white p-5">
+        <h3 className="text-sm font-semibold text-[var(--ink)] mb-1">Invite a partner</h3>
+        <p className="text-xs text-[var(--ink3)] mb-4">
           Send a direct invitation. The partner registers via a unique link and their account is immediately active — no admin approval required.
         </p>
 
-        {err && <div className="mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{err}</div>}
+        {err && <div className="mb-3 rounded-md border border-[var(--oxide)] bg-[var(--oxide-tint)] px-3 py-2 text-xs text-[var(--oxide-deep)]">{err}</div>}
 
         {sent && (
-          <div className="mb-4 rounded-lg border border-[oklch(0.46_0.16_55)]/20 bg-[oklch(0.94_0.02_250)]/50 p-3">
-            <p className="text-xs font-semibold text-[oklch(0.17_0.010_250)] mb-1">Invitation created</p>
-            <div className="flex items-center gap-2 font-mono text-xs text-[oklch(0.46_0.16_55)] bg-white rounded border border-[#dde4ec] px-2 py-1.5 break-all">
+          <div className="mb-4 rounded-lg border border-[var(--petrol-tint)] bg-[var(--petrol-tint)] p-3">
+            <p className="text-xs font-semibold text-[var(--ink)] mb-1">Invitation created</p>
+            <div className="flex items-center gap-2 font-mono text-xs text-[var(--petrol)] bg-white rounded-md border border-[var(--line)] px-2 py-1.5 break-all">
               {window.location.origin}{sent.invite_url}
               <button type="button"
                 onClick={() => copyUrl(sent.invite_url)}
-                className="ml-auto shrink-0 text-[10px] uppercase tracking-wide font-bold text-[oklch(0.46_0.16_55)] hover:underline"
+                className="ml-auto shrink-0 text-[10px] uppercase tracking-wide font-bold text-[var(--petrol)] hover:underline"
               >
                 Copy
               </button>
             </div>
-            <p className="text-[10px] text-[#6b7685] mt-1">Expires: {new Date(sent.expires_at).toLocaleDateString()}</p>
+            <p className="text-[10px] text-[var(--ink3)] mt-1">Expires: {new Date(sent.expires_at).toLocaleDateString()}</p>
           </div>
         )}
 
         <form onSubmit={handleSend} className="space-y-4">
           {/* Role selector */}
           <div>
-            <label className="block text-xs font-medium text-[#3d4756] mb-2">Partner type</label>
+            <label className="block text-xs font-medium text-[var(--ink2)] mb-2">Partner type</label>
             <div className="grid grid-cols-3 gap-2">
               {PARTNER_ROLES.map(r => (
                 <button
@@ -102,8 +102,8 @@ export default function InvitePartnersSurface(_props: { role: string }) {
                   onClick={() => setSelectedRole(r.role)}
                   className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${
                     selectedRole === r.role
-                      ? 'border-[oklch(0.46_0.16_55)] bg-[oklch(0.94_0.02_250)]/60 text-[oklch(0.17_0.010_250)]'
-                      : 'border-[#dde4ec] bg-white text-[#6b7685] hover:border-[oklch(0.46_0.16_55)]/40'
+                      ? 'border-[var(--petrol)] bg-[var(--petrol-tint)] text-[var(--ink)]'
+                      : 'border-[var(--line)] bg-white text-[var(--ink3)] hover:border-[var(--petrol)]'
                   }`}
                 >
                   <div className="text-xs font-semibold">{r.label.split(' /')[0]}</div>
@@ -111,17 +111,17 @@ export default function InvitePartnersSurface(_props: { role: string }) {
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-[#6b7685] mt-1.5">{selectedPartner.desc}</p>
+            <p className="text-[11px] text-[var(--ink3)] mt-1.5">{selectedPartner.desc}</p>
           </div>
 
           {/* Project selector */}
           {projects.length > 0 && (
             <div>
-              <label className="block text-xs font-medium text-[#3d4756] mb-1">Link to project</label>
+              <label className="block text-xs font-medium text-[var(--ink2)] mb-1">Link to project</label>
               <select
                 value={form.project_id}
                 onChange={(e) => setForm(f => ({ ...f, project_id: e.target.value }))}
-                className="w-full border border-[#dde4ec] rounded px-2.5 py-1.5 text-sm text-[oklch(0.17_0.010_250)]"
+                className="w-full border border-[var(--line)] rounded-md px-2.5 py-1.5 text-sm text-[var(--ink)]"
               >
                 <option value="">— no project —</option>
                 {projects.map(p => (
@@ -135,14 +135,14 @@ export default function InvitePartnersSurface(_props: { role: string }) {
 
           {/* Email */}
           <div>
-            <label className="block text-xs font-medium text-[#3d4756] mb-1">
-              Partner email <span className="font-normal text-[#6b7685]">(optional — locks invite to this address)</span>
+            <label className="block text-xs font-medium text-[var(--ink2)] mb-1">
+              Partner email <span className="font-normal text-[var(--ink3)]">(optional — locks invite to this address)</span>
             </label>
             <input
               type="email"
               value={form.email}
               onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
-              className="w-full border border-[#dde4ec] rounded px-2.5 py-1.5 text-sm"
+              className="w-full border border-[var(--line)] rounded-md px-2.5 py-1.5 text-sm"
               placeholder="partner@bank.co.za"
             />
           </div>
@@ -150,22 +150,22 @@ export default function InvitePartnersSurface(_props: { role: string }) {
           {/* Organisation */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-[#3d4756] mb-1">Organisation</label>
+              <label className="block text-xs font-medium text-[var(--ink2)] mb-1">Organisation</label>
               <input
                 type="text"
                 value={form.organization}
                 onChange={(e) => setForm(f => ({ ...f, organization: e.target.value }))}
-                className="w-full border border-[#dde4ec] rounded px-2.5 py-1.5 text-sm"
+                className="w-full border border-[var(--line)] rounded-md px-2.5 py-1.5 text-sm"
                 placeholder="First National Bank"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#3d4756] mb-1">Note to recipient</label>
+              <label className="block text-xs font-medium text-[var(--ink2)] mb-1">Note to recipient</label>
               <input
                 type="text"
                 value={form.note}
                 onChange={(e) => setForm(f => ({ ...f, note: e.target.value }))}
-                className="w-full border border-[#dde4ec] rounded px-2.5 py-1.5 text-sm"
+                className="w-full border border-[var(--line)] rounded-md px-2.5 py-1.5 text-sm"
                 placeholder="Invitation to review term sheet"
               />
             </div>
@@ -174,7 +174,7 @@ export default function InvitePartnersSurface(_props: { role: string }) {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-[oklch(0.46_0.16_55)] text-white text-sm font-semibold px-5 py-2 hover:bg-[#0f2540] transition-colors disabled:opacity-50"
+            className="rounded-lg bg-[var(--petrol)] text-white text-sm font-semibold px-5 py-2 hover:bg-[var(--petrol-deep)] transition-colors disabled:opacity-50"
           >
             {loading ? 'Generating link…' : 'Generate invite link'}
           </button>
@@ -182,17 +182,17 @@ export default function InvitePartnersSurface(_props: { role: string }) {
       </div>
 
       {/* Invitation history */}
-      <div className="rounded-lg border border-[#dde4ec] bg-white">
-        <div className="px-4 py-3 border-b border-[#eef1f5]">
-          <h3 className="text-sm font-semibold text-[oklch(0.17_0.010_250)]">Sent invitations</h3>
+      <div className="rounded-lg border border-[var(--line)] bg-white">
+        <div className="px-4 py-3 border-b border-[var(--raised)]">
+          <h3 className="text-sm font-semibold text-[var(--ink)]">Sent invitations</h3>
         </div>
         {histLoading ? (
-          <div className="px-4 py-4 text-xs text-[#6b7685]">Loading…</div>
+          <div className="px-4 py-4 text-xs text-[var(--ink3)]">Loading…</div>
         ) : history.length === 0 ? (
-          <div className="px-4 py-6 text-xs text-[#6b7685] text-center">No partner invitations sent yet.</div>
+          <div className="px-4 py-6 text-xs text-[var(--ink3)] text-center">No partner invitations sent yet.</div>
         ) : (
           <table className="w-full text-xs">
-            <thead className="bg-[#f6f8fa] text-[#6b7685]">
+            <thead className="bg-[var(--raised)] text-[var(--ink3)]">
               <tr>
                 <th className="text-left px-4 py-2">Role</th>
                 <th className="text-left px-4 py-2">Email / org</th>
@@ -203,22 +203,22 @@ export default function InvitePartnersSurface(_props: { role: string }) {
             </thead>
             <tbody>
               {history.map((inv: any) => (
-                <tr key={inv.id} className="border-t border-[#eef1f5]">
+                <tr key={inv.id} className="border-t border-[var(--raised)]">
                   <td className="px-4 py-2 font-medium capitalize">{(inv.role || '').replace(/_/g, ' ')}</td>
-                  <td className="px-4 py-2 text-[#6b7685]">{inv.email || inv.organization || '—'}</td>
+                  <td className="px-4 py-2 text-[var(--ink3)]">{inv.email || inv.organization || '—'}</td>
                   <td className="px-4 py-2">
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
-                      inv.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' :
-                      inv.status === 'pending'  ? 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]' :
-                      'bg-gray-100 text-gray-500'
+                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase ${
+                      inv.status === 'accepted' ? 'bg-[var(--moss-tint)] text-[var(--moss-deep)]' :
+                      inv.status === 'pending'  ? 'bg-[var(--petrol-tint)] text-[var(--petrol)]' :
+                      'bg-[var(--raised)] text-[var(--ink3)]'
                     }`}>{inv.status}</span>
                   </td>
-                  <td className="px-4 py-2 text-[#6b7685]">{inv.expires_at ? new Date(inv.expires_at).toLocaleDateString() : '—'}</td>
+                  <td className="px-4 py-2 text-[var(--ink3)]">{inv.expires_at ? new Date(inv.expires_at).toLocaleDateString() : '—'}</td>
                   <td className="px-4 py-2 text-right">
                     {inv.status === 'pending' && inv.token && (
                       <button type="button"
                         onClick={() => copyUrl(`/register?token=${inv.token}`)}
-                        className="text-[10px] uppercase tracking-wide font-bold text-[oklch(0.46_0.16_55)] hover:underline"
+                        className="text-[10px] uppercase tracking-wide font-bold text-[var(--petrol)] hover:underline"
                       >
                         Copy link
                       </button>

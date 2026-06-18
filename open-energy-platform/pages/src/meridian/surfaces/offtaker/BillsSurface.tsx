@@ -71,9 +71,9 @@ type OfftakerOptions = {
 function Card({ label, value, unit }: { label: string; value: number | null | undefined; unit?: string }) {
   const formatted = value != null ? `${Number(value).toLocaleString()}${unit ? ' ' + unit : ''}` : '—';
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white p-4">
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
-      <div className="text-[20px] font-semibold text-[#0f1c2e] mt-1">{formatted}</div>
+    <div className="rounded-lg border border-[var(--line)] bg-white p-4">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink3)]">{label}</div>
+      <div className="text-[20px] font-semibold text-[var(--ink)] mt-1">{formatted}</div>
     </div>
   );
 }
@@ -89,10 +89,10 @@ function OptionGroup({
 }) {
   return (
     <div>
-      <div className="text-[12px] font-semibold text-[#6b7685] mb-2">{title}</div>
-      <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto text-[#0f1c2e]">
+      <div className="text-[12px] font-semibold text-[var(--ink3)] mb-2">{title}</div>
+      <div className="rounded-lg border border-[var(--line)] bg-white overflow-x-auto text-[var(--ink)]">
         <table className="w-full text-[12px]">
-          <thead className="bg-[#f4f6f8] text-[#6b7685]">
+          <thead className="bg-[var(--raised)] text-[var(--ink3)]">
             <tr>
               <th className="text-left p-2">Option</th>
               <th className="text-right p-2">MWh / yr</th>
@@ -105,17 +105,17 @@ function OptionGroup({
           </thead>
           <tbody>
             {options.map((o) => (
-              <tr key={o.option_id} className="border-t border-[#eef1f5]">
+              <tr key={o.option_id} className="border-t border-[var(--raised)]">
                 <td className="p-2 font-semibold">{o.title}</td>
                 <td className="p-2 text-right">{Number(o.annual_mwh || 0).toLocaleString()}</td>
                 <td className="p-2 text-right">
                   {o.blended_price_zar_per_mwh == null
-                    ? <span className="text-[#6b7685]">Contact seller</span>
+                    ? <span className="text-[var(--ink3)]">Contact seller</span>
                     : `${o.price_basis === 'indicative' ? '~R ' : 'R '}${Number(o.blended_price_zar_per_mwh).toLocaleString()}`}
                 </td>
                 <td className="p-2 text-right">
                   {o.est_saving_zar == null
-                    ? <span className="text-[#6b7685]">—</span>
+                    ? <span className="text-[var(--ink3)]">—</span>
                     : `R ${Number(o.est_saving_zar).toLocaleString()} (${Number(o.est_saving_pct ?? 0)}%)`}
                 </td>
                 <td className="p-2 text-right">{Number(o.co2_avoided_tco2e || 0).toLocaleString()} t</td>
@@ -124,7 +124,7 @@ function OptionGroup({
                   <button type="button"
                     onClick={() => onAct(o)}
                     disabled={busyId !== null}
-                    className="h-8 px-3 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[11px] font-semibold disabled:opacity-60"
+                    className="h-8 px-3 rounded-md bg-[var(--petrol)] text-white text-[11px] font-semibold disabled:opacity-60"
                   >
                     {busyId === o.option_id ? '…' : actionLabel}
                   </button>
@@ -154,25 +154,25 @@ function touTone(risk: string | undefined): 'good' | 'warn' | 'bad' | 'neutral' 
 
 function RiskCard({ risk }: { risk: string | undefined }) {
   const tone = touTone(risk);
-  const bg = tone === 'bad' ? '#fdecea' : tone === 'warn' ? '#fef6e7' : tone === 'good' ? '#eaf6ee' : '#f4f6f8';
-  const fg = tone === 'bad' ? '#a4161a' : tone === 'warn' ? '#7a5b00' : tone === 'good' ? '#0f7553' : '#0f1c2e';
+  const bg = tone === 'bad' ? 'var(--oxide-tint)' : tone === 'warn' ? 'var(--amber-tint)' : tone === 'good' ? 'var(--moss-tint)' : 'var(--raised)';
+  const fg = tone === 'bad' ? 'var(--oxide-deep)' : tone === 'warn' ? 'var(--amber-deep)' : tone === 'good' ? 'var(--moss-deep)' : 'var(--ink)';
   return (
-    <div className="rounded-xl border border-[#dde4ec] p-4" style={{ background: bg }}>
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">TOU exposure</div>
+    <div className="rounded-lg border border-[var(--line)] p-4" style={{ background: bg }}>
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink3)]">TOU exposure</div>
       <div className="text-[20px] font-semibold mt-1" style={{ color: fg }}>{(risk || 'unknown').toUpperCase()}</div>
     </div>
   );
 }
 
 function BarRow({ label, value, tone }: { label: string; value: number; tone: 'good' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#a4161a' : tone === 'warn' ? '#c08a00' : '#0f7553';
+  const color = tone === 'bad' ? 'var(--oxide-deep)' : tone === 'warn' ? 'var(--amber-deep)' : 'var(--moss-deep)';
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white p-3">
+    <div className="rounded-lg border border-[var(--line)] bg-white p-3">
       <div className="flex justify-between items-baseline">
-        <span className="text-[11px] uppercase tracking-wider text-[#6b7685]">{label}</span>
-        <span className="text-[13px] font-semibold text-[#0f1c2e]">{value.toFixed(1)}%</span>
+        <span className="text-[11px] uppercase tracking-wider text-[var(--ink3)]">{label}</span>
+        <span className="text-[13px] font-semibold text-[var(--ink)]">{value.toFixed(1)}%</span>
       </div>
-      <div className="mt-2 h-2 rounded-full bg-[#eef1f5] overflow-hidden">
+      <div className="mt-2 h-2 rounded-full bg-[var(--raised)] overflow-hidden">
         <div className="h-full rounded-full" style={{ width: `${Math.min(100, value)}%`, background: color }} />
       </div>
     </div>
@@ -335,14 +335,14 @@ export default function BillsSurface(_props: { role: string }) {
 
   return (
     <div className="space-y-4">
-      {err && <div className="text-[12px] text-red-700">{err}</div>}
+      {err && <div className="text-[12px] text-[var(--oxide-deep)]">{err}</div>}
 
       {/* AI assist banner — "why" + 1-click */}
-      <div className="rounded-xl border border-[#cfe0d6] bg-[#f4faf6] p-4 flex items-start gap-3">
-        <div className="h-8 w-8 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold flex items-center justify-center">AI</div>
-        <div className="flex-1 text-[13px] text-[#0f1c2e]">
+      <div className="rounded-lg border border-[var(--line)] bg-[var(--moss-tint)] p-4 flex items-start gap-3">
+        <div className="h-8 w-8 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold flex items-center justify-center">AI</div>
+        <div className="flex-1 text-[13px] text-[var(--ink)]">
           <div className="font-semibold mb-1">Bill analyser</div>
-          <div className="text-[#3d4756]">
+          <div className="text-[var(--ink2)]">
             Paste an Eskom or municipal utility bill below. The platform extracts your annual consumption,
             TOU split, demand charges and tariff exposure — then recommends a fixed-price PPA mix
             from operating + under-construction projects. Why this matters: every 1% improvement in
@@ -354,15 +354,15 @@ export default function BillsSurface(_props: { role: string }) {
       {/* Upload form */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <label className="block text-[13px]">
-          <span className="text-[#6b7685]">Site</span>
-          <input value={siteName} onChange={(e) => setSiteName(e.target.value)} className="mt-1 h-9 w-full px-3 border border-[#dde4ec] rounded-md text-[13px] bg-white" />
+          <span className="text-[var(--ink3)]">Site</span>
+          <input value={siteName} onChange={(e) => setSiteName(e.target.value)} className="mt-1 h-9 w-full px-3 border border-[var(--line)] rounded-md text-[13px] bg-white" />
         </label>
         <label className="block text-[13px]">
-          <span className="text-[#6b7685]">Billing period (YYYY-MM)</span>
-          <input value={period} onChange={(e) => setPeriod(e.target.value)} className="mt-1 h-9 w-full px-3 border border-[#dde4ec] rounded-md text-[13px] bg-white" />
+          <span className="text-[var(--ink3)]">Billing period (YYYY-MM)</span>
+          <input value={period} onChange={(e) => setPeriod(e.target.value)} className="mt-1 h-9 w-full px-3 border border-[var(--line)] rounded-md text-[13px] bg-white" />
         </label>
         <label className="block text-[13px]">
-          <span className="text-[#6b7685]">Upload .txt / .csv extract</span>
+          <span className="text-[var(--ink3)]">Upload .txt / .csv extract</span>
           <input type="file" accept=".txt,.csv,.json,text/plain,text/csv" onChange={handleFileChange} className="mt-1 h-9 w-full text-[12px]" />
         </label>
       </div>
@@ -370,20 +370,20 @@ export default function BillsSurface(_props: { role: string }) {
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder={`Paste extracted bill text here, e.g.:\n\nESKOM MEGAFLEX — period ${period}\nDemand charge       2,500 kVA   R 535,500\nEnergy (peak)     180,000 kWh   R 1,140,300\nEnergy (standard) 540,000 kWh   R 1,118,400\nEnergy (off-peak) 280,000 kWh   R   316,400\nTotal energy    1,000,000 kWh\n\nOr leave blank to use the sample profile for ${siteName}.`}
-        className="w-full h-32 px-3 py-2 border border-[#dde4ec] rounded-md text-[12px] font-mono bg-white text-[#0f1c2e]"
+        className="w-full h-32 px-3 py-2 border border-[var(--line)] rounded-md text-[12px] font-mono bg-white text-[var(--ink)]"
       />
       <div className="flex justify-end gap-2">
         <button type="button"
           onClick={upload}
           disabled={uploading}
-          className="h-9 px-4 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold disabled:opacity-60"
+          className="h-9 px-4 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold disabled:opacity-60"
         >
           {uploading ? 'Analysing…' : 'Analyse bill'}
         </button>
         <button type="button"
           onClick={optimize}
           disabled={!latest || optimizing}
-          className="h-9 px-4 rounded-md bg-[#0f7553] text-white text-[12px] font-semibold disabled:opacity-60"
+          className="h-9 px-4 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold disabled:opacity-60"
         >
           {optimizing ? 'Optimising…' : 'Optimise PPA mix'}
         </button>
@@ -392,7 +392,7 @@ export default function BillsSurface(_props: { role: string }) {
       {/* Latest profile */}
       {latest && (
         <div>
-          <h3 className="text-[13px] font-semibold text-[#3d4756] mb-2">Latest analysed profile</h3>
+          <h3 className="text-[13px] font-semibold text-[var(--ink2)] mb-2">Latest analysed profile</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Card label="Annual kWh" value={latest.profile.annual_kwh} unit="kWh" />
             <Card label="Avg tariff" value={latest.profile.avg_tariff_zar_per_kwh} unit="R/kWh" />
@@ -410,10 +410,10 @@ export default function BillsSurface(_props: { role: string }) {
       {/* AI mix recommendation */}
       {mix && mix.mix && mix.mix.length > 0 && (
         <div>
-          <h3 className="text-[13px] font-semibold text-[#3d4756] mb-2">Recommended PPA mix · 15 yr horizon</h3>
-          <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto text-[#0f1c2e]">
+          <h3 className="text-[13px] font-semibold text-[var(--ink2)] mb-2">Recommended PPA mix · 15 yr horizon</h3>
+          <div className="rounded-lg border border-[var(--line)] bg-white overflow-x-auto text-[var(--ink)]">
             <table className="w-full text-[12px]">
-              <thead className="bg-[#f4f6f8] text-[#6b7685]">
+              <thead className="bg-[var(--raised)] text-[var(--ink3)]">
                 <tr>
                   <th className="text-left p-2">Project</th>
                   <th className="text-right p-2">Share</th>
@@ -424,12 +424,12 @@ export default function BillsSurface(_props: { role: string }) {
               </thead>
               <tbody>
                 {mix.mix.map((m, idx) => (
-                  <tr key={idx} className="border-t border-[#eef1f5]">
+                  <tr key={idx} className="border-t border-[var(--raised)]">
                     <td className="p-2 font-semibold">{m.project_name}</td>
                     <td className="p-2 text-right">{Number(m.share_pct || 0).toFixed(1)}%</td>
                     <td className="p-2 text-right">{Number(m.mwh_per_year || 0).toLocaleString()}</td>
                     <td className="p-2 text-right">R {Number(m.blended_price || 0).toLocaleString()}</td>
-                    <td className="p-2 text-[#3d4756]">{m.rationale || '—'}</td>
+                    <td className="p-2 text-[var(--ink2)]">{m.rationale || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -438,23 +438,23 @@ export default function BillsSurface(_props: { role: string }) {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
             <Card label="Estimated savings" value={mix.savings_pct} unit="%" />
             <Card label="Annual CO₂ avoided" value={mix.carbon_tco2e} unit="tCO₂e" />
-            <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex flex-col justify-between">
+            <div className="rounded-lg border border-[var(--line)] bg-white p-4 flex flex-col justify-between">
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Next step</div>
-                <div className="text-[13px] mt-1 text-[#0f1c2e]">Draft an LOI to every developer in this mix. Each one lands in the developer's action queue.</div>
+                <div className="text-[10px] uppercase tracking-wider text-[var(--ink3)]">Next step</div>
+                <div className="text-[13px] mt-1 text-[var(--ink)]">Draft an LOI to every developer in this mix. Each one lands in the developer's action queue.</div>
               </div>
               <button type="button"
                 onClick={draftFromMix}
                 disabled={loiBusy !== null}
-                className="mt-3 h-9 px-4 rounded-md bg-[oklch(0.46_0.16_55)] text-white text-[12px] font-semibold disabled:opacity-60"
+                className="mt-3 h-9 px-4 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold disabled:opacity-60"
               >
                 {loiBusy === '__mix__' ? 'Drafting…' : 'Draft LOIs from this mix'}
               </button>
             </div>
           </div>
-          {loiMsg && <div className="mt-2 text-[12px] text-[#0f7553]">{loiMsg}</div>}
+          {loiMsg && <div className="mt-2 text-[12px] text-[var(--moss-deep)]">{loiMsg}</div>}
           {mix.warnings && mix.warnings.length > 0 && (
-            <ul className="mt-2 text-[12px] text-[#a16207] list-disc pl-5">
+            <ul className="mt-2 text-[12px] text-[var(--amber-deep)] list-disc pl-5">
               {mix.warnings.map((w, i) => <li key={i}>{w}</li>)}
             </ul>
           )}
@@ -464,8 +464,8 @@ export default function BillsSurface(_props: { role: string }) {
       {/* Procurement options — available now + upcoming, each scored vs the bill */}
       {options && (options.available_now.length > 0 || options.upcoming_projects.length > 0) && (
         <div className="space-y-4">
-          <h3 className="text-[13px] font-semibold text-[#3d4756]">Procurement options matched to this bill</h3>
-          {loiMsg && <div className="text-[12px] text-[#0f7553]">{loiMsg}</div>}
+          <h3 className="text-[13px] font-semibold text-[var(--ink2)]">Procurement options matched to this bill</h3>
+          {loiMsg && <div className="text-[12px] text-[var(--moss-deep)]">{loiMsg}</div>}
           {options.available_now.length > 0 && (
             <OptionGroup title="Available now · marketplace" options={options.available_now} actionLabel="Send inquiry" onAct={inquire} busyId={loiBusy} />
           )}
@@ -477,15 +477,15 @@ export default function BillsSurface(_props: { role: string }) {
 
       {/* History */}
       <div>
-        <h3 className="text-[13px] font-semibold text-[#3d4756] mb-2">Recent analyses</h3>
+        <h3 className="text-[13px] font-semibold text-[var(--ink2)] mb-2">Recent analyses</h3>
         {bills.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[#dde4ec] p-6 text-center text-[12px] text-[#6b7685]">
+          <div className="rounded-lg border border-dashed border-[var(--line)] p-6 text-center text-[12px] text-[var(--ink3)]">
             No bills analysed yet — paste one above to start.
           </div>
         ) : (
-          <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto text-[#0f1c2e]">
+          <div className="rounded-lg border border-[var(--line)] bg-white overflow-x-auto text-[var(--ink)]">
             <table className="w-full text-[12px]">
-              <thead className="bg-[#f4f6f8] text-[#6b7685]">
+              <thead className="bg-[var(--raised)] text-[var(--ink3)]">
                 <tr>
                   <th className="text-left p-2">Uploaded</th>
                   <th className="text-left p-2">Site</th>
@@ -499,7 +499,7 @@ export default function BillsSurface(_props: { role: string }) {
                 {bills.map((b) => (
                   <tr
                     key={b.id}
-                    className="border-t border-[#eef1f5] hover:bg-[#f9fbfd] cursor-pointer"
+                    className="border-t border-[var(--raised)] hover:bg-[var(--raised)] cursor-pointer"
                     onClick={() => setLatest({ id: b.id, profile: b.profile })}
                   >
                     <td className="p-2">{new Date(b.created_at).toLocaleDateString()}</td>

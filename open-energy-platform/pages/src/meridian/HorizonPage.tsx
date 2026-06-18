@@ -138,7 +138,18 @@ export default function HorizonPage() {
     return (
       <div className="mer horizon">
         {roleSwitcher}
-        <div className="mer-loading" aria-busy="true">Computing horizon…</div>
+        <div className="main" aria-busy="true" role="status" aria-label="Computing horizon">
+          <section className="board" style={{ padding: '8px 0' }}>
+            {[0, 1, 2, 3].map(r => (
+              <div key={r} style={{ marginBottom: 18 }}>
+                <div className="skel skel-line lg" style={{ width: `${28 - r * 4}%` }} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                  {[0, 1, 2, 3].map(col => <div key={col} className="skel skel-card" />)}
+                </div>
+              </div>
+            ))}
+          </section>
+        </div>
       </div>
     );
   }

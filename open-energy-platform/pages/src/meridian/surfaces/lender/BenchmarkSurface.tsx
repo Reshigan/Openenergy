@@ -12,7 +12,7 @@ import { AutoTable } from './_AutoTable';
 export default function BenchmarkSurface(_props: { role: string }) {
   return (
     <div>
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 mb-3 text-[12px] text-slate-600">
+      <div className="rounded-lg border border-[var(--line)] bg-[var(--raised)] px-4 py-3 mb-3 text-[12px] text-[var(--ink2)]">
         Reference-rate transition (JIBAR → ZARONIA). Tracks fallback-language adoption and
         facility repapering across the book.
       </div>

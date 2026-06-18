@@ -83,7 +83,7 @@ export default function ReportsSurface(_props: { role: string }) {
     <div className="space-y-8">
       {reports.map((cfg) => (
         <div key={cfg.endpoint} className="space-y-2">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{cfg.title}</p>
+          <p className="text-xs font-semibold text-[var(--ink3)] uppercase tracking-wide">{cfg.title}</p>
           <ReportPanel config={cfg} />
         </div>
       ))}

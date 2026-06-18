@@ -33,8 +33,8 @@ export default function OrdersSurface(_props: { role: string }) {
           { key: '_actions', label: '', render: (r) => (
             (r.status === 'open' || r.status === 'partially_filled') ? (
               <div className="flex gap-1">
-                <button type="button" onClick={() => setAmending(r)} className="px-2 py-1 text-[11px] bg-[#c2873a] text-white rounded">Amend</button>
-                <button type="button" onClick={() => setCancelling(r)} className="px-2 py-1 text-[11px] bg-red-600 text-white rounded">Cancel</button>
+                <button type="button" onClick={() => setAmending(r)} className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md">Amend</button>
+                <button type="button" onClick={() => setCancelling(r)} className="px-2 py-1 text-[11px] bg-[var(--oxide-deep)] text-white rounded-md">Cancel</button>
               </div>
             ) : null
           ) },

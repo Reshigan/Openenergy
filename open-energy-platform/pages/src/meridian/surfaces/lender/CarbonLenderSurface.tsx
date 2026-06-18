@@ -22,10 +22,10 @@ const zar = (v: any, dp = 0) => (v == null ? '—' : `R${num(v, dp)}`);
 
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 min-w-[150px]">
-      <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="text-[20px] font-semibold text-slate-900 tabular-nums">{value}</div>
-      {sub && <div className="text-[11px] text-slate-500">{sub}</div>}
+    <div className="rounded-lg border border-[var(--line)] bg-white px-4 py-3 min-w-[150px]">
+      <div className="text-[11px] uppercase tracking-wide text-[var(--ink3)]">{label}</div>
+      <div className="text-[20px] font-semibold text-[var(--ink)] tabular-nums">{value}</div>
+      {sub && <div className="text-[11px] text-[var(--ink3)]">{sub}</div>}
     </div>
   );
 }
@@ -45,7 +45,7 @@ export default function CarbonLenderSurface(_props: { role: string }) {
 
   return (
     <div>
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 mb-4 text-[12px] text-slate-600">
+      <div className="rounded-lg border border-[var(--line)] bg-[var(--raised)] px-4 py-3 mb-4 text-[12px] text-[var(--ink2)]">
         Carbon position held against your portfolio, for ESG and sustainability-linked-loan reporting.
         Scoped to your institution. Retirements are permanent and count toward financed-emissions offset.
       </div>
@@ -59,10 +59,10 @@ export default function CarbonLenderSurface(_props: { role: string }) {
       </div>
 
       {breakdown.length > 0 && (
-        <div className="rounded-lg border border-slate-200 overflow-hidden mb-5">
-          <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 bg-slate-50">Holdings by type &amp; vintage</div>
+        <div className="rounded-lg border border-[var(--line)] overflow-hidden mb-5">
+          <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)] bg-[var(--raised)]">Holdings by type &amp; vintage</div>
           <table className="w-full text-[12px]">
-            <thead><tr className="text-slate-500 border-b border-slate-200">
+            <thead><tr className="text-[var(--ink3)] border-b border-[var(--line)]">
               <th className="text-left px-4 py-1.5 font-medium">Credit type</th>
               <th className="text-left px-4 py-1.5 font-medium">Vintage</th>
               <th className="text-right px-4 py-1.5 font-medium">Quantity tCO₂e</th>
@@ -70,9 +70,9 @@ export default function CarbonLenderSurface(_props: { role: string }) {
             </tr></thead>
             <tbody>
               {breakdown.map((b, i) => (
-                <tr key={`${b.credit_type}-${b.vintage_year}-${i}`} className="border-b border-slate-100 last:border-0">
+                <tr key={`${b.credit_type}-${b.vintage_year}-${i}`} className="border-b border-[var(--line)] last:border-0">
                   <td className="px-4 py-1.5">{b.credit_type || '—'}</td>
-                  <td className="px-4 py-1.5 text-slate-500">{b.vintage_year || '—'}</td>
+                  <td className="px-4 py-1.5 text-[var(--ink3)]">{b.vintage_year || '—'}</td>
                   <td className="px-4 py-1.5 text-right tabular-nums">{num(b.qty)}</td>
                   <td className="px-4 py-1.5 text-right tabular-nums">{zar(b.cost)}</td>
                 </tr>
@@ -82,7 +82,7 @@ export default function CarbonLenderSurface(_props: { role: string }) {
         </div>
       )}
 
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-2">Holdings register</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)] mb-2">Holdings register</div>
       <AutoTable
         endpoint="/carbon/credits"
         empty="No carbon holdings."
