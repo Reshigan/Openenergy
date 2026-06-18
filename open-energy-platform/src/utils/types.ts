@@ -99,6 +99,18 @@ export interface HonoBindings {
   AZURE_AD_REDIRECT_URI?: string;
   APP_BASE_URL?: string;
   BACKUP_TOKEN?: string;
+
+  // ── Deployment environment ────────────────────────────────────────────────
+  // Set in wrangler.toml [vars] (currently "production"). Read by gates that
+  // must stay dark outside prod (e.g. live email delivery in src/utils/email.ts).
+  ENVIRONMENT?: string;
+
+  // ── Email (MailChannels) ──────────────────────────────────────────────────
+  // Live delivery via src/utils/email.ts is gated on ENVIRONMENT==='production'
+  // && EMAIL_FROM. Until both are set the sendEmail() seam is a no-op that still
+  // records every attempt in oe_email_outbox. EMAIL_FROM stays unset (B7 gate).
+  EMAIL_FROM?: string;
+  EMAIL_REPLY_TO?: string;
 }
 
 // Authenticated user attached to the request context by authMiddleware.
