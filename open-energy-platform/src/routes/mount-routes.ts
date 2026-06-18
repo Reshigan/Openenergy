@@ -278,6 +278,7 @@ import esumsAccrualsRoutes, { esumsInvoiceRoutes, esumsCreditRoutes } from './es
 import platformFeaturesRoutes from './platform-features';
 import onboardingRoutes from './onboarding';
 import onboardingChecklistRoutes from './onboarding-checklist';
+import onboardingKycRoutes from './onboarding-kyc';
 import {
   mfa as mfaRoutes,
   kyc as kycRoutes,
@@ -688,6 +689,9 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   app.route('/api/print-packs',         printPacksRoutes);
   app.route('/api/onboarding', onboardingRoutes);
   app.route('/api/onboarding', onboardingChecklistRoutes);
+  // Full static basePath so the /kyc segment wins over any /:param route in the
+  // sibling onboarding routers (Hono silent-collision risk - deliberate).
+  app.route('/api/onboarding/kyc', onboardingKycRoutes);
   app.route('/api/kyc-verifications', kycChainRoutes);
   app.route('/api/smart-meter-assets', smartMeterChainRoutes);
   app.route('/api/carbon-tax-returns', carbonTaxChainRoutes);

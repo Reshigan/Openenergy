@@ -173,17 +173,24 @@ function kvStub() {
 }
 
 function r2Stub() {
-  const store = new Map<string, string>();
+  // Values may be strings (KV-style) or binary (Uint8Array/ArrayBuffer) for real
+  // object bytes, mirroring the R2Bucket.put contract the routes call.
+  const store = new Map<string, unknown>();
   return {
     async get(key: string) {
       const v = store.get(key);
-      return v == null ? null : { text: async () => v };
+      return v == null ? null : { text: async () => (typeof v === 'string' ? v : String(v)) };
     },
-    async put(key: string, value: string) {
+    async put(key: string, value: string | ArrayBuffer | ArrayBufferView) {
       store.set(key, value);
     },
     async delete(key: string) {
       store.delete(key);
+    },
+    // Test-only: inspect which keys were written (lets a test assert that a
+    // rejected request wrote NO object, not merely that the stub exists).
+    _keys() {
+      return Array.from(store.keys());
     },
   };
 }

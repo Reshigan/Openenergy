@@ -837,6 +837,9 @@ export type EventType =
   | 'report.submitted_to_regulator' | 'report.submission_acknowledged'
   // ─── Go-live KYC/POPIA/Regulator generators ────────────────────────────
   | 'kyc.document_submitted' | 'kyc.document_reviewed'
+  // Self-service KYC pack submitted for review (flips participant kyc_status
+  // to in_review) - Task 3.2 onboarding-kyc route.
+  | 'kyc.submitted'
   | 'popia.export_requested' | 'popia.erasure_requested' | 'popia.erasure_cancelled'
   | 'regulator.nersa_quarterly_generated' | 'regulator.sars_pack_generated'
   // ─── PAIA (public-legal) ────────────────────────────────────────────────
