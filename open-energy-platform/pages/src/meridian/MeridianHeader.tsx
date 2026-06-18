@@ -5,8 +5,32 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth';
 
+// Header quicklinks. Deals / ESG / Reports are for every signed-in role; the
+// last two are oversight surfaces that shouldn't show for an operator role
+// (part of the "every role sees everything" complaint). Intelligence is an
+// admin analytics console; National (/dashboard) is the regulator/grid/admin
+// oversight board.
+const QUICKLINKS: { to: string; label: string }[] = [
+  { to: '/deals', label: 'Deals' },
+  { to: '/esg', label: 'ESG' },
+  { to: '/reports', label: 'Reports' },
+  { to: '/intelligence', label: 'Intelligence' },
+  { to: '/dashboard', label: 'National' },
+];
+const QUICKLINK_ROLES: Record<string, string[]> = {
+  '/intelligence': ['admin'],
+  '/dashboard': ['admin', 'regulator', 'grid_operator', 'grid'],
+};
+// A quicklink with no role restriction is visible to all; a restricted one
+// shows only for the listed roles (JWT-suffixed forms, e.g. grid_operator).
+export function quicklinkVisible(role: string, to: string): boolean {
+  const allowed = QUICKLINK_ROLES[to];
+  return !allowed || allowed.includes(role);
+}
+
 export function MeridianHeader({ ctx }: { ctx?: React.ReactNode }) {
   const { user, logout } = useAuth();
+  const role = user?.role ?? '';
   const nav = useNavigate();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const now = new Date();
@@ -36,11 +60,9 @@ export function MeridianHeader({ ctx }: { ctx?: React.ReactNode }) {
       {ctx && <div className="ctx">{ctx}</div>}
       <div className="spacer" />
       <nav className="quicklinks" aria-label="Platform sections">
-        <Link to="/deals">Deals</Link>
-        <Link to="/esg">ESG</Link>
-        <Link to="/reports">Reports</Link>
-        <Link to="/intelligence">Intelligence</Link>
-        <Link to="/dashboard">National</Link>
+        {QUICKLINKS.filter(q => quicklinkVisible(role, q.to)).map(q => (
+          <Link key={q.to} to={q.to}>{q.label}</Link>
+        ))}
       </nav>
       <div className="clock mono">{clock}</div>
       <Link className="head-new" to="/new" title="Start a new transaction">+ New</Link>

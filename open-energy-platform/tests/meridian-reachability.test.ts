@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { surfaceRole, tileTarget, isTileReachable } from '../pages/src/meridian/reachability';
 import { singleChainOf, classifyLoadError } from '../pages/src/meridian/lib';
+import { quicklinkVisible } from '../pages/src/meridian/MeridianHeader';
 
 // hasSurface stub: only this one composite key exists.
 const hasSurface = (k: string) => k === 'esco:sites-portfolio';
@@ -60,5 +61,25 @@ describe('classifyLoadError', () => {
   it('falls back to unknown for everything else', () => {
     expect(classifyLoadError(new Error('boom'))).toBe('unknown');
     expect(classifyLoadError({ response: { status: 500 } })).toBe('unknown');
+  });
+});
+
+describe('quicklinkVisible', () => {
+  it('shows unrestricted links to every role', () => {
+    expect(quicklinkVisible('ipp_developer', '/deals')).toBe(true);
+    expect(quicklinkVisible('trader', '/esg')).toBe(true);
+    expect(quicklinkVisible('offtaker', '/reports')).toBe(true);
+  });
+  it('restricts Intelligence to admin', () => {
+    expect(quicklinkVisible('admin', '/intelligence')).toBe(true);
+    expect(quicklinkVisible('ipp_developer', '/intelligence')).toBe(false);
+    expect(quicklinkVisible('trader', '/intelligence')).toBe(false);
+  });
+  it('restricts National to oversight roles', () => {
+    expect(quicklinkVisible('admin', '/dashboard')).toBe(true);
+    expect(quicklinkVisible('regulator', '/dashboard')).toBe(true);
+    expect(quicklinkVisible('grid_operator', '/dashboard')).toBe(true);
+    expect(quicklinkVisible('ipp_developer', '/dashboard')).toBe(false);
+    expect(quicklinkVisible('offtaker', '/dashboard')).toBe(false);
   });
 });
