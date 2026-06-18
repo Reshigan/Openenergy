@@ -5,14 +5,19 @@
 //   esums_owner  → om_sites row           (commissioning_status='planned')
 //   ipp_developer→ ipp_projects row       (status='development')
 //   trader       → oe_position_limits row (electricity desk limits from risk step)
+//   offtaker     → off_ppa_portfolio row  (status='negotiating' procurement intent)
 //   other roles  → no business entity, manifest-only (logged as kind='manifest')
 //
 // Why seed-vs-manifest: a real row is created ONLY where the target is a
-// persistent OPERATING object (a site, a project, a desk-limit config) AND the
-// wizard collected enough to populate it. The remaining roles (lender, offtaker,
-// grid_operator, regulator, carbon_fund, support) have no such standalone table —
-// their real artifacts are regulated chain CASES, which must be initiated through
-// the proper workflow, not silently faked at signup. Those get a manifest only.
+// persistent OPERATING object (a site, a project, a desk-limit config, a buyer
+// procurement portfolio) AND the wizard collected enough to populate it. Four
+// roles now seed (esums_owner, ipp_developer, trader, offtaker). The remaining
+// five (lender, carbon_fund, grid_operator, regulator, support) stay manifest
+// only: lender/carbon_fund/grid_operator's real artifacts are regulated chain
+// CASES that must be initiated through the proper workflow rather than silently
+// faked at signup, and regulator/support are oversight roles whose work
+// materialises from crossings of OTHER roles' chains, so there is nothing to
+// seed up front. Those get a manifest only.
 //
 // Idempotency: guarded on oe_onboarding_provisioning_log UNIQUE (participant_id, kind);
 // alreadyProvisioned short-circuits the whole rule on a re-fire.
@@ -64,8 +69,8 @@ export function registerOnboardingProvisioningRules(): void {
       if (await alreadyProvisioned(db, participantId)) return;
 
       const participantRow = (await db
-        .prepare(`SELECT role, onboarding_data FROM participants WHERE id = ?`)
-        .bind(participantId).first()) as { role: string; onboarding_data: string | null } | null;
+        .prepare(`SELECT role, onboarding_data, tenant_id FROM participants WHERE id = ?`)
+        .bind(participantId).first()) as { role: string; onboarding_data: string | null; tenant_id?: string | null } | null;
       if (!participantRow) return;
 
       // Prefer the logical role from the cascade context (e.g. 'esums_owner' is
@@ -116,6 +121,29 @@ export function registerOnboardingProvisioningRules(): void {
         ref = {
           kind: 'position_limit', entityType: 'oe_position_limits', entityId: participantId,
           detail: { energy_type: 'electricity', net_long_limit_mwh: maxPos, daily_pnl_floor_zar: pnlFloor },
+        };
+
+      } else if (role === 'offtaker') {
+        // Seed a draft PPA-portfolio entry capturing the buyer's procurement
+        // intent so the offtaker lands on a real "find generation" starting
+        // point rather than an empty workspace. This is a persistent buyer
+        // PORTFOLIO row (off_ppa_portfolio, created in migration 047), not a
+        // chain case: the actual PPA is negotiated later through the proper
+        // workflow, so the row starts at status='negotiating' with a placeholder
+        // counterparty. Scoped to the participant's OWN tenant.
+        const tenantId = (participantRow as any)?.tenant_id || 'default';
+        const technology = (typeof data.preferred_technology === 'string' && data.preferred_technology)
+          ? data.preferred_technology : 'solar_pv';
+        const capacityMw = num(data.peak_demand_mw);
+        const portfolioId = genId();
+        await db.prepare(
+          `INSERT INTO off_ppa_portfolio
+             (id, participant_id, tenant_id, counterparty_name, technology, capacity_mw, status, created_at)
+           VALUES (?, ?, ?, 'To be selected', ?, ?, 'negotiating', datetime('now'))`,
+        ).bind(portfolioId, participantId, tenantId, technology, capacityMw).run();
+        ref = {
+          kind: 'ppa_portfolio', entityType: 'off_ppa_portfolio', entityId: portfolioId,
+          detail: { technology, capacity_mw: capacityMw, status: 'negotiating' },
         };
       }
 

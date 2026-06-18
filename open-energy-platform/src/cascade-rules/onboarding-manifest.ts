@@ -130,6 +130,8 @@ function roleActions(role: string): NextAction[] {
       return [{ key: 'lifecycle', label: 'Track project lifecycle', route: '/horizon', description: 'Licensing → construction → COD in one place.' }];
     case 'trader':
       return [{ key: 'risk', label: 'Review your risk limits', route: '/horizon', description: 'VaR, exposure and position-limit utilisation.' }];
+    case 'offtaker':
+      return [{ key: 'review_portfolio', label: 'Review your procurement portfolio', route: '/horizon', description: 'Your draft PPA enquiries and generation options.' }];
     default:
       return [];
   }
