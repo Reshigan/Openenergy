@@ -32,6 +32,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser, hashPassword } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { sendEmail } from '../utils/email';
 
 const rbac = new Hono<HonoEnv>();
 
@@ -357,6 +358,14 @@ rbac.post('/me/invitations', async (c) => {
     data: { id, role, email, project_id, expires_at: expiresAt },
     env: c.env,
   });
+
+  if (email) {
+    await sendEmail(c.env, {
+      to: email,
+      template: 'invite',
+      data: { link: `/register?token=${token}`, org: organization ?? '', role },
+    });
+  }
 
   return c.json({
     success: true,

@@ -307,7 +307,7 @@ auth.post('/forgot-password', async (c) => {
   // just by knowing the email. The token is stored server-side and delivered
   // via email once a mail provider is configured. Until then, admins can
   // issue reset links out-of-band via POST /auth/admin/reset-link.
-  await createPasswordResetToken(c.env.DB, participant.id, clientIp(c));
+  const resetToken = await createPasswordResetToken(c.env.DB, participant.id, clientIp(c));
 
   await fireCascade({
     event: 'auth.password_reset',
@@ -316,6 +316,12 @@ auth.post('/forgot-password', async (c) => {
     entity_id: participant.id,
     data: { email, reason: 'forgot_password' },
     env: c.env,
+  });
+
+  await sendEmail(c.env, {
+    to: email,
+    template: 'reset',
+    data: { link: `/reset-password?token=${resetToken}` },
   });
 
   return c.json({
