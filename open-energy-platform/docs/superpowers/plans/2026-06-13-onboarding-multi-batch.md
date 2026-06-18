@@ -8,7 +8,9 @@
 
 **Tech Stack:** Cloudflare Worker + Hono + D1 (SQLite) + R2 (evidence vault) + KV + Workers AI binding; React SPA (Vite + Tailwind); vitest (backend), Playwright (browser).
 
-**Migration counter:** highest existing is `507`. This plan adds `508`–`512`. Before writing any migration, run `ls migrations | sort | tail -1` to confirm the next free number; renumber upward if other work has landed.
+**Migration counter (corrected 2026-06-18):** highest existing is `509` — and `509_onboarding_provisioning_manifest.sql` (the manifest column, Task 1.1) **already landed**. Next free number is `510`. Remaining migrations renumbered: first-entity tables `510` (Task 1.2, only if graphify finds no canonical table), email outbox `511` (Task 2.1), KYC submissions `512` (Task 3.1), market-access flag `513` (Task 3.3). Before writing any migration, run `ls migrations | sort | tail -1` to re-confirm the next free number; renumber upward if other work has landed.
+
+**Role-coverage correction (2026-06-18):** the live wizard's `ONBOARDING_STEPS` has 10 entries (the 9 personas + `admin`) but is **missing `esco` and `epc_contractor`** — both real role values (roleData ROLE_CONFIGS + capability-map). `POST /api/onboarding/step` throws 400 for any role not in `ONBOARDING_STEPS`, so esco/epc users crash on the first wizard step. Provisioning currently covers **3** roles (`esums_owner`, `ipp_developer`, `trader`), not 2. Task 1.0 (new, below) fixes the 400-crash; Task 1.2 expands provisioning. Also add: **B3** first-run per-component intro cards and **B5** sandbox demo tenant (appended after Batch 3).
 
 **Standing constraints (load-bearing — do not violate):**
 - Feature-depth: target **L4**. No shallow CRUD tabs.
@@ -24,20 +26,21 @@
 
 | File | Batch | Responsibility |
 |---|---|---|
-| `src/cascade-rules/onboarding-provisioning.ts` | 1 | Expand from 2 roles to all 9 provisioning roles; emit a structured `provisioned` manifest |
-| `src/routes/onboarding.ts` | 1 | `/state` returns provisioning manifest + checklist; `/complete` unchanged contract |
+| `src/routes/onboarding.ts` | 1 | Task 1.0: add `esco`+`epc_contractor` to `ONBOARDING_STEPS` + generic `['welcome','complete']` fallback so `/step` never 400s. Task 1.3: `/state` returns provisioning manifest + checklist; `/complete` unchanged contract |
+| `src/cascade-rules/onboarding-provisioning.ts` | 1 | Expand from **3** roles to all 9 provisioning roles; emit a structured `provisioned` manifest |
 | `src/routes/onboarding-checklist.ts` | 1 | **New** — `GET /api/onboarding/checklist/:role` computes getting-started items + completion from real data |
-| `migrations/508_onboarding_provisioning_manifest.sql` | 1 | Add `manifest` JSON col to `oe_onboarding_provisioning_log` |
-| `pages/src/components/launch/GettingStarted.tsx` | 1 | **New** — launch-board checklist card with progress + inline AI "next best step" |
+| `migrations/509_onboarding_provisioning_manifest.sql` | 1 | **LANDED** — `manifest` JSON col on `oe_onboarding_provisioning_log` (Task 1.1 done) |
+| `migrations/510_onboarding_first_entities.sql` | 1 | **New, conditional** — `CREATE TABLE IF NOT EXISTS` for any first-entity table graphify finds no canonical home for (Task 1.2) |
+| `pages/src/meridian/GettingStarted.tsx` | 1 | **Exists, on Horizon** (HorizonPage.tsx:163) — extend with progress + inline AI "next best step" (Task 1.6) |
 | `pages/src/lib/uxState.ts` | 1 | `useOnboarding()` reads the wizard track, not the orphaned ux-state track |
-| `src/utils/email.ts` | 2 | **New** — single `sendEmail()` seam (MailChannels over `fetch`, dev no-op) |
+| `src/utils/email.ts` | 2 | **New** — single `sendEmail()` seam (MailChannels over `fetch`, dev no-op). **HARD-GATE: live send needs provider sign-off** |
 | `src/routes/auth.ts` | 2 | Register + reset + verify call `sendEmail()`; verify token delivered |
 | `src/routes/rbac.ts` | 2 | Invitation create fires email; `SELF_REGISTER_ROLES` + org bootstrap |
-| `migrations/509_email_outbox.sql` | 2 | `oe_email_outbox` audit table (every send logged) |
+| `migrations/511_email_outbox.sql` | 2 | `oe_email_outbox` audit table (every send logged) |
 | `src/routes/onboarding-kyc.ts` | 3 | **New** — user-facing KYC submission + evidence upload + status read |
 | `src/cascade-rules/kyc-gate.ts` | 3 | **New** — `kyc.submitted`/`kyc.decided` cascade → admin inbox + market-access flag |
-| `migrations/510_kyc_submissions.sql` | 3 | `oe_kyc_submissions` + `oe_kyc_evidence` tables |
-| `migrations/511_market_access_flag.sql` | 3 | `participants.market_access` flag (gates trading/deal endpoints) |
+| `migrations/512_kyc_submissions.sql` | 3 | `oe_kyc_submissions` + `oe_kyc_evidence` tables. **HARD-GATE: PII-at-rest encryption design needs sign-off** |
+| `migrations/513_market_access_flag.sql` | 3 | `participants.market_access` flag (gates trading/deal endpoints) |
 | `src/utils/pre-trade-guards.ts` | 3 | Add `marketAccessGuard` to the order-rejection composition |
 | `pages/src/components/onboarding/KycSubmission.tsx` | 3 | **New** — evidence upload UI + status timeline |
 
@@ -45,13 +48,40 @@
 
 # BATCH 1 — Activation Depth
 
-**Why first:** the wizard already collects answers but only `esums_owner` and `ipp_developer` get a provisioned entity; the other 7 roles land on an empty board. And the frontend `useOnboarding()` hook reads `oe_onboarding_state` (072), a *different* track from the wizard's `participants.onboarding_*` (378) — so launch-board checklists never reflect wizard progress. Batch 1 makes "finish the wizard → see a populated, explained workspace" true for all 9 roles, from one source of truth.
+**Why first:** the wizard already collects answers but only `esums_owner`, `ipp_developer`, and `trader` get a provisioned entity; the other 6 roles land on an empty board. And the frontend `useOnboarding()` hook reads `oe_onboarding_state` (072), a *different* track from the wizard's `participants.onboarding_*` (378) — so launch-board checklists never reflect wizard progress. Batch 1 makes "finish the wizard → see a populated, explained workspace" true for all 9 roles, from one source of truth.
 
-**Batch 1 done when:** completing the wizard as any of the 9 non-admin roles provisions ≥1 real first entity in that user's tenant; `/api/onboarding/state` returns a manifest of what was created; the launch board shows a Getting-Started card whose progress is computed from real data; and the dual-tracking disconnect is gone.
+**Batch 1 done when:** completing the wizard as any of the 9 non-admin roles provisions ≥1 real first entity in that user's tenant; `/api/onboarding/state` returns a manifest of what was created; the launch board shows a Getting-Started card whose progress is computed from real data; the dual-tracking disconnect is gone; and **no role 400-crashes on `POST /step`** (Task 1.0).
 
 ---
 
-### Task 1.1: Provisioning manifest column
+### Task 1.0: Fix the `POST /step` 400-crash for unconfigured roles (esco / epc_contractor)
+
+**Files:**
+- Modify: `src/routes/onboarding.ts` (`ONBOARDING_STEPS` map lines 24-35; `POST /step` lines 115-117)
+- Test: `tests/onboarding-routes.test.ts` (create if absent)
+
+`ONBOARDING_STEPS` has 10 entries (9 personas + `admin`) but is missing `esco` and `epc_contractor` — both real role values (roleData ROLE_CONFIGS lines 1009/1016 + capability-map lines 280/303). `POST /api/onboarding/step` looks up `ONBOARDING_STEPS[user.role]` and throws `VALIDATION_ERROR` 400 (`No onboarding steps configured for role: ${user.role}`) for any role not in the map — so esco/epc users crash on the first wizard step. (`/state`, `/complete`, `/skip` tolerate it; only `/step` crashes.)
+
+- [ ] **Step 1: Failing test** — `POST /api/onboarding/step` as an `esco` token (step `welcome`) currently returns 400; assert it returns 200 and persists the step. Add a second case for `epc_contractor`. Add a third asserting a genuinely-unknown role still does not 500 (falls back to the generic step list, not a throw).
+
+- [ ] **Step 2: Run — FAIL** (400 for esco/epc).
+Run: `npx vitest run tests/onboarding-routes.test.ts -t "step"`
+
+- [ ] **Step 3: Implement** — add `esco` and `epc_contractor` entries to `ONBOARDING_STEPS` (give them role-appropriate steps, e.g. `['welcome','org_profile','sites','complete']` for esco, `['welcome','org_profile','project_scope','complete']` for epc_contractor — match the existing entry shape), AND replace the hard 400 at lines 115-117 with a generic fallback: `const steps = ONBOARDING_STEPS[user.role] ?? ['welcome','complete'];` so an unconfigured role degrades gracefully instead of crashing. Keep the existing "step not in this role's list" rejection (it now validates against the fallback list too).
+
+- [ ] **Step 4: Run — PASS.**
+
+- [ ] **Step 5: Commit.**
+```bash
+git add src/routes/onboarding.ts tests/onboarding-routes.test.ts
+git commit -m "fix(onboarding): esco/epc_contractor steps + generic fallback so /step never 400s"
+```
+
+---
+
+### Task 1.1: Provisioning manifest column — **ALREADY LANDED (2026-06-18)**
+
+> **Status: DONE.** The manifest column shipped as `migrations/509_onboarding_provisioning_manifest.sql` (`ALTER TABLE oe_onboarding_provisioning_log ADD COLUMN manifest TEXT DEFAULT '{}';`). On prod it applies via the deploy.yml column-reconcile band; on fresh/local + vitest `createTestDb` it lands as migration 509. The manifest-shape test below is folded into Task 1.2 (it stays red until 1.2 writes the manifest). The original Task 1.1 steps are retained for reference only — do not re-create migration 508.
 
 **Files:**
 - Create: `migrations/508_onboarding_provisioning_manifest.sql`
@@ -125,7 +155,7 @@ Per-role first entity (each row also pushes one manifest entity `{entity_type,la
 | `regulator` | `regulator_body` | `oe_regulator_bodies` | `jurisdiction`, `licence_classes` | draft body |
 | `support` | `support_org` | `oe_support_orgs` | `oem_brands`, `sla_tiers` | draft org |
 
-> Before adding any new target table, `/graphify query "<role> first entity table"` to confirm whether a canonical table already exists (e.g. trader entities may already live in a risk/limits table). Prefer the existing table; only create a new `oe_*` table (in 508) if none exists. **Do not duplicate an existing node.**
+> Before adding any new target table, `/graphify query "<role> first entity table"` to confirm whether a canonical table already exists (e.g. trader entities may already live in a risk/limits table). Prefer the existing table; only create a new `oe_*` table (in new migration `510_onboarding_first_entities.sql`) if none exists. **Do not duplicate an existing node.**
 
 - [ ] **Step 1: Write failing tests** — one per role, asserting (a) a row created in the right table within the participant's tenant, (b) manifest entity present, (c) re-running the cascade is idempotent (no second row). Table-driven:
 
@@ -157,16 +187,17 @@ for (const tc of CASES) {
 - [ ] **Step 2: Run — expect FAIL** (`kind:'none'`, no rows).
 Run: `npx vitest run tests/onboarding-provisioning.test.ts`
 
-- [ ] **Step 3: Implement** the per-role provisioning map in `onboarding-provisioning.ts`. Keep the existing `alreadyProvisioned()` idempotency guard. Resolve tenant from the participant row (`SELECT tenant_id FROM participants WHERE id = ?`), default `'default'`. Each branch INSERTs one draft row + builds `manifest = { entities: [{ entity_type, label, href }] }`, then writes the log row with `kind` + `manifest`. For any new `oe_*` tables, add their `CREATE TABLE IF NOT EXISTS` to migration 508.
+- [ ] **Step 3: Implement** the per-role provisioning map in `onboarding-provisioning.ts`. Keep the existing `alreadyProvisioned()` idempotency guard. Resolve tenant from the participant row (`SELECT tenant_id FROM participants WHERE id = ?`), default `'default'`. Each branch INSERTs one draft row + builds `manifest = { entities: [{ entity_type, label, href }] }`, then writes the log row with `kind` + `manifest`. For any new `oe_*` tables (only where graphify found no canonical table), add their `CREATE TABLE IF NOT EXISTS` to new migration `510_onboarding_first_entities.sql` and apply it locally.
 
 - [ ] **Step 4: Run — expect PASS** (all roles + idempotency).
 Run: `npx vitest run tests/onboarding-provisioning.test.ts`
 
 - [ ] **Step 5: Commit.**
 ```bash
-git add src/cascade-rules/onboarding-provisioning.ts migrations/508_onboarding_provisioning_manifest.sql tests/onboarding-provisioning.test.ts
+git add src/cascade-rules/onboarding-provisioning.ts migrations/510_onboarding_first_entities.sql tests/onboarding-provisioning.test.ts
 git commit -m "feat(onboarding): provision a first entity + manifest for all 9 roles"
 ```
+(omit `migrations/510_*` from the `git add` if graphify confirmed every role maps to an existing canonical table and no new migration was needed.)
 
 ---
 
@@ -288,19 +319,21 @@ BASE=http://localhost:8787 npm run test:browser -- onboarding-activation
 ### Task 2.1: Email outbox table + `sendEmail()` seam
 
 **Files:**
-- Create: `migrations/509_email_outbox.sql`, `src/utils/email.ts`
+- Create: `migrations/511_email_outbox.sql`, `src/utils/email.ts`
 - Modify: `src/utils/types.ts` (optional `EMAIL_*` env), `wrangler.toml` (vars)
 - Test: `tests/email.test.ts`
+
+> **HARD-GATE (B7):** live email delivery via MailChannels needs provider confirmation + sign-off before wiring live send. The dev no-op seam + `oe_email_outbox` ARE buildable now; the `fetch`→MailChannels live path stays behind `env.ENVIRONMENT === 'production' && env.EMAIL_FROM` and is NOT enabled without approval.
 
 `sendEmail()` is the single seam: in production it POSTs via MailChannels over `fetch` (no SDK, Worker-native); in dev/test it is a no-op that still writes the outbox row. Every send writes `oe_email_outbox` (id, to, template, payload JSON, status, error, created_at) so delivery is auditable and testable without a live provider.
 
 - [ ] **Step 1: Failing test** — `sendEmail(env,{to,template:'verify',data:{token}})` writes an `oe_email_outbox` row with status `queued`→`sent` (dev no-op marks `sent`), and returns `{id}`. On `fetch` throw it records `status:'failed'` + error and does **not** throw.
 - [ ] **Step 2: Run — FAIL.** `npx vitest run tests/email.test.ts`
-- [ ] **Step 3: Migration 509** (`oe_email_outbox`) + implement `sendEmail()` with templates map (`verify`, `reset`, `invite`, `kyc_decision`). Gate live send on `env.ENVIRONMENT === 'production' && env.EMAIL_FROM`.
+- [ ] **Step 3: Migration 511** (`oe_email_outbox`) + implement `sendEmail()` with templates map (`verify`, `reset`, `invite`, `kyc_decision`). Gate live send on `env.ENVIRONMENT === 'production' && env.EMAIL_FROM` (live path stays dark until B7 sign-off).
 - [ ] **Step 4: Run — PASS** (+ `wrangler d1 migrations apply --local`).
 - [ ] **Step 5: Commit.**
 ```bash
-git add migrations/509_email_outbox.sql src/utils/email.ts src/utils/types.ts tests/email.test.ts
+git add migrations/511_email_outbox.sql src/utils/email.ts src/utils/types.ts tests/email.test.ts
 git commit -m "feat(auth): email outbox + sendEmail() seam (MailChannels, dev no-op)"
 ```
 
@@ -368,12 +401,14 @@ npm run check
 ### Task 3.1: KYC submission + evidence tables
 
 **Files:**
-- Create: `migrations/510_kyc_submissions.sql`
+- Create: `migrations/512_kyc_submissions.sql`
 - Test: covered by 3.2/3.3 route tests
 
-- [ ] **Step 1:** Write `510_kyc_submissions.sql`:
+> **HARD-GATE (B6):** application-level PII-at-rest encryption for the KYC pack + evidence (director IDs, tax/BBBEE certs) needs explicit sign-off before building. This task lands the table schema + plaintext-column structure ONLY as a design placeholder; the encryption strategy (column-level vs envelope vs R2-side) is presented separately and is NOT built autonomously.
+
+- [ ] **Step 1:** Write `512_kyc_submissions.sql`:
 ```sql
--- 510_kyc_submissions.sql — user-facing KYC pack + evidence (admin review machine already exists).
+-- 512_kyc_submissions.sql — user-facing KYC pack + evidence (admin review machine already exists).
 CREATE TABLE IF NOT EXISTS oe_kyc_submissions (
   id TEXT PRIMARY KEY,
   participant_id TEXT NOT NULL,
@@ -397,7 +432,7 @@ CREATE INDEX IF NOT EXISTS idx_kyc_sub_participant ON oe_kyc_submissions(partici
 CREATE INDEX IF NOT EXISTS idx_kyc_evidence_sub ON oe_kyc_evidence(submission_id);
 ```
 - [ ] **Step 2:** `wrangler d1 migrations apply open-energy-db --local`.
-- [ ] **Step 3: Commit.** `git add migrations/510_kyc_submissions.sql && git commit -m "feat(kyc): user-facing submission + evidence tables"`
+- [ ] **Step 3: Commit.** `git add migrations/512_kyc_submissions.sql && git commit -m "feat(kyc): user-facing submission + evidence tables"`
 
 ---
 
@@ -429,17 +464,17 @@ git commit -m "feat(kyc): user submission + R2 evidence upload route"
 
 **Files:**
 - Create: `src/cascade-rules/kyc-gate.ts`
-- Modify: `src/routes/admin.ts` (`/admin/kyc` reads `oe_kyc_submissions`; `/admin/kyc/:id` decision also updates the submission + fires `kyc.decided`), `migrations/511_market_access_flag.sql`
+- Modify: `src/routes/admin.ts` (`/admin/kyc` reads `oe_kyc_submissions`; `/admin/kyc/:id` decision also updates the submission + fires `kyc.decided`), `migrations/513_market_access_flag.sql`
 - Test: `tests/kyc-gate.test.ts`
 
-- [ ] **Step 1: Migration 511** — `ALTER TABLE participants ADD COLUMN market_access INTEGER DEFAULT 0;` (idempotent: tolerate `duplicate column name`).
+- [ ] **Step 1: Migration 513** — `ALTER TABLE participants ADD COLUMN market_access INTEGER DEFAULT 0;` (idempotent: tolerate `duplicate column name`; on prod applies via deploy.yml column-reconcile band).
 - [ ] **Step 2: Failing tests** — `kyc.submitted` cascade materialises an item in the admin KYC queue; an admin `approved` decision flips `participants.market_access=1` and fires `kyc.decided`; a `rejected`/`info_requested` decision leaves `market_access=0` and notifies the user with a structured `reason_code`. Re-fire is idempotent.
 - [ ] **Step 3: Run — FAIL.**
 - [ ] **Step 4: Implement** `kyc-gate.ts` (register via `registerCascadeRule`); extend the admin decision handler to update `oe_kyc_submissions.status` + `reason_code` and set `market_access` on approve. Reuse the existing audit + notification writes.
-- [ ] **Step 5: Run — PASS** (+ apply 511 local).
+- [ ] **Step 5: Run — PASS** (+ apply 513 local).
 - [ ] **Step 6: Commit.**
 ```bash
-git add src/cascade-rules/kyc-gate.ts src/routes/admin.ts migrations/511_market_access_flag.sql tests/kyc-gate.test.ts
+git add src/cascade-rules/kyc-gate.ts src/routes/admin.ts migrations/513_market_access_flag.sql tests/kyc-gate.test.ts
 git commit -m "feat(kyc): submission→admin inbox + decision→market-access cascade"
 ```
 
@@ -489,7 +524,66 @@ BASE=http://localhost:8787 npm run test:browser -- onboarding-kyc
 
 ---
 
-## Programme-level verification (after all three batches)
+# BATCH 4 — Guided Tour & Sandbox
+
+**Why fourth:** Batches 1-3 make onboarding *provision* and *gate* correctly, but the user's intent is a "full digital onboard, and guide through the system, as well as the use of the features." A populated workspace still needs a guided walkthrough of the surfaces (Horizon / Atlas / Ledger / Thread / Deal Desk) and a safe place to practise transactions. Batch 4 adds first-run per-component intro cards (the guided tour) and an isolated sandbox demo tenant so new users can exercise features without touching real tenant data.
+
+**Batch 4 done when:** a first-run user gets a dismissible, sequenced set of inline intro cards anchored to each Meridian surface (no modal takeover, respects `prefers-reduced-motion`), tracked per-user so they show once; and a sandbox toggle lets a user practise initiating a chain/deal against a clearly-isolated demo tenant that never writes synthetic data into a real tenant.
+
+---
+
+### Task 4.1 (B3): First-run per-component intro cards (guided tour)
+
+**Files:**
+- Create: `pages/src/meridian/GuidedTour.tsx` (sequenced inline anchored cards), `pages/src/meridian/useTourState.ts`
+- Modify: `src/routes/onboarding.ts` (add `GET|POST /api/onboarding/tour` — per-user seen-step ledger) or reuse the generic `oe_onboarding_state` ux-state track for dismissals (decide at execution; the ux-state track is the right home for first-run UI dismissals per Task 1.7)
+- Test: `pages/tests/browser/onboarding-tour.spec.ts`
+
+The tour is NOT an AI popup and NOT a modal wizard. Each surface (`/horizon`, `/atlas`, `/ledger/:chainKey`, `/thread/...`, `/deals`) shows one inline anchored card on first visit explaining what the surface does + the single next action, with "Got it" (dismiss) and "Skip tour". Seen-state persisted per user so each card shows once. AA contrast, `scale(0.97)` active feedback, honour `prefers-reduced-motion` (no slide animation when set).
+
+- [ ] **Step 1: Playwright flow** — fresh user lands on `/horizon`, the Horizon intro card renders anchored (not a full-screen modal); click "Got it" → card dismisses and does not reappear on reload; navigate to `/atlas` → Atlas card renders; "Skip tour" suppresses all remaining cards.
+- [ ] **Step 2: Run — FAIL** (component absent). `BASE=http://localhost:8787 npm run test:browser -- onboarding-tour`
+- [ ] **Step 3: Build `GuidedTour.tsx` + `useTourState.ts`** + persist seen-steps (route or ux-state track).
+- [ ] **Step 4: `npm run check:pages` + spec → PASS.**
+- [ ] **Step 5: Commit.**
+```bash
+git add pages/src/meridian/GuidedTour.tsx pages/src/meridian/useTourState.ts pages/tests/browser/onboarding-tour.spec.ts
+git commit -m "feat(onboarding): first-run guided tour — inline anchored intro cards per surface"
+```
+
+---
+
+### Task 4.2 (B5): Sandbox demo tenant for practice transactions
+
+**Files:**
+- Modify: `src/utils/tenant.ts` (recognise a reserved `sandbox` tenant id namespace), `src/routes/onboarding.ts` (add `POST /api/onboarding/sandbox/enter` — provision/reset a per-user sandbox tenant)
+- Create: `src/cascade-rules/sandbox-seed.ts` (seed demo entities into the sandbox tenant only)
+- Test: `tests/sandbox-tenant.test.ts`
+
+**Hard isolation invariant (load-bearing):** sandbox practice transactions live in a reserved demo tenant (e.g. `sandbox_<participant_id>`) and NEVER INSERT synthetic kWh/billing/telemetry into a real tenant. NXT Energy's Goldrush C&I sites and every real tenant stay untouched. The sandbox is read-isolated and write-isolated through the existing `resolveTenant` fence.
+
+- [ ] **Step 1: Failing test** — `POST /api/onboarding/sandbox/enter` creates a tenant id in the `sandbox_*` namespace owned by the caller, seeds ≥1 demo entity into it, and a write performed in sandbox context is invisible to the caller's real tenant (and vice-versa). A real-tenant query returns zero sandbox rows.
+- [ ] **Step 2: Run — FAIL.** `npx vitest run tests/sandbox-tenant.test.ts`
+- [ ] **Step 3: Implement** — reserved `sandbox_<participant_id>` tenant; `sandbox-seed.ts` seeds demo entities (clearly flagged `is_demo=1` / sandbox tenant) on enter; re-enter resets idempotently. All reads/writes tenant-fenced.
+- [ ] **Step 4: Run — PASS.**
+- [ ] **Step 5: Commit.**
+```bash
+git add src/utils/tenant.ts src/routes/onboarding.ts src/cascade-rules/sandbox-seed.ts tests/sandbox-tenant.test.ts
+git commit -m "feat(onboarding): isolated sandbox demo tenant for practice transactions"
+```
+
+---
+
+## HARD-GATES — explicit sign-off required before building
+
+These two items are **designed in this plan but NOT built autonomously.** Surface each for explicit user sign-off; build only after approval.
+
+- **B6 — KYC PII-at-rest encryption (Task 3.1 gated).** Director IDs, tax-clearance, BBBEE certs, proof-of-address are sensitive PII under POPIA. The table schema is buildable; the *encryption strategy* (column-level AEAD vs envelope-encryption with a KMS/secret vs R2-side encryption + access logging) must be chosen and signed off before any real PII is stored. Present options + recommendation; do not enable plaintext PII storage on a real tenant without sign-off.
+- **B7 — Live email delivery (Task 2.1 gated).** The dev no-op seam + `oe_email_outbox` audit table are buildable now. Wiring the live MailChannels `fetch` path (or any provider) requires provider/domain confirmation (SPF/DKIM/DMARC, sending domain, MailChannels account) + approval. The live path stays behind `env.ENVIRONMENT === 'production' && env.EMAIL_FROM` and is NOT enabled until then.
+
+---
+
+## Programme-level verification (after all batches)
 
 ```bash
 cd open-energy-platform
@@ -497,7 +591,7 @@ npm test                 # full vitest green
 npm run check            # backend 0 TS errors
 npm run check:pages      # SPA 0 TS errors
 BASE=http://localhost:8787 npm run test:browser -- onboarding   # all three flows
-# Migrations 508–511 apply cleanly --local; then --remote per CI band discipline.
+# Migrations 510–513 apply cleanly --local (509 already landed); then --remote per CI band discipline.
 ```
 
 End-to-end manual smoke (one new tenant, cold start):
