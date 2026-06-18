@@ -33,6 +33,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser, hashPassword } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { sendEmail } from '../utils/email';
+import { resolveOrCreateTenant } from '../utils/tenant';
 
 const rbac = new Hono<HonoEnv>();
 
@@ -686,17 +687,43 @@ async function approveRegistration(
     return c.json({ success: false, error: 'Invalid role' }, 400);
   }
 
+  // Resolve which invitation (if any) this approval is accepting. Hoisted here
+  // because tenant resolution below depends on it; reused later for the
+  // invitation-accept update and the role scaffold seed.
+  const invId = invitationId ?? reg.invitation_id;
+
+  // Resolve the tenant for the new participant.
+  let tenantId = 'default';
+  if (invId) {
+    // Invitee inherits the inviter's tenant.
+    const inv = await c.env.DB.prepare(
+      `SELECT invited_by FROM rbac_invitations WHERE id = ?`
+    ).bind(invId).first() as any;
+    if (inv?.invited_by) {
+      const inviter = await c.env.DB.prepare(
+        `SELECT tenant_id FROM participants WHERE id = ?`
+      ).bind(inv.invited_by).first() as any;
+      tenantId = inviter?.tenant_id || 'default';
+    }
+  } else {
+    // Primary self-register bootstraps (or rejoins) its company tenant.
+    tenantId = await resolveOrCreateTenant(c.env, {
+      company_name: reg.company_name,
+      reg_number: reg.reg_number,
+    });
+  }
+
   // Create participant account
   const participantId = genId();
   await c.env.DB.prepare(`
     INSERT INTO participants
       (id, email, password_hash, name, company_name, role, status,
-       phone, org_reg_num, email_verified, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, datetime('now'))
+       phone, org_reg_num, email_verified, tenant_id, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, datetime('now'))
   `).bind(
     participantId, reg.email, reg.password_hash, reg.full_name,
     reg.company_name ?? null, role, reg.phone ?? null, reg.reg_number ?? null,
-    emailVerified ? 1 : 0,
+    emailVerified ? 1 : 0, tenantId,
   ).run();
 
   // Mark registration converted
@@ -707,7 +734,6 @@ async function approveRegistration(
   `).bind(reviewerId ?? participantId, regId).run();
 
   // Mark invitation accepted if applicable
-  const invId = invitationId ?? reg.invitation_id;
   if (invId) {
     await c.env.DB.prepare(`
       UPDATE rbac_invitations

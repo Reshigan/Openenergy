@@ -13,6 +13,7 @@
 // caller's tenant.
 // ═══════════════════════════════════════════════════════════════════════════
 import { Context } from 'hono';
+import type { D1Database } from '@cloudflare/workers-types';
 import { HonoEnv, AppError, ErrorCode, AuthContext } from './types';
 
 export function getAuth(c: Context<HonoEnv>): AuthContext {
@@ -111,6 +112,50 @@ export async function assertResourceTenant(
   if (targetTenant !== callerTenant) {
     throw new AppError(ErrorCode.FORBIDDEN, 'Cross-tenant access denied', 403);
   }
+}
+
+/**
+ * Resolve (or create) the tenant for a primary self-registering participant.
+ *
+ * Self-register with no invitation should bootstrap a NEW tenant keyed off the
+ * company's identity so the first member is not dumped into the shared
+ * 'default' tenant. A deterministic id/slug derived from the same key makes
+ * this idempotent: a second self-register for the same company rejoins the
+ * same tenant instead of creating a duplicate.
+ *
+ * Key precedence: a non-empty trimmed reg_number, else a non-empty trimmed
+ * company_name. Absent both, returns 'default' (preserves today's behaviour
+ * for company-less self-registers).
+ *
+ * SECURITY INVARIANT: table/column names in the SQL come only from this static
+ * string literal; the request-derived slug/id/display_name values bind ONLY
+ * through '?' placeholders. No request value is interpolated into SQL text.
+ */
+export async function resolveOrCreateTenant(
+  env: { DB: D1Database },
+  opts: { company_name?: string | null; reg_number?: string | null },
+): Promise<string> {
+  const regNumber = (opts.reg_number ?? '').trim();
+  const companyName = (opts.company_name ?? '').trim();
+  const key = regNumber || companyName;
+  if (!key) return 'default';
+
+  const slug = key
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48);
+  if (!slug) return 'default';
+
+  const id = `t_${slug}`;
+  const displayName = companyName || regNumber || slug;
+
+  await env.DB.prepare(
+    `INSERT OR IGNORE INTO tenants (id, slug, display_name, created_at)
+     VALUES (?, ?, ?, datetime('now'))`,
+  ).bind(id, slug, displayName).run();
+
+  return id;
 }
 
 /**
