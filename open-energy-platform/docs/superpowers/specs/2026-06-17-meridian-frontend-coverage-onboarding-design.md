@@ -1,5 +1,12 @@
 # Meridian Frontend Coverage, Onboarding & Neatening — Design
 
+> **CORRECTION (2026-06-18) — verified baseline supersedes inline figures below.**
+> Measured by importing `MERIDIAN_CHAINS` + `ROLES` directly (not regex): **207 chains** (not 168),
+> **392 tiles · 352 reachable (89.8%) · 0 dangling · 0 route-dead · 40 dead** (surface-class, already hidden).
+> There is **no dangling-404 bug**; the "44 dangling / ~39 false-positives" figures were an undercount artifact.
+> The reachability hardening (WS-A5 / U2) ships as defense-in-depth + a CI ratchet, not a 404 fix, and there are
+> **no roleData repoints**. See `docs/superpowers/plans/2026-06-18-meridian-reachability-ia.md`.
+
 > **Status:** Design / spec. Plan-first gate. No implementation until this spec is approved and an implementation plan is written (`writing-plans`).
 > **Date:** 2026-06-17 · **Branch:** `meridian-redesign` · **Target:** prod `oe.vantax.co.za`
 
@@ -7,7 +14,7 @@
 
 Make **every** backend capability reachable and usable from the Meridian frontend, give **every role and every component** a full digital onboarding, and neaten all frontend elements so any role can complete a journey without friction. Resolve the headline complaint verbatim: Atlas-everywhere clutter, dead pages, "everything shown to every role", left-rail "W-number" text, unclickable labels, hard IPP journeys, missing dropdowns for DB-backed fields, weak O&M predictive analysis.
 
-This is the front-door layer on top of the existing 168-chain backend — no chain rewrites. It exposes, guides, and neatens what already exists.
+This is the front-door layer on top of the existing 207-chain backend — no chain rewrites. It exposes, guides, and neatens what already exists.
 
 > **Companion specs (evidence/intent layer):**
 > - [`meridian-ux/`](meridian-ux/README.md) — the **entire intended user experience**, detailed: 8 surfaces, 12 roles (signature journey + full tile/lane inventory), 4 cross-cutting systems (~15.4k lines). Serves "this must be detailed for the entire user experience."
@@ -30,7 +37,7 @@ This is the front-door layer on top of the existing 168-chain backend — no cha
 
 ## Current state (audit w08jywqqh, 22 agents)
 
-Deterministic matrix: **168 registry chains · 12 roles · 124 surface keys · 63 surface bodies.** Findings verified against source.
+Deterministic matrix: **207 registry chains · 12 roles · 124 surface keys · 63 surface bodies.** Findings verified against source.
 
 ### Reachability gaps
 
