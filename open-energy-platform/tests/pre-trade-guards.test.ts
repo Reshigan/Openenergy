@@ -370,6 +370,51 @@ describe('evaluateOrder · display size', () => {
   });
 });
 
+describe('evaluateOrder · market-access guard', () => {
+  it('rejects a read_only participant with MARKET_ACCESS_REQUIRED', () => {
+    const r = evaluateOrder(order(), snap({ participant_market_access: 'read_only' }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('MARKET_ACCESS_REQUIRED');
+  });
+
+  it('rejects an unverified participant with MARKET_ACCESS_REQUIRED', () => {
+    const r = evaluateOrder(order(), snap({ participant_market_access: 'unverified' }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('MARKET_ACCESS_REQUIRED');
+  });
+
+  it('a full_trading participant passes the market-access guard', () => {
+    const r = evaluateOrder(order(), snap({ participant_market_access: 'full_trading' }));
+    expect(r.ok).toBe(true);
+  });
+
+  it('a certificate_only participant is NOT blocked by this guard (fenced at route level)', () => {
+    const r = evaluateOrder(order(), snap({ participant_market_access: 'certificate_only' }));
+    expect(r.ok).toBe(true);
+  });
+
+  it('an undefined market-access flag passes (back-compat)', () => {
+    const r = evaluateOrder(order(), snap());
+    expect(r.ok).toBe(true);
+  });
+
+  it('the market-access guard does not short-circuit earlier guards', () => {
+    // Volume sanity runs before the access gate, so a negative volume still
+    // wins even when access has been revoked.
+    const r = evaluateOrder(order({ volume_mwh: -5 }), snap({ participant_market_access: 'read_only' }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('INVALID_VOLUME');
+  });
+
+  it('the guard runs before market-state checks', () => {
+    // The access gate sits before the market-state checks, so a read_only
+    // participant on a closed book still gets MARKET_ACCESS_REQUIRED.
+    const r = evaluateOrder(order(), snap({ participant_market_access: 'read_only', market_state: 'closed' }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason_code).toBe('MARKET_ACCESS_REQUIRED');
+  });
+});
+
 describe('suggestedSizeMwh', () => {
   it('returns null when there is no mark price', () => {
     expect(suggestedSizeMwh(snap({ mark_price_zar_mwh: null }), 'buy')).toBeNull();

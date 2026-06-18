@@ -317,6 +317,13 @@ function deterministicFallback(input: ExplainerInput): { human_explanation: stri
           { label: 'Contact compliance', action: 'contact_support' },
         ],
       };
+    case 'MARKET_ACCESS_REQUIRED':
+      return {
+        human_explanation: 'Your account does not currently have market access, so new orders are blocked. This usually means KYC verification is incomplete or your access has been restricted. Complete verification or contact support to restore trading.',
+        suggested_remediations: [
+          { label: 'Contact support', action: 'contact_support' },
+        ],
+      };
     case 'POST_ONLY_WOULD_CROSS': {
       const opp = input.side === 'buy'
         ? Number((input.snapshot as { best_ask_zar_mwh?: number | null }).best_ask_zar_mwh ?? 0)

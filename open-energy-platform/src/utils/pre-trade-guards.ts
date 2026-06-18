@@ -39,6 +39,8 @@ export const REJECTION_CODES = [
   'MARGIN_GATE_BLOCKED',
   // ─── W2 — regulatory trading block (FSCA kill-switch / market-abuse STOR) ──
   'ALGO_TRADING_BLOCKED',
+  // ─── Onboarding/KYC - market-access flag (participant_market_access) ────
+  'MARKET_ACCESS_REQUIRED',
 ] as const;
 
 export type RejectionCode = typeof REJECTION_CODES[number];
@@ -99,6 +101,14 @@ export interface RiskSnapshot {
   // by loadRiskSnapshot via direct participant_id match OR the
   // oe_trading_party_link bridge. Undefined treated as not-blocked.
   trading_block_active?: boolean;
+  // ─── Onboarding/KYC - participant market-access flag ──────────────────
+  // From participants.participant_market_access (migration 472). The admin
+  // KYC decision handler sets 'read_only' on rejection, 'full_trading' on
+  // approval. 'certificate_only' is fenced separately at the route by
+  // certOnlyGuard; this order-engine guard only blocks revoked/unverified
+  // access. Undefined treated as full access for back-compat with callers
+  // and tests that predate the flag.
+  participant_market_access?: 'full_trading' | 'certificate_only' | 'read_only' | 'unverified' | null;
 }
 
 export type GuardResult =
@@ -161,7 +171,19 @@ export function evaluateOrder(order: ProposedOrder, snapshot: RiskSnapshot): Gua
     };
   }
 
-  // 2a. Regulatory trading block — FSCA algo kill-switch or market-abuse STOR
+  // 2a. Market-access flag - a participant whose access has been revoked to
+  // read_only (e.g. after a KYC rejection) or who is unverified cannot place
+  // new orders. certificate_only is fenced at the route by certOnlyGuard, not
+  // here. Undefined/null/full_trading pass through.
+  if (snapshot.participant_market_access === 'read_only' || snapshot.participant_market_access === 'unverified') {
+    return {
+      ok: false,
+      reason_code: 'MARKET_ACCESS_REQUIRED',
+      detail: 'This account does not have market access. Complete KYC verification to enable trading.',
+    };
+  }
+
+  // 2b. Regulatory trading block - FSCA algo kill-switch or market-abuse STOR
   // freeze. A participant-level hard stop enforced regardless of market/mark
   // state. Resolved in loadRiskSnapshot via direct id or the party-link bridge.
   if (snapshot.trading_block_active === true) {
@@ -172,7 +194,7 @@ export function evaluateOrder(order: ProposedOrder, snapshot: RiskSnapshot): Gua
     };
   }
 
-  // 2b. Clearing margin gate — block if member has overdue margin call.
+  // 2c. Clearing margin gate - block if member has overdue margin call.
   // Operationally upstream of credit/collateral checks because a margin
   // breach is a stronger signal than transient headroom.
   if (snapshot.margin_gate_status === 'blocked') {
