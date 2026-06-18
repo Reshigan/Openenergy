@@ -13,14 +13,22 @@
   --petrol-deep: oklch(0.30 0.06 205);
   --petrol-tint: oklch(0.94 0.015 200);
   --amber: oklch(0.70 0.13 70);
-  --amber-deep: oklch(0.55 0.12 70);
+  /* Darker amber for TEXT/borders only — at L0.55 amber copy on --raised reads ~3.4:1
+     (fails WCAG AA 4.5:1). L≈0.47 lifts it to ~4.9:1. Caution dots/fills keep --amber;
+     warning copy + emphasis borders use --amber-deep. CTAs use --petrol, never amber. */
+  --amber-deep: oklch(0.47 0.115 70);
+  --amber-tint: oklch(0.965 0.03 80);
   --oxide: oklch(0.50 0.18 30);
+  /* Darker oxide for danger TEXT — --oxide (L0.50) on --oxide-tint reads ~4.0:1
+     (just under AA). L≈0.42 clears it at ~5.5:1. Fills/borders keep --oxide. */
+  --oxide-deep: oklch(0.42 0.17 30);
   --oxide-tint: oklch(0.95 0.02 30);
   --moss: oklch(0.55 0.09 150);
   /* Darker moss for TEXT only — lighter --moss reads ~3.3:1 on --raised paper
      (fails WCAG AA 4.5:1). L≈0.46 lifts contrast to ~6.5:1 → clears AA. Dots/fills
      keep --moss; .sweet text and any small moss copy uses --moss-deep. */
   --moss-deep: oklch(0.46 0.085 150);
+  --moss-tint: oklch(0.955 0.028 150);
   --ease: cubic-bezier(0.23, 1, 0.32, 1);
   font-family: 'Archivo', 'IBM Plex Sans', sans-serif;
   background: var(--paper); color: var(--ink);
@@ -64,7 +72,7 @@
   align-self:start; display:inline-flex; align-items:center; gap:4px;
   font-size:11.5px; font-weight:700; letter-spacing:0.02em;
   color:var(--petrol-deep); text-decoration:none; padding:3px 8px; margin:0 6px;
-  border:1px solid oklch(0.40 0.075 200 / 0.35); border-radius:7px;
+  border:1px solid oklch(0.40 0.075 200 / 0.35); border-radius:6px;
   background:var(--petrol-tint); transition:background 120ms var(--ease), box-shadow 120ms var(--ease);
 }
 .mer .board-new:hover { background:oklch(0.40 0.075 200 / 0.16); }
@@ -311,6 +319,9 @@
   transition:transform 140ms var(--ease), background 140ms;
 }
 .mer .btn:active { transform:scale(0.97); }
+.mer .btn:disabled, .mer .btn[disabled], .mer .btn[aria-disabled="true"] {
+  opacity:0.5; cursor:not-allowed; transform:none; pointer-events:none;
+}
 .mer .btn.pri { background:var(--petrol); color:white; }
 .mer .btn.pri:hover { background:var(--petrol-deep); }
 .mer .btn.ghost { background:transparent; border-color:var(--line); color:var(--ink2); }
@@ -895,4 +906,50 @@
   .mer .mer-gs-bar-fill { transition: none; }
   .mer .mer-gs-ai-cta { transition: none; }
   .mer .mer-gs-ai-cta:active { transform: none; }
+}
+
+/* ── Focus-visible rings (a11y floor) ──────────────────────────────────────
+   Keyboard focus must be visible on every interactive control. Mouse/touch
+   focus stays ring-free (:focus-visible only). Petrol outline matches the
+   chrome's existing focus idiom (cf. .board-new, .palette input, .new-txn .fn). */
+.mer .tile:focus-visible,
+.mer .btn:focus-visible,
+.mer .dcard:focus-visible,
+.mer .ocard:focus-visible,
+.mer .sweet-toggle:focus-visible,
+.mer .fn:focus-visible,
+.mer .mer-gs-action:focus-visible,
+.mer .mer-gs-ai-cta:focus-visible,
+.mer .duty-rail:focus-visible,
+.mer .duty-collapse:focus-visible,
+.mer.ledger .pill:focus-visible,
+.mer.ledger .lcard:focus-visible {
+  outline:2px solid var(--petrol); outline-offset:2px;
+}
+/* Controls inside tight / scrolling containers use an inset ring so the
+   outline isn't clipped by the container edge. */
+.mer .hit:focus-visible,
+.mer .mer-gs-x:focus-visible {
+  outline:2px solid var(--petrol); outline-offset:-2px;
+}
+
+/* ── Skeleton loaders ──────────────────────────────────────────────────────
+   Layout-matched placeholders (interactive-states rubric: skeletal loaders,
+   not spinners). Shimmer sweeps L→R; reduced-motion users get a static block. */
+.mer .skel {
+  position:relative; overflow:hidden; border-radius:6px;
+  background:oklch(0.92 0.008 85);
+}
+.mer .skel::after {
+  content:''; position:absolute; inset:0; transform:translateX(-100%);
+  background:linear-gradient(90deg, transparent, oklch(0.985 0.004 85 / 0.7), transparent);
+  animation:mer-shimmer 1.25s var(--ease) infinite;
+}
+.mer .skel-line { height:12px; margin:0 0 9px; }
+.mer .skel-line.sm { height:10px; }
+.mer .skel-line.lg { height:16px; }
+.mer .skel-card { height:84px; margin:0 0 12px; border-radius:8px; }
+@keyframes mer-shimmer { to { transform:translateX(100%); } }
+@media (prefers-reduced-motion:reduce) {
+  .mer .skel::after { animation:none; }
 }
