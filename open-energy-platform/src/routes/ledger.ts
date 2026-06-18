@@ -89,6 +89,13 @@ export const LOOKUP_SOURCES: Record<string, string> = {
   // Lender credit facilities (W53 origination) — picker for facility_id fields.
   'lender-facilities':
     'SELECT id, facility_name AS label FROM oe_credit_facility_applications ORDER BY facility_name LIMIT 500',
+  // Grid operators / BRPs — participants filtered to grid_operator role. Backs
+  // imbalance brp_id, unserved-energy grid_operator_id, demand-response operator_id.
+  'grid-operators':
+    "SELECT id, name AS label FROM participants WHERE role = 'grid_operator' ORDER BY name LIMIT 500",
+  // Support tickets — backs CSAT ticket_id. ticket_number is UNIQUE NOT NULL.
+  'support-tickets':
+    'SELECT id, ticket_number AS label FROM support_tickets ORDER BY ticket_number LIMIT 500',
 };
 
 ledger.get('/lookup/:source', async (c) => {

@@ -4725,7 +4725,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Open settlement period',
       path: '/api/grid/imbalance-settlement/chain',
       fields: [
-        { key: 'brp_id', label: 'BRP', type: 'string' },
+        { key: 'brp_id', label: 'BRP', type: 'lookup', source: '/api/ledger/lookup/grid-operators' },
         { key: 'brp_label', label: 'BRP label', type: 'string' },
         { key: 'brp_voltage_class', label: 'BRP voltage class', type: 'string' },
         { key: 'market_zone', label: 'Market zone', type: 'string' },
@@ -6945,7 +6945,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'New Enforcement action',
       path: '/api/regulator/enforcement-action-s35/chain',
       fields: [
-        { key: 'respondent_party_id', label: 'Respondent Party ID', type: 'string', placeholder: 'ipp-001' },
+        { key: 'respondent_party_id', label: 'Respondent Party', type: 'lookup', source: '/api/ledger/lookup/participants' },
         { key: 'respondent_party_label', label: 'Respondent Name', type: 'string', placeholder: 'Demo Wind IPP (Pty) Ltd' },
         { key: 'triggering_event_type', label: 'Triggering Event Type', type: 'enum', options: ['inspection_finding', 'complaint', 'sla_breach_referral', 'regulator_initiated', 'criminal_intelligence'] },
         { key: 'triggering_reason_summary_text', label: 'Reason Summary', type: 'string', placeholder: 'Repeated NRS 097-2 power-quality breach at PCC' },
@@ -12826,7 +12826,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       path: '/api/csat-records',
       fields: [
         { key: 'participant_id', label: 'Participant', type: 'lookup', source: '/api/ledger/lookup/participants' },
-        { key: 'ticket_id', label: 'Ticket', type: 'string' },
+        { key: 'ticket_id', label: 'Ticket', type: 'lookup', source: '/api/ledger/lookup/support-tickets' },
         { key: 'support_tier', label: 'Support tier', type: 'enum',
           options: ['p1_critical', 'p2_high', 'p3_medium', 'p4_low'] },
       ],
@@ -16685,7 +16685,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
         { key: 'meter_serial', label: 'Meter serial', type: 'string', required: true },
         { key: 'site_id', label: 'Site', type: 'lookup', source: '/api/ledger/lookup/om-sites', required: true },
         { key: 'meter_class', label: 'Meter class', type: 'enum', options: ['hv_bulk', 'bulk', 'prepaid', 'post_paid'] },
-        { key: 'owner_id', label: 'Owner', type: 'string' },
+        { key: 'owner_id', label: 'Owner', type: 'lookup', source: '/api/ledger/lookup/participants' },
         { key: 'make_model', label: 'Make / model', type: 'string' },
         { key: 'communication_tech', label: 'Communication tech', type: 'string' },
       ],
@@ -16779,7 +16779,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
       label: 'Lodge unserved-energy claim',
       path: '/api/unserved-energy-claims',
       fields: [
-        { key: 'grid_operator_id', label: 'Grid operator', type: 'string', required: true },
+        { key: 'grid_operator_id', label: 'Grid operator', type: 'lookup', source: '/api/ledger/lookup/grid-operators', required: true },
         { key: 'event_date', label: 'Event date', type: 'date', required: true },
         { key: 'customer_category', label: 'Customer category', type: 'enum', required: true, options: ['industrial', 'commercial', 'municipal', 'residential', 'scheduled'] },
         { key: 'unserved_mwh', label: 'Unserved energy', type: 'number', required: true, unit: 'MWh' },
@@ -16888,7 +16888,7 @@ export const MERIDIAN_CHAINS: ChainDescriptor[] = [
           options: ['real_time', 'day_ahead', 'interruptible_tariff', 'frequency_response'] },
         { key: 'requested_mw', label: 'Requested shed', type: 'number', unit: 'MW' },
         { key: 'incentive_rate_per_mw', label: 'Incentive rate', type: 'number', unit: 'ZAR' },
-        { key: 'operator_id', label: 'Operator', type: 'string' },
+        { key: 'operator_id', label: 'Operator', type: 'lookup', source: '/api/ledger/lookup/grid-operators' },
         { key: 'activation_ref', label: 'Activation reference', type: 'string' },
         { key: 'notification_type', label: 'Notification type', type: 'enum', options: ['day_ahead', 'real_time', 'test'] },
         { key: 'reason', label: 'Notes', type: 'string' },
