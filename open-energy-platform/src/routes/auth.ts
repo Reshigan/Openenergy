@@ -26,6 +26,7 @@ import {
   randomId,
 } from '../utils/auth-tokens';
 import { randomBase32Secret, otpauthUri, totpVerify, generateBackupCodes } from '../utils/totp';
+import { sendEmail } from '../utils/email';
 
 const auth = new Hono<HonoEnv>();
 
@@ -57,9 +58,9 @@ auth.post('/register', async (c) => {
     VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
   `).bind(participantId, email, passwordHash, name, company_name || null, role, new Date().toISOString()).run();
 
-  // Token is generated and persisted in DB for later delivery via email.
-  // It is intentionally NOT returned in the response — see comment below.
-  await createEmailVerificationToken(c.env.DB, participantId);
+  // Token is generated and persisted in DB, then delivered via the email seam.
+  // It is intentionally NOT returned in the response - see comment below.
+  const verificationToken = await createEmailVerificationToken(c.env.DB, participantId);
 
   await fireCascade({
     event: 'auth.registered',
@@ -69,6 +70,10 @@ auth.post('/register', async (c) => {
     data: { email, name, role },
     env: c.env,
   });
+
+  // Deliver the verification link. In dev/test this is a no-op that still
+  // records the outbox row; it never throws on a transport failure.
+  await sendEmail(c.env, { to: email, template: 'verify', data: { token: verificationToken, name } });
 
   return c.json({
     success: true,
