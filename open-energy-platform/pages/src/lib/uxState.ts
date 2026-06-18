@@ -49,20 +49,58 @@ export function useSavedFilters(surface: string) {
   return { own, shared, save, remove, reload: load, busy };
 }
 
+// Wizard track (/api/onboarding/*, backed by participants.onboarding_* +
+// oe_onboarding_provisioning_log) is the single source of truth for "did the
+// user finish onboarding". The first-run tour's per-step dismissal is ephemeral
+// per-device UI state, so it lives in localStorage - this hook makes ZERO calls
+// to the legacy /ux-state/onboarding store.
+const TOUR_LS_KEY = 'oe.onboarding.tour.completed';
+
+function readTourCompleted(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = window.localStorage?.getItem(TOUR_LS_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? new Set(arr.filter((k) => typeof k === 'string')) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
 export function useOnboarding() {
-  const [completed, setCompleted] = useState<Set<string>>(new Set());
+  const [completed, setCompleted] = useState<Set<string>>(() => readTourCompleted());
+  const [wizardCompleted, setWizardCompleted] = useState<boolean | null>(null);
+
+  // Completion signal comes from the wizard track. data.completed is unwrapped
+  // from the /api/onboarding/state envelope.
   const load = useCallback(async () => {
-    const r = await api.get('/ux-state/onboarding').catch(() => null);
-    const j = r?.data;
-    if (j?.success) setCompleted(new Set(j.data.completed));
+    setCompleted(readTourCompleted());
+    const r = await api.get('/onboarding/state').catch(() => null);
+    if (!r) return null; // tolerate failure - leave wizardCompleted as-is.
+    const body = r.data?.data ?? r.data;
+    if (body && typeof body.completed === 'boolean') return body.completed as boolean;
+    return null;
   }, []);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    let alive = true;
+    void load().then((c) => { if (alive && c !== null) setWizardCompleted(c); });
+    return () => { alive = false; };
+  }, [load]);
+
+  // Per-step dismissal is persisted to localStorage only (no network).
   const complete = useCallback(async (stepKey: string) => {
-    setCompleted((prev) => new Set([...prev, stepKey]));
-    await api.post(`/ux-state/onboarding/${encodeURIComponent(stepKey)}/complete`).catch(() => null);
+    setCompleted((prev) => {
+      const next = new Set([...prev, stepKey]);
+      if (typeof window !== 'undefined') {
+        try { window.localStorage?.setItem(TOUR_LS_KEY, JSON.stringify([...next])); } catch { /* private mode */ }
+      }
+      return next;
+    });
   }, []);
+
   const isComplete = useCallback((stepKey: string) => completed.has(stepKey), [completed]);
-  return { completed, complete, isComplete, reload: load };
+  return { completed, complete, isComplete, reload: load, wizardCompleted };
 }
 
 export function useHelpDismissal(key: string) {

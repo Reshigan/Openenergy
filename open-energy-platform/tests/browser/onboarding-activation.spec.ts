@@ -54,6 +54,11 @@ async function seedToken(page: import('@playwright/test').Page) {
   });
   await page.addInitScript((tok) => {
     localStorage.setItem('token', tok as string);
+    // Suppress the global OnboardingTour overlay for these specs - they
+    // exercise the GettingStarted card, not the first-run tour. Without this
+    // the tour (which renders once the wizard is complete) can paint on top of
+    // the card and intercept the "Do this" click.
+    localStorage.setItem('oe.onboarding.skipped', '1');
   }, tokenValue);
 }
 
@@ -156,4 +161,40 @@ test('Getting-Started card shows checklist progress and a 1-click AI next step',
 
   const real = errors.filter((e) => !isBenign(e));
   expect(real, real.join('\n')).toEqual([]);
+});
+
+test('board never calls the disjoint /ux-state/onboarding store', async ({ page, baseURL }) => {
+  await seedToken(page);
+
+  // Same deterministic mocks the card / page depend on.
+  await page.route('**/api/onboarding/checklist/**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(CHECKLIST_PAYLOAD) });
+  });
+  await page.route('**/api/onboarding/state', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(STATE_PAYLOAD) });
+  });
+  await page.route('**/api/horizon/**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(HORIZON_PAYLOAD) });
+  });
+
+  // Trip-wire: the board must NOT touch the legacy oe_onboarding_state store.
+  let uxStateHit = false;
+  await page.route('**/ux-state/onboarding**', async (route) => {
+    uxStateHit = true;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: { completed: [] } }),
+    });
+  });
+
+  await page.goto(`${baseURL}/horizon`, { waitUntil: 'load' });
+
+  // Let the board settle past the skeleton + card render.
+  await expect(page.getByText('1 / 3')).toBeVisible({ timeout: 20_000 });
+
+  // Give any late effect a tick to fire.
+  await page.waitForTimeout(500);
+
+  expect(uxStateHit, 'board must not call the disjoint /ux-state/onboarding store').toBe(false);
 });

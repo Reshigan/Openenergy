@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════════════════
 // ux-state — per-user UI state surfaces:
 //   • Saved filters per workstation surface (name + JSON)
-//   • First-run onboarding completion ticks
+//   • First-run onboarding completion ticks (SUPERSEDED - see Onboarding section)
 //   • Inline help / tooltip dismissals
 //
 // Mounted at /api/ux-state. All endpoints scoped to the caller.
@@ -70,6 +70,12 @@ r.delete('/filters/:id', async (c) => {
 });
 
 // ─── Onboarding ────────────────────────────────────────────────────────
+// SUPERSEDED: the wizard track at /api/onboarding/* (backed by
+// participants.onboarding_* + oe_onboarding_provisioning_log) is now the
+// single source of truth for onboarding progress. These oe_onboarding_state
+// endpoints are retained only for backward compatibility and are no longer
+// read or written by the SPA onboarding surface (the first-run tour's per-step
+// dismissal now lives in localStorage; completion comes from /api/onboarding/state).
 r.get('/onboarding', async (c) => {
   const user = getCurrentUser(c);
   const rows = await c.env.DB.prepare(

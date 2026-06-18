@@ -1,7 +1,9 @@
 // ════════════════════════════════════════════════════════════════════════
 // OnboardingTour — declarative first-run tour. Pass a sequence of steps;
-// each step's `key` is tracked per-user in /api/ux-state/onboarding so the
-// step only ever fires once. Skip closes the whole tour for the session.
+// each step's `key` is tracked per-device in localStorage (via useOnboarding)
+// so the step only ever fires once. The tour itself is gated on wizard
+// completion (the wizard track at /api/onboarding/* is the source of truth).
+// Skip closes the whole tour for the session.
 // ════════════════════════════════════════════════════════════════════════
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -22,7 +24,7 @@ type Props = {
 };
 
 export function OnboardingTour({ scope, steps }: Props) {
-  const { isComplete, complete, completed } = useOnboarding();
+  const { isComplete, complete, completed, wizardCompleted } = useOnboarding();
   const [skip, setSkip] = useState(false);
 
   const remaining = useMemo(() => {
@@ -38,6 +40,11 @@ export function OnboardingTour({ scope, steps }: Props) {
   if (typeof window !== 'undefined' && window.localStorage?.getItem('oe.onboarding.skipped') === '1') {
     return null;
   }
+
+  // A brand-new user who has not finished the wizard is driven by the
+  // GettingStarted card first - do not layer the platform UI tour on top until
+  // the wizard reports complete (null = still loading).
+  if (wizardCompleted !== true) return null;
 
   if (skip || remaining.length === 0) return null;
 
