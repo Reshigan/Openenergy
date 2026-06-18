@@ -13,6 +13,19 @@ function genId(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).substring(2, 8)}`;
 }
 
+// Structured reason codes for a KYC decision. Static allow-list - never derived
+// from request input; the value is validated against this set before any write.
+const KYC_DECISION_REASONS = [
+  'documents_complete',
+  'identity_verified',
+  'sanctions_clear',
+  'documents_missing',
+  'documents_illegible',
+  'identity_mismatch',
+  'sanctions_hit',
+  'other',
+] as const;
+
 function slugify(input: string): string {
   return input.toLowerCase().trim()
     .replace(/[^a-z0-9]+/g, '-')
@@ -139,20 +152,49 @@ admin.get('/kyc', async (c) => {
 
 admin.put('/kyc/:id', async (c) => {
   const user = getCurrentUser(c);
-  const id = c.req.param('id');
-  const { kyc_status, notes } = (await c.req.json().catch(() => ({}))) as Record<string, any>;
+  const id = c.req.param('id') as string;
+  const { kyc_status, notes, reason_code } = (await c.req.json().catch(() => ({}))) as Record<string, any>;
   if (!['pending', 'in_review', 'approved', 'rejected'].includes(kyc_status)) {
     return c.json({ success: false, error: 'Invalid kyc_status' }, 400);
   }
-  await c.env.DB.prepare('UPDATE participants SET kyc_status = ?, updated_at = datetime(\'now\') WHERE id = ?').bind(kyc_status, id).run();
+  // Reason codes are validated against a static allow-list before any write.
+  const hasReason = typeof reason_code === 'string' && reason_code.length > 0;
+  if (hasReason && !(KYC_DECISION_REASONS as readonly string[]).includes(reason_code)) {
+    return c.json({ success: false, error: 'Invalid reason_code' }, 400);
+  }
+  // A rejection MUST carry a structured reason - auditors need the "why".
+  if (kyc_status === 'rejected' && !(hasReason && (KYC_DECISION_REASONS as readonly string[]).includes(reason_code))) {
+    return c.json({ success: false, error: 'reason_code is required when rejecting' }, 400);
+  }
+
+  // Market access is derived from the decision and written AUTHORITATIVELY and
+  // SYNCHRONOUSLY here (the cascade registry runs async behind a QUEUE binding
+  // in production, so it cannot own anything a pre-trade guard reads). approved
+  // → full_trading, rejected → read_only; pending/in_review leave it unchanged.
+  const marketAccess: 'full_trading' | 'read_only' | null =
+    kyc_status === 'approved' ? 'full_trading'
+      : kyc_status === 'rejected' ? 'read_only'
+        : null;
+
+  if (marketAccess) {
+    await c.env.DB.prepare(
+      'UPDATE participants SET kyc_status = ?, participant_market_access = ?, updated_at = datetime(\'now\') WHERE id = ?',
+    ).bind(kyc_status, marketAccess, id).run();
+  } else {
+    await c.env.DB.prepare(
+      'UPDATE participants SET kyc_status = ?, updated_at = datetime(\'now\') WHERE id = ?',
+    ).bind(kyc_status, id).run();
+  }
   if (kyc_status === 'approved') {
     await c.env.DB.prepare('UPDATE participants SET status = \'active\' WHERE id = ? AND status = \'pending\'').bind(id).run();
   }
   await c.env.DB.prepare(`
     INSERT INTO audit_logs (id, actor_id, action, entity_type, entity_id, changes, created_at)
     VALUES (?, ?, 'admin.kyc_decision', 'participants', ?, ?, ?)
-  `).bind('al_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6), user.id, id, JSON.stringify({ kyc_status, notes }), new Date().toISOString()).run();
+  `).bind('al_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6), user.id, id, JSON.stringify({ kyc_status, notes, reason_code: reason_code ?? null, market_access: marketAccess }), new Date().toISOString()).run();
   // Notify the affected user.
+  const baseBody = notes || `Your KYC was ${kyc_status} by the admin team.`;
+  const notifBody = hasReason ? `${baseBody} (reason: ${reason_code})` : baseBody;
   await c.env.DB.prepare(`
     INSERT INTO notifications (id, participant_id, type, title, body, read, email_sent, created_at)
     VALUES (?, ?, 'kyc_update', ?, ?, 0, 0, ?)
@@ -160,9 +202,26 @@ admin.put('/kyc/:id', async (c) => {
     'ntf_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
     id,
     `KYC status: ${kyc_status}`,
-    notes || `Your KYC was ${kyc_status} by the admin team.`,
+    notifBody,
     new Date().toISOString(),
   ).run();
+  // Decision cascade: closes the admin-inbox review action and fans out any
+  // downstream reactions. Guard-critical state (market access) is already
+  // written above, so this is purely the lifecycle/notification layer.
+  // Fire ONLY for a terminal decision (approved/rejected). Setting a participant
+  // back to pending/in_review is not a "decision" and must NOT close the open
+  // admin review action - otherwise an admin re-opening a case would silently
+  // clear its own inbox item.
+  if (kyc_status === 'approved' || kyc_status === 'rejected') {
+    await fireCascade({
+      event: 'kyc.decided',
+      actor_id: user.id,
+      entity_type: 'participant',
+      entity_id: id,
+      data: { kyc_status, market_access: marketAccess, reason_code: reason_code ?? null },
+      env: c.env,
+    });
+  }
   return c.json({ success: true });
 });
 
