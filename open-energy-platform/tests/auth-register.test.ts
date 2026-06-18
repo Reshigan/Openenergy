@@ -64,7 +64,9 @@ describe('auth/register email-verification delivery', () => {
     expect(res.status).toBe(200);
     const body = await res.json() as any;
 
-    const token = JSON.parse(String(outboxVerifyRow().payload)).token;
+    const row = outboxVerifyRow();
+    expect(row).toBeTruthy();
+    const token = JSON.parse(String(row.payload)).token;
     expect(JSON.stringify(body)).not.toContain(token);
   });
 
@@ -72,7 +74,9 @@ describe('auth/register email-verification delivery', () => {
     const res = await register({ email: EMAIL, password: PASSWORD, name: NAME, role: 'trader' });
     expect(res.status).toBe(200);
 
-    const token = JSON.parse(String(outboxVerifyRow().payload)).token;
+    const row = outboxVerifyRow();
+    expect(row).toBeTruthy();
+    const token = JSON.parse(String(row.payload)).token;
     const verifyRes = await verifyEmail(token);
     expect(verifyRes.status).toBe(200);
 
