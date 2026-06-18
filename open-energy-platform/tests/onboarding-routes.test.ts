@@ -73,3 +73,38 @@ describe('POST /api/onboarding/step -- role-step coverage', () => {
     expect((res.json as any).error).toBe('VALIDATION_ERROR');
   });
 });
+
+describe('GET /api/onboarding/state -- provisioned envelope', () => {
+  it('seeded case surfaces kind + entities and preserves manifest', async () => {
+    seedParticipant('par_off');
+    db.prepare(
+      `INSERT INTO oe_onboarding_provisioning_log (id, participant_id, role, kind, manifest)
+       VALUES (?,?,?,?,?)`,
+    ).run('oprov_t1', 'par_off', 'offtaker', 'ppa_portfolio', JSON.stringify({
+      headline: 'Your procurement portfolio is ready',
+      profile_summary: { entity_type: 'commercial' },
+      next_actions: [
+        { key: 'horizon', label: 'Open your workspace', route: '/horizon', description: 'x' },
+        { key: 'new', label: 'Start a transaction', route: '/new', description: 'y' },
+      ],
+    }));
+    const token = await testJwtFor(db, 'par_off', { role: 'offtaker' });
+    const res = await call(onboarding, env, 'GET', '/state', { token });
+    expect(res.status).toBe(200);
+    expect((res.json as any).data.provisioned.kind).toBe('ppa_portfolio');
+    expect((res.json as any).data.provisioned.entities).toEqual([
+      { label: 'Open your workspace', href: '/horizon' },
+      { label: 'Start a transaction', href: '/new' },
+    ]);
+    expect((res.json as any).data.manifest.headline).toBe('Your procurement portfolio is ready');
+  });
+
+  it('null-safe case returns kind none and empty entities with null manifest', async () => {
+    seedParticipant('par_none');
+    const token = await testJwtFor(db, 'par_none', { role: 'offtaker' });
+    const res = await call(onboarding, env, 'GET', '/state', { token });
+    expect(res.status).toBe(200);
+    expect((res.json as any).data.provisioned).toEqual({ kind: 'none', entities: [] });
+    expect((res.json as any).data.manifest).toBe(null);
+  });
+});

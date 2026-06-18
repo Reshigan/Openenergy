@@ -78,18 +78,42 @@ onboarding.get('/state', async (c) => {
   // row wins; null until the operator has completed onboarding at least once.
   let manifest: Record<string, unknown> | null = null;
   const provRow = await c.env.DB.prepare(
-    `SELECT manifest FROM oe_onboarding_provisioning_log
+    `SELECT kind, manifest FROM oe_onboarding_provisioning_log
       WHERE participant_id = ? ORDER BY created_at DESC LIMIT 1`,
   )
     .bind(user.id)
-    .first<{ manifest: string | null }>();
+    .first<{ kind: string | null; manifest: string | null }>();
   if (provRow?.manifest) {
     try {
       const parsed = JSON.parse(provRow.manifest);
-      // '{}' default (pre-manifest rows) carries no headline — treat as absent.
+      // '{}' default (pre-manifest rows) carries no headline - treat as absent.
       if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) manifest = parsed;
     } catch {
       manifest = null;
+    }
+  }
+
+  // Normalized envelope so the SPA can distinguish seeded-entity roles from
+  // manifest-only roles and read a null-safe action list. When no usable
+  // manifest survived above, this is exactly { kind: 'none', entities: [] }.
+  const provisioned: { kind: string; entities: Array<{ label: string; href: string }> } = {
+    kind: manifest ? (provRow?.kind || 'none') : 'none',
+    entities: [],
+  };
+  if (manifest) {
+    const nextActions = manifest.next_actions;
+    if (Array.isArray(nextActions)) {
+      for (const a of nextActions) {
+        if (a && typeof a === 'object') {
+          const action = a as Record<string, unknown>;
+          if (action.label != null && action.route != null) {
+            provisioned.entities.push({
+              label: String(action.label),
+              href: String(action.route),
+            });
+          }
+        }
+      }
     }
   }
 
@@ -102,6 +126,7 @@ onboarding.get('/state', async (c) => {
       skipped: Boolean(row.onboarding_skipped),
       role: user.role,
       manifest,
+      provisioned,
     },
   });
 });
