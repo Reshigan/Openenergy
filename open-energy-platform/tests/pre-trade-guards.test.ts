@@ -389,9 +389,10 @@ describe('evaluateOrder · market-access guard', () => {
   });
 
   it('rejects a certificate_only participant with MARKET_ACCESS_REQUIRED (authoritative backstop)', () => {
-    // The cert-only route fence (W226) is unmounted and cannot read its field, so
-    // the order engine is the authoritative backstop: a certificate-track account
-    // has no spot-market access and must be blocked here, not only at a route.
+    // A former cert-only route fence (W226) was removed as dead code (never
+    // mounted, could not read this field), so the order engine is the sole
+    // authoritative gate: a certificate-track account has no spot-market access
+    // and must be blocked here, at the engine, not only at a route.
     const r = evaluateOrder(order(), snap({ participant_market_access: 'certificate_only' }));
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason_code).toBe('MARKET_ACCESS_REQUIRED');

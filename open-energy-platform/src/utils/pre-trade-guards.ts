@@ -104,12 +104,13 @@ export interface RiskSnapshot {
   // ─── Onboarding/KYC - participant market-access flag ──────────────────
   // From participants.participant_market_access (migration 472). The admin
   // KYC decision handler sets 'read_only' on rejection, 'full_trading' on
-  // approval. The order engine (evaluateOrder) is the AUTHORITATIVE backstop:
-  // it rejects read_only, unverified, AND certificate_only attempts to place
-  // tradable orders. certOnlyGuard (W226, currently unmounted) is a separate
-  // route-level fence for certificate-only product surfaces, not a substitute
-  // for this engine check. Undefined/null treated as full access for
-  // back-compat with callers and tests that predate the flag.
+  // approval. The order engine (evaluateOrder) is the AUTHORITATIVE and SOLE
+  // gate: it rejects read_only, unverified, AND certificate_only attempts to
+  // place tradable orders. (A former W226 certificate-only route fence,
+  // src/middleware/cert-only.ts, was never mounted and could not read this
+  // field; it was removed as dead code, so this engine check stands alone.)
+  // Undefined/null treated as full access for back-compat with callers and
+  // tests that predate the flag.
   participant_market_access?: 'full_trading' | 'certificate_only' | 'read_only' | 'unverified' | null;
 }
 
