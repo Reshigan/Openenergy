@@ -90,6 +90,7 @@ r.get('/', async (c) => {
   const documents: Record<string, Array<Record<string, unknown>>> = {};
   for (const row of subs.results) {
     let fileName: string | null = row.file_name;
+    let decryptError = false;
     if (row.file_name != null) {
       try {
         fileName = await decryptField(c.env, row.file_name);
@@ -99,16 +100,34 @@ r.get('/', async (c) => {
         // the document with a null name; kyc_status and the rest of the list stay
         // visible so onboarding is never blocked by one bad row.
         fileName = null;
+        decryptError = true;
+        // Structured warn so an operator can find the offending row without the
+        // raw ciphertext or key ever being logged. This is the audit signal a
+        // silent null swallow would otherwise hide.
+        console.warn(
+          JSON.stringify({
+            level: 'warn',
+            event: 'kyc.file_name.decrypt_failed',
+            submission_id: row.id,
+            participant_id: user.id,
+            tenant_id: getTenantId(c),
+            document_type: row.document_type,
+          }),
+        );
       }
     }
-    (documents[row.document_type] ||= []).push({
+    const doc: Record<string, unknown> = {
       id: row.id,
       file_name: fileName,
       mime_type: row.mime_type,
       size_bytes: row.size_bytes,
       status: row.status,
       submitted_at: row.submitted_at,
-    });
+    };
+    // Surface a non-blocking flag only when decryption failed, so the client can
+    // prompt a re-upload instead of showing a nameless document with no reason.
+    if (decryptError) doc.decrypt_error = true;
+    (documents[row.document_type] ||= []).push(doc);
   }
 
   return c.json({

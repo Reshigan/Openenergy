@@ -104,10 +104,12 @@ export interface RiskSnapshot {
   // ─── Onboarding/KYC - participant market-access flag ──────────────────
   // From participants.participant_market_access (migration 472). The admin
   // KYC decision handler sets 'read_only' on rejection, 'full_trading' on
-  // approval. 'certificate_only' is fenced separately at the route by
-  // certOnlyGuard; this order-engine guard only blocks revoked/unverified
-  // access. Undefined treated as full access for back-compat with callers
-  // and tests that predate the flag.
+  // approval. The order engine (evaluateOrder) is the AUTHORITATIVE backstop:
+  // it rejects read_only, unverified, AND certificate_only attempts to place
+  // tradable orders. certOnlyGuard (W226, currently unmounted) is a separate
+  // route-level fence for certificate-only product surfaces, not a substitute
+  // for this engine check. Undefined/null treated as full access for
+  // back-compat with callers and tests that predate the flag.
   participant_market_access?: 'full_trading' | 'certificate_only' | 'read_only' | 'unverified' | null;
 }
 
@@ -171,11 +173,17 @@ export function evaluateOrder(order: ProposedOrder, snapshot: RiskSnapshot): Gua
     };
   }
 
-  // 2a. Market-access flag - a participant whose access has been revoked to
-  // read_only (e.g. after a KYC rejection) or who is unverified cannot place
-  // new orders. certificate_only is fenced at the route by certOnlyGuard, not
-  // here. Undefined/null/full_trading pass through.
-  if (snapshot.participant_market_access === 'read_only' || snapshot.participant_market_access === 'unverified') {
+  // 2a. Market-access flag - the order engine is the authoritative backstop.
+  // A participant on read_only (e.g. after a KYC rejection), unverified, or
+  // certificate_only (entitled to certificate products but NOT to place
+  // tradable energy orders) cannot place new orders here. Undefined / null /
+  // full_trading pass through. This is defense-in-depth: route-level fences may
+  // also apply, but correctness must not depend on them being mounted.
+  if (
+    snapshot.participant_market_access === 'read_only' ||
+    snapshot.participant_market_access === 'unverified' ||
+    snapshot.participant_market_access === 'certificate_only'
+  ) {
     return {
       ok: false,
       reason_code: 'MARKET_ACCESS_REQUIRED',

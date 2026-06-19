@@ -6,12 +6,12 @@
 // difficult for an ipp to go through a journey").
 //
 // Shape: { headline, profile_summary, next_actions[] }
-//   headline        — one-line confirmation tailored to the role + what we seeded
-//   profile_summary — the few wizard fields worth echoing back, per role
-//   next_actions    — 3+ deep-links. EVERY route here is a universally-valid
+//   headline        - one-line confirmation tailored to the role + what we seeded
+//   profile_summary - the few wizard fields worth echoing back, per role
+//   next_actions    - 3+ deep-links. EVERY route here is a universally-valid
 //                     Meridian route (/horizon, /new, /atlas, and at most one
 //                     role-relevant /surface or /ledger that always resolves) so
-//                     there are NO dead links — directly serving the "labels not
+//                     there are NO dead links - directly serving the "labels not
 //                     clickable / pages dont work" complaint.
 
 export type ProvisionRef = {
@@ -46,7 +46,7 @@ function baseActions(): NextAction[] {
   return [
     { key: 'horizon', label: 'Open your workspace', route: '/horizon', description: 'Your live, role-specific cases and lanes.' },
     { key: 'new', label: 'Start a transaction', route: '/new', description: 'Pick any workflow your role can initiate.' },
-    { key: 'atlas', label: 'Browse all functions', route: '/atlas', description: 'The full function library — ⌘K from anywhere.' },
+    { key: 'atlas', label: 'Browse all functions', route: '/atlas', description: 'The full function library - ⌘K from anywhere.' },
   ];
 }
 

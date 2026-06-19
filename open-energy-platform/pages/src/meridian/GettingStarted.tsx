@@ -1,4 +1,4 @@
-// pages/src/meridian/GettingStarted.tsx — post-onboarding activation card.
+// pages/src/meridian/GettingStarted.tsx - post-onboarding activation card.
 //
 // Source of truth is GET /api/onboarding/checklist/:role (onboarding-checklist.ts):
 // a per-role activation checklist with a live, data-computed `done` per item, a

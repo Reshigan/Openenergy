@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// GuidedTour — first-run inline anchored intro card per Meridian surface.
+// GuidedTour - first-run inline anchored intro card per Meridian surface.
 //
 // NOT a modal, NOT an overlay, NOT an AI popup. One small card that sits in
 // normal document flow at the top of the surface content, explaining what the

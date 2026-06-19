@@ -1,11 +1,11 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// Onboarding — per-role step tracking for new participants.
+// Onboarding - per-role step tracking for new participants.
 //
 // Endpoints (all require auth):
-//   GET  /state         — current step, data, completion flags
-//   POST /step          — advance to next step, merging supplied data
-//   POST /complete      — mark onboarding complete
-//   POST /skip          — skip onboarding entirely
+//   GET  /state         - current step, data, completion flags
+//   POST /step          - advance to next step, merging supplied data
+//   POST /complete      - mark onboarding complete
+//   POST /skip          - skip onboarding entirely
 //
 // Step sequences are role-specific (see ONBOARDING_STEPS). The esums_owner
 // role is enforced at application level (not via a DB CHECK constraint).
@@ -18,6 +18,7 @@ import { fireCascade } from '../utils/cascade';
 import { AppError, ErrorCode } from '../utils/types';
 import { sandboxTenantId } from '../utils/tenant';
 import { seedSandboxTenant } from '../cascade-rules/sandbox-seed';
+import { provisionOnboarding } from '../cascade-rules/onboarding-provisioning';
 
 const onboarding = new Hono<HonoEnv>();
 onboarding.use('*', authMiddleware);
@@ -216,6 +217,15 @@ onboarding.post('/complete', async (c) => {
   )
     .bind(user.id)
     .run();
+
+  // Provision SYNCHRONOUSLY in the request path. In production env.QUEUE is
+  // provisioned, so the onboarding.completed cascade rule runs async AFTER this
+  // response - if the seed + getting-started manifest depended only on that
+  // rule, GET /state would return an empty workspace until the queue drained.
+  // provisionOnboarding is idempotent (alreadyProvisioned short-circuits), so
+  // the cascade rule re-running it for audit is a no-op. user.role carries the
+  // logical role (e.g. 'esums_owner') that is not in the participants DB CHECK.
+  await provisionOnboarding(c.env.DB, user.id, user.role);
 
   await fireCascade({
     event: 'onboarding.completed',

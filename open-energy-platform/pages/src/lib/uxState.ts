@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// uxState — thin client hooks over /api/ux-state for per-user UI state.
+// uxState - thin client hooks over /api/ux-state for per-user UI state.
 // Saved filters, onboarding step completion, and inline-help dismissals.
 // ════════════════════════════════════════════════════════════════════════
 

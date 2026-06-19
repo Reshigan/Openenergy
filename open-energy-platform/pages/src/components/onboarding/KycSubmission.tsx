@@ -115,6 +115,20 @@ export function KycSubmission() {
   const [slotBusy, setSlotBusy] = React.useState<Partial<Record<KycDocType, boolean>>>({});
   const [slotError, setSlotError] = React.useState<Partial<Record<KycDocType, string>>>({});
 
+  // The slow-upload skeleton replaces a slot's file input, which would silently
+  // drop keyboard focus to the body. We keep a ref per input and the doc type
+  // whose focus must be restored once the skeleton clears, so a keyboard user
+  // lands back on the same control instead of nowhere.
+  const inputRefs = React.useRef<Partial<Record<KycDocType, HTMLInputElement | null>>>({});
+  const refocusSlot = React.useRef<KycDocType | null>(null);
+  React.useEffect(() => {
+    const dt = refocusSlot.current;
+    if (dt && !slotBusy[dt]) {
+      inputRefs.current[dt]?.focus();
+      refocusSlot.current = null;
+    }
+  });
+
   const load = React.useCallback(async () => {
     setLoading(true);
     setLoadError(null);
@@ -144,7 +158,12 @@ export function KycSubmission() {
   const upload = React.useCallback(async (docType: KycDocType, file: File) => {
     setSlotError((m) => ({ ...m, [docType]: undefined }));
     // Show a skeleton on the slot only if the upload is slow (>300ms), never a spinner.
-    const slowTimer = setTimeout(() => setSlotBusy((m) => ({ ...m, [docType]: true })), 300);
+    // Record the slot so focus is restored to its input once the skeleton clears
+    // (the skeleton unmounts the focused input; only mark it when it actually shows).
+    const slowTimer = setTimeout(() => {
+      refocusSlot.current = docType;
+      setSlotBusy((m) => ({ ...m, [docType]: true }));
+    }, 300);
     try {
       const contentBase64 = await fileToBase64(file);
       const res = await api.post('/onboarding/kyc/evidence', {
@@ -269,7 +288,7 @@ export function KycSubmission() {
           if (isCurrent) cls += ' current';
           if (isTerminal && isCurrent && isRejected) cls += ' rejected';
           if (isTerminal && isCurrent && isApproved) cls += ' approved';
-          const glyph = isPast || (isCurrent && isApproved) ? '✓' : isCurrent && isRejected ? '×' : isCurrent ? '○' : '○';
+          const glyph = isPast || (isCurrent && isApproved) ? '✓' : isCurrent && isRejected ? '×' : '○';
           return (
             <li className={cls} key={step.key} aria-current={isCurrent ? 'step' : undefined}>
               <span className="mer-kyc-step-glyph" aria-hidden="true">{glyph}</span>
@@ -329,6 +348,7 @@ export function KycSubmission() {
                 ) : (
                   <input
                     id={inputId}
+                    ref={(el) => { inputRefs.current[docType] = el; }}
                     className="mer-kyc-file-input"
                     type="file"
                     aria-describedby={err ? `${inputId}-err` : undefined}

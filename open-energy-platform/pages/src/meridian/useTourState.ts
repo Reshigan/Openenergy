@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
-// useTourState — per-device seen-state for the Meridian first-run guided tour.
+// useTourState - per-device seen-state for the Meridian first-run guided tour.
 //
 // Reuses the SAME localStorage ledger as the wizard tour (useOnboarding):
 // key `oe.onboarding.tour.completed`, holding a JSON array of completed

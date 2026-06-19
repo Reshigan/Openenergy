@@ -81,6 +81,7 @@ function bandIndicative(value: number | null): number | null {
 function snapshotForAccept(
   participantStatus: RiskSnapshot['participant_status'],
   notionalZar: number,
+  marketAccess: RiskSnapshot['participant_market_access'],
 ): RiskSnapshot {
   return {
     participant_status: participantStatus,
@@ -93,18 +94,29 @@ function snapshotForAccept(
     mark_price_zar_mwh: 1000,
     mark_age_minutes: 0,
     price_band_pct: null,
+    // Thread the real KYC market-access tier so evaluateOrder's authoritative
+    // backstop also gates deal-accepts that are trades (read_only / unverified /
+    // certificate_only -> MARKET_ACCESS_REQUIRED). Generous credit/collateral
+    // headroom above is intentional; the gating signals are status + access.
+    participant_market_access: marketAccess,
   };
 }
 
-async function participantStatus(env: HonoEnv['Bindings'], pid: string): Promise<RiskSnapshot['participant_status']> {
-  const row = await env.DB.prepare('SELECT status, kyc_status FROM participants WHERE id = ?')
+async function gateStateForAccept(
+  env: HonoEnv['Bindings'],
+  pid: string,
+): Promise<{ status: RiskSnapshot['participant_status']; market_access: RiskSnapshot['participant_market_access'] }> {
+  const row = await env.DB.prepare('SELECT status, kyc_status, participant_market_access FROM participants WHERE id = ?')
     .bind(pid)
-    .first<{ status: string | null; kyc_status: string | null }>();
-  if (!row) return 'unknown';
-  if (row.status === 'suspended') return 'suspended';
-  if (row.kyc_status && row.kyc_status !== 'approved') return 'pending_kyc';
-  if (row.status === 'active') return 'active';
-  return 'unknown';
+    .first<{ status: string | null; kyc_status: string | null; participant_market_access: string | null }>();
+  if (!row) return { status: 'unknown', market_access: null };
+  const market_access = (row.participant_market_access as RiskSnapshot['participant_market_access']) ?? null;
+  let status: RiskSnapshot['participant_status'];
+  if (row.status === 'suspended') status = 'suspended';
+  else if (row.kyc_status && row.kyc_status !== 'approved') status = 'pending_kyc';
+  else if (row.status === 'active') status = 'active';
+  else status = 'unknown';
+  return { status, market_access };
 }
 
 function termSheetNumber(ts: Json, key: string): number {
@@ -547,7 +559,7 @@ deals.post('/:type/accept', async (c) => {
 
         // Pre-trade gate when the accept IS a trade.
         if (d.dispatch_is_trade) {
-          const status = await participantStatus(c.env, user.id);
+          const gate = await gateStateForAccept(c.env, user.id);
           const guard = evaluateOrder(
             {
               side: 'buy',
@@ -556,7 +568,7 @@ deals.post('/:type/accept', async (c) => {
               price_zar_mwh: termSheetNumber(ts, 'blended_price_zar_per_mwh') || null,
               delivery_date: null,
             },
-            snapshotForAccept(status, dealValue),
+            snapshotForAccept(gate.status, dealValue, gate.market_access),
           );
           if (!guard.ok) {
             return c.json({ error: 'guard_rejected', reason_code: guard.reason_code, detail: guard.detail }, 409);

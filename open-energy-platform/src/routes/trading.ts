@@ -32,8 +32,8 @@ async function loadRiskSnapshot(
   deliveryDate: string | null,
 ): Promise<RiskSnapshot> {
   const [participant, limit, exposure, collateral, position, mark, halt, bookSides, marginGate, tradingBlock] = await Promise.all([
-    env.DB.prepare(`SELECT status, kyc_status FROM participants WHERE id = ?`)
-      .bind(participantId).first<{ status: string; kyc_status: string }>(),
+    env.DB.prepare(`SELECT status, kyc_status, participant_market_access FROM participants WHERE id = ?`)
+      .bind(participantId).first<{ status: string; kyc_status: string; participant_market_access: string | null }>(),
     env.DB.prepare(
       `SELECT limit_zar FROM credit_limits
         WHERE participant_id = ?
@@ -158,6 +158,12 @@ async function loadRiskSnapshot(
     ask_liquidity_mwh: Number(bookSides?.ask_liq || 0),
     margin_gate_status: (marginGate?.gate_status as 'clear' | 'warning' | 'blocked' | undefined) || 'clear',
     trading_block_active: Number(tradingBlock?.n || 0) > 0,
+    // Market-access tier from KYC. The order engine (evaluateOrder) is the
+    // authoritative backstop that rejects read_only / unverified / certificate_only
+    // attempts to trade, so the tier MUST be loaded into the snapshot here - it
+    // is dead if left null. Null = no tier set, treated as no restriction.
+    participant_market_access:
+      (participant?.participant_market_access as RiskSnapshot['participant_market_access']) ?? null,
   };
 }
 
