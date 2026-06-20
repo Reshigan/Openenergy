@@ -38,79 +38,77 @@ async function gatherInputs(c: any, _asOfDate: string): Promise<DisclosureInputs
     try { return await q(); } catch { return fallback; }
   };
 
-  // §6 Margin — sum across oe_margin_calls + oe_collateral_postings.
-  const im = await safe(async () => {
-    const r = await db.prepare(`SELECT COALESCE(SUM(initial_margin_zar),0) AS s FROM oe_margin_calls WHERE status IN ('open','posted')`).first<any>();
-    return Number(r?.s || 0);
-  }, 0);
-  const vm = await safe(async () => {
-    const r = await db.prepare(`SELECT COALESCE(SUM(variation_margin_zar),0) AS s FROM oe_margin_calls WHERE status IN ('open','posted')`).first<any>();
-    return Number(r?.s || 0);
-  }, 0);
-
-  // VaR 99% lookback total — sum across system portfolios for the day.
-  const var99 = await safe(async () => {
-    const r = await db.prepare(`
-      SELECT COALESCE(SUM(var_zar),0) AS s
-        FROM risk_var_results
-       WHERE confidence = 0.99
-         AND as_of_date = (SELECT MAX(as_of_date) FROM risk_var_results)
-    `).first<any>();
-    return Number(r?.s || 0);
-  }, 0);
-
-  // §7 Liquidity — qualifying liquid resources from collateral accounts.
-  const qlr = await safe(async () => {
-    const r = await db.prepare(`SELECT COALESCE(SUM(balance_zar),0) AS s FROM collateral_accounts WHERE asset_type IN ('cash','t_bill','bond')`).first<any>();
-    return Number(r?.s || 0);
-  }, 0);
-  const largest = await safe(async () => {
-    const r = await db.prepare(`
-      SELECT COALESCE(MAX(exposure),0) AS s FROM (
-        SELECT counterparty_id, SUM(ABS(net_volume_mwh * last_mark_price)) AS exposure
-          FROM trader_positions
-         GROUP BY counterparty_id
-      )
-    `).first<any>();
-    return Number(r?.s || 0);
-  }, 0);
-
-  // §4 Credit — default fund. oe_clearing_fund tracks total_size_zar as
-  // the target size; actual member contributions live in
-  // oe_clearing_contributions.amount_zar.
-  const df_bal = await safe(async () => {
-    const r = await db.prepare(`
-      SELECT COALESCE(SUM(amount_zar - COALESCE(refund_amount_zar,0)),0) AS s
-        FROM oe_clearing_contributions WHERE status = 'active'
-    `).first<any>();
-    return Number(r?.s || 0);
-  }, 0);
-  const df_req = await safe(async () => {
-    const r = await db.prepare(`SELECT COALESCE(SUM(total_size_zar),0) AS s FROM oe_clearing_fund WHERE status='active'`).first<any>();
-    return Number(r?.s || 0);
-  }, 0);
-
-  // §15 CCP capital — held in a KV config key; defaults to 0 if not set.
-  const cap = await safe(async () => {
-    const raw = await (c.env.KV?.get?.('ccp:capital_zar') ?? Promise.resolve(null));
-    return raw ? Number(raw) : 0;
-  }, 0);
-
-  // §17 Operational — settlement instruction outcomes.
-  const settled = await safe(async () => {
-    const r = await db.prepare(`SELECT COUNT(*) AS c FROM oe_settlement_instructions WHERE status='confirmed'`).first<any>();
-    return Number(r?.c || 0);
-  }, 0);
-  const failed = await safe(async () => {
-    const r = await db.prepare(`SELECT COUNT(*) AS c FROM oe_settlement_instructions WHERE status='failed'`).first<any>();
-    return Number(r?.c || 0);
-  }, 0);
-
-  // Active members.
-  const members = await safe(async () => {
-    const r = await db.prepare(`SELECT COUNT(DISTINCT user_id) AS c FROM users WHERE active = 1`).first<any>();
-    return Number(r?.c || 0);
-  }, 0);
+  // All inputs are independent best-effort reads — fire them in parallel so the
+  // 11 D1/KV round-trips overlap instead of accumulating serially.
+  const [im, vm, var99, qlr, largest, df_bal, df_req, cap, settled, failed, members] = await Promise.all([
+    // §6 Margin — sum across oe_margin_calls + oe_collateral_postings.
+    safe(async () => {
+      const r = await db.prepare(`SELECT COALESCE(SUM(initial_margin_zar),0) AS s FROM oe_margin_calls WHERE status IN ('open','posted')`).first<any>();
+      return Number(r?.s || 0);
+    }, 0),
+    safe(async () => {
+      const r = await db.prepare(`SELECT COALESCE(SUM(variation_margin_zar),0) AS s FROM oe_margin_calls WHERE status IN ('open','posted')`).first<any>();
+      return Number(r?.s || 0);
+    }, 0),
+    // VaR 99% lookback total — sum across system portfolios for the day.
+    safe(async () => {
+      const r = await db.prepare(`
+        SELECT COALESCE(SUM(var_zar),0) AS s
+          FROM risk_var_results
+         WHERE confidence = 0.99
+           AND as_of_date = (SELECT MAX(as_of_date) FROM risk_var_results)
+      `).first<any>();
+      return Number(r?.s || 0);
+    }, 0),
+    // §7 Liquidity — qualifying liquid resources from collateral accounts.
+    safe(async () => {
+      const r = await db.prepare(`SELECT COALESCE(SUM(balance_zar),0) AS s FROM collateral_accounts WHERE asset_type IN ('cash','t_bill','bond')`).first<any>();
+      return Number(r?.s || 0);
+    }, 0),
+    safe(async () => {
+      const r = await db.prepare(`
+        SELECT COALESCE(MAX(exposure),0) AS s FROM (
+          SELECT counterparty_id, SUM(ABS(net_volume_mwh * last_mark_price)) AS exposure
+            FROM trader_positions
+           GROUP BY counterparty_id
+        )
+      `).first<any>();
+      return Number(r?.s || 0);
+    }, 0),
+    // §4 Credit — default fund. oe_clearing_fund tracks total_size_zar as
+    // the target size; actual member contributions live in
+    // oe_clearing_contributions.amount_zar.
+    safe(async () => {
+      const r = await db.prepare(`
+        SELECT COALESCE(SUM(amount_zar - COALESCE(refund_amount_zar,0)),0) AS s
+          FROM oe_clearing_contributions WHERE status = 'active'
+      `).first<any>();
+      return Number(r?.s || 0);
+    }, 0),
+    safe(async () => {
+      const r = await db.prepare(`SELECT COALESCE(SUM(total_size_zar),0) AS s FROM oe_clearing_fund WHERE status='active'`).first<any>();
+      return Number(r?.s || 0);
+    }, 0),
+    // §15 CCP capital — held in a KV config key; defaults to 0 if not set.
+    safe(async () => {
+      const raw = await (c.env.KV?.get?.('ccp:capital_zar') ?? Promise.resolve(null));
+      return raw ? Number(raw) : 0;
+    }, 0),
+    // §17 Operational — settlement instruction outcomes.
+    safe(async () => {
+      const r = await db.prepare(`SELECT COUNT(*) AS c FROM oe_settlement_instructions WHERE status='confirmed'`).first<any>();
+      return Number(r?.c || 0);
+    }, 0),
+    safe(async () => {
+      const r = await db.prepare(`SELECT COUNT(*) AS c FROM oe_settlement_instructions WHERE status='failed'`).first<any>();
+      return Number(r?.c || 0);
+    }, 0),
+    // Active members.
+    safe(async () => {
+      const r = await db.prepare(`SELECT COUNT(DISTINCT user_id) AS c FROM users WHERE active = 1`).first<any>();
+      return Number(r?.c || 0);
+    }, 0),
+  ]);
 
   return {
     initial_margin_total_zar: im,

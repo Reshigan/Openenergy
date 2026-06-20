@@ -70,16 +70,21 @@ export async function rollupMetrics(
   const now = new Date().toISOString();
   const snapStmts = [];
   for (const ck of chainKeys) {
-    const cum = await db.prepare(
-      `SELECT COALESCE(SUM(value_total_zar), 0) AS value_total_zar,
-              COALESCE(SUM(sla_breaches), 0) AS breach_count
-         FROM oe_metrics_daily WHERE chain_key = ?`,
-    ).bind(ck).first<any>();
-    const last = await db.prepare(
-      `SELECT MAX(occurred_at) AS last_event_at FROM oe_platform_events
-        WHERE COALESCE(NULLIF(chain_key, ''), 'unattributed') = ?`,
-    ).bind(ck).first<any>();
-    const ot = await computeOpenTerminal(db, ck);
+    // The three per-chain reads are independent — overlap them. Outer loop stays
+    // sequential to keep concurrent D1 queries bounded (chains × 3 could be 200+).
+    // ponytail: per-chain serial; widen to chunked-parallel chains if the nightly run gets slow.
+    const [cum, last, ot] = await Promise.all([
+      db.prepare(
+        `SELECT COALESCE(SUM(value_total_zar), 0) AS value_total_zar,
+                COALESCE(SUM(sla_breaches), 0) AS breach_count
+           FROM oe_metrics_daily WHERE chain_key = ?`,
+      ).bind(ck).first<any>(),
+      db.prepare(
+        `SELECT MAX(occurred_at) AS last_event_at FROM oe_platform_events
+          WHERE COALESCE(NULLIF(chain_key, ''), 'unattributed') = ?`,
+      ).bind(ck).first<any>(),
+      computeOpenTerminal(db, ck),
+    ]);
     snapStmts.push(
       db.prepare(
         `INSERT INTO oe_chain_metrics
