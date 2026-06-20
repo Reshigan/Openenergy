@@ -21,7 +21,7 @@ const REGULATOR_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'submitted_at',
     pivotGroupBy: 'report_type',
-    mailSubject: 'CEC — Regulator Statutory Reports',
+    mailSubject: 'CEC: Regulator Statutory Reports',
   },
   {
     title: 'Levy Assessments',
@@ -35,7 +35,7 @@ const REGULATOR_REPORTS: ReportConfig[] = [
     ],
     filters: [{ key: 'chain_status', label: 'Status', type: 'select', options: [{ value: 'assessed', label: 'Assessed' }, { value: 'final_demand', label: 'Final Demand' }, { value: 'enforcement', label: 'Enforcement' }, { value: 'paid', label: 'Paid' }] }],
     pivotGroupBy: 'chain_status',
-    mailSubject: 'CEC — NERSA Levy Assessments Report',
+    mailSubject: 'CEC: NERSA Levy Assessments Report',
   },
   {
     title: 'Disposition Cases',
@@ -47,7 +47,7 @@ const REGULATOR_REPORTS: ReportConfig[] = [
       { key: 'created_at', label: 'Filed' },
     ],
     pivotGroupBy: 'chain_status',
-    mailSubject: 'CEC — Disposition Cases Report',
+    mailSubject: 'CEC: Disposition Cases Report',
   },
 ];
 

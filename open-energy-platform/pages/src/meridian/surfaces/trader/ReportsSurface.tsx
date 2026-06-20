@@ -24,7 +24,7 @@ const TRADER_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'trade_date',
     pivotGroupBy: 'status',
-    mailSubject: 'CEC — Trade Settlement Report',
+    mailSubject: 'CEC: Trade Settlement Report',
   },
   {
     title: 'Best Execution Records',
@@ -38,7 +38,7 @@ const TRADER_REPORTS: ReportConfig[] = [
       { key: 'chain_status', label: 'Status' },
     ],
     pivotGroupBy: 'instrument',
-    mailSubject: 'CEC — Best Execution Report',
+    mailSubject: 'CEC: Best Execution Report',
   },
   {
     title: 'FSCA Trade Reports',
@@ -52,7 +52,7 @@ const TRADER_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'submitted_at',
     pivotGroupBy: 'chain_status',
-    mailSubject: 'CEC — FSCA Trade Reports',
+    mailSubject: 'CEC: FSCA Trade Reports',
   },
 ];
 

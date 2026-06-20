@@ -234,6 +234,7 @@
   background:var(--petrol-tint); color:var(--petrol-deep); white-space:nowrap;
 }
 .mer .chip.ox { background:var(--oxide-tint); color:var(--oxide); border:1px solid var(--oxide); }
+.mer .chip.best-chip { background:var(--petrol); color:#fff; font-weight:600; }
 .mer .fuse { height:3px; border-radius:2px; background:var(--line); margin-top:8px; overflow:hidden; }
 .mer .fuse > i { display:block; height:100%; border-radius:2px; background:var(--petrol); }
 /* Non-color cue (a11y): warn/dead aren't distinguishable by hue alone, so layer a

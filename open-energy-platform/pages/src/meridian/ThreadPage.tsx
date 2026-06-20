@@ -7,7 +7,7 @@ import React from 'react';
 import './meridian.css';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
-import { fmtZar, type LedgerActionField } from './lib';
+import { fmtZar, humanizeKey, type LedgerActionField } from './lib';
 import { FieldForm } from './FieldForm';
 import { FuseBar } from './components';
 import { cleanLabel } from './labels';
@@ -102,7 +102,7 @@ export default function ThreadPage() {
           <div className="case-head">
             <h1>{t.case.title}</h1>
             <div className="case-sub">
-              <span className="chip">{t.case.status.replace(/_/g, ' ')}</span>
+              <span className="chip">{humanizeKey(t.case.status, true)}</span>
               <span>{cleanLabel(t.chain.title)}</span>
               {t.case.counterparty && <span>↔ {t.case.counterparty}</span>}
             </div>
@@ -114,11 +114,11 @@ export default function ThreadPage() {
               {t.events.map((e, i) => (
                 <li key={`${e.created_at ?? ''}-${e.event_type ?? ''}-${i}`} className="state done">
                   <span className="mono">{e.created_at?.slice(0, 16).replace('T', ' ')}</span>
-                  <b>{(e.event_type ?? '').replace(/_/g, ' ')}</b>
-                  {e.actor_role && <span className="actor">{e.actor_role}</span>}
+                  <b>{humanizeKey(e.event_type ?? '', true)}</b>
+                  {e.actor_role && <span className="actor">{humanizeKey(e.actor_role)}</span>}
                 </li>
               ))}
-              <li className="state now"><b>{t.case.status.replace(/_/g, ' ')}</b></li>
+              <li className="state now"><b>{humanizeKey(t.case.status, true)}</b></li>
             </ol>
           )}
 
@@ -129,7 +129,7 @@ export default function ThreadPage() {
                 .filter(([k, v]) => v != null && !['id'].includes(k))
                 .map(([k, v]) => (
                   <React.Fragment key={k}>
-                    <dt>{k.replace(/_/g, ' ')}</dt><dd className="mono">{String(v)}</dd>
+                    <dt>{humanizeKey(k, true)}</dt><dd className="mono">{String(v)}</dd>
                   </React.Fragment>
                 ))}
             </dl>

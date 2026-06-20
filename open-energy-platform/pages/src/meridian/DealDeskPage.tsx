@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom';
 import {
   fetchMyDeals, fetchDealTypes, fetchDealOptions,
   publishDealRequest, publishDealOffer, acceptDealOffer,
-  dealLabel, dealStage, fmtZar,
+  dealLabel, dealStage, fmtZar, humanizeKey,
   type MyDeals, type DealTypeInfo, type DealRequestSummary, type DealOfferSummary,
   type ScoredOption, type DealKind,
 } from './lib';
@@ -172,7 +172,7 @@ export default function DealDeskPage() {
             <div className="dcard" key={r.id}>
               <div className="dcard-top">
                 <b>{dealLabel(r.deal_type)}</b>
-                <span className="chip">{r.status}</span>
+                <span className="chip">{humanizeKey(r.status, true)}</span>
               </div>
               <DealProcessRail kind={kindFor(r.deal_type)} stage={dealStage(r)} />
               <div className="dcard-meta mono">
@@ -210,7 +210,7 @@ export default function DealDeskPage() {
             <div className="dcard" key={o.id}>
               <div className="dcard-top">
                 <b>{o.title || dealLabel(o.deal_type)}</b>
-                <span className="chip">{o.status}</span>
+                <span className="chip">{humanizeKey(o.status, true)}</span>
               </div>
               <div className="dcard-meta mono">
                 {dealLabel(o.deal_type)}
@@ -246,7 +246,7 @@ export default function DealDeskPage() {
       {compare && (
         <div className="mer veil" onClick={() => setCompare(null)}>
           <div className="veil-body" role="dialog" aria-modal="true"
-               aria-label={`Compare offers — ${dealLabel(compare.req.deal_type)}`}
+               aria-label={`Compare offers: ${dealLabel(compare.req.deal_type)}`}
                onClick={e => e.stopPropagation()}>
             <OfferCompareGrid
               options={compare.options}

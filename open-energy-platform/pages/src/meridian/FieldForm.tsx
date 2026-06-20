@@ -4,7 +4,7 @@
 // object. Used by the Thread action drawer and the Ledger "+ New" drawer.
 import React from 'react';
 import type { LedgerActionField, LookupOption } from './lib';
-import { fetchLookup } from './lib';
+import { fetchLookup, humanizeKey } from './lib';
 import { cleanLabel } from './labels';
 
 export function FieldForm({ fields, prefill, submitLabel, cascadeHint, ariaLabel, onSubmit, onCancel }: {
@@ -33,6 +33,13 @@ export function FieldForm({ fields, prefill, submitLabel, cascadeHint, ariaLabel
   const [lookupErr, setLookupErr] = React.useState<Record<string, string>>({});
 
   const set = (key: string, v: unknown) => setValues(prev => ({ ...prev, [key]: v }));
+
+  // ponytail: move focus into the dialog on open by focusing the first control.
+  // Covers the a11y "focus enters modal" rule; full Tab-trap is the upgrade path.
+  const formRef = React.useRef<HTMLFormElement>(null);
+  React.useEffect(() => {
+    formRef.current?.querySelector<HTMLElement>('input, select, textarea')?.focus();
+  }, []);
 
   // Populate lookup pickers on mount from each field's source endpoint.
   React.useEffect(() => {
@@ -81,7 +88,7 @@ export function FieldForm({ fields, prefill, submitLabel, cascadeHint, ariaLabel
   }
 
   return (
-    <form className="composer" onSubmit={submit} aria-label={ariaLabel ?? submitLabel}>
+    <form ref={formRef} className="composer" onSubmit={submit} aria-label={ariaLabel ?? submitLabel}>
       {fields.map(f => {
         const id = `ff-${f.key}`;
         const errId = `${id}-err`;
@@ -114,7 +121,7 @@ export function FieldForm({ fields, prefill, submitLabel, cascadeHint, ariaLabel
               <select id={id} value={(values[f.key] as string) ?? ''}
                       onChange={e => set(f.key, e.target.value)} {...errProps}>
                 <option value="" disabled>Select…</option>
-                {(f.options ?? []).map(o => <option key={o} value={o}>{o}</option>)}
+                {(f.options ?? []).map(o => <option key={o} value={o}>{humanizeKey(o, true)}</option>)}
               </select>
             )}
             {f.type === 'boolean' && (

@@ -22,9 +22,11 @@ function OfferCard({ opt, best, onAccept }: { opt: ScoredOption; best: boolean; 
   const est = opt.est_value_zar;
   const metric = opt.primary_metric;
   return (
-    <div className={best ? 'ocard best' : 'ocard'}>
+    <div className={best ? 'ocard best' : 'ocard'}
+         aria-label={best ? `Recommended: ${opt.title}` : opt.title}>
       <div className="ocard-top">
         <b>{opt.title}</b>
+        {best && <span className="chip best-chip">Recommended</span>}
         {opt.price_basis === 'indicative' && <span className="chip">indicative</span>}
       </div>
       {metric != null && (

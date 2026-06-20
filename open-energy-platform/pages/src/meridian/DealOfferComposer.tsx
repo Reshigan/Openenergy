@@ -4,7 +4,7 @@
 // .field/label/input/select, .preview, .cascade-hint; .btn .pri/.ghost). Pure form
 // state; the parent owns publishing via onPublish.
 import React from 'react';
-import { fmtZar, type DealKind, type DealFieldSpec } from './lib';
+import { fmtZar, humanizeKey, type DealKind, type DealFieldSpec } from './lib';
 
 // A unit reads as monetary if it mentions ZAR or rands ('R…', 'R/MWh' etc.).
 function isMonetary(unit?: string): boolean {
@@ -23,6 +23,12 @@ export function DealOfferComposer({ dealType, kind, schema, mode, onPublish, onC
   const [err, setErr] = React.useState<string | null>(null);
 
   const set = (key: string, v: unknown) => setValues(prev => ({ ...prev, [key]: v }));
+
+  // ponytail: move focus into the dialog on open by focusing the first control.
+  const formRef = React.useRef<HTMLFormElement>(null);
+  React.useEffect(() => {
+    formRef.current?.querySelector<HTMLElement>('input, select, textarea')?.focus();
+  }, []);
 
   // Live ZAR preview: sum numeric fields carrying a monetary unit.
   const zarTotal = schema.reduce((sum, s) => {
@@ -68,7 +74,7 @@ export function DealOfferComposer({ dealType, kind, schema, mode, onPublish, onC
   }
 
   return (
-    <form className="composer" onSubmit={submit} aria-label={`Publish ${mode} — ${dealType} (${kind})`}>
+    <form ref={formRef} className="composer" onSubmit={submit} aria-label={`Publish ${mode}: ${dealType} (${kind})`}>
       {schema.map(s => {
         const id = `deal-${s.key}`;
         const errId = `${id}-err`;
@@ -100,7 +106,7 @@ export function DealOfferComposer({ dealType, kind, schema, mode, onPublish, onC
               <select id={id} value={(values[s.key] as string) ?? ''}
                       onChange={e => set(s.key, e.target.value)} {...errProps}>
                 <option value="" disabled>Select…</option>
-                {(s.options ?? []).map(o => <option key={o} value={o}>{o}</option>)}
+                {(s.options ?? []).map(o => <option key={o} value={o}>{humanizeKey(o, true)}</option>)}
               </select>
             )}
             {s.type === 'boolean' && (

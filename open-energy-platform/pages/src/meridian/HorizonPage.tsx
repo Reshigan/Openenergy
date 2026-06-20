@@ -219,7 +219,7 @@ export default function HorizonPage() {
                 )}
                 {collapsed ? (
                   <button type="button" className="lane-collapsed-summary" onClick={() => toggleLane(lane.key)}>
-                    {lane.cases.length} case{lane.cases.length === 1 ? '' : 's'}{breached ? ` · ${breached} breached` : ''} — click to expand
+                    {lane.cases.length} case{lane.cases.length === 1 ? '' : 's'}{breached ? ` · ${breached} breached` : ''} · click to expand
                   </button>
                 ) : BUCKETS.map(b => (
                   <div className="cell" key={b.key}>
@@ -239,12 +239,13 @@ export default function HorizonPage() {
           )}
         </section>
 
-        <aside className={dutyCollapsed ? 'collapsed' : undefined} aria-label="Duty stream">
+        <aside className={dutyCollapsed ? 'collapsed' : undefined} aria-label="Duty stream"
+               inert={dutyCollapsed || undefined}>
           <div className="duty-head">
             <button type="button" className="duty-collapse" onClick={toggleDuty}
                     aria-label="Collapse duty stream" title="Collapse duty stream">›</button>
             <h2>DUTY STREAM</h2>
-            <p>Computed {now.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })} — ranked by ZAR at risk × time remaining</p>
+            <p>Computed {now.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })} · ranked by ZAR at risk × time remaining</p>
           </div>
           {actErr && (
             <div className="act-error" role="alert">

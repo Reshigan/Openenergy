@@ -22,7 +22,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
+import { humanizeKey } from '../../meridian/lib';
 import '../../meridian/meridian.css';
+
+// Accept only the document formats the reviewers can open, and cap pre-upload size
+// so a too-large file fails with a clear message instead of a silent backend 413.
+const KYC_ACCEPT = 'image/*,application/pdf';
+const MAX_KYC_BYTES = 10 * 1024 * 1024; // 10 MB
 
 // Source of truth - mirrors the backend allow-list (onboarding-kyc.ts). The only
 // values ever sent as document_type. Order drives the rendered slot order.
@@ -157,6 +163,10 @@ export function KycSubmission() {
 
   const upload = React.useCallback(async (docType: KycDocType, file: File) => {
     setSlotError((m) => ({ ...m, [docType]: undefined }));
+    if (file.size > MAX_KYC_BYTES) {
+      setSlotError((m) => ({ ...m, [docType]: 'File is over 10 MB. Please upload a smaller copy.' }));
+      return;
+    }
     // Show a skeleton on the slot only if the upload is slow (>300ms), never a spinner.
     // Record the slot so focus is restored to its input once the skeleton clears
     // (the skeleton unmounts the focused input; only mark it when it actually shows).
@@ -337,7 +347,7 @@ export function KycSubmission() {
                     {submitted.map((d) => (
                       <li className="mer-kyc-file" key={d.id}>
                         <span className="mer-kyc-file-name">{d.file_name || 'Uploaded document'}</span>
-                        <span className={`mer-kyc-file-status ${d.status}`}>{d.status}</span>
+                        <span className={`mer-kyc-file-status ${d.status}`}>{humanizeKey(d.status, true)}</span>
                       </li>
                     ))}
                   </ul>
@@ -351,6 +361,7 @@ export function KycSubmission() {
                     ref={(el) => { inputRefs.current[docType] = el; }}
                     className="mer-kyc-file-input"
                     type="file"
+                    accept={KYC_ACCEPT}
                     aria-describedby={err ? `${inputId}-err` : undefined}
                     onChange={(e) => {
                       const file = e.target.files?.[0];

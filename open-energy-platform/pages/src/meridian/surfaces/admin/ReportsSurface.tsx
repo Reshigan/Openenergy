@@ -22,7 +22,7 @@ const ADMIN_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'occurred_at',
     pivotGroupBy: 'chain_key',
-    mailSubject: 'CEC — Platform Events Report',
+    mailSubject: 'CEC: Platform Events Report',
   },
   {
     title: 'Role Action Queue',
@@ -36,7 +36,7 @@ const ADMIN_REPORTS: ReportConfig[] = [
     ],
     filters: [{ key: 'status', label: 'Status', type: 'select', options: [{ value: 'pending', label: 'Pending' }, { value: 'actioned', label: 'Actioned' }, { value: 'dismissed', label: 'Dismissed' }] }],
     pivotGroupBy: 'target_role',
-    mailSubject: 'CEC — Role Action Queue Report',
+    mailSubject: 'CEC: Role Action Queue Report',
   },
 ];
 

@@ -126,7 +126,9 @@ function ProgressDots({ steps, currentStep, accentColor }: { steps: string[]; cu
   const currentIdx = displaySteps.indexOf(currentStep);
 
   return (
-    <div className="flex gap-2 mb-8">
+    <div className="flex gap-2 mb-8" role="progressbar"
+         aria-valuenow={currentIdx + 1} aria-valuemin={1} aria-valuemax={displaySteps.length}
+         aria-valuetext={`Step ${currentIdx + 1} of ${displaySteps.length}`}>
       {displaySteps.map((s, i) => {
         const active = i === currentIdx;
         const done = i < currentIdx;
@@ -247,6 +249,8 @@ export function OnboardingWizard() {
   };
 
   const handleSkip = async () => {
+    // Skipping discards anything entered so far; confirm before throwing it away.
+    if (!window.confirm('Skip setup? You can finish it later, but anything entered here will not be saved.')) return;
     setLoading(true);
     try {
       await api.post('/onboarding/skip', {});

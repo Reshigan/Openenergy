@@ -9,7 +9,7 @@ import React from 'react';
 import './meridian.css';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
-import { fetchLedger, classifyLoadError, fmtZar, type LedgerData, type LoadErrorKind } from './lib';
+import { fetchLedger, classifyLoadError, fmtZar, humanizeKey, type LedgerData, type LoadErrorKind } from './lib';
 import { MeridianHeader } from './MeridianHeader';
 import { GuidedTour } from './GuidedTour';
 import { FieldForm } from './FieldForm';
@@ -67,7 +67,7 @@ export default function LedgerPage() {
     const msg: Record<LoadErrorKind, string> = {
       forbidden: "Your role can't access this ledger.",
       notfound: "This ledger doesn't exist.",
-      network: "Couldn't reach the server — check your connection.",
+      network: "Couldn't reach the server. Check your connection.",
       unknown: 'The ledger failed to load.',
     };
     const canRetry = err === 'network' || err === 'unknown';
@@ -161,7 +161,7 @@ export default function LedgerPage() {
                     onClick={() => nav('/thread/' + chainKey + '/' + row.id)}>
               <div className="lcard-top">
                 <span className="ref mono">{row.ref}</span>
-                <span className="chip">{row.status.replace(/_/g, ' ')}</span>
+                <span className="chip">{humanizeKey(row.status, true)}</span>
               </div>
               <b className="lcard-title">{row.title}</b>
               <FuseBar deadline={row.deadline_at} />

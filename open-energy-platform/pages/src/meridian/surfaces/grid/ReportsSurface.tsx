@@ -22,7 +22,7 @@ const GRID_REPORTS: ReportConfig[] = [
     ],
     filters: [{ key: 'chain_status', label: 'Status', type: 'select', options: [{ value: 'invoiced', label: 'Invoiced' }, { value: 'disputed', label: 'Disputed' }, { value: 'settled', label: 'Settled' }] }],
     pivotGroupBy: 'chain_status',
-    mailSubject: 'CEC — Grid Wheeling Charges Report',
+    mailSubject: 'CEC: Grid Wheeling Charges Report',
   },
   {
     title: 'Dispatch Nominations',
@@ -36,7 +36,7 @@ const GRID_REPORTS: ReportConfig[] = [
     ],
     dateKey: 'trading_day',
     pivotGroupBy: 'nomination_status',
-    mailSubject: 'CEC — Dispatch Nominations Report',
+    mailSubject: 'CEC: Dispatch Nominations Report',
   },
   {
     title: 'Grid Code Compliance',
@@ -48,7 +48,7 @@ const GRID_REPORTS: ReportConfig[] = [
       { key: 'created_at', label: 'Filed' },
     ],
     pivotGroupBy: 'requirement_code',
-    mailSubject: 'CEC — Grid Code Compliance Report',
+    mailSubject: 'CEC: Grid Code Compliance Report',
   },
 ];
 

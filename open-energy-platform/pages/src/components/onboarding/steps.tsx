@@ -317,7 +317,7 @@ function DataSourceForm({
             </Field>
             {(entry.api_auth_type === 'bearer' || entry.api_auth_type === 'api_key') && (
               <Field label="Token / API key">
-                <input className={INPUT_CLS} placeholder="sk-…" value={entry.api_key_value || ''}
+                <input className={INPUT_CLS} type="password" autoComplete="off" placeholder="sk-…" value={entry.api_key_value || ''}
                   onChange={(e) => set('api_key_value', e.target.value)} />
               </Field>
             )}

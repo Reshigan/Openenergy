@@ -86,7 +86,7 @@ export default function CommandPalette() {
         go: () => nav(to) }))),
     ...cases
       .filter(c => `${c.ref} ${c.title} ${c.counterparty ?? ''}`.toLowerCase().includes(ql))
-      .map(c => ({ type: 'case' as const, label: `${c.ref} — ${c.title}`,
+      .map(c => ({ type: 'case' as const, label: `${c.ref} · ${c.title}`,
         sub: c.status.replace(/_/g, ' '), go: () => nav(`/thread/${c.chain}/${c.id}`) })),
   ].slice(0, 12);
 
@@ -94,15 +94,18 @@ export default function CommandPalette() {
     <div className="mer veil" onClick={() => setOpen(false)}>
       <div className="palette" role="dialog" aria-modal="true" aria-label="Command palette" onClick={e => e.stopPropagation()}>
         <input autoFocus value={q} placeholder="functions · cases…" aria-label="Search functions and cases"
+               role="combobox" aria-expanded="true" aria-controls="pal-hits" aria-autocomplete="list"
+               aria-activedescendant={hits[sel] ? `pal-hit-${sel}` : undefined}
                onChange={e => { setQ(e.target.value); setSel(0); }}
                onKeyDown={e => {
                  if (e.key === 'ArrowDown') setSel(s => Math.max(0, Math.min(s + 1, hits.length - 1)));
                  if (e.key === 'ArrowUp') setSel(s => Math.max(s - 1, 0));
                  if (e.key === 'Enter' && hits[sel]) { hits[sel].go(); setOpen(false); }
                }} />
-        <div className="pal-hits">
+        <div className="pal-hits" role="listbox" id="pal-hits" aria-label="Results">
           {hits.map((hit, i) => (
-            <button key={i} type="button" className={`hit ${i === sel ? 'sel' : ''}`}
+            <button key={i} type="button" id={`pal-hit-${i}`} role="option" aria-selected={i === sel}
+                    className={`hit ${i === sel ? 'sel' : ''}`}
                     onMouseEnter={() => setSel(i)} onClick={() => { hit.go(); setOpen(false); }}>
               <span className={`type ${hit.type === 'function' ? 'fn' : 'case'}`}>{hit.type.toUpperCase()}</span>
               <b>{hit.label}</b><span className="sub">{hit.sub}</span>

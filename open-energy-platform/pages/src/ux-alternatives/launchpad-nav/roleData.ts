@@ -74,7 +74,6 @@ const ippDomains: Domain[] = [
       { key: 'document_control', label: 'Document control', chainKey: 'ipp_doc_control', description: 'Project document register and revision control.', mockStates: ['submitted','under_review','approved','superseded','rejected'], mockState: 'under_review' },
       { key: 'submittals', label: 'Submittals', chainKey: 'ipp_submittal', description: 'EPC submittal register.' },
       { key: 'rfis', label: 'RFIs', chainKey: 'ipp_rfi', description: 'Requests for information.' },
-      { key: 'change_orders', label: 'Change orders', chainKey: 'project_change_order', description: 'Project change order log.' },
       { key: 'technical_queries', label: 'Technical queries', chainKey: 'ipp_tq', description: 'Engineering technical query register.' },
       { key: 'site_instructions', label: 'Site instructions', chainKey: 'site_instruction', description: 'Engineer site instructions (W144).' },
       { key: 'dlp_defects', label: 'DLP defects', chainKey: 'dlp_defect', description: 'Defects liability period tracking (W145).' },
