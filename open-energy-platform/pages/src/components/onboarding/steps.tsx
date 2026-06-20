@@ -15,7 +15,7 @@ export interface StepProps {
 // ─── Shared primitives ──────────────────────────────────────────────────────
 
 const LABEL_CLS = 'block text-[12px] font-medium text-[#3a4658] mb-1';
-const INPUT_CLS = 'w-full h-9 px-3 rounded border border-[#dde4ec] text-[13px] text-[#0f1c2e] bg-white focus:outline-none focus:border-[oklch(0.46_0.16_55)]';
+const INPUT_CLS = 'w-full h-9 px-3 rounded border border-[#dde4ec] text-[13px] text-[#0f1c2e] bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.46_0.16_55)] focus-visible:border-[oklch(0.46_0.16_55)]';
 const SELECT_CLS = INPUT_CLS;
 const FIELD_CLS = 'space-y-1';
 const GRID2 = 'grid grid-cols-2 gap-x-4 gap-y-3';
@@ -27,11 +27,18 @@ const PROVINCE_LABELS: Record<string, string> = {
   LP: 'Limpopo', FS: 'Free State', NC: 'Northern Cape', NW: 'North West', MP: 'Mpumalanga',
 };
 
+// ponytail: inject a generated id onto the first input child + htmlFor on the label so
+// every Field call site gets a programmatic label/control pair with no per-site edits.
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const id = React.useId();
+  const [first, ...rest] = React.Children.toArray(children);
+  const labelled = React.isValidElement(first)
+    ? React.cloneElement(first as React.ReactElement<{ id?: string }>, { id })
+    : first;
   return (
     <div className={FIELD_CLS}>
-      <label className={LABEL_CLS}>{label}</label>
-      {children}
+      <label className={LABEL_CLS} htmlFor={id}>{label}</label>
+      {labelled}{rest}
     </div>
   );
 }
@@ -94,7 +101,7 @@ export function WelcomeStep({ data: _data, onChange: _onChange, role = 'admin', 
       />
       <div className="relative">
         <h2 className="text-[22px] font-semibold text-[#0f1c2e] leading-snug">
-          Welcome to the Consolidated Energy Cockpit, {firstName}
+          Welcome to Meridian, {firstName}
         </h2>
         <p className="mt-3 text-[14px] text-[#6b7685] leading-relaxed max-w-sm mx-auto">{desc}</p>
         <p className="mt-4 text-[12px] text-[#6b7685] font-medium uppercase tracking-wider">

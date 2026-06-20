@@ -103,7 +103,7 @@ export default function ThreadPage() {
             <h1>{t.case.title}</h1>
             <div className="case-sub">
               <span className="chip">{t.case.status.replace(/_/g, ' ')}</span>
-              <span>W{t.chain.wave} · {t.chain.title}</span>
+              <span>{cleanLabel(t.chain.title)}</span>
               {t.case.counterparty && <span>↔ {t.case.counterparty}</span>}
             </div>
             <FuseBar deadline={t.case.deadline_at} />
@@ -122,7 +122,7 @@ export default function ThreadPage() {
             </ol>
           )}
 
-          <details className="raw-fields" open>
+          <details className="raw-fields">
             <summary>Case record</summary>
             <dl>
               {Object.entries(t.case.raw)
@@ -145,7 +145,8 @@ export default function ThreadPage() {
               <button type="button" className="btn ghost" onClick={() => setActErr(null)}>Dismiss</button>
             </div>
           )}
-          <div className="cascade-preview">{t.actions[0].cascadeHint}</div>
+          {/* ponytail: single action shows its own hint; with rival actions a generic prompt avoids mislabelling */}
+          <div className="cascade-preview">{t.actions.length === 1 ? t.actions[0].cascadeHint : 'Pick an action below. Hover any button to preview its effect.'}</div>
           <div className="actbar-btns">
             {t.actions.map(a => (
               <button key={a.action} type="button" disabled={busy !== null}

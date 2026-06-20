@@ -5,6 +5,7 @@
 import React from 'react';
 import type { LedgerActionField, LookupOption } from './lib';
 import { fetchLookup } from './lib';
+import { cleanLabel } from './labels';
 
 export function FieldForm({ fields, prefill, submitLabel, cascadeHint, ariaLabel, onSubmit, onCancel }: {
   fields: LedgerActionField[];
@@ -89,7 +90,7 @@ export function FieldForm({ fields, prefill, submitLabel, cascadeHint, ariaLabel
         return (
           <div className={flag ? 'field flag' : 'field'} key={f.key}>
             <label htmlFor={id}>
-              {f.label}{f.required && ' *'}
+              {cleanLabel(f.label)}{f.required && ' *'}
               {f.unit && <span className="mono"> · {f.unit}</span>}
             </label>
             {f.type === 'number' && (
