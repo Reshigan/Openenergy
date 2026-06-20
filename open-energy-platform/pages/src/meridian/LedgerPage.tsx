@@ -183,6 +183,7 @@ export default function LedgerPage() {
                onClick={e => e.stopPropagation()}>
             <FieldForm
               fields={initiation.fields}
+              prefill={data.prefill}
               submitLabel={initiation.label}
               ariaLabel={initiation.label}
               onSubmit={async (values) => {

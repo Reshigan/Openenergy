@@ -58,6 +58,7 @@ export interface LedgerData {
   chain: { key: string; wave: number; title: string };
   filters: { key: string; label: string; statuses: string[] }[];
   initiation: { label: string; path: string; fields: LedgerActionField[] } | null;
+  prefill?: Record<string, unknown>;
   kpis: { key: string; label: string; value: number }[];
   rows: LedgerRow[];
 }

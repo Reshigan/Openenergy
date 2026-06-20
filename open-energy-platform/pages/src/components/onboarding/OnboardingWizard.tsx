@@ -178,6 +178,7 @@ export function OnboardingWizard() {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState<string>('');
+  const [confirmSkip, setConfirmSkip] = useState(false);
 
   const role = user?.role || 'admin';
   const accentColor = ROLE_COLORS[role] || ROLE_COLORS['admin'];
@@ -211,6 +212,14 @@ export function OnboardingWizard() {
         setInitializing(false);
       });
   }, [user, role, navigate]);
+
+  // Escape closes the skip-confirm modal (Meridian veil idiom).
+  useEffect(() => {
+    if (!confirmSkip) return undefined;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setConfirmSkip(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [confirmSkip]);
 
   // ── Form data helpers ──────────────────────────────────────────────────────
   const handleChange = (key: string, value: unknown) => {
@@ -248,9 +257,10 @@ export function OnboardingWizard() {
     }
   };
 
-  const handleSkip = async () => {
-    // Skipping discards anything entered so far; confirm before throwing it away.
-    if (!window.confirm('Skip setup? You can finish it later, but anything entered here will not be saved.')) return;
+  // Skipping discards anything entered so far; confirm in-page (brand-consistent,
+  // not a native window.confirm) before throwing it away.
+  const doSkip = async () => {
+    setConfirmSkip(false);
     setLoading(true);
     try {
       await api.post('/onboarding/skip', {});
@@ -347,7 +357,7 @@ export function OnboardingWizard() {
             <button
               type="button"
               className="text-[12px] text-[#6b7685] hover:text-[#3a4658] underline underline-offset-2 transition-colors"
-              onClick={handleSkip}
+              onClick={() => setConfirmSkip(true)}
               disabled={loading}
             >
               Skip setup
@@ -378,6 +388,46 @@ export function OnboardingWizard() {
           </div>
         </div>
       </div>
+
+      {/* Skip-confirm modal — replaces native window.confirm for brand consistency. */}
+      {confirmSkip && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onClick={() => setConfirmSkip(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Skip setup"
+            className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-[16px] font-semibold text-[#0f1c2e]">Skip setup?</h3>
+            <p className="mt-2 text-[13px] text-[#6b7685]">
+              You can finish it later from Horizon, but anything entered here will not be saved.
+            </p>
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                className="h-9 px-4 rounded border border-[#dde4ec] text-[13px] text-[#3a4658] bg-white hover:bg-[#f5f7fa] transition-colors"
+                onClick={() => setConfirmSkip(false)}
+                autoFocus
+              >
+                Keep setting up
+              </button>
+              <button
+                type="button"
+                className="h-9 px-5 rounded text-[13px] font-medium text-white transition-opacity disabled:opacity-60"
+                style={{ backgroundColor: accentColor }}
+                onClick={doSkip}
+                disabled={loading}
+              >
+                {loading ? 'Skipping…' : 'Skip for now'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

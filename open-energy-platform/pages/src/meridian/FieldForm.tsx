@@ -19,9 +19,10 @@ export function FieldForm({ fields, prefill, submitLabel, cascadeHint, ariaLabel
   const [values, setValues] = React.useState<Record<string, unknown>>(() => {
     const init: Record<string, unknown> = {};
     for (const f of fields) {
-      if (f.defaultFrom && prefill != null && prefill[f.defaultFrom] != null) {
-        init[f.key] = prefill[f.defaultFrom];
-      }
+      // explicit defaultFrom alias wins; else autofill by the field's own key
+      const v = (f.defaultFrom && prefill?.[f.defaultFrom] != null) ? prefill[f.defaultFrom]
+              : (prefill?.[f.key] != null ? prefill[f.key] : undefined);
+      if (v !== undefined) init[f.key] = v;
     }
     return init;
   });

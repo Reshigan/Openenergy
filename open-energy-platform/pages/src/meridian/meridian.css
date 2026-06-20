@@ -1143,3 +1143,15 @@
   .mer-tour-skip, .mer-tour-gotit { transition: none; }
   .mer-tour-skip:active, .mer-tour-gotit:active { transform: none; }
 }
+
+/* Thread signature ceremony panel — hash-bound, vault-backed signatory roster. */
+.mer .sign-panel { margin-top:28px; border:1px solid var(--line); border-radius:8px; background:var(--raised); padding:14px; }
+.mer .sign-head { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.mer .sign-list { list-style:none; margin:0 0 12px; padding:0; }
+.mer .sign-list li { display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-top:1px solid var(--line); font-size:12.5px; }
+.mer .sign-list li:first-child { border-top:none; }
+.mer .sign-list li.signed { color:var(--ink2); }
+.mer .sign-list li.pending span:last-child { color:var(--oxide); }
+.mer .sign-acts { display:flex; gap:8px; }
+.mer .sign-add { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.mer .sign-add input { flex:1 1 140px; padding:7px 10px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink); font-size:12.5px; }

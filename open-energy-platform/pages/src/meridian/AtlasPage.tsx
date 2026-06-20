@@ -55,6 +55,7 @@ export default function AtlasPage() {
   const isReachable = (f: { chainKey?: string; route?: string; key: string }) =>
     isTileReachable(role, f, hasSurface);
   const fnCount = cfg.domains.reduce((n, d) => n + d.features.filter(isReachable).length, 0);
+  const nothing = fnCount === 0 && transactable.length === 0;
 
   return (
     <div className="mer atlas">
@@ -64,6 +65,12 @@ export default function AtlasPage() {
       </>} />
       <GuidedTour surface="atlas" />
       <main className="domains">
+        {nothing && (
+          <div className="lcard-empty">
+            No functions are wired for your role yet. Your live work still lands on{' '}
+            <Link to="/horizon">Horizon</Link>.
+          </div>
+        )}
         {transactable.length > 0 && (
           <section className="domain">
             <h2>DEAL DESK</h2>

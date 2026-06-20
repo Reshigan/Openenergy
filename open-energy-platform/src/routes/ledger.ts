@@ -12,6 +12,7 @@ import { HonoEnv } from '../utils/types';
 import {
   getChain, bucketFor, attentionScore, quantumZar, listSelectCols, type ChainDescriptor,
 } from '../utils/chain-registry-meridian';
+import { buildPrefill } from '../utils/autofill';
 
 export interface LedgerRow {
   id: string; ref: string; title: string; status: string;
@@ -26,7 +27,7 @@ function viewerCanSee(chain: ChainDescriptor, role: string): boolean {
   return chain.actions.some(a => a.roles.includes(role));
 }
 
-export function assembleLedger(chain: ChainDescriptor, rows: Record<string, unknown>[], role: string, now: number) {
+export function assembleLedger(chain: ChainDescriptor, rows: Record<string, unknown>[], role: string, now: number, prefill: Record<string, unknown> = {}) {
   const mapped: LedgerRow[] = rows.map(r => {
     const deadline = (r[chain.deadlineCol] as string | null) ?? null;
     const zar = quantumZar(chain, r);
@@ -54,6 +55,7 @@ export function assembleLedger(chain: ChainDescriptor, rows: Record<string, unkn
     chain: { key: chain.key, wave: chain.wave, title: chain.title },
     filters: chain.filters ?? [],
     initiation: chain.initiation ?? null,
+    prefill,
     kpis,
     rows: mapped.sort((a, b) => b.score - a.score),
   };
@@ -138,7 +140,10 @@ ledger.get('/:chainKey', async (c) => {
   sql += ` ORDER BY (${chain.deadlineCol} IS NULL), ${chain.deadlineCol} ASC LIMIT 200`;
   const res = await c.env.DB.prepare(sql).bind(...binds).all();
   const rows = (res.results ?? []) as Record<string, unknown>[];
-  return c.json({ success: true, data: assembleLedger(chain, rows, user.role, Date.now()) });
+  // Compute autofill only when the chain offers an initiation form (the only
+  // consumer of prefill); skips two D1 reads on view-only ledgers.
+  const prefill = chain.initiation ? await buildPrefill(c.env, user) : {};
+  return c.json({ success: true, data: assembleLedger(chain, rows, user.role, Date.now(), prefill) });
 });
 
 export default ledger;

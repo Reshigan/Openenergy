@@ -22,6 +22,9 @@ interface ThreadData {
   actions: { action: string; label: string; path: string; cascadeHint: string; tone?: string; fields?: LedgerActionField[];
              method?: string; body?: Record<string, unknown> }[];
   viewer_role: string;
+  signatories?: { id: string; participant_id: string; signatory_name: string | null;
+                  signatory_designation: string | null; signed: number; signed_at: string | null }[];
+  can_manage_signatories?: boolean;
 }
 
 export default function ThreadPage() {
@@ -61,6 +64,28 @@ export default function ThreadPage() {
       // State machines return 409 with a reason for invalid transitions —
       // surface the server's {error} text; keep the thread rendered.
       setActErr(e?.response?.data?.error ?? e?.message ?? 'Action failed');
+    } finally { setBusy(null); }
+  }
+
+  async function sign() {
+    setBusy('__sign__');
+    try {
+      await api.post(`/thread/${chainKey}/${id}/sign`, {});
+      setActErr(null);
+      await load();
+    } catch (e: any) {
+      setActErr(e?.response?.data?.error ?? 'Sign failed');
+    } finally { setBusy(null); }
+  }
+
+  async function addSignatory(form: { participant_id: string; signatory_name: string; signatory_designation: string }) {
+    setBusy('__add_sig__');
+    try {
+      await api.post(`/thread/${chainKey}/${id}/signatories`, form);
+      setActErr(null);
+      await load();
+    } catch (e: any) {
+      setActErr(e?.response?.data?.error ?? 'Could not add signatory');
     } finally { setBusy(null); }
   }
 
@@ -134,6 +159,16 @@ export default function ThreadPage() {
                 ))}
             </dl>
           </details>
+
+          {(t.signatories?.length || t.can_manage_signatories) ? (
+            <SignPanel
+              signatories={t.signatories ?? []}
+              canManage={!!t.can_manage_signatories}
+              busy={busy}
+              onSign={sign}
+              onAdd={addSignatory}
+            />
+          ) : null}
         </section>
       </main>
 
@@ -182,5 +217,69 @@ export default function ThreadPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Signature ceremony panel — hash-bound, vault-backed roster for the chain entity.
+// Lists each signatory's state; one "Sign" button signs as the current user
+// (server 403s if they're not on the roster). Writer roles get a minimal add form.
+type Sigs = NonNullable<ThreadData['signatories']>;
+function SignPanel(props: {
+  signatories: Sigs;
+  canManage: boolean;
+  busy: string | null;
+  onSign: () => void;
+  onAdd: (f: { participant_id: string; signatory_name: string; signatory_designation: string }) => void;
+}) {
+  const { signatories, canManage, busy, onSign, onAdd } = props;
+  const [open, setOpen] = React.useState(false);
+  const [pid, setPid] = React.useState('');
+  const [name, setName] = React.useState('');
+  const [desig, setDesig] = React.useState('');
+  const pending = signatories.filter(s => !s.signed).length;
+
+  return (
+    <section className="sign-panel">
+      <div className="sign-head">
+        <b>Signatures</b>
+        <span className="chip">{pending === 0 && signatories.length > 0 ? 'All signed' : `${signatories.length - pending}/${signatories.length} signed`}</span>
+      </div>
+      {signatories.length > 0 && (
+        <ul className="sign-list">
+          {signatories.map(s => (
+            <li key={s.id} className={s.signed ? 'signed' : 'pending'}>
+              <span>{s.signatory_name || s.participant_id}{s.signatory_designation ? ` · ${s.signatory_designation}` : ''}</span>
+              <span className="mono">{s.signed ? `signed ${s.signed_at?.slice(0, 16).replace('T', ' ') ?? ''}` : 'pending'}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="sign-acts">
+        <button type="button" className="btn pri" disabled={busy !== null || pending === 0} onClick={onSign}>
+          {busy === '__sign__' ? '…' : 'Sign'}
+        </button>
+        {canManage && (
+          <button type="button" className="btn ghost" disabled={busy !== null} onClick={() => setOpen(o => !o)}>
+            {open ? 'Cancel' : 'Add signatory'}
+          </button>
+        )}
+      </div>
+      {canManage && open && (
+        <form
+          className="sign-add"
+          onSubmit={e => {
+            e.preventDefault();
+            if (!pid.trim()) return;
+            onAdd({ participant_id: pid.trim(), signatory_name: name.trim(), signatory_designation: desig.trim() });
+            setPid(''); setName(''); setDesig(''); setOpen(false);
+          }}
+        >
+          <input value={pid} onChange={e => setPid(e.target.value)} placeholder="Participant ID" aria-label="Participant ID" />
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Name" aria-label="Signatory name" />
+          <input value={desig} onChange={e => setDesig(e.target.value)} placeholder="Designation" aria-label="Designation" />
+          <button type="submit" className="btn pri" disabled={busy !== null || !pid.trim()}>Add</button>
+        </form>
+      )}
+    </section>
   );
 }
