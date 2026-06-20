@@ -91,7 +91,7 @@ export function LenderAuditPage() {
           </div>
           <button
             type="button"
-            onClick={() => navigate('/lender-suite')}
+            onClick={() => navigate('/horizon')}
             style={{
               width: '100%',
               background: 'transparent',
