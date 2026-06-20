@@ -15,7 +15,7 @@ export function ErrorBanner({ message = 'Something went wrong', onRetry, onDismi
       {onRetry && (
         <button type="button"
           onClick={onRetry}
-          className="flex items-center gap-1 px-3 py-1 text-sm rounded"
+          className="flex items-center gap-1 px-3 py-1 text-sm rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
           style={{ color: '#c0392b' }}
           onMouseEnter={e => (e.currentTarget.style.background = '#fee2e2')}
           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -25,7 +25,8 @@ export function ErrorBanner({ message = 'Something went wrong', onRetry, onDismi
         </button>
       )}
       {onDismiss && (
-        <button type="button" onClick={onDismiss} className="p-1 rounded"
+        <button type="button" onClick={onDismiss} aria-label="Dismiss error"
+          className="p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
           style={{ color: '#c0392b' }}
           onMouseEnter={e => (e.currentTarget.style.background = '#fee2e2')}
           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}

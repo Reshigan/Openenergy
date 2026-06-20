@@ -8,6 +8,7 @@
 // mutating lender surfaces compose their own ActionModals around this.
 import React, { useEffect, useState } from 'react';
 import { Pill } from '../../../components/launch/WorkstationShell';
+import { TableSkeleton } from '../../../components/Skeleton';
 import { api } from '../../../lib/api';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}/;
@@ -67,6 +68,7 @@ export function AutoTable({
 }) {
   const [rows, setRows] = useState<any[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     let live = true;
@@ -75,10 +77,22 @@ export function AutoTable({
       .then((res) => { if (live) setRows(unwrap(res.data)); })
       .catch((e) => { if (live) setErr(e?.response?.data?.error || e?.message || 'Failed to load'); });
     return () => { live = false; };
-  }, [endpoint, refreshKey]);
+  }, [endpoint, refreshKey, retry]);
 
-  if (err) return <div className="rounded-lg border border-[var(--oxide)] bg-[var(--oxide-tint)] px-4 py-3 text-[12px] text-[var(--oxide-deep)]">{err}</div>;
-  if (rows == null) return <div className="text-[12px] text-[var(--ink3)] px-1 py-6">Loading…</div>;
+  // A failed load is a dead-end without a way back; give the user a one-click retry.
+  if (err) return (
+    <div className="rounded-lg border border-[var(--oxide)] bg-[var(--oxide-tint)] px-4 py-3 text-[12px] text-[var(--oxide-deep)] flex items-center justify-between gap-3">
+      <span>{err}</span>
+      <button
+        type="button"
+        onClick={() => setRetry((n) => n + 1)}
+        className="shrink-0 rounded border border-[var(--oxide)] px-2 py-1 text-[11px] font-semibold hover:bg-white/50"
+      >
+        Try again
+      </button>
+    </div>
+  );
+  if (rows == null) return <TableSkeleton columns={Math.min(maxCols, 5)} rows={5} />;
   if (rows.length === 0) return <div className="rounded-lg border border-[var(--line)] bg-white px-4 py-8 text-center text-[12px] text-[var(--ink3)]">{empty}</div>;
 
   const seen = new Set<string>();

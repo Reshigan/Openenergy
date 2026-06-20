@@ -18,6 +18,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { ListingTable, Pill } from './WorkstationShell';
+import { ErrorBanner } from '../ErrorBanner';
 import { api } from '../../lib/api';
 import { ReconBreaksModal, AuditEventsModal, ExportDetailModal } from './AuditDrillIns';
 import { ListTree } from 'lucide-react';
@@ -109,7 +110,7 @@ export function AuditPanel({
 
   return (
     <div className="space-y-4">
-      {err && <div className="text-[12px] text-red-700">{err}</div>}
+      {err && <ErrorBanner message={err} onDismiss={() => setErr(null)} />}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="rounded-xl border border-[#dde4ec] bg-white p-4">

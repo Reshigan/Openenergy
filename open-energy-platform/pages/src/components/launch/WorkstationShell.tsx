@@ -842,7 +842,7 @@ export function ListingTable({
               type="button"
               onClick={() => setPage(p => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="p-1 rounded disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none"
+              className="p-1 rounded disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oe-accent/50"
               style={{ border: `1px solid ${BORDER}`, background: 'transparent' }}
               aria-label="Previous page"
             >
@@ -852,7 +852,7 @@ export function ListingTable({
               type="button"
               onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               disabled={page === totalPages - 1}
-              className="p-1 rounded disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none"
+              className="p-1 rounded disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oe-accent/50"
               style={{ border: `1px solid ${BORDER}`, background: 'transparent' }}
               aria-label="Next page"
             >
@@ -874,12 +874,15 @@ export const Pill = ({ tone, children }: { tone: 'good' | 'warn' | 'bad' | 'neut
     info:    { bg: INFO_BG, color: INFO },
   };
   const s = styles[tone] ?? styles.neutral;
+  // Status values arrive as raw snake_case (e.g. "in_om"); tidy underscores so no
+  // call site has to remember to. Non-string children (numbers, JSX) pass through.
+  const tidy = typeof children === 'string' ? children.replace(/_/g, ' ') : children;
   return (
     <span
       className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide"
       style={{ background: s.bg, color: s.color }}
     >
-      {children}
+      {tidy}
     </span>
   );
 };

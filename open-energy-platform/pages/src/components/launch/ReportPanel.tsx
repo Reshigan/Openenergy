@@ -261,13 +261,24 @@ export function ReportPanel({ config }: { config: ReportConfig }) {
         <div className="h-24 flex items-center justify-center text-xs text-[#6b7685]">Loading…</div>
       )}
       {!loading && err && (
-        <div className="text-xs text-red-500 border border-red-200 bg-red-50 rounded p-3">{err}</div>
+        <div className="text-xs text-red-500 border border-red-200 bg-red-50 rounded p-3 flex items-center justify-between gap-3">
+          <span>{err}</span>
+          {/* Don't strand the user on a failed report load; one-click retry. */}
+          <button type="button" onClick={() => void load()} className="shrink-0 rounded border border-red-300 px-2 py-1 font-semibold text-red-600 hover:bg-red-100">
+            Try again
+          </button>
+        </div>
+      )}
+      {!loading && !err && rows.length === 0 && (
+        <div className="rounded-lg border border-[#e3e8ef] bg-white px-4 py-10 text-center text-xs text-[#6b7685]">
+          No data for the selected filters. Widen the date range or clear filters.
+        </div>
       )}
 
-      {!loading && !err && view === 'report' && (
+      {!loading && !err && rows.length > 0 && view === 'report' && (
         <ReportView rows={rows} columns={config.columns} numerics={summaryNumerics} title={config.title} from={from} to={to} />
       )}
-      {!loading && !err && view === 'table' && (
+      {!loading && !err && rows.length > 0 && view === 'table' && (
         <TableView
           rows={pageRows} columns={config.columns}
           sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}
@@ -275,7 +286,7 @@ export function ReportPanel({ config }: { config: ReportConfig }) {
           onPage={setPage} total={rows.length}
         />
       )}
-      {!loading && !err && view === 'pivot' && (
+      {!loading && !err && rows.length > 0 && view === 'pivot' && (
         <PivotView
           data={pivotData} columns={config.columns} numericKeys={numericKeys}
           pivotField={pivotField} onPivotField={setPivotField}

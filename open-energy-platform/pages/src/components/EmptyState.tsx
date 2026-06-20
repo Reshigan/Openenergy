@@ -25,7 +25,7 @@ export function EmptyState({ icon, title, description, subtitle, action }: Empty
       {action && (
         <button type="button"
           onClick={action.onClick}
-          className="flex items-center gap-2 px-4 py-2 bg-oe-accent text-white rounded-lg hover:bg-oe-accent/90"
+          className="flex items-center gap-2 px-4 py-2 bg-oe-accent text-white rounded-lg hover:bg-oe-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oe-accent/50"
         >
           <Plus className="w-4 h-4" />
           {action.label}

@@ -254,6 +254,14 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
 
   useEffect(() => { void load(); }, [load]);
 
+  // Escape closes the confirm dialog — keyboard users otherwise have no way out without a mouse.
+  useEffect(() => {
+    if (!confirmPending) return undefined;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setConfirmPending(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [confirmPending]);
+
   const executeRowAction = useCallback(async (action: RowAction, row: Record<string, unknown>) => {
     setConfirmPending(null);
     const rowId = String(row.id ?? '');
@@ -372,10 +380,19 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
 
       {error && (
         <div
-          className="rounded-lg px-4 py-2 text-[13px] inline-flex items-center gap-2"
+          className="rounded-lg px-4 py-2 text-[13px] flex items-center gap-2"
           style={{ borderWidth: 1, borderStyle: 'solid', borderColor: BAD_BDR, background: BAD_BG, color: BAD }}
         >
-          <AlertTriangle size={14} /> {error}
+          <AlertTriangle size={14} /> <span className="flex-1">{error}</span>
+          {/* A failed load left the user with no way forward; offer a one-click retry. */}
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="shrink-0 inline-flex items-center gap-1 rounded px-2 py-1 text-[12px] font-semibold"
+            style={{ borderWidth: 1, borderStyle: 'solid', borderColor: BAD_BDR, color: BAD }}
+          >
+            <RefreshCw size={12} /> Try again
+          </button>
         </div>
       )}
       {success && (
@@ -399,6 +416,19 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
           <div className="p-10 text-center" style={{ color: TX2 }}>
             <p className="text-[14px] font-semibold" style={{ color: TX1 }}>No records yet</p>
             {tab.emptyHint && <p className="text-[12px] mt-1 max-w-lg mx-auto">{tab.emptyHint}</p>}
+            {/* Empty table + a hidden header button is a dead-end; surface the create action inline. */}
+            {tab.create && (
+              <button
+                type="button"
+                onClick={() => setModalForm({ form: tab.create!, title: tab.create!.title })}
+                className="mt-4 inline-flex items-center gap-1 rounded-md px-3 h-9 text-[12px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+                style={{ background: ACC }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = ACC_HVR; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = ACC; }}
+              >
+                <Plus size={12} /> {tab.create.submitLabel || 'New'}
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -772,6 +802,7 @@ function FormModal({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close dialog"
             className="p-1.5 rounded"
             style={{ color: TX2 }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = ROW_HOVER; }}
@@ -1020,6 +1051,7 @@ function DetailDrawer({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close detail"
             className="p-1.5 rounded"
             style={{ color: TX2 }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = ROW_HOVER; }}
