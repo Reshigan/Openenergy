@@ -297,6 +297,7 @@ const lenderDomains: Domain[] = [
       { key: 'loan_default', label: 'Default & enforcement', chainKey: 'loan_default', description: 'LMA event-of-default enforcement/step-in (W45).', mockStates: ['performing','watchlist','event_of_default','standstill','enforcement','step_in','restructure','write_off'], mockState: 'watchlist' },
       { key: 'loan_restructure', label: 'Restructure & A&E', chainKey: 'loan_restructure', description: 'LMA Amend & Extend / forbearance with credit-committee gate (W108).', mockStates: ['trigger_event','restructure_proposal_drafted','lender_credit_committee_review','term_sheet_signed','effective_date','completed','escalated_to_default'], mockState: 'lender_credit_committee_review' },
       { key: 'dunning', label: 'Dunning queue', description: 'Cycle 1/2/3 borrower observation notices with cure deadlines and escalation (W6).' },
+      { key: 'covenant_workout', label: 'Covenant workout queue', route: '/lender-suite/workout', description: 'Covenant-breach workout cases (open → investigating → resolved) with inline AI advisor.' },
     ],
   },
   {
@@ -322,6 +323,7 @@ const lenderDomains: Domain[] = [
       { key: 'covenant_reports', label: 'Covenant summary', description: 'Cross-facility covenant status dashboard.' },
       { key: 'carbon_lender', label: 'ESG carbon reports', description: 'Carbon accounting for DFI portfolios.' },
       { key: 'reports', label: 'Reports & exports', description: 'Covenant certificates, DSCR, drawdown and EP IV ESAP reports with pivots and exports.' },
+      { key: 'facility_audit_log', label: 'Facility audit & IFRS9 export', route: '/lender-suite/audit', description: 'L5 tamper-evident audit, IFRS9 export and disbursement reconciliation.' },
       { key: 'strate-swift', label: 'Settlement rails (W124)', description: 'STRATE/SWIFT settlement connectors.' },
       { key: 'sap-oracle-erp', label: 'ERP connectors (W125)', description: 'SAP/Oracle ERP integration.' },
       { key: 'government-filing', label: 'Filing connectors (W126)', description: 'NERSA/SARS government filing connectors.' },
