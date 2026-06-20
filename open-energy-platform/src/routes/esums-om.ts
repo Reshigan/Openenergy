@@ -338,9 +338,12 @@ om.post('/telemetry', async (c) => {
     written += await writeTelemetry(c.env as any, rows, shardKey);
   }
 
-  // Keep last_seen_at fresh (always hits main DB — device table lives there)
-  for (const r of enriched) {
-    await c.env.DB.prepare(`UPDATE om_devices SET last_seen_at = ? WHERE id = ?`).bind(r.ts, r.device_id).run();
+  // Keep last_seen_at fresh (always hits main DB — device table lives there).
+  // One UPDATE per device but independent — fire them in a single batch.
+  if (enriched.length) {
+    await c.env.DB.batch(enriched.map((r) =>
+      c.env.DB.prepare(`UPDATE om_devices SET last_seen_at = ? WHERE id = ?`).bind(r.ts, r.device_id),
+    ));
   }
 
   return c.json({ success: true, data: { written } });

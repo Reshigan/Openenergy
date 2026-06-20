@@ -251,7 +251,8 @@ procurement.post('/rfps/:id/evaluate', async (c) => {
   const list = (allBids.results || []) as Array<{ id: string; bid_amount: number }>;
   const minPrice = list.reduce((m, b) => Math.min(m, b.bid_amount || Infinity), Infinity);
 
-  let updated = 0;
+  // Each bid's score is independent — build all UPDATEs and fire them in one batch.
+  const scoreStmts = [];
   for (const [bidId, s] of Object.entries(body.scoring)) {
     const bid = list.find((b) => b.id === bidId);
     if (!bid) continue;
@@ -260,11 +261,12 @@ procurement.post('/rfps/:id/evaluate', async (c) => {
     const del  = Number(s?.delivery ?? 70);
     const priceScore = bid.bid_amount ? (minPrice / bid.bid_amount) * 100 : 0;
     const overall = (priceScore * 0.40) + (tech * 0.25) + (sus * 0.20) + (del * 0.15);
-    await c.env.DB.prepare(
+    scoreStmts.push(c.env.DB.prepare(
       `UPDATE procurement_bids SET technical_score = ?, sustainability_score = ?, delivery_score = ?, overall_score = ?, score = ? WHERE id = ?`,
-    ).bind(tech, sus, del, overall, overall, bidId).run();
-    updated++;
+    ).bind(tech, sus, del, overall, overall, bidId));
   }
+  if (scoreStmts.length) await c.env.DB.batch(scoreStmts);
+  const updated = scoreStmts.length;
   if ((rfp as { status?: string }).status === 'published') {
     await c.env.DB.prepare(`UPDATE procurement_rfps SET status = 'evaluation' WHERE id = ?`).bind(id).run();
   }

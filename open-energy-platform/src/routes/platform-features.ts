@@ -509,14 +509,18 @@ platform.post('/bulk/invoices', async (c) => {
   const action = String(b.action || '');
   if (!ids.length) return c.json({ success: false, error: 'ids[] required' }, 400);
   if (action !== 'confirm') return c.json({ success: false, error: 'only "confirm" supported in bulk' }, 400);
+  // Identical UPDATE per id — collapse to one set-based statement.
+  const targets = ids.slice(0, 500);
   let updated = 0, failed = 0;
-  for (const id of ids.slice(0, 500)) {
+  if (targets.length) {
     try {
-      await c.env.DB.prepare(
-        `UPDATE invoices SET confirmation_status = 'issuer_confirmed' WHERE id = ?`,
-      ).bind(id).run();
-      updated += 1;
-    } catch { failed += 1; }
+      const placeholders = targets.map(() => '?').join(',');
+      const res = await c.env.DB.prepare(
+        `UPDATE invoices SET confirmation_status = 'issuer_confirmed' WHERE id IN (${placeholders})`,
+      ).bind(...targets).run();
+      updated = res.meta?.changes ?? targets.length;
+      failed = targets.length - updated;
+    } catch { failed = targets.length; }
   }
   return c.json({ success: true, data: { requested: ids.length, updated, failed } });
 });
