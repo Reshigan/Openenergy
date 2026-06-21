@@ -45,9 +45,16 @@ for entry in "${PATTERNS[@]}"; do
   name="${rest%%:*}"
   desc="${rest#*:}"
   encoded=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "$pattern")
-  code=$(curl -s -o /tmp/smoke-cron.out -w "%{http_code}" \
-    -X POST -H "Authorization: Bearer $TOKEN" \
-    "$BASE/api/admin/cron/run-once?pattern=$encoded")
+  # Truncate first + retry 000 (connection failure leaves the body file stale).
+  : > /tmp/smoke-cron.out
+  for attempt in 1 2 3; do
+    code=$(curl -s -o /tmp/smoke-cron.out -w "%{http_code}" \
+      -X POST -H "Authorization: Bearer $TOKEN" \
+      "$BASE/api/admin/cron/run-once?pattern=$encoded")
+    [ "$code" != "000" ] && break
+    : > /tmp/smoke-cron.out
+    sleep 2
+  done
   head=$(head -c 200 /tmp/smoke-cron.out)
   if [[ "$code" =~ ^2 ]]; then
     printf "  ✅  %-22s  [%s]  %s\n" "$pattern" "$name" "$desc"

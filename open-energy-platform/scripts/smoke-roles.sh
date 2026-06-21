@@ -46,8 +46,16 @@ login_as() {
 # call TOKEN METHOD PATH [EXPECTED_PREFIX]
 call() {
   local token="$1" method="$2" path="$3" expect="${4:-2}"
-  local code; code=$(curl -s -o /tmp/smoke-roles.out -w "%{http_code}" \
-    -X "$method" -H "Authorization: Bearer $token" "$BASE$path")
+  # Truncate first + retry 000 (connection failure leaves the body file stale).
+  : > /tmp/smoke-roles.out
+  local code attempt
+  for attempt in 1 2 3; do
+    code=$(curl -s -o /tmp/smoke-roles.out -w "%{http_code}" \
+      -X "$method" -H "Authorization: Bearer $token" "$BASE$path")
+    [ "$code" != "000" ] && break
+    : > /tmp/smoke-roles.out
+    sleep 2
+  done
   local head; head=$(head -c 140 /tmp/smoke-roles.out)
   if [[ "$code" =~ ^$expect ]]; then
     printf "      ✅  %-6s %-50s  HTTP %s\n" "$method" "$path" "$code"

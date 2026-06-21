@@ -46,8 +46,20 @@ call() {
   if [ -n "$body" ]; then
     args+=(-H "Content-Type: application/json" -d "$body")
   fi
-  local code
-  code=$(curl "${args[@]}" "$BASE$path")
+  # Truncate the body file first: curl leaves it untouched on a connection
+  # failure (HTTP 000), so a stale prior body would otherwise leak into the
+  # failure line and masquerade as a wrong response.
+  : > /tmp/smoke.out
+  local code attempt
+  # Retry transient connection failures (000 = no HTTP response: reset/timeout/DNS).
+  # CI runs against prod where the edge occasionally drops a connection; a real
+  # status (2xx/4xx/5xx) is authoritative and never retried.
+  for attempt in 1 2 3; do
+    code=$(curl "${args[@]}" "$BASE$path")
+    [ "$code" != "000" ] && break
+    : > /tmp/smoke.out
+    sleep 2
+  done
   local head; head=$(head -c 180 /tmp/smoke.out)
   if [[ "$code" =~ ^$expect ]]; then
     printf "  ✅  %-6s %-50s  HTTP %s\n" "$method" "$path" "$code"
