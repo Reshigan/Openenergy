@@ -53,6 +53,32 @@
   display:flex; flex-wrap:wrap; gap:8px; padding:10px 28px;
   border-bottom:1px solid var(--line); background:var(--raised); flex-shrink:0;
 }
+/* Role headline KPI band (HorizonKpis) — horizontal strip of clickable metric
+   tiles between the role-switcher and the board. Scrolls on narrow viewports
+   rather than wrapping into a tall block that pushes the board below the fold. */
+.mer .kpi-band {
+  display:flex; gap:10px; padding:12px 28px; flex-shrink:0;
+  border-bottom:1px solid var(--line); background:var(--paper);
+  overflow-x:auto; scrollbar-width:thin;
+}
+.mer .kpi-tile {
+  display:flex; flex-direction:column; gap:2px; min-width:118px; flex:0 0 auto;
+  padding:9px 14px; border:1px solid var(--line); border-radius:8px;
+  background:var(--raised); text-decoration:none; color:var(--ink);
+  transition:border-color 120ms var(--ease), transform 120ms var(--ease), box-shadow 120ms var(--ease);
+}
+.mer .kpi-tile:hover { border-color:var(--petrol); transform:translateY(-1px); box-shadow:0 2px 8px oklch(0.40 0.075 200 / 0.12); }
+.mer .kpi-tile:active { transform:translateY(0); }
+.mer .kpi-tile:focus-visible { outline:2px solid var(--petrol-deep); outline-offset:2px; }
+.mer .kpi-tile .kpi-v { font-size:19px; font-weight:700; letter-spacing:-0.01em; line-height:1.1; }
+.mer .kpi-tile .kpi-l { font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:0.04em; }
+.mer .kpi-tile.alert { border-color:var(--oxide); background:var(--oxide-tint); }
+.mer .kpi-tile.alert .kpi-v { color:var(--oxide); }
+.mer .kpi-tile.alert:hover { border-color:var(--oxide); }
+/* Loading shell — same box as a real tile (no layout shift) but inert. */
+.mer .kpi-tile.kpi-skel { cursor:default; pointer-events:none; justify-content:center; }
+.mer .kpi-tile.kpi-skel:hover { border-color:var(--line); transform:none; box-shadow:none; }
+
 /* Inline (non-fatal) action error — board/thread stays rendered behind it. */
 .mer .act-error {
   display:flex; align-items:center; gap:10px; padding:8px 12px; font-size:12px;
@@ -77,6 +103,12 @@
 }
 .mer .board-new:hover { background:oklch(0.40 0.075 200 / 0.16); }
 .mer .board-new:focus-visible { outline:2px solid var(--petrol-deep); outline-offset:2px; }
+/* Stacked corner actions: create (primary) + browse existing records (secondary).
+   The board only shows *live* cases; "Browse records" is the always-present path
+   to a role's full portfolio via the role-scoped Atlas (so it's not just "+New"). */
+.mer .board-new-stack { display:flex; flex-direction:column; gap:5px; align-self:start; }
+.mer .board-new.alt { color:var(--ink2); background:transparent; border-color:var(--line); }
+.mer .board-new.alt:hover { background:var(--raised); color:var(--ink); }
 
 /* ── Top bar ─────────────────────────────── */
 .mer header {

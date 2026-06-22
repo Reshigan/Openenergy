@@ -7,6 +7,7 @@ import './meridian.css';
 import { fetchHorizon, singleChainOf, BUCKETS, fmtZar, type Bucket, type HorizonData, type MerCase } from './lib';
 import { CaseTile } from './components';
 import { MeridianHeader } from './MeridianHeader';
+import { HorizonKpis } from './HorizonKpis';
 import { GettingStarted } from './GettingStarted';
 import { GuidedTour } from './GuidedTour';
 import { cleanLabel } from './labels';
@@ -167,10 +168,15 @@ export default function HorizonPage() {
 
       {roleSwitcher}
 
+      <HorizonKpis role={role} />
+
       <div className={dutyCollapsed ? 'main duty-collapsed' : 'main'}>
         <section className="board" aria-label="Live cases by time to consequence">
           <div className="board-head">
-            <Link to="/new" className="board-new" title="Start a new transaction">+ New transaction</Link>
+            <div className="board-new-stack">
+              <Link to="/new" className="board-new" title="Start a new transaction">+ New transaction</Link>
+              <Link to="/atlas" className="board-new alt" title="Browse all your records and functions">Browse records</Link>
+            </div>
             {BUCKETS.map(b => (
               <div key={b.key} className={b.key === 'breached' ? 'bucket-h breach' : 'bucket-h'}>
                 {b.label}

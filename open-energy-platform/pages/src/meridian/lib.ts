@@ -70,6 +70,22 @@ export async function fetchLedger(chainKey: string, status?: string): Promise<Le
   return r.data.data;
 }
 
+// Role headline stats for the Horizon KPI band. Reuses the existing role-aware
+// /cockpit/stats endpoint (KV-cached 30s) — top-level money/contract counts plus
+// a role_national block of domain KPIs. Keyed off the signed-in user's JWT, so
+// the band always shows *your* numbers (admin sees platform stats regardless of
+// which board the role-switcher is viewing).
+export interface RoleStats {
+  role: string;
+  role_national?: Record<string, number>;
+  [k: string]: unknown;
+}
+export async function fetchRoleStats(): Promise<RoleStats> {
+  const r = await api.get('/cockpit/stats');
+  if (!r.data?.success) throw new Error(r.data?.error || 'stats fetch failed');
+  return r.data.data as RoleStats;
+}
+
 export function fmtZar(v: number | null): string {
   if (v == null) return '';
   if (v >= 1e9) return `R ${(v / 1e9).toFixed(2)}bn`;
