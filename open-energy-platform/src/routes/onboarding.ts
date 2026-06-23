@@ -44,8 +44,13 @@ const ONBOARDING_STEPS: Record<string, string[]> = {
   regulator:      ['welcome', 'body', 'jurisdiction', 'complete'],
   support:        ['welcome', 'org', 'sla', 'complete'],
   admin:          ['welcome', 'complete'],
-  esco:           ['welcome', 'org_profile', 'sites', 'complete'],
-  epc_contractor: ['welcome', 'org_profile', 'project_scope', 'complete'],
+  // esco/epc_contractor are not signup-selectable (validation.ts role enum) and
+  // have no dedicated wizard step components, so the SPA falls back to the admin
+  // sequence for them. Keep these in lockstep with that fallback to avoid the
+  // backend returning a next_step the frontend cannot render. esco still seeds an
+  // om_sites row on onboarding.completed (provisionOnboarding); epc stays manifest-only.
+  esco:           ['welcome', 'complete'],
+  epc_contractor: ['welcome', 'complete'],
 };
 
 // ── GET /state ─────────────────────────────────────────────────────────────
@@ -209,6 +214,19 @@ onboarding.post('/step', async (c) => {
 onboarding.post('/complete', async (c) => {
   const user = getCurrentUser(c);
 
+  // take_on_mode ('new' | 'historic') was captured by the wizard's first step
+  // and persisted into onboarding_data. It drives how the activation cascade
+  // fans out: 'historic' resolves every counterparty the imported history
+  // implies and lights their IncomingPanels; 'new' just welcomes the owner.
+  const row = await c.env.DB.prepare(
+    `SELECT onboarding_data FROM participants WHERE id = ?`,
+  ).bind(user.id).first<{ onboarding_data: string | null }>();
+  let takeOnMode = 'new';
+  try {
+    const parsed = JSON.parse(row?.onboarding_data || '{}');
+    if (parsed && parsed.take_on_mode === 'historic') takeOnMode = 'historic';
+  } catch { /* default to 'new' on malformed data */ }
+
   await c.env.DB.prepare(
     `UPDATE participants
         SET onboarding_completed = 1,
@@ -232,11 +250,11 @@ onboarding.post('/complete', async (c) => {
     actor_id: user.id,
     entity_type: 'participant',
     entity_id: user.id,
-    data: { role: user.role },
+    data: { role: user.role, take_on_mode: takeOnMode },
     env: c.env,
   });
 
-  return c.json({ success: true, data: { ok: true } });
+  return c.json({ success: true, data: { ok: true, take_on_mode: takeOnMode } });
 });
 
 // ── POST /skip ─────────────────────────────────────────────────────────────

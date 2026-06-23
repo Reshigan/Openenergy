@@ -27,7 +27,10 @@ function seedParticipant(id: string) {
 }
 
 describe('POST /api/onboarding/step -- role-step coverage', () => {
-  it('esco step welcome returns 200 and next_step org_profile', async () => {
+  // esco/epc_contractor are not signup-selectable and have no dedicated wizard
+  // step components, so their sequence is collapsed to welcome -> complete to
+  // stay in lockstep with the SPA's admin fallback (no unrenderable next_step).
+  it('esco step welcome returns 200 and next_step complete', async () => {
     seedParticipant('par_esco');
     const token = await testJwtFor(db, 'par_esco', { role: 'esco' });
     const res = await call(onboarding, env, 'POST', '/step', {
@@ -35,10 +38,10 @@ describe('POST /api/onboarding/step -- role-step coverage', () => {
       body: { step: 'welcome' },
     });
     expect(res.status).toBe(200);
-    expect((res.json as any).data.next_step).toBe('org_profile');
+    expect((res.json as any).data.next_step).toBe('complete');
   });
 
-  it('epc_contractor step welcome returns 200 and next_step org_profile', async () => {
+  it('epc_contractor step welcome returns 200 and next_step complete', async () => {
     seedParticipant('par_epc');
     const token = await testJwtFor(db, 'par_epc', { role: 'epc_contractor' });
     const res = await call(onboarding, env, 'POST', '/step', {
@@ -46,7 +49,7 @@ describe('POST /api/onboarding/step -- role-step coverage', () => {
       body: { step: 'welcome' },
     });
     expect(res.status).toBe(200);
-    expect((res.json as any).data.next_step).toBe('org_profile');
+    expect((res.json as any).data.next_step).toBe('complete');
   });
 
   it('unknown role step welcome returns 200 via generic fallback', async () => {

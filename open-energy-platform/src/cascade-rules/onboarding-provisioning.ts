@@ -3,6 +3,7 @@
 // onto the provisioning-log row so the SPA can show "what next" instead of
 // dropping the operator on an empty workspace:
 //   esums_owner  → om_sites row           (commissioning_status='planned')
+//   esco         → om_sites row           (same archetype: operates sites/O&M)
 //   ipp_developer→ ipp_projects row       (status='development')
 //   trader       → oe_position_limits row (electricity desk limits from risk step)
 //   offtaker     → off_ppa_portfolio row  (status='negotiating' procurement intent)
@@ -15,7 +16,8 @@
 // five (lender, carbon_fund, grid_operator, regulator, support) stay manifest
 // only: lender/carbon_fund/grid_operator's real artifacts are regulated chain
 // CASES that must be initiated through the proper workflow rather than silently
-// faked at signup, and regulator/support are oversight roles whose work
+// faked at signup, epc_contractor's work materialises from construction-chain
+// cases against an IPP project (not a self-seeded entity), and regulator/support are oversight roles whose work
 // materialises from crossings of OTHER roles' chains, so there is nothing to
 // seed up front. Those get a manifest only.
 //
@@ -89,7 +91,7 @@ export async function provisionOnboarding(
   // can deep-link straight to the thing the cascade just created.
   let ref: ProvisionRef = null;
 
-  if (role === 'esums_owner') {
+  if (role === 'esums_owner' || role === 'esco') {
     const siteName = typeof data.site_name === 'string' && data.site_name ? data.site_name : 'My site';
     const capacityMw = (num(data.installed_capacity_kw) ?? 0) / 1000;
     const siteId = genId();
@@ -125,6 +127,25 @@ export async function provisionOnboarding(
          (participant_id, energy_type, net_long_limit_mwh, net_short_limit_mwh, daily_pnl_floor_zar, set_by, set_at)
        VALUES (?, 'electricity', ?, ?, ?, ?, datetime('now'))`,
     ).bind(participantId, maxPos, maxPos, pnlFloor, participantId).run();
+
+    // A desk with NO credit_limits row trips CREDIT_HEADROOM_EXCEEDED on its
+    // first order (pre-trade-guards), and kyc_status defaults to 'pending' which
+    // trips KYC_INCOMPLETE — so a freshly onboarded trader could not place a
+    // single order. Seed an aggregate credit line from the wizard credit step
+    // (falling back to the position notional) and approve KYC. credit_limits has
+    // no natural unique key, so guard the re-seed on a NOT EXISTS check rather
+    // than INSERT OR IGNORE. market_access is left at its 'full_trading' default
+    // (the DB CHECK does not even allow 'unverified'), so it is not a blocker.
+    const creditLine = num(data.credit_limit_zar) ?? (maxPos > 0 ? maxPos * 1_000_000 : 10_000_000);
+    await db.prepare(
+      `INSERT INTO credit_limits (id, participant_id, limit_zar, basis, scope, effective_from, set_by)
+       SELECT ?, ?, ?, 'aggregate', 'platform', datetime('now'), ?
+        WHERE NOT EXISTS (SELECT 1 FROM credit_limits WHERE participant_id = ? AND scope = 'platform')`,
+    ).bind(genId(), participantId, creditLine, participantId, participantId).run();
+    await db.prepare(
+      `UPDATE participants SET kyc_status = 'approved' WHERE id = ? AND (kyc_status IS NULL OR kyc_status != 'approved')`,
+    ).bind(participantId).run();
+
     ref = {
       kind: 'position_limit', entityType: 'oe_position_limits', entityId: participantId,
       detail: { energy_type: 'electricity', net_long_limit_mwh: maxPos, daily_pnl_floor_zar: pnlFloor },

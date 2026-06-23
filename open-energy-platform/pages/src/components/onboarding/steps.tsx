@@ -86,7 +86,54 @@ const ROLE_DESCS: Record<string, string> = {
   admin:         'Full platform access across all roles, modules, and administrative functions.',
 };
 
-export function WelcomeStep({ data: _data, onChange: _onChange, role = 'admin', userName = '' }: StepProps) {
+// Roles that can join with existing history (assets, contracts, credits,
+// capacity, O&M books). For these the welcome step asks new-vs-historic so the
+// activation cascade knows whether to fan out to every counterparty the
+// imported history implies. Oversight roles (regulator, grid_operator, support,
+// admin) bring no portfolio, so they skip the choice and default to 'new'.
+const HISTORIC_ROLES: Record<string, { historicLabel: string; historicDesc: string }> = {
+  ipp_developer: { historicLabel: 'I have existing projects', historicDesc: 'Bring operating plants, PPAs, debt and carbon arms into the platform' },
+  esums_owner:   { historicLabel: 'I have existing sites / O&M', historicDesc: 'Bring operating sites and live O&M contracts under monitoring' },
+  esco:          { historicLabel: 'I have existing O&M', historicDesc: 'Bring live O&M contracts under monitoring' },
+  lender:        { historicLabel: 'I have an existing loan book', historicDesc: 'Bring active facilities and borrowers into the portfolio' },
+  carbon_fund:   { historicLabel: 'I have existing credits / RECs', historicDesc: 'Bring carbon inventory and RECs in for registry reconciliation and sale' },
+  offtaker:      { historicLabel: 'I have existing offtake', historicDesc: 'Bring an existing PPA portfolio under management' },
+  trader:        { historicLabel: 'I am bringing trading capacity', historicDesc: 'Activate the desk with imported limits and counterparties' },
+};
+
+function TakeOnChoice({ data, onChange, role }: { data: Record<string, unknown>; onChange: (k: string, v: unknown) => void; role: string }) {
+  const cfg = HISTORIC_ROLES[role];
+  if (!cfg) return null;
+  // Default to 'new' so the field is always captured even if the user never clicks.
+  const mode = data.take_on_mode === 'historic' ? 'historic' : 'new';
+  const Card = ({ value, label, desc }: { value: 'new' | 'historic'; label: string; desc: string }) => {
+    const on = mode === value;
+    return (
+      <button
+        type="button"
+        onClick={() => onChange('take_on_mode', value)}
+        aria-pressed={on}
+        className={`flex-1 text-left rounded-lg border p-3 transition ${
+          on ? 'border-[oklch(0.46_0.16_55)] bg-[oklch(0.46_0.16_55)]/[0.04] ring-2 ring-[oklch(0.46_0.16_55)]/30'
+             : 'border-[#dde4ec] hover:border-[#c4cedb]'}`}
+      >
+        <div className="text-[13px] font-semibold text-[#0f1c2e]">{label}</div>
+        <div className="mt-1 text-[12px] text-[#6b7685] leading-snug">{desc}</div>
+      </button>
+    );
+  };
+  return (
+    <div className="relative mt-6 text-left">
+      <p className="text-[12px] font-medium text-[#3a4658] mb-2 text-center">How are you joining?</p>
+      <div className="flex gap-3 max-w-md mx-auto">
+        <Card value="new" label="Starting fresh" desc="Set up from scratch — no existing portfolio to import" />
+        <Card value="historic" label={cfg.historicLabel} desc={cfg.historicDesc} />
+      </div>
+    </div>
+  );
+}
+
+export function WelcomeStep({ data, onChange, role = 'admin', userName = '' }: StepProps) {
   const desc = ROLE_DESCS[role] || ROLE_DESCS['admin'];
   const firstName = userName ? userName.split(' ')[0] : 'there';
   return (
@@ -108,6 +155,7 @@ export function WelcomeStep({ data: _data, onChange: _onChange, role = 'admin', 
           This will take about 2 minutes
         </p>
       </div>
+      <TakeOnChoice data={data} onChange={onChange} role={role} />
     </div>
   );
 }
