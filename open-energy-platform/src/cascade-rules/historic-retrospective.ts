@@ -97,47 +97,271 @@ async function seedIppQuarterlyReports(ctx: CascadeContext, owner: string): Prom
 
 interface PpaRow {
   id: string;
+  contract_ref: string | null;
+  counterparty_name: string | null;
   capacity_mw: number;
-  counterparty_id: string | null;
+  ppa_term_years: number | null;
+  ppa_start_date: string | null;
+  ppa_end_date: string | null;
+  price_zar_per_mwh: number | null;
+  expected_p50_gwh_yr: number | null;
+  take_or_pay_pct: number | null;
 }
 
-// ── offtaker: current-month delivery obligation per active PPA ──────────────
-async function seedOfftakerObligations(ctx: CascadeContext, owner: string): Promise<void> {
-  // counterparty_id column name varies by provisioning; try the canonical one,
-  // fall back to NULL seller if the column is absent.
+const CPI = 0.054; // CY escalation applied to base tariff
+const GRID_FACTOR = 0.94; // tCO2e/MWh SA grid (avoided emissions)
+const DEFAULT_TARIFF = 1230; // ZAR/MWh fallback when the PPA carries no price
+const r2 = (x: number) => Math.round(x * 100) / 100;
+
+// NERSA/JSE capacity bands used by oe_ppa_contract_chain (strategic|medium|small).
+function capacityTier(mw: number): string {
+  return mw < 10 ? 'small' : mw < 50 ? 'medium' : 'strategic';
+}
+
+function addYears(d: Date, n: number): Date {
+  return new Date(Date.UTC(d.getUTCFullYear() + n, d.getUTCMonth(), d.getUTCDate()));
+}
+
+// Most recent COMPLETE contract year as of `now`, anchored on the PPA start.
+function trailingContractYear(startIso: string | null, now: Date): {
+  year: number; label: string; periodStart: string; periodEnd: string;
+} {
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const start = startIso ? new Date(`${startIso}T00:00:00Z`)
+                         : new Date(Date.UTC(now.getUTCFullYear() - 1, 0, 1));
+  let n = now.getUTCFullYear() - start.getUTCFullYear();
+  if (addYears(start, n) > now) n -= 1; // not yet reached this anniversary
+  const year = Math.max(1, n); // 1-based, last COMPLETE contract year
+  const periodStart = addYears(start, year - 1);
+  const periodEnd = new Date(addYears(start, year).getTime() - 86_400_000);
+  const sy = periodStart.getUTCFullYear();
+  return {
+    year, label: `${sy}/${String((sy + 1) % 100).padStart(2, '0')}`,
+    periodStart: iso(periodStart), periodEnd: iso(periodEnd),
+  };
+}
+
+// ── offtaker: full opening retrospective across the core PPA chains ─────────
+// Obligation (current month) + PPA contract chain + annual reconciliation +
+// tariff indexation + REC lifecycle, one per active PPA, plus singleton ESG
+// disclosure + payment security. Mirrors the hand-run Goldrush backfill so a
+// new offtaker take-on lights operations/contracts/security/compliance lanes,
+// not just operations. Contract-chain + tariff need a NOT-NULL seller party id;
+// they seed only when the seller IPP resolves (via the solax_stations offtaker
+// link) — the other four surfaces seed regardless. Exception/dispute chains
+// (take-or-pay, curtailment, change-in-law, unserved-energy, VPPA, wheeling,
+// SLB, terminations) are deliberately NOT seeded: no such events occurred.
+async function seedOfftakerRetrospective(ctx: CascadeContext, owner: string): Promise<void> {
   let ppas: PpaRow[] = [];
+  let rich = true;
   try {
     const res = await ctx.env.DB.prepare(
-      `SELECT id, capacity_mw, counterparty_id FROM off_ppa_portfolio
-         WHERE participant_id = ? AND status = 'active' AND capacity_mw IS NOT NULL`,
+      `SELECT id, contract_ref, counterparty_name, capacity_mw, ppa_term_years,
+              ppa_start_date, ppa_end_date, price_zar_per_mwh, expected_p50_gwh_yr,
+              take_or_pay_pct
+         FROM off_ppa_portfolio
+        WHERE participant_id = ? AND status = 'active' AND capacity_mw IS NOT NULL`,
     ).bind(owner).all();
     ppas = (res.results || []) as unknown as PpaRow[];
   } catch {
+    // Schema predates the rich columns — degrade to obligations only.
+    rich = false;
     const res = await ctx.env.DB.prepare(
       `SELECT id, capacity_mw FROM off_ppa_portfolio
          WHERE participant_id = ? AND status = 'active' AND capacity_mw IS NOT NULL`,
     ).bind(owner).all();
     ppas = ((res.results || []) as unknown as Array<{ id: string; capacity_mw: number }>)
-      .map((r) => ({ ...r, counterparty_id: null }));
+      .map((r) => ({
+        id: r.id, capacity_mw: r.capacity_mw, contract_ref: null, counterparty_name: null,
+        ppa_term_years: null, ppa_start_date: null, ppa_end_date: null,
+        price_zar_per_mwh: null, expected_p50_gwh_yr: null, take_or_pay_pct: null,
+      }));
   }
   if (ppas.length === 0) return;
 
-  const { month } = currentQuarter(new Date());
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const today = nowIso.slice(0, 10);
+  const { month } = currentQuarter(now);
+
+  // Offtaker display name + seller IPP (real participant link), both defensive.
+  let offName = owner;
+  let sellerId: string | null = null;
+  try {
+    const p = await ctx.env.DB.prepare(`SELECT name FROM participants WHERE id = ?`).bind(owner).first();
+    if (p && (p as { name?: string }).name) offName = (p as { name: string }).name;
+  } catch { /* default to id */ }
+  try {
+    const s = await ctx.env.DB.prepare(
+      `SELECT participant_id FROM solax_stations
+        WHERE offtaker_participant_id = ? AND participant_id IS NOT NULL LIMIT 1`,
+    ).bind(owner).first();
+    if (s && (s as { participant_id?: string }).participant_id) {
+      sellerId = (s as { participant_id: string }).participant_id;
+    }
+  } catch { /* seller-keyed surfaces will be skipped */ }
+
+  let totP50 = 0;
+  let totRev = 0;
+
   for (const ppa of ppas) {
-    const contracted = Math.round((ppa.capacity_mw * CF_ANNUAL_MWH_PER_MW) / 12 * 100) / 100;
-    const delivered = Math.round(contracted * 0.95 * 100) / 100;
-    const id = `oblig_${month.replace('-', '_')}_${String(ppa.id).slice(0, 18)}`;
+    const p50 = ppa.expected_p50_gwh_yr ? r2(ppa.expected_p50_gwh_yr * 1000)
+                                        : r2(ppa.capacity_mw * CF_ANNUAL_MWH_PER_MW);
+    const tariff = ppa.price_zar_per_mwh ?? DEFAULT_TARIFF;
+    const idxTariff = r2(tariff * (1 + CPI));
+    const reconDelivered = r2(p50 * 0.98); // healthy ~98% of P50 over the year
+    const energyRev = r2(reconDelivered * idxTariff);
+    const sfx = String(ppa.id).replace(/^ppa_/, '').slice(0, 18);
+    const sellerName = ppa.counterparty_name || 'Generator';
+    const tier = capacityTier(ppa.capacity_mw);
+    totP50 += p50;
+    totRev += energyRev;
+
+    // 1. Current-month delivery obligation (always — legacy behaviour).
     await ctx.env.DB.prepare(
       `INSERT OR IGNORE INTO oe_offtaker_ppa_obligations
          (id, ppa_id, participant_id, counterparty_id, period_month,
           contracted_mwh, delivered_mwh, threshold_pct, status, notes)
        VALUES (?,?,?,?,?,?,?,?,?,?)`,
     ).bind(
-      id, ppa.id, owner, ppa.counterparty_id ?? null, month,
-      contracted, delivered, 95, 'pending',
-      'Opening delivery obligation derived on onboarding. Contracted = capacity * 1752/12; delivered at 0.95 (calculated retrospective off real fleet).',
+      `oblig_${month.replace('-', '_')}_${sfx}`, ppa.id, owner, sellerId, month,
+      r2(p50 / 12), r2((p50 / 12) * 0.95), 95, 'pending',
+      'Opening delivery obligation derived on onboarding (calculated retrospective off real fleet).',
+    ).run();
+
+    if (!rich) continue; // schema too old for the deeper surfaces
+
+    const cy = trailingContractYear(ppa.ppa_start_date, now);
+    const start = ppa.ppa_start_date || cy.periodStart;
+    const expiry = ppa.ppa_end_date
+      || addYears(new Date(`${start}T00:00:00Z`), ppa.ppa_term_years || 20).toISOString().slice(0, 10);
+    const vintage = Number(cy.periodStart.slice(0, 4));
+
+    // 2. PPA contract chain (in_force) — needs the seller IPP (participant_id NOT NULL).
+    if (sellerId) {
+      await ctx.env.DB.prepare(
+        `INSERT OR IGNORE INTO oe_ppa_contract_chain
+           (id, ppa_number, project_name, participant_id, offtaker_id, offtaker_name,
+            contract_term_years, capacity_mw, capacity_tier, tariff_zar_per_mwh, indexation,
+            take_or_pay_pct, chain_status, draft_at, negotiation_at, terms_locked_at,
+            legal_signed_at, executed_at, in_force_at, expiry_date, contract_notes,
+            created_by, created_at, updated_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      ).bind(
+        `ppacc_${sfx}`, ppa.contract_ref || `PPA-${sfx}`, `${sellerName} private-wire solar`,
+        sellerId, owner, offName, ppa.ppa_term_years || 20, ppa.capacity_mw, tier, tariff, 'CPI',
+        ppa.take_or_pay_pct ?? 95, 'in_force', start, start, start,
+        start, start, start, expiry,
+        'Executed PPA derived on onboarding; in force since COD (calculated retrospective off real fleet).',
+        owner, start, today,
+      ).run();
+    }
+
+    // 3. Annual reconciliation (signed_off) — seller party id is nullable here.
+    await ctx.env.DB.prepare(
+      `INSERT OR IGNORE INTO oe_ppa_annual_recon
+         (id, recon_number, ppa_id, ppa_name, buyer_party_id, buyer_party_name,
+          seller_party_id, seller_party_name, contract_year, contract_year_label,
+          year_period_start, year_period_end, contracted_mwh, delivered_mwh, metered_mwh,
+          variance_mwh, variance_pct, base_tariff_zar_per_mwh, indexed_tariff_zar_per_mwh,
+          energy_revenue_zar, net_cash_position_zar, current_tier, chain_status,
+          year_opened_at, data_collected_at, reconciled_at, signed_off_at,
+          created_by, created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    ).bind(
+      `annrec_${sfx}`, `AR-${sfx}-${cy.year}`, ppa.id, ppa.contract_ref || `PPA-${sfx}`,
+      owner, offName, sellerId, sellerName, cy.year, cy.label,
+      cy.periodStart, cy.periodEnd, p50, reconDelivered, reconDelivered,
+      r2(reconDelivered - p50), r2(((reconDelivered - p50) / p50) * 100), tariff, idxTariff,
+      energyRev, energyRev, 'minor', 'signed_off',
+      cy.periodStart, today, today, today,
+      owner, today, today,
+    ).run();
+
+    // 4. Tariff indexation (applied) — seller party id NOT NULL here.
+    if (sellerId) {
+      await ctx.env.DB.prepare(
+        `INSERT OR IGNORE INTO oe_tariff_indexation
+           (id, indexation_number, seller_party_id, seller_party_name, offtaker_party_id,
+            offtaker_party_name, ppa_ref, project_name, contract_tier, contract_year,
+            base_tariff_zar_mwh, index_type, index_reference_period, escalation_factor,
+            proposed_tariff_zar_mwh, agreed_tariff_zar_mwh, annual_contract_value_zar,
+            calculation_basis, chain_status, indexation_due_at, index_published_at,
+            escalation_calculated_at, notice_issued_at, tariff_agreed_at, applied_at,
+            created_by, created_at, updated_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      ).bind(
+        `tariffidx_${sfx}`, `TI-${sfx}-${cy.year}`, sellerId, sellerName, owner,
+        offName, ppa.contract_ref || `PPA-${sfx}`, `${sellerName} private-wire solar`, 'commercial', cy.year,
+        tariff, 'CPI', cy.label, 1 + CPI,
+        idxTariff, idxTariff, energyRev,
+        `Annual CPI escalation applied at ${r2(CPI * 100)}%.`, 'applied', cy.periodStart, cy.periodStart,
+        cy.periodStart, cy.periodStart, cy.periodStart, cy.periodStart,
+        owner, cy.periodStart, cy.periodStart,
+      ).run();
+    }
+
+    // 5. REC lifecycle (issued + retired for the Scope-2 claim).
+    await ctx.env.DB.prepare(
+      `INSERT OR IGNORE INTO oe_rec_lifecycle
+         (id, case_number, generator_id, generator_name, project_name, offtaker_id,
+          offtaker_name, holder_id, holder_name, issuer_id, issuer_name,
+          certificate_standard, energy_source, certificate_serial, vintage_year,
+          generation_period_start, generation_period_end, mwh_represented, registry,
+          claim_purpose, severity_tier, chain_status, issuance_requested_at,
+          eligibility_review_at, issued_at, retired_at, created_by, created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    ).bind(
+      `reclc_${sfx}_v${vintage}`, `REC-${sfx}-${vintage}`, sellerId, sellerName,
+      `${sellerName} private-wire solar`, owner, offName, owner, offName, sellerId, sellerName,
+      'i_rec', 'solar_pv', `${sfx}-${vintage}`, vintage,
+      cy.periodStart, cy.periodEnd, reconDelivered, 'i_rec_registry',
+      'scope2_market_based', 'minor', 'retired', cy.periodEnd,
+      cy.periodEnd, cy.periodEnd, today, owner, today, today,
     ).run();
   }
+
+  if (!rich) return;
+
+  // 6. ESG disclosure (singleton, published).
+  const totAvoided = r2(r2(totP50 * 0.98) * GRID_FACTOR);
+  const fy = trailingContractYear(null, now);
+  await ctx.env.DB.prepare(
+    `INSERT OR IGNORE INTO oe_esg_disclosure
+       (id, disclosure_number, reporting_entity_id, reporting_entity_name,
+        financial_year_label, financial_year_end_at, disclosure_scope,
+        scope2_market_tco2e, scope2_location_tco2e, scope3_total_tco2e, title, narrative,
+        current_tier, effective_tier, chain_status, period_open_at, data_collected_at,
+        metrics_computed_at, draft_compiled_at, assured_at, published_at,
+        created_by, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+  ).bind(
+    `esgdisc_${owner}`, `ESG-${owner}`, owner, offName,
+    `FY${fy.label}`, fy.periodEnd, 'entity_only',
+    0, totAvoided, 0, `${offName} climate disclosure`,
+    `Scope-2 emissions offset by ${r2(totP50)} MWh of contracted private-wire solar; ${totAvoided} tCO2e avoided vs grid (calculated retrospective off real fleet).`,
+    'standard', 'standard', 'published', fy.periodStart, today,
+    today, today, today, today,
+    owner, today, today,
+  ).run();
+
+  // 7. PPA payment security (singleton, active — ~3 months cover).
+  const secured = r2((totRev / 1e6) * 0.25);
+  await ctx.env.DB.prepare(
+    `INSERT OR IGNORE INTO oe_ppa_payment_securities
+       (id, security_number, offtaker_party_id, offtaker_party_name, seller_party_name,
+        security_tier, instrument_name, instrument_type, issuer_name, issuer_rating,
+        secured_amount_zar_m, required_amount_zar_m, cover_months, project_name, sector,
+        chain_status, security_required_at, instrument_submitted_at, under_verification_at,
+        active_at, created_by, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+  ).bind(
+    `ppasec_${owner}`, `PS-${owner}`, owner, offName, ppas[0].counterparty_name || 'Generator',
+    'moderate', 'Bank guarantee', 'bank_guarantee', 'Standard Bank', 'A',
+    secured, secured, 3, `${offName} private-wire portfolio`, 'commercial_industrial',
+    'active', today, today, today,
+    today, owner, today, today,
+  ).run();
 }
 
 interface FacilityRow {
@@ -194,14 +418,17 @@ export async function seedHistoricRetrospective(
       await safeRun(() => seedIppQuarterlyReports(ctx, owner));
       break;
     case 'offtaker':
-      await safeRun(() => seedOfftakerObligations(ctx, owner));
+      await safeRun(() => seedOfftakerRetrospective(ctx, owner));
       break;
     case 'lender':
       await safeRun(() => seedLenderCovenantCertificates(ctx, owner));
       break;
     default:
-      // carbon_fund inventory + regulator recon are card-only on activation;
-      // their opening chain cases are seeded by their own domain flows.
+      // carbon_fund + regulator stay card-only on activation: there is no
+      // honest generic source to derive their opening chain cases from (no
+      // ITMO issuance / no enforcement events occurred), and fabricating one
+      // would violate the actuals-only honesty rule. Their opening cases are
+      // seeded only by their own domain flows when real activity arrives.
       break;
   }
 }

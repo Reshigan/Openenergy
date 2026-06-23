@@ -227,20 +227,98 @@ describe('historic-retrospective opening chain case', () => {
     expect(a.mwh_actual).toBeCloseTo(5 * 1752 / 4 * 0.93, 1);
   });
 
-  it('offtaker historic seeds a current-month obligation per active PPA', async () => {
+  // Seeds an offtaker take-on: identity, an active rich PPA, and the
+  // solax_stations link that resolves the seller IPP (mirrors live).
+  function offtakerTakeon(owner: string, seller: string) {
+    db.prepare(
+      `INSERT INTO participants (id, email, password_hash, name, role)
+       VALUES (?, ?, 'x', 'Goldrush Operations', 'offtaker')`,
+    ).run(owner, `${owner}@t.co`);
+    db.prepare(
+      `INSERT INTO participants (id, email, password_hash, name, role)
+       VALUES (?, ?, 'x', 'GoNXT Project Office', 'ipp_developer')`,
+    ).run(seller, `${seller}@t.co`);
     db.prepare(
       `INSERT INTO off_ppa_portfolio (id, participant_id, counterparty_name,
-         capacity_mw, status, created_at)
-       VALUES ('ppa_h', 'off_h1', 'GoNXT', 4, 'active', datetime('now'))`,
-    ).run();
+         capacity_mw, status, contract_ref, ppa_term_years, ppa_start_date,
+         price_zar_per_mwh, expected_p50_gwh_yr, take_or_pay_pct, created_at)
+       VALUES ('ppa_h', ?, 'GoNXT Energy', 4, 'active', 'PPA-TEST', 20,
+         '2024-03-01', 1000, 7.008, 95, datetime('now'))`,
+    ).run(owner);
+    db.prepare(
+      `INSERT INTO solax_stations (id, participant_id, plant_id, device_sn,
+         offtaker_participant_id, created_at, updated_at)
+       VALUES ('stn_h', ?, 'PL1', 'SN1', ?, datetime('now'), datetime('now'))`,
+    ).run(seller, owner);
+  }
+
+  it('offtaker historic seeds the full opening retrospective across the PPA chains', async () => {
+    offtakerTakeon('off_h1', 'gonxt_h1');
     await runCascadeRegistry(ctx('offtaker', 'off_h1', 'historic'));
-    const rows = db.prepare(
-      `SELECT ppa_id, contracted_mwh, status FROM oe_offtaker_ppa_obligations
-         WHERE participant_id = ?`,
+
+    // 1. current-month delivery obligation (p50 7008 MWh / 12)
+    const oblig = db.prepare(
+      `SELECT contracted_mwh, status FROM oe_offtaker_ppa_obligations WHERE participant_id = ?`,
     ).all('off_h1') as any[];
-    expect(rows).toHaveLength(1);
-    expect(rows[0].status).toBe('pending');
-    expect(rows[0].contracted_mwh).toBeCloseTo(4 * 1752 / 12, 1); // capacity * 1752 / 12
+    expect(oblig).toHaveLength(1);
+    expect(oblig[0].status).toBe('pending');
+    expect(oblig[0].contracted_mwh).toBeCloseTo(7008 / 12, 1);
+
+    // 2. contract chain (in_force) — seller resolved via solax_stations
+    const cc = db.prepare(
+      `SELECT participant_id, offtaker_id, chain_status FROM oe_ppa_contract_chain WHERE offtaker_id = ?`,
+    ).all('off_h1') as any[];
+    expect(cc).toHaveLength(1);
+    expect(cc[0].participant_id).toBe('gonxt_h1');
+    expect(cc[0].chain_status).toBe('in_force');
+
+    // 3. annual reconciliation (signed_off), delivered ~98% of P50
+    const ar = db.prepare(
+      `SELECT delivered_mwh, chain_status FROM oe_ppa_annual_recon WHERE buyer_party_id = ?`,
+    ).all('off_h1') as any[];
+    expect(ar).toHaveLength(1);
+    expect(ar[0].chain_status).toBe('signed_off');
+    expect(ar[0].delivered_mwh).toBeCloseTo(7008 * 0.98, 1);
+
+    // 4. tariff indexation (applied), CPI-escalated tariff 1000 -> 1054
+    const ti = db.prepare(
+      `SELECT agreed_tariff_zar_mwh, chain_status FROM oe_tariff_indexation WHERE offtaker_party_id = ?`,
+    ).all('off_h1') as any[];
+    expect(ti).toHaveLength(1);
+    expect(ti[0].chain_status).toBe('applied');
+    expect(ti[0].agreed_tariff_zar_mwh).toBeCloseTo(1054, 1);
+
+    // 5. REC lifecycle (retired for the Scope-2 claim)
+    const rec = db.prepare(
+      `SELECT chain_status FROM oe_rec_lifecycle WHERE offtaker_id = ?`,
+    ).all('off_h1') as any[];
+    expect(rec).toHaveLength(1);
+    expect(rec[0].chain_status).toBe('retired');
+
+    // 6a. ESG disclosure singleton (published)
+    const esg = db.prepare(
+      `SELECT chain_status FROM oe_esg_disclosure WHERE reporting_entity_id = ?`,
+    ).all('off_h1') as any[];
+    expect(esg).toHaveLength(1);
+    expect(esg[0].chain_status).toBe('published');
+
+    // 6b. payment security singleton (active)
+    const sec = db.prepare(
+      `SELECT chain_status FROM oe_ppa_payment_securities WHERE offtaker_party_id = ?`,
+    ).all('off_h1') as any[];
+    expect(sec).toHaveLength(1);
+    expect(sec[0].chain_status).toBe('active');
+  });
+
+  it('offtaker historic is idempotent on re-fire (no duplicate surfaces)', async () => {
+    offtakerTakeon('off_idem', 'gonxt_idem');
+    const c = ctx('offtaker', 'off_idem', 'historic');
+    await runCascadeRegistry(c);
+    await runCascadeRegistry(c);
+    const n = (db.prepare(
+      `SELECT COUNT(*) n FROM oe_ppa_contract_chain WHERE offtaker_id = ?`,
+    ).get('off_idem') as any).n;
+    expect(n).toBe(1);
   });
 
   it('lender historic seeds an under-review covenant certificate per facility', async () => {
