@@ -11,14 +11,14 @@ import { logger } from './utils/logger';
 import { mountRoutes } from './routes/mount-routes';
 import { runAllSweeps } from './utils/sweep-runner';
 import { runDealSweep } from './routes/deals';
-import { processCascadeQueueBatch } from './utils/cascade';
+import { processCascadeQueueBatch, fireCascade } from './utils/cascade';
 
 // Cron-utility functions (not route default exports)
 import { runSurveillanceScan } from './routes/regulator-suite';
 import { executeSettlementRun } from './routes/settlement-automation';
 import { executeSettlementRun as executeImbalanceRun } from './routes/imbalance';
 import { dispatchAllForwarders } from './routes/siem';
-import { computeStationAccruals } from './routes/esums-accruals';
+import { computeStationAccruals, materializeFinancials } from './routes/esums-accruals';
 import { computeLatePaymentFees } from './routes/business-depth';
 import { runFaultEngine } from './utils/esums-fault-engine';
 import { verifyChain } from './utils/audit-chain';
@@ -242,6 +242,24 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
         const stations = await env.DB.prepare('SELECT id FROM solax_stations WHERE active = 1 LIMIT 500').all<{ id: string }>();
         for (const st of (stations.results || []) as { id: string }[]) {
           try { await computeStationAccruals(st.id, env as never); } catch { /* per-station failures are non-fatal */ }
+        }
+        // Rebuild the financial bridges (invoices/credits/holdings) per owner so the
+        // nightly refresh keeps them current — and fire esums_financials_materialized,
+        // which esums-activation.ts consumes to re-light every counterparty IncomingPanel.
+        // Without this the cron only wrote raw accruals; invoices went stale and no
+        // cross-role card ever fired on refresh (only on manual upload/materialize).
+        const owners = await env.DB.prepare(
+          `SELECT DISTINCT participant_id AS pid FROM solax_stations WHERE active = 1 AND participant_id IS NOT NULL AND participant_id != '' LIMIT 200`,
+        ).all<{ pid: string }>();
+        for (const o of (owners.results || []) as { pid: string }[]) {
+          try {
+            const result = await materializeFinancials(o.pid, env as never);
+            await fireCascade({
+              event: 'esums_financials_materialized', actor_id: 'system',
+              entity_type: 'esums_station', entity_id: o.pid,
+              data: { participant_id: o.pid, refresh: true, suppress_notifications: true, ...result }, env: env as never,
+            }).catch(() => {});
+          } catch { /* per-owner failures are non-fatal */ }
         }
       });
       await safe('fault_engine', () => runFaultEngine(env));

@@ -27,6 +27,7 @@ import { registerDealEngineRules } from './deal-engine';
 import { registerKycGateRules } from './kyc-gate';
 import { registerSandboxSeedRules } from './sandbox-seed';
 import { registerProjectFundingOfferRules } from './project-funding-offers';
+import { registerEsumsActivationRules } from './esums-activation';
 
 registerTradingSafetyRules();
 registerLifecycleSequencingRules();
@@ -54,5 +55,6 @@ registerDealEngineRules();
 registerKycGateRules();
 registerSandboxSeedRules();
 registerProjectFundingOfferRules();
+registerEsumsActivationRules();
 
-export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules, registerLenderCovenantRules, registerCarbonEventRules, registerRegulatorInboxRules, registerOfftakerProcurementRules, registerUnderservedInboxRules, registerPpaDeliveryShortfallRules, registerPtwWoInteractionRules, registerTariffRepriceRules, registerPredictiveMaintenanceRules, registerWarrantySupplyRules, registerDefaultFreezeRules, registerOnboardingProvisioningRules, registerDealEngineRules, registerKycGateRules, registerSandboxSeedRules, registerProjectFundingOfferRules };
+export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules, registerLenderCovenantRules, registerCarbonEventRules, registerRegulatorInboxRules, registerOfftakerProcurementRules, registerUnderservedInboxRules, registerPpaDeliveryShortfallRules, registerPtwWoInteractionRules, registerTariffRepriceRules, registerPredictiveMaintenanceRules, registerWarrantySupplyRules, registerDefaultFreezeRules, registerOnboardingProvisioningRules, registerDealEngineRules, registerKycGateRules, registerSandboxSeedRules, registerProjectFundingOfferRules, registerEsumsActivationRules };

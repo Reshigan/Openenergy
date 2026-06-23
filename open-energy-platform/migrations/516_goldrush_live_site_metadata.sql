@@ -15,81 +15,81 @@
 -- re-running re-sets the same values. Scoped to the 10 Goldrush sites only.
 
 UPDATE om_sites SET
-  capacity_kwp       = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id),
-  capacity_mw        = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0,
-  ppa_tariff_zar_mwh = (SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id),
+  capacity_kwp       = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id), capacity_kwp),
+  capacity_mw        = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0, capacity_mw),
+  ppa_tariff_zar_mwh = COALESCE((SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id), ppa_tariff_zar_mwh),
   province = 'KwaZulu-Natal', latitude = -29.8874, longitude = 30.9786, commissioning_date = '2024-03-01',
   updated_at = datetime('now')
 WHERE name LIKE 'Goldrush Malvern%';
 
 UPDATE om_sites SET
-  capacity_kwp       = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id),
-  capacity_mw        = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0,
-  ppa_tariff_zar_mwh = (SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id),
+  capacity_kwp       = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id), capacity_kwp),
+  capacity_mw        = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0, capacity_mw),
+  ppa_tariff_zar_mwh = COALESCE((SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id), ppa_tariff_zar_mwh),
   province = 'Limpopo', latitude = -24.8834, longitude = 28.3120, commissioning_date = '2024-03-01',
   updated_at = datetime('now')
 WHERE name LIKE 'Goldrush Bela Bela%';
 
 UPDATE om_sites SET
-  capacity_kwp       = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id),
-  capacity_mw        = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0,
-  ppa_tariff_zar_mwh = (SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id),
+  capacity_kwp       = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id), capacity_kwp),
+  capacity_mw        = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0, capacity_mw),
+  ppa_tariff_zar_mwh = COALESCE((SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id), ppa_tariff_zar_mwh),
   province = 'KwaZulu-Natal', latitude = -29.9095, longitude = 30.9162, commissioning_date = '2024-03-01',
   updated_at = datetime('now')
 WHERE name LIKE 'Goldrush Chatsworth Chillers%';
 
 UPDATE om_sites SET
-  capacity_kwp       = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id),
-  capacity_mw        = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0,
-  ppa_tariff_zar_mwh = (SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id),
+  capacity_kwp       = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id), capacity_kwp),
+  capacity_mw        = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0, capacity_mw),
+  ppa_tariff_zar_mwh = COALESCE((SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id), ppa_tariff_zar_mwh),
   province = 'KwaZulu-Natal', latitude = -29.9078, longitude = 30.9138, commissioning_date = '2024-03-01',
   updated_at = datetime('now')
 WHERE name LIKE 'Goldrush Chatsworth%' AND name NOT LIKE '%Chillers%';
 
 UPDATE om_sites SET
-  capacity_kwp       = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id),
-  capacity_mw        = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0,
-  ppa_tariff_zar_mwh = (SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id),
+  capacity_kwp       = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id), capacity_kwp),
+  capacity_mw        = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0, capacity_mw),
+  ppa_tariff_zar_mwh = COALESCE((SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id), ppa_tariff_zar_mwh),
   province = 'KwaZulu-Natal', latitude = -29.8587, longitude = 31.0218, commissioning_date = '2024-03-01',
   updated_at = datetime('now')
 WHERE name LIKE 'Goldrush HQ%';
 
 UPDATE om_sites SET
-  capacity_kwp       = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id),
-  capacity_mw        = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0,
-  ppa_tariff_zar_mwh = (SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id),
+  capacity_kwp       = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id), capacity_kwp),
+  capacity_mw        = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0, capacity_mw),
+  ppa_tariff_zar_mwh = COALESCE((SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id), ppa_tariff_zar_mwh),
   province = 'KwaZulu-Natal', latitude = -28.5565, longitude = 29.7843, commissioning_date = '2024-03-01',
   updated_at = datetime('now')
 WHERE name LIKE 'Goldrush Ladysmith%';
 
 UPDATE om_sites SET
-  capacity_kwp       = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id),
-  capacity_mw        = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0,
-  ppa_tariff_zar_mwh = (SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id),
+  capacity_kwp       = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id), capacity_kwp),
+  capacity_mw        = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0, capacity_mw),
+  ppa_tariff_zar_mwh = COALESCE((SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id), ppa_tariff_zar_mwh),
   province = 'KwaZulu-Natal', latitude = -29.6006, longitude = 30.3794, commissioning_date = '2024-03-01',
   updated_at = datetime('now')
 WHERE name LIKE 'Goldrush Pietermaritzburg%';
 
 UPDATE om_sites SET
-  capacity_kwp       = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id),
-  capacity_mw        = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0,
-  ppa_tariff_zar_mwh = (SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id),
+  capacity_kwp       = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id), capacity_kwp),
+  capacity_mw        = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0, capacity_mw),
+  ppa_tariff_zar_mwh = COALESCE((SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id), ppa_tariff_zar_mwh),
   province = 'KwaZulu-Natal', latitude = -29.3321, longitude = 31.2887, commissioning_date = '2024-03-01',
   updated_at = datetime('now')
 WHERE name LIKE 'Goldrush Stanger%';
 
 UPDATE om_sites SET
-  capacity_kwp       = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id),
-  capacity_mw        = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0,
-  ppa_tariff_zar_mwh = (SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id),
+  capacity_kwp       = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id), capacity_kwp),
+  capacity_mw        = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0, capacity_mw),
+  ppa_tariff_zar_mwh = COALESCE((SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id), ppa_tariff_zar_mwh),
   province = 'KwaZulu-Natal', latitude = -29.8579, longitude = 31.0173, commissioning_date = '2024-03-01',
   updated_at = datetime('now')
 WHERE name LIKE 'Goldrush West Street%';
 
 UPDATE om_sites SET
-  capacity_kwp       = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id),
-  capacity_mw        = (SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0,
-  ppa_tariff_zar_mwh = (SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id),
+  capacity_kwp       = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id), capacity_kwp),
+  capacity_mw        = COALESCE((SELECT SUM(rated_kw) FROM om_devices WHERE site_id = om_sites.id) / 1000.0, capacity_mw),
+  ppa_tariff_zar_mwh = COALESCE((SELECT tariff_rate_zar_per_kwh * 1000 FROM solax_stations WHERE site_id = om_sites.id), ppa_tariff_zar_mwh),
   province = 'Gauteng', latitude = -25.6574, longitude = 28.1101, commissioning_date = '2024-03-01',
   updated_at = datetime('now')
 WHERE name LIKE 'Goldrush Wonderpark%';
