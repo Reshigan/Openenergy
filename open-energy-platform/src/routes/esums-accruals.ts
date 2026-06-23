@@ -939,6 +939,36 @@ export async function materializeFinancials(
     HAVING SUM(sa.carbon_tco2e) > 0
   `).bind(...(stationId ? [participantId, stationId] : [participantId])).run();
 
+  // Onboarding edge case: carbon_holdings.project_id REFERENCES carbon_projects(id).
+  // On a fresh takeon the project metadata row does not exist yet, so the holdings
+  // INSERT below FK-explodes. Provision it idempotently here from the carbon fund
+  // that actually owns the accruals, so finalize is self-sufficient for every role
+  // instead of needing a manual D1 seed.
+  // ponytail: one fleet project per onboarded carbon fund; matches the constant
+  // project_id used by the holdings insert. INSERT OR IGNORE = safe on re-run.
+  await env.DB.prepare(`
+    INSERT OR IGNORE INTO carbon_projects (
+      id, project_name, project_number, project_type, methodology,
+      host_country, developer_id, status, registration_date
+    )
+    SELECT
+      'cp_goldrush_fleet',
+      'Goldrush C&I Solar Fleet',
+      'OE-CP-GOLDRUSH',
+      'solar_pv',
+      'grid-connected renewable (AMS-I.D)',
+      'South Africa',
+      MIN(ss.carbon_participant_id),
+      'active',
+      date('now')
+    FROM site_accruals sa
+    JOIN solax_stations ss ON ss.id = sa.station_id
+    WHERE sa.participant_id = ?
+      AND ss.carbon_participant_id IS NOT NULL AND ss.carbon_participant_id != ''
+      AND sa.carbon_tco2e > 0 ${stationClause}
+    HAVING COUNT(*) > 0
+  `).bind(...(stationId ? [participantId, stationId] : [participantId])).run();
+
   const holdingResult = await env.DB.prepare(`
     INSERT OR REPLACE INTO carbon_holdings (
       id, participant_id, project_id, credit_type, quantity,
