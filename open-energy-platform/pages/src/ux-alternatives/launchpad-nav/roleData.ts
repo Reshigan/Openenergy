@@ -367,6 +367,7 @@ const offtakerDomains: Domain[] = [
       { key: 'annual_recon', label: 'Annual reconciliation', chainKey: 'ppa_annual_recon', description: 'IFRS 15 / NERSA s34 annual true-up & financial close (W101).', mockStates: ['year_opened','data_collected','reconciled','signed_off','invoiced','settled','restated'], mockState: 'reconciled' },
       { key: 'unserved_energy_claims', label: 'Unserved-energy claims', chainKey: 'unserved_energy_claim', description: 'Use-of-system unserved-energy claim chain.', mockStates: ['claim_lodged','validated','quantum_agreed','settled','disputed'], mockState: 'validated' },
       { key: 'delivery_reports', label: 'Delivery reports', description: 'Monthly MWh contracted vs delivered.' },
+      { key: 'settlement_bills', label: 'Solar settlement invoices', description: 'Monthly bills for delivered solar, with kWh, tariff and payment status.' },
       { key: 'billing', label: 'Billing & payments', description: 'Invoice register and payment status.' },
       { key: 'metering', label: 'Metering & reconciliation', description: 'Smart meter reconciliation data.' },
       { key: 'wheeling', label: 'Wheeling statements', description: 'Third-party access wheeling charges.' },

@@ -381,9 +381,19 @@ export async function backfillStationHistory(
   const lastHour = hourPoints[hourPoints.length - 1].hourKey + ':00:00Z';
   await env.DB.batch([
     // om_sites: reuse the station's linked site, or create a deterministic one.
-    env.DB.prepare(`INSERT INTO om_sites (id, name, participant_id, technology, status, created_at, updated_at)
-        VALUES (?, ?, ?, 'solar', 'operational', ?, ?) ON CONFLICT(id) DO NOTHING`)
-      .bind(omSiteId, (station.plant_name as string | null) ?? deviceSn, station.participant_id, now, now),
+    // Seed capacity from the real SolaX inverter rating (rated_power_kw) so new
+    // sites are not metadata-bare; on conflict only fill capacity if still null
+    // (never clobber a curated value). Geo/commissioning stay null — SolaX does
+    // not expose them and we do not invent them.
+    env.DB.prepare(`INSERT INTO om_sites (id, name, participant_id, technology, status, capacity_kwp, capacity_mw, created_at, updated_at)
+        VALUES (?, ?, ?, 'solar', 'operational', ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          capacity_kwp = COALESCE(om_sites.capacity_kwp, excluded.capacity_kwp),
+          capacity_mw  = COALESCE(NULLIF(om_sites.capacity_mw, 0), excluded.capacity_mw)`)
+      .bind(omSiteId, (station.plant_name as string | null) ?? deviceSn, station.participant_id,
+        (station.rated_power_kw as number | null) ?? null,
+        station.rated_power_kw != null ? (station.rated_power_kw as number) / 1000 : null,
+        now, now),
     // om_devices: one inverter per SolaX station.
     env.DB.prepare(`INSERT INTO om_devices (id, site_id, device_type, manufacturer, serial_number, rated_kw, status, last_seen_at, created_at)
         VALUES (?, ?, 'inverter', 'solax', ?, ?, 'online', ?, ?)

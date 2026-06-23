@@ -525,6 +525,7 @@ const OfftakerEnergyCost = React.lazy(() => import('./surfaces/offtaker/EnergyCo
 const OfftakerDeliveryReports = React.lazy(() => import('./surfaces/offtaker/DeliveryReportsSurface'));
 const OfftakerPpaPortfolio = React.lazy(() => import('./surfaces/offtaker/PpaPortfolioSurface'));
 const OfftakerCreditSupport = React.lazy(() => import('./surfaces/offtaker/CreditSupportSurface'));
+const OfftakerSettlementBills = React.lazy(() => import('./surfaces/offtaker/SettlementBillsSurface'));
 
 // WheelingChargesTab is an already-imported standalone named export (optional `scope` prop); the
 // husk rendered the offtaker view. ObligationsTab is a self-contained no-prop named export. Wrap
@@ -796,6 +797,7 @@ export const SURFACE_REGISTRY: Record<
   'offtaker:wheeling': OfftakerWheelingCharges,
   'offtaker:obligations': OfftakerObligations,
   'offtaker:billing': OfftakerBilling,
+  'offtaker:settlement_bills': OfftakerSettlementBills,
   'offtaker:metering': OfftakerMetering,
   'offtaker:energy_cost': OfftakerEnergyCost,
   'offtaker:delivery_reports': OfftakerDeliveryReports,
