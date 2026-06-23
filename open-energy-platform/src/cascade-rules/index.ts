@@ -26,6 +26,7 @@ import { registerOnboardingProvisioningRules } from './onboarding-provisioning';
 import { registerDealEngineRules } from './deal-engine';
 import { registerKycGateRules } from './kyc-gate';
 import { registerSandboxSeedRules } from './sandbox-seed';
+import { registerProjectFundingOfferRules } from './project-funding-offers';
 
 registerTradingSafetyRules();
 registerLifecycleSequencingRules();
@@ -52,5 +53,6 @@ registerOnboardingProvisioningRules();
 registerDealEngineRules();
 registerKycGateRules();
 registerSandboxSeedRules();
+registerProjectFundingOfferRules();
 
-export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules, registerLenderCovenantRules, registerCarbonEventRules, registerRegulatorInboxRules, registerOfftakerProcurementRules, registerUnderservedInboxRules, registerPpaDeliveryShortfallRules, registerPtwWoInteractionRules, registerTariffRepriceRules, registerPredictiveMaintenanceRules, registerWarrantySupplyRules, registerDefaultFreezeRules, registerOnboardingProvisioningRules, registerDealEngineRules, registerKycGateRules, registerSandboxSeedRules };
+export { registerTradingSafetyRules, registerLifecycleSequencingRules, registerTradeSettlementRules, registerContractLifecycleRules, registerIppLifecycleRules, registerOnaOperationsRules, registerEsgEventRules, registerRegulatorActionRules, registerGridDispatchRules, registerTraderMarginRules, registerLenderCovenantRules, registerCarbonEventRules, registerRegulatorInboxRules, registerOfftakerProcurementRules, registerUnderservedInboxRules, registerPpaDeliveryShortfallRules, registerPtwWoInteractionRules, registerTariffRepriceRules, registerPredictiveMaintenanceRules, registerWarrantySupplyRules, registerDefaultFreezeRules, registerOnboardingProvisioningRules, registerDealEngineRules, registerKycGateRules, registerSandboxSeedRules, registerProjectFundingOfferRules };

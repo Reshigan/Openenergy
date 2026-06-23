@@ -40,6 +40,11 @@ npx wrangler d1 execute cec-energy-db --env live --remote \
 # benign (table/index/columns already present), so swallow it.
 npx wrangler d1 execute cec-energy-db --env live --remote \
   --file migrations/513_solax_backfill_jobs.sql 2>&1 | tail -2 || true
+# 514: cross-role offer / marketplace engine. CREATE TABLE IF NOT EXISTS +
+# role-based INSERT OR IGNORE seeds (guarded by WHERE EXISTS participants) →
+# idempotent; a re-apply is a no-op.
+npx wrangler d1 execute cec-energy-db --env live --remote \
+  --file migrations/514_counterparty_offer_engine.sql 2>&1 | tail -2 || true
 
 echo "▸ Live bootstrap: disable demo logins + seed platform admin..."
 npx wrangler d1 execute cec-energy-db --env live --remote \

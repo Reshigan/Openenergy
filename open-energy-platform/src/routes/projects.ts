@@ -6,6 +6,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { buildFundingOptions } from '../utils/funding-options';
 
 const projects = new Hono<HonoEnv>();
 
@@ -706,6 +707,100 @@ projects.post('/', async (c) => {
   });
 
   return c.json({ success: true, data: project }, 201);
+});
+
+// GET /projects/:id/funding-options — standing carbon-fund + lender offers aimed
+// at the IPP, each scored for fit against this project. This is the "pop up
+// options when an IPP loads a project for funding" surface: the IPP reviews the
+// offers (many funders / carbon funds with different terms) and multi-selects via
+// POST /engage. Read-only matcher; no writes.
+projects.get('/:id/funding-options', async (c) => {
+  getCurrentUser(c);                          // require auth
+  const id = c.req.param('id');
+  const project = await c.env.DB.prepare(
+    'SELECT id, technology, capacity_mw, ppa_volume_mwh FROM ipp_projects WHERE id = ?',
+  ).bind(id).first();
+  if (!project) return c.json({ success: false, error: 'Project not found' }, 404);
+
+  const options = await buildFundingOptions(c.env, {
+    id: String(project.id),
+    technology: project.technology != null ? String(project.technology) : null,
+    capacity_mw: Number(project.capacity_mw) || 0,
+    ppa_volume_mwh: project.ppa_volume_mwh != null ? Number(project.ppa_volume_mwh) : null,
+  });
+  return c.json({ success: true, data: options });
+});
+
+// POST /projects/:id/engage — IPP multi-selects one/some/all offers to kick off
+// cross-chain engagement. Inserts an oe_offer_engagements handshake per selected
+// offer and fires marketplace.inquired so the project-funding-offers cascade rule
+// pushes "New funding request for <project>" into each offeror's IncomingPanel.
+// Body: { offer_ids: string[], note?: string }.
+projects.post('/:id/engage', async (c) => {
+  const user = getCurrentUser(c);
+  const id = c.req.param('id');
+  const body = await c.req.json().catch(() => ({}));
+  const offerIds: string[] = Array.isArray(body?.offer_ids)
+    ? body.offer_ids.filter((x: unknown) => typeof x === 'string' && x).slice(0, 50)
+    : [];
+  const note = typeof body?.note === 'string' ? body.note.slice(0, 1000) : null;
+
+  const project = await c.env.DB.prepare(
+    'SELECT id, project_name, developer_id FROM ipp_projects WHERE id = ?',
+  ).bind(id).first();
+  if (!project) return c.json({ success: false, error: 'Project not found' }, 404);
+  if (project.developer_id !== user.id) return c.json({ success: false, error: 'Not authorized' }, 403);
+  if (offerIds.length === 0) return c.json({ success: false, error: 'offer_ids is required' }, 400);
+
+  // Only engage offers that are genuinely active and aimed at this role; bind the
+  // ids as placeholders (never interpolate).
+  const placeholders = offerIds.map(() => '?').join(',');
+  const offers = await c.env.DB.prepare(
+    `SELECT id, offeror_participant_id, offeror_role, offer_kind
+       FROM oe_counterparty_offers
+      WHERE status = 'active' AND target_role = 'ipp_developer' AND id IN (${placeholders})`,
+  ).bind(...offerIds).all();
+
+  const label = String(project.project_name ?? id);
+  const engaged: string[] = [];
+  for (const row of (offers.results ?? []) as Array<Record<string, unknown>>) {
+    const offerId = String(row.id);
+    const engId = 'eng_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+    await c.env.DB.prepare(
+      `INSERT INTO oe_offer_engagements
+         (id, offer_id, offer_kind, initiator_id, initiator_role, offeror_id, offeror_role,
+          entity_type, entity_id, entity_label, status, note, created_at, updated_at)
+       VALUES (?, ?, ?, ?, 'ipp_developer', ?, ?, 'ipp_projects', ?, ?, 'requested', ?, ?, ?)`,
+    ).bind(
+      engId, offerId, String(row.offer_kind ?? ''), user.id,
+      String(row.offeror_participant_id ?? ''), String(row.offeror_role ?? ''),
+      id, label, note, new Date().toISOString(), new Date().toISOString(),
+    ).run();
+    engaged.push(offerId);
+
+    // One cascade per engagement carries the offeror + offer so the rule can
+    // target the right IncomingPanel.
+    await fireCascade({
+      event: 'marketplace.inquired',
+      actor_id: user.id,
+      entity_type: 'oe_offer_engagements',
+      entity_id: engId,
+      data: {
+        engagement_id: engId,
+        offer_id: offerId,
+        offer_kind: String(row.offer_kind ?? ''),
+        offeror_id: String(row.offeror_participant_id ?? ''),
+        offeror_role: String(row.offeror_role ?? ''),
+        project_id: id,
+        project_name: label,
+        note: note ?? '',
+      },
+      env: c.env,
+    });
+  }
+
+  if (engaged.length === 0) return c.json({ success: false, error: 'No active offers matched the selection' }, 400);
+  return c.json({ success: true, data: { engaged_offer_ids: engaged, count: engaged.length } }, 201);
 });
 
 // GET /projects/:id/milestones — list milestones for a project
