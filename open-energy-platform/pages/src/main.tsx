@@ -40,12 +40,36 @@ function reportGlobal(error: unknown, source: 'onerror' | 'unhandledrejection'):
   }).catch(() => { /* swallow */ });
 }
 
+// A stale tab whose hashed chunk no longer exists after a deploy throws on
+// dynamic import (Vite fires `vite:preloadError`, or the browser throws the
+// "'text/html' is not a valid JavaScript MIME type" TypeError). One reload
+// pulls the fresh index.html + new hashes. sessionStorage-guarded so a
+// genuinely broken build can't loop.
+function recoverFromStaleChunk(): boolean {
+  if (sessionStorage.getItem('oe-chunk-reload')) return false;
+  sessionStorage.setItem('oe-chunk-reload', '1');
+  window.location.reload();
+  return true;
+}
+window.addEventListener('vite:preloadError', (ev) => {
+  ev.preventDefault();
+  recoverFromStaleChunk();
+});
+
 window.addEventListener('error', (ev) => {
+  const msg = ev.message || '';
+  if (msg.includes('is not a valid JavaScript MIME type') || msg.includes('Failed to fetch dynamically imported module')) {
+    if (recoverFromStaleChunk()) return;
+  }
   reportGlobal(ev.error ?? ev.message, 'onerror');
 });
 window.addEventListener('unhandledrejection', (ev) => {
   reportGlobal(ev.reason, 'unhandledrejection');
 });
+
+// App mounted OK — clear the one-shot guard so a future stale-chunk error in
+// this session can reload once more.
+window.addEventListener('load', () => { sessionStorage.removeItem('oe-chunk-reload'); });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

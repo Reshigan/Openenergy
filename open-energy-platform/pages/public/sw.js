@@ -14,7 +14,7 @@
 // Bump this version on every release that ships new HTML / asset hashes.
 // `activate` deletes caches whose key doesn't start with SW_VERSION, so any
 // stale `/` HTML pointing at old /assets/* hashes gets evicted on next load.
-const SW_VERSION = 'oe-sw-v1.1.0';
+const SW_VERSION = 'oe-sw-v1.2.0';
 const STATIC_CACHE = `${SW_VERSION}-static`;
 const RUNTIME_CACHE = `${SW_VERSION}-runtime`;
 
@@ -114,7 +114,16 @@ async function cacheFirst(req) {
   if (cached) return cached;
   try {
     const resp = await fetch(req);
-    if (resp.ok) cache.put(req, resp.clone());
+    // A hashed asset that 404s falls through to the SPA shell (200 text/html).
+    // Never cache or serve that as a .js/.css — it triggers the browser's
+    // "'text/html' is not a valid JavaScript MIME type" and poisons the cache.
+    // Return 504 so the dynamic import rejects cleanly and the page can reload.
+    const ct = resp.headers.get('content-type') || '';
+    if (resp.ok && !ct.includes('text/html')) {
+      cache.put(req, resp.clone());
+      return resp;
+    }
+    if (ct.includes('text/html')) return new Response('', { status: 504 });
     return resp;
   } catch {
     return new Response('', { status: 504 });
