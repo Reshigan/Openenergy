@@ -46,6 +46,7 @@ import { registerCascadeRule, type CascadeRule } from '../utils/cascade-registry
 import { pushRoleAction } from '../utils/role-actions';
 import { dstr } from '../utils/cascade-data';
 import { isPlatformRole } from '../utils/platform-event';
+import { seedHistoricRetrospective } from './historic-retrospective';
 
 const CHAIN_KEY = 'onboarding_activation';
 
@@ -270,7 +271,11 @@ const RULES: CascadeRule[] = [
         return;
       }
 
-      // Historic take-on: fan out per source-role combination.
+      // Historic take-on: first seed the opening chain case so the role's
+      // Horizon is non-empty at first login (Horizon is chain-case-driven),
+      // then fan out the cross-role IncomingPanel cards.
+      await seedHistoricRetrospective(ctx, role, owner);
+
       switch (role) {
         case 'ipp_developer':
           await activateGenerationFleet(ctx, owner, role);

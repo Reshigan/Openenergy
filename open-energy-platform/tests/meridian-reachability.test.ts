@@ -67,10 +67,24 @@ describe('classifyLoadError', () => {
 });
 
 describe('quicklinkVisible', () => {
-  it('shows unrestricted links to every role', () => {
-    expect(quicklinkVisible('ipp_developer', '/deals')).toBe(true);
-    expect(quicklinkVisible('trader', '/esg')).toBe(true);
+  it('shows Reports to every role (universal)', () => {
     expect(quicklinkVisible('offtaker', '/reports')).toBe(true);
+    expect(quicklinkVisible('support', '/reports')).toBe(true);
+    expect(quicklinkVisible('grid_operator', '/reports')).toBe(true);
+  });
+  it('restricts Deals to commercial originators', () => {
+    expect(quicklinkVisible('ipp_developer', '/deals')).toBe(true);
+    expect(quicklinkVisible('trader', '/deals')).toBe(true);
+    expect(quicklinkVisible('offtaker', '/deals')).toBe(true);
+    expect(quicklinkVisible('grid_operator', '/deals')).toBe(false);
+    expect(quicklinkVisible('support', '/deals')).toBe(false);
+  });
+  it('restricts ESG to sustainability/disclosure roles', () => {
+    expect(quicklinkVisible('offtaker', '/esg')).toBe(true);
+    expect(quicklinkVisible('carbon_fund', '/esg')).toBe(true);
+    expect(quicklinkVisible('regulator', '/esg')).toBe(true);
+    expect(quicklinkVisible('trader', '/esg')).toBe(false);
+    expect(quicklinkVisible('grid_operator', '/esg')).toBe(false);
   });
   it('restricts Intelligence to admin', () => {
     expect(quicklinkVisible('admin', '/intelligence')).toBe(true);

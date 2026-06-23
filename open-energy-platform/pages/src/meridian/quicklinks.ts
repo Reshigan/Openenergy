@@ -3,11 +3,12 @@
 // server vitest suite without dragging the SPA runtime (react, axios) into a
 // node-only test install. MeridianHeader re-exports these for rendering.
 
-// Header quicklinks. Deals / ESG / Reports are for every signed-in role; the
-// last two are oversight surfaces that shouldn't show for an operator role
-// (part of the "every role sees everything" complaint). Intelligence is an
-// admin analytics console; National (/dashboard) is the regulator/grid/admin
-// oversight board.
+// Header quicklinks. Every link is role-gated to the roles that actually use the
+// surface — answering the "why do all the roles have Deals / ESG at the top?"
+// complaint. Reports stays universal (every role files/reads reports). Deals is
+// for commercial originators; ESG for sustainability/disclosure roles;
+// Intelligence is the admin analytics console; National (/dashboard) is the
+// regulator/grid/admin oversight board.
 export const QUICKLINKS: { to: string; label: string }[] = [
   { to: '/deals', label: 'Deals' },
   { to: '/esg', label: 'ESG' },
@@ -15,7 +16,11 @@ export const QUICKLINKS: { to: string; label: string }[] = [
   { to: '/intelligence', label: 'Intelligence' },
   { to: '/dashboard', label: 'National' },
 ];
+// JWT roles are suffixed (grid_operator, ipp_developer, carbon_fund); include the
+// short forms too so gating holds whichever shape the token carries.
 export const QUICKLINK_ROLES: Record<string, string[]> = {
+  '/deals': ['admin', 'trader', 'ipp_developer', 'ipp', 'offtaker', 'carbon_fund', 'carbon', 'lender'],
+  '/esg': ['admin', 'offtaker', 'carbon_fund', 'carbon', 'ipp_developer', 'ipp', 'regulator'],
   '/intelligence': ['admin'],
   '/dashboard': ['admin', 'regulator', 'grid_operator', 'grid'],
 };

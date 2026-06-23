@@ -198,3 +198,83 @@ describe('onboarding-activation cascade rules', () => {
     expect(rows[0].title).toContain('Welcome');
   });
 });
+
+// Historic-retrospective seeding (src/cascade-rules/historic-retrospective.ts) is
+// wired into the historic branch of the activation rule. Horizon is chain-case
+// -driven, so the opening case per role must exist after a historic onboard or
+// the role lands on an empty workspace. These assert the chain row, not the card.
+describe('historic-retrospective opening chain case', () => {
+  function ippProject(id: string, developer: string, mw: number) {
+    db.prepare(
+      `INSERT INTO ipp_projects (id, project_name, developer_id, structure_type,
+         technology, capacity_mw, location)
+       VALUES (?, ?, ?, 'private_wire', 'solar', ?, 'Northern Cape')`,
+    ).run(id, `Project ${id}`, developer, mw);
+  }
+
+  it('ipp_developer historic seeds one quarterly gen report per project', async () => {
+    ippProject('proj_a', 'ipp_h1', 5);
+    ippProject('proj_b', 'ipp_h1', 3);
+    await runCascadeRegistry(ctx('ipp_developer', 'ipp_h1', 'historic'));
+    const rows = db.prepare(
+      `SELECT project_id, mwh_contracted, mwh_actual, chain_status
+         FROM oe_ipp_quarterly_gen_reports WHERE participant_id = ?`,
+    ).all('ipp_h1') as any[];
+    expect(rows).toHaveLength(2);
+    expect(rows.every((r) => r.chain_status === 'report_quarter_opened')).toBe(true);
+    const a = rows.find((r) => r.project_id === 'proj_a');
+    expect(a.mwh_contracted).toBeCloseTo(5 * 1752 / 4, 1); // capacity * 1752 / 4
+    expect(a.mwh_actual).toBeCloseTo(5 * 1752 / 4 * 0.93, 1);
+  });
+
+  it('offtaker historic seeds a current-month obligation per active PPA', async () => {
+    db.prepare(
+      `INSERT INTO off_ppa_portfolio (id, participant_id, counterparty_name,
+         capacity_mw, status, created_at)
+       VALUES ('ppa_h', 'off_h1', 'GoNXT', 4, 'active', datetime('now'))`,
+    ).run();
+    await runCascadeRegistry(ctx('offtaker', 'off_h1', 'historic'));
+    const rows = db.prepare(
+      `SELECT ppa_id, contracted_mwh, status FROM oe_offtaker_ppa_obligations
+         WHERE participant_id = ?`,
+    ).all('off_h1') as any[];
+    expect(rows).toHaveLength(1);
+    expect(rows[0].status).toBe('pending');
+    expect(rows[0].contracted_mwh).toBeCloseTo(4 * 1752 / 12, 1); // capacity * 1752 / 12
+  });
+
+  it('lender historic seeds an under-review covenant certificate per facility', async () => {
+    db.prepare(
+      `INSERT INTO loan_facilities (id, facility_name, lender_participant_id,
+         borrower_participant_id, committed_amount, drawn_amount, status)
+       VALUES ('fac_h', 'Senior Facility', 'lend_h1', 'borrower_h', 18000000, 14200000, 'active')`,
+    ).run();
+    await runCascadeRegistry(ctx('lender', 'lend_h1', 'historic'));
+    const rows = db.prepare(
+      `SELECT facility_name, chain_status FROM oe_covenant_certificates WHERE created_by = ?`,
+    ).all('lend_h1') as any[];
+    expect(rows).toHaveLength(1);
+    expect(rows[0].chain_status).toBe('under_review');
+    expect(rows[0].facility_name).toBe('Senior Facility');
+  });
+
+  it('NEW mode seeds no opening chain case', async () => {
+    ippProject('proj_new', 'ipp_new', 5);
+    await runCascadeRegistry(ctx('ipp_developer', 'ipp_new', 'new'));
+    const n = (db.prepare(
+      `SELECT COUNT(*) n FROM oe_ipp_quarterly_gen_reports WHERE participant_id = ?`,
+    ).get('ipp_new') as any).n;
+    expect(n).toBe(0);
+  });
+
+  it('idempotent on historic re-fire (no duplicate chain case)', async () => {
+    ippProject('proj_idem', 'ipp_idem', 5);
+    const c = ctx('ipp_developer', 'ipp_idem', 'historic');
+    await runCascadeRegistry(c);
+    await runCascadeRegistry(c);
+    const n = (db.prepare(
+      `SELECT COUNT(*) n FROM oe_ipp_quarterly_gen_reports WHERE participant_id = ?`,
+    ).get('ipp_idem') as any).n;
+    expect(n).toBe(1);
+  });
+});
