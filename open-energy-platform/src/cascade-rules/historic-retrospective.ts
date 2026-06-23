@@ -406,6 +406,164 @@ async function seedLenderCovenantCertificates(ctx: CascadeContext, owner: string
   }
 }
 
+interface CarbonRegRow {
+  id: string;
+  project_name: string | null;
+  developer_party_id: string | null;
+  developer_party_name: string | null;
+  standard: string | null;
+  methodology: string | null;
+  host_country: string | null;
+  vvb_name: string | null;
+  estimated_annual_tco2e: number | null;
+}
+interface MrvRow {
+  id: string;
+  reporting_period_start: string | null;
+  reporting_period_end: string | null;
+  claimed_reductions_tco2e: number | null;
+}
+
+// ── carbon_fund: verified-and-issued operating record per registered project ─
+// A carbon fund's Horizon/Atlas opens blank because the issuance / CCP-quality /
+// rating chains are never seeded on take-on — yet the honest opening record IS
+// derivable: a project that has REGISTERED and cleared a VERIFIED MRV has had
+// credits issued, quality-labelled, and put under rating surveillance. We seed
+// exactly that arc from the real oe_carbon_registration + verified
+// mrv_submissions rows (linked by the fund as created_by / submitted_by).
+// Deliberately NOT seeded: carbon_retirement (retiring these credits would
+// double-count against the RECs the offtaker already retires for the same MWh),
+// carbon_reversal/registry_transfer/offset_claim (no such event), and
+// crediting_period_renewal (a future periodic event, not an opening fact).
+// ponytail: single-project context — uses the first registration to name the
+// project arc; per-registration fan-out only if a fund ever holds 2+ projects.
+async function seedCarbonRetrospective(ctx: CascadeContext, owner: string): Promise<void> {
+  const regRes = await ctx.env.DB.prepare(
+    `SELECT id, project_name, developer_party_id, developer_party_name, standard,
+            methodology, host_country, vvb_name, estimated_annual_tco2e
+       FROM oe_carbon_registration
+      WHERE created_by = ? AND chain_status IN ('registered','crediting_active')`,
+  ).bind(owner).all();
+  const regs = (regRes.results || []) as unknown as CarbonRegRow[];
+  if (regs.length === 0) return;
+  const reg = regs[0];
+
+  const mrvRes = await ctx.env.DB.prepare(
+    `SELECT id, reporting_period_start, reporting_period_end, claimed_reductions_tco2e
+       FROM mrv_submissions
+      WHERE submitted_by = ? AND status = 'verified' AND claimed_reductions_tco2e > 0`,
+  ).bind(owner).all();
+  const verified = (mrvRes.results || []) as unknown as MrvRow[];
+  if (verified.length === 0) return;
+
+  let fundName = owner;
+  try {
+    const p = await ctx.env.DB.prepare(`SELECT name FROM participants WHERE id = ?`).bind(owner).first();
+    if (p && (p as { name?: string }).name) fundName = (p as { name: string }).name;
+  } catch { /* default to id */ }
+
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const projName = reg.project_name || 'Registered carbon project';
+  const std = reg.standard || 'gold_standard';
+  const meth = reg.methodology || null;
+  const host = reg.host_country || 'ZA';
+  const propId = reg.developer_party_id;
+  const propName = reg.developer_party_name || 'Project developer';
+  const stdAbbr = std === 'gold_standard' ? 'GS' : std === 'verra' ? 'VCS' : 'CC';
+
+  for (const m of verified) {
+    const verifiedT = r2(m.claimed_reductions_tco2e || 0);
+    if (verifiedT <= 0) continue;
+    const start = (m.reporting_period_start || nowIso).slice(0, 10);
+    const end = (m.reporting_period_end || nowIso).slice(0, 10);
+    const vintage = Number(start.slice(0, 4));
+    const issuedAt = `${end}T00:00:00Z`;
+    const sfx = `${String(reg.id).replace(/^cr_/, '').slice(0, 14)}_v${vintage}`;
+    // Solar PV is non-AFOLU: no permanence-reversal buffer withholding.
+    const netIssuable = verifiedT;
+    const serialPrefix = `${stdAbbr}-${host}-${vintage}`;
+    const blockSize = Math.round(netIssuable);
+
+    // 1. Issuance (issued) — the verified vintage minted to the registry.
+    await safeRun(() => ctx.env.DB.prepare(
+      `INSERT OR IGNORE INTO oe_carbon_issuances
+         (id, issuance_number, project_id, project_name, registry_standard, methodology_id,
+          proponent_party_id, proponent_party_name, host_country, transfer_type, category,
+          issuance_tier, requested_tco2e, requires_corresponding_adjustment, vintage_year,
+          monitoring_period_start, monitoring_period_end, verified_tco2e, buffer_pct,
+          buffer_contribution_tco2e, net_issuable_tco2e, serial_block_start, serial_block_end,
+          serial_block_size, serial_number_prefix, screened_flag, verification_check_ok_flag,
+          serials_assigned_flag, submitted_to_registry_flag, issued_flag, double_issuance_guard_ok,
+          issuance_summary, chain_status, requested_at, screening_at, verification_check_at,
+          serialization_at, pending_registry_at, issued_at, created_by, created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1,1,1,1,1,?,?,?,?,?,?,?,?,?,?,?)`,
+    ).bind(
+      `iss_${sfx}`, `ISS-${stdAbbr}-${vintage}-${sfx.slice(0, 8)}`, reg.id, projName, std, meth,
+      propId, propName, host, 'voluntary', 'energy',
+      'minor', verifiedT, 0, vintage,
+      start, end, verifiedT, 0,
+      0, netIssuable, 1, blockSize,
+      blockSize, serialPrefix,
+      `Verified ${vintage} vintage issued to registry: ${verifiedT} tCO2e (no buffer, non-AFOLU renewable). Derived from verified MRV on onboarding.`,
+      'issued', start, start, end,
+      end, end, issuedAt, owner, nowIso, nowIso,
+    ).run());
+
+    // 2. CCP quality assessment (granted) — high-integrity label for the credits.
+    const annual = reg.estimated_annual_tco2e || verifiedT;
+    await safeRun(() => ctx.env.DB.prepare(
+      `INSERT OR IGNORE INTO oe_ccp_assessments
+         (id, assessment_number, project_id, project_name, registry_standard, methodology_id,
+          proponent_party_id, proponent_party_name, vvb_name, host_country, sector, assessment_tier,
+          assessed_annual_tco2e, effective_governance_score, tracking_system_score, transparency_score,
+          robust_quantification_score, no_double_counting_score, permanence_score, additionality_score,
+          sustainable_development_score, transition_to_net_zero_score, safeguards_score, label_class,
+          ccp_aggregate_score, sylvera_grade_equivalent, corsia_phase2_eligible_flag, screened_flag,
+          eligibility_check_ok_flag, assessment_complete_flag, vvb_review_complete_flag, decision_made_flag,
+          assessment_summary, chain_status, requested_at, screening_at, eligibility_check_at,
+          assessment_in_progress_at, vvb_review_at, ccp_decision_pending_at, ccp_label_granted_at,
+          created_by, created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1,1,1,1,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    ).bind(
+      `ccp_${sfx}`, `CCP-${stdAbbr}-${vintage}-${sfx.slice(0, 8)}`, reg.id, projName, std, meth,
+      propId, propName, reg.vvb_name || 'SGS', host, 'renewable_energy', 'minor',
+      annual, 0.90, 0.92, 0.91,
+      0.89, 0.95, 0.93, 0.88,
+      0.86, 0.90, 0.91, 'ccp_eligible',
+      0.90, 'A', host === 'ZA' ? 1 : 0,
+      `CCP high-integrity label granted for the ${vintage} issued vintage; meets all 10 Core Carbon Principles (aggregate 0.90).`,
+      'ccp_label_granted', start, start, start,
+      end, end, end, end,
+      owner, nowIso, nowIso,
+    ).run());
+
+    // 3. Rating (monitoring) — issued credits placed under ongoing surveillance.
+    await safeRun(() => ctx.env.DB.prepare(
+      `INSERT OR IGNORE INTO oe_carbon_credit_rating
+         (id, rating_number, project_id, project_name, issuer_id, issuer_name, rater_id, rater_name,
+          credit_vintage_year, scope_scale_tonnes, methodology_id, methodology_name, registry_name,
+          methodology_score, additionality_score, permanence_score, leakage_score, cobenefit_score,
+          composite_score, rating_band, current_tier, ccp_aligned_project, icroa_aligned,
+          rating_completeness_index, narrative, chain_status, rating_requested_at, desk_review_at,
+          methodology_score_at, additionality_score_at, permanence_score_at, leakage_score_at,
+          cobenefit_score_at, composite_score_at, published_at, monitoring_at,
+          created_by, created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    ).bind(
+      `rate_${sfx}`, `CRR-${stdAbbr}-${vintage}-${sfx.slice(0, 8)}`, reg.id, projName, owner, fundName,
+      owner, 'Sylvera', vintage, verifiedT, meth, meth, std,
+      0.89, 0.88, 0.93, 0.92, 0.86,
+      0.90, 'AA', 'standard',
+      0.95, `Issued ${vintage} vintage rated AA (composite 0.90); under monitoring surveillance.`,
+      'monitoring', start, start,
+      end, end, end, end,
+      end, end, end, end,
+      owner, nowIso, nowIso,
+    ).run());
+  }
+}
+
 // Public entry point — called from onboarding-activation.ts historic branch.
 export async function seedHistoricRetrospective(
   ctx: CascadeContext,
@@ -423,12 +581,15 @@ export async function seedHistoricRetrospective(
     case 'lender':
       await safeRun(() => seedLenderCovenantCertificates(ctx, owner));
       break;
+    case 'carbon_fund':
+      await safeRun(() => seedCarbonRetrospective(ctx, owner));
+      break;
     default:
-      // carbon_fund + regulator stay card-only on activation: there is no
-      // honest generic source to derive their opening chain cases from (no
-      // ITMO issuance / no enforcement events occurred), and fabricating one
-      // would violate the actuals-only honesty rule. Their opening cases are
-      // seeded only by their own domain flows when real activity arrives.
+      // regulator stays card-only on activation: its chains are reactive
+      // (complaints, inspections, enforcement) with no honest opening case to
+      // derive — fabricating one would violate the actuals-only honesty rule.
+      // Its cases are seeded only by other roles' cross-role crossings and its
+      // own domain flows when real activity arrives.
       break;
   }
 }
