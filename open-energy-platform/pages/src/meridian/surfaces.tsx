@@ -96,6 +96,9 @@ const CarbonMrv = React.lazy(() => import('./surfaces/carbon/MrvSurface'));
 const CarbonCertificates = React.lazy(() => import('./surfaces/carbon/CertificatesSurface'));
 const CarbonReports = React.lazy(() => import('./surfaces/carbon/ReportsSurface'));
 
+// Paid doc-generation subscription (mig 515) — shared by carbon_fund + lender.
+const DocStudio = React.lazy(() => import('./surfaces/shared/DocStudioSurface'));
+
 // Audit tab carried verbatim from the CarbonWorkstationPage `audit` tab
 // (prefix /carbon-registry, recon hint + carbon registry recon sources).
 const CarbonAuditPanel: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
@@ -680,6 +683,7 @@ export const SURFACE_REGISTRY: Record<
   'carbon_fund:certificates': CarbonCertificates,
   'carbon_fund:reports': CarbonReports,
   'carbon_fund:audit': CarbonAuditPanel,
+  'carbon_fund:doc_studio': DocStudio,
   // regulator workstation migration (E2.8d) — keys match roleData feature keys emitted by Atlas
   'regulator:inbox': RegulatorInbox,
   'regulator:notices': RegulatorNotices,
@@ -705,6 +709,7 @@ export const SURFACE_REGISTRY: Record<
   'lender:concentrations': LenderConcentrations,
   'lender:benchmark_lender': LenderBenchmark,
   'lender:carbon_lender': LenderCarbon,
+  'lender:doc_studio': DocStudio,
   // admin workstation migration (E2.1) — keys match roleData feature keys emitted by Atlas.
   // settlement_rails / erp_connectors / filing_connectors / anomaly_admin / rul_prediction_admin /
   // fault_fingerprint_admin are registered in the connector/ML trio above.

@@ -14,6 +14,7 @@ import React from 'react';
 import { OEIcon } from '../OEIcon';
 import { ProjectScurve } from '../widgets/ProjectScurve';
 import { ScheduleTab } from '../schedule/ScheduleTab';
+import { FundingOptionsPanel } from '../funding/FundingOptionsPanel';
 import {
   FileSection,
   FileTable,
@@ -367,6 +368,9 @@ export const projectFileTabs: EntityFileTab<ProjectFileData>[] = [
     badgeFromSummary: (s) => Number(s.drawdowns_total || 0),
     render: (data) => (
       <>
+        <FileSection title="Market offers" subtitle="Standing carbon-fund and lender offers aimed at this project, scored for fit. Multi-select to kick off engagement with the offerors.">
+          <FundingOptionsPanel projectId={data.project.id} />
+        </FileSection>
         <FileSection title="Financial models" subtitle="Base-case + sensitivity runs. DSCR ≥ 1.20 typically required for financial close.">
           <FileTable
             rows={data.funding.financial_models as any[]}
