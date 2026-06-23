@@ -371,6 +371,39 @@ export async function backfillStationHistory(
   }
   const daysWritten = stmts.length;
 
+  // ── Telemetry plane (om_devices / om_telemetry) ──────────────────────────
+  // The financial plane above feeds dashboards/settlement. O&M + W71 predictive
+  // ML read the telemetry plane instead, which the historical backfill must seed
+  // from the SAME SolaX readings — no new API calls, no synthetic data.
+  // Idempotent: deterministic ids upsert on re-run.
+  const omSiteId = (station.site_id as string | null) || `site_bf_${stationId}`;
+  const omDeviceId = `omdev_${stationId}`;
+  const lastHour = hourPoints[hourPoints.length - 1].hourKey + ':00:00Z';
+  await env.DB.batch([
+    // om_sites: reuse the station's linked site, or create a deterministic one.
+    env.DB.prepare(`INSERT INTO om_sites (id, name, participant_id, technology, status, created_at, updated_at)
+        VALUES (?, ?, ?, 'solar', 'operational', ?, ?) ON CONFLICT(id) DO NOTHING`)
+      .bind(omSiteId, (station.plant_name as string | null) ?? deviceSn, station.participant_id, now, now),
+    // om_devices: one inverter per SolaX station.
+    env.DB.prepare(`INSERT INTO om_devices (id, site_id, device_type, manufacturer, serial_number, rated_kw, status, last_seen_at, created_at)
+        VALUES (?, ?, 'inverter', 'solax', ?, ?, 'online', ?, ?)
+        ON CONFLICT(id) DO UPDATE SET last_seen_at = excluded.last_seen_at, rated_kw = excluded.rated_kw`)
+      .bind(omDeviceId, omSiteId, deviceSn, (station.rated_power_kw as number | null) ?? null, lastHour, now),
+  ]);
+  // Hourly telemetry rows. ac_kw ≈ interval kWh over a 1-hour interval (avg power);
+  // yield_kwh carries the cumulative meter reading. ponytail: deterministic PK id
+  // (omt_bf_<station>_<hour>) gives idempotency without a (device,ts) unique index.
+  const telStmts = hourPoints.map(pt => {
+    const periodHour = pt.hourKey + ':00:00Z';
+    return env.DB.prepare(`INSERT INTO om_telemetry (id, device_id, site_id, ts, ac_kw, yield_kwh, interval_kwh, quality)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'valid')
+        ON CONFLICT(id) DO UPDATE SET ac_kw = excluded.ac_kw, yield_kwh = excluded.yield_kwh, interval_kwh = excluded.interval_kwh`)
+      .bind(`omt_bf_${stationId}_${pt.hourKey}`, omDeviceId, omSiteId, periodHour, pt.kwhDelta, pt.totalYield, pt.kwhDelta);
+  });
+  for (let i = 0; i < telStmts.length; i += 100) {
+    await env.DB.batch(telStmts.slice(i, i + 100));
+  }
+
   const more = clampedStart > fullStartMs;
   return {
     days_backfilled: uniqueDays.size,
