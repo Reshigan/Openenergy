@@ -63,6 +63,7 @@ export interface ChainDescriptor {
   initiation?: ChainInitiation | null;
   filters?: ChainFilterSpec[];
   kpis?: ChainKpiSpec[];
+  level?: 3 | 4 | 5;             // optional hand-pin; else derived by chainLevel()
 }
 
 const HOUR = 3600_000;
@@ -118,6 +119,43 @@ export function listSelectCols(chain: ChainDescriptor): string {
   const cols = ['id', chain.refCol, chain.titleCol, chain.quantumCol,
     chain.statusCol, chain.deadlineCol, chain.counterpartyCol];
   return [...new Set(cols.filter((x): x is string => !!x))].join(', ');
+}
+
+// Feature-depth level (L1-L5 rubric, CLAUDE.md). Derived from structural signals,
+// not hand-tagged, so it can't drift from the descriptor. A governed chain is L3
+// at minimum (state machine + server validation + audit). It earns L4 when it shows
+// full-workflow depth (money-at-risk, evidence attachments, or structured reason
+// codes on its transitions). It earns L5 when it is regulator-grade: a tamper-evident
+// per-chain audit timeline AND a crossing into the regulator / external-reconciliation
+// world (regulator lane, regulator-role action, or a cascade naming a regulator/
+// settlement/certified-export hook). `level` on the descriptor overrides the derivation.
+export function chainLevel(d: ChainDescriptor): 3 | 4 | 5 {
+  if (d.level) return d.level;
+  const acts = d.actions ?? [];
+  const fields = acts.flatMap(a => a.fields ?? []);
+  const hintText = acts.map(a => a.cascadeHint ?? '').join(' ').toLowerCase();
+
+  const regulatorLane = 'regulator' in (d.lanes ?? {});
+  const regulatorRole = acts.some(a => (a.roles ?? []).some(r => r.startsWith('regulator')));
+  const regulatorText = /\b(regulator|nersa|sarb|fsca|dffe|sars|dmre|ipuo|ippo|dti|equator)\b/.test(hintText);
+  const reconciles = /\b(dvp|reconcil|certified export|tamper|itmo|corresponding adjustment|stor)\b/.test(hintText);
+  const crossesRegulator = regulatorLane || regulatorRole || regulatorText || reconciles;
+
+  const hasAuditTimeline = !!d.eventsTable;
+  const hasQuantum = !!d.quantumCol;
+  const hasEvidence = fields.some(f => f.type === 'evidence');
+  const hasReasonCodes = fields.some(f => f.type === 'enum' && (f.options?.length ?? 0) > 0);
+
+  if (hasAuditTimeline && crossesRegulator && (hasQuantum || reconciles)) return 5;
+  if (hasQuantum || hasEvidence || hasReasonCodes) return 4;
+  return 3;
+}
+
+// L1/L2 never appear: every entry here is a governed state-machine chain (>= L3).
+export function chainLevelHistogram(): Record<3 | 4 | 5, number> {
+  const h: Record<3 | 4 | 5, number> = { 3: 0, 4: 0, 5: 0 };
+  for (const d of MERIDIAN_CHAINS) h[chainLevel(d)]++;
+  return h;
 }
 
 // SECURITY: table/column/status values below are interpolated into SQL identifiers

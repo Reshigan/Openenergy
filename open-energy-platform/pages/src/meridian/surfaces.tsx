@@ -741,6 +741,7 @@ export const SURFACE_REGISTRY: Record<
   'esco:predictions': EsumsPredictions,
   'esco:ingestion': EsumsIngestion,
   'esco:integrations': EsumsIntegrations,
+  'ipp_developer:integrations': EsumsIntegrations,
   'esco:data-sources': EsumsDataSources,
   'esco:participant-links': EsumsParticipantLinks,
   'esco:protection-relay-tests': EsumsProtectionRelayTests,

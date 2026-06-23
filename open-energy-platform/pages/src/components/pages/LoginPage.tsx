@@ -4,26 +4,27 @@ import { useAuth } from '../../lib/useAuth';
 import { api } from '../../lib/api';
 import { LogoMark } from '../Logo';
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
+// ─── Design tokens — matched to the in-app Meridian palette (meridian.css):
+//     warm paper, petrol primary accent, amber secondary. ────────────────────
 const T = {
-  // Dark brand panel
-  brandBg:     'oklch(0.11 0.014 250)',
-  brandBg2:    'oklch(0.14 0.015 250)',
-  brandText:   'oklch(0.98 0.002 250)',
-  brandSubtle: 'oklch(0.65 0.008 250)',
-  brandAccent: 'oklch(0.75 0.13 55)',   // platform amber, lifted for dark bg
-  brandAmber:  'oklch(0.72 0.14 55)',
-  // Form panel
-  panelBg:  'oklch(0.99 0.002 80)',
-  text1:    'oklch(0.17 0.010 250)',
-  text2:    'oklch(0.40 0.009 250)',
-  text3:    'oklch(0.52 0.008 250)',   /* darkened from 0.60 → clears WCAG AA 4.5:1 on the light panel (used at 9.5–11px) */
-  border:   'oklch(0.88 0.006 250)',
-  accent:   'oklch(0.46 0.16 55)',
-  inputBg:  'oklch(0.97 0.003 250)',
-  errorBg:  'oklch(0.97 0.04 20)',
-  errorFg:  'oklch(0.45 0.20 20)',
-  errorBd:  'oklch(0.75 0.12 20)',
+  // Dark brand panel — deep petrol, the app's primary hue
+  brandBg:     'oklch(0.18 0.030 205)',
+  brandBg2:    'oklch(0.22 0.040 205)',
+  brandText:   'oklch(0.98 0.004 85)',
+  brandSubtle: 'oklch(0.72 0.022 200)',
+  brandAccent: 'oklch(0.74 0.100 200)',   // petrol, lifted for dark bg
+  brandAmber:  'oklch(0.74 0.130 70)',     // amber, the app's secondary
+  // Form panel — warm paper, ink text
+  panelBg:  'oklch(0.985 0.004 85)',
+  text1:    'oklch(0.21 0.012 85)',
+  text2:    'oklch(0.42 0.012 85)',
+  text3:    'oklch(0.50 0.012 85)',   /* clears WCAG AA 4.5:1 on the paper panel (used at 9.5–11px) */
+  border:   'oklch(0.885 0.008 85)',
+  accent:   'oklch(0.30 0.060 205)',   // petrol-deep — links + CTA, never amber (matches app rule)
+  inputBg:  'oklch(0.965 0.006 85)',
+  errorBg:  'oklch(0.95 0.020 30)',
+  errorFg:  'oklch(0.42 0.170 30)',
+  errorBd:  'oklch(0.75 0.120 30)',
 } as const;
 
 // ─── Persona data (compact, 11 roles + IPP variant) ──────────────────────────
@@ -72,7 +73,7 @@ function BrandPanel() {
     <div
       style={{
         position: 'relative',
-        background: `radial-gradient(ellipse at 20% 20%, oklch(0.20 0.05 250) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, oklch(0.18 0.04 55) 0%, transparent 50%), ${T.brandBg}`,
+        background: `radial-gradient(ellipse at 20% 20%, oklch(0.26 0.055 205) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, oklch(0.24 0.05 70) 0%, transparent 50%), ${T.brandBg}`,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -130,11 +131,11 @@ function BrandPanel() {
             <LogoMark size={36} variant="colour" />
           </div>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: T.brandText, letterSpacing: '0.06em', lineHeight: 1.1, fontFamily: '"IBM Plex Mono", ui-monospace, monospace' }}>
-              CEC<span style={{ color: T.brandAccent }}>/</span>
+            <div style={{ display: 'inline-block', fontSize: 22, fontWeight: 800, color: T.brandText, letterSpacing: '0.14em', lineHeight: 1.1, paddingBottom: 3, borderBottom: `3px solid ${T.brandAccent}` }}>
+              CEC
             </div>
-            <div style={{ fontSize: 10, letterSpacing: '0.18em', color: T.brandSubtle, textTransform: 'uppercase', fontFamily: 'ui-monospace, monospace' }}>
-              Consolidated Energy Cockpit · Vanta X
+            <div style={{ fontSize: 10, letterSpacing: '0.18em', color: T.brandSubtle, textTransform: 'uppercase', fontFamily: 'ui-monospace, monospace', marginTop: 6 }}>
+              Consolidated Energy Cockpit
             </div>
           </div>
         </div>
@@ -152,14 +153,14 @@ function BrandPanel() {
             color: T.brandText,
           }}
         >
-          South Africa's{' '}
+          Run your energy business from{' '}
           <em style={{ fontStyle: 'normal', color: T.brandAccent }}>
-            unified energy exchange
+            one cockpit
           </em>
           .
         </h1>
         <p style={{ marginTop: 16, color: T.brandSubtle, fontSize: 15, lineHeight: 1.6, maxWidth: 380 }}>
-          Trade power, carbon and RECs, originate IPP projects, run procurement, and settle — all on one platform.
+          Your projects, trades, settlements, carbon and compliance, live and in one place. Sign in and pick up where your work left off.
         </p>
 
         {/* Platform stats */}
@@ -212,8 +213,8 @@ function BrandPanel() {
       </div>
 
       {/* Footer */}
-      <div style={{ position: 'relative', zIndex: 1, fontSize: 11, color: 'oklch(0.38 0.006 250)' }}>
-        © {new Date().getFullYear()} Consolidated Energy Cockpit · Vanta X Holdings
+      <div style={{ position: 'relative', zIndex: 1, fontSize: 11, color: T.brandSubtle, opacity: 0.7 }}>
+        © {new Date().getFullYear()} Consolidated Energy Cockpit
       </div>
     </div>
   );
@@ -283,6 +284,9 @@ export default function LoginPage() {
   const [loading, setLoading]       = useState(false);
   const [ssoEnabled, setSsoEnabled] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);
+  // Demo personas + one-click password are hidden on live (DEMO_MODE=off).
+  // Default true so demo env shows them even before /config resolves.
+  const [demoMode, setDemoMode]     = useState(true);
   const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -292,6 +296,7 @@ export default function LoginPage() {
   useEffect(() => {
     api.get('/auth/sso/config').then((r) => {
       if (r.data?.success && r.data?.data?.enabled) setSsoEnabled(true);
+      if (r.data?.data?.demo_mode === 'off') setDemoMode(false);
     }).catch(() => {});
   }, []);
 
@@ -435,7 +440,7 @@ export default function LoginPage() {
               Sign in
             </h2>
             <p style={{ margin: '6px 0 0', fontSize: 14, color: T.text2, lineHeight: 1.5 }}>
-              Welcome back to the Consolidated Energy Cockpit.
+              Welcome back. Sign in to pick up your work.
             </p>
 
             {/* Error */}
@@ -618,7 +623,7 @@ export default function LoginPage() {
                   padding: '11px 16px',
                   borderRadius: 8,
                   border: 'none',
-                  background: loading ? 'oklch(0.35 0.010 250)' : T.text1,
+                  background: loading ? 'oklch(0.45 0.020 205)' : T.accent,
                   color: T.panelBg,
                   fontSize: 14,
                   fontWeight: 700,
@@ -693,7 +698,8 @@ export default function LoginPage() {
               </>
             )}
 
-            {/* Demo personas */}
+            {/* Demo personas — hidden on live (DEMO_MODE=off) */}
+            {demoMode && (
             <div style={{ margin: '22px 0 0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                 <div style={{ flex: 1, height: 1, background: T.border }} />
@@ -718,6 +724,7 @@ export default function LoginPage() {
                 All demo accounts · <span style={{ color: T.accent }}>Demo@2024!</span>
               </p>
             </div>
+            )}
 
             {/* Register link */}
             <p style={{ marginTop: 20, textAlign: 'center', fontSize: 13, color: T.text2 }}>

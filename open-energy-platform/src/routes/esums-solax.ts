@@ -22,41 +22,55 @@
 // ════════════════════════════════════════════════════════════════════════
 
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { randomId } from '../utils/auth-tokens';
 import { AppError, ErrorCode } from '../utils/types';
+
+type HonoContext = Context<HonoEnv>;
 
 const sr = new Hono<HonoEnv>();
 sr.use('*', authMiddleware);
 
 const BTYPE = 4; // C&I throughout
 
-// ─── OAuth token cache (per-isolate, re-fetched on cold start or expiry) ────
+// ─── OAuth token cache (per-isolate, keyed by client_id so tenants never
+//     share a token; re-fetched on cold start or expiry) ──────────────────
 
-type TokenCache = { token: string; expiresAt: number } | null;
-let tokenCache: TokenCache = null;
+type SolaxCreds = { clientId: string; clientSecret: string; base: string };
+const tokenCache = new Map<string, { token: string; expiresAt: number }>();
 
-function solaxBase(env: HonoEnv['Bindings']): string {
-  return (env as unknown as Record<string, string>).SOLAX_BASE_URL
-    ?? 'https://openapi-eu.solaxcloud.com';
+// Resolve the logged-in participant's SolaX credentials from their
+// manufacturer_credentials row, falling back to the worker env vars.
+// This is what lets a user enter their own keys in the CEC UI and have the
+// proxy + /sync use them, instead of a single platform-wide key.
+async function resolveCreds(c: HonoContext): Promise<SolaxCreds> {
+  const user = getCurrentUser(c);
+  const e = c.env as unknown as Record<string, string>;
+  const row = await c.env.DB
+    .prepare(`SELECT client_id, client_secret, base_url FROM manufacturer_credentials
+              WHERE participant_id = ? AND manufacturer = 'solax' AND status = 'active'`)
+    .bind(user.id).first<{ client_id: string | null; client_secret: string | null; base_url: string | null }>();
+
+  const clientId     = row?.client_id     ?? e.SOLAX_CLIENT_ID;
+  const clientSecret = row?.client_secret ?? e.SOLAX_CLIENT_SECRET;
+  const base         = row?.base_url       ?? e.SOLAX_BASE_URL ?? 'https://openapi-eu.solaxcloud.com';
+  if (!clientId || !clientSecret) {
+    throw new AppError(ErrorCode.VALIDATION_ERROR, 'SolaX credentials not configured — add them under Integrations', 503);
+  }
+  return { clientId, clientSecret, base };
 }
 
-async function getToken(env: HonoEnv['Bindings']): Promise<string> {
+async function getToken(creds: SolaxCreds): Promise<string> {
   const now = Date.now();
-  if (tokenCache && tokenCache.expiresAt > now + 60_000) return tokenCache.token;
+  const cached = tokenCache.get(creds.clientId);
+  if (cached && cached.expiresAt > now + 60_000) return cached.token;
 
-  const e = env as unknown as Record<string, string>;
-  const clientId     = e.SOLAX_CLIENT_ID;
-  const clientSecret = e.SOLAX_CLIENT_SECRET;
-  if (!clientId || !clientSecret) {
-    throw new AppError(ErrorCode.VALIDATION_ERROR, 'SolaX credentials not configured (SOLAX_CLIENT_ID / SOLAX_CLIENT_SECRET)', 503);
-  }
-
-  const res = await fetch(`${solaxBase(env)}/openapi/auth/oauth/token`, {
+  const res = await fetch(`${creds.base}/openapi/auth/oauth/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, grant_type: 'client_credentials' }),
+    body: new URLSearchParams({ client_id: creds.clientId, client_secret: creds.clientSecret, grant_type: 'client_credentials' }),
   });
   if (!res.ok) {
     throw new AppError(ErrorCode.INTERNAL_ERROR, `SolaX auth HTTP ${res.status}`, 502);
@@ -67,23 +81,25 @@ async function getToken(env: HonoEnv['Bindings']): Promise<string> {
     throw new AppError(ErrorCode.INTERNAL_ERROR, `SolaX auth code ${j.code}`, 502);
   }
 
-  tokenCache = { token: j.result.access_token, expiresAt: now + (j.result.expires_in - 300) * 1000 };
-  return tokenCache.token;
+  tokenCache.set(creds.clientId, { token: j.result.access_token, expiresAt: now + (j.result.expires_in - 300) * 1000 });
+  return j.result.access_token;
 }
 
 function hdr(token: string): Record<string, string> {
   return { Authorization: `bearer ${token}`, 'Content-Type': 'application/json', Accept: '*/*' };
 }
 
-async function solaxGet(env: HonoEnv['Bindings'], path: string): Promise<unknown> {
-  const token = await getToken(env);
-  const res = await fetch(`${solaxBase(env)}${path}`, { headers: hdr(token) });
+async function solaxGet(c: HonoContext, path: string): Promise<unknown> {
+  const creds = await resolveCreds(c);
+  const token = await getToken(creds);
+  const res = await fetch(`${creds.base}${path}`, { headers: hdr(token) });
   return res.json();
 }
 
-async function solaxPost(env: HonoEnv['Bindings'], path: string, body: unknown): Promise<unknown> {
-  const token = await getToken(env);
-  const res = await fetch(`${solaxBase(env)}${path}`, {
+async function solaxPost(c: HonoContext, path: string, body: unknown): Promise<unknown> {
+  const creds = await resolveCreds(c);
+  const token = await getToken(creds);
+  const res = await fetch(`${creds.base}${path}`, {
     method: 'POST',
     headers: hdr(token),
     body: JSON.stringify(body),
@@ -95,7 +111,7 @@ async function solaxPost(env: HonoEnv['Bindings'], path: string, body: unknown):
 
 sr.get('/plants', async (c) => {
   getCurrentUser(c);
-  const json = await solaxGet(c.env, `/openapi/v2/plant/page_plant_info?businessType=${BTYPE}`);
+  const json = await solaxGet(c, `/openapi/v2/plant/page_plant_info?businessType=${BTYPE}`);
   return c.json(json);
 });
 
@@ -107,7 +123,7 @@ sr.get('/devices', async (c) => {
   const deviceType = c.req.query('device_type') ?? '1';
   const params = new URLSearchParams({ businessType: String(BTYPE), deviceType });
   if (plantId) params.set('plantId', plantId);
-  const json = await solaxGet(c.env, `/openapi/v2/device/page_device_info?${params}`);
+  const json = await solaxGet(c, `/openapi/v2/device/page_device_info?${params}`);
   return c.json(json);
 });
 
@@ -119,7 +135,7 @@ sr.get('/realtime', async (c) => {
   if (!sn) throw new AppError(ErrorCode.VALIDATION_ERROR, 'sn is required (comma-separated)', 400);
   const deviceType = c.req.query('device_type') ?? '1';
   const params = new URLSearchParams({ snList: sn, deviceType, businessType: String(BTYPE) });
-  const json = await solaxGet(c.env, `/openapi/v2/device/realtime_data?${params}`);
+  const json = await solaxGet(c, `/openapi/v2/device/realtime_data?${params}`);
   return c.json(json);
 });
 
@@ -136,7 +152,7 @@ sr.get('/history', async (c) => {
   const deviceType   = c.req.query('device_type') ?? '1';
   const timeInterval = c.req.query('interval') ?? '60'; // minutes
   const params = new URLSearchParams({ snList: sn, deviceType, startTime: start, endTime: end, timeInterval, businessType: String(BTYPE) });
-  const json = await solaxGet(c.env, `/openapi/v2/device/history_data?${params}`);
+  const json = await solaxGet(c, `/openapi/v2/device/history_data?${params}`);
   return c.json(json);
 });
 
@@ -147,7 +163,7 @@ sr.get('/plant-summary', async (c) => {
   const plantId = c.req.query('plant_id');
   if (!plantId) throw new AppError(ErrorCode.VALIDATION_ERROR, 'plant_id is required', 400);
   const params = new URLSearchParams({ plantId, businessType: String(BTYPE) });
-  const json = await solaxGet(c.env, `/openapi/v2/plant/realtime_data?${params}`);
+  const json = await solaxGet(c, `/openapi/v2/plant/realtime_data?${params}`);
   return c.json(json);
 });
 
@@ -159,7 +175,7 @@ sr.post('/plant-stats', async (c) => {
   if (!b.plant_id || !b.date) {
     throw new AppError(ErrorCode.VALIDATION_ERROR, 'plant_id and date are required', 400);
   }
-  const json = await solaxPost(c.env, '/openapi/v2/plant/energy/get_stat_data', {
+  const json = await solaxPost(c, '/openapi/v2/plant/energy/get_stat_data', {
     plantId: b.plant_id,
     dateType: b.date_type ?? 2, // 2=Monthly
     date: b.date,
@@ -277,27 +293,66 @@ sr.delete('/stations/:id', async (c) => {
 });
 
 // ─── POST /sync ───────────────────────────────────────────────────────────────
-// Discovers all plants + inverters from SolaX, upserts solax_stations rows.
-// Does NOT auto-create om_sites — link those manually after sync.
+// Discovers all plants + inverters from SolaX. Each SolaX plant maps to one
+// om_sites row (created if absent, matched by participant_id + name); every
+// inverter upserts a solax_stations row linked to that site. A site can hold
+// many stations of mixed make = "many integrations per site". Manual site
+// reassignment (PUT /stations/:id) is preserved — sync never clobbers a
+// non-null site_id. Optionally rolls sites under ?project_id=<esums_projects.id>.
 
 sr.post('/sync', async (c) => {
   const user = getCurrentUser(c);
+  const projectId = c.req.query('project_id') || null;
+
+  // Guard: project_id, if supplied, must belong to this participant.
+  if (projectId) {
+    const owns = await c.env.DB
+      .prepare('SELECT id FROM esums_projects WHERE id = ? AND participant_id = ?')
+      .bind(projectId, user.id).first<{ id: string }>();
+    if (!owns) throw new AppError(ErrorCode.VALIDATION_ERROR, 'Unknown project_id', 400);
+  }
 
   type PlantRecord  = { plantId: string; plantName: string };
   type DeviceRecord = { deviceSn: string; ratedPower: number; onlineStatus: number };
 
-  const plantsJson = await solaxGet(c.env, `/openapi/v2/plant/page_plant_info?businessType=${BTYPE}`) as {
+  const plantsJson = await solaxGet(c, `/openapi/v2/plant/page_plant_info?businessType=${BTYPE}`) as {
     code: number; result?: { records: PlantRecord[] };
   };
   const plants: PlantRecord[] = plantsJson.result?.records ?? [];
 
   let upserted = 0;
+  let sitesCreated = 0;
   const errors: string[] = [];
+
+  // Find-or-create the om_sites row for a SolaX plant. Match by (participant, name).
+  async function resolveSite(plantName: string): Promise<string> {
+    const now = new Date().toISOString();
+    const found = await c.env.DB
+      .prepare('SELECT id FROM om_sites WHERE participant_id = ? AND name = ?')
+      .bind(user.id, plantName).first<{ id: string }>();
+    if (found) {
+      if (projectId) {
+        await c.env.DB.prepare('UPDATE om_sites SET project_id = ?, updated_at = ? WHERE id = ?')
+          .bind(projectId, now, found.id).run();
+      }
+      return found.id;
+    }
+    const id = randomId('site_');
+    await c.env.DB.prepare(`
+      INSERT INTO om_sites
+        (id, name, participant_id, project_id, technology, status, created_at, updated_at)
+      VALUES (?,?,?,?,?,?,?,?)
+    `).bind(id, plantName, user.id, projectId, 'solar', 'operational', now, now).run();
+    sitesCreated++;
+    return id;
+  }
 
   for (const plant of plants) {
     try {
+      const siteId = await resolveSite(plant.plantName);
+
       const devJson = await solaxGet(
-        c.env,
+        c,
         `/openapi/v2/device/page_device_info?businessType=${BTYPE}&deviceType=1&plantId=${plant.plantId}`,
       ) as { code: number; result?: { records: DeviceRecord[] } };
       const devices: DeviceRecord[] = devJson.result?.records ?? [];
@@ -309,12 +364,13 @@ sr.post('/sync', async (c) => {
           .bind(user.id, dev.deviceSn).first<{ id: string }>();
 
         if (existing) {
+          // COALESCE keeps any manual site reassignment; only fills if null.
           await c.env.DB.prepare(`
             UPDATE solax_stations
             SET plant_id = ?, plant_name = ?, rated_power_kw = ?, online_status = ?,
-                last_sync_at = ?, updated_at = ?
+                site_id = COALESCE(site_id, ?), last_sync_at = ?, updated_at = ?
             WHERE id = ?
-          `).bind(plant.plantId, plant.plantName, dev.ratedPower || null, dev.onlineStatus ?? 0, now, now, existing.id).run();
+          `).bind(plant.plantId, plant.plantName, dev.ratedPower || null, dev.onlineStatus ?? 0, siteId, now, now, existing.id).run();
         } else {
           const id = randomId('ssx_');
           await c.env.DB.prepare(`
@@ -324,7 +380,7 @@ sr.post('/sync', async (c) => {
                last_sync_at, status, created_at, updated_at)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
           `).bind(
-            id, user.id, null,
+            id, user.id, siteId,
             plant.plantId, plant.plantName, dev.deviceSn,
             1, BTYPE,
             dev.ratedPower || null, dev.onlineStatus ?? 0,
@@ -338,7 +394,7 @@ sr.post('/sync', async (c) => {
     }
   }
 
-  return c.json({ ok: true, plants: plants.length, upserted, errors: errors.length ? errors : undefined });
+  return c.json({ ok: true, plants: plants.length, sites_created: sitesCreated, upserted, errors: errors.length ? errors : undefined });
 });
 
 export default sr;

@@ -1,5 +1,5 @@
 'use client';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { api } from '../../lib/api';
 
@@ -490,6 +490,29 @@ function Field({ label, name, value, onChange, type = 'text', placeholder }: {
   );
 }
 
+// ─── Group stations by their linked site ──────────────────────────────────────
+// One IPP has many sites; each site holds many device integrations. Unlinked
+// devices (site_id null, pre-assignment) collect under a trailing group.
+
+interface SiteGroup { key: string; siteName: string | null; rows: Station[]; totalKw: number }
+
+function groupBySite(rows: Station[]): SiteGroup[] {
+  const byKey = new Map<string, SiteGroup>();
+  for (const s of rows) {
+    const key = s.site_id ?? '__unlinked__';
+    let g = byKey.get(key);
+    if (!g) { g = { key, siteName: s.site_name, rows: [], totalKw: 0 }; byKey.set(key, g); }
+    g.rows.push(s);
+    g.totalKw += s.ac_kw ?? 0;
+  }
+  // Named sites first (alpha), unlinked last.
+  return [...byKey.values()].sort((a, b) => {
+    if (a.key === '__unlinked__') return 1;
+    if (b.key === '__unlinked__') return -1;
+    return (a.siteName ?? '').localeCompare(b.siteName ?? '');
+  });
+}
+
 // ─── Station row ──────────────────────────────────────────────────────────────
 
 function StationRow({ s }: { s: Station }) {
@@ -750,6 +773,7 @@ export function InverterIntegrationsTab() {
   const [error, setError] = useState<string | null>(null);
   const [testing, setTesting] = useState<Record<string, boolean>>({});
   const [polling, setPolling] = useState(false);
+  const [discovering, setDiscovering] = useState(false);
   const [pollResult, setPollResult] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editCred, setEditCred] = useState<Credential | null>(null);
@@ -805,6 +829,25 @@ export function InverterIntegrationsTab() {
     }
   };
 
+  const handleDiscover = async () => {
+    setDiscovering(true);
+    setPollResult(null);
+    try {
+      const res = await api.post('/esums/solax/sync', {}) as { ok?: boolean; plants?: number; upserted?: number; errors?: string[]; error?: string };
+      if (res.ok === false || res.error) {
+        setPollResult(`Discovery failed: ${res.error ?? 'unknown error'}`);
+      } else {
+        const errSuffix = res.errors?.length ? ` (${res.errors.length} plant error(s))` : '';
+        setPollResult(`Discovered ${res.upserted ?? 0} station(s) across ${res.plants ?? 0} plant(s)${errSuffix}`);
+      }
+      await loadAll();
+    } catch (e: unknown) {
+      setPollResult(`Discovery failed: ${(e as Error).message}`);
+    } finally {
+      setDiscovering(false);
+    }
+  };
+
   const handleSave = async (data: Record<string, string>) => {
     if (editCred) {
       await api.put(`/esums/manufacturers/credentials/${editCred.id}`, data);
@@ -845,6 +888,13 @@ export function InverterIntegrationsTab() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button type="button"
+            onClick={handleDiscover}
+            disabled={discovering}
+            className="px-3 py-1.5 text-xs font-medium border border-[#dde4ec] text-[#2d3748] rounded-lg hover:border-gray-400 disabled:opacity-50 transition-colors"
+          >
+            {discovering ? 'Discovering…' : 'Discover stations'}
+          </button>
           <button type="button"
             onClick={handlePollAll}
             disabled={polling}
@@ -999,7 +1049,22 @@ export function InverterIntegrationsTab() {
                 </tr>
               </thead>
               <tbody>
-                {filteredStations.map(s => <StationRow key={s.id} s={s} />)}
+                {groupBySite(filteredStations).map(g => (
+                  <Fragment key={g.key}>
+                    <tr className="bg-[#f1f5f9] border-t border-[#dde4ec]">
+                      <td colSpan={11} className="px-3 py-1.5">
+                        <span className="text-xs font-semibold text-[#2d3748]">
+                          {g.siteName ?? <span className="text-[#9aa5b4] font-normal">Unlinked devices</span>}
+                        </span>
+                        <span className="ml-2 text-xs text-[#9aa5b4]">
+                          {g.rows.length} integration{g.rows.length === 1 ? '' : 's'}
+                          {g.totalKw > 0 ? ` · ${kw(g.totalKw)}` : ''}
+                        </span>
+                      </td>
+                    </tr>
+                    {g.rows.map(s => <StationRow key={s.id} s={s} />)}
+                  </Fragment>
+                ))}
               </tbody>
             </table>
           </div>

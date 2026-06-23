@@ -188,3 +188,120 @@ crons = [
   "0 6 1 * *",      # Day 1 of month 08:00 SAST: CPMI-IOSCO PFMI disclosure
   "0 18 * * *"      # 18:00 SAST (16:00 UTC) daily: W111 P&L attribution T+1 EOD opener
 ]
+
+# ══════════════════════════════════════════════════════════════════════════════
+# LIVE ENVIRONMENT — cec.vantax.co.za (CEC, Consolidated Energy Cockpit)
+# ──────────────────────────────────────────────────────────────────────────────
+# oe.vantax.co.za stays the DEMO env (top-level config above, demo personas seeded).
+# `[env.live]` is the real-org production env: separate Worker, separate D1/KV/queue,
+# no demo logins (DEMO_MODE=off). Deploy with: `wrangler deploy --env live`.
+# Named environments do NOT inherit bindings/vars/routes/triggers, so every
+# binding is redeclared here. R2 is reused (token has no r2:write scope; tenant-
+# prefixed keys already isolate live orgs from demo data).
+# ══════════════════════════════════════════════════════════════════════════════
+[env.live]
+name = "cec-energy-platform"
+workers_dev = true
+
+[[env.live.routes]]
+pattern = "cec.vantax.co.za"
+custom_domain = true
+
+[env.live.assets]
+directory = "pages/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[env.live.vars]
+ENVIRONMENT = "live"
+PLATFORM_NAME = "CEC"
+DOMAIN = "cec.vantax.co.za"
+APP_BASE_URL = "https://cec.vantax.co.za"
+# DEMO_MODE gates demo personas + the one-click demo password in the SPA login.
+# "off" on live: no persona buttons, no Demo@2024! hint, real-org login only.
+DEMO_MODE = "off"
+AZURE_AD_CLIENT_ID = "0a0bcbd9-afcb-44b9-b0ad-16e1da612f98"
+AZURE_AD_TENANT_ID = "998b123c-e559-479d-bbb9-cf3330469a73"
+AZURE_AD_REDIRECT_URI = "https://cec.vantax.co.za/api/auth/sso/microsoft/callback"
+# SA Goldrush plants are registered on the GLOBAL SolaX base (businessType=4 is
+# empty on the EU base — that was the original 0-plant sync bug). Per-org stored
+# credentials can still override this via manufacturer_credentials.base_url.
+SOLAX_BASE_URL = "https://openapi.solaxcloud.com"
+SOLAX_CLIENT_ID = "3299754f484a4bde8bfe810e1bd166d6"
+# Platform display/reporting timezone. South African Standard Time (UTC+2, no
+# DST). Workers run UTC internally; this drives SA-local rendering/reporting.
+PLATFORM_TZ = "Africa/Johannesburg"
+
+# Reuses the demo vault bucket; live keys are tenant-prefixed (t_<slug>/…).
+[[env.live.r2_buckets]]
+binding = "R2"
+bucket_name = "open-energy-vault"
+
+[[env.live.kv_namespaces]]
+binding = "KV"
+id = "35ec13fbde8c4222bfa1adf1caa1fcae"
+
+[[env.live.d1_databases]]
+binding = "DB"
+database_name = "cec-energy-db"
+database_id = "ec72fd09-00aa-42d7-90b2-8879dbe39943"
+migrations_dir = "migrations"
+
+[env.live.ai]
+binding = "AI"
+
+[[env.live.durable_objects.bindings]]
+name = "ORDER_BOOK"
+class_name = "OrderBook"
+
+[[env.live.migrations]]
+tag = "v1"
+new_sqlite_classes = ["OrderBook"]
+
+[[env.live.queues.producers]]
+binding = "QUEUE"
+queue = "cec-energy-cascade"
+
+[[env.live.queues.consumers]]
+queue = "cec-energy-cascade"
+max_batch_size = 50
+max_batch_timeout = 5
+
+# Live runs the same scheduled jobs as demo (settlement, rollups, surveillance,
+# ML drift, statutory sweeps). Kept identical so live behaviour matches demo.
+[env.live.triggers]
+crons = [
+  "*/15 * * * *",
+  "0 * * * *",
+  "15 0 * * *",
+  "20 0 * * *",
+  "25 0 * * *",
+  "5 0 * * *",
+  "10 0 * * *",
+  "30 0 * * *",
+  "35 0 * * *",
+  "40 0 * * *",
+  "45 0 * * *",
+  "50 0 * * *",
+  "55 0 * * *",
+  "58 0 * * *",
+  "5 * * * *",
+  "0 3 1 1,4,7,10 *",
+  "0 2 1 * *",
+  "0 4 1 * *",
+  "0 5 1 * *",
+  "0 6 1 1 *",
+  "0 6 * * 1",
+  "0 7 * * 1",
+  "30 1 * * *",
+  "45 1 * * *",
+  "0 2 * * *",
+  "30 2 * * *",
+  "0 3 * * *",
+  "30 3 * * *",
+  "15 4 * * *",
+  "0 1 1 * *",
+  "0 15 * * 5",
+  "0 6 1 * *",
+  "0 18 * * *"
+]

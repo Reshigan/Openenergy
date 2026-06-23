@@ -71,6 +71,10 @@ sso.get('/config', (c) => {
     data: {
       enabled: ssoEnabled(c.env),
       providers: ssoEnabled(c.env) ? ['microsoft'] : [],
+      // Live (cec) sets DEMO_MODE=off → SPA hides demo personas. Demo env
+      // (oe) has no such var, so this is undefined and personas stay visible.
+      demo_mode: (c.env as { DEMO_MODE?: string }).DEMO_MODE ?? 'on',
+      platform_name: (c.env as { PLATFORM_NAME?: string }).PLATFORM_NAME ?? 'Open Energy',
     },
   });
 });

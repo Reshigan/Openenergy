@@ -166,6 +166,7 @@ const ippDomains: Domain[] = [
     // meridian/surfaces.tsx via the connector/ML trio adapters. These feature keys carry the
     // slugs the registry expects so Atlas routes them to /surface (no chainKey).
     features: [
+      { key: 'integrations', label: 'Inverter integrations', description: 'Connect generation assets — Solax and other inverter credentials, live telemetry, station discovery.' },
       { key: 'scada', label: 'SCADA connectors', description: 'SCADA telemetry connector — real-time plant measurement ingestion.' },
       { key: 'mqtt-opcua', label: 'MQTT / OPC-UA', description: 'Industrial MQTT / OPC-UA telemetry connector configuration.' },
       { key: 'anomaly-detection', label: 'Anomaly detection', description: 'Predictive anomaly-detection ML on plant telemetry.' },
