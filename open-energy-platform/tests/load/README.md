@@ -35,7 +35,7 @@ To target a staging Worker, set `BASE=https://open-energy-platform.reshigan-085.
 
 ## Calibration — SA grid trading-hour profile
 
-Sized against [NATIONAL_DEPLOYMENT_EVALUATION.md](../../../NATIONAL_DEPLOYMENT_EVALUATION.md):
+Sized against [NATIONAL_DEPLOYMENT_EVALUATION.md](../../../docs/operations/NATIONAL_DEPLOYMENT_EVALUATION.md):
 
 | Scenario | Concurrent VUs | Peak throughput | Realistic load source |
 |---|---|---|---|

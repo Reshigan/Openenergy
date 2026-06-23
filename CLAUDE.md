@@ -159,8 +159,8 @@ To rebuild the graph after significant changes: `/graphify open-energy-platform`
 |---|---|
 | [README.md](README.md) | High-level pitch; roles + landing pages table |
 | [open-energy-platform/README.md](open-energy-platform/README.md) | Module-level feature catalogue; API surface highlights |
-| [DATABASE_INFRASTRUCTURE_GUIDE.md](DATABASE_INFRASTRUCTURE_GUIDE.md) | Sharded D1 strategy; R2 vault layout; KV TTLs; migration discipline |
-| [NATIONAL_DEPLOYMENT_EVALUATION.md](NATIONAL_DEPLOYMENT_EVALUATION.md) | Per-role readiness audit for SA national rollout |
-| [GO_LIVE_READINESS.md](GO_LIVE_READINESS.md) | Honest go-live ledger — already-fixed P1 issues, remaining caveats |
-| [TESTING_VALIDATION_CHECKLIST.md](TESTING_VALIDATION_CHECKLIST.md) | The per-role functional UAT matrix |
+| [DATABASE_INFRASTRUCTURE_GUIDE.md](docs/architecture/DATABASE_INFRASTRUCTURE_GUIDE.md) | Sharded D1 strategy; R2 vault layout; KV TTLs; migration discipline |
+| [NATIONAL_DEPLOYMENT_EVALUATION.md](docs/operations/NATIONAL_DEPLOYMENT_EVALUATION.md) | Per-role readiness audit for SA national rollout |
+| [GO_LIVE_READINESS.md](docs/operations/GO_LIVE_READINESS.md) | Honest go-live ledger — already-fixed P1 issues, remaining caveats |
+| [TESTING_VALIDATION_CHECKLIST.md](docs/operations/TESTING_VALIDATION_CHECKLIST.md) | The per-role functional UAT matrix |
 | [open-energy-platform/tests/load/README.md](open-energy-platform/tests/load/README.md) | k6 scenarios, SLO thresholds, calibration to SA grid trading-hour profile |
