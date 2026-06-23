@@ -26,6 +26,16 @@ app.use('*', authMiddleware);
 const SA_CARBON_INTENSITY_DEFAULT = 950; // gCO₂e/kWh — DEFF 2023 gazette
 const CUSTOMER_TARIFF_DEFAULT = 2.50;    // ZAR/kWh — typical C&I Megaflex
 
+// PPA tariff with one escalation step. On/after stepDate (interpreted at the
+// SAST day boundary, UTC+2), revenue uses stepRate; before it, base. Absent
+// step → flat base for the whole history. e.g. Goldrush R1.23 → R1.3038 @ 2026-04-01.
+export function tariffForPeriod(periodMs: number, base: number, stepDate: string | null, stepRate: number | null): number {
+  if (stepRate == null || !stepDate) return base;
+  const stepMs = Date.parse(`${stepDate}T00:00:00+02:00`);
+  if (Number.isNaN(stepMs)) return base;
+  return periodMs >= stepMs ? stepRate : base;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Core: compute accruals for one station from telemetry snapshot
 // Called by POST /compute and the hourly cron.
@@ -257,6 +267,10 @@ export async function backfillStationHistory(
   const tariffRate = (station.tariff_rate_zar_per_kwh as number | null) ?? 1.28;
   const customerRate = (station.customer_tariff_rate_zar_per_kwh as number | null) ?? CUSTOMER_TARIFF_DEFAULT;
   const carbonIntensity = (station.carbon_intensity_gco2_per_kwh as number | null) ?? SA_CARBON_INTENSITY_DEFAULT;
+  // Tariff step: on/after tariff_step_date (SAST), revenue uses tariff_step_rate.
+  const stepRate = station.tariff_step_rate as number | null;
+  const stepDate = station.tariff_step_date as string | null;
+  const rateAt = (periodHourMs: number): number => tariffForPeriod(periodHourMs, tariffRate, stepDate, stepRate);
   const deviceSn = station.device_sn as string;
 
   // Hourly granularity — W71 predictive ML needs 1-hour resolution.
@@ -335,9 +349,10 @@ export async function backfillStationHistory(
     const kwhDelta = pt.kwhDelta;
     cumulative += kwhDelta;
     const carbonTco2e = kwhDelta * (carbonIntensity / 1_000_000);
-    const revenueZar = kwhDelta * tariffRate;
-    const savingsZar = kwhDelta * customerRate;
     const periodHour = pt.hourKey + ':00:00Z';
+    const periodTariff = rateAt(Date.parse(periodHour));
+    const revenueZar = kwhDelta * periodTariff;
+    const savingsZar = kwhDelta * customerRate;
     uniqueDays.add(pt.hourKey.slice(0, 10));
     return env.DB
       .prepare(`INSERT INTO site_accruals (id, station_id, site_id, participant_id, period_hour, kwh_delta, cumulative_kwh, carbon_tco2e, revenue_zar, savings_zar, tariff_rate_used, customer_tariff_rate_used, carbon_intensity_used, is_backfill, created_at, updated_at)
@@ -348,7 +363,7 @@ export async function backfillStationHistory(
           savings_zar = excluded.savings_zar, updated_at = excluded.updated_at`)
       .bind(crypto.randomUUID(), stationId, station.site_id ?? null, station.participant_id,
         periodHour, kwhDelta, cumulative, carbonTco2e, revenueZar, savingsZar,
-        tariffRate, customerRate, carbonIntensity, now, now);
+        periodTariff, customerRate, carbonIntensity, now, now);
   });
 
   if (stmts.length > 0) {
@@ -609,6 +624,197 @@ app.post('/backfill', async (c) => {
     }
   }
   return c.json({ stations_processed: results.length, results });
+});
+
+// ── Resumable job-driven historic import ──────────────────────────────────
+// A full portfolio backfill walks back up to 2 years, one ~7-day chunk per
+// station per tick, and can run for hours. solax_backfill_jobs persists per
+// station progress so the frontend can drive it across many short requests
+// and show a live status panel. start -> creates one job per active station;
+// tick -> advances each job one chunk; status -> per-station + aggregate %.
+
+const TWO_YEARS_MS = 730 * 24 * 60 * 60 * 1000;
+const CHUNK_MS = 7 * 24 * 60 * 60 * 1000;
+
+// POST /backfill/start — (re)queue one job per active SolaX station.
+app.post('/backfill/start', async (c) => {
+  const user = getCurrentUser(c);
+  if (!['admin', 'support'].includes(user.role)) return c.json({ error: 'Forbidden' }, 403);
+
+  const body = await c.req.json<{ participant_id?: string }>().catch(() => ({} as { participant_id?: string }));
+  const env = c.env;
+  const participant = (body.participant_id && ['admin', 'support'].includes(user.role))
+    ? body.participant_id : user.id;
+
+  const nowMs = Date.now();
+  const runEnd = nowMs - 60 * 60 * 1000;       // newest instant: now - 1h
+  const windowStart = nowMs - TWO_YEARS_MS;    // oldest instant: now - 2y
+  const now = new Date().toISOString();
+
+  const stations = await env.DB
+    .prepare(`SELECT id, device_sn, plant_name FROM solax_stations WHERE participant_id = ? AND status = ? AND manufacturer = ?`)
+    .bind(participant, 'active', 'solax')
+    .all<{ id: string; device_sn: string | null; plant_name: string | null }>();
+
+  const rows = stations.results ?? [];
+  for (const st of rows) {
+    await env.DB.prepare(
+      `INSERT INTO solax_backfill_jobs
+         (id, participant_id, station_id, device_sn, plant_name, status, window_start_ms, run_end_ms, cursor_end_ms, hours_written, kwh_total, last_error, started_at, finished_at, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, 'queued', ?, ?, ?, 0, 0, NULL, NULL, NULL, ?, ?)
+       ON CONFLICT(participant_id, station_id) DO UPDATE SET
+         status='queued', window_start_ms=excluded.window_start_ms, run_end_ms=excluded.run_end_ms,
+         cursor_end_ms=excluded.cursor_end_ms, hours_written=0, kwh_total=0, empty_streak=0,
+         last_error=NULL, started_at=NULL, finished_at=NULL, updated_at=excluded.updated_at`
+    ).bind(crypto.randomUUID(), participant, st.id, st.device_sn ?? null, st.plant_name ?? null,
+      windowStart, runEnd, runEnd, now, now).run();
+  }
+  return c.json({ queued: rows.length, run_end_ms: runEnd, window_start_ms: windowStart });
+});
+
+// POST /backfill/tick — advance up to max_jobs jobs by one chunk each.
+// Frontend loops this until aggregate done. Bounded so each request stays short.
+app.post('/backfill/tick', async (c) => {
+  const user = getCurrentUser(c);
+  if (!['admin', 'support'].includes(user.role)) return c.json({ error: 'Forbidden' }, 403);
+
+  const body = await c.req.json<{ participant_id?: string; max_jobs?: number }>().catch(() => ({} as { participant_id?: string; max_jobs?: number }));
+  const env = c.env;
+  const participant = (body.participant_id && ['admin', 'support'].includes(user.role))
+    ? body.participant_id : user.id;
+  const maxJobs = Math.max(1, Math.min(10, body.max_jobs ?? 4));
+
+  // Least-done first (highest cursor_end_ms) so progress spreads evenly.
+  const jobs = await env.DB
+    .prepare(`SELECT * FROM solax_backfill_jobs WHERE participant_id = ? AND status IN ('queued','running') ORDER BY cursor_end_ms DESC LIMIT ?`)
+    .bind(participant, maxJobs)
+    .all<Record<string, unknown>>();
+
+  const ticked: unknown[] = [];
+  for (const job of (jobs.results ?? [])) {
+    const stationId = job.station_id as string;
+    const windowStart = job.window_start_ms as number;
+    const cursorEnd = job.cursor_end_ms as number;
+    const chunkStart = Math.max(windowStart, cursorEnd - CHUNK_MS);
+    const now = new Date().toISOString();
+    const hoursSoFar = (job.hours_written as number) ?? 0;
+    const prevStreak = (job.empty_streak as number) ?? 0;
+    try {
+      const r = await backfillStationHistory(stationId, env, chunkStart, cursorEnd);
+      const gotHours = r.hours_backfilled ?? 0;
+      // Stop walking back once we pass commissioning: SolaX has no data before a
+      // plant existed, so a run of empty chunks AFTER real data means end-of-history.
+      // ponytail: 3-week threshold tolerates a real outage; a longer gap stops early
+      //   and loses only older low-value history — raise EMPTY_STOP if that bites.
+      const EMPTY_STOP = 3;
+      const newStreak = gotHours > 0 ? 0 : (hoursSoFar > 0 ? prevStreak + 1 : 0);
+      const reachedFloor = chunkStart <= windowStart || r.more_available === false || newStreak >= EMPTY_STOP;
+      const newCursor = reachedFloor ? windowStart : chunkStart;
+      await env.DB.prepare(
+        `UPDATE solax_backfill_jobs SET
+           status = ?, cursor_end_ms = ?, hours_written = hours_written + ?, kwh_total = kwh_total + ?,
+           empty_streak = ?, last_error = NULL, started_at = COALESCE(started_at, ?), finished_at = ?, updated_at = ?
+         WHERE id = ?`
+      ).bind(
+        reachedFloor ? 'done' : 'running', newCursor, gotHours, r.kwh_total ?? 0,
+        newStreak, now, reachedFloor ? now : null, now, job.id as string
+      ).run();
+      ticked.push({ station_id: stationId, hours: gotHours, kwh: r.kwh_total ?? 0, done: reachedFloor });
+    } catch (e) {
+      await env.DB.prepare(
+        `UPDATE solax_backfill_jobs SET status='failed', last_error=?, updated_at=? WHERE id = ?`
+      ).bind(String(e).slice(0, 500), now, job.id as string).run();
+      ticked.push({ station_id: stationId, error: String(e) });
+    }
+  }
+
+  const remaining = await env.DB
+    .prepare(`SELECT COUNT(*) AS n FROM solax_backfill_jobs WHERE participant_id = ? AND status IN ('queued','running')`)
+    .bind(participant)
+    .first<{ n: number }>();
+  return c.json({ ticked, remaining: remaining?.n ?? 0 });
+});
+
+// GET /backfill/status — per-station rows + aggregate progress for the panel.
+app.get('/backfill/status', async (c) => {
+  const user = getCurrentUser(c);
+  const env = c.env;
+  const qp = c.req.query('participant_id');
+  const participant = (qp && ['admin', 'support'].includes(user.role)) ? qp : user.id;
+
+  const jobs = await env.DB
+    .prepare(`SELECT station_id, plant_name, device_sn, status, window_start_ms, run_end_ms, cursor_end_ms, hours_written, kwh_total, last_error, started_at, finished_at, updated_at FROM solax_backfill_jobs WHERE participant_id = ? ORDER BY plant_name`)
+    .bind(participant)
+    .all<Record<string, unknown>>();
+
+  const rows: Record<string, unknown>[] = (jobs.results ?? []).map(j => {
+    const span = (j.run_end_ms as number) - (j.window_start_ms as number);
+    const done = (j.run_end_ms as number) - (j.cursor_end_ms as number);
+    const pct = span > 0 ? Math.max(0, Math.min(100, Math.round((done / span) * 100))) : 0;
+    return { ...j, pct: j.status === 'done' ? 100 : pct };
+  });
+  const overall = rows.length ? Math.round(rows.reduce((s, r) => s + (r.pct as number), 0) / rows.length) : 0;
+  const active = rows.some(r => r.status === 'queued' || r.status === 'running');
+  return c.json({
+    overall_pct: overall, active, stations: rows.length,
+    hours_total: rows.reduce((s, r) => s + ((r.hours_written as number) ?? 0), 0),
+    kwh_total: rows.reduce((s, r) => s + ((r.kwh_total as number) ?? 0), 0),
+    jobs: rows,
+  });
+});
+
+// POST /backfill/finalize — after the import drains, run everything downstream.
+// Backfill only writes the raw site_accruals ledger; the derived surfaces every
+// role reads (offtaker/IPP settlement invoices, carbon credits, carbon-fund
+// holdings) are materialized views that need a rebuild pass. This sweeps the
+// station owner through materializeFinancials (idempotent, full-history) so all
+// retrospective months/years appear at once, then fires the cross-role cascade.
+app.post('/backfill/finalize', async (c) => {
+  const user = getCurrentUser(c);
+  if (!['admin', 'support'].includes(user.role)) return c.json({ error: 'Forbidden' }, 403);
+
+  const body = await c.req.json<{ participant_id?: string }>().catch(() => ({} as { participant_id?: string }));
+  const env = c.env;
+  const participant = (body.participant_id && ['admin', 'support'].includes(user.role))
+    ? body.participant_id : user.id;
+
+  // Every backfill job for this participant shares the owner; one materialize
+  // pass rebuilds all their stations' invoices/credits/holdings across history.
+  const result = await materializeFinancials(participant, env);
+
+  // ONE completion notification per stakeholder, not one per period/invoice/credit.
+  // The backfill + materialize passes are silent (no cascade per row); the only
+  // signal a role gets about a retrospective rebuild is this single "now live"
+  // notice. Deterministic id (notif_live_<owner>_<recipient>) + INSERT OR REPLACE
+  // => re-running finalize refreshes the one notice instead of spamming.
+  const liveTitle = 'Live: historic data loaded';
+  const liveBody = `Historic data load complete. Your portfolio is now live with ${result.invoices} settlement invoice(s), ${result.credits} carbon credit period(s) and ${result.holdings} fund holding(s) rebuilt across full history.`;
+  const liveData = JSON.stringify({ retrospective: true, ...result });
+  await env.DB.prepare(`
+    INSERT OR REPLACE INTO notifications (id, participant_id, type, title, body, data, created_at)
+    SELECT 'notif_live_' || ? || '_' || r.pid, r.pid, 'esums_live', ?, ?, ?, datetime('now')
+    FROM (
+      SELECT ? AS pid
+      UNION SELECT offtaker_participant_id FROM solax_stations WHERE participant_id = ? AND offtaker_participant_id IS NOT NULL AND offtaker_participant_id != ''
+      UNION SELECT carbon_participant_id   FROM solax_stations WHERE participant_id = ? AND carbon_participant_id   IS NOT NULL AND carbon_participant_id   != ''
+      UNION SELECT lender_participant_id   FROM solax_stations WHERE participant_id = ? AND lender_participant_id   IS NOT NULL AND lender_participant_id   != ''
+    ) r
+    WHERE r.pid IS NOT NULL AND r.pid != ''
+  `).bind(participant, liveTitle, liveBody, liveData, participant, participant, participant, participant)
+    .run().catch(() => { /* non-fatal: FK/table absence must not fail the rebuild */ });
+
+  // Audit-only cascade (no notification rule matches this event; per-row pushes
+  // would storm, so the rebuild stays silent and the notice above is the signal).
+  await fireCascade({
+    event: 'esums_financials_materialized' as EventType,
+    actor_id: user.id,
+    entity_type: 'esums_station',
+    entity_id: participant,
+    data: { participant_id: participant, retrospective: true, suppress_notifications: true, ...result },
+    env,
+  }).catch(() => {});
+
+  return c.json({ success: true, participant_id: participant, notified: true, ...result });
 });
 
 // GET /api/esums/accruals/solax-probe?sn=X3F100J6779008&start_ms=...&end_ms=...

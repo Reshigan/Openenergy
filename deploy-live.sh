@@ -35,6 +35,11 @@ npx wrangler deploy --dry-run --env live
 echo "▸ Reconciling additive schema (idempotent; dup/exists = benign)..."
 npx wrangler d1 execute cec-energy-db --env live --remote \
   --file migrations/510_email_outbox.sql 2>&1 | tail -2 || true
+# 513: resumable SolaX backfill jobs + per-station tariff step. The two raw
+# ADD COLUMNs error "duplicate column name" on re-run after the first land —
+# benign (table/index/columns already present), so swallow it.
+npx wrangler d1 execute cec-energy-db --env live --remote \
+  --file migrations/513_solax_backfill_jobs.sql 2>&1 | tail -2 || true
 
 echo "▸ Live bootstrap: disable demo logins + seed platform admin..."
 npx wrangler d1 execute cec-energy-db --env live --remote \

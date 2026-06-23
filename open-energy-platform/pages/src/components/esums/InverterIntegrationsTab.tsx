@@ -1,5 +1,5 @@
 'use client';
-import React, { Fragment, useCallback, useEffect, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { api } from '../../lib/api';
 
@@ -561,6 +561,16 @@ interface AccrualStation {
 }
 interface SeriesPoint { bucket: string; kwh: number; revenue_zar: number; savings_zar: number; carbon_tco2e: number }
 
+interface ImportJob {
+  station_id: string; plant_name: string | null; device_sn: string | null;
+  status: 'queued' | 'running' | 'done' | 'failed';
+  pct: number; hours_written: number; kwh_total: number; last_error: string | null;
+}
+interface ImportStatus {
+  overall_pct: number; active: boolean; stations: number;
+  hours_total: number; kwh_total: number; jobs: ImportJob[];
+}
+
 function fmtTco2e(v: number): string {
   if (v >= 1000) return `${(v / 1000).toFixed(1)} ktCO₂e`;
   if (v >= 1) return `${v.toFixed(2)} tCO₂e`;
@@ -580,6 +590,50 @@ function AccrualsPanel() {
   const [loading, setLoading] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState<string | null>(null);
+  const [importStatus, setImportStatus] = useState<ImportStatus | null>(null);
+  const runningRef = useRef(false);
+
+  const loadImportStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get<ImportStatus>('/api/esums/accruals/backfill/status');
+      setImportStatus(data);
+      return data;
+    } catch { return null; }
+  }, []);
+
+  // Drive the import: tick until no jobs remain, refreshing the panel each pass.
+  // Resumable — survives reloads because job state lives in solax_backfill_jobs.
+  const runTickLoop = useCallback(async () => {
+    if (runningRef.current) return;
+    runningRef.current = true;
+    setBackfilling(true);
+    try {
+      for (let guard = 0; guard < 5000; guard++) {
+        const { data: t } = await api.post<{ remaining: number }>('/api/esums/accruals/backfill/tick', { max_jobs: 4 });
+        const st = await loadImportStatus();
+        if ((t.remaining ?? 0) <= 0 || !st?.active) break;
+      }
+      const fin = await loadImportStatus();
+      // Raw ledger filled. Rebuild every downstream surface (settlement invoices,
+      // carbon credits, carbon-fund holdings) across all retrospective periods.
+      setBackfillMsg(`Import done, building retrospectives across all roles…`);
+      const { data: retro } = await api.post<{ invoices: number; credits: number; holdings: number }>(
+        '/api/esums/accruals/backfill/finalize', {},
+      );
+      setBackfillMsg(
+        `Now live: ${(fin?.kwh_total ?? 0).toFixed(0)} kWh across ${fin?.stations ?? 0} station(s). ` +
+        `Retrospectives built once across full history (${retro.invoices} invoices, ${retro.credits} carbon credits, ${retro.holdings} holdings) ` +
+        `and each role notified once. No per-period alerts were sent.`,
+      );
+      await loadAccruals();
+    } catch (e) {
+      setBackfillMsg(`Import failed: ${String(e)}`);
+    } finally {
+      runningRef.current = false;
+      setBackfilling(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadImportStatus]);
 
   const loadAccruals = useCallback(async () => {
     setLoading(true);
@@ -597,23 +651,23 @@ function AccrualsPanel() {
 
   useEffect(() => { loadAccruals(); }, [loadAccruals]);
 
+  // On mount, surface any in-progress import and auto-resume it.
+  useEffect(() => {
+    (async () => {
+      const st = await loadImportStatus();
+      if (st?.active) runTickLoop();
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleBackfill = async () => {
-    setBackfilling(true);
     setBackfillMsg(null);
     try {
-      const { data: r } = await api.post<{
-        stations_processed: number;
-        results: Array<{ station_id: string; days_backfilled?: number; kwh_total?: number; error?: string }>;
-      }>('/api/esums/accruals/backfill', {});
-      const ok = r.results.filter(x => !x.error);
-      const totalDays = ok.reduce((s, x) => s + (x.days_backfilled ?? 0), 0);
-      const totalKwh = ok.reduce((s, x) => s + (x.kwh_total ?? 0), 0);
-      setBackfillMsg(`Imported ${totalDays} days of history (${totalKwh.toFixed(0)} kWh) across ${ok.length} station(s).`);
-      await loadAccruals();
+      await api.post('/api/esums/accruals/backfill/start', {});
+      await loadImportStatus();
+      runTickLoop();
     } catch (e) {
-      setBackfillMsg(`Backfill failed: ${String(e)}`);
-    } finally {
-      setBackfilling(false);
+      setBackfillMsg(`Import failed: ${String(e)}`);
     }
   };
 
@@ -672,21 +726,62 @@ function AccrualsPanel() {
               </button>
             ))}
           </div>
-          {/* One-time historical backfill */}
+          {/* Resumable historical backfill — runs for hours, hour-batched per plant */}
           <button type="button"
             onClick={handleBackfill}
             disabled={backfilling}
-            title="Pull full historical data from SolaX API for all connected stations"
+            title="Pull up to 2 years of SolaX history for every connected station. Runs in the background and can take hours."
             className="px-3 py-1.5 text-xs font-medium border border-amber-300 text-amber-700 bg-amber-50 rounded-lg hover:bg-amber-100 disabled:opacity-50 transition-colors"
           >
-            {backfilling ? 'Importing…' : 'Import historical data'}
+            {backfilling ? `Importing… ${importStatus?.overall_pct ?? 0}%` : 'Import historical data'}
           </button>
         </div>
       </div>
 
-      {backfillMsg && (
+      {backfillMsg && !backfilling && (
         <div className={`text-xs px-3 py-2 rounded border ${backfillMsg.includes('failed') ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
           {backfillMsg}
+        </div>
+      )}
+
+      {/* Import status panel — per-plant progress while the backfill runs */}
+      {importStatus && importStatus.stations > 0 && (backfilling || importStatus.active || importStatus.overall_pct < 100) && (
+        <div className="rounded-lg border border-[#dde4ec] bg-white p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {backfilling && <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse" />}
+              <h5 className="text-xs font-semibold text-[#0f1c2e]">
+                Historical import {backfilling ? 'running' : importStatus.active ? 'paused' : 'idle'}
+              </h5>
+            </div>
+            <span className="text-xs tabular-nums text-[#3d4756]">
+              {importStatus.overall_pct}% · {(importStatus.kwh_total / 1000).toFixed(1)} MWh
+            </span>
+          </div>
+          {/* Overall bar */}
+          <div className="h-1.5 rounded-full bg-[#eef2f7] overflow-hidden">
+            <div className="h-full bg-amber-500 transition-all" style={{ width: `${importStatus.overall_pct}%` }} />
+          </div>
+          {/* Per-plant rows */}
+          <div className="space-y-1.5 pt-1">
+            {importStatus.jobs.map(j => (
+              <div key={j.station_id} className="flex items-center gap-2 text-xs">
+                <span className="w-40 truncate text-[#3d4756]" title={j.plant_name ?? j.device_sn ?? j.station_id}>
+                  {j.plant_name ?? j.device_sn ?? j.station_id}
+                </span>
+                <div className="flex-1 h-1.5 rounded-full bg-[#eef2f7] overflow-hidden">
+                  <div className={`h-full transition-all ${j.status === 'failed' ? 'bg-red-400' : j.status === 'done' ? 'bg-green-500' : 'bg-amber-500'}`}
+                    style={{ width: `${j.pct}%` }} />
+                </div>
+                <span className="w-10 text-right tabular-nums text-[#6b7685]">{j.pct}%</span>
+                <span className="w-14 text-right tabular-nums text-[#9aa5b4]" title="hours imported">{j.hours_written}h</span>
+                {j.status === 'failed' && <span className="text-red-600" title={j.last_error ?? ''}>!</span>}
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-[#9aa5b4] pt-1">
+            SolaX serves history one hour-batch at a time, so a full 2-year backfill across all plants can take hours. Progress is saved — you can leave this page and it resumes when you return.
+          </p>
         </div>
       )}
 
