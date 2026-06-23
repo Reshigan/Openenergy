@@ -695,6 +695,7 @@ export function CarbonRegistryStep({ data, onChange }: StepProps) {
     { key: 'gold_standard', label: 'Gold Standard' },
     { key: 'article_6_4', label: 'Article 6.4 (UN)' },
     { key: 'cdm_poa', label: 'CDM PoA' },
+    { key: 'pure_earth', label: 'Pure Earth' },
     { key: 'i_rec', label: 'I-REC' },
   ];
   return (
