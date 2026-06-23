@@ -1387,11 +1387,14 @@ function useWatershed<T>(path: string, initial: T): { data: T; loading: boolean;
     setLoading(true); setError(null);
     try {
       const r = await api.get(`/watershed${path}`);
-      setData((r && (r.data ?? r)) as T);
+      // axios: r.data is the response body { success, data }. Payload is body.data.
+      const body = r?.data;
+      const payload = body && typeof body === 'object' && 'data' in body ? (body as any).data : body;
+      setData((payload ?? initial) as T);
     } catch (e: any) {
       setError(e?.message || 'Failed to load');
     } finally { setLoading(false); }
-  }, [path]);
+  }, [path, initial]);
   useEffect(() => { refresh(); }, [refresh]);
   return { data, loading, error, refresh };
 }
