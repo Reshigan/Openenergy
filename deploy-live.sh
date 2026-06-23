@@ -45,6 +45,10 @@ npx wrangler d1 execute cec-energy-db --env live --remote \
 # idempotent; a re-apply is a no-op.
 npx wrangler d1 execute cec-energy-db --env live --remote \
   --file migrations/514_counterparty_offer_engine.sql 2>&1 | tail -2 || true
+# 515: paid doc-generation feature (oe_feature_entitlements + oe_doc_jobs).
+# CREATE TABLE/INDEX IF NOT EXISTS only → idempotent, re-apply is a no-op.
+npx wrangler d1 execute cec-energy-db --env live --remote \
+  --file migrations/515_document_generation_subscription.sql 2>&1 | tail -2 || true
 
 echo "▸ Live bootstrap: disable demo logins + seed platform admin..."
 npx wrangler d1 execute cec-energy-db --env live --remote \

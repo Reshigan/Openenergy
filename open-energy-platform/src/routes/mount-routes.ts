@@ -11,6 +11,7 @@ import participantsRoutes from './participants';
 import contractsRoutes from './contracts';
 import invoicesRoutes from './invoices';
 import projectsRoutes from './projects';
+import docGenerationRoutes from './doc-generation';
 import projectScheduleRoutes from './project-schedule';
 import riskRoutes from './risk';
 import clearingDisclosureRoutes from './clearing-disclosure';
@@ -373,6 +374,7 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   app.route('/api/contracts', contractsRoutes);
   app.route('/api/invoices', invoicesRoutes);
   app.route('/api/projects', projectsRoutes);
+  app.route('/api/doc-gen', docGenerationRoutes);
   app.route('/api/projects/:projectId/schedule', projectScheduleRoutes);
   app.route('/api/risk', riskRoutes);
   app.route('/api/clearing/disclosure', clearingDisclosureRoutes);
