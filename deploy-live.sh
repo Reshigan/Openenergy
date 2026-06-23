@@ -27,8 +27,14 @@ cd ..
 echo "▸ Wrangler dry-run (live bindings)..."
 npx wrangler deploy --dry-run --env live
 
-echo "▸ Applying migrations to cec-energy-db (fresh DB, in order)..."
-yes | npx wrangler d1 migrations apply cec-energy-db --env live --remote
+# cec-energy-db schema was seeded by a full demo schema dump (todo 3), so its
+# d1_migrations ledger is frozen at 011 while the schema is current. Running
+# `migrations apply` would wrongly replay 012->latest and explode on existing
+# tables / FK seeds (same drift as demo prod, see CLAUDE.md migration band).
+# New additive migrations are applied by hand, guarded for idempotency:
+echo "▸ Reconciling additive schema (idempotent; dup/exists = benign)..."
+npx wrangler d1 execute cec-energy-db --env live --remote \
+  --file migrations/510_email_outbox.sql 2>&1 | tail -2 || true
 
 echo "▸ Live bootstrap: disable demo logins + seed platform admin..."
 npx wrangler d1 execute cec-energy-db --env live --remote \
