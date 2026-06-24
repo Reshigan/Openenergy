@@ -8,6 +8,7 @@ import { fetchHorizon, singleChainOf, BUCKETS, fmtZar, type Bucket, type Horizon
 import { CaseTile } from './components';
 import { MeridianHeader } from './MeridianHeader';
 import { HorizonKpis } from './HorizonKpis';
+import { PlatformPulse } from './PlatformPulse';
 import { GettingStarted } from './GettingStarted';
 import { GuidedTour } from './GuidedTour';
 import { cleanLabel } from './labels';
@@ -180,6 +181,8 @@ export default function HorizonPage() {
       <GuidedTour surface="horizon" />
 
       {roleSwitcher}
+
+      <PlatformPulse />
 
       <HorizonKpis role={boardRole} />
 

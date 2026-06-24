@@ -6,6 +6,7 @@ import type { HonoEnv } from '../utils/types';
 import authRoutes from './auth';
 import ssoRoutes from './sso';
 import cockpitRoutes from './cockpit';
+import pulseRoutes from './pulse';
 import launchRoutes from './launch';
 import participantsRoutes from './participants';
 import contractsRoutes from './contracts';
@@ -367,6 +368,7 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   app.route('/api/auth', authRoutes);
   app.route('/api/auth/sso', ssoRoutes);
   app.route('/api/cockpit', cockpitRoutes);
+  app.route('/api/pulse', pulseRoutes);
   app.route('/api/launch', launchRoutes);
 
   // Protected routes

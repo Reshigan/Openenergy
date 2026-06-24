@@ -1190,3 +1190,12 @@
 .mer .sign-acts { display:flex; gap:8px; }
 .mer .sign-add { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
 .mer .sign-add input { flex:1 1 140px; padding:7px 10px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink); font-size:12.5px; }
+
+/* Platform Pulse — live generation heartbeat strip atop Horizon */
+.mer .mer-pulse { display:flex; flex-wrap:wrap; align-items:center; gap:18px; padding:9px 14px; margin:0 0 12px; border:1px solid var(--line); border-radius:8px; background:var(--moss-tint); }
+.mer .mer-pulse-dot { width:8px; height:8px; border-radius:50%; background:var(--moss); box-shadow:0 0 0 0 var(--moss); animation:mer-pulse-beat 2s var(--ease) infinite; flex:0 0 auto; }
+.mer .mer-pulse-item { display:flex; flex-direction:column; line-height:1.25; }
+.mer .mer-pulse-item i { font-style:normal; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--moss-deep); opacity:.85; }
+.mer .mer-pulse-item b { font-size:14px; color:var(--ink); font-variant-numeric:tabular-nums; }
+@keyframes mer-pulse-beat { 0%{box-shadow:0 0 0 0 var(--moss);} 70%{box-shadow:0 0 0 7px transparent;} 100%{box-shadow:0 0 0 0 transparent;} }
+@media (prefers-reduced-motion: reduce){ .mer .mer-pulse-dot{ animation:none; } }
