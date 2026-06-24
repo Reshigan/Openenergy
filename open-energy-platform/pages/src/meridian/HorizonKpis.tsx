@@ -58,6 +58,22 @@ const KPI_SPECS: Record<string, KpiTile[]> = {
     { stat: 'open_alerts', label: 'Surveillance alerts', to: '/surface/regulator:surveillance' },
     { stat: 'critical_alerts', label: 'Critical alerts', to: '/surface/regulator:surveillance', alert: true },
   ],
+  esco: [
+    { stat: 'predictive_savings_zar', label: 'Predictive savings', to: '/surface/esco:predictions', money: true },
+    { stat: 'open_faults', label: 'Open faults', to: '/surface/esco:faults', alert: true },
+    { stat: 'critical_faults', label: 'Critical faults', to: '/surface/esco:faults', alert: true },
+    { stat: 'nearest_rul_days', label: 'Nearest RUL (days)', to: '/surface/esco:predictions' },
+    { stat: 'availability_open', label: 'Availability cases', to: '/ledger/availability_guarantee' },
+    { stat: 'permits_active', label: 'Active permits', to: '/ledger/permit_to_work' },
+  ],
+  support: [
+    { stat: 'open_tickets', label: 'Open tickets', to: '/surface/support:tickets' },
+    { stat: 'critical_tickets', label: 'Critical tickets', to: '/surface/support:tickets', alert: true },
+    { stat: 'open_escalations', label: 'Open escalations', to: '/surface/support:escalations', alert: true },
+    { stat: 'open_problems', label: 'Open problems', to: '/ledger/problem_record' },
+    { stat: 'changes_in_flight', label: 'Changes in flight', to: '/ledger/change_request' },
+    { stat: 'vital_parts_open', label: 'Vital parts at risk', to: '/ledger/spare_parts_provisioning', alert: true },
+  ],
   grid_operator: [
     { stat: 'schedules_today', label: 'Schedules today', to: '/surface/grid_operator:scada' },
     { stat: 'instructions_pending_ack', label: 'Instructions to ack', to: '/surface/grid_operator:scada', alert: true },

@@ -318,6 +318,15 @@ async function roleNationalStats(
       return cachedBlock(env, `cockpit:user:offtaker:${user.id}`, 30, () => offtakerStats(env, user.id));
     case 'carbon_fund':
       return cachedBlock(env, `cockpit:user:carbon:${user.id}`, 30, () => carbonStats(env, user.id));
+    // esco/support are operational (platform-wide, not tenant-scoped) like
+    // grid/regulator — role-level cache. Both previously fell to {} so their
+    // Horizon had no headline at all; these are the only two roles with a
+    // blank landing band.
+    case 'esco':
+    case 'esums_owner':
+      return cachedBlock(env, 'cockpit:role:esco', 30, () => escoStats(env));
+    case 'support':
+      return cachedBlock(env, 'cockpit:role:support', 30, () => supportStats(env));
     default:
       return {};
   }
@@ -362,6 +371,37 @@ async function gridOperatorStats(env: HonoEnv['Bindings']): Promise<Record<strin
       (SELECT COUNT(*) FROM ancillary_service_tenders WHERE status = 'open') AS open_tenders,
       (SELECT COUNT(*) FROM grid_outages WHERE status IN ('open','investigating','in_progress','partial_restoration')) AS active_outages,
       (SELECT COUNT(*) FROM grid_connection_applications WHERE status NOT IN ('energised','rejected','withdrawn')) AS in_flight_connections
+  `).first<Record<string, number>>();
+  return row || {};
+}
+
+async function escoStats(env: HonoEnv['Bindings']): Promise<Record<string, unknown>> {
+  // Headline is predictive_savings_zar — the W71 NTT-beating number that was
+  // computed per-asset then discarded. NOT IN terminal predicates over-count
+  // at worst (never break) so unknown terminals are safe.
+  const row = await env.DB.prepare(`
+    SELECT
+      (SELECT COALESCE(ROUND(SUM(savings_zar)), 0) FROM oe_asset_prognostics) AS predictive_savings_zar,
+      (SELECT COUNT(*) FROM om_faults WHERE status = 'open') AS open_faults,
+      (SELECT COUNT(*) FROM om_faults WHERE status = 'open' AND severity IN ('critical','major')) AS critical_faults,
+      (SELECT MIN(rul_days) FROM oe_asset_prognostics WHERE rul_days IS NOT NULL) AS nearest_rul_days,
+      (SELECT COUNT(*) FROM oe_pr_chain WHERE chain_status NOT IN ('closed','resolved','withdrawn','cancelled')) AS pr_cases_open,
+      (SELECT COUNT(*) FROM oe_availability_guarantees WHERE chain_status NOT IN ('closed','settled','cancelled','withdrawn')) AS availability_open,
+      (SELECT COUNT(*) FROM oe_pm_compliance WHERE chain_status NOT IN ('closed','verified_compliant','cancelled','withdrawn')) AS pm_open,
+      (SELECT COUNT(*) FROM oe_permit_to_work WHERE chain_status NOT IN ('closed','cancelled','rejected','expired')) AS permits_active
+  `).first<Record<string, number>>();
+  return row || {};
+}
+
+async function supportStats(env: HonoEnv['Bindings']): Promise<Record<string, unknown>> {
+  const row = await env.DB.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM support_tickets WHERE status NOT IN ('resolved','closed','cancelled')) AS open_tickets,
+      (SELECT COUNT(*) FROM support_tickets WHERE priority = 'critical' AND status NOT IN ('resolved','closed','cancelled')) AS critical_tickets,
+      (SELECT COUNT(*) FROM support_escalations WHERE status = 'open') AS open_escalations,
+      (SELECT COUNT(*) FROM oe_problem_records WHERE chain_status NOT IN ('resolution_verified','closed','cancelled')) AS open_problems,
+      (SELECT COUNT(*) FROM oe_change_requests WHERE chain_status NOT IN ('implemented','closed','rejected','rolled_back','cancelled')) AS changes_in_flight,
+      (SELECT COUNT(*) FROM oe_spare_parts_provisioning WHERE criticality = 'vital' AND chain_status NOT IN ('issued','stocked','cancelled','closed')) AS vital_parts_open
   `).first<Record<string, number>>();
   return row || {};
 }
