@@ -19,7 +19,12 @@ export default function MeridianSurfacePage() {
   // only carries `esco:*` keys, so resolve it to esco for lookup (AtlasPage idiom).
   const role = (user?.role === 'esums_owner' ? 'esco' : user?.role) ?? '';
 
-  const Comp = SURFACE_REGISTRY[`${role}:${key}`];
+  // Atlas/CommandPalette emit bare-key links (/surface/metering) and rely on the
+  // role prefix being added here. The Horizon KPI band emits already-qualified
+  // links (/surface/offtaker:metering). Accept both: a key that already carries a
+  // `role:` prefix is used verbatim, otherwise the resolved role is prepended.
+  const lookupKey = key.includes(':') ? key : `${role}:${key}`;
+  const Comp = SURFACE_REGISTRY[lookupKey];
 
   if (!Comp) {
     return (

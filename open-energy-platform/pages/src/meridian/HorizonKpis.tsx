@@ -38,6 +38,10 @@ const KPI_SPECS: Record<string, KpiTile[]> = {
   ],
   ipp_developer: [
     { stat: 'projects_count', label: 'Projects', to: '/surface/ipp_developer:projects' },
+    { stat: 'generation_mwh', label: 'Generation MWh', to: '/surface/ipp_developer:plant_revenue' },
+    { stat: 'settlement_paid_zar', label: 'Settled revenue', to: '/surface/ipp_developer:plant_revenue', unit: 'zar' },
+    { stat: 'settlement_outstanding_zar', label: 'Outstanding', to: '/surface/ipp_developer:plant_revenue', unit: 'zar' },
+    { stat: 'sites_settling', label: 'Sites settling', to: '/surface/ipp_developer:plant_revenue' },
     { stat: 'active_epc', label: 'Active EPC', to: '/surface/ipp_developer:milestones' },
     { stat: 'pending_epc_variations', label: 'EPC variations', to: '/surface/ipp_developer:milestones' },
     { stat: 'insurance_expiring_90d', label: 'Insurance expiring', to: '/surface/ipp_developer:insurance', warn: 1 },

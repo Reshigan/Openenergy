@@ -18,7 +18,7 @@ import { runSurveillanceScan } from './routes/regulator-suite';
 import { executeSettlementRun } from './routes/settlement-automation';
 import { executeSettlementRun as executeImbalanceRun } from './routes/imbalance';
 import { dispatchAllForwarders } from './routes/siem';
-import { computeStationAccruals, materializeFinancials } from './routes/esums-accruals';
+import { computeStationAccruals, backfillStationHistory, materializeFinancials } from './routes/esums-accruals';
 import { computeLatePaymentFees } from './routes/business-depth';
 import { runFaultEngine } from './utils/esums-fault-engine';
 import { verifyChain } from './utils/audit-chain';
@@ -233,13 +233,28 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       break;
 
     case '0 * * * *':
-      // VWAP mark prices — feeds margin calculations and surveillance alerts.
+      // Hourly SolaX → telemetry ingestion. Pull a short trailing window of inverter-
+      // cloud history per live station so the telemetry plane (om_telemetry → /pulse,
+      // W71 predictive, O&M) and the financial site_accruals plane stay within the hour.
+      // backfillStationHistory is idempotent (deterministic ids + ON CONFLICT), so the
+      // overlapping window only upserts — re-running never double-counts.
+      // ponytail: serial loop over ~10 live stations; parallelise if the fleet grows
+      // past a few hundred. 2-day window catches late-arriving SolaX history rows.
+      await safe('solax_hourly_ingest', async () => {
+        const sinceMs = Date.now() - 2 * 24 * 60 * 60 * 1000;
+        const stations = await env.DB.prepare(
+          "SELECT id FROM solax_stations WHERE status = 'active' LIMIT 500",
+        ).all<{ id: string }>();
+        for (const st of (stations.results || []) as { id: string }[]) {
+          try { await backfillStationHistory(st.id, env as never, sinceMs); } catch { /* per-station non-fatal */ }
+        }
+      });
       break;
 
     case '5 0 * * *':
       // Nightly metering + ONA rollups, fault engine, metrics rollup, audit reconcile.
       await safe('esums_accruals', async () => {
-        const stations = await env.DB.prepare('SELECT id FROM solax_stations WHERE active = 1 LIMIT 500').all<{ id: string }>();
+        const stations = await env.DB.prepare("SELECT id FROM solax_stations WHERE status = 'active' LIMIT 500").all<{ id: string }>();
         for (const st of (stations.results || []) as { id: string }[]) {
           try { await computeStationAccruals(st.id, env as never); } catch { /* per-station failures are non-fatal */ }
         }
@@ -249,7 +264,7 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
         // Without this the cron only wrote raw accruals; invoices went stale and no
         // cross-role card ever fired on refresh (only on manual upload/materialize).
         const owners = await env.DB.prepare(
-          `SELECT DISTINCT participant_id AS pid FROM solax_stations WHERE active = 1 AND participant_id IS NOT NULL AND participant_id != '' LIMIT 200`,
+          `SELECT DISTINCT participant_id AS pid FROM solax_stations WHERE status = 'active' AND participant_id IS NOT NULL AND participant_id != '' LIMIT 200`,
         ).all<{ pid: string }>();
         for (const o of (owners.results || []) as { pid: string }[]) {
           try {

@@ -458,8 +458,21 @@ async function ippStats(env: HonoEnv['Bindings'], participantId: string): Promis
       (SELECT COUNT(*) FROM community_engagements ce
         JOIN ipp_projects p ON p.id = ce.project_id
         WHERE p.developer_id = ? AND ce.follow_up_date IS NOT NULL
-          AND ce.follow_up_date <= date('now','+14 days')) AS community_follow_ups_14d
-  `).bind(participantId, participantId, participantId, participantId, participantId).first<Record<string, number>>();
+          AND ce.follow_up_date <= date('now','+14 days')) AS community_follow_ups_14d,
+      -- Operational IPP headline (post-COD): real metered generation + settled revenue
+      -- straight off esums_settlement_invoices (physical private-wire model, gonxt→offtaker).
+      -- An operational IPP has no open EPC/insurance counts, so without these its band
+      -- collapsed to a single "Projects" tile. ponytail: invoice table IS the rollup.
+      (SELECT COALESCE(SUM(kwh_delivered),0)/1000.0
+         FROM esums_settlement_invoices WHERE from_participant_id = ?) AS generation_mwh,
+      (SELECT COALESCE(SUM(total_zar),0)
+         FROM esums_settlement_invoices WHERE from_participant_id = ? AND status = 'paid') AS settlement_paid_zar,
+      (SELECT COALESCE(SUM(total_zar),0)
+         FROM esums_settlement_invoices WHERE from_participant_id = ? AND status IN ('issued','draft')) AS settlement_outstanding_zar,
+      (SELECT COUNT(DISTINCT station_id)
+         FROM esums_settlement_invoices WHERE from_participant_id = ?) AS sites_settling
+  `).bind(participantId, participantId, participantId, participantId, participantId,
+          participantId, participantId, participantId, participantId).first<Record<string, number>>();
   return row || {};
 }
 

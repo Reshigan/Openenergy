@@ -582,6 +582,7 @@ const IppCommunity = React.lazy(() => import('./surfaces/ipp/CommunitySurface'))
 const IppGtia = React.lazy(() => import('./surfaces/ipp/GtiaSurface'));
 const IppInvitePartners = React.lazy(() => import('./surfaces/ipp/InvitePartnersSurface'));
 const IppReports = React.lazy(() => import('./surfaces/ipp/ReportsSurface'));
+const IppPlantRevenue = React.lazy(() => import('./surfaces/ipp/PlantRevenueSurface'));
 
 // IppIssuesTab / IppRiskTab / IppStakeholderTab / IppLessonsLearnedTab are default exports taking
 // an optional `{ readOnly? }` prop; wrap each in a lazy adapter that ignores `role` and renders
@@ -815,6 +816,7 @@ export const SURFACE_REGISTRY: Record<
   'ipp_developer:gtia': IppGtia,
   'ipp_developer:invite_partners': IppInvitePartners,
   'ipp_developer:reports': IppReports,
+  'ipp_developer:plant_revenue': IppPlantRevenue,
   'ipp_developer:issues_log': IppIssues,
   'ipp_developer:risk_register': IppRisk,
   'ipp_developer:stakeholder_register': IppStakeholder,
