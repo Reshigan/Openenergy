@@ -324,7 +324,7 @@ export default function LoginPage() {
     setError('');
     setSsoLoading(true);
     try {
-      const r = await api.post('/auth/sso/microsoft/start', { return_to: '/feed' });
+      const r = await api.post('/auth/sso/microsoft/start', { return_to: '/horizon' });
       if (r.data?.success && r.data?.data?.redirect_url) {
         window.location.href = r.data.data.redirect_url;
         return;
@@ -344,7 +344,11 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password, mfaRequired ? mfaCode : undefined);
-      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/feed';
+      // Land on the populated per-role Horizon workspace, not the activity feed —
+      // the feed (oe_role_action_queue) is empty until cascades fire, so on a quiet
+      // deployment it reads as a blank screen. Horizon always carries the role's
+      // live chain cases. ponytail: deep-link `from` still wins (e.g. bookmarked /feed).
+      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/horizon';
       navigate(from, { replace: true });
     } catch (err: unknown) {
       const anyErr = err as { name?: string; message?: string };

@@ -211,7 +211,7 @@ function SsoLanding() {
     const params = new URLSearchParams(frag);
     const token = params.get('token');
     const refresh_token = params.get('refresh_token') || undefined;
-    const returnTo = params.get('return_to') || '/feed';
+    const returnTo = params.get('return_to') || '/horizon';
     if (!token) {
       setError('Missing SSO token. Please try signing in again.');
       const t = setTimeout(() => navigate('/login?sso_error=missing_token', { replace: true }), 2000);
@@ -723,7 +723,7 @@ function AppRoutes() {
         <Route path="/ux-prototype/cockpit-grid"  element={<LazyWorkbench><CockpitGridPrototype /></LazyWorkbench>} />
         <Route path="/ux-prototype/launchpad-nav" element={<LazyWorkbench><LaunchpadNavPrototype /></LazyWorkbench>} />
       </Route>
-      <Route path="/" element={<Navigate to="/feed" replace />} />
+      <Route path="/" element={<Navigate to="/horizon" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
     {/* Meridian ⌘K palette — global on every authed page; renders null when
