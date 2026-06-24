@@ -168,7 +168,7 @@ export default function HorizonPage() {
 
       {roleSwitcher}
 
-      <HorizonKpis role={role} />
+      <HorizonKpis role={boardRole} />
 
       <div className={dutyCollapsed ? 'main duty-collapsed' : 'main'}>
         <section className="board" aria-label="Live cases by time to consequence">

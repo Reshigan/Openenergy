@@ -72,9 +72,12 @@
 .mer .kpi-tile:focus-visible { outline:2px solid var(--petrol-deep); outline-offset:2px; }
 .mer .kpi-tile .kpi-v { font-size:19px; font-weight:700; letter-spacing:-0.01em; line-height:1.1; }
 .mer .kpi-tile .kpi-l { font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:0.04em; }
-.mer .kpi-tile.alert { border-color:var(--oxide); background:var(--oxide-tint); }
-.mer .kpi-tile.alert .kpi-v { color:var(--oxide); }
-.mer .kpi-tile.alert:hover { border-color:var(--oxide); }
+.mer .kpi-tile.alert { border-color:var(--oxide-deep); background:var(--oxide-tint); }
+.mer .kpi-tile.alert .kpi-v { color:var(--oxide-deep); }
+.mer .kpi-tile.alert:hover { border-color:var(--oxide-deep); }
+/* crit — one rung past alert: deeper fill + bold value so red reads as "act now". */
+.mer .kpi-tile.alert.crit { background:color-mix(in oklch, var(--oxide) 16%, var(--paper)); box-shadow:inset 0 0 0 1px var(--oxide-deep); }
+.mer .kpi-tile.alert.crit .kpi-v { color:var(--oxide-deep); font-weight:800; }
 /* Loading shell — same box as a real tile (no layout shift) but inert. */
 .mer .kpi-tile.kpi-skel { cursor:default; pointer-events:none; justify-content:center; }
 .mer .kpi-tile.kpi-skel:hover { border-color:var(--line); transform:none; box-shadow:none; }
@@ -82,7 +85,7 @@
 /* Inline (non-fatal) action error — board/thread stays rendered behind it. */
 .mer .act-error {
   display:flex; align-items:center; gap:10px; padding:8px 12px; font-size:12px;
-  color:var(--oxide); background:var(--oxide-tint); border:1px solid var(--oxide);
+  color:var(--oxide-deep); background:var(--oxide-tint); border:1px solid var(--oxide);
   border-radius:6px; margin-bottom:8px;
 }
 .mer .board-empty { padding: 56px 28px; color: var(--ink2); border-top: 1px solid var(--line); text-align:center; }
@@ -179,8 +182,8 @@
 }
 .mer .avatar-item:hover { background:var(--paper); color:var(--petrol); }
 .mer .avatar-item:focus-visible { outline:2px solid var(--petrol); outline-offset:-2px; }
-.mer .avatar-item.danger { color:var(--oxide); }
-.mer .avatar-item.danger:hover { background:color-mix(in oklch, var(--oxide) 10%, transparent); color:var(--oxide); }
+.mer .avatar-item.danger { color:var(--oxide-deep); }
+.mer .avatar-item.danger:hover { background:color-mix(in oklch, var(--oxide) 10%, transparent); color:var(--oxide-deep); }
 
 /* ── Layout ──────────────────────────────── */
 .mer .main { flex:1; display:grid; grid-template-columns:1fr 348px; min-height:0; position:relative; overflow-x:clip; transition:grid-template-columns 300ms var(--ease); }
@@ -198,7 +201,7 @@
   font-variation-settings:'wdth' 110; padding:0 10px 6px 10px;
   border-left:1px solid var(--line);
 }
-.mer .bucket-h.breach { color:var(--oxide); }
+.mer .bucket-h.breach { color:var(--oxide-deep); }
 .mer .bucket-h .tick { font-family:'JetBrains Mono',monospace; font-weight:400; letter-spacing:0; display:block; font-size:10px; color:var(--ink3); margin-top:1px; }
 
 .mer .lane-row { border-top:1px solid var(--line); }
@@ -265,7 +268,7 @@
   font-family:'JetBrains Mono',monospace; font-size:9.5px; padding:2px 7px; border-radius:99px;
   background:var(--petrol-tint); color:var(--petrol-deep); white-space:nowrap;
 }
-.mer .chip.ox { background:var(--oxide-tint); color:var(--oxide); border:1px solid var(--oxide); }
+.mer .chip.ox { background:var(--oxide-tint); color:var(--oxide-deep); border:1px solid var(--oxide); }
 .mer .chip.best-chip { background:var(--petrol); color:#fff; font-weight:600; }
 .mer .fuse { height:3px; border-radius:2px; background:var(--line); margin-top:8px; overflow:hidden; }
 .mer .fuse > i { display:block; height:100%; border-radius:2px; background:var(--petrol); }
@@ -283,7 +286,7 @@
     repeating-linear-gradient(-45deg, oklch(1 0 0 / 0.55) 0 2px, transparent 2px 4px),
     var(--oxide);
 }
-.mer .breach-note { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--oxide); font-weight:700; margin-top:6px; }
+.mer .breach-note { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--oxide-deep); font-weight:700; margin-top:6px; }
 
 /* ── Duty Stream ─────────────────────────── */
 .mer aside {
@@ -323,11 +326,11 @@
 .mer .duty-list { overflow-y:auto; flex:1; }
 .mer .duty { padding:15px 22px; border-bottom:1px solid var(--line); display:grid; grid-template-columns:30px 1fr; gap:12px; }
 .mer .duty .rank { font-family:'JetBrains Mono',monospace; font-size:19px; font-weight:700; color:var(--petrol); line-height:1.1; }
-.mer .duty.ox .rank { color:var(--oxide); }
+.mer .duty.ox .rank { color:var(--oxide-deep); }
 .mer .duty h3 { font-size:13px; font-weight:600; line-height:1.35; }
 .mer .duty .why { font-size:11.5px; color:var(--ink2); margin:3px 0 9px; }
 .mer .why .mono { font-weight:500; }
-.mer .why .due-ox { color:var(--oxide); font-weight:700; }
+.mer .why .due-ox { color:var(--oxide-deep); font-weight:700; }
 .mer .why .due-am { color:var(--amber-deep); font-weight:700; }
 .mer .duty .acts { display:flex; gap:8px; }
 /* Narrow viewports: the fixed 348px aside would overflow, so stack it under the
@@ -464,7 +467,7 @@
 .mer.new-txn .fn:hover { background:var(--petrol-tint); }
 .mer.new-txn .fn:focus-visible { outline:2px solid var(--petrol-deep); outline-offset:-2px; }
 .mer.new-txn .fn .live { color:var(--petrol-deep); font-weight:700; }
-.mer .fn .breach { font-size:11.5px; color:var(--oxide); font-weight:700; }
+.mer .fn .breach { font-size:11.5px; color:var(--oxide-deep); font-weight:700; }
 
 /* ── Command palette ─────────────────────── */
 /* The veil mounts globally (AppRoutes), so it must beat every page's stacking
@@ -652,16 +655,16 @@
    an inset petrol ring (rule below) so "focused" and "invalid" stay independently readable. */
 .mer .composer .field.flag input, .mer .composer .field.flag select,
 .mer .composer input[aria-invalid=true], .mer .composer select[aria-invalid=true] {
-  border-color:var(--oxide); box-shadow:0 0 0 3px oklch(0.50 0.18 30 / 0.20);
+  border-color:var(--oxide-deep); box-shadow:0 0 0 3px oklch(0.50 0.18 30 / 0.20);
 }
 /* Focused AND invalid: oxide error halo (outer) + petrol focus ring (inner inset) so the
    two states are visually distinct — without this the error border alone wins on focus. */
 .mer .composer .field.flag input:focus-visible, .mer .composer .field.flag select:focus-visible,
 .mer .composer input[aria-invalid=true]:focus-visible, .mer .composer select[aria-invalid=true]:focus-visible {
-  border-color:var(--oxide);
+  border-color:var(--oxide-deep);
   box-shadow:0 0 0 3px oklch(0.50 0.18 30 / 0.20), inset 0 0 0 2px var(--petrol);
 }
-.mer .composer .field-required { font-size:11px; color:var(--oxide); }
+.mer .composer .field-required { font-size:11px; color:var(--oxide-deep); }
 
 /* Emil motion: reduced-motion users get opacity-only — no transforms. */
 @media (prefers-reduced-motion:reduce) {
@@ -773,7 +776,7 @@
     font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
     color:var(--ink3); font-variation-settings:'wdth' 110;
   }
-  .mer .cell:nth-of-type(1):not(:empty)::before { content:'BREACHED'; color:var(--oxide); }
+  .mer .cell:nth-of-type(1):not(:empty)::before { content:'BREACHED'; color:var(--oxide-deep); }
   .mer .cell:nth-of-type(2):not(:empty)::before { content:'< 2H'; }
   .mer .cell:nth-of-type(3):not(:empty)::before { content:'TODAY'; }
   .mer .cell:nth-of-type(4):not(:empty)::before { content:'48H'; }
@@ -1183,7 +1186,7 @@
 .mer .sign-list li { display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-top:1px solid var(--line); font-size:12.5px; }
 .mer .sign-list li:first-child { border-top:none; }
 .mer .sign-list li.signed { color:var(--ink2); }
-.mer .sign-list li.pending span:last-child { color:var(--oxide); }
+.mer .sign-list li.pending span:last-child { color:var(--oxide-deep); }
 .mer .sign-acts { display:flex; gap:8px; }
 .mer .sign-add { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
 .mer .sign-add input { flex:1 1 140px; padding:7px 10px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink); font-size:12.5px; }

@@ -8,95 +8,130 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { fetchRoleStats, fmtZar, type RoleStats } from './lib';
 
-interface KpiTile { stat: string; label: string; to: string; money?: boolean; alert?: boolean }
+// `warn`/`crit` are thresholds that tint a tile amber/red. `lowBad` flips the
+// comparison (tint when the value drops BELOW the threshold — e.g. delivered %,
+// availability). `unit` drives formatting: zar money, tco2e tonnage, else count.
+interface KpiTile {
+  stat: string; label: string; to: string;
+  unit?: 'zar' | 'tco2e';
+  warn?: number; crit?: number; lowBad?: boolean;
+}
 
 // Per-role tiles. `stat` resolves from role_national first, then the top-level
 // stats block (where the one-shot follow-ups like projects_count/open_orders/
-// pending_kyc live). `to` points at a registered /surface or a chain /ledger —
-// both already routed. `alert` only tints when the value is > 0.
+// pending_kyc live). `to` points at a registered /surface or a chain /ledger.
 const KPI_SPECS: Record<string, KpiTile[]> = {
   trader: [
     { stat: 'positions', label: 'Open positions', to: '/surface/trader:positions' },
-    { stat: 'unrealised_pnl_zar', label: 'Unrealised P&L', to: '/surface/trader:positions', money: true },
+    { stat: 'net_exposure_mwh', label: 'Net exposure MWh', to: '/surface/trader:positions' },
+    { stat: 'unrealised_pnl_zar', label: 'Unrealised P&L', to: '/surface/trader:positions', unit: 'zar' },
     { stat: 'open_orders', label: 'Open orders', to: '/surface/trader:orders' },
-    { stat: 'open_margin_calls', label: 'Margin calls', to: '/surface/trader:margin', alert: true },
-    { stat: 'margin_shortfall_zar', label: 'Margin shortfall', to: '/surface/trader:margin', money: true, alert: true },
+    { stat: 'open_margin_calls', label: 'Margin calls', to: '/surface/trader:margin', warn: 1, crit: 3 },
+    { stat: 'margin_shortfall_zar', label: 'Margin shortfall', to: '/surface/trader:margin', unit: 'zar', warn: 1 },
   ],
   lender: [
     { stat: 'active_covenants', label: 'Active covenants', to: '/surface/lender:covenant_reports' },
-    { stat: 'covenant_breaches_30d', label: 'Breaches (30d)', to: '/ledger/covenant_certificate', alert: true },
+    { stat: 'covenant_breaches_30d', label: 'Breaches (30d)', to: '/ledger/covenant_certificate', warn: 1, crit: 3 },
     { stat: 'covenant_warns_30d', label: 'Warnings (30d)', to: '/ledger/covenant_certificate' },
     { stat: 'ie_certs_pending_review', label: 'IE certs to review', to: '/surface/lender:ie_certifications' },
-    { stat: 'waivers_pending', label: 'Waivers pending', to: '/surface/lender:covenant_reports', alert: true },
+    { stat: 'waivers_pending', label: 'Waivers pending', to: '/surface/lender:covenant_reports', warn: 1 },
   ],
   ipp_developer: [
     { stat: 'projects_count', label: 'Projects', to: '/surface/ipp_developer:projects' },
     { stat: 'active_epc', label: 'Active EPC', to: '/surface/ipp_developer:milestones' },
     { stat: 'pending_epc_variations', label: 'EPC variations', to: '/surface/ipp_developer:milestones' },
-    { stat: 'insurance_expiring_90d', label: 'Insurance expiring', to: '/surface/ipp_developer:insurance', alert: true },
+    { stat: 'insurance_expiring_90d', label: 'Insurance expiring', to: '/surface/ipp_developer:insurance', warn: 1 },
     { stat: 'community_follow_ups_14d', label: 'Community follow-ups', to: '/surface/ipp_developer:community' },
   ],
   offtaker: [
-    { stat: 'active_recs', label: 'Active RECs', to: '/surface/offtaker:rec_retirement' },
-    { stat: 'active_rec_mwh', label: 'REC MWh', to: '/surface/offtaker:rec_retirement' },
-    { stat: 'site_groups', label: 'Site groups', to: '/surface/offtaker:sites' },
-    { stat: 'delivery_points', label: 'Delivery points', to: '/surface/offtaker:metering' },
-    { stat: 'published_scope2', label: 'Scope 2 published', to: '/surface/offtaker:reports' },
+    { stat: 'ppa_annual_zar', label: 'Annual PPA value', to: '/surface/offtaker:ppa_portfolio', unit: 'zar' },
+    { stat: 'delivered_pct', label: 'Delivered vs contracted %', to: '/surface/offtaker:metering', lowBad: true, warn: 95, crit: 90 },
+    { stat: 'delivered_mwh', label: 'Delivered MWh', to: '/surface/offtaker:metering' },
+    { stat: 'carbon_tco2e', label: 'Carbon offset', to: '/surface/offtaker:reports', unit: 'tco2e' },
+    { stat: 'ppa_contracted_mwh_yr', label: 'Contracted MWh/yr', to: '/surface/offtaker:ppa_portfolio' },
   ],
   carbon_fund: [
-    { stat: 'credits_active', label: 'Active credits', to: '/surface/carbon_fund:vintages' },
+    { stat: 'credits_active', label: 'Active credits', to: '/surface/carbon_fund:vintages', unit: 'tco2e' },
     { stat: 'vintages', label: 'Vintages', to: '/surface/carbon_fund:vintages' },
-    { stat: 'mrv_pending', label: 'MRV pending', to: '/surface/carbon_fund:mrv', alert: true },
+    { stat: 'mrv_pending', label: 'MRV pending', to: '/surface/carbon_fund:mrv', warn: 1 },
     { stat: 'verified_90d', label: 'Verified (90d)', to: '/surface/carbon_fund:mrv' },
     { stat: 'tax_claims_submitted', label: 'Tax claims', to: '/surface/carbon_fund:certificates' },
   ],
   regulator: [
     { stat: 'active_licences', label: 'Active licences', to: '/surface/regulator:licences' },
-    { stat: 'licences_expiring', label: 'Expiring (90d)', to: '/surface/regulator:licences', alert: true },
+    { stat: 'licences_expiring', label: 'Expiring (90d)', to: '/surface/regulator:licences', warn: 1 },
     { stat: 'pending_tariff', label: 'Tariff submissions', to: '/surface/regulator:notices' },
-    { stat: 'open_cases', label: 'Enforcement cases', to: '/surface/regulator:enforcement', alert: true },
+    { stat: 'open_cases', label: 'Enforcement cases', to: '/surface/regulator:enforcement', warn: 1 },
     { stat: 'open_alerts', label: 'Surveillance alerts', to: '/surface/regulator:surveillance' },
-    { stat: 'critical_alerts', label: 'Critical alerts', to: '/surface/regulator:surveillance', alert: true },
+    { stat: 'critical_alerts', label: 'Critical alerts', to: '/surface/regulator:surveillance', warn: 1, crit: 1 },
   ],
   esco: [
-    { stat: 'predictive_savings_zar', label: 'Predictive savings', to: '/surface/esco:predictions', money: true },
-    { stat: 'open_faults', label: 'Open faults', to: '/surface/esco:faults', alert: true },
-    { stat: 'critical_faults', label: 'Critical faults', to: '/surface/esco:faults', alert: true },
-    { stat: 'nearest_rul_days', label: 'Nearest RUL (days)', to: '/surface/esco:predictions' },
+    { stat: 'predictive_savings_zar', label: 'Predictive savings', to: '/surface/esco:predictions', unit: 'zar' },
+    { stat: 'open_faults', label: 'Open faults', to: '/surface/esco:faults', warn: 1 },
+    { stat: 'critical_faults', label: 'Critical faults', to: '/surface/esco:faults', warn: 1, crit: 1 },
+    { stat: 'nearest_rul_days', label: 'Nearest RUL (days)', to: '/surface/esco:predictions', lowBad: true, warn: 30, crit: 7 },
+    { stat: 'pm_open', label: 'PM open', to: '/ledger/pm_compliance' },
+    { stat: 'pr_cases_open', label: 'PR cases', to: '/ledger/pr_chain', warn: 1 },
     { stat: 'availability_open', label: 'Availability cases', to: '/ledger/availability_guarantee' },
     { stat: 'permits_active', label: 'Active permits', to: '/ledger/permit_to_work' },
   ],
   support: [
     { stat: 'open_tickets', label: 'Open tickets', to: '/surface/support:tickets' },
-    { stat: 'critical_tickets', label: 'Critical tickets', to: '/surface/support:tickets', alert: true },
-    { stat: 'open_escalations', label: 'Open escalations', to: '/surface/support:escalations', alert: true },
+    { stat: 'critical_tickets', label: 'Critical tickets', to: '/surface/support:tickets', warn: 1, crit: 1 },
+    { stat: 'open_escalations', label: 'Open escalations', to: '/surface/support:escalations', warn: 1 },
     { stat: 'open_problems', label: 'Open problems', to: '/ledger/problem_record' },
     { stat: 'changes_in_flight', label: 'Changes in flight', to: '/ledger/change_request' },
-    { stat: 'vital_parts_open', label: 'Vital parts at risk', to: '/ledger/spare_parts_provisioning', alert: true },
+    { stat: 'vital_parts_open', label: 'Vital parts at risk', to: '/ledger/spare_parts_provisioning', warn: 1, crit: 1 },
   ],
   grid_operator: [
     { stat: 'schedules_today', label: 'Schedules today', to: '/surface/grid_operator:scada' },
-    { stat: 'instructions_pending_ack', label: 'Instructions to ack', to: '/surface/grid_operator:scada', alert: true },
-    { stat: 'active_curtailments', label: 'Active curtailments', to: '/surface/grid_operator:curtailment', alert: true },
-    { stat: 'active_outages', label: 'Active outages', to: '/surface/grid_operator:outage', alert: true },
+    { stat: 'instructions_pending_ack', label: 'Instructions to ack', to: '/surface/grid_operator:scada', warn: 1 },
+    { stat: 'non_compliant', label: 'Non-compliant', to: '/surface/grid_operator:scada', warn: 1, crit: 5 },
+    { stat: 'in_flight_connections', label: 'Connections in flight', to: '/surface/grid_operator:scada' },
+    { stat: 'active_curtailments', label: 'Active curtailments', to: '/surface/grid_operator:curtailment', warn: 1 },
+    { stat: 'active_outages', label: 'Active outages', to: '/surface/grid_operator:outage', warn: 1 },
     { stat: 'open_tenders', label: 'Ancillary tenders', to: '/surface/grid_operator:ancillary' },
   ],
   admin: [
     { stat: 'active_tenants', label: 'Active tenants', to: '/surface/admin:users' },
-    { stat: 'provisioning_pending', label: 'Provisioning pending', to: '/surface/admin:users', alert: true },
+    { stat: 'provisioning_pending', label: 'Provisioning pending', to: '/surface/admin:users', warn: 1 },
     { stat: 'active_subscriptions', label: 'Subscriptions', to: '/surface/admin:subscription_billing' },
-    { stat: 'outstanding_platform_invoices', label: 'Outstanding invoices', to: '/surface/admin:billing', alert: true },
-    { stat: 'outstanding_platform_zar', label: 'Outstanding', to: '/surface/admin:billing', money: true },
-    { stat: 'pending_kyc', label: 'KYC pending', to: '/surface/admin:users', alert: true },
-    { stat: 'failed_settlement_runs_7d', label: 'Failed settlements (7d)', to: '/surface/admin:settlement_audit', alert: true },
+    { stat: 'outstanding_platform_invoices', label: 'Outstanding invoices', to: '/surface/admin:billing', warn: 1 },
+    { stat: 'outstanding_platform_zar', label: 'Outstanding', to: '/surface/admin:billing', unit: 'zar' },
+    { stat: 'pending_kyc', label: 'KYC pending', to: '/surface/admin:users', warn: 1 },
+    { stat: 'failed_settlement_runs_7d', label: 'Failed settlements (7d)', to: '/surface/admin:settlement_audit', warn: 1, crit: 1 },
   ],
 };
+
+// Oversight roles read zero as an affirmative "all clear" — a regulator's empty
+// enforcement queue is good news worth showing, not noise to hide. Everyone else
+// gets zero-count tiles suppressed (progressive disclosure).
+const OVERSIGHT = new Set(['regulator', 'admin']);
 
 function resolve(stats: RoleStats, key: string): number | undefined {
   const nat = stats.role_national;
   if (nat && typeof nat[key] === 'number') return nat[key];
   const top = stats[key];
   return typeof top === 'number' ? top : undefined;
+}
+
+// null | 'warn' (amber) | 'crit' (red). lowBad flips the comparison so a falling
+// metric (delivered %, RUL days) trips on the way DOWN.
+function severity(v: number, t: KpiTile): 'crit' | 'warn' | null {
+  if (t.lowBad) {
+    if (t.crit != null && v <= t.crit) return 'crit';
+    if (t.warn != null && v <= t.warn) return 'warn';
+    return null;
+  }
+  if (t.crit != null && v >= t.crit) return 'crit';
+  if (t.warn != null && v >= t.warn) return 'warn';
+  return null;
+}
+
+function fmtVal(v: number, unit?: KpiTile['unit']): string {
+  if (unit === 'zar') return fmtZar(v);
+  if (unit === 'tco2e') return `${v.toLocaleString('en-ZA')} tCO₂e`;
+  return v.toLocaleString('en-ZA');
 }
 
 // Per-role memory of whether this role's band has ever carried a non-zero value.
@@ -148,22 +183,26 @@ export function HorizonKpis({ role }: { role: string }) {
   const tiles = spec
     .map(t => ({ t, v: resolve(stats, t.stat) }))
     .filter((x): x is { t: KpiTile; v: number } => x.v !== undefined);
-  if (!tiles.length) return null;
-  // Day-one suppression: an all-zeros band is nav-to-empty — no signal, and it
-  // competes with the GettingStarted activation card for "what do I do next".
-  // A truly empty account's nav IS the checklist. The moment any record lands a
-  // count goes non-zero and the band reappears on its own (progressive disclosure).
-  if (tiles.every(({ v }) => v === 0)) return null;
+  // Per-tile zero-suppression: a zero count is nav-to-empty noise for working
+  // roles, so hide it — but keep zero for oversight roles (zero = all-clear) and
+  // for lowBad tiles (0% delivered is the worst case, not "no data").
+  const shown = OVERSIGHT.has(role)
+    ? tiles
+    : tiles.filter(({ t, v }) => v !== 0 || t.lowBad);
+  if (!shown.length) return null;
 
   return (
     <div className="kpi-band" role="navigation" aria-label="Role headline metrics">
-      {tiles.map(({ t, v }) => (
-        <Link key={t.stat} to={t.to} className={t.alert && v > 0 ? 'kpi-tile alert' : 'kpi-tile'}
-              title={`Open ${t.label}`}>
-          <span className="kpi-v">{t.money ? fmtZar(v) : v.toLocaleString('en-ZA')}</span>
-          <span className="kpi-l">{t.label}</span>
-        </Link>
-      ))}
+      {shown.map(({ t, v }) => {
+        const sev = severity(v, t);
+        const cls = sev === 'crit' ? 'kpi-tile alert crit' : sev === 'warn' ? 'kpi-tile alert' : 'kpi-tile';
+        return (
+          <Link key={t.stat} to={t.to} className={cls} title={`Open ${t.label}`}>
+            <span className="kpi-v">{fmtVal(v, t.unit)}</span>
+            <span className="kpi-l">{t.label}</span>
+          </Link>
+        );
+      })}
     </div>
   );
 }
