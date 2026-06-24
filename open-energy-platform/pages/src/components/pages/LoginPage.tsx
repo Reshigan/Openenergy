@@ -50,6 +50,17 @@ const PERSONAS: Persona[] = [
   { email: 'admin@openenergy.co.za',     label: 'Admin',          short: 'AD', accent: 'oklch(0.30 0.015 250)', group: 'Oversight' },
 ];
 
+// Live ecosystem profiles (cec.vantax.co.za) — the real Goldrush deployment.
+// Shown on the live host so the demo can swap between the actual participants.
+const LIVE_PERSONAS: Persona[] = [
+  { email: 'reshigan+gonxt@vantax.co.za',    label: 'GoNXT (IPP)',        short: 'GN', accent: 'oklch(0.46 0.16 55)',  group: 'Goldrush ecosystem' },
+  { email: 'reshigan+goldrush@vantax.co.za', label: 'Goldrush (Offtaker)', short: 'GR', accent: 'oklch(0.46 0.14 200)', group: 'Goldrush ecosystem' },
+  { email: 'reshigan+envera@vantax.co.za',   label: 'Envera (Carbon)',    short: 'EN', accent: 'oklch(0.46 0.16 145)', group: 'Goldrush ecosystem' },
+  { email: 'reshigan+growvest@vantax.co.za', label: 'Growvest (Lender)',  short: 'GV', accent: 'oklch(0.46 0.16 280)', group: 'Goldrush ecosystem' },
+  { email: 'reshigan@vantax.co.za',          label: 'Admin',              short: 'AD', accent: 'oklch(0.30 0.015 250)', group: 'Goldrush ecosystem' },
+];
+const isLiveHost = typeof window !== 'undefined' && /(^|\.)cec\./.test(window.location.hostname);
+
 // ─── Animated energy node (pure CSS — no JS animation) ────────────────────────
 function EnergyNode({ cx, cy, r, delay, color }: { cx: number; cy: number; r: number; delay: number; color: string }) {
   return (
@@ -560,7 +571,12 @@ export default function LoginPage() {
                       border: 'none',
                       cursor: 'pointer',
                       color: T.text3,
-                      padding: 4,
+                      minWidth: 24,
+                      minHeight: 24,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 4px',
                       lineHeight: 1,
                       fontSize: 12,
                       fontFamily: 'ui-monospace, monospace',
@@ -727,6 +743,24 @@ export default function LoginPage() {
               <p style={{ marginTop: 10, fontSize: 11, color: T.text3, textAlign: 'center', fontFamily: 'ui-monospace, monospace' }}>
                 All demo accounts · <span style={{ color: T.accent }}>Demo@2024!</span>
               </p>
+            </div>
+            )}
+
+            {/* Live ecosystem profiles — shown on the live host so roles can be swapped in-demo */}
+            {isLiveHost && (
+            <div style={{ margin: '22px 0 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                <div style={{ flex: 1, height: 1, background: T.border }} />
+                <span style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'ui-monospace, monospace', whiteSpace: 'nowrap' }}>
+                  switch profile
+                </span>
+                <div style={{ flex: 1, height: 1, background: T.border }} />
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {LIVE_PERSONAS.map((p) => (
+                  <PersonaChip key={p.email} persona={p} onPick={fillDemo} />
+                ))}
+              </div>
             </div>
             )}
 
