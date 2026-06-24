@@ -107,8 +107,12 @@ function assignDomain(chainKey: string): string {
 
 r.get('/', async (c) => {
   const user = getCurrentUser(c);
-  if (user.role !== 'admin') {
-    return c.json({ success: false, error: 'Admin only' }, 403);
+  // Read-only national rollup: admin owns it, but the regulator is the natural
+  // oversight consumer of a market-wide picture (ERA s.10 monitoring). Both are
+  // oversight roles that read zero as "all-clear" and never write here; no other
+  // role sees cross-tenant aggregates.
+  if (user.role !== 'admin' && user.role !== 'regulator') {
+    return c.json({ success: false, error: 'Admin or regulator only' }, 403);
   }
 
   const db = c.env.DB;

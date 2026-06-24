@@ -127,8 +127,35 @@ metering.post('/readings/:id/validate', async (c) => {
 // caller over a period (default 30 days).
 metering.get('/summary', async (c) => {
   const user = getCurrentUser(c);
-  const days = Math.min(Math.max(Number(c.req.query('days') || '30'), 1), 365);
+  const days = Math.min(Math.max(Number(c.req.query('days') || '30'), 1), 3650);
   const privileged = user.role === 'admin' || user.role === 'regulator' || user.role === 'grid_operator';
+
+  // Offtakers have no grid_connections of their own — their delivered energy lives
+  // in om_telemetry behind the generation sites their PPAs point at. Resolve it via
+  // the same portfolio↔site hex seam cockpit.offtakerStats uses, so this drill-through
+  // and the Horizon "Delivered MWh" tile read ONE source. export_kwh_sum carries the
+  // real metered delivery; peak/import are not measured here (left null → "—").
+  if (user.role === 'offtaker') {
+    // Wide lookback (default 365d) so the ramp-up window is fully covered regardless
+    // of the shared 30d default; an explicit ?days= still overrides.
+    const offDays = c.req.query('days') ? days : 365;
+    const siteRows = await c.env.DB.prepare(`
+      SELECT s.name AS project_name, s.id AS project_id, s.id AS connection_id,
+             s.province AS connection_point,
+             COUNT(*) AS readings,
+             COALESCE(SUM(t.interval_kwh), 0) AS export_kwh_sum,
+             0 AS import_kwh_sum,
+             NULL AS peak_demand_kw
+      FROM om_telemetry t
+      JOIN om_sites s ON s.id = t.site_id
+      WHERE substr(s.id, 6, 12) IN
+            (SELECT substr(id, -12) FROM off_ppa_portfolio WHERE participant_id = ? AND status = 'active')
+        AND julianday('now') - julianday(t.ts) <= ?
+      GROUP BY s.id ORDER BY export_kwh_sum DESC LIMIT 50
+    `).bind(user.id, offDays).all();
+    return c.json({ success: true, data: { days: offDays, connections: siteRows.results || [] } });
+  }
+
   const scopeFilter = privileged ? '' : 'AND ip.developer_id = ?';
   const bindings = privileged ? [days] : [days, user.id];
 
