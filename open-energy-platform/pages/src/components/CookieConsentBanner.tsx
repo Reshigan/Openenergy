@@ -78,7 +78,7 @@ export function CookieConsentBanner() {
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" onClick={() => record({ analytics, marketing })}
-                      className="h-8 px-3 rounded bg-[#c2873a] text-white text-[12px] font-semibold">Save preferences</button>
+                      className="h-8 px-3 rounded bg-[#996428] text-white text-[12px] font-semibold">Save preferences</button>
               <button type="button" onClick={() => record({ analytics: true, marketing: true })}
                       className="h-8 px-3 rounded bg-white border border-[#dde4ec] text-[#3d4756] text-[12px] font-semibold">Accept all</button>
               <button type="button" onClick={() => record({ analytics: false, marketing: false })}
