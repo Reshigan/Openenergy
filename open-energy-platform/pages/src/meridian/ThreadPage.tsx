@@ -5,7 +5,7 @@
 // so the counterparty gets no .actbar at all.
 import React from 'react';
 import './meridian.css';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { fmtZar, humanizeKey, type LedgerActionField } from './lib';
 import { FieldForm } from './FieldForm';
@@ -39,6 +39,19 @@ export default function ThreadPage() {
     api.get(`/thread/${chainKey}/${id}`).then(r => setT(r.data.data)).catch(e => setErr(String(e))),
   [chainKey, id]);
   React.useEffect(() => { load(); }, [load]);
+
+  // Deep-link from the Horizon board: ?act=<action> opens that action's FieldForm
+  // drawer once the thread has loaded. Once-only (ref guard) so firing the action —
+  // which reloads `t` — doesn't re-pop the drawer.
+  const [sp] = useSearchParams();
+  const actOpened = React.useRef(false);
+  React.useEffect(() => {
+    if (actOpened.current || !t) return;
+    const want = sp.get('act');
+    if (!want) return;
+    const a = t.actions.find(x => x.action === want);
+    if (a?.fields?.length) { setFormAction(a); actOpened.current = true; }
+  }, [sp, t]);
 
   // Escape-to-dismiss + focus-restore for the action-form veil (LedgerPage idiom).
   React.useEffect(() => {

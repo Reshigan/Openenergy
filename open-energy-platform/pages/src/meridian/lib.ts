@@ -13,7 +13,10 @@ export const BUCKETS: { key: Bucket; label: string }[] = [
   { key: 'week', label: 'THIS WEEK' }, { key: 'later', label: 'LATER' },
 ];
 
-export interface MerAction { action: string; label: string; path: string; cascadeHint: string; tone?: string }
+// fields is carried verbatim from the registry by horizon.ts (the `({roles, ...a})`
+// spread keeps it). The board uses its presence to route fielded transitions into
+// the Thread FieldForm drawer instead of firing a bare empty-body POST.
+export interface MerAction { action: string; label: string; path: string; cascadeHint: string; tone?: string; fields?: LedgerActionField[] }
 export interface MerCase {
   chain: string; wave: number; id: string; ref: string; title: string;
   status: string; deadline_at: string | null; bucket: Bucket;
@@ -59,7 +62,7 @@ export interface LedgerData {
   filters: { key: string; label: string; statuses: string[] }[];
   initiation: { label: string; path: string; fields: LedgerActionField[] } | null;
   prefill?: Record<string, unknown>;
-  kpis: { key: string; label: string; value: number }[];
+  kpis: { key: string; label: string; value: number; unit?: 'zar' | 'count' }[];
   rows: LedgerRow[];
 }
 

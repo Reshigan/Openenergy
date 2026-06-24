@@ -97,9 +97,11 @@ export default function LedgerPage() {
   );
 
   const { initiation } = data;
-  // ZAR heuristic keys off the kpi key name — the LedgerData kpi shape carries no unit.
-  const fmtKpi = (k: { key: string; value: number }) =>
-    /exposure|zar|amount|value/i.test(k.key) ? fmtZar(k.value) : String(k.value);
+  // unit comes from the backend (derived from the registry's compute kind).
+  // Fall back to the old key-name heuristic only if an older worker omits it.
+  const fmtKpi = (k: { key: string; value: number; unit?: 'zar' | 'count' }) =>
+    (k.unit === 'zar' || (!k.unit && /exposure|zar|amount|value/i.test(k.key)))
+      ? fmtZar(k.value) : k.value.toLocaleString('en-ZA');
 
   return (
     <div className="mer ledger">

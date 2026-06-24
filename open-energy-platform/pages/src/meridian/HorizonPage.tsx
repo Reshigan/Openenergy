@@ -2,9 +2,9 @@
 // Markup mirrors mockups/meridian/01-horizon.html (header / .main { .board + aside } / .wire);
 // styling comes verbatim from meridian.css (scoped under .mer). Data from GET /api/horizon/:role.
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './meridian.css';
-import { fetchHorizon, singleChainOf, BUCKETS, fmtZar, type Bucket, type HorizonData, type MerCase } from './lib';
+import { fetchHorizon, singleChainOf, BUCKETS, fmtZar, type Bucket, type HorizonData, type MerCase, type MerAction } from './lib';
 import { CaseTile } from './components';
 import { MeridianHeader } from './MeridianHeader';
 import { HorizonKpis } from './HorizonKpis';
@@ -47,6 +47,7 @@ function bucketTick(key: Bucket, now: Date): string {
 
 export default function HorizonPage() {
   const role = useRole();
+  const navigate = useNavigate();
   // Admin holds no Meridian lanes — it views any role's board via the backend
   // passthrough. Non-admin roles always view their own board (boardRole === role).
   const isAdmin = role === 'admin';
@@ -56,6 +57,9 @@ export default function HorizonPage() {
   const [data, setData] = React.useState<HorizonData | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
   const [actErr, setActErr] = React.useState<string | null>(null);
+  // In-flight inline action, keyed `${caseId}:${action}` — disables every duty
+  // button while a POST is open so a double-click can't double-fire the transition.
+  const [acting, setActing] = React.useState<string | null>(null);
 
   // Duty-stream collapse — persisted so the operator's choice survives a reload
   // and the 60s board refresh. The aside is a fixed 348px grid column; collapsed,
@@ -100,17 +104,26 @@ export default function HorizonPage() {
   const laneLabel = (key: string) =>
     cfg?.domains.find(d => d.key === key)?.label ?? key.replace(/_/g, ' ');
 
-  async function act(c: MerCase, path: string) {
+  async function act(c: MerCase, a: MerAction) {
+    // Fielded transitions (reason code, quantum, evidence) can't be fired from a
+    // bare board click — they'd 409. Hand them to the Thread, which already has the
+    // schema-driven FieldForm drawer; ?act= opens it pre-targeted on that action.
+    if (a.fields?.length) { navigate(`/thread/${c.chain}/${c.id}?act=${encodeURIComponent(a.action)}`); return; }
+    // Destructive transitions (oxide tone — disconnect, cancel, forced-liq, revoke)
+    // get a confirm; a single misclick on the board shouldn't trip them.
+    if (a.tone === 'oxide' && !window.confirm(`${a.label} — ${c.ref}?\nThis transition may be hard to reverse.`)) return;
+    const key = `${c.id}:${a.action}`;
+    setActing(key);
     // Duty-stream inline action: POST the existing chain endpoint, then refresh.
     // api has baseURL '/api', so strip the prefix the registry paths carry.
     try {
-      await api.post(path.replace('/api', '').replace(':id', c.id), {});
+      await api.post(a.path.replace('/api', '').replace(':id', c.id), {});
       setActErr(null);
     } catch (e: any) {
       // State machines return 409 with a reason for invalid transitions —
       // surface it; the refresh below still shows authoritative state.
       setActErr(e?.response?.data?.error ?? e?.message ?? 'Action failed');
-    }
+    } finally { setActing(null); }
     try { setData(await fetchHorizon(boardRole)); } catch { /* keep last good board */ }
   }
 
@@ -271,17 +284,23 @@ export default function HorizonPage() {
                     {c.bucket === 'breached' && <> · <span className="due-ox">SLA breached</span></>}
                   </div>
                   <div className="acts">
-                    {c.actions.slice(0, 2).map(a => (
-                      <button
-                        type="button"
-                        key={a.action}
-                        className={a.tone === 'oxide' ? 'btn ox' : 'btn pri'}
-                        title={a.cascadeHint}
-                        onClick={() => act(c, a.path)}
-                      >
-                        {a.label}
-                      </button>
-                    ))}
+                    {c.actions.slice(0, 2).map(a => {
+                      const key = `${c.id}:${a.action}`;
+                      const busy = acting === key;
+                      return (
+                        <button
+                          type="button"
+                          key={a.action}
+                          className={a.tone === 'oxide' ? 'btn ox' : 'btn pri'}
+                          title={a.fields?.length ? `${a.cascadeHint} — opens the form` : a.cascadeHint}
+                          disabled={acting !== null}
+                          aria-busy={busy || undefined}
+                          onClick={() => act(c, a)}
+                        >
+                          {busy ? '…' : a.fields?.length ? `${a.label}…` : a.label}
+                        </button>
+                      );
+                    })}
                     <Link className="btn ghost" to={`/thread/${c.chain}/${c.id}`}>
                       Open thread
                     </Link>

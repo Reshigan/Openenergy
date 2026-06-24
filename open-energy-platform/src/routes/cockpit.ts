@@ -464,6 +464,11 @@ async function ippStats(env: HonoEnv['Bindings'], participantId: string): Promis
 }
 
 async function offtakerStats(env: HonoEnv['Bindings'], participantId: string): Promise<Record<string, unknown>> {
+  // Money-led: the offtaker's headline is the PPA, not RECs. Contracted ZAR/MWh
+  // come from off_ppa_portfolio (active rows). Delivered MWh come from the real
+  // generation sites behind the PPA — joined by the hex seam: portfolio id
+  // ppa_<name>_<hex12> ↔ site id site_<hex32> where the first 12 hex match.
+  // delivered_pct/carbon are pro-rated in TS (delivered is a partial-period sum).
   const row = await env.DB.prepare(`
     SELECT
       (SELECT COUNT(*) FROM offtaker_site_groups WHERE participant_id = ?) AS site_groups,
@@ -471,9 +476,33 @@ async function offtakerStats(env: HonoEnv['Bindings'], participantId: string): P
       (SELECT COUNT(*) FROM rec_certificates WHERE owner_participant_id = ? AND status IN ('issued','transferred')) AS active_recs,
       (SELECT COALESCE(SUM(mwh_represented), 0) FROM rec_certificates WHERE owner_participant_id = ? AND status IN ('issued','transferred')) AS active_rec_mwh,
       (SELECT COUNT(*) FROM rec_retirements WHERE retiring_participant_id = ?) AS retirements_count,
-      (SELECT COUNT(*) FROM scope2_disclosures WHERE participant_id = ? AND status = 'published') AS published_scope2
-  `).bind(participantId, participantId, participantId, participantId, participantId, participantId).first<Record<string, number>>();
-  return row || {};
+      (SELECT COUNT(*) FROM scope2_disclosures WHERE participant_id = ? AND status = 'published') AS published_scope2,
+      (SELECT COALESCE(SUM(expected_p50_gwh_yr * 1000 * price_zar_per_mwh), 0)
+         FROM off_ppa_portfolio WHERE participant_id = ? AND status = 'active') AS ppa_annual_zar,
+      (SELECT COALESCE(SUM(expected_p50_gwh_yr * 1000), 0)
+         FROM off_ppa_portfolio WHERE participant_id = ? AND status = 'active') AS ppa_contracted_mwh_yr,
+      (SELECT COALESCE(SUM(t.interval_kwh) / 1000.0, 0)
+         FROM om_telemetry t JOIN om_sites s ON s.id = t.site_id
+         WHERE substr(s.id, 6, 12) IN
+           (SELECT substr(id, -12) FROM off_ppa_portfolio WHERE participant_id = ? AND status = 'active')) AS delivered_mwh,
+      (SELECT COUNT(DISTINCT substr(t.ts, 1, 10))
+         FROM om_telemetry t JOIN om_sites s ON s.id = t.site_id
+         WHERE substr(s.id, 6, 12) IN
+           (SELECT substr(id, -12) FROM off_ppa_portfolio WHERE participant_id = ? AND status = 'active')) AS delivered_days
+  `).bind(
+    participantId, participantId, participantId, participantId, participantId, participantId,
+    participantId, participantId, participantId, participantId,
+  ).first<Record<string, number>>();
+  const s = row || {};
+  // Pro-rate delivered vs the contracted run-rate for the same elapsed window so
+  // a 14-day telemetry sum isn't compared against a full annual contract volume.
+  const days = Number(s.delivered_days) || 0;
+  const contracted = Number(s.ppa_contracted_mwh_yr) || 0;
+  const delivered = Number(s.delivered_mwh) || 0;
+  const expectedToDate = days > 0 ? contracted * (days / 365) : 0;
+  s.delivered_pct = expectedToDate > 0 ? Math.round((delivered / expectedToDate) * 100) : 0;
+  s.carbon_tco2e = Math.round(delivered * 0.94); // SA grid emission factor ≈ 0.94 tCO2e/MWh
+  return s;
 }
 
 async function carbonStats(env: HonoEnv['Bindings'], participantId: string): Promise<Record<string, unknown>> {

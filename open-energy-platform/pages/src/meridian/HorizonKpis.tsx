@@ -45,7 +45,11 @@ const KPI_SPECS: Record<string, KpiTile[]> = {
   ],
   offtaker: [
     { stat: 'ppa_annual_zar', label: 'Annual PPA value', to: '/surface/offtaker:ppa_portfolio', unit: 'zar' },
-    { stat: 'delivered_pct', label: 'Delivered vs contracted %', to: '/surface/offtaker:metering', lowBad: true, warn: 95, crit: 90 },
+    // No warn/crit: delivered_pct is run-rate vs expected-to-date, so over a
+    // partial-month window a low % is a coverage artifact, not under-delivery
+    // (Goldrush reads 27% off 14 days). Tint only once backend gates variance on
+    // >=1 full billing month. ponytail: re-add lowBad thresholds when that lands.
+    { stat: 'delivered_pct', label: 'Delivered vs contracted %', to: '/surface/offtaker:metering' },
     { stat: 'delivered_mwh', label: 'Delivered MWh', to: '/surface/offtaker:metering' },
     { stat: 'carbon_tco2e', label: 'Carbon offset', to: '/surface/offtaker:reports', unit: 'tco2e' },
     { stat: 'ppa_contracted_mwh_yr', label: 'Contracted MWh/yr', to: '/surface/offtaker:ppa_portfolio' },

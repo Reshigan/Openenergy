@@ -47,6 +47,9 @@ export function assembleLedger(chain: ChainDescriptor, rows: Record<string, unkn
   const BREACHED = 'breached'; // bucketFor returns 'breached' for an overdue deadline
   const kpis = (chain.kpis ?? []).map(k => ({
     key: k.key, label: k.label,
+    // unit is derivable from compute: sum_quantum always sums quantum_zar (ZAR);
+    // count/count_breached are always bare integers. No per-chain edit needed.
+    unit: k.compute === 'sum_quantum' ? 'zar' : 'count',
     value: k.compute === 'count' ? mapped.length
       : k.compute === 'count_breached' ? mapped.filter(m => m.bucket === BREACHED).length
       : mapped.reduce((s, m) => s + (m.quantum_zar ?? 0), 0),
