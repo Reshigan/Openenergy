@@ -43,6 +43,7 @@ import { Hono } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { resolveNextStatus } from '../utils/chain-sla';
 import {
   deriveCbtTier,
   cbtSlaDeadlineFor,
@@ -268,7 +269,7 @@ app.post('/:id/action', async (c) => {
     return c.json({ success: false, error: `Action '${action}' requires admin, support or regulator` }, 403);
   }
 
-  const to = CBT_STATE_TRANSITIONS[action];
+  const to = resolveNextStatus(action, row.chain_status as CbtStatus, CBT_STATE_TRANSITIONS);
   const nowIso = new Date().toISOString();
   const tier = row.cbt_disbursement_tier;
 

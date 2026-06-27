@@ -15,6 +15,7 @@ import {
   FSCC_VALID_TRANSITIONS, FSCC_STATE_TRANSITIONS,
   fsccCrossesIntoRegulator, fsccSlaBreachCrossesIntoRegulator,
 } from '../utils/fsca-compliance-spec';
+import { resolveNextStatus } from '../utils/chain-sla';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -227,7 +228,7 @@ app.post('/:id/action', async (c) => {
     return c.json({ success: false, error: `Action '${action}' not valid from '${currentStatus}'` }, 422);
   }
 
-  const nextStatus = FSCC_STATE_TRANSITIONS[action];
+  const nextStatus = resolveNextStatus(action, currentStatus, FSCC_STATE_TRANSITIONS);
   const now = new Date().toISOString();
 
   // Check SLA breach inline
@@ -249,7 +250,7 @@ app.post('/:id/action', async (c) => {
       extraBinds.push(body.compliance_officer_id, body.compliance_officer_name ?? null);
     }
   }
-  if (action === 'co_sign' || action === 'submit_to_fsca') {
+  if (action === 'co_sign') {
     extraFields.push('submitted_at = ?');
     extraBinds.push(now);
     if (body.fsca_reference) { extraFields.push('fsca_reference = ?'); extraBinds.push(body.fsca_reference); }

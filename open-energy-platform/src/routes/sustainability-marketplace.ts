@@ -24,6 +24,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { resolveNextStatus } from '../utils/chain-sla';
 import {
   ListingStatus,
   ListingAction,
@@ -463,7 +464,7 @@ app.post('/listings/:id/action', authMiddleware, async (c) => {
     );
   }
 
-  const nextStatus = LISTING_STATE_TRANSITIONS[action];
+  const nextStatus = resolveNextStatus(action, currentStatus, LISTING_STATE_TRANSITIONS);
   const now        = new Date().toISOString();
 
   // Mark SLA breached if overdue

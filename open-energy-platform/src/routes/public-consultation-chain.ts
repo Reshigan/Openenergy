@@ -16,6 +16,7 @@ import {
   PC_VALID_TRANSITIONS, PC_STATE_TRANSITIONS,
   pcCrossesIntoRegulator, pcSlaBreachCrossesIntoRegulator,
 } from '../utils/public-consultation-spec';
+import { resolveNextStatus } from '../utils/chain-sla';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -211,7 +212,7 @@ app.post('/:id/action', async (c) => {
     return c.json({ success: false, error: `Action '${action}' not valid from '${currentStatus}'` }, 422);
   }
 
-  const nextStatus = PC_STATE_TRANSITIONS[action];
+  const nextStatus = resolveNextStatus(action, currentStatus, PC_STATE_TRANSITIONS);
   const now = new Date().toISOString();
 
   if (row.sla_deadline && row.sla_deadline < now && !row.sla_breached) {

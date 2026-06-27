@@ -16,6 +16,7 @@ import {
   DR_VALID_TRANSITIONS, DR_STATE_TRANSITIONS,
   drCrossesIntoRegulator, drSlaBreachCrossesIntoRegulator,
 } from '../utils/demand-response-spec';
+import { resolveNextStatus } from '../utils/chain-sla';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -205,7 +206,7 @@ app.post('/:id/action', async (c) => {
     return c.json({ success: false, error: `Action '${action}' not valid from '${currentStatus}'` }, 422);
   }
 
-  const nextStatus = DR_STATE_TRANSITIONS[action];
+  const nextStatus = resolveNextStatus(action, currentStatus, DR_STATE_TRANSITIONS);
   const now = new Date().toISOString();
 
   if (row.sla_deadline && row.sla_deadline < now && !row.sla_breached) {

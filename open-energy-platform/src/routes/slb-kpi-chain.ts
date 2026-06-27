@@ -9,6 +9,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { resolveNextStatus } from '../utils/chain-sla';
 import {
   SlbStatus, SlbAction, SlbTier,
   deriveSlbSla, SLB_HARD_TERMINALS,
@@ -198,10 +199,11 @@ app.post('/:id/action', async (c) => {
     return c.json({ success: false, error: `Action '${action}' not valid from '${currentStatus}'` }, 422);
   }
 
-  const nextStatus = SLB_STATE_TRANSITIONS[action];
+  // sla_breach holds position (flag event), never rewinds to the mapped state.
+  const nextStatus = resolveNextStatus(action, currentStatus, SLB_STATE_TRANSITIONS);
   const now = new Date().toISOString();
 
-  if (row.sla_deadline && row.sla_deadline < now && !row.sla_breached) {
+  if (!row.sla_breached && (action === 'sla_breach' || (row.sla_deadline && row.sla_deadline < now))) {
     await c.env.DB.prepare(`UPDATE oe_slb_kpi_ratchets SET sla_breached = 1, updated_at = ? WHERE id = ?`)
       .bind(now, id).run();
   }

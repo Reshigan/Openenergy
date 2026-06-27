@@ -150,10 +150,18 @@ r.get('/envelopes', async (c) => {
 });
 
 r.get('/envelopes/:id', async (c) => {
+  const user = getCurrentUser(c);
   const row = await c.env.DB.prepare(
     `SELECT * FROM oe_document_envelopes WHERE id = ?`
-  ).bind(c.req.param('id')).first();
+  ).bind(c.req.param('id')).first<any>();
   if (!row) return c.json({ success: false, error: 'not found' }, 404);
+  // Private to the raiser, its signatories, and admin — same gate as the list.
+  if (!isAdmin(user.role) && row.raised_by !== user.id) {
+    const parties = JSON.parse(String(row.signatories_json || '[]')) as Array<{ participant_id?: string }>;
+    if (!parties.some((p) => p.participant_id === user.id)) {
+      return c.json({ success: false, error: 'forbidden' }, 403);
+    }
+  }
   // Also pull signatures so far
   const sigs = await c.env.DB.prepare(
     `SELECT id, signer_id, signer_role, signed_at, signing_method

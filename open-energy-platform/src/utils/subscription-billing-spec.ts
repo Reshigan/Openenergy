@@ -61,8 +61,10 @@ export function deriveSlaWindowDays(tier: SubscriptionTier): number {
   return DAYS[tier];
 }
 
+// 'suspended' is a recoverable hold state (reactivate / write_off lead out of
+// it), NOT a terminal — listing it here dead-ends those transitions.
 export const INVOICE_HARD_TERMINALS = new Set<InvoiceStatus>([
-  'paid', 'suspended', 'cancelled', 'waived', 'written_off',
+  'paid', 'cancelled', 'waived', 'written_off',
 ]);
 
 export const INVOICE_VALID_TRANSITIONS: Record<InvoiceStatus, InvoiceAction[]> = {

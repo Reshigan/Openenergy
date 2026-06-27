@@ -14,7 +14,6 @@ export type BundleStatus =
 
 export type BundleAction =
   | 'submit_for_validation'
-  | 'validate'
   | 'issue_certificate'
   | 'apply_to_disclosure'
   | 'retire'
@@ -52,7 +51,6 @@ export const BUNDLE_VALID_TRANSITIONS: Record<BundleStatus, BundleAction[]> = {
 
 export const BUNDLE_STATE_TRANSITIONS: Record<BundleAction, BundleStatus> = {
   submit_for_validation: 'validated',
-  validate:              'validated',
   issue_certificate:     'issued',
   apply_to_disclosure:   'applied',
   retire:                'retired',

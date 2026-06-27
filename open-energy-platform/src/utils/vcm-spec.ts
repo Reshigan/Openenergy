@@ -16,14 +16,12 @@ export type VcmProjectStatus =
   | 'monitoring'
   | 'verification_submitted'
   | 'credits_issued'
-  | 'active'
   | 'cancelled';
 
 export type VcmProjectAction =
   | 'start_pdd'
   | 'generate_ai_sections'
   | 'complete_pdd'
-  | 'open_stakeholder_consultation'
   | 'submit_preliminary_review'
   | 'submit_to_vvb'
   | 'complete_validation'
@@ -32,7 +30,6 @@ export type VcmProjectAction =
   | 'open_monitoring_period'
   | 'submit_monitoring_report'
   | 'complete_verification'
-  | 'issue_credits'
   | 'cancel'
   | 'sla_breach';
 
@@ -67,7 +64,6 @@ export const VCM_VALID_TRANSITIONS: Record<VcmProjectStatus, VcmProjectAction[]>
   monitoring:               ['submit_monitoring_report', 'cancel', 'sla_breach'],
   verification_submitted:   ['complete_verification', 'cancel', 'sla_breach'],
   credits_issued:           [],
-  active:                   ['open_monitoring_period', 'sla_breach'],
   cancelled:                [],
 };
 
@@ -75,7 +71,6 @@ export const VCM_STATE_TRANSITIONS: Record<VcmProjectAction, VcmProjectStatus> =
   start_pdd:                    'pdd_draft',
   generate_ai_sections:         'pdd_ai_generated',
   complete_pdd:                 'stakeholder_consultation',
-  open_stakeholder_consultation:'stakeholder_consultation',
   submit_preliminary_review:    'preliminary_review',
   submit_to_vvb:                'validation_submitted',
   complete_validation:          'validation_complete',
@@ -84,7 +79,6 @@ export const VCM_STATE_TRANSITIONS: Record<VcmProjectAction, VcmProjectStatus> =
   open_monitoring_period:       'monitoring',
   submit_monitoring_report:     'verification_submitted',
   complete_verification:        'credits_issued',
-  issue_credits:                'active',
   cancel:                       'cancelled',
   sla_breach:                   'cancelled',
 };
@@ -94,7 +88,7 @@ export function vcmCrossesIntoRegulator(
   tier: VcmTier,
 ): boolean {
   if (action === 'cancel') return true;
-  if (action === 'register_project' || action === 'issue_credits') {
+  if (action === 'register_project') {
     return tier === 'large' || tier === 'mega';
   }
   if (action === 'complete_verification') return tier === 'mega';

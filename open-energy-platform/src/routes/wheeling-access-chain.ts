@@ -9,6 +9,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { resolveNextStatus } from '../utils/chain-sla';
 import {
   WheelStatus, WheelAction, WheelTier,
   deriveWheelSla, WHEEL_HARD_TERMINALS,
@@ -200,7 +201,7 @@ app.post('/:id/action', async (c) => {
     return c.json({ success: false, error: `Action '${action}' not valid from '${currentStatus}'` }, 422);
   }
 
-  const nextStatus = WHEEL_STATE_TRANSITIONS[action];
+  const nextStatus = resolveNextStatus(action, currentStatus, WHEEL_STATE_TRANSITIONS);
   const now = new Date().toISOString();
 
   if (row.sla_deadline && (row.sla_deadline as string) < now && !row.sla_breached) {

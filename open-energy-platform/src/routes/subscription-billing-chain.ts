@@ -34,6 +34,7 @@ import { Hono } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { resolveNextStatus } from '../utils/chain-sla';
 import {
   computeInvoiceAmounts,
   slaDeadlineFor,
@@ -255,7 +256,9 @@ app.post('/:id/action', async (c) => {
     return c.json({ success: false, error: `Action '${action}' requires admin or support` }, 403);
   }
 
-  const to = INVOICE_STATE_TRANSITIONS[action];
+  // sla_breach is an escalation marker — it holds position and raises the flag,
+  // never rewinds (real dunning runs through send_dunning_1/2 in the cron sweep).
+  const to = resolveNextStatus(action, row.chain_status, INVOICE_STATE_TRANSITIONS);
   const nowIso = new Date().toISOString();
 
   const overrides: Partial<InvoiceRow> = {};
@@ -282,6 +285,7 @@ app.post('/:id/action', async (c) => {
   const setClauses: string[] = ['chain_status = ?', 'updated_at = ?', 'actor_id = ?'];
   const setParams: (string | number | null)[] = [to, nowIso, user.id];
 
+  if (action === 'sla_breach' && !row.sla_breached) { setClauses.push('sla_breached = ?'); setParams.push(1); }
   if (newSla !== row.sla_deadline) { setClauses.push('sla_deadline = ?'); setParams.push(newSla); }
   if (dunning !== row.dunning_notices_sent) { setClauses.push('dunning_notices_sent = ?'); setParams.push(dunning); }
   if (body.reason) { setClauses.push('reason = ?'); setParams.push(body.reason); }

@@ -9,6 +9,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { resolveNextStatus } from '../utils/chain-sla';
 import { badEnum } from '../utils/validation';
 import {
   VcmProjectStatus, VcmProjectAction, VcmTier,
@@ -76,9 +77,9 @@ app.get('/', async (c) => {
   const all = rows.results ?? [];
   const kpis = {
     total: all.length,
-    in_progress: all.filter(r => !['credits_issued', 'cancelled', 'active'].includes(r.chain_status as string)).length,
-    registered: all.filter(r => r.chain_status === 'registration' || r.chain_status === 'implementation' || r.chain_status === 'monitoring' || r.chain_status === 'active').length,
-    credits_issued: all.filter(r => r.chain_status === 'credits_issued' || r.chain_status === 'active').length,
+    in_progress: all.filter(r => !['credits_issued', 'cancelled'].includes(r.chain_status as string)).length,
+    registered: all.filter(r => r.chain_status === 'registration' || r.chain_status === 'implementation' || r.chain_status === 'monitoring').length,
+    credits_issued: all.filter(r => r.chain_status === 'credits_issued').length,
     sla_breached: all.filter(r => r.sla_breached).length,
   };
 
@@ -248,7 +249,7 @@ app.post('/:id/action', async (c) => {
     return c.json({ success: false, error: `Action '${action}' not valid from '${currentStatus}'` }, 422);
   }
 
-  const nextStatus = VCM_STATE_TRANSITIONS[action];
+  const nextStatus = resolveNextStatus(action, currentStatus, VCM_STATE_TRANSITIONS);
   const now = new Date().toISOString();
 
   if (row.sla_deadline && (row.sla_deadline as string) < now && !row.sla_breached) {

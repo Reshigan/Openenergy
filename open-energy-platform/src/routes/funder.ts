@@ -83,6 +83,23 @@ function scopeLenderWhere(user: { id: string; role?: string }, alias = 'lf') {
   return { where: `${alias}.lender_participant_id = ?`, params: [user.id] };
 }
 
+// A facility's analytics (cashflow, sensitivity, covenant triage) are private
+// to its lender, borrower (+ admin/regulator). The detail handler enforced
+// this; the AI-backed analytics handlers did not — leaking another tenant's
+// facility into the model prompt and response. Returns true when the caller is
+// NOT permitted (so the route can bail before any AI call).
+function facilityForbidden(
+  user: { id: string; role?: string },
+  facility: { lender_participant_id?: unknown; borrower_participant_id?: unknown },
+): boolean {
+  return (
+    user.role !== 'admin' &&
+    user.role !== 'regulator' &&
+    facility.lender_participant_id !== user.id &&
+    facility.borrower_participant_id !== user.id
+  );
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // GET /facilities — portfolio overview with outstanding + risk tagging
 // ──────────────────────────────────────────────────────────────────────────
@@ -576,6 +593,7 @@ funder.post('/facilities/:id/cashflow', async (c) => {
     WHERE lf.id = ?
   `).bind(id).first();
   if (!facility) return c.json({ success: false, error: 'Facility not found' }, 404);
+  if (facilityForbidden(user, facility)) return c.json({ success: false, error: 'forbidden' }, 403);
 
   const result = await ask(c.env, {
     intent: 'lender.cashflow_forecast',
@@ -600,6 +618,7 @@ funder.post('/facilities/:id/sensitivity', async (c) => {
   };
   const facility = await c.env.DB.prepare(`SELECT * FROM loan_facilities WHERE id = ?`).bind(id).first();
   if (!facility) return c.json({ success: false, error: 'Facility not found' }, 404);
+  if (facilityForbidden(user, facility)) return c.json({ success: false, error: 'forbidden' }, 403);
 
   const vars = body.variables && body.variables.length > 0 ? body.variables : ['tariff', 'capex', 'availability', 'rates'];
   const deltas = body.deltas && body.deltas.length > 0 ? body.deltas : [-15, -5, 5, 15];
@@ -641,6 +660,7 @@ funder.post('/covenants/:id/check', async (c) => {
   const id = c.req.param('id');
   const covenant = await c.env.DB.prepare(`
     SELECT lc.*, lf.facility_name, lf.committed_amount, lf.drawn_amount, lf.dscr_covenant,
+           lf.lender_participant_id, lf.borrower_participant_id,
            p.project_name, p.technology
     FROM loan_covenants lc
     JOIN loan_facilities lf ON lf.id = lc.facility_id
@@ -648,6 +668,7 @@ funder.post('/covenants/:id/check', async (c) => {
     WHERE lc.id = ?
   `).bind(id).first();
   if (!covenant) return c.json({ success: false, error: 'Covenant not found' }, 404);
+  if (facilityForbidden(user, covenant)) return c.json({ success: false, error: 'forbidden' }, 403);
 
   const result = await ask(c.env, {
     intent: 'lender.covenant_check',

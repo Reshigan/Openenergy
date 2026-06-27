@@ -10,23 +10,20 @@ export type GbrStatus =
   | 'external_review'
   | 'board_approval'
   | 'submitted_jse'
-  | 'under_review'
   | 'queries_raised'
   | 'queries_responded'
-  | 'approved'         // terminal +
+  | 'approved'         // JSE-cleared, awaiting publication (intermediate)
   | 'published'        // terminal + (publicly disclosed)
   | 'deficiency_noted' // JSE flag
   | 'remediation'
   | 'rejected';        // terminal — JSE rejects report
 
 export type GbrAction =
-  | 'open_period'
   | 'start_data_gathering'
   | 'complete_impact_calc'
   | 'submit_for_external_review'
   | 'complete_external_review'
   | 'board_approve'
-  | 'submit_to_jse'
   | 'jse_raises_queries'
   | 'respond_to_queries'
   | 'jse_approve'
@@ -47,8 +44,10 @@ export function deriveGbrSla(_bondClass: BondClass, issuanceSizeZar: number): nu
   return 30;
 }
 
+// 'approved' is JSE-cleared but not yet disclosed — `publish` leads out of it,
+// so it is NOT terminal. Listing it here dead-ended publish→published.
 export const GBR_HARD_TERMINALS = new Set<GbrStatus>([
-  'approved', 'published', 'rejected',
+  'published', 'rejected',
 ]);
 
 export const GBR_VALID_TRANSITIONS: Record<GbrStatus, GbrAction[]> = {
@@ -57,8 +56,7 @@ export const GBR_VALID_TRANSITIONS: Record<GbrStatus, GbrAction[]> = {
   impact_calculation: ['submit_for_external_review', 'sla_breach'],
   external_review:  ['complete_external_review', 'sla_breach'],
   board_approval:   ['board_approve', 'sla_breach'],
-  submitted_jse:    ['jse_raises_queries', 'jse_approve', 'note_deficiency', 'sla_breach'],
-  under_review:     ['jse_raises_queries', 'jse_approve', 'note_deficiency', 'reject', 'sla_breach'],
+  submitted_jse:    ['jse_raises_queries', 'jse_approve', 'note_deficiency', 'reject', 'sla_breach'],
   queries_raised:   ['respond_to_queries', 'sla_breach'],
   queries_responded: ['jse_approve', 'note_deficiency', 'reject', 'sla_breach'],
   deficiency_noted: ['start_remediation', 'reject', 'sla_breach'],
@@ -69,13 +67,11 @@ export const GBR_VALID_TRANSITIONS: Record<GbrStatus, GbrAction[]> = {
 };
 
 export const GBR_STATE_TRANSITIONS: Record<GbrAction, GbrStatus> = {
-  open_period:               'data_gathering',
   start_data_gathering:      'data_gathering',
   complete_impact_calc:      'impact_calculation',
   submit_for_external_review: 'external_review',
   complete_external_review:  'board_approval',
   board_approve:             'submitted_jse',
-  submit_to_jse:             'under_review',
   jse_raises_queries:        'queries_raised',
   respond_to_queries:        'queries_responded',
   jse_approve:               'approved',

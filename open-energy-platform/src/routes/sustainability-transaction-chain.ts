@@ -16,6 +16,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { resolveNextStatus } from '../utils/chain-sla';
 import {
   TransactionStatus,
   TransactionAction,
@@ -342,7 +343,7 @@ app.post('/:id/action', async (c) => {
     return c.json({ success: false, error: `Action '${action}' not valid from '${currentStatus}'` }, 422);
   }
 
-  const nextStatus = TRANSACTION_STATE_TRANSITIONS[action];
+  const nextStatus = resolveNextStatus(action, currentStatus, TRANSACTION_STATE_TRANSITIONS);
   const now = new Date().toISOString();
 
   // ── Late SLA flag ─────────────────────────────────────────────────────────

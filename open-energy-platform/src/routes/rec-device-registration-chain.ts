@@ -15,6 +15,7 @@ import {
   REC_DEVICE_VALID_TRANSITIONS, REC_DEVICE_STATE_TRANSITIONS,
   recDeviceCrossesIntoRegulator, recDeviceSlaBreachCrossesIntoRegulator,
 } from '../utils/rec-spec';
+import { resolveNextStatus } from '../utils/chain-sla';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -271,7 +272,7 @@ app.post('/:id/action', async (c) => {
     return c.json({ success: false, error: `Action '${action}' not valid from '${currentStatus}'` }, 422);
   }
 
-  const nextStatus = REC_DEVICE_STATE_TRANSITIONS[action];
+  const nextStatus = resolveNextStatus(action, currentStatus, REC_DEVICE_STATE_TRANSITIONS);
   const now = new Date().toISOString();
 
   if (row.sla_deadline && (row.sla_deadline as string) < now && !row.sla_breached) {

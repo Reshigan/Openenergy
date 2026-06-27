@@ -2,7 +2,7 @@
 // Invoice lifecycle (draft → issued → paid / disputed) lives on /api/invoices.
 // This module covers the downstream: recording bank payments against invoices,
 // resolving disputes, and producing reconciliation summaries.
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
@@ -13,6 +13,29 @@ import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
 
 const settlement = new Hono<HonoEnv>();
 settlement.use('*', authMiddleware);
+
+// Invoice child rows (breaks, confirmations, fees) are private to the two
+// counterparties (+ admin). The POST handlers enforced this; the read
+// handlers did not — a cross-tenant leak. Returns a 403/404 Response to bail
+// with, or null when the caller is a party and the read may proceed.
+async function assertInvoiceParty(
+  c: Context<HonoEnv>,
+  invoiceId: string,
+): Promise<Response | null> {
+  const user = getCurrentUser(c);
+  const inv = await c.env.DB.prepare(
+    `SELECT from_participant_id, to_participant_id FROM invoices WHERE id = ?`,
+  )
+    .bind(invoiceId)
+    .first<{ from_participant_id: string; to_participant_id: string }>();
+  if (!inv) return c.json({ success: false, error: 'Invoice not found' }, 404);
+  const involved =
+    user.id === inv.from_participant_id ||
+    user.id === inv.to_participant_id ||
+    user.role === 'admin';
+  if (!involved) return c.json({ success: false, error: 'Forbidden' }, 403);
+  return null;
+}
 
 type InvoiceRow = {
   id: string;
@@ -557,6 +580,8 @@ settlement.post('/invoices/:id/breaks', async (c) => {
 // GET /settlement/invoices/:id/breaks — list breaks for an invoice.
 settlement.get('/invoices/:id/breaks', async (c) => {
   const invoiceId = c.req.param('id');
+  const gate = await assertInvoiceParty(c, invoiceId);
+  if (gate) return gate;
   const rows = await c.env.DB.prepare(
     `SELECT id, break_type, severity, status, reported_by, reported_at, reason,
             expected_value, actual_value, resolution_outcome, resolution_notes,
@@ -714,6 +739,8 @@ settlement.post('/invoices/:id/confirm', async (c) => {
 // GET /settlement/invoices/:id/confirmations
 settlement.get('/invoices/:id/confirmations', async (c) => {
   const invoiceId = c.req.param('id');
+  const gate = await assertInvoiceParty(c, invoiceId);
+  if (gate) return gate;
   const rows = await c.env.DB.prepare(
     `SELECT party, confirmed_by, confirmed_at, status, notes
        FROM invoice_confirmations WHERE invoice_id = ?
@@ -771,6 +798,8 @@ settlement.post('/invoices/:id/fees/recompute', async (c) => {
 // GET /settlement/invoices/:id/fees
 settlement.get('/invoices/:id/fees', async (c) => {
   const invoiceId = c.req.param('id');
+  const gate = await assertInvoiceParty(c, invoiceId);
+  if (gate) return gate;
   const rows = await c.env.DB.prepare(
     `SELECT id, fee_type, basis, amount_zar, reason, calc_rule_version, applied_after, calculated_at
        FROM settlement_fees WHERE invoice_id = ? ORDER BY calculated_at DESC`,

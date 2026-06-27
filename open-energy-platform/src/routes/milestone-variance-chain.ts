@@ -15,6 +15,7 @@ import {
   MVS_VALID_TRANSITIONS, MVS_STATE_TRANSITIONS,
   mvsCrossesIntoRegulator, mvsSlaBreachCrossesIntoRegulator,
 } from '../utils/milestone-variance-spec';
+import { resolveNextStatus } from '../utils/chain-sla';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -206,7 +207,7 @@ app.post('/:id/action', async (c) => {
     return c.json({ success: false, error: `Action '${action}' not valid from '${currentStatus}'` }, 422);
   }
 
-  const nextStatus = MVS_STATE_TRANSITIONS[action];
+  const nextStatus = resolveNextStatus(action, currentStatus, MVS_STATE_TRANSITIONS);
   const now = new Date().toISOString();
 
   if (row.sla_deadline && row.sla_deadline < now && !row.sla_breached) {

@@ -51,10 +51,12 @@ export const SLB_HARD_TERMINALS = new Set<SlbStatus>([
 ]);
 
 export const SLB_VALID_TRANSITIONS: Record<SlbStatus, SlbAction[]> = {
-  kpi_pending:         ['start_measurement', 'sla_breach'],
-  kpi_measurement:     ['submit_kpi_data', 'record_kpi_miss', 'sla_breach'],
-  kpi_verification:    ['request_verification', 'certify_kpi', 'record_kpi_miss', 'sla_breach'],
-  kpi_certified:       ['calculate_ratchet', 'sla_breach'],
+  // `withdraw` allowed only before ratchet quantum is in play (pre-negotiation
+  // stages); once a ratchet is being calculated/negotiated it is committed.
+  kpi_pending:         ['start_measurement', 'withdraw', 'sla_breach'],
+  kpi_measurement:     ['submit_kpi_data', 'record_kpi_miss', 'withdraw', 'sla_breach'],
+  kpi_verification:    ['request_verification', 'certify_kpi', 'record_kpi_miss', 'withdraw', 'sla_breach'],
+  kpi_certified:       ['calculate_ratchet', 'withdraw', 'sla_breach'],
   ratchet_calculation: ['agree_ratchet', 'raise_dispute', 'sla_breach'],
   ratchet_agreed:      ['apply_ratchet', 'waive_ratchet', 'sla_breach'],
   ratchet_disputed:    ['refer_to_arbitration', 'agree_ratchet', 'sla_breach'],

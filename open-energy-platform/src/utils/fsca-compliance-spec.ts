@@ -10,7 +10,6 @@ export type FsccStatus =
   | 'internal_review'
   | 'co_sign_off'
   | 'submitted'
-  | 'under_review'
   | 'queries_received'
   | 'queries_responded'
   | 'filed'          // terminal + (clean outcome)
@@ -21,12 +20,10 @@ export type FsccStatus =
 
 export type FsccAction =
   | 'open_period'
-  | 'start_data_gathering'
   | 'start_drafting'
   | 'submit_for_internal_review'
   | 'request_co_sign_off'
   | 'co_sign'
-  | 'submit_to_fsca'
   | 'fsca_raises_queries'
   | 'respond_to_queries'
   | 'file_clean'
@@ -60,8 +57,7 @@ export const FSCC_VALID_TRANSITIONS: Record<FsccStatus, FsccAction[]> = {
   drafting:          ['submit_for_internal_review', 'sla_breach'],
   internal_review:   ['request_co_sign_off', 'flag_deficiency', 'sla_breach'],
   co_sign_off:       ['co_sign', 'flag_deficiency', 'sla_breach'],
-  submitted:         ['fsca_raises_queries', 'file_clean', 'sla_breach'],
-  under_review:      ['fsca_raises_queries', 'file_clean', 'flag_revocation_risk', 'sla_breach'],
+  submitted:         ['fsca_raises_queries', 'file_clean', 'flag_revocation_risk', 'sla_breach'],
   queries_received:  ['respond_to_queries', 'sla_breach'],
   queries_responded: ['file_clean', 'flag_revocation_risk', 'sla_breach'],
   deficiency_found:  ['start_remediation', 'sla_breach'],
@@ -73,12 +69,10 @@ export const FSCC_VALID_TRANSITIONS: Record<FsccStatus, FsccAction[]> = {
 
 export const FSCC_STATE_TRANSITIONS: Record<FsccAction, FsccStatus> = {
   open_period:             'data_gathering',
-  start_data_gathering:    'data_gathering',
   start_drafting:          'drafting',
   submit_for_internal_review: 'internal_review',
   request_co_sign_off:     'co_sign_off',
   co_sign:                 'submitted',
-  submit_to_fsca:          'under_review',
   fsca_raises_queries:     'queries_received',
   respond_to_queries:      'queries_responded',
   file_clean:              'filed',

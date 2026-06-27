@@ -10,7 +10,6 @@ export type CapStatus =
   | 'icaap_review'
   | 'board_review'
   | 'submitted_sarb'
-  | 'under_review'
   | 'queries_raised'
   | 'queries_responded'
   | 'accepted'         // terminal +
@@ -22,7 +21,6 @@ export type CapStatus =
 export type CapAction =
   | 'start_rwa_calc'
   | 'complete_rwa_calc'
-  | 'aggregate_capital'
   | 'complete_icaap'
   | 'board_approve'
   | 'submit_to_sarb'
@@ -54,13 +52,13 @@ export const CAP_HARD_TERMINALS = new Set<CapStatus>([
 ]);
 
 export const CAP_VALID_TRANSITIONS: Record<CapStatus, CapAction[]> = {
-  data_gathering:      ['start_rwa_calc', 'sla_breach'],
-  rwa_calculation:     ['complete_rwa_calc', 'sla_breach'],
-  capital_aggregation: ['complete_icaap', 'declare_capital_breach', 'sla_breach'],
-  icaap_review:        ['board_approve', 'declare_capital_breach', 'sla_breach'],
-  board_review:        ['submit_to_sarb', 'declare_capital_breach', 'sla_breach'],
-  submitted_sarb:      ['sarb_raises_queries', 'sarb_accept', 'sla_breach'],
-  under_review:        ['sarb_raises_queries', 'sarb_accept', 'flag_remediation', 'sla_breach'],
+  // `withdraw` allowed only before SARB submission; once filed it is committed.
+  data_gathering:      ['start_rwa_calc', 'withdraw', 'sla_breach'],
+  rwa_calculation:     ['complete_rwa_calc', 'withdraw', 'sla_breach'],
+  capital_aggregation: ['complete_icaap', 'declare_capital_breach', 'withdraw', 'sla_breach'],
+  icaap_review:        ['board_approve', 'declare_capital_breach', 'withdraw', 'sla_breach'],
+  board_review:        ['submit_to_sarb', 'declare_capital_breach', 'withdraw', 'sla_breach'],
+  submitted_sarb:      ['sarb_raises_queries', 'sarb_accept', 'flag_remediation', 'sla_breach'],
   queries_raised:      ['respond_to_queries', 'sla_breach'],
   queries_responded:   ['sarb_accept', 'flag_remediation', 'sla_breach'],
   remediation_required: ['start_remediation', 'sla_breach'],
@@ -73,7 +71,6 @@ export const CAP_VALID_TRANSITIONS: Record<CapStatus, CapAction[]> = {
 export const CAP_STATE_TRANSITIONS: Record<CapAction, CapStatus> = {
   start_rwa_calc:          'rwa_calculation',
   complete_rwa_calc:       'capital_aggregation',
-  aggregate_capital:       'capital_aggregation',
   complete_icaap:          'icaap_review',
   board_approve:           'board_review',
   submit_to_sarb:          'submitted_sarb',

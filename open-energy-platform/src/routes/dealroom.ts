@@ -2,13 +2,32 @@
 // Deal Room — Negotiation, Proposals, Terms Editing, and Diff Tracking
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 
 const dealroom = new Hono<HonoEnv>();
 dealroom.use('*', authMiddleware);
+
+// A deal room is private to its two counterparties (+ admin). Every read and
+// write below must gate on this — loading a contract by id alone is a
+// cross-tenant leak (the GET handler enforced it; the mutating handlers did not).
+async function loadAccessibleContract(
+  c: Context<HonoEnv>,
+  contractId: string,
+): Promise<{ contract: Record<string, unknown> } | { error: Response }> {
+  const participant = getCurrentUser(c);
+  const contract = await c.env.DB.prepare('SELECT * FROM contract_documents WHERE id = ?')
+    .bind(contractId).first<Record<string, unknown>>();
+  if (!contract) {
+    return { error: c.json({ success: false, error: 'Contract not found' }, 404) };
+  }
+  if (participant.role !== 'admin' && contract.creator_id !== participant.id && contract.counterparty_id !== participant.id) {
+    return { error: c.json({ success: false, error: 'Access denied' }, 403) };
+  }
+  return { contract };
+}
 
 // GET /dealroom/:contractId — Get deal room for contract
 dealroom.get('/:contractId', async (c) => {
@@ -68,12 +87,10 @@ dealroom.post('/:contractId/propose', async (c) => {
   if (!terms) {
     return c.json({ success: false, error: 'Terms required' }, 400);
   }
-  
-  const contract = await c.env.DB.prepare('SELECT * FROM contract_documents WHERE id = ?').bind(contractId).first();
-  if (!contract) {
-    return c.json({ success: false, error: 'Contract not found' }, 404);
-  }
-  
+
+  const access = await loadAccessibleContract(c, contractId);
+  if ('error' in access) return access.error;
+
   const proposalId = 'prop_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
   
   await c.env.DB.prepare(`
@@ -97,6 +114,9 @@ dealroom.post('/:contractId/propose', async (c) => {
 dealroom.post('/:contractId/accept', async (c) => {
   const participant = getCurrentUser(c);
   const contractId = c.req.param('contractId');
+
+  const access = await loadAccessibleContract(c, contractId);
+  if ('error' in access) return access.error;
 
   const latestProposal = await c.env.DB.prepare(`
     SELECT * FROM deal_proposals WHERE contract_id = ? ORDER BY created_at DESC LIMIT 1
@@ -139,7 +159,10 @@ dealroom.post('/:contractId/message', async (c) => {
   if (!content) {
     return c.json({ success: false, error: 'Message content required' }, 400);
   }
-  
+
+  const access = await loadAccessibleContract(c, contractId);
+  if ('error' in access) return access.error;
+
   const messageId = 'msg_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
   
   await c.env.DB.prepare(`
@@ -160,6 +183,13 @@ dealroom.get('/:contractId/diff', async (c) => {
 
   if (!proposal1 || !proposal2) {
     return c.json({ success: false, error: 'Proposals not found' }, 404);
+  }
+
+  // Both proposals must belong to a deal room the caller is party to.
+  const access = await loadAccessibleContract(c, String(proposal1.contract_id));
+  if ('error' in access) return access.error;
+  if (proposal2.contract_id !== proposal1.contract_id) {
+    return c.json({ success: false, error: 'Proposals span different contracts' }, 400);
   }
 
   // Simple diff - in production would use proper diff algorithm

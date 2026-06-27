@@ -42,6 +42,7 @@ import { Hono } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { resolveNextStatus } from '../utils/chain-sla';
 import {
   computeDifferential,
   deriveSettlementTier,
@@ -271,7 +272,7 @@ app.post('/:id/action', async (c) => {
     return c.json({ success: false, error: 'reference_price_zar_per_mwh required to publish the reference index' }, 400);
   }
 
-  const to = SETTLEMENT_STATE_TRANSITIONS[action];
+  const to = resolveNextStatus(action, row.chain_status as SettlementStatus, SETTLEMENT_STATE_TRANSITIONS);
   const nowIso = new Date().toISOString();
 
   // Compute the differential when the reference price is published — this is

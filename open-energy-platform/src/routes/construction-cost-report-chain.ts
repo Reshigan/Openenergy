@@ -21,6 +21,7 @@ import {
   type CcrAction,
   type BudgetTier,
 } from '../utils/construction-cost-report-spec';
+import { resolveNextStatus } from '../utils/chain-sla';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -237,7 +238,7 @@ app.post('/:id/action', async (c) => {
   if (CCR_LENDER_ONLY_ACTIONS.has(action) && !ADMIN_LENDER_ROLES.has(user.role))
     return c.json({ error: `Action ${action} requires lender role` }, 403);
 
-  const nextStatus = CCR_STATE_TRANSITIONS[action];
+  const nextStatus = resolveNextStatus(action, row.chain_status as CcrStatus, CCR_STATE_TRANSITIONS);
   const now = new Date().toISOString();
 
   const tier = row.budget_tier;
