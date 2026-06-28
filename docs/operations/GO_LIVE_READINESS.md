@@ -1,8 +1,10 @@
 # Go-Live Readiness Assessment
 
-> **Current verdict (2026-06-17): NO-GO for national/hard launch. CONDITIONAL-GO for a tightly-scoped soft-launch** (internal users, regulator demos, 1–2 pilot tenants, capped data, no settlement-of-record money movement). The remaining gates are now **operational/external** (load proof, independent pen-test, key rotation, DR drill, human sign-off) — **not missing application controls**, which a 2026-06-17 code audit found present (see the security correction below).
+> **Current verdict (2026-06-28): cec.vantax.co.za (production) is LIVE with the new build + fee billing ON; oe.vantax.co.za (demo) kept in sync. CONDITIONAL-GO for soft-launch remains — the open gates are operational/external (load proof, independent pen-test, key rotation, DR drill, human sign-off), NOT missing application controls.**
 >
-> Assessed against `https://oe.vantax.co.za` — `GET /api/health` → `200 {"status":"healthy"}` verified.
+> **2026-06-28 go-live pass.** Both envs deployed from the same commit (cec Worker v`33363557`, oe Worker v`77c59aa1`); both `GET /api/health` → `200 healthy`. Migrations 520–523 applied to BOTH D1s (cec-energy-db + open-energy-db): audit-chain preimage hardening + R2 anchor ledger (520), go-live fee rate card — 7 billing rows enabled (521), marketplace 1.5% take-rate + RFQ/auction 25 bps — 3 rows (522), monthly SaaS subscription fee row (523). **oe_fee_schedule now has 10 enabled billing rows on cec** (was 0 — fee-engine previously billed nothing on prod). Marketplace take-rate was decorative (fee trigger_event matched no real cascade); now bills on `transaction_complete_settlement`. Full vitest 8612/8612 green; backend + SPA tsc clean. Tenant data untouched — cec's 15 real participants preserved; only schema DDL + fee config seeds applied.
+>
+> Assessed against `https://oe.vantax.co.za` (demo) and `https://cec.vantax.co.za` (prod) — both `GET /api/health` → `200 {"status":"healthy"}` verified 2026-06-28.
 >
 > **2026-06-17 security correction.** An earlier draft listed "no CSRF, no admin 2FA, per-IP-only login limit" as open blockers. A code audit (file:line evidence below) found these controls **already present**: per-account login lockout, refresh-endpoint rate-limiting, admin/regulator MFA-required policies + a step-up gate, and a Bearer-token (non-cookie-credential) auth model. The step-up gate had a `grace=0` footgun that bricked high-risk ops; **repaired in PR #66 (`HIGH_RISK_GRACE_SECONDS=120`)**. Genuinely-still-open security items are narrower: independent pen-test, exposed Cloudflare Global API key rotation, `JWT_SECRET` rotation, at-rest PII encryption.
 >
@@ -14,9 +16,9 @@
 
 | Dimension | 2026-05-10 baseline | Current |
 |---|---|---|
-| Migrations | 37 | **508** (highest `508_add_carbon_chain_tier_columns.sql`) |
+| Migrations | 37 | **523** (highest `523_subscription_fee.sql`) |
 | Route modules | 51 | **347** (360 `app.route` mounts) |
-| Unit tests | 474 | **8227** green (246 files, 0 fail — reproduced 2026-06-18) |
+| Unit tests | 474 | **8612** green (289 files, 0 fail — reproduced 2026-06-28) |
 | State-machine chains | suites only | **Waves 1–76** L4/L5 (settlement atomic DvP, grid dispatch/curtailment/capacity, regulator SLA escalation, carbon Article 6, ITIL) |
 
 ### What is genuinely strong (not vaporware)
@@ -29,7 +31,7 @@
 1. ~~PR #65 unmerged~~ **RESOLVED** — PR #65 (journey work) **and** PR #66 (step-up security repair) both merged to `main`; `deploy.yml` shipped them. `GET /api/health` → healthy confirmed post-deploy. What prod serves now matches `main`.
 2. **No load proof at SA grid peak** — k6 scenarios exist but zero recorded P95/P99. Single Worker (~50 req/s ceiling) + single D1.
 3. **No independent pen-test** (still open) — the external engagement has not run. **Correction to an earlier draft:** the application controls it listed as missing are in fact present — admin/regulator MFA-required (`oe_mfa_policies`, `migrations/061_depth.sql`) + step-up gate (repaired, PR #66); per-account login lockout (5 fails/15min → 15min, `auth.ts:95-103`, `auth-tokens.ts:209-226`) on top of per-IP 10/5min; refresh endpoint rate-limited; CSRF mitigated by architecture (Bearer-token auth from memory, not an ambient cookie credential — `api.ts`, `auth.ts:223-227`; httpOnly cookie is fallback only, so confirm `SameSite` on it to fully close cookie-only cross-origin POST). **Genuinely open security items:** exposed Cloudflare Global API key **must be rotated**; `JWT_SECRET` rotation; at-rest PII encryption; the independent pen-test itself.
-4. **Prod schema not reproducible from migrations** (019–048 force-applied out-of-band); no DR restore drill proving the band replays.
+4. **Prod schema not reproducible from migrations** (019–048 force-applied out-of-band on the demo DB; cec-energy-db is worse — `d1_migrations` ledger holds only 001–011, 012–523 force-applied out-of-band). 520–523 were applied to both DBs on 2026-06-28 via `wrangler d1 execute --file` (idempotent DDL + ON CONFLICT seeds). No DR restore drill proving the irregular band replays from scratch.
 5. **Single-region D1 10GB ceiling**; national metering shards NOT bound (`METERING_DB_CURRENT` / `esums-telemetry` commented out in `wrangler.toml`).
 6. **E2E not verifiably run on the current build** (live-run half still open). **Netting-race correctness now CLOSED in code** — the `/settlement/cycles/:id/net` handler wraps its read-check-write in `withLock(settlement:netting:<id>, …, {ttlSeconds:30})` (`settlement-deep.ts`), so a concurrent second netting on the same cycle gets a `409 netting already in progress` instead of double-inserting legs. Guard is unit-proven red-green: `settlement-correctness.test.ts` pre-holds the lock as a different holder, asserts the 409 + zero leg writes + cycle still `open`, releases, then asserts the 200 happy path — the test goes RED if the `withLock` wrapper is removed. The remaining open piece is a *live* E2E PASS against the deployed build (harness serialises D1, so the lock branch is proven by direct lock-hold, not by in-process interleaving).
 7. (P2) **No compliance/exec/CISO sign-off**; POPIA data-residency unsubstantiated (D1 region is Cloudflare-controlled, not pinned to a ZA region).
