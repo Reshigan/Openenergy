@@ -37,12 +37,12 @@ function bucketTick(key: Bucket, now: Date): string {
   const fmtT = (d: Date) => d.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
   const fmtD = (d: Date) => d.toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric' });
   switch (key) {
-    case 'breached': return 'consequence running';
-    case 'h2':       return `before ${fmtT(new Date(now.getTime() + 2 * 3600_000))}`;
-    case 'today':    return 'before 17:00';
-    case 'h48':      return `by ${fmtD(new Date(now.getTime() + 48 * 3600_000))}`;
-    case 'week':     return `by ${fmtD(new Date(now.getTime() + 7 * 86400_000))}`;
-    case 'later':    return '> 7 days';
+    case 'breached': return 'act now — past due';
+    case 'h2':       return `due by ${fmtT(new Date(now.getTime() + 2 * 3600_000))}`;
+    case 'today':    return 'due today';
+    case 'h48':      return `due ${fmtD(new Date(now.getTime() + 48 * 3600_000))}`;
+    case 'week':     return `due ${fmtD(new Date(now.getTime() + 7 * 86400_000))}`;
+    case 'later':    return 'more than 7 days';
   }
 }
 
@@ -174,7 +174,7 @@ export default function HorizonPage() {
 
   return (
     <div className="mer horizon">
-      <MeridianHeader ctx={<><b>{cleanLabel(cfg?.label ?? boardRole)}</b><span>{data.counts.total} live · {data.counts.breached} breached</span></>} />
+      <MeridianHeader ctx={<><b>{cleanLabel(cfg?.label ?? boardRole)}</b><span>{data.counts.total} live · {data.counts.breached} overdue</span></>} />
 
       <GettingStarted />
 
@@ -188,6 +188,9 @@ export default function HorizonPage() {
 
       <div className={dutyCollapsed ? 'main duty-collapsed' : 'main'}>
         <section className="board" aria-label="Live cases by time to consequence">
+          <p className="board-caption" style={{ margin: '0 0 10px', color: 'var(--ink3, #5b6b85)', fontSize: 13 }}>
+            Your active work, sorted left-to-right by how soon it needs you. Overdue items act on first — they cost the most while they wait.
+          </p>
           <div className="board-head">
             <div className="board-new-stack">
               <Link to="/new" className="board-new" title="Start a new transaction">+ New transaction</Link>
@@ -211,7 +214,7 @@ export default function HorizonPage() {
             // single all-button header (no single Ledger to point at).
             const laneChain = singleChainOf(lane.cases);
             const laneText = cleanLabel(laneLabel(lane.key)).toUpperCase();
-            const laneCount = `${lane.cases.length} live${breached ? ` · ${breached} breached` : ''}`;
+            const laneCount = `${lane.cases.length} live${breached ? ` · ${breached} overdue` : ''}`;
             return (
               <div className="lane-row" key={lane.key}>
                 {laneChain ? (
@@ -241,7 +244,7 @@ export default function HorizonPage() {
                 )}
                 {collapsed ? (
                   <button type="button" className="lane-collapsed-summary" onClick={() => toggleLane(lane.key)}>
-                    {lane.cases.length} case{lane.cases.length === 1 ? '' : 's'}{breached ? ` · ${breached} breached` : ''} · click to expand
+                    {lane.cases.length} case{lane.cases.length === 1 ? '' : 's'}{breached ? ` · ${breached} overdue` : ''} · click to expand
                   </button>
                 ) : BUCKETS.map(b => (
                   <div className="cell" key={b.key}>
@@ -284,7 +287,7 @@ export default function HorizonPage() {
                   <div className="why">
                     <span className="mono">{c.ref}</span>
                     {c.quantum_zar != null && <> · <span className="mono">{fmtZar(c.quantum_zar)}</span></>}
-                    {c.bucket === 'breached' && <> · <span className="due-ox">SLA breached</span></>}
+                    {c.bucket === 'breached' && <> · <span className="due-ox">overdue</span></>}
                   </div>
                   <div className="acts">
                     {c.actions.slice(0, 2).map(a => {
