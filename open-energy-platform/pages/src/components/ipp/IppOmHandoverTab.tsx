@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../../lib/api';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface OmHandover {
   id: string;
@@ -195,7 +196,7 @@ export function IppOmHandoverTab() {
                   <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[h.capacity_tier]}`}>{h.capacity_tier}</span></td>
                   <td className="py-2 pr-4 text-xs text-[#3d4756]">{h.capacity_mw} MW</td>
                   <td className="py-2 pr-4 text-xs text-[#6b7685]">{h.document_count ?? '—'}</td>
-                  <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[h.chain_status]}`}>{h.chain_status.replace(/_/g, ' ')}</span></td>
+                  <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[h.chain_status]}`}>{statusLabel(h.chain_status).text}</span></td>
                   <td className={`py-2 pr-4 text-xs ${h.sla_breached ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                     {h.sla_breached ? '⚠ BREACHED' : fmtDate(h.sla_due_at)}
                   </td>
@@ -221,7 +222,7 @@ export function IppOmHandoverTab() {
             <div className="text-sm font-medium text-[#1e2a38] mb-3">{selected.title}</div>
 
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{selected.chain_status.replace(/_/g, ' ')}</span></div>
+              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{statusLabel(selected.chain_status).text}</span></div>
               <div><span className="text-[#6b7685]">Documents:</span> {selected.document_count ?? '—'}</div>
               {selected.deficiency_count != null && <div><span className="text-[#6b7685]">Deficiencies:</span> <span className="text-orange-700 font-semibold">{selected.deficiency_count}</span></div>}
               {selected.conditions && <div className="col-span-2"><span className="text-[#6b7685]">Conditions:</span> <span className="text-yellow-700 text-xs">{selected.conditions}</span></div>}

@@ -26,6 +26,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 // ── design tokens (mockup-b) ─────────────────────────────────────────────
 const BG     = 'oklch(0.96 0.003 250)';
@@ -416,7 +417,7 @@ function getActions(row: ChangeInLawRow): ChainAction[] {
 function renderDetail(row: ChangeInLawRow): React.ReactNode {
   return (
     <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
-      <DetailPair label="State"             value={row.chain_status.replace(/_/g, ' ')} />
+      <DetailPair label="State"             value={statusLabel(row.chain_status).text} />
       <DetailPair label="Tier"              value={row.change_in_law_tier} />
       <DetailPair label="Change type"       value={row.change_type ? CHANGE_LABEL[row.change_type] : '—'} />
       <DetailPair label="Change category"   value={row.change_category ?? '—'} />

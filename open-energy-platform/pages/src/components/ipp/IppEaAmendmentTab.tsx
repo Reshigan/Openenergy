@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface EaAmendment {
   id: string;
@@ -282,7 +283,7 @@ export function IppEaAmendmentTab() {
                     <td className="py-2 pr-4">
                       <div className="flex items-center gap-1 flex-wrap">
                         <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
-                          {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
+                          {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                         </span>
                         {regulator && (
                           <span className="px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">

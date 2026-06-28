@@ -8,6 +8,7 @@
 import React, { useState } from 'react';
 import { ListingTable, Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
 import { api } from '../../../lib/api';
+import { statusLabel } from '../../ease/statusLabel';
 
 export default function OrdersSurface(_props: { role: string }) {
   const [cancelling, setCancelling] = useState<any | null>(null);
@@ -29,7 +30,7 @@ export default function OrdersSurface(_props: { role: string }) {
           { key: 'volume_mwh', label: 'Vol (MWh)', align: 'right', render: (r) => `${Number(r.remaining_volume_mwh ?? r.volume_mwh).toFixed(1)} / ${Number(r.volume_mwh).toFixed(1)}` },
           { key: 'price', label: 'Price', align: 'right', render: (r) => r.price != null ? Number(r.price).toFixed(2) : '—' },
           { key: 'delivery_date', label: 'Delivery', render: (r) => r.delivery_date || '—' },
-          { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'filled' ? 'good' : r.status === 'cancelled' ? 'bad' : 'warn'}>{(r.status || '').replace(/_/g, ' ')}</Pill> },
+          { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'filled' ? 'good' : r.status === 'cancelled' ? 'bad' : 'warn'}>{statusLabel(r.status).text}</Pill> },
           { key: '_actions', label: '', render: (r) => (
             (r.status === 'open' || r.status === 'partially_filled') ? (
               <div className="flex gap-1">

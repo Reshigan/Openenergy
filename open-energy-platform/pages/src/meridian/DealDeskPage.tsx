@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom';
 import {
   fetchMyDeals, fetchDealTypes, fetchDealOptions,
   publishDealRequest, publishDealOffer, acceptDealOffer,
-  dealLabel, dealStage, fmtZar, humanizeKey,
+  dealLabel, dealStage, fmtZar,
   type MyDeals, type DealTypeInfo, type DealRequestSummary, type DealOfferSummary,
   type ScoredOption, type DealKind,
 } from './lib';
@@ -19,6 +19,7 @@ import { OfferCompareGrid } from './OfferCompareGrid';
 import { DealOfferComposer } from './DealOfferComposer';
 import { MeridianHeader } from './MeridianHeader';
 import { GuidedTour } from './GuidedTour';
+import { statusLabel, STATUS_TONE_CLASS } from './ease/statusLabel';
 
 // Active composer veil: which deal type, and offer vs request.
 interface ComposeState { info: DealTypeInfo; mode: 'offer' | 'request' }
@@ -172,7 +173,7 @@ export default function DealDeskPage() {
             <div className="dcard" key={r.id}>
               <div className="dcard-top">
                 <b>{dealLabel(r.deal_type)}</b>
-                <span className="chip">{humanizeKey(r.status, true)}</span>
+                {(() => { const s = statusLabel(r.status); return <span className={STATUS_TONE_CLASS[s.tone]}>{s.text}</span>; })()}
               </div>
               <DealProcessRail kind={kindFor(r.deal_type)} stage={dealStage(r)} />
               <div className="dcard-meta mono">
@@ -210,7 +211,7 @@ export default function DealDeskPage() {
             <div className="dcard" key={o.id}>
               <div className="dcard-top">
                 <b>{o.title || dealLabel(o.deal_type)}</b>
-                <span className="chip">{humanizeKey(o.status, true)}</span>
+                {(() => { const s = statusLabel(o.status); return <span className={STATUS_TONE_CLASS[s.tone]}>{s.text}</span>; })()}
               </div>
               <div className="dcard-meta mono">
                 {dealLabel(o.deal_type)}

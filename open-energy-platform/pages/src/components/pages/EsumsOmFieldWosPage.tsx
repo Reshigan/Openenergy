@@ -22,6 +22,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
 import { enqueueMutation, flushQueue, offlineFirstFetch, listPending } from '../../lib/offlineQueue';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 type WoRow = {
   id: string;
@@ -220,7 +221,7 @@ export function EsumsOmFieldWosPage() {
                   <MapPin size={11} /> {w.site_name}
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[11px]">
-                  <span className="capitalize" style={{ color: 'oklch(0.60 0.007 250)' }}>{w.status.replace(/_/g, ' ')}</span>
+                  <span className="capitalize" style={{ color: 'oklch(0.60 0.007 250)' }}>{statusLabel(w.status).text}</span>
                   <span className="font-mono font-semibold" style={{ color: slaColor }}>
                     {minsLeft < 0 ? `⚠ ${Math.abs(minsLeft)}m over SLA` : `SLA ${minsLeft}m`}
                   </span>
@@ -266,7 +267,7 @@ function FieldWoDetail({
           <div className="text-[16px] font-semibold leading-tight" style={{ color: 'oklch(0.17 0.010 250)' }}>{wo.title}</div>
           {wo.description && <p className="mt-1 text-[13px] leading-snug" style={{ color: 'oklch(0.40 0.009 250)' }}>{wo.description}</p>}
           <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
-            <Stat label="State" value={wo.status.replace(/_/g, ' ')} />
+            <Stat label="State" value={statusLabel(wo.status).text} />
             <Stat label="SLA" tone={minsLeft < 0 ? 'bad' : minsLeft < 60 ? 'warn' : 'good'}
                   value={minsLeft < 0 ? `${Math.abs(minsLeft)}m over` : `${minsLeft}m left`} />
           </div>

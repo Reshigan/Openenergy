@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface AudRecord {
   id: string;
@@ -510,7 +511,7 @@ export function IppAnnualAuditTab() {
                     </td>
                     <td className="py-2 pr-3">
                       <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_COLOR_STYLES[item.chain_status] ?? {}}>
-                        {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
+                        {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                     </td>
                     <td className="py-2 pr-3">
@@ -608,7 +609,7 @@ export function IppAnnualAuditTab() {
               {/* Status badge */}
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_COLOR_STYLES[detailItem.chain_status] ?? {}}>
-                  {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
+                  {STATUS_LABELS[detailItem.chain_status] ?? statusLabel(detailItem.chain_status).text}
                 </span>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.revenue_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={TIER_COLOR_STYLES[detailItem.revenue_tier] ?? {}}>
                   {detailItem.revenue_tier.charAt(0).toUpperCase() + detailItem.revenue_tier.slice(1)}

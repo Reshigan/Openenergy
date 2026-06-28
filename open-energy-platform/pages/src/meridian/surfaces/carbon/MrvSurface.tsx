@@ -10,6 +10,7 @@
 import React, { useState } from 'react';
 import { ListingTable, Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
 import { api } from '../../../lib/api';
+import { statusLabel } from '../../ease/statusLabel';
 
 const MRV_TRANSITIONS = [
   { value: 'submitted', label: 'Submit' },
@@ -45,7 +46,7 @@ export default function MrvSurface(_props: { role: string }) {
         columns={[
           { key: 'project_id', label: 'Project', render: (r) => <span className="font-mono text-[11px]">{(r.project_id || '').slice(0, 12)}…</span> },
           { key: 'period_start', label: 'Period', render: (r) => `${r.period_start} → ${r.period_end}` },
-          { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'verified' || r.status === 'published' ? 'good' : r.status === 'rejected' ? 'bad' : 'warn'}>{r.status.replace(/_/g, ' ')}</Pill> },
+          { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'verified' || r.status === 'published' ? 'good' : r.status === 'rejected' ? 'bad' : 'warn'}>{statusLabel(r.status).text}</Pill> },
           { key: 'reduction_tco2e', label: 'Reduction tCO₂e', align: 'right', render: (r) => r.reduction_tco2e != null ? Number(r.reduction_tco2e).toFixed(1) : '—' },
           { key: 'verified_at', label: 'Verified', render: (r) => r.verified_at ? new Date(r.verified_at).toLocaleDateString() : '—' },
           { key: '_actions', label: '', render: (r) => (

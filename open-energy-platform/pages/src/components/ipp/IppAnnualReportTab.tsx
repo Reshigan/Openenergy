@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface IppAnnualReport {
   id: string;
@@ -206,7 +207,7 @@ export function IppAnnualReportTab() {
                     </td>
                     <td className="py-2 pr-4 text-xs text-[#3d4756]">{CATEGORY_LABELS[item.report_category] ?? item.report_category}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_BLUE_SET.has(item.chain_status) ? { color: 'oklch(0.46 0.16 55)', background: 'oklch(0.94 0.006 250)' } : undefined}>{item.chain_status.replace(/_/g, ' ')}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_BLUE_SET.has(item.chain_status) ? { color: 'oklch(0.46 0.16 55)', background: 'oklch(0.94 0.006 250)' } : undefined}>{statusLabel(item.chain_status).text}</span>
                       {regulator && <span className="ml-1 px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">REGULATOR</span>}
                     </td>
                     <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>

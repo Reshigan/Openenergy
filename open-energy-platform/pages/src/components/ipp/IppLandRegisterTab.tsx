@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../../lib/api';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface LandRegister {
   id: string;
@@ -172,7 +173,7 @@ export function IppLandRegisterTab() {
                   <td className="py-2 pr-4 text-xs font-medium">{lr.area_ha.toLocaleString()}</td>
                   <td className="py-2 pr-4 text-xs text-[#6b7685]">{lr.erf_count ?? '—'}</td>
                   <td className="py-2 pr-4 text-xs text-[#6b7685]">{lr.servitude_count ?? '—'}</td>
-                  <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[lr.chain_status]}`}>{lr.chain_status.replace(/_/g, ' ')}</span></td>
+                  <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[lr.chain_status]}`}>{statusLabel(lr.chain_status).text}</span></td>
                   <td className="py-2 pr-4 text-xs font-mono text-[#3d4756]">{lr.deeds_reference ?? '—'}</td>
                   <td className={`py-2 pr-4 text-xs ${lr.sla_breached ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                     {lr.sla_breached ? '⚠ BREACHED' : fmtDate(lr.sla_due_at)}
@@ -198,7 +199,7 @@ export function IppLandRegisterTab() {
             </div>
             {selected.description && <div className="text-sm text-[#3d4756] bg-[#f8fafc] rounded p-3 mb-4">{selected.description}</div>}
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{selected.chain_status.replace(/_/g, ' ')}</span></div>
+              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{statusLabel(selected.chain_status).text}</span></div>
               <div><span className="text-[#6b7685]">Erven:</span> {selected.erf_count ?? '—'}</div>
               <div><span className="text-[#6b7685]">Servitudes:</span> {selected.servitude_count ?? '—'}</div>
               <div><span className="text-[#6b7685]">Surveyor:</span> {selected.surveyor_firm ?? '—'}</div>

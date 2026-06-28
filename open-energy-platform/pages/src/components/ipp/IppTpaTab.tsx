@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../../lib/api';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface Tpa {
   id: string;
@@ -184,7 +185,7 @@ export function IppTpaTab() {
                   <td className="py-2 pr-4 text-xs font-medium">{tpa.wheeling_capacity_mw}</td>
                   <td className="py-2 pr-4 text-xs text-[#6b7685]">{tpa.tpa_category ? CATEGORY_LABELS[tpa.tpa_category] ?? tpa.tpa_category : '—'}</td>
                   <td className="py-2 pr-4 text-xs text-[#6b7685] max-w-[120px] truncate">{tpa.network_owner ?? '—'}</td>
-                  <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[tpa.chain_status]}`}>{tpa.chain_status.replace(/_/g, ' ')}</span></td>
+                  <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[tpa.chain_status]}`}>{statusLabel(tpa.chain_status).text}</span></td>
                   <td className="py-2 pr-4 text-xs text-green-700">{fmtDate(tpa.tpa_signed_at)}</td>
                   <td className={`py-2 pr-4 text-xs ${tpa.sla_breached ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                     {tpa.sla_breached ? '⚠ BREACHED' : fmtDate(tpa.sla_due_at)}
@@ -210,7 +211,7 @@ export function IppTpaTab() {
             </div>
             {selected.description && <div className="text-sm text-[#3d4756] bg-[#f8fafc] rounded p-3 mb-4">{selected.description}</div>}
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{selected.chain_status.replace(/_/g, ' ')}</span></div>
+              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{statusLabel(selected.chain_status).text}</span></div>
               <div><span className="text-[#6b7685]">Network:</span> {selected.tpa_category ? CATEGORY_LABELS[selected.tpa_category] ?? selected.tpa_category : '—'}</div>
               {selected.network_owner && <div className="col-span-2"><span className="text-[#6b7685]">Network Owner:</span> {selected.network_owner}</div>}
               {selected.offtaker_reference && <div><span className="text-[#6b7685]">Off-taker Ref:</span> <span className="font-mono text-xs">{selected.offtaker_reference}</span></div>}

@@ -22,7 +22,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
-import { humanizeKey } from '../../meridian/lib';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 import '../../meridian/meridian.css';
 
 // Accept only the document formats the reviewers can open, and cap pre-upload size
@@ -287,7 +287,7 @@ export function KycSubmission() {
           terminal step renders as approved (success) or rejected (failure). */}
       <ol
         className={`mer-kyc-timeline${isRejected ? ' rejected' : ''}${isApproved ? ' approved' : ''}`}
-        aria-label={`Verification status: ${status.replace(/_/g, ' ')}`}
+        aria-label={`Verification status: ${statusLabel(status).text}`}
       >
         {steps.map((step, i) => {
           const isCurrent = i === idx;
@@ -347,7 +347,7 @@ export function KycSubmission() {
                     {submitted.map((d) => (
                       <li className="mer-kyc-file" key={d.id}>
                         <span className="mer-kyc-file-name">{d.file_name || 'Uploaded document'}</span>
-                        <span className={`mer-kyc-file-status ${d.status}`}>{humanizeKey(d.status, true)}</span>
+                        <span className={`mer-kyc-file-status ${d.status}`}>{statusLabel(d.status).text}</span>
                       </li>
                     ))}
                   </ul>

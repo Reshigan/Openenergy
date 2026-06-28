@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../../lib/api';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface VariationOrder {
   id: string;
@@ -230,7 +231,7 @@ export function IppVariationOrderTab() {
                   <td className="py-2 pr-4 text-xs">{fmt(vo.instructed_value_zar)}</td>
                   <td className="py-2 pr-4 text-xs">{fmt(vo.agreed_value_zar)}</td>
                   <td className="py-2 pr-4">
-                    <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[vo.chain_status] ?? 'bg-[#eef2f7] text-[#3d4756]'}`}>{vo.chain_status.replace(/_/g,' ')}</span>
+                    <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[vo.chain_status] ?? 'bg-[#eef2f7] text-[#3d4756]'}`}>{statusLabel(vo.chain_status).text}</span>
                   </td>
                   <td className={`py-2 pr-4 text-xs ${vo.sla_breached ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                     {vo.sla_breached ? '⚠ BREACHED' : fmtDate(vo.sla_due_at)}
@@ -263,7 +264,7 @@ export function IppVariationOrderTab() {
               <div><span className="text-[#6b7685]">Tier:</span> <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[selected.value_tier]}`}>{selected.value_tier}</span></div>
               <div><span className="text-[#6b7685]">Instructed:</span> <span className="font-medium">{fmt(selected.instructed_value_zar)}</span></div>
               <div><span className="text-[#6b7685]">Agreed:</span> <span className="font-medium text-green-700">{fmt(selected.agreed_value_zar)}</span></div>
-              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{selected.chain_status.replace(/_/g,' ')}</span></div>
+              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{statusLabel(selected.chain_status).text}</span></div>
               <div><span className="text-[#6b7685]">SLA:</span> <span className={selected.sla_breached ? 'text-red-600 font-bold' : 'text-[#2d3748]'}>{selected.sla_breached ? '⚠ BREACHED' : fmtDate(selected.sla_due_at)}</span></div>
               <div><span className="text-[#6b7685]">Instructed:</span> {fmtDate(selected.instructed_at)}</div>
               {selected.approved_at && <div><span className="text-[#6b7685]">Approved:</span> {fmtDate(selected.approved_at)}</div>}

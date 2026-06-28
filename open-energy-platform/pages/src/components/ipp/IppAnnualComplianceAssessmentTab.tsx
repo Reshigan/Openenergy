@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface AcsRecord {
   id: string;
@@ -521,7 +522,7 @@ export function IppAnnualComplianceAssessmentTab() {
                     </td>
                     <td className="py-2 pr-3">
                       <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status]?.cls ?? 'bg-[#eef2f7]'}`} style={STATUS_COLORS[item.chain_status]?.style ?? { color: '#6b7685' }}>
-                        {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
+                        {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                     </td>
                     <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748]">{fmtMw(item.plant_mw)}</td>
@@ -618,7 +619,7 @@ export function IppAnnualComplianceAssessmentTab() {
               {/* Status badge */}
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status]?.cls ?? 'bg-[#eef2f7]'}`} style={STATUS_COLORS[detailItem.chain_status]?.style ?? { color: '#6b7685' }}>
-                  {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
+                  {STATUS_LABELS[detailItem.chain_status] ?? statusLabel(detailItem.chain_status).text}
                 </span>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.capacity_tier]?.cls ?? 'bg-[#eef2f7]'}`} style={TIER_COLORS[detailItem.capacity_tier]?.style ?? { color: '#6b7685' }}>
                   {detailItem.capacity_tier.charAt(0).toUpperCase() + detailItem.capacity_tier.slice(1)}

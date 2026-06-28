@@ -12,6 +12,7 @@
 import React, { useState } from 'react';
 import { Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
 import { api } from '../../../lib/api';
+import { statusLabel } from '../../ease/statusLabel';
 
 type SubInvoice = {
   id: string;
@@ -180,7 +181,7 @@ export default function SubscriptionBillingSurface(_props: { role: string }) {
                       <td className="px-4 py-2 text-[12px] tabular-nums">{r.billing_period}</td>
                       <td className="px-4 py-2"><Pill tone="info">{r.subscription_tier}</Pill></td>
                       <td className="px-4 py-2 text-right tabular-nums text-[12px]">{zar(r.net_payable_zar)}</td>
-                      <td className="px-4 py-2"><Pill tone={subStatusTone(r.chain_status)}>{r.chain_status.replace(/_/g, ' ')}</Pill></td>
+                      <td className="px-4 py-2"><Pill tone={subStatusTone(r.chain_status)}>{statusLabel(r.chain_status).text}</Pill></td>
                       <td className="px-4 py-2 text-[11px] whitespace-nowrap">
                         {breached ? (
                           <span className="text-[var(--oxide-deep)] font-medium">Breached</span>

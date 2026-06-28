@@ -3,6 +3,7 @@
 // tile children are .ref / .title / .zar / .meta).
 import { Link } from 'react-router-dom';
 import { fmtZar, zarMagnitudeClass, fuseFraction, humanizeKey, type MerCase } from './lib';
+import { statusLabel, STATUS_TONE_CLASS } from './ease/statusLabel';
 
 export function FuseBar({ deadline }: { deadline: string | null }) {
   const f = fuseFraction(deadline);
@@ -32,7 +33,12 @@ export function CaseTile({ c }: { c: MerCase }) {
         <div className={`zar ${zarMagnitudeClass(c.quantum_zar)}`}>{fmtZar(c.quantum_zar)}</div>
       )}
       <div className="meta">
-        <span className={breached ? 'chip ox' : 'chip'}>{c.status.replace(/_/g, ' ').toUpperCase()}</span>
+        {(() => {
+          // Breach overrides tone (oxide) regardless of the underlying state's tone.
+          const s = statusLabel(c.status);
+          const cls = breached ? STATUS_TONE_CLASS.oxide : STATUS_TONE_CLASS[s.tone];
+          return <span className={cls}>{s.text}</span>;
+        })()}
         {c.counterparty && <span>{c.counterparty}</span>}
       </div>
       <FuseBar deadline={c.deadline_at} />

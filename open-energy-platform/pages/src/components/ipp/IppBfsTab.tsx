@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { CSSProperties } from 'react';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface BfsStudy {
   id: string;
@@ -183,7 +184,7 @@ export function IppBfsTab() {
                       <span className="px-2 py-0.5 rounded text-xs text-white font-medium" style={{ backgroundColor: tierColor }}>{item.bfs_capacity_tier}</span>
                     </td>
                     <td className="py-2 pr-4">
-                      {(() => { const sc = STATUS_COLORS[item.chain_status] ?? { className: 'bg-[#eef2f7] text-[#6b7685]' }; return <span className={`px-2 py-0.5 rounded text-xs ${sc.className}`} style={sc.style}>{item.chain_status.replace(/_/g, ' ')}</span>; })()}
+                      {(() => { const sc = STATUS_COLORS[item.chain_status] ?? { className: 'bg-[#eef2f7] text-[#6b7685]' }; return <span className={`px-2 py-0.5 rounded text-xs ${sc.className}`} style={sc.style}>{statusLabel(item.chain_status).text}</span>; })()}
                     </td>
                     <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}

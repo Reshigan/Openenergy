@@ -10,6 +10,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 import { ChainStateBar } from '../ChainStateBar';
 import { SlaCountdown } from '../SlaCountdown';
 
@@ -363,7 +364,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
                   <td className="px-3 py-2 capitalize text-[#3d4756]">{row.risk_category.replace('_', ' ')}</td>
                   <td className="px-3 py-2">
                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_COLOR[row.chain_status]}`}>
-                      {row.chain_status.replace(/_/g, ' ')}
+                      {statusLabel(row.chain_status).text}
                     </span>
                   </td>
                   <td className="px-3 py-2 capitalize text-[#3d4756]">{row.response_strategy ?? '—'}</td>
@@ -409,7 +410,7 @@ export default function IppRiskTab({ readOnly = false }: Props) {
                     {TIER_LABEL[selected.risk_tier]}
                   </span>
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_COLOR[selected.chain_status]}`}>
-                    {selected.chain_status.replace(/_/g, ' ')}
+                    {statusLabel(selected.chain_status).text}
                   </span>
                   {!!selected.is_safety && <span className="px-1 py-0.5 rounded text-[10px] bg-red-100 text-red-700">SAFETY</span>}
                   {!!selected.is_reportable && <span className="px-1 py-0.5 rounded text-[10px] bg-red-200 text-red-800">REGULATOR CROSSED</span>}

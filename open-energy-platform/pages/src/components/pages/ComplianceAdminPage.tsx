@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { StitchPage } from '../StitchPage';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 type Tab = 'info-officer' | 'sar' | 'kyc-review' | 'devices' | 'lockouts' | 'submissions' | 'incidents' | 'maintenance';
 
@@ -140,7 +141,7 @@ function SarTab() {
                 <td><span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
                   s.status === 'fulfilled' ? 'widget-tone-good' : s.status === 'rejected' ? 'widget-tone-bad' :
                   s.status === 'escalated' ? 'widget-tone-bad' : 'widget-tone-amber'
-                }`}>{s.status.replace(/_/g, ' ')}</span></td>
+                }`}>{statusLabel(s.status).text}</span></td>
                 <td className={`font-mono text-[10px] ${overdue ? 'widget-tone-bad-text' : ''}`}>{new Date(s.due_at).toLocaleDateString()}{overdue ? ' ⚠' : ''}</td>
                 <td className="text-right space-x-2">
                   {!['fulfilled', 'rejected'].includes(s.status) && (
@@ -394,7 +395,7 @@ function IncidentsTab() {
               }`}>{r.severity}</span></td>
               <td><span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
                 r.status === 'resolved' || r.status === 'postmortem_published' ? 'widget-tone-good' : 'widget-tone-amber'
-              }`}>{r.status.replace(/_/g, ' ')}</span></td>
+              }`}>{statusLabel(r.status).text}</span></td>
               <td className="text-right space-x-2">
                 {!['resolved', 'postmortem_published'].includes(r.status) && (
                   <>
@@ -462,7 +463,7 @@ function MaintenanceTab() {
                 r.status === 'completed' ? 'widget-tone-good' :
                 r.status === 'in_progress' ? 'widget-tone-amber' :
                 r.status === 'cancelled' ? 'widget-tone-bad' : 'widget-tone-info'
-              }`}>{r.status.replace(/_/g, ' ')}</span></td>
+              }`}>{statusLabel(r.status).text}</span></td>
             </tr>
           ))}
           {!rows.length && <tr><td colSpan={5} className="italic py-3" style={{ color: 'oklch(0.40 0.009 250)' }}>No windows scheduled.</td></tr>}

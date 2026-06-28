@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../../lib/api';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface EnvClosure {
   id: string;
@@ -182,7 +183,7 @@ export function IppEnvClosureTab() {
                   <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[ec.area_tier]}`}>{ec.area_tier}</span></td>
                   <td className="py-2 pr-4 text-xs font-medium">{ec.disturbed_area_ha.toLocaleString()}</td>
                   <td className="py-2 pr-4 text-xs text-[#6b7685]">{ec.eia_category ? EIA_LABELS[ec.eia_category] ?? ec.eia_category : '—'}</td>
-                  <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[ec.chain_status]}`}>{ec.chain_status.replace(/_/g, ' ')}</span></td>
+                  <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[ec.chain_status]}`}>{statusLabel(ec.chain_status).text}</span></td>
                   <td className="py-2 pr-4 text-xs font-mono text-green-700">{ec.closure_cert_reference ?? '—'}</td>
                   <td className={`py-2 pr-4 text-xs ${ec.sla_breached ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                     {ec.sla_breached ? '⚠ BREACHED' : fmtDate(ec.sla_due_at)}
@@ -208,7 +209,7 @@ export function IppEnvClosureTab() {
             </div>
             {selected.description && <div className="text-sm text-[#3d4756] bg-[#f8fafc] rounded p-3 mb-4">{selected.description}</div>}
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{selected.chain_status.replace(/_/g, ' ')}</span></div>
+              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{statusLabel(selected.chain_status).text}</span></div>
               <div><span className="text-[#6b7685]">EIA Type:</span> {selected.eia_category ? EIA_LABELS[selected.eia_category] ?? selected.eia_category : '—'}</div>
               <div><span className="text-[#6b7685]">EA Ref:</span> <span className="font-mono text-xs">{selected.ea_reference ?? '—'}</span></div>
               <div><span className="text-[#6b7685]">EMP Ref:</span> <span className="font-mono text-xs">{selected.emp_reference ?? '—'}</span></div>

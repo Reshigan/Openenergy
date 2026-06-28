@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface LicenceReturnRecord {
   id: string;
@@ -547,7 +548,7 @@ export function IppLicenceReturnsTab() {
                     </td>
                     <td className="py-2 pr-3">
                       <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
-                        {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
+                        {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                     </td>
                     <td className="py-2 pr-3 text-xs tabular-nums">

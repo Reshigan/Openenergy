@@ -10,6 +10,7 @@
 import React, { useState } from 'react';
 import { ListingTable, Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
 import { api } from '../../../lib/api';
+import { statusLabel } from '../../ease/statusLabel';
 
 const formatZAR = (v: number) =>
   new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(v || 0);
@@ -39,7 +40,7 @@ export default function BillingSurface(_props: { role: string }) {
         columns={[
           { key: 'run_type', label: 'Type', render: (r) => <Pill tone="info">{r.run_type}</Pill> },
           { key: 'period_start', label: 'Period', render: (r) => `${r.period_start} → ${r.period_end}` },
-          { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'completed' ? 'good' : r.status === 'failed' ? 'bad' : 'warn'}>{r.status.replace(/_/g, ' ')}</Pill> },
+          { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'completed' ? 'good' : r.status === 'failed' ? 'bad' : 'warn'}>{statusLabel(r.status).text}</Pill> },
           { key: 'tenants_billed', label: 'Tenants', align: 'right' },
           { key: 'total_zar', label: 'Total', align: 'right', render: (r) => formatZAR(r.total_zar) },
           { key: 'completed_at', label: 'Completed', render: (r) => r.completed_at ? new Date(r.completed_at).toLocaleString() : '—' },

@@ -13,6 +13,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { ActionModal, FieldSpec } from '../launch/WorkstationShell';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 const BG     = 'oklch(0.96 0.003 250)';
 const BG1    = 'oklch(0.99 0.002 80)';
@@ -48,7 +49,7 @@ function StatusBadge({ status }: { status: string }) {
   const color = isGood ? GOOD   : isBad ? BAD    : isWarn ? WARN    : INFO;
   return (
     <span style={{ background: bg, color, padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700, letterSpacing: '0.03em', textTransform: 'uppercase' }}>
-      {status.replace(/_/g, ' ')}
+      {statusLabel(status).text}
     </span>
   );
 }
@@ -159,7 +160,7 @@ export function LicenceActionDetailPage() {
           <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '12px 16px', flex: 1, minWidth: 120 }}>
             <div style={{ fontSize: 11, color: TX3, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Status</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: TX1, marginTop: 6, textTransform: 'capitalize' }}>
-              {row.status.replace(/_/g, ' ')}
+              {statusLabel(row.status).text}
             </div>
           </div>
           <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '12px 16px', flex: 1, minWidth: 120 }}>
@@ -287,7 +288,7 @@ export function LicenceActionDetailPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
               { label: 'Action type', value: row.action_type },
-              { label: 'Status', value: row.status.replace(/_/g, ' ') },
+              { label: 'Status', value: statusLabel(row.status).text },
               { label: 'Licence ID', value: row.licence_id ? row.licence_id.slice(0, 18) + '…' : '—', mono: true },
               { label: 'Application ID', value: row.application_id ? row.application_id.slice(0, 18) + '…' : '—', mono: true },
             ].map(({ label, value, mono }) => (

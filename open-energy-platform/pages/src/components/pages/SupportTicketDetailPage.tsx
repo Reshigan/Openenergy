@@ -14,6 +14,7 @@ import { useAuth } from '../../lib/useAuth';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { ActionModal, FieldSpec } from '../launch/WorkstationShell';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 // ── design tokens ──────────────────────────────────────────────────────
 const BG      = 'oklch(0.96 0.003 250)';
@@ -177,7 +178,7 @@ export function SupportTicketDetailPage() {
             {ticket.subject}
           </h1>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 8 }}>
-            <Badge bg={sc.bg} color={sc.color}>{ticket.status.replace(/_/g, ' ')}</Badge>
+            <Badge bg={sc.bg} color={sc.color}>{statusLabel(ticket.status).text}</Badge>
             <Badge bg={BG2} color={TX2}>{ticket.category}</Badge>
             <Badge bg={pc.bg} color={pc.color}>{ticket.priority}</Badge>
             <span style={{ fontSize: 12, color: TX3, marginLeft: 4 }}>
@@ -436,7 +437,7 @@ export function SupportTicketDetailPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
               { label: 'Ticket #', value: ticket.ticket_number },
-              { label: 'Status', value: <Badge bg={sc.bg} color={sc.color}>{ticket.status.replace(/_/g, ' ')}</Badge> },
+              { label: 'Status', value: <Badge bg={sc.bg} color={sc.color}>{statusLabel(ticket.status).text}</Badge> },
               { label: 'Priority', value: <Badge bg={pc.bg} color={pc.color}>{ticket.priority}</Badge> },
               { label: 'Category', value: ticket.category },
               { label: 'Reporter', value: ticket.reporter_id.slice(0, 16) + '…' },

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface AelLicence {
   id: string;
@@ -288,7 +289,7 @@ export function IppAelTab() {
                           className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status]?.cls ?? 'bg-[#eef2f7] text-[#6b7685]'}`}
                           style={STATUS_COLORS[item.chain_status]?.style}
                         >
-                          {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
+                          {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                         </span>
                         {regulator && (
                           <span className="px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">

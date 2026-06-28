@@ -12,6 +12,7 @@ import { api } from '../../lib/api';
 import { Skeleton } from '../Skeleton';
 import { ErrorBanner } from '../ErrorBanner';
 import { Pill } from '../launch/WorkstationShell';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 type Run = {
   id: string;
@@ -84,7 +85,7 @@ export function BillingRunDetailPage() {
           </h1>
           <p className="text-[13px] text-[#3d4756]">
             <Pill tone={run.status === 'completed' ? 'good' : run.status === 'failed' ? 'bad' : 'warn'}>
-              {run.status.replace(/_/g, ' ')}
+              {statusLabel(run.status).text}
             </Pill>
             {' '}· created {new Date(run.created_at).toLocaleString()}
             {run.initiated_by && <> by <span className="font-mono text-[11px]">{run.initiated_by.slice(0, 14)}…</span></>}

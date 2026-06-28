@@ -8,6 +8,7 @@ import './meridian.css';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { fmtZar, humanizeKey, type LedgerActionField } from './lib';
+import { statusLabel, STATUS_TONE_CLASS } from './ease/statusLabel';
 import { FieldForm } from './FieldForm';
 import { FuseBar } from './components';
 import { cleanLabel } from './labels';
@@ -140,7 +141,10 @@ export default function ThreadPage() {
           <div className="case-head">
             <h1>{t.case.title}</h1>
             <div className="case-sub">
-              <span className="chip">{humanizeKey(t.case.status, true)}</span>
+              {(() => {
+                const s = statusLabel(t.case.status);
+                return <span className={STATUS_TONE_CLASS[s.tone]}>{s.text}</span>;
+              })()}
               <span>{cleanLabel(t.chain.title)}</span>
               {t.case.counterparty && <span>↔ {t.case.counterparty}</span>}
             </div>
@@ -156,7 +160,7 @@ export default function ThreadPage() {
                   {e.actor_role && <span className="actor">{humanizeKey(e.actor_role)}</span>}
                 </li>
               ))}
-              <li className="state now"><b>{humanizeKey(t.case.status, true)}</b></li>
+              <li className="state now"><b>{statusLabel(t.case.status).text}</b></li>
             </ol>
           )}
 

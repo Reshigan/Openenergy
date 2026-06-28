@@ -12,6 +12,7 @@ import { SURFACE_REGISTRY } from './surfaces';
 import { tileTarget } from './reachability';
 import { fetchHorizon, type MerCase } from './lib';
 import { cleanLabel } from './labels';
+import { statusLabel } from './ease/statusLabel';
 
 interface Hit { type: 'function' | 'case'; label: string; sub: string; go: () => void }
 
@@ -87,7 +88,7 @@ export default function CommandPalette() {
     ...cases
       .filter(c => `${c.ref} ${c.title} ${c.counterparty ?? ''}`.toLowerCase().includes(ql))
       .map(c => ({ type: 'case' as const, label: `${c.ref} · ${c.title}`,
-        sub: c.status.replace(/_/g, ' '), go: () => nav(`/thread/${c.chain}/${c.id}`) })),
+        sub: statusLabel(c.status).text, go: () => nav(`/thread/${c.chain}/${c.id}`) })),
   ].slice(0, 12);
 
   return (

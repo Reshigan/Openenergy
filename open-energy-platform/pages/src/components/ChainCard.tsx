@@ -12,6 +12,7 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight, Clock, AlertTriangle, CheckCircle, XCircle, Zap } from 'lucide-react';
 import { ChainStateBar } from './ChainStateBar';
+import { statusLabel as easeStatusLabel } from '../meridian/ease/statusLabel';
 import { ActionModal, type FieldSpec } from './launch/WorkstationShell';
 
 // ─── Design tokens (mockup-b) ─────────────────────────────────────────
@@ -263,7 +264,7 @@ export function ChainCard({
   const [actioning, setActioning] = useState<string | null>(null);
   const [showEvents, setShowEvents] = useState(false);
 
-  const statusLabel = item.chain_status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const statusLabel = easeStatusLabel(item.chain_status).text;
   const isTerminal  = !!(item.is_terminal);
   const isBreach    = !!(item.sla_breached);
 

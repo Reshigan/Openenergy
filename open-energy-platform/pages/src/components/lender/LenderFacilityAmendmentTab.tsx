@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface FacilityAmendmentItem {
   id: string;
@@ -631,7 +632,7 @@ export function LenderFacilityAmendmentTab() {
                         className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status]?.className ?? 'bg-[#eef2f7] text-[#6b7685]'}`}
                         style={STATUS_COLORS[item.chain_status]?.style}
                       >
-                        {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
+                        {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                       {item.sla_breached === 1 && (
                         <span className="ml-1 px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-600 font-semibold">SLA</span>
@@ -743,7 +744,7 @@ export function LenderFacilityAmendmentTab() {
                   className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status]?.className ?? 'bg-[#eef2f7] text-[#6b7685]'}`}
                   style={STATUS_COLORS[detailItem.chain_status]?.style}
                 >
-                  {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
+                  {STATUS_LABELS[detailItem.chain_status] ?? statusLabel(detailItem.chain_status).text}
                 </span>
                 <span
                   className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[detailItem.amendment_class]?.className ?? 'bg-[#eef2f7] text-[#6b7685]'}`}

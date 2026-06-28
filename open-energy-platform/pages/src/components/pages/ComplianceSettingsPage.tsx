@@ -13,6 +13,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
 import { StitchPage } from '../StitchPage';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 type Tab = 'mfa' | 'kyc' | 'popia' | 'regulator';
 
@@ -387,7 +388,7 @@ function PopiaTab() {
             {data.deletions.map((d) => (
               <li key={d.id} className="py-2 flex items-center gap-2" style={{ borderBottom: '1px solid oklch(0.87 0.006 250)' }}>
                 <span className="font-mono text-[10px]">{new Date(d.requested_at).toLocaleString()}</span>
-                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${d.status === 'cooling_off' ? 'widget-tone-amber' : d.status === 'completed' ? 'widget-tone-bad' : 'widget-tone-info'}`}>{d.status.replace(/_/g, ' ')}</span>
+                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${d.status === 'cooling_off' ? 'widget-tone-amber' : d.status === 'completed' ? 'widget-tone-bad' : 'widget-tone-info'}`}>{statusLabel(d.status).text}</span>
                 {d.status === 'cooling_off' && (
                   <>
                     <span className="text-[10px]" style={{ color: 'oklch(0.40 0.009 250)' }}>deletes {new Date(d.scheduled_for).toLocaleDateString()}</span>

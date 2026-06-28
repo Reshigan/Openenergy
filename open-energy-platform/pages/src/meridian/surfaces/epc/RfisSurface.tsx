@@ -9,6 +9,7 @@
 // has no MERIDIAN_CHAINS descriptor, so it is extracted rather than retired to /ledger.
 import React, { useState } from 'react';
 import { ListingTable, Pill, ActionModal } from '../../../components/launch/WorkstationShell';
+import { statusLabel } from '../../ease/statusLabel';
 
 export default function RfisSurface(_props: { role: string }) {
   const [creatingRfi, setCreatingRfi] = useState(false);
@@ -26,7 +27,7 @@ export default function RfisSurface(_props: { role: string }) {
         columns={[
           { key: 'rfi_number', label: 'RFI No.', render: (r) => <span className="font-mono text-[11px]">{r.rfi_number}</span> },
           { key: 'subject', label: 'Subject', render: (r) => <span className="block truncate max-w-xs">{r.subject}</span> },
-          { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'closed' ? 'good' : r.status === 'overdue' ? 'bad' : 'warn'}>{r.status?.replace(/_/g, ' ')}</Pill> },
+          { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'closed' ? 'good' : r.status === 'overdue' ? 'bad' : 'warn'}>{statusLabel(r.status).text}</Pill> },
           { key: 'required_by', label: 'Response due', render: (r) => r.required_by ? new Date(r.required_by).toLocaleDateString() : '—' },
         ]}
       />

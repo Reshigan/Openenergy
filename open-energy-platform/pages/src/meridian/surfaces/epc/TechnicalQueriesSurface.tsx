@@ -9,6 +9,7 @@
 // descriptor, so it is extracted rather than retired to /ledger.
 import React from 'react';
 import { ListingTable, Pill } from '../../../components/launch/WorkstationShell';
+import { statusLabel } from '../../ease/statusLabel';
 
 export default function TechnicalQueriesSurface(_props: { role: string }) {
   return (
@@ -20,7 +21,7 @@ export default function TechnicalQueriesSurface(_props: { role: string }) {
         { key: 'tq_number', label: 'TQ No.', render: (r) => <span className="font-mono text-[11px]">{r.tq_number}</span> },
         { key: 'subject', label: 'Subject', render: (r) => <span className="block truncate max-w-xs">{r.subject}</span> },
         { key: 'discipline', label: 'Discipline' },
-        { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'closed' ? 'good' : 'warn'}>{r.status?.replace(/_/g, ' ')}</Pill> },
+        { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'closed' ? 'good' : 'warn'}>{statusLabel(r.status).text}</Pill> },
         { key: 'created_at', label: 'Raised', render: (r) => new Date(r.created_at).toLocaleDateString() },
       ]}
     />

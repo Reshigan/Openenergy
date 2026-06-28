@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface DlpDefect {
   [key: string]: unknown;
@@ -259,7 +260,7 @@ export function IppDlpDefectTab() {
                 <td className="py-2 pr-4 text-[#2d3748] max-w-[200px] truncate">{d.description}</td>
                 <td className="py-2 pr-4">
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[d.status] ?? 'bg-[#eef2f7] text-[#2d3748]'}`}>
-                    {d.status.replace(/_/g, ' ')}
+                    {statusLabel(d.status).text}
                   </span>
                 </td>
                 <td className="py-2 pr-4">{slaLabel(d)}</td>
@@ -296,7 +297,7 @@ export function IppDlpDefectTab() {
 
               <div className="flex gap-2 flex-wrap">
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[selected.status] ?? ''}`}>
-                  {selected.status.replace(/_/g, ' ')}
+                  {statusLabel(selected.status).text}
                 </span>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${SEVERITY_COLORS[selected.severity_class] ?? ''}`}>
                   {selected.severity_class}

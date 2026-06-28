@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface ChangeOfControl {
   id: string;
@@ -283,7 +284,7 @@ export function IppChangeOfControlTab() {
                     </td>
                     <td className="py-2 pr-4">
                       <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_STYLE[item.chain_status] ?? {}}>
-                        {item.chain_status.replace(/_/g, ' ')}
+                        {statusLabel(item.chain_status).text}
                       </span>
                       {hasRegulator && (
                         <span className="ml-1 px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">REGULATOR</span>
@@ -332,7 +333,7 @@ export function IppChangeOfControlTab() {
                 <span className="text-[#6b7685] text-xs">Status</span>
                 <div className="mt-0.5 flex flex-wrap gap-1">
                   <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status] ?? ''}`} style={STATUS_STYLE[selected.chain_status] ?? {}}>
-                    {selected.chain_status.replace(/_/g, ' ')}
+                    {statusLabel(selected.chain_status).text}
                   </span>
                   {selected.approval_granted_at && (
                     <span className="px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">REGULATOR</span>

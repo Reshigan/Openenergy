@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { ChainStateBar } from '../ChainStateBar';
 import { SlaCountdown } from '../SlaCountdown';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 type TqStatus =
   | 'raised' | 'logged' | 'allocated' | 'under_review'
@@ -481,7 +482,7 @@ export default function IppTqTab({ readOnly = false }: Props) {
                   </td>
                   <td className="px-3 py-2">
                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_COLOR[row.chain_status]}`}>
-                      {row.chain_status.replace(/_/g, ' ')}
+                      {statusLabel(row.chain_status).text}
                     </span>
                   </td>
                   <td className="px-3 py-2">

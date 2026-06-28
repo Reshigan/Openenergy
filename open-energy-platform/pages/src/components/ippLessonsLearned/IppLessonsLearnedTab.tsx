@@ -12,6 +12,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 import { ChainStateBar } from '../ChainStateBar';
 import { SlaCountdown } from '../SlaCountdown';
 
@@ -410,7 +411,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
                   <td className="px-3 py-2 text-[#6b7685]">{row.rca_method ? (RCA_LABEL[row.rca_method] ?? row.rca_method) : '—'}</td>
                   <td className="px-3 py-2">
                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_COLOR[row.chain_status]}`}>
-                      {row.chain_status.replace(/_/g, ' ')}
+                      {statusLabel(row.chain_status).text}
                     </span>
                   </td>
                   <td className="px-3 py-2">
@@ -464,7 +465,7 @@ export default function IppLessonsLearnedTab({ readOnly = false }: Props) {
                     </span>
                   )}
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_COLOR[selected.chain_status]}`}>
-                    {selected.chain_status.replace(/_/g, ' ')}
+                    {statusLabel(selected.chain_status).text}
                   </span>
                   {!!selected.is_reportable && <span className="px-1 py-0.5 rounded text-[10px] bg-red-200 text-red-800">REGULATOR CROSSED</span>}
                 </div>

@@ -9,7 +9,8 @@ import React from 'react';
 import './meridian.css';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { api } from '../lib/api';
-import { fetchLedger, classifyLoadError, fmtZar, humanizeKey, type LedgerData, type LoadErrorKind } from './lib';
+import { fetchLedger, classifyLoadError, fmtZar, type LedgerData, type LoadErrorKind } from './lib';
+import { statusLabel, STATUS_TONE_CLASS } from './ease/statusLabel';
 import { MeridianHeader } from './MeridianHeader';
 import { GuidedTour } from './GuidedTour';
 import { FieldForm } from './FieldForm';
@@ -163,7 +164,10 @@ export default function LedgerPage() {
                     onClick={() => nav('/thread/' + chainKey + '/' + row.id)}>
               <div className="lcard-top">
                 <span className="ref mono">{row.ref}</span>
-                <span className="chip">{humanizeKey(row.status, true)}</span>
+                {(() => {
+                  const s = statusLabel(row.status);
+                  return <span className={STATUS_TONE_CLASS[s.tone]}>{s.text}</span>;
+                })()}
               </div>
               <b className="lcard-title">{row.title}</b>
               <FuseBar deadline={row.deadline_at} />

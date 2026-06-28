@@ -10,6 +10,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 import { ChainStateBar } from '../ChainStateBar';
 import { SlaCountdown } from '../SlaCountdown';
 
@@ -490,7 +491,7 @@ export default function IppProgressClaimTab({ readOnly = false }: Props) {
                     </td>
                     <td className="px-3 py-2">
                       <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_COLOR[row.chain_status]}`}>
-                        {row.chain_status.replace(/_/g, ' ')}
+                        {statusLabel(row.chain_status).text}
                       </span>
                     </td>
                     <td className="px-3 py-2">

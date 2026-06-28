@@ -269,6 +269,8 @@
   background:var(--petrol-tint); color:var(--petrol-deep); white-space:nowrap;
 }
 .mer .chip.ox { background:var(--oxide-tint); color:var(--oxide-deep); border:1px solid var(--oxide); }
+.mer .chip.good { background:var(--moss-tint); color:var(--moss-deep); border:1px solid oklch(0.55 0.09 150 / 0.35); }
+.mer .chip.warn { background:var(--amber-tint); color:var(--amber-deep); border:1px solid oklch(0.70 0.13 70 / 0.40); }
 .mer .chip.best-chip { background:var(--petrol); color:#fff; font-weight:600; }
 .mer .fuse { height:3px; border-radius:2px; background:var(--line); margin-top:8px; overflow:hidden; }
 .mer .fuse > i { display:block; height:100%; border-radius:2px; background:var(--petrol); }

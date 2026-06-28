@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface EcoReport {
   id: string;
@@ -220,7 +221,7 @@ export function IppEcoReportTab() {
                     <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.eco_name ?? '—'}</td>
                     <td className="py-2 pr-4 text-xs text-[#6b7685] font-mono">{eaRef}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>{item.chain_status.replace(/_/g, ' ')}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>{statusLabel(item.chain_status).text}</span>
                       {regulator && <span className="ml-1 px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">REGULATOR</span>}
                     </td>
                     <td className="py-2 pr-4 text-xs text-[#3d4756]">{violation}</td>

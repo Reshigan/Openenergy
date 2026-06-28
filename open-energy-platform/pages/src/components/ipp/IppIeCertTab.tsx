@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../../lib/api';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface IeCert {
   id: string;
@@ -185,7 +186,7 @@ export function IppIeCertTab() {
                   <td className="py-2 pr-4 text-xs font-medium" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtZar(ie.milestone_value_zar)}</td>
                   <td className="py-2 pr-4 text-xs text-[#6b7685]">{ie.milestone_category ? CATEGORY_LABELS[ie.milestone_category] ?? ie.milestone_category : '—'}</td>
                   <td className="py-2 pr-4 text-xs text-[#6b7685] max-w-[120px] truncate">{ie.ie_firm ?? '—'}</td>
-                  <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[ie.chain_status]}`}>{ie.chain_status.replace(/_/g, ' ')}</span></td>
+                  <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[ie.chain_status]}`}>{statusLabel(ie.chain_status).text}</span></td>
                   <td className="py-2 pr-4 text-xs font-mono text-green-700">{ie.cert_number ?? '—'}</td>
                   <td className={`py-2 pr-4 text-xs ${ie.sla_breached ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
                     {ie.sla_breached ? '⚠ BREACHED' : fmtDate(ie.sla_due_at)}
@@ -211,7 +212,7 @@ export function IppIeCertTab() {
             </div>
             {selected.description && <div className="text-sm text-[#3d4756] bg-[#f8fafc] rounded p-3 mb-4">{selected.description}</div>}
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{selected.chain_status.replace(/_/g, ' ')}</span></div>
+              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{statusLabel(selected.chain_status).text}</span></div>
               <div><span className="text-[#6b7685]">Milestone:</span> {selected.milestone_category ? CATEGORY_LABELS[selected.milestone_category] ?? selected.milestone_category : '—'}</div>
               {selected.ie_firm && <div className="col-span-2"><span className="text-[#6b7685]">IE Firm:</span> {selected.ie_firm}</div>}
               {selected.lender_reference && <div><span className="text-[#6b7685]">Lender Ref:</span> <span className="font-mono text-xs">{selected.lender_reference}</span></div>}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../../lib/api';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface CommissioningTest {
   id: string;
@@ -187,7 +188,7 @@ export function IppCommissioningTestTab() {
                   <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[ct.capacity_tier]}`}>{ct.capacity_tier}</span></td>
                   <td className="py-2 pr-4 text-xs font-medium">{ct.capacity_mw}</td>
                   <td className="py-2 pr-4 text-xs text-[#6b7685]">{ct.test_category ? TEST_LABELS[ct.test_category] ?? ct.test_category : '—'}</td>
-                  <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[ct.chain_status]}`}>{ct.chain_status.replace(/_/g, ' ')}</span></td>
+                  <td className="py-2 pr-4"><span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[ct.chain_status]}`}>{statusLabel(ct.chain_status).text}</span></td>
                   <td className="py-2 pr-4 text-xs font-mono text-green-700">{ct.cert_reference ?? '—'}</td>
                   <td className="py-2 pr-4 text-xs text-cyan-700">{fmtDate(ct.pac_issued_at)}</td>
                   <td className={`py-2 pr-4 text-xs ${ct.sla_breached ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
@@ -214,7 +215,7 @@ export function IppCommissioningTestTab() {
             </div>
             {selected.description && <div className="text-sm text-[#3d4756] bg-[#f8fafc] rounded p-3 mb-4">{selected.description}</div>}
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{selected.chain_status.replace(/_/g, ' ')}</span></div>
+              <div><span className="text-[#6b7685]">Status:</span> <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status]}`}>{statusLabel(selected.chain_status).text}</span></div>
               <div><span className="text-[#6b7685]">Test Type:</span> {selected.test_category ? TEST_LABELS[selected.test_category] ?? selected.test_category : '—'}</div>
               {selected.contractor_firm && <div className="col-span-2"><span className="text-[#6b7685]">Contractor:</span> {selected.contractor_firm}</div>}
               {selected.ie_firm && <div className="col-span-2"><span className="text-[#6b7685]">IE:</span> {selected.ie_firm}</div>}

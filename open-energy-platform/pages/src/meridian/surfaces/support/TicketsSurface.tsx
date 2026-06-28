@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { ListingTable, Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
 import { api } from '../../../lib/api';
 import { X } from 'lucide-react';
+import { statusLabel } from '../../ease/statusLabel';
 
 function FileTicketModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
   const [subject, setSubject] = useState('');
@@ -104,7 +105,7 @@ export default function TicketsSurface(_props: { role: string }) {
           { key: 'subject', label: 'Subject', render: (r) => <span className="block truncate max-w-md" title={r.subject}>{r.subject}</span> },
           { key: 'category', label: 'Category', render: (r) => <Pill tone="info">{r.category}</Pill> },
           { key: 'priority', label: 'Priority', render: (r) => <Pill tone={r.priority === 'urgent' ? 'bad' : r.priority === 'high' ? 'warn' : 'neutral'}>{r.priority}</Pill> },
-          { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'resolved' || r.status === 'closed' ? 'good' : r.status === 'open' ? 'bad' : 'warn'}>{r.status.replace(/_/g, ' ')}</Pill> },
+          { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'resolved' || r.status === 'closed' ? 'good' : r.status === 'open' ? 'bad' : 'warn'}>{statusLabel(r.status).text}</Pill> },
           { key: 'created_at', label: 'Filed', render: (r) => new Date(r.created_at).toLocaleString() },
           { key: '_actions', label: '', render: (r) => (
             (r.status !== 'resolved' && r.status !== 'closed') ? (

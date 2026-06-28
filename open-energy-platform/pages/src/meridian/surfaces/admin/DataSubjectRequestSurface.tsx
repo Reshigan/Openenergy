@@ -10,6 +10,7 @@
 // roleData feature key `popia`. Non-chain operational surface (Bucket E).
 import React from 'react';
 import { Pill, ActionModal } from '../../../components/launch/WorkstationShell';
+import { statusLabel } from '../../ease/statusLabel';
 
 type DsrRow = {
   id: string;
@@ -139,7 +140,7 @@ export default function DataSubjectRequestSurface(_props: { role: string }) {
                   <div className="text-[var(--oe-outline)] text-[10px]">{row.requester_email}</div>
                 </td>
                 <td className="py-2 px-2"><Pill tone="info">{row.request_type}</Pill></td>
-                <td className="py-2 px-2"><Pill tone={dsrStatusTone(row.chain_status)}>{row.chain_status.replace(/_/g, ' ')}</Pill></td>
+                <td className="py-2 px-2"><Pill tone={dsrStatusTone(row.chain_status)}>{statusLabel(row.chain_status).text}</Pill></td>
                 <td className="py-2 px-2">
                   {row.sla_deadline
                     ? <span className={overdue ? 'text-[var(--oxide-deep)] font-medium' : 'text-[var(--oe-on-surface-variant)]'}>{new Date(row.sla_deadline).toLocaleDateString()}</span>

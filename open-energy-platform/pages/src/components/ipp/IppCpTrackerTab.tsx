@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 interface CpTrackerItem {
   id: string;
@@ -595,7 +596,7 @@ export function IppCpTrackerTab() {
                     </td>
                     <td className="py-2 pr-3">
                       <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
-                        {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
+                        {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                       {item.sla_breached === 1 && (
                         <span className="ml-1 px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-600 font-semibold">SLA</span>
@@ -689,7 +690,7 @@ export function IppCpTrackerTab() {
               {/* Status badges */}
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
-                  {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
+                  {STATUS_LABELS[detailItem.chain_status] ?? statusLabel(detailItem.chain_status).text}
                 </span>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.cp_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
                   {TIER_LABELS[detailItem.cp_tier] ?? detailItem.cp_tier} — {TIER_SLA[detailItem.cp_tier] ?? ''}

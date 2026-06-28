@@ -4,6 +4,7 @@
 // Environmental and Social Action Plan (ESAP) compliance lifecycle.
 
 import React, { useState, useEffect } from 'react';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -608,7 +609,7 @@ export function LenderEsapTab() {
                     </td>
                     <td className="py-2 pr-3">
                       <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_STYLES[item.chain_status]}>
-                        {STATUS_LABELS[item.chain_status] ?? item.chain_status.replace(/_/g, ' ')}
+                        {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                       {item.sla_breached === 1 && (
                         <span className="ml-1 px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-600 font-semibold">SLA</span>
@@ -709,7 +710,7 @@ export function LenderEsapTab() {
               {/* Status badges */}
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_STYLES[detailItem.chain_status]}>
-                  {STATUS_LABELS[detailItem.chain_status] ?? detailItem.chain_status.replace(/_/g, ' ')}
+                  {STATUS_LABELS[detailItem.chain_status] ?? statusLabel(detailItem.chain_status).text}
                 </span>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.commitment_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={TIER_STYLES[detailItem.commitment_tier]}>
                   {TIER_LABELS[detailItem.commitment_tier] ?? detailItem.commitment_tier}

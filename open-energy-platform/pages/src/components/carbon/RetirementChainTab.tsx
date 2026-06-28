@@ -12,6 +12,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+import { statusLabel } from '../../meridian/ease/statusLabel';
 
 // ── design tokens (mockup-b) ─────────────────────────────────────────────
 const BG     = 'oklch(0.96 0.003 250)';
@@ -211,7 +212,7 @@ function renderDetail(row: RetirementRow): React.ReactNode {
   return (
     <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
       <DetailPair label="Scope"        value={SCOPE_LABEL[row.scope]} />
-      <DetailPair label="State"        value={row.chain_status.replace(/_/g, ' ')} />
+      <DetailPair label="State"        value={statusLabel(row.chain_status).text} />
       <DetailPair label="Quantity"     value={fmtTons(row.quantity)} />
       <DetailPair label="Country"      value={row.beneficiary_country ?? '—'} />
       <DetailPair label="SLA deadline" value={fmtDate(row.sla_deadline_at)} />
