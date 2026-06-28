@@ -1,40 +1,42 @@
 /* pages/src/meridian/meridian.css — scoped: every Meridian page wraps in <div className="mer"> */
-/* Archivo variable font (wdth+wght axes) — same @import pattern as index.css fonts. */
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&display=swap');
+/* v2 design system: Inter Tight (body) / Newsreader (headings) / IBM Plex Mono (labels+numbers).
+ * Fonts are loaded via <link> in index.html (preconnects already present there). */
 
 .mer {
-  --paper: oklch(0.965 0.006 85);
-  --raised: oklch(0.985 0.004 85);
-  --ink: oklch(0.21 0.012 85);
-  --ink2: oklch(0.42 0.012 85);
-  --ink3: oklch(0.50 0.012 85);
-  --line: oklch(0.885 0.008 85);
-  --petrol: oklch(0.40 0.075 200);
-  --petrol-deep: oklch(0.30 0.06 205);
-  --petrol-tint: oklch(0.94 0.015 200);
-  --amber: oklch(0.70 0.13 70);
+  --paper: oklch(0.97 0.003 240);
+  --raised: #ffffff;
+  --ink: #0d1626;
+  --ink2: #33415c;
+  --ink3: #5b6b85;
+  --line: #dde4ee;
+  --petrol: oklch(0.45 0.09 165);
+  --petrol-deep: oklch(0.36 0.08 165);
+  --petrol-tint: oklch(0.94 0.02 165);
+  --amber: oklch(0.55 0.13 55);
   /* Darker amber for TEXT/borders only — at L0.55 amber copy on --raised reads ~3.4:1
      (fails WCAG AA 4.5:1). L≈0.47 lifts it to ~4.9:1. Caution dots/fills keep --amber;
      warning copy + emphasis borders use --amber-deep. CTAs use --petrol, never amber. */
-  --amber-deep: oklch(0.47 0.115 70);
-  --amber-tint: oklch(0.965 0.03 80);
+  --amber-deep: oklch(0.45 0.12 50);
+  --amber-tint: oklch(0.95 0.03 55);
   --oxide: oklch(0.50 0.18 30);
   /* Darker oxide for danger TEXT — --oxide (L0.50) on --oxide-tint reads ~4.0:1
      (just under AA). L≈0.42 clears it at ~5.5:1. Fills/borders keep --oxide. */
   --oxide-deep: oklch(0.42 0.17 30);
   --oxide-tint: oklch(0.95 0.02 30);
-  --moss: oklch(0.55 0.09 150);
+  --moss: oklch(0.55 0.09 165);
   /* Darker moss for TEXT only — lighter --moss reads ~3.3:1 on --raised paper
      (fails WCAG AA 4.5:1). L≈0.46 lifts contrast to ~6.5:1 → clears AA. Dots/fills
      keep --moss; .sweet text and any small moss copy uses --moss-deep. */
-  --moss-deep: oklch(0.46 0.085 150);
-  --moss-tint: oklch(0.955 0.028 150);
+  --moss-deep: oklch(0.46 0.085 165);
+  --moss-tint: oklch(0.955 0.028 165);
   --ease: cubic-bezier(0.23, 1, 0.32, 1);
-  font-family: 'Archivo', 'IBM Plex Sans', sans-serif;
+  font-family: 'Inter Tight', 'IBM Plex Sans', system-ui, sans-serif;
   background: var(--paper); color: var(--ink);
   min-height: 100dvh; font-size: 14px; line-height: 1.5;
 }
-.mer .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+.mer .mono { font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+/* v2 serif headings — used where a surface opts in via .hd-serif or a plain h1/h2. */
+.mer h1, .mer h2, .mer .hd-serif { font-family: 'Newsreader', Georgia, serif; font-weight: 600; letter-spacing: -0.01em; }
 
 /* React-app additions (not in the mockup):
    The mockup styled <body> with display:flex;flex-direction:column — a scoped .mer
@@ -67,7 +69,7 @@
   background:var(--raised); text-decoration:none; color:var(--ink);
   transition:border-color 120ms var(--ease), transform 120ms var(--ease), box-shadow 120ms var(--ease);
 }
-.mer .kpi-tile:hover { border-color:var(--petrol); transform:translateY(-1px); box-shadow:0 2px 8px oklch(0.40 0.075 200 / 0.12); }
+.mer .kpi-tile:hover { border-color:var(--petrol); transform:translateY(-1px); box-shadow:0 2px 8px oklch(0.45 0.09 165 / 0.12); }
 .mer .kpi-tile:active { transform:translateY(0); }
 .mer .kpi-tile:focus-visible { outline:2px solid var(--petrol-deep); outline-offset:2px; }
 .mer .kpi-tile .kpi-v { font-size:19px; font-weight:700; letter-spacing:-0.01em; line-height:1.1; }
@@ -101,10 +103,10 @@
   align-self:start; display:inline-flex; align-items:center; gap:4px;
   font-size:11.5px; font-weight:700; letter-spacing:0.02em;
   color:var(--petrol-deep); text-decoration:none; padding:3px 8px; margin:0 6px;
-  border:1px solid oklch(0.40 0.075 200 / 0.35); border-radius:6px;
+  border:1px solid oklch(0.45 0.09 165 / 0.35); border-radius:6px;
   background:var(--petrol-tint); transition:background 120ms var(--ease), box-shadow 120ms var(--ease);
 }
-.mer .board-new:hover { background:oklch(0.40 0.075 200 / 0.16); }
+.mer .board-new:hover { background:oklch(0.45 0.09 165 / 0.16); }
 .mer .board-new:focus-visible { outline:2px solid var(--petrol-deep); outline-offset:2px; }
 /* Stacked corner actions: create (primary) + browse existing records (secondary).
    The board only shows *live* cases; "Browse records" is the always-present path
@@ -113,31 +115,34 @@
 .mer .board-new.alt { color:var(--ink2); background:transparent; border-color:var(--line); }
 .mer .board-new.alt:hover { background:var(--raised); color:var(--ink); }
 
-/* ── Top bar ─────────────────────────────── */
+/* ── Top bar — v2 dark header ─────────────── */
 .mer header {
   height:60px; display:flex; align-items:center; gap:28px; padding:0 28px;
-  border-bottom:1px solid var(--line); background:var(--raised); flex-shrink:0;
+  border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0;
+  background: radial-gradient(1200px 400px at 80% -10%, rgba(31,111,84,0.20), transparent 60%),
+              linear-gradient(180deg, #0d1626, #13203a);
+  color: #e8edf5;
 }
 .mer .wordmark {
-  font-variation-settings:'wdth' 125; font-weight:800; font-size:17px;
-  letter-spacing:0.14em; color:var(--ink);
+  font-family: 'IBM Plex Mono', monospace; font-weight:600; font-size:15px;
+  letter-spacing:0.22em; text-transform:uppercase; color:#f6f8fb;
   padding-bottom:2px; border-bottom:3px solid var(--petrol);
 }
 .mer .ctx { display:flex; flex-direction:column; line-height:1.25; }
-.mer .ctx b { font-size:13px; font-weight:600; }
-.mer .ctx span { font-size:11.5px; color:var(--ink3); }
+.mer .ctx b { font-size:13px; font-weight:600; color:#e8edf5; }
+.mer .ctx span { font-size:11.5px; color:#9aa8c0; }
 .mer .spacer { flex:1; }
-.mer .clock { font-size:13px; color:var(--ink2); }
+.mer .clock { font-size:13px; color:#9aa8c0; }
 .mer .kbd-hint {
-  display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink2);
-  border:1px solid var(--line); border-radius:6px; padding:7px 14px; background:var(--paper);
+  display:flex; align-items:center; gap:8px; font-size:12.5px; color:#cdd6e6;
+  border:1px solid rgba(255,255,255,0.14); border-radius:6px; padding:7px 14px; background:rgba(255,255,255,0.04);
   cursor:pointer; transition:transform 140ms var(--ease), border-color 140ms;
 }
 .mer .kbd-hint:hover { border-color:var(--petrol); }
 .mer .kbd-hint:active { transform:scale(0.98); }
 .mer .kbd-hint kbd {
-  font-family:'JetBrains Mono',monospace; font-size:10.5px; border:1px solid var(--line);
-  border-radius:4px; padding:1px 5px; background:var(--raised); color:var(--ink2);
+  font-family:'IBM Plex Mono',monospace; font-size:10.5px; border:1px solid rgba(255,255,255,0.12);
+  border-radius:4px; padding:1px 5px; background:rgba(255,255,255,0.08); color:#cdd6e6;
 }
 /* Global "+ New" — primary action in the shared header, reachable from every
    Meridian surface (Horizon/Thread/Ledger), not just the board. */
@@ -152,10 +157,10 @@
 
 .mer .quicklinks { display:flex; align-items:center; gap:2px; }
 .mer .quicklinks a {
-  font-size:12.5px; font-weight:600; color:var(--ink2); text-decoration:none;
+  font-size:12.5px; font-weight:600; color:#cdd6e6; text-decoration:none;
   padding:6px 11px; border-radius:6px; transition:background 140ms var(--ease), color 140ms;
 }
-.mer .quicklinks a:hover { background:var(--paper); color:var(--petrol); }
+.mer .quicklinks a:hover { background:rgba(255,255,255,0.08); color:#fff; }
 .mer .quicklinks a:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
 .mer .avatar-wrap { position:relative; }
 .mer .avatar {
@@ -254,7 +259,7 @@
   /* tiles render as react-router <Link>s — neutralise anchor defaults */
   display:block; text-decoration:none; color:inherit;
 }
-.mer .tile:hover { border-color:var(--petrol); box-shadow:0 1px 4px oklch(0.40 0.075 200 / 0.10); }
+.mer .tile:hover { border-color:var(--petrol); box-shadow:0 1px 4px oklch(0.45 0.09 165 / 0.10); }
 .mer .tile:active { transform:scale(0.98); }
 .mer .tile.breached { border:1.5px solid var(--oxide); background:var(--oxide-tint); }
 .mer .tile .ref { font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--ink3); }
@@ -493,7 +498,7 @@
 /* The base rule kills the native outline; restore a visible focus ring (a11y).
    Inset box-shadow keeps the rounded panel edge clean. */
 .mer .palette input:focus-visible {
-  box-shadow:inset 0 -2px 0 0 var(--petrol), inset 0 0 0 2px oklch(0.40 0.075 200 / 0.25);
+  box-shadow:inset 0 -2px 0 0 var(--petrol), inset 0 0 0 2px oklch(0.45 0.09 165 / 0.25);
 }
 .mer .pal-hits { padding:10px 8px; max-height:52vh; overflow-y:auto; }
 .mer .hit {
@@ -508,7 +513,7 @@
   font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700; letter-spacing:0.08em;
   padding:3px 7px; border-radius:4px; flex-shrink:0; width:74px; text-align:center;
 }
-.mer .type.fn { background:var(--petrol-tint); color:var(--petrol-deep); border:1px solid oklch(0.40 0.075 200 / 0.3); }
+.mer .type.fn { background:var(--petrol-tint); color:var(--petrol-deep); border:1px solid oklch(0.45 0.09 165 / 0.3); }
 .mer .type.case { background:oklch(0.95 0.02 70); color:var(--amber-deep); border:1px solid oklch(0.55 0.12 70 / 0.35); }
 .mer .hit b { font-size:13.5px; font-weight:600; }
 .mer .hit .sub { font-size:11.5px; color:var(--ink3); }
@@ -563,7 +568,7 @@
   text-decoration:none; color:inherit;
   transition:transform 160ms var(--ease), border-color 160ms, box-shadow 160ms;
 }
-.mer .dcard:hover { border-color:var(--petrol); box-shadow:0 1px 4px oklch(0.40 0.075 200 / 0.10); transform:translateY(-2px); }
+.mer .dcard:hover { border-color:var(--petrol); box-shadow:0 1px 4px oklch(0.45 0.09 165 / 0.10); transform:translateY(-2px); }
 .mer .dcard:active { transform:scale(0.98); }
 .mer .dcard .top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .mer .dcard .title { font-size:13.5px; font-weight:600; line-height:1.35; margin:5px 0 3px; }
@@ -599,7 +604,7 @@
   padding:13px 15px 14px; margin-bottom:12px; cursor:pointer;
   transition:transform 160ms var(--ease), border-color 160ms, box-shadow 160ms;
 }
-.mer .ocard:hover { border-color:var(--petrol); box-shadow:0 1px 4px oklch(0.40 0.075 200 / 0.10); }
+.mer .ocard:hover { border-color:var(--petrol); box-shadow:0 1px 4px oklch(0.45 0.09 165 / 0.10); }
 .mer .ocard:active { transform:scale(0.97); }
 .mer .ocard.best { border-left:3px solid var(--petrol); }
 .mer .ocard .metric { font-family:'JetBrains Mono',monospace; font-weight:700; font-size:18px; letter-spacing:-0.01em; color:var(--petrol-deep); }
@@ -639,7 +644,7 @@
 .mer .composer input:focus, .mer .composer select:focus { border-color:var(--petrol); }
 /* Visible focus ring (a11y): petrol halo, distinct from the oxide error halo below. */
 .mer .composer input:focus-visible, .mer .composer select:focus-visible {
-  border-color:var(--petrol); box-shadow:0 0 0 3px oklch(0.40 0.075 200 / 0.25);
+  border-color:var(--petrol); box-shadow:0 0 0 3px oklch(0.45 0.09 165 / 0.25);
 }
 .mer .composer .preview {
   font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--ink2);
@@ -728,7 +733,7 @@
   cursor:pointer; color:inherit; font-family:'Archivo',sans-serif;
   transition:transform 160ms var(--ease), border-color 160ms, box-shadow 160ms;
 }
-.mer.ledger .lcard:hover { border-color:var(--petrol); box-shadow:0 1px 4px oklch(0.40 0.075 200 / 0.10); transform:translateY(-1px); }
+.mer.ledger .lcard:hover { border-color:var(--petrol); box-shadow:0 1px 4px oklch(0.45 0.09 165 / 0.10); transform:translateY(-1px); }
 .mer.ledger .lcard:active { transform:scale(0.99); }
 .mer.ledger .lcard-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .mer.ledger .lcard .ref { font-size:10.5px; color:var(--ink3); }

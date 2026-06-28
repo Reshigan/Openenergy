@@ -19,17 +19,17 @@
 @tailwind utilities;
 
 :root {
-  /* Brand */
-  --oe-primary: oklch(0.46 0.16 55);
-  --oe-primary-deep: #0f2540;
-  --oe-primary-container: #d6e3ef;
+  /* Brand — v2 palette: green primary, burnt-orange secondary, cool ink/paper */
+  --oe-primary: oklch(0.45 0.09 165);
+  --oe-primary-deep: #0d1626;
+  --oe-primary-container: #e1efe9;
   --oe-on-primary: #ffffff;
   --oe-on-primary-container: #0a1c30;
   --oe-primary-fixed-dim: #7faac9;
 
-  --oe-secondary: #3b82c4;
-  --oe-secondary-deep: #1a5d97;
-  --oe-secondary-container: #d4e7f6;
+  --oe-secondary: #b45a1c;
+  --oe-secondary-deep: #7c3a12;
+  --oe-secondary-container: #f6e8dd;
   --oe-on-secondary: #ffffff;
   --oe-on-secondary-container: #062842;
 
@@ -44,8 +44,8 @@
   --oe-accent-container: #dbecfb;
   --oe-on-accent: #06294a;
 
-  /* Surfaces */
-  --oe-surface: #f5f8fb;
+  /* Surfaces — v2 paper/ink */
+  --oe-surface: #f6f8fb;
   --oe-surface-bright: #ffffff;
   --oe-surface-dim: #d8dfe7;
   --oe-surface-container-lowest: #ffffff;
@@ -53,14 +53,14 @@
   --oe-surface-container: #e5ebf2;
   --oe-surface-container-high: #dde4ec;
   --oe-surface-container-highest: #d3dce6;
-  --oe-on-surface: #0f1c2e;
-  --oe-on-surface-variant: #3d4756;
+  --oe-on-surface: #0d1626;
+  --oe-on-surface-variant: #33415c;
   --oe-inverse-surface: #1a2a3e;
   --oe-inverse-on-surface: #eef2f7;
 
-  --oe-outline: #6b7685;
-  --oe-outline-variant: #c5cdd6;
-  --oe-outline-strong: #3d4756;
+  --oe-outline: #5b6b85;
+  --oe-outline-variant: #dde4ee;
+  --oe-outline-strong: #33415c;
 
   --oe-error: #c0392b;
   --oe-error-container: #fde0db;
