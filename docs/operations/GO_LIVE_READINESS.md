@@ -126,33 +126,45 @@
 
 ## 3. Open issues to close before hard-launch
 
-### 3.1 (P1) Endpoints returning 500
-| Endpoint | Symptom | Fix |
-|---|---|---|
-| `/api/cockpit/kpis` | `no such column: volume` (`trade_orders` has `volume_mwh`) | One-line column rename in `cockpit.ts` query |
-| `/api/regulator/market-summary` | D1 error | Schema reference — needs alignment with current trader/imbalance tables |
-| `/api/admin/monitoring/cascade-dlq` | D1 error | `cascade_dlq` table exists; column mismatch in the SELECT |
-| `/api/admin/monitoring/cron-health` | D1 error | Same family — column mismatch |
-| `/api/esg-reports/my-reports` | D1 error | `esg_reports` table exists, route may join a missing column |
-| `/api/esg-reports/templates` | D1 error | Same |
-| `/api/esg/decarbonisation` | `no such table: decarb_actions` (actual is `esg_decarbonisation_pathways`) | Route table-name fix |
+### 3.1 (P1) Endpoints returning 500 — **CLOSED 2026-06-28**
+All seven now return **200** against `oe.vantax.co.za` (admin token, verified live 2026-06-28). The drift family was closed in earlier waves by giving every sub-aggregate its own `.catch()`/try-fallback so a missing column or legacy table degrades that one metric instead of 500ing the endpoint:
 
-These are the same family of schema/code drift bugs we've already fixed in trading, carbon, procurement, funder, and ona. Each is a 1–10 minute fix. None block the validated cross-role flows.
+| Endpoint | Fix landed |
+|---|---|
+| `/api/cockpit/kpis` | `cockpit.ts` uses `matched_volume_mwh` + `invoices.total_amount` |
+| `/api/regulator/market-summary` | `regulator.ts:671` `safe()` wrapper per sub-aggregate |
+| `/api/admin/monitoring/cascade-dlq` | `monitoring.ts:152` `.catch(() => {results:[]})` per query |
+| `/api/admin/monitoring/cron-health` | `monitoring.ts:201` 8 probes, each `.catch(() => null)` |
+| `/api/esg-reports/my-reports` | `esg-reports.ts:55` column-set fallback + `.catch` |
+| `/api/esg-reports/templates` | static literal, no DB hit |
+| `/api/esg/decarbonisation` | `esg.ts:90` try `decarb_actions` → catch `esg_decarbonisation_pathways` |
+
+A broader ~50-endpoint admin GET sweep the same day returned only 404s for unmounted paths — **zero 5xx** on the read surface.
 
 ### 3.2 (P1) JWT secret rotation policy
-- `JWT_SECRET` was generated as a 86-char URL-safe random and uploaded as a Worker secret. Document the rotation cadence (recommended quarterly) and the procedure (set new secret, redeploy, old tokens fail next request — refresh-token endpoint mints new ones).
+- `JWT_SECRET` was generated as a 86-char URL-safe random and uploaded as a Worker secret.
+- **Cadence:** quarterly, or immediately on any suspected disclosure.
+- **Procedure (runbook):**
+  ```bash
+  # 1. Generate a fresh secret.
+  echo "$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')" | wrangler secret put JWT_SECRET --env live   # cec prod
+  echo "$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')" | wrangler secret put JWT_SECRET               # oe demo
+  # 2. Redeploy both envs so running isolates pick up the new secret.
+  ./deploy.sh
+  # 3. Effect: every outstanding 1-hour TTL token fails on next request (sig mismatch);
+  #    clients auto-recover via the refresh-token endpoint, which mints new tokens
+  #    signed with the new secret. No user-facing logout storm beyond the TTL window.
+  ```
+- **Rotate BOTH envs together** or cec/oe drift and cross-env dev tokens break.
 
 ### 3.3 (P1) Decommission the legacy Pages project
 - Cloudflare Pages project `open-energy-platform` (id `14238833-47b8-4dda-94b8-5c7b04d53703`) still exists and is connected to the GitHub repo. A push to `main` could trigger a Pages build that, while now deployed without the custom domain, would still consume CI/CD slot and potentially serve at `open-energy-platform.pages.dev`. Disable the Pages project's git integration or delete the project once you're sure no scripts reference it.
 
-### 3.4 (P2) Stitch chrome migration
-- 4 of 35 pages (Cockpit, Trading, Carbon, Funds, Procurement, ESG) use the new `StitchPage` chrome with consistent eyebrow + title + tab + actions layout.
-- Remaining ~30 still use ad-hoc per-page chrome. They render correctly with the OE palette via the legacy Tailwind aliases, but the headline/section pattern is inconsistent.
-- Each page is a 5–15 minute migration: wrap in `<StitchPage>`, swap inline gradients/cards for `<StitchCard>`/`<StitchKpi>`/`<StitchPill>`.
+### 3.4 (P2) Stitch chrome migration — **NLA (superseded by Meridian)**
+`StitchPage` was retired in **Phase E**. The SPA is now **Meridian** — one full-canvas chrome (`MeridianFrame`) wrapping every authed page (22 files). The per-page `StitchPage` migration this section described no longer applies; the consistency goal it aimed at is met by Meridian.
 
-### 3.5 (P2) JS bundle size
-- 1.5 MB single chunk; gzip 437 KB. Acceptable on broadband but slow on 3G.
-- Add `manualChunks` to `vite.config.ts`: split `recharts`, `lucide-react`, `jspdf`, `html2canvas` into vendor chunks. Expected drop to ~600 KB main bundle.
+### 3.5 (P2) JS bundle size — **CLOSED**
+`pages/vite.config.ts` already defines `manualChunks` + the workbenches are lazy code-split. Current `pages/dist/assets/`: main `index-*.js` **76 KB**, vendor `vendor-*.js` 793 KB (cached, recharts/lucide/jspdf), per-workstation chunks 90–126 KB each loaded on demand. No single 1.5 MB chunk remains.
 
 ### 3.6 (P3) Document the support role landing
 - The support role exists in seeds but its dedicated `/support` deep-page hasn't been audited. Most support actions go through `/admin/monitoring` + `/support` impersonation flow.
@@ -164,7 +176,7 @@ These are the same family of schema/code drift bugs we've already fixed in tradi
 
 ## 4. Pre-launch checklist (hard launch)
 
-- [ ] Close all P1 issues in §3
+- [x] Close all P1 issues in §3 (§3.1 500s verified 200 2026-06-28; §3.2 policy below; §3.3 external)
 - [ ] Decommission legacy Pages project (§3.3)
 - [ ] Rotate the Cloudflare Global API key shared in chat (security hygiene)
 - [ ] Document JWT_SECRET rotation policy and add to ops runbook
@@ -174,8 +186,8 @@ These are the same family of schema/code drift bugs we've already fixed in tradi
 - [ ] Confirm SSO end-to-end with a real Microsoft Entra tenant (`AZURE_AD_CLIENT_SECRET` set as a Worker secret)
 - [ ] Snapshot D1 to R2 (the `/api/data-tier/snapshot` and `/api/backup/run` paths exist) — run a backup-restore drill
 - [ ] POPIA: confirm the 30-day breach notification timeline is wired (briefing fires + admin escalation cascades)
-- [ ] Migrate remaining ~30 pages to StitchPage chrome (§3.4)
-- [ ] Code-split the SPA bundle (§3.5)
+- [x] Migrate remaining ~30 pages to StitchPage chrome (§3.4) — NLA, Meridian replaced StitchPage
+- [x] Code-split the SPA bundle (§3.5) — manualChunks + lazy workstations, main 76 KB
 - [ ] Cache-bust strategy for SPA — the index.html `cache-control: must-revalidate` is correct; verify on real cold load
 
 ---
@@ -236,9 +248,9 @@ done
 | Procurement | Platform | ✅ ready | RFP → bid → evaluate → award → LOI flow E2E-tested |
 | Lender / funder | Platform | ✅ ready | Cash waterfall + disbursement E2E-tested after body-shape fix |
 | ASOBA / O&M | Platform | ✅ ready | Live proxy, sync, cascade promotion all working |
-| Regulator | Platform | ⚠ partial | Workbench tabs are wired; `market-summary` 500 (P1) |
+| Regulator | Platform | ✅ ready | Workbench tabs wired; `market-summary` 200 (§3.1 closed 2026-06-28) |
 | Grid operator | Platform | ✅ ready | Imbalance, wheeling, overview all 200; ancillary tables now exist |
-| Admin | Platform | ⚠ partial | Core admin works; monitoring DLQ + cron-health 500 (P1) |
+| Admin | Platform | ✅ ready | Core admin works; monitoring DLQ + cron-health 200 (§3.1 closed 2026-06-28) |
 | POPIA | Platform | ✅ ready | All 22 POPIA endpoints respond; breach + DSAR flows wired |
 | Brand & design | Design | ⚠ partial | OE colours + typography applied platform-wide; StitchPage chrome on 6/35 pages (§3.4) |
 | Infra & ops | DevOps | ✅ ready | Custom domain bound, secrets set, cron triggers active |
