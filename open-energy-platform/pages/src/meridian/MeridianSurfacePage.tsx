@@ -10,6 +10,7 @@ import { useAuth } from '../lib/useAuth';
 import { MeridianFrame } from './MeridianFrame';
 import { SURFACE_REGISTRY } from './surfaces';
 import { humanizeKey } from './lib';
+import { EaseLoading } from './ease/states';
 
 export default function MeridianSurfacePage() {
   const { key = '' } = useParams();
@@ -38,7 +39,9 @@ export default function MeridianSurfacePage() {
 
   return (
     <MeridianFrame ctx={<b>{humanizeKey(key, true)}</b>}>
-      <React.Suspense fallback={<div className="mer mer-loading" aria-busy="true">Loading…</div>}>
+      {/* Every leaf inherits a skeletal load shape (not a bare "Loading…") while
+          its lazy chunk + first fetch resolve — the platform-wide ease floor. */}
+      <React.Suspense fallback={<EaseLoading kpis rows={4} />}>
         <Comp role={role} />
       </React.Suspense>
     </MeridianFrame>
