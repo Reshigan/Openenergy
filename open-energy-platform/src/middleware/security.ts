@@ -30,6 +30,7 @@ const SENSITIVE_PATH_PATTERNS = [
   '/auth/forgot-password',
   '/auth/mfa/verify',
   '/auth/mfa/challenge',
+  '/auth/mfa/backup-code',
   '/auth/sso/microsoft/callback',
   '/auth/refresh',
 ];
@@ -51,10 +52,12 @@ async function doRateLimit(
   windowSeconds: number,
   maxRequests: number,
 ): Promise<RateLimitResult> {
-  // NOTE: KV get-then-put is non-atomic. Under burst traffic two requests can
-  // read the same count simultaneously and both pass when only one should.
-  // For the login rate limiter (10/5min) the race window is ~2 ms — acceptable
-  // risk; true atomics would require a Durable Object counter.
+  // Global tier only — capacity shaping, not a security boundary. KV
+  // get-then-put is non-atomic by design: under burst a transient KV miss
+  // must fall open (allow), never 500 a legitimate request. The sensitive
+  // tier below uses D1 for true atomicity; this KV path is intentionally
+  // kept fall-open because the global 100/min cap is not brute-force
+  // protection.
   const now = Math.floor(Date.now() / 1000);
   const current = await env.KV.get(key, 'json') as { count: number; windowStart: number } | null;
 
@@ -90,6 +93,132 @@ async function doRateLimit(
   };
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// Sensitive tier — D1 atomic conditional upsert.
+//
+// The previous implementation shared the KV get-then-put path with the global
+// tier. That had two defects on the brute-force-protected endpoints
+// (/auth/login et al):
+//   1. Non-atomic: two concurrent logins could both read count=N and both
+//      pass when only one should (the ~2ms race window the old comment
+//      hand-waved away).
+//   2. Fell open on KV errors: a transient KV failure returned
+//      allowed=true, silently disabling the 10/5min cap — exactly the wrong
+//      direction for a security boundary.
+//
+// This path uses a single D1 INSERT ... ON CONFLICT DO UPDATE ... WHERE
+// statement. D1 executes a single statement atomically, so the
+// read-check-increment is one atomic step: at count = max-1 only one of two
+// concurrent callers increments (allowed); the other hits WHERE false and
+// is blocked. On any D1 failure (schema bootstrap or the upsert itself)
+// we FAIL CLOSED — return allowed=false so the caller 429s — rather than
+// silently let a brute-force loop through.
+// ──────────────────────────────────────────────────────────────────────────
+
+let sensitiveSchemaReady: Promise<void> | null = null;
+
+function ensureSensitiveSchema(db: HonoEnv['Bindings']['DB']): Promise<void> {
+  if (sensitiveSchemaReady) return sensitiveSchemaReady;
+  sensitiveSchemaReady = (async () => {
+    // IF NOT EXISTS — idempotent, safe to re-run on every cold isolate.
+    await db.prepare(
+      `CREATE TABLE IF NOT EXISTS sensitive_rate_counters (
+        bucket_key TEXT PRIMARY KEY,
+        window_start INTEGER NOT NULL,
+        count INTEGER NOT NULL,
+        max_requests INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL
+      )`,
+    ).run();
+    await db.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_sensitive_rate_expires
+       ON sensitive_rate_counters(expires_at)`,
+    ).run();
+  })().catch((err) => {
+    // Allow a retry on the next request rather than poisoning the isolate.
+    sensitiveSchemaReady = null;
+    throw err;
+  });
+  return sensitiveSchemaReady;
+}
+
+// Test-only: drop the memoised schema promise so a fresh isolate's
+// bootstrap path can be exercised repeatedly within a single test run.
+// Not part of the public surface; prefixed to make the intent obvious.
+export function __resetSensitiveSchemaCacheForTests(): void {
+  sensitiveSchemaReady = null;
+}
+
+async function doSensitiveRateLimit(
+  env: HonoEnv['Bindings'],
+  identifier: string,
+  routeFamily: string,
+  windowSeconds: number,
+  maxRequests: number,
+): Promise<RateLimitResult> {
+  const db = env.DB;
+  // No D1 binding (e.g. legacy unit-test fixtures that only stub KV). Fall
+  // back to the KV path so those fixtures keep working. Production always
+  // binds DB, so the atomic D1 path below is what runs for real traffic.
+  if (!db) {
+    return doRateLimit(
+      env,
+      `ratelimit:sensitive:${routeFamily}:${identifier}`,
+      windowSeconds,
+      maxRequests,
+    );
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const windowStart = Math.floor(now / windowSeconds) * windowSeconds;
+  const bucketKey = `sensitive:${routeFamily}:${identifier}:${windowStart}`;
+  const expiresAt = windowStart + windowSeconds + 10;
+  const resetAt = windowStart + windowSeconds;
+
+  try {
+    await ensureSensitiveSchema(db);
+  } catch {
+    // Schema bootstrap failed — fail closed for brute-force protection.
+    return { allowed: false, remaining: 0, resetAt, limit: maxRequests };
+  }
+
+  try {
+    // Atomic conditional upsert.
+    //  - No existing row: INSERT count=1, RETURNING count=1 → allowed.
+    //  - Row exists, count < max: DO UPDATE increments, RETURNING new count.
+    //  - Row exists, count >= max: WHERE false → no update, RETURNING
+    //    nothing → we see null and block.
+    // Single statement → atomic under D1; the get-then-put race is gone.
+    const row = await db
+      .prepare(
+        `INSERT INTO sensitive_rate_counters
+           (bucket_key, window_start, count, max_requests, expires_at)
+         VALUES (?, ?, 1, ?, ?)
+         ON CONFLICT(bucket_key) DO UPDATE SET count = count + 1
+         WHERE count < max_requests
+         RETURNING count`,
+      )
+      .bind(bucketKey, windowStart, maxRequests, expiresAt)
+      .first<{ count: number }>();
+
+    if (!row) {
+      return { allowed: false, remaining: 0, resetAt, limit: maxRequests };
+    }
+    const newCount = row.count;
+    return {
+      allowed: true,
+      remaining: Math.max(0, maxRequests - newCount),
+      resetAt,
+      limit: maxRequests,
+    };
+  } catch {
+    // Store error — fail closed. A transient D1 outage must NOT silently
+    // disable the 10/5min brute-force cap on /auth/login. Returning 429
+    // here is the security-correct direction.
+    return { allowed: false, remaining: 0, resetAt, limit: maxRequests };
+  }
+}
+
 export async function checkRateLimit(env: HonoEnv['Bindings'], identifier: string): Promise<RateLimitResult> {
   return doRateLimit(env, `ratelimit:${identifier}`, RATE_LIMIT_WINDOW, MAX_REQUESTS_PER_WINDOW);
 }
@@ -99,12 +228,7 @@ export async function checkSensitiveRateLimit(
   identifier: string,
   routeFamily: string,
 ): Promise<RateLimitResult> {
-  return doRateLimit(
-    env,
-    `ratelimit:sensitive:${routeFamily}:${identifier}`,
-    SENSITIVE_WINDOW,
-    MAX_SENSITIVE_REQUESTS,
-  );
+  return doSensitiveRateLimit(env, identifier, routeFamily, SENSITIVE_WINDOW, MAX_SENSITIVE_REQUESTS);
 }
 
 // Security headers middleware — applied to every response.

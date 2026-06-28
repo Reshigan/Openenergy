@@ -61,6 +61,12 @@ const STEP_SEQUENCES: Record<string, string[]> = {
   regulator:     ['welcome', 'body', 'jurisdiction', 'complete'],
   support:       ['welcome', 'org', 'sla', 'complete'],
   admin:         ['welcome', 'complete'],
+  // Not signup-selectable (validation.ts role enum) and have no dedicated wizard
+  // step components — mirror the backend STEP_SEQUENCES in onboarding.ts so the
+  // SPA never falls through to a different shape than the server returns. esco
+  // still seeds an om_sites row on completion; epc stays manifest-only.
+  esco:           ['welcome', 'complete'],
+  epc_contractor: ['welcome', 'complete'],
 };
 
 // ─── Step metadata ────────────────────────────────────────────────────────────

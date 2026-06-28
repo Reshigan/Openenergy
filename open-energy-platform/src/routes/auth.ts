@@ -26,11 +26,100 @@ import {
   randomId,
 } from '../utils/auth-tokens';
 import { randomBase32Secret, otpauthUri, totpVerify, generateBackupCodes } from '../utils/totp';
+import { encryptField, decryptField } from '../utils/crypto-aead';
+import { sha256Hex } from '../utils/auth-tokens';
 import { sendEmail } from '../utils/email';
+
+// Refresh-cookie TTL must match the DB refresh_expires_at (REFRESH_TTL_DAYS,
+// 30 days). A shorter cookie silently logged users out on browser restart
+// even though their refresh token was still valid server-side; a longer
+// cookie than the DB column would leave a dead cookie pinned on the client.
+const REFRESH_COOKIE_MAX_AGE = 30 * 24 * 60 * 60;
+
+// Backup-code at-rest format. Legacy rows stored a plaintext JSON array of
+// codes: ["abcd-1234", ...]. New writes store {v:2, hashes:[...]} where each
+// entry is sha256Hex(code) — one-way, so a DB dump cannot recover the codes.
+// The read path matches against both shapes.
+interface StoredBackupCodes { v: 2; hashes: string[] }
+function isStoredHashes(v: unknown): v is StoredBackupCodes {
+  return typeof v === 'object' && v !== null && (v as any).v === 2 && Array.isArray((v as any).hashes);
+}
+
+/** Hash every backup code; return the {v:2, hashes:[...]} envelope to persist. */
+async function hashBackupCodesForStore(codes: string[]): Promise<string> {
+  const hashes = await Promise.all(codes.map((c) => sha256Hex(c.toLowerCase())));
+  return JSON.stringify({ v: 2, hashes } satisfies StoredBackupCodes);
+}
+
+/**
+ * Find the index of a submitted backup code in the stored envelope (or legacy
+ * plaintext array). Returns -1 if not found. Burns-on-success is the caller's
+ * job. Normalises both the submitted code and the stored codes to lower case
+ * before comparing.
+ */
+async function findBackupCodeIndex(storedJson: string | null, rawCode: string): Promise<number> {
+  if (!storedJson) return -1;
+  const parsed = JSON.parse(storedJson) as unknown;
+  const norm = rawCode.toLowerCase();
+  if (isStoredHashes(parsed)) {
+    const hash = await sha256Hex(norm);
+    return parsed.hashes.findIndex((h) => h === hash);
+  }
+  // Legacy plaintext array — codes were stored verbatim pre-hash.
+  if (Array.isArray(parsed)) {
+    return (parsed as string[]).findIndex((c) => String(c).toLowerCase() === norm);
+  }
+  return -1;
+}
+
+/** Build the stored envelope minus the code at idx (preserves v:2 shape). */
+async function remainingBackupCodesForStore(storedJson: string | null, idx: number): Promise<string | null> {
+  if (!storedJson) return null;
+  const parsed = JSON.parse(storedJson) as unknown;
+  if (isStoredHashes(parsed)) {
+    const hashes = parsed.hashes.filter((_, i) => i !== idx);
+    return JSON.stringify({ v: 2, hashes } satisfies StoredBackupCodes);
+  }
+  if (Array.isArray(parsed)) {
+    // Legacy plaintext — re-write as v:2 hashes so a re-encrypt-on-write
+    // migrates the row off plaintext on the next burn.
+    const remaining = (parsed as string[]).filter((_, i) => i !== idx);
+    return hashBackupCodesForStore(remaining);
+  }
+  return null;
+}
+
+/**
+ * Resolve the plaintext TOTP secret from a stored row. New rows store an
+ * encrypted `v1:` value (encryptField); legacy rows store the raw base32
+ * secret. We try the encrypted path first; if a key is configured and the
+ * value has a v1: prefix, decryptField returns the secret. If no key is
+ * configured, decryptField throws — but a legacy plaintext secret (no v1:
+ * prefix) only ever existed because the gate was closed when it was written,
+ * so we fall back to the raw stored value. This keeps existing seeds usable
+ * across the encrypt-on-write migration without a flag-day backfill.
+ */
+async function resolveTotpSecret(env: HonoEnv['Bindings'], stored: string): Promise<string> {
+  if (stored.startsWith('v1:')) {
+    // Encrypted form — only decryptable with a key. If decrypt fails (no key,
+    // tampered, wrong key) the secret is unrecoverable; surface the error.
+    return await decryptField(env, stored);
+  }
+  // Legacy plaintext base32 secret written before encryption existed.
+  return stored;
+}
 
 const auth = new Hono<HonoEnv>();
 
 const ISSUER = 'Open Energy Exchange';
+
+// Cookies must NOT carry `Secure` over local http dev (wrangler :8787) — the
+// browser drops Secure cookies on http, so oe_refresh never lands and the SPA's
+// mount-time /auth/refresh 400s on every load (session restore broken). Prod
+// terminates TLS at the edge, so c.req.url is https there and this is true.
+function cookieSecure(c: { req: { url: string } }): boolean {
+  return new URL(c.req.url).protocol === 'https:';
+}
 
 function clientIp(c: any): string | null {
   return c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || null;
@@ -97,7 +186,7 @@ auth.post('/login', async (c) => {
   const mfaCode: string | undefined = typeof body?.mfa_code === 'string' ? body.mfa_code : undefined;
   const ip = clientIp(c);
 
-  const lockout = await isLockedOut(c.env.DB, email);
+  const lockout = await isLockedOut(c.env.DB, email, ip);
   if (lockout.locked) {
     return c.json({
       success: false,
@@ -145,7 +234,7 @@ auth.post('/login', async (c) => {
       // after 5 normal logins within the 15-minute window.
       return c.json({ success: false, error: 'MFA code required', code: 'MFA_REQUIRED' }, 401);
     }
-    const ok = await totpVerify(mfa.secret_base32, mfaCode);
+    const ok = await totpVerify(await resolveTotpSecret(c.env, mfa.secret_base32), mfaCode);
     if (!ok) {
       await recordLoginAttempt(c.env.DB, email, ip, false, 'bad_mfa_code');
       return c.json({ success: false, error: 'Invalid MFA code', code: 'MFA_INVALID' }, 401);
@@ -182,11 +271,11 @@ auth.post('/login', async (c) => {
   // httpOnly cookies — defense-in-depth: XSS cannot read these.
   // oe_access: scoped to /api so all API routes can use it as fallback.
   // oe_refresh: scoped to /api/auth/refresh only (rotation endpoint).
-  const cookieOpts = { httpOnly: true, secure: true, sameSite: 'Strict' as const, path: '/api' };
+  const cookieOpts = { httpOnly: true, secure: cookieSecure(c), sameSite: 'Strict' as const, path: '/api' };
   setCookie(c, 'oe_access', token, { ...cookieOpts, maxAge: ACCESS_TOKEN_EXPIRY_SECONDS });
   setCookie(c, 'oe_refresh', session.refreshToken, {
     ...cookieOpts, path: '/api/auth/refresh',
-    maxAge: 7 * 24 * 60 * 60,
+    maxAge: REFRESH_COOKIE_MAX_AGE,
   });
 
   return c.json({
@@ -232,11 +321,11 @@ auth.post('/refresh', async (c) => {
     { expiresInSeconds: ACCESS_TOKEN_EXPIRY_SECONDS }
   );
 
-  const cookieOpts = { httpOnly: true, secure: true, sameSite: 'Strict' as const, path: '/api' };
+  const cookieOpts = { httpOnly: true, secure: cookieSecure(c), sameSite: 'Strict' as const, path: '/api' };
   setCookie(c, 'oe_access', token, { ...cookieOpts, maxAge: ACCESS_TOKEN_EXPIRY_SECONDS });
   setCookie(c, 'oe_refresh', rot.newRefreshToken, {
     ...cookieOpts, path: '/api/auth/refresh',
-    maxAge: 7 * 24 * 60 * 60,
+    maxAge: REFRESH_COOKIE_MAX_AGE,
   });
 
   return c.json({
@@ -388,13 +477,19 @@ auth.post('/mfa/setup', authMiddleware, async (c) => {
     return c.json({ success: false, error: 'MFA already enabled. Disable first to re-enrol.' }, 409);
   }
   const secret = randomBase32Secret(20);
+  // Encrypt the base32 secret at rest. When KYC_ENC_KEY is unset this is a
+  // plaintext passthrough (dark-by-default) so dev/test enrolment still works;
+  // when the key is set the stored value is `v1:<...>` ciphertext. The plain
+  // secret is returned to the caller once, here, so the authenticator app can
+  // enrol — it is never readable again from the DB.
+  const storedSecret = await encryptField(c.env, secret);
   const now = new Date().toISOString();
   if (existing) {
     await c.env.DB.prepare(`UPDATE mfa_totp_secrets SET secret_base32 = ?, verified_at = NULL, backup_codes_json = NULL, updated_at = ? WHERE participant_id = ?`)
-      .bind(secret, now, user.id).run();
+      .bind(storedSecret, now, user.id).run();
   } else {
     await c.env.DB.prepare(`INSERT INTO mfa_totp_secrets (participant_id, secret_base32, created_at, updated_at) VALUES (?, ?, ?, ?)`)
-      .bind(user.id, secret, now, now).run();
+      .bind(user.id, storedSecret, now, now).run();
   }
   const uri = otpauthUri({ issuer: ISSUER, account: user.email, secret });
   return c.json({ success: true, data: { secret, otpauth_uri: uri } });
@@ -409,12 +504,17 @@ auth.post('/mfa/verify', authMiddleware, async (c) => {
     `SELECT secret_base32, verified_at FROM mfa_totp_secrets WHERE participant_id = ?`
   ).bind(user.id).first() as any;
   if (!row) return c.json({ success: false, error: 'Start MFA setup first' }, 400);
-  const ok = await totpVerify(row.secret_base32, code);
+  const ok = await totpVerify(await resolveTotpSecret(c.env, row.secret_base32), code);
   if (!ok) return c.json({ success: false, error: 'Invalid code' }, 400);
   const backups = generateBackupCodes(10);
+  // Store one-way hashes of the backup codes (never the plaintext codes). The
+  // plaintext codes are returned to the user exactly once, here; subsequent
+  // logins hash the submitted code and compare. A DB dump cannot recover
+  // usable backup codes.
+  const storedBackupJson = await hashBackupCodesForStore(backups);
   await c.env.DB.prepare(
     `UPDATE mfa_totp_secrets SET verified_at = ?, backup_codes_json = ?, updated_at = ? WHERE participant_id = ?`
-  ).bind(new Date().toISOString(), JSON.stringify(backups), new Date().toISOString(), user.id).run();
+  ).bind(new Date().toISOString(), storedBackupJson, new Date().toISOString(), user.id).run();
   return c.json({ success: true, data: { enabled: true, backup_codes: backups } });
 });
 
@@ -431,7 +531,7 @@ auth.post('/mfa/backup-code', async (c) => {
   if (!rawCode) return c.json({ success: false, error: 'backup_code required' }, 400);
 
   const ip = clientIp(c);
-  const lockout = await isLockedOut(c.env.DB, email);
+  const lockout = await isLockedOut(c.env.DB, email, ip);
   if (lockout.locked) {
     return c.json({
       success: false,
@@ -466,18 +566,29 @@ auth.post('/mfa/backup-code', async (c) => {
     return c.json({ success: false, error: 'MFA not enrolled — use regular login' }, 400);
   }
 
-  const codes: string[] = JSON.parse(mfa.backup_codes_json || '[]');
-  const idx = codes.findIndex((c) => c.toLowerCase() === rawCode);
+  // Match the submitted backup code against the stored envelope. New rows
+  // store {v:2, hashes:[...]}; legacy rows stored a plaintext JSON array —
+  // findBackupCodeIndex handles both so existing enrolments keep working.
+  const idx = await findBackupCodeIndex(mfa.backup_codes_json, rawCode);
   if (idx === -1) {
     await recordLoginAttempt(c.env.DB, email, ip, false, 'bad_backup_code');
     return c.json({ success: false, error: 'Invalid backup code', code: 'BACKUP_INVALID' }, 401);
   }
 
-  // Burn the used code before issuing tokens — prevents replay if token issuance fails mid-flight.
-  const remaining = [...codes.slice(0, idx), ...codes.slice(idx + 1)];
+  // Burn the used code before issuing tokens — prevents replay if token
+  // issuance fails mid-flight. remainingBackupCodesForStore re-writes legacy
+  // plaintext arrays as v:2 hashes on the burn, migrating the row off
+  // plaintext the first time a legacy code is consumed.
+  const remainingJson = await remainingBackupCodesForStore(mfa.backup_codes_json, idx);
   await c.env.DB.prepare(
     `UPDATE mfa_totp_secrets SET backup_codes_json = ?, updated_at = ? WHERE participant_id = ?`
-  ).bind(JSON.stringify(remaining), new Date().toISOString(), participant.id).run();
+  ).bind(remainingJson, new Date().toISOString(), participant.id).run();
+  const remainingCount = (() => {
+    const p = JSON.parse(remainingJson || '[]') as unknown;
+    if (isStoredHashes(p)) return p.hashes.length;
+    if (Array.isArray(p)) return p.length;
+    return 0;
+  })();
 
   const accessJti = randomId('jti_');
   const token = await signToken(
@@ -497,9 +608,9 @@ auth.post('/mfa/backup-code', async (c) => {
     .bind(new Date().toISOString(), participant.id).run();
   await recordLoginAttempt(c.env.DB, email, ip, true, 'backup_code');
 
-  const cookieOpts = { httpOnly: true, secure: true, sameSite: 'Strict' as const, path: '/api' };
+  const cookieOpts = { httpOnly: true, secure: cookieSecure(c), sameSite: 'Strict' as const, path: '/api' };
   setCookie(c, 'oe_access', token, { ...cookieOpts, maxAge: ACCESS_TOKEN_EXPIRY_SECONDS });
-  setCookie(c, 'oe_refresh', session.refreshToken, { ...cookieOpts, path: '/api/auth/refresh', maxAge: 7 * 24 * 60 * 60 });
+  setCookie(c, 'oe_refresh', session.refreshToken, { ...cookieOpts, path: '/api/auth/refresh', maxAge: REFRESH_COOKIE_MAX_AGE });
 
   return c.json({
     success: true,
@@ -508,7 +619,7 @@ auth.post('/mfa/backup-code', async (c) => {
       expires_in: ACCESS_TOKEN_EXPIRY_SECONDS,
       refresh_token: session.refreshToken,
       session_id: session.sessionId,
-      backup_codes_remaining: remaining.length,
+      backup_codes_remaining: remainingCount,
       participant: {
         id: participant.id, email: participant.email, name: participant.name,
         role: participant.role, mfa_enabled: true,

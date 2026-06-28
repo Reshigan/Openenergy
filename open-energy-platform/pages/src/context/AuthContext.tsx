@@ -34,7 +34,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // On mount: attempt to restore session from oe_refresh httpOnly cookie.
   // The server rotates the cookie and returns a fresh access token.
+  // Guard: skip the POST entirely on a cold load when there is no sign a session
+  // exists. oe_refresh is httpOnly so we can't see it; setAuthToken() drops a
+  // non-httpOnly oe_session_present flag cookie on login/refresh-success and
+  // clears it on logout. No flag ⇒ no cookie ⇒ /auth/refresh would 400 and spam
+  // the console on every first visit.
   useEffect(() => {
+    const hasSessionFlag = typeof document !== 'undefined' && document.cookie.includes('oe_session_present');
+    if (!hasSessionFlag) {
+      setLoading(false);
+      return;
+    }
     (async () => {
       try {
         const res = await api.post('/auth/refresh', {});

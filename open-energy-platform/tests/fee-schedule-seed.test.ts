@@ -7,12 +7,26 @@ beforeEach(() => { db = createTestDb({ applyMigrations: true }); });
 afterEach(() => { db.close(); });
 
 describe('migration 481 — all-free fee schedule seed', () => {
-  it('seeds at least 20 billable events, every one free at launch', () => {
+  it('seeds at least 20 billable events; go-live rows enabled, the rest stay free', () => {
     const rows = db.prepare(`SELECT * FROM oe_fee_schedule`).all() as any[];
     expect(rows.length).toBeGreaterThanOrEqual(20);
+    // ponytail: 521_fee_schedule_go_live flips a vetted 7-row set live for go-live;
+    // every other row stays is_enabled=0 / rate=0 (the 481 all-free default).
+    const GO_LIVE_EVENTS = new Set([
+      // 521 fee_schedule_go_live
+      'trade.matched', 'settlement.cycle_settled', 'contract.signed',
+      'invoice.issued', 'invoice.paid', 'carbon.retired', 'grid.wheeling_charge_paid',
+      // 522 marketplace take-rate
+      'transaction_complete_settlement', 'marketplace.rfq_awarded', 'marketplace.auction_closed',
+    ]);
     for (const r of rows) {
-      expect(r.is_enabled).toBe(0);  // ALL FREE
-      expect(r.rate).toBe(0);        // R0
+      if (GO_LIVE_EVENTS.has(r.trigger_event)) {
+        expect(r.is_enabled).toBe(1);
+        expect(r.rate).toBeGreaterThan(0);
+      } else {
+        expect(r.is_enabled).toBe(0);  // still free
+        expect(r.rate).toBe(0);         // still R0
+      }
     }
   });
 

@@ -751,7 +751,9 @@ export default function App() {
       <AuthProvider>
         <AppRoutes />
         <CookieConsentBanner />
-        <AiAssistantDock />
+        {/* AiAssistantDock unmounted per CLAUDE.md "no AI popups" — inline AI only.
+            Component kept for future per-surface migration; do not delete. */}
+        {/* <AiAssistantDock /> */}
         <StepUpModal />
         <PromptHost />
         <GlobalOnboardingTourWrapper />

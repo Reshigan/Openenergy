@@ -43,6 +43,7 @@
 
 import { Hono, Context } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { requireTier } from '../middleware/entitlement';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
 import { assertSafeWebhookUrl } from '../utils/url-safety';
@@ -388,6 +389,10 @@ app.route('/', publicApp);
 
 // All non-public routes require auth.
 app.use('*', authMiddleware);
+// Government-filing connector is the highest-tier paid surface: mutating
+// filing actions require enterprise. Reads (GET) stay open; the public
+// mTLS peer endpoint is mounted on `publicApp` before this gate.
+app.use('*', requireTier('enterprise'));
 
 // ─── List ────────────────────────────────────────────────────────────────
 app.get('/', async (c) => {

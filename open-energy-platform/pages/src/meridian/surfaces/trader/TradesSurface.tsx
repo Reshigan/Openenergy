@@ -8,6 +8,7 @@
 // reached from Atlas (⌘K) via the roleData feature key `trades`.
 import React, { useState } from 'react';
 import { ListingTable, Pill } from '../../../components/launch/WorkstationShell';
+import { StatusPill } from '../../components';
 
 const num = (n: any, d = 2) => (n == null || isNaN(Number(n)) ? '—' : Number(n).toLocaleString('en-ZA', { minimumFractionDigits: d, maximumFractionDigits: d }));
 
@@ -57,12 +58,12 @@ export default function TradesSurface(_props: { role: string }) {
           empty={{ title: 'No matches', description: 'Cleared matches across the book appear here.' }}
           columns={[
             { key: 'matched_at', label: 'Matched', render: (r) => r.matched_at ? new Date(r.matched_at).toLocaleString() : '—' },
-            { key: 'energy_type', label: 'Energy', render: (r) => <Pill tone="info">{(r.energy_type || '—').replace(/_/g, ' ')}</Pill> },
+            { key: 'energy_type', label: 'Energy', render: (r) => <StatusPill status={r.energy_type} tone="info" /> },
             { key: 'delivery_date', label: 'Delivery', render: (r) => r.delivery_date ? new Date(r.delivery_date).toLocaleDateString() : '—' },
             { key: 'matched_volume_mwh', label: 'MWh', align: 'right', render: (r) => num(r.matched_volume_mwh, 1) },
             { key: 'buyer_name', label: 'Buyer', render: (r) => r.buyer_name || '—' },
             { key: 'seller_name', label: 'Seller', render: (r) => r.seller_name || '—' },
-            { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'settled' ? 'good' : r.status === 'failed' ? 'bad' : 'warn'}>{r.status || '—'}</Pill> },
+            { key: 'status', label: 'Status', render: (r) => <StatusPill status={r.status} tone={r.status === 'settled' ? 'good' : r.status === 'failed' ? 'bad' : 'warn'} /> },
           ]}
         />
       )}

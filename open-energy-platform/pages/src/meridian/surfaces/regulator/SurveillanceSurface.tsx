@@ -7,7 +7,8 @@
 // `regulator:surveillance` in surfaces.tsx, reached from Atlas (⌘K) via roleData feature key
 // `surveillance`. Non-chain CRUD surface (Bucket B).
 import React, { useState } from 'react';
-import { ListingTable, Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
+import { ListingTable, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
+import { StatusPill } from '../../components';
 import { api } from '../../../lib/api';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
@@ -34,7 +35,7 @@ export default function SurveillanceSurface(_props: { role: string }) {
         empty={{ title: 'No triage decisions yet', description: 'Surveillance alert triage decisions (false positive / monitor / escalate / contact party / close) will appear here.' }}
         columns={[
           { key: 'alert_id', label: 'Alert', render: (r) => <span className="font-mono text-[11px]">{(r.alert_id || '').slice(0, 12)}…</span> },
-          { key: 'decision', label: 'Decision', render: (r) => <Pill tone={r.decision === 'false_positive' || r.decision === 'close_no_action' ? 'good' : r.decision === 'escalate_to_enforcement' ? 'bad' : 'warn'}>{r.decision.replace(/_/g, ' ')}</Pill> },
+          { key: 'decision', label: 'Decision', render: (r) => <StatusPill status={r.decision} tone={r.decision === 'false_positive' || r.decision === 'close_no_action' ? 'good' : r.decision === 'escalate_to_enforcement' ? 'bad' : 'warn'} /> },
           { key: 'rationale', label: 'Rationale', render: (r) => <span className="block truncate max-w-md" title={r.rationale || ''}>{r.rationale || '—'}</span> },
           { key: 'triaged_at', label: 'Triaged', render: (r) => new Date(r.triaged_at).toLocaleString() },
           { key: 'next_review_at', label: 'Review by', render: (r) => r.next_review_at ? new Date(r.next_review_at).toLocaleDateString() : '—' },

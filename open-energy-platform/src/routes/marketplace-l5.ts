@@ -176,6 +176,12 @@ r.post('/rfqs/:id/award', requireStepUp('marketplace.rfq_award.high'), async (c)
   await c.env.DB.prepare(`UPDATE oe_rfq_quotes SET status = 'awarded' WHERE id = ?`).bind(b.quote_id).run();
   await c.env.DB.prepare(`UPDATE oe_rfq_quotes SET status = 'declined' WHERE rfq_id = ? AND id != ? AND status NOT IN ('awarded','withdrawn')`).bind(id, b.quote_id).run();
   await c.env.DB.prepare(`UPDATE oe_rfqs SET status = 'awarded', awarded_quote_id = ?, awarded_at = datetime('now') WHERE id = ?`).bind(b.quote_id, id).run();
+  // awarded value = price × volume — the ZAR quantum the 25 bps take-rate
+  // (fee_schedule marketplace.rfq_awarded) is computed against. Without this
+  // the fee-engine has no entity_value and a multi-million-Rand award clears
+  // with zero platform revenue.
+  const awardedValueZar =
+    Number(awardedQuote?.price_zar ?? 0) * Number(awardedQuote?.volume_offered_mwh ?? 0);
   await fireCascade({
     event: 'marketplace.rfq_awarded',
     actor_id: user.id,
@@ -186,6 +192,10 @@ r.post('/rfqs/:id/award', requireStepUp('marketplace.rfq_award.high'), async (c)
       seller_id: awardedQuote?.seller_id ?? null,
       price_zar: awardedQuote?.price_zar ?? null,
       volume_offered_mwh: awardedQuote?.volume_offered_mwh ?? null,
+    },
+    commercial: {
+      entity_value: awardedValueZar,
+      participant_id: user.id,
     },
     env: c.env,
   });
@@ -375,12 +385,25 @@ r.post('/auctions/:id/close', requireStepUp('marketplace.auction_close.high'), a
   await c.env.DB.prepare(`UPDATE oe_auction_bids SET visible = 1 WHERE auction_id = ?`).bind(id).run();
   await c.env.DB.prepare(`UPDATE oe_auction_bids SET is_winning = 1 WHERE id = ?`).bind(winning.id).run();
   await c.env.DB.prepare(`UPDATE oe_auctions SET status = 'awarded', awarded_bid_id = ?, awarded_at = datetime('now') WHERE id = ?`).bind(winning.id, id).run();
+  // awarded value = winning bid × volume — the ZAR quantum the 25 bps take-rate
+  // (fee_schedule marketplace.auction_closed) is computed against. Without
+  // this a multi-million-Rand auction clears with zero platform revenue.
+  const winningBid = await c.env.DB
+    .prepare(`SELECT bid_amount_zar, volume_mwh FROM oe_auction_bids WHERE id = ?`)
+    .bind(winning.id)
+    .first<any>();
+  const awardedValueZar =
+    Number(winningBid?.bid_amount_zar ?? 0) * Number(winningBid?.volume_mwh ?? 0);
   await fireCascade({
     event: 'marketplace.auction_closed',
     actor_id: user.id,
     entity_type: 'oe_auctions',
     entity_id: String(id),
     data: { winning_bid_id: winning.id, auction_type: auc.auction_type },
+    commercial: {
+      entity_value: awardedValueZar,
+      participant_id: user.id,
+    },
     env: c.env,
   });
   return c.json({ success: true, data: { winning_bid_id: winning.id } });

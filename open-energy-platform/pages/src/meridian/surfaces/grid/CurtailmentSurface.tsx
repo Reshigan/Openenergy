@@ -7,7 +7,8 @@
 // `grid_operator:curtailment` in surfaces.tsx, reached from Atlas (⌘K) via the roleData feature
 // key `curtailment`.
 import React, { useState } from 'react';
-import { ListingTable, Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
+import { ListingTable, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
+import { StatusPill } from '../../components';
 import { api } from '../../../lib/api';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
@@ -34,7 +35,7 @@ export default function CurtailmentSurface(_props: { role: string }) {
         empty={{ title: 'No curtailment events', description: 'Issuance, acknowledgement, partial / full lift events will appear here.' }}
         columns={[
           { key: 'curtailment_id', label: 'Curtailment', render: (r) => <span className="font-mono text-[11px]">{(r.curtailment_id || '').slice(0, 12)}…</span> },
-          { key: 'event_type', label: 'Event', render: (r) => <Pill tone={r.event_type.includes('lift') ? 'good' : r.event_type === 'disputed' ? 'bad' : 'info'}>{r.event_type.replace(/_/g, ' ')}</Pill> },
+          { key: 'event_type', label: 'Event', render: (r) => <StatusPill status={r.event_type} tone={r.event_type.includes('lift') ? 'good' : r.event_type === 'disputed' ? 'bad' : 'info'} /> },
           { key: 'actor_id', label: 'Actor', render: (r) => <span className="font-mono text-[11px]">{(r.actor_id || '').slice(0, 12)}…</span> },
           { key: 'occurred_at', label: 'When', render: (r) => new Date(r.occurred_at).toLocaleString() },
           { key: 'notes', label: 'Notes', render: (r) => <span className="block truncate max-w-md" title={r.notes || ''}>{r.notes || '—'}</span> },

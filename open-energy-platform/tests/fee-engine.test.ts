@@ -161,3 +161,81 @@ describe('fee-engine — revenue splits', () => {
     expect(count.n).toBe(0);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// P0 fix — migration 520 flips a vetted set of oe_fee_schedule rows from
+// the all-free seed (481/507) to is_enabled=1 with go-live rates. These
+// tests run against a DB that has applied every migration (including 520),
+// so they assert the rate card as shipped, not a hand-seeded row.
+// ═══════════════════════════════════════════════════════════════════════════
+describe('fee-engine — go-live rate card (migration 520)', () => {
+  function scheduleRow(triggerEvent: string): any {
+    return db.prepare(`SELECT * FROM oe_fee_schedule WHERE trigger_event = ?`).get(triggerEvent) as any;
+  }
+
+  it('trade.matched is enabled at 5 bps and bills non-zero (was R0 waived at launch)', async () => {
+    const row = scheduleRow('trade.matched');
+    expect(row).toBeDefined();
+    expect(row.is_enabled).toBe(1);
+    expect(row.fee_type).toBe('bps');
+    expect(row.rate).toBe(5);
+    await computeAndRecordFee(ctx('trade.matched', 1_000_000, 'par_trader'));
+    const r = revenue();
+    expect(r.fee_zar).toBeCloseTo(500, 6); // 1,000,000 × 5/10000
+    expect(r.status).toBe('pending');
+    expect(r.payer_role).toBe('trader');
+    // maker/taker split — two rows summing to the fee
+    const sp = splits(r.id);
+    expect(sp.length).toBe(2);
+    expect(sp.reduce((t: number, s: any) => t + s.amount_zar, 0)).toBeCloseTo(500, 6);
+  });
+
+  it('settlement.cycle_settled is enabled at R12 flat per leg', async () => {
+    const row = scheduleRow('settlement.cycle_settled');
+    expect(row.is_enabled).toBe(1);
+    expect(row.fee_type).toBe('flat_zar');
+    expect(row.rate).toBe(12);
+    await computeAndRecordFee(ctx('settlement.cycle_settled', 100_000));
+    expect(revenue().fee_zar).toBe(12);
+  });
+
+  it('contract.signed is enabled at R500 flat', async () => {
+    expect(scheduleRow('contract.signed').is_enabled).toBe(1);
+    await computeAndRecordFee(ctx('contract.signed', 5_000_000));
+    expect(revenue().fee_zar).toBe(500);
+  });
+
+  it('high-risk rows remain disabled (marketplace/RFQ/auction handled separately)', async () => {
+    for (const ev of ['deal.accepted', 'deal.cleared', 'deal.subscribed', 'objective.subscribed', 'vcm_order_matched', 'clearing.loss_event_executed']) {
+      const row = scheduleRow(ev);
+      expect(row).toBeDefined();
+      expect(row.is_enabled).toBe(0);
+    }
+    // A disabled deal row still records R0 waived — no billing until flipped.
+    await computeAndRecordFee(ctx('deal.accepted', 1_000_000));
+    const r = revenue();
+    expect(r.fee_zar).toBe(0);
+    expect(r.status).toBe('waived');
+  });
+
+  it('the go-live rate card flips all 7 vetted rows on (no duplicates, marketplace rows untouched)', async () => {
+    const enabled = db.prepare(`SELECT trigger_event FROM oe_fee_schedule WHERE is_enabled = 1 ORDER BY trigger_event`).all() as any[];
+    const events = enabled.map((r: any) => r.trigger_event);
+    // 520 enables exactly these 7 (other agents own marketplace/RFQ/auction rows).
+    const goLive = [
+      'carbon.retired',
+      'contract.signed',
+      'grid.wheeling_charge_paid',
+      'invoice.issued',
+      'invoice.paid',
+      'settlement.cycle_settled',
+      'trade.matched',
+    ];
+    for (const ev of goLive) {
+      expect(events).toContain(ev);
+    }
+    // No duplicate trigger_events in the table — UNIQUE constraint holds.
+    const dup = db.prepare(`SELECT trigger_event, COUNT(*) n FROM oe_fee_schedule GROUP BY trigger_event HAVING n > 1`).all();
+    expect(dup).toHaveLength(0);
+  });
+});

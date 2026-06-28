@@ -5,7 +5,7 @@
 // function — caller does INSERT OR IGNORE so the UNIQUE
 // (match_id, participant_id, fee_type, rule_version) absorbs duplicates.
 //
-// Fee schedule (v1):
+// Fee schedule (v1 hardcoded fallback):
 //   brokerage      — 0.10 ZAR per MWh, both sides of the trade
 //   exchange       — 5 basis points of notional, both sides
 //   clearing       — 0.05 ZAR per MWh, both sides (for cleared trades)
@@ -14,6 +14,15 @@
 // Each rule writes its own row so the audit trail shows the breakdown.
 // "clearing" only fires when market_type='exchange' (others are bilateral
 // and don't go through a CCP).
+//
+// One source of truth (P1 dedup): the operator-configurable Layer B row
+// 'trade.matched' in oe_fee_schedule (see fee-engine.ts + migration 520) is
+// the canonical trade-match fee. When that row is is_enabled=1, the v1
+// hardcoded path MUST NOT also bill — otherwise the participant is charged
+// twice (once into trade_fees, once into oe_platform_revenue). The caller
+// resolves the flag via isLayerBTradeMatchedLive(db) and passes
+// { layerBTradeMatchedEnabled: true } to suppress the v1 path. When the row
+// is absent or disabled, the v1 hardcoded rates below remain the fallback.
 // ════════════════════════════════════════════════════════════════════════
 
 export type TradeFeeRule =
@@ -73,7 +82,31 @@ function row(
   };
 }
 
-export function computeTradeFees(fill: FillShape): TradeFeeRow[] {
+// Layer B 'trade.matched' is the operator-configurable rate-card row billed
+// via fee-engine.ts → oe_platform_revenue. When it is live, the v1 hardcoded
+// path below is suppressed so the trade is billed exactly once. Resolved by
+// the caller via isLayerBTradeMatchedLive(db).
+export interface TradeFeeOptions {
+  layerBTradeMatchedEnabled?: boolean;
+}
+
+// Look up the Layer B 'trade.matched' row. Returns true only when a row exists
+// AND is_enabled=1 — the v1 hardcoded path must defer to it then. Absent or
+// disabled rows fall through to the v1 fallback (no double-billing either way).
+interface FeeScheduleLookup {
+  prepare: (q: string) => { bind: (...a: unknown[]) => { first: () => Promise<unknown> } };
+}
+
+export async function isLayerBTradeMatchedLive(db: FeeScheduleLookup): Promise<boolean> {
+  const r = await db.prepare(`SELECT is_enabled FROM oe_fee_schedule WHERE trigger_event = ?`)
+    .bind('trade.matched').first() as { is_enabled: number } | null;
+  return Boolean(r && r.is_enabled === 1);
+}
+
+export function computeTradeFees(fill: FillShape, opts: TradeFeeOptions = {}): TradeFeeRow[] {
+  // P1 dedup — one source of truth: the configurable Layer B row wins.
+  if (opts.layerBTradeMatchedEnabled) return [];
+
   const out: TradeFeeRow[] = [];
   const notional = fill.matched_volume_mwh * fill.matched_price_zar;
   const vol = fill.matched_volume_mwh;

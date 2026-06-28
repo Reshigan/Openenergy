@@ -8,7 +8,8 @@
 // roleData feature key `vintages`. Non-chain CRUD surface (Bucket B) — no MERIDIAN_CHAINS
 // descriptor, so extracted rather than retired to /ledger.
 import React, { useState } from 'react';
-import { ListingTable, Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
+import { ListingTable, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
+import { StatusPill } from '../../components';
 import { api } from '../../../lib/api';
 
 const STAGE_OPTIONS = [
@@ -33,7 +34,7 @@ export default function VintagesSurface(_props: { role: string }) {
         empty={{ title: 'No vintages in workflow', description: 'Vintage cohorts will appear here as they progress through issued → validated → listed → traded → retired.' }}
         columns={[
           { key: 'vintage_id', label: 'Vintage', render: (r) => <span className="font-mono text-[11px]">{(r.vintage_id || '').slice(0, 12)}…</span> },
-          { key: 'current_stage', label: 'Stage', render: (r) => <Pill tone={r.current_stage === 'retired_full' ? 'good' : 'info'}>{r.current_stage.replace(/_/g, ' ')}</Pill> },
+          { key: 'current_stage', label: 'Stage', render: (r) => <StatusPill status={r.current_stage} tone={r.current_stage === 'retired_full' ? 'good' : 'info'} /> },
           { key: 'retired_volume_tco2e', label: 'Retired tCO₂e', align: 'right', render: (r) => Number(r.retired_volume_tco2e || 0).toFixed(1) },
           { key: 'outstanding_tco2e', label: 'Outstanding tCO₂e', align: 'right', render: (r) => Number(r.outstanding_tco2e || 0).toFixed(1) },
           { key: 'updated_at', label: 'Updated', render: (r) => new Date(r.updated_at).toLocaleDateString() },

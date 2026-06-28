@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { computeTradeFees, type FillShape } from '../src/utils/trade-fees';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import type Database from 'better-sqlite3';
+import { computeTradeFees, isLayerBTradeMatchedLive, type FillShape } from '../src/utils/trade-fees';
+import { createTestDb, envFor } from './helpers/d1-sqlite';
 
 const fill = (overrides: Partial<FillShape> = {}): FillShape => ({
   match_id: 'match_1',
@@ -59,5 +61,57 @@ describe('trade-fees engine', () => {
     const a = computeTradeFees(fill());
     const b = computeTradeFees(fill());
     expect(a.map((f) => f.calc_rule_version)).toEqual(b.map((f) => f.calc_rule_version));
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// P1 dedup — one source of truth. When the operator-configurable Layer B
+// 'trade.matched' row in oe_fee_schedule is live (migration 520 flips it to
+// 5 bps), the v1 hardcoded trade-fees path MUST NOT also bill, otherwise the
+// participant is charged twice (trade_fees + oe_platform_revenue).
+// ═══════════════════════════════════════════════════════════════════════════
+describe('trade-fees — Layer B dedup (no double-billing)', () => {
+  it('suppresses every v1 hardcoded row when the Layer B trade.matched row is live', () => {
+    // Without the guard, a bilateral 10 MWh @ R1500 fill emits 6 rows
+    // (brokerage + exchange + regulatory, both sides). With the guard: zero.
+    const fees = computeTradeFees(fill(), { layerBTradeMatchedEnabled: true });
+    expect(fees).toHaveLength(0);
+  });
+
+  it('falls back to the v1 hardcoded path when the flag is explicitly false', () => {
+    const a = computeTradeFees(fill(), { layerBTradeMatchedEnabled: false });
+    const b = computeTradeFees(fill());
+    expect(a.map((f) => f.id)).not.toEqual(b.map((f) => f.id)); // ids are random
+    expect(a.map((f) => f.fee_type).sort()).toEqual(b.map((f) => f.fee_type).sort());
+    expect(a.length).toBe(b.length);
+  });
+
+  it('default (no opts) keeps the v1 path for backward compatibility', () => {
+    const fees = computeTradeFees(fill());
+    expect(fees.length).toBeGreaterThan(0);
+  });
+});
+
+describe('isLayerBTradeMatchedLive — oe_fee_schedule lookup', () => {
+  let db: Database.Database;
+  let d1: Record<string, unknown>;
+  beforeEach(() => { db = createTestDb({ applyMigrations: true }); d1 = envFor(db).DB; });
+  afterEach(() => { db.close(); });
+
+  it('returns true after migration 520 flips trade.matched to is_enabled=1', async () => {
+    const live = await isLayerBTradeMatchedLive(d1 as any);
+    expect(live).toBe(true);
+  });
+
+  it('returns false when the row is disabled', async () => {
+    db.prepare(`UPDATE oe_fee_schedule SET is_enabled = 0 WHERE trigger_event = ?`).run('trade.matched');
+    const live = await isLayerBTradeMatchedLive(d1 as any);
+    expect(live).toBe(false);
+  });
+
+  it('returns false when the row is absent', async () => {
+    db.prepare(`DELETE FROM oe_fee_schedule WHERE trigger_event = ?`).run('trade.matched');
+    const live = await isLayerBTradeMatchedLive(d1 as any);
+    expect(live).toBe(false);
   });
 });

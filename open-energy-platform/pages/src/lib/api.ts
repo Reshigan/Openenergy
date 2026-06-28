@@ -15,6 +15,14 @@ export function setAuthToken(t: string | null): void {
   // (Playwright suites seed it via addInitScript), else the request interceptor's
   // localStorage fallback keeps re-authenticating after logout/refresh-failure.
   if (t === null) { try { localStorage.removeItem('token'); } catch { /* non-fatal */ } }
+  // Non-httpOnly flag cookie so the AuthProvider mount-time /auth/refresh can
+  // cheaply skip when no session exists (avoids a cold-load 400 in the console).
+  // oe_refresh itself is httpOnly and unreadable from JS; this flag mirrors its
+  // presence. SameSite=Lax keeps it scoped to top-level navigations.
+  try {
+    if (t) document.cookie = 'oe_session_present=true; path=/; max-age=2592000; SameSite=Lax';
+    else document.cookie = 'oe_session_present=; path=/; max-age=0; SameSite=Lax';
+  } catch { /* non-fatal — SSR / restricted environments */ }
 }
 export function getAuthToken(): string | null { return _accessToken; }
 

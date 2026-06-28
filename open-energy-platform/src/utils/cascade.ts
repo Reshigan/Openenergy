@@ -69,10 +69,7 @@ export type EventType =
   // General
   | 'demand.matched' | 'meter.ingested'
   | 'popia.consent_changed' | 'popia.data_exported' | 'popia.erasure'
-  // Pipeline
-  | 'pipeline.created' | 'pipeline.stage_changed' | 'pipeline.won' | 'pipeline.lost'
-  // Threads / collaboration
-  | 'thread.posted'
+  // Collaboration extras
   | 'intelligence.item_created' | 'action_queue.created'
   // L5 audit chain — fires after every appendAudit(); entity_type +
   // event_type are in the cascade data payload.
@@ -96,6 +93,7 @@ export type EventType =
   | 'grid.connection_advanced'
   // Trader risk
   | 'trader.credit_limit_set' | 'trader.margin_call_issued' | 'trader.margin_call_met'
+  | 'trader.margin_call_escalated'
   | 'trader.collateral_movement' | 'trader.clearing_run_complete'
   | 'trader.algo_rule_created'
   // Lender
@@ -2514,6 +2512,8 @@ function auditEntityTypeFor(event: string): string {
  * external receiver never holds up the user's request. Webhook failures
  * still reach DLQ but via runStage running inside the .catch chain.
  */
+let queueMissingWarned = false;
+
 export async function fireCascade(ctx: CascadeContext): Promise<void> {
   // Fast path: collect every durable write (audit + N notification rows)
   // into a single env.DB.batch() call. That's 1 D1 round-trip total for
@@ -2552,6 +2552,12 @@ export async function fireCascade(ctx: CascadeContext): Promise<void> {
   // request path returns immediately and the consumer processes them async.
   // Until the Queue binding is live they run inline so tests observe the effect
   // synchronously. Skip for audit.event_appended to prevent recursive pollution.
+  //
+  // Operator action required: `wrangler queues create open-energy-cascade`
+  // provisions the queue resource the [[queues.producers]]/[[queues.consumers]]
+  // blocks in wrangler.toml reference. Until that resource exists the QUEUE
+  // binding is undefined and the async path is a no-op — we warn once per
+  // process so a misconfigured deploy is loud rather than silently inline.
   if (ctx.event !== 'audit.event_appended') {
     if (ctx.env?.QUEUE) {
       const payload: CascadeQueuePayload = {
@@ -2573,6 +2579,16 @@ export async function fireCascade(ctx: CascadeContext): Promise<void> {
       } catch {
         // Queue send failed — fall through to inline execution so no event is lost.
       }
+    } else if (!queueMissingWarned) {
+      // Once-per-process signal: the async Queue path is disabled because the
+      // QUEUE binding is absent. Cascades still run inline (correct, just
+      // slower under load); this warns the operator that the Queue resource
+      // hasn't been provisioned yet. Suppressed after the first emit to avoid
+      // log flooding on a busy Worker with no binding.
+      queueMissingWarned = true;
+      console.warn(
+        'cascade_queue_binding_missing: async cascade path disabled — run `wrangler queues create open-energy-cascade` to enable',
+      );
     }
     await runStage(ctx, 'registry', () => runCascadeRegistry(ctx)).catch(() => {});
     await runStage(ctx, 'analytics', () => recordPlatformEvent(ctx)).catch(() => {});
@@ -2716,6 +2732,25 @@ async function writeToDlq(
   const errorStack = err instanceof Error ? err.stack || null : null;
 
   try {
+    // Persist the FULL CascadeContext (minus env) — not just ctx.data — so a
+    // replayed stage sees the same PlatformEventFields it ran with the first
+    // time. Without this, a replayed 'commercial' stage early-returns (no
+    // ctx.commercial → no revenue row) and 'analytics' writes a degraded row
+    // (null chain_key). We reuse the CascadeQueuePayload shape (the same
+    // contract the async Queue consumer uses) so rehydration is symmetric.
+    const payload: CascadeQueuePayload = {
+      event: ctx.event,
+      actor_id: ctx.actor_id,
+      entity_type: ctx.entity_type,
+      entity_id: ctx.entity_id,
+      data: ctx.data,
+      chain_key: ctx.chain_key,
+      source_chain_status: ctx.source_chain_status,
+      affected_roles: ctx.affected_roles as string[] | undefined,
+      cross_impact_hint: ctx.cross_impact_hint,
+      commercial: ctx.commercial,
+      skipAudit: ctx.skipAudit,
+    };
     await ctx.env.DB.prepare(
       `INSERT INTO cascade_dlq
          (id, event, entity_type, entity_id, actor_id, payload, stage,
@@ -2728,7 +2763,7 @@ async function writeToDlq(
         ctx.entity_type,
         ctx.entity_id,
         ctx.actor_id || null,
-        JSON.stringify(ctx.data || {}),
+        JSON.stringify(payload),
         stage,
         errorMessage,
         errorStack,
@@ -2772,24 +2807,38 @@ export async function retryDlqItem(
   if (!row) return { ok: false, error: 'DLQ row not found' };
   if (row.status !== 'pending') return { ok: false, error: `Row is ${row.status}` };
 
-  // NOTE: the DLQ row persists only event/entity_type/entity_id/actor_id/data —
-  // NOT the PlatformEventFields (commercial, chain_key, affected_roles,
-  // source_chain_status). So a replayed 'analytics' stage writes a degraded row
-  // (null chain_key/entity_value) and a replayed 'commercial' stage early-returns
-  // (no ctx.commercial → no revenue row). Non-crashing and acceptable for W1
-  // (registry empty; fees all-free so the lost revenue row is R0 anyway). W2 TODO:
-  // serialize PlatformEventFields into cascade_dlq.payload and rehydrate here for
-  // full-fidelity replay once fees are enabled and chain_key-routed rules exist.
-  const ctx: CascadeContext = {
-    event: row.event as EventType,
-    entity_type: row.entity_type,
-    entity_id: row.entity_id,
-    actor_id: row.actor_id || undefined,
-    data: (() => {
-      try { return JSON.parse(row.payload); } catch { return {}; }
-    })(),
-    env,
-  };
+  // Rehydrate the FULL CascadeContext from payload. New rows (post-fidelity
+  // fix) store a CascadeQueuePayload JSON with chain_key/commercial/etc.; old
+  // rows store just ctx.data. We detect the new shape by the presence of
+  // `entity_type` in the parsed JSON; if absent we fall back to the legacy
+  // interpretation (parsed payload IS ctx.data) so historical rows still replay.
+  let parsed: any = {};
+  try { parsed = JSON.parse(row.payload); } catch { parsed = {}; }
+  const isFullCtx = parsed && typeof parsed === 'object' && 'entity_type' in parsed;
+
+  const ctx: CascadeContext = isFullCtx
+    ? {
+        event: (parsed.event as EventType) ?? (row.event as EventType),
+        actor_id: parsed.actor_id ?? (row.actor_id || undefined),
+        entity_type: parsed.entity_type ?? row.entity_type,
+        entity_id: parsed.entity_id ?? row.entity_id,
+        data: parsed.data,
+        chain_key: parsed.chain_key,
+        source_chain_status: parsed.source_chain_status,
+        affected_roles: parsed.affected_roles,
+        cross_impact_hint: parsed.cross_impact_hint,
+        commercial: parsed.commercial,
+        skipAudit: parsed.skipAudit,
+        env,
+      }
+    : {
+        event: row.event as EventType,
+        entity_type: row.entity_type,
+        entity_id: row.entity_id,
+        actor_id: row.actor_id || undefined,
+        data: parsed,
+        env,
+      };
 
   try {
     switch (row.stage) {

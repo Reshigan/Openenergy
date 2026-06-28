@@ -103,14 +103,30 @@ export async function rotateSession(db: D1Database, refreshToken: string, newAcc
   const accessExpires = new Date(now.getTime() + ACCESS_TTL_MINUTES * 60_000);
   const refreshExpires = new Date(now.getTime() + REFRESH_TTL_DAYS * 86_400_000);
 
-  await db
+  // Atomic rotation: the UPDATE only matches a row whose refresh hash is the
+  // one we looked up AND which has not been revoked/rotated in the meantime.
+  // Under a concurrent refresh race, exactly one caller gets changes>0; the
+  // other gets changes===0 — that second caller is either a legit user whose
+  // token was just rotated by their other tab, or an attacker replaying a
+  // stolen refresh token. Either way, treat it as a replay signal and
+  // revoke the whole session family for that participant (we don't track a
+  // per-token family_id, so participant-wide revocation is the practical
+  // containment — it forces a full re-login, which is the right move when a
+  // refresh token is being used twice).
+  const res = await db
     .prepare(
       `UPDATE sessions
          SET access_jti = ?, refresh_token_hash = ?, expires_at = ?, refresh_expires_at = ?, last_used_at = ?
-         WHERE id = ?`
+         WHERE refresh_token_hash = ? AND revoked_at IS NULL`
     )
-    .bind(newAccessJti, newRefreshHash, accessExpires.toISOString(), refreshExpires.toISOString(), now.toISOString(), row.id)
+    .bind(newAccessJti, newRefreshHash, accessExpires.toISOString(), refreshExpires.toISOString(), now.toISOString(), refreshHash)
     .run();
+  if ((res.meta?.changes ?? 0) === 0) {
+    // Someone else rotated or revoked this token between our SELECT and UPDATE.
+    // Contain the compromise: revoke every active session for this participant.
+    await revokeAllSessionsForParticipant(db, row.participant_id, 'replay_detected');
+    return null;
+  }
 
   return {
     sessionId: row.id,
@@ -206,9 +222,20 @@ export async function recordLoginAttempt(db: D1Database, email: string, ip: stri
     .run();
 }
 
-export async function isLockedOut(db: D1Database, email: string): Promise<{ locked: boolean; retryAfterSeconds: number; attempts: number }> {
+/**
+ * Composite lockout: a login is blocked when EITHER the email dimension OR the
+ * IP dimension has >= LOCKOUT_THRESHOLD failures in the window. Keying only on
+ * email let an attacker force-lock any account (DoS) by submitting bad
+ * passwords for it; keying only on IP let a credential-stuffer rotate IPs to
+ * evade the threshold. The composite keys both: an attacker driving lockout
+ * on a victim email trips the email dimension (intended — protect the victim),
+ * while a distributed credential-stuffing attack against many accounts from
+ * one IP trips the IP dimension. ip may be null (then the IP dimension is
+ * skipped — a missing IP cannot be used to evade, only to relax the IP bucket).
+ */
+export async function isLockedOut(db: D1Database, email: string, ip?: string | null): Promise<{ locked: boolean; retryAfterSeconds: number; attempts: number }> {
   const since = new Date(Date.now() - LOCKOUT_WINDOW_MINUTES * 60_000).toISOString();
-  const row = await db
+  const emailRow = await db
     .prepare(
       `SELECT COUNT(*) AS n, MAX(attempted_at) AS last_failed
        FROM login_attempts
@@ -216,13 +243,38 @@ export async function isLockedOut(db: D1Database, email: string): Promise<{ lock
     )
     .bind(email.toLowerCase(), since)
     .first<{ n: number; last_failed: string | null }>();
-  const n = Number(row?.n || 0);
-  if (n < LOCKOUT_THRESHOLD) return { locked: false, retryAfterSeconds: 0, attempts: n };
-  const lastFailed = row?.last_failed ? new Date(row.last_failed).getTime() : Date.now();
+  const emailN = Number(emailRow?.n || 0);
+  let ipN = 0;
+  let ipLast: string | null = null;
+  if (ip) {
+    const ipRow = await db
+      .prepare(
+        `SELECT COUNT(*) AS n, MAX(attempted_at) AS last_failed
+         FROM login_attempts
+         WHERE ip = ? AND succeeded = 0 AND attempted_at >= ?`
+      )
+      .bind(ip, since)
+      .first<{ n: number; last_failed: string | null }>();
+    ipN = Number(ipRow?.n || 0);
+    ipLast = ipRow?.last_failed ?? null;
+  }
+  // Lock if either dimension crosses the threshold.
+  const lockedByEmail = emailN >= LOCKOUT_THRESHOLD;
+  const lockedByIp = ipN >= LOCKOUT_THRESHOLD;
+  if (!lockedByEmail && !lockedByIp) {
+    return { locked: false, retryAfterSeconds: 0, attempts: Math.max(emailN, ipN) };
+  }
+  // Use whichever dimension tripped to compute the unlock instant. If both
+  // tripped, the most recent failure governs (longest remaining lock).
+  const emailLast = emailRow?.last_failed ?? null;
+  const candidates = [emailLast, ipLast]
+    .filter((t): t is string => t != null)
+    .map((t) => new Date(t).getTime());
+  const lastFailed = candidates.length ? Math.max(...candidates) : Date.now();
   const unlockAt = lastFailed + LOCKOUT_DURATION_MINUTES * 60_000;
   const remainingMs = unlockAt - Date.now();
-  if (remainingMs <= 0) return { locked: false, retryAfterSeconds: 0, attempts: n };
-  return { locked: true, retryAfterSeconds: Math.ceil(remainingMs / 1000), attempts: n };
+  if (remainingMs <= 0) return { locked: false, retryAfterSeconds: 0, attempts: Math.max(emailN, ipN) };
+  return { locked: true, retryAfterSeconds: Math.ceil(remainingMs / 1000), attempts: Math.max(emailN, ipN) };
 }
 
 // Retained for tests / callers wanting to introspect config.

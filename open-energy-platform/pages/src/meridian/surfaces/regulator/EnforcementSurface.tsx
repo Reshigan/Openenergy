@@ -7,7 +7,8 @@
 // in surfaces.tsx, reached from Atlas (⌘K) via roleData feature key `enforcement`. Non-chain
 // event-log surface (Bucket B) — distinct from the `enforcement_action` chain (→ /ledger).
 import React, { useState } from 'react';
-import { ListingTable, Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
+import { ListingTable, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
+import { StatusPill } from '../../components';
 import { api } from '../../../lib/api';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
@@ -34,7 +35,7 @@ export default function EnforcementSurface(_props: { role: string }) {
         empty={{ title: 'No enforcement events', description: 'Case opened / evidence filed / hearings / findings / appeals events will appear here.' }}
         columns={[
           { key: 'case_id', label: 'Case', render: (r) => <span className="font-mono text-[11px]">{(r.case_id || '').slice(0, 12)}…</span> },
-          { key: 'event_type', label: 'Event', render: (r) => <Pill tone={r.event_type === 'closed' ? 'good' : r.event_type === 'finding_issued' || r.event_type === 'appeal_lodged' ? 'bad' : 'info'}>{r.event_type.replace(/_/g, ' ')}</Pill> },
+          { key: 'event_type', label: 'Event', render: (r) => <StatusPill status={r.event_type} tone={r.event_type === 'closed' ? 'good' : r.event_type === 'finding_issued' || r.event_type === 'appeal_lodged' ? 'bad' : 'info'} /> },
           { key: 'occurred_at', label: 'When', render: (r) => new Date(r.occurred_at).toLocaleString() },
           { key: 'notes', label: 'Notes', render: (r) => <span className="block truncate max-w-md" title={r.notes || ''}>{r.notes || '—'}</span> },
         ]}

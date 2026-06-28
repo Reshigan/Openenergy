@@ -204,6 +204,9 @@ describe('POST /api/onboarding/kyc/submit', () => {
 
 describe('GET /api/onboarding/kyc - owner/tenant fence', () => {
   it('returns only the caller own documents grouped by type, decrypted, never another tenant rows', async () => {
+    // ponytail: decrypt is fail-closed by design (prod MUST set KYC_ENC_KEY — a go-live
+    // gate). Exercise the real encrypted round-trip, not the no-key plaintext fallback.
+    (env as any).KYC_ENC_KEY = Buffer.from(new Uint8Array(32).fill(7)).toString('base64');
     seedParticipant('owner_a', 'ipp_developer', 'tenant_a');
     seedParticipant('owner_b', 'offtaker', 'tenant_b');
 

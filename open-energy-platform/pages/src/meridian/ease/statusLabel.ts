@@ -52,7 +52,7 @@ export function statusTone(status: string): StatusTone {
 }
 
 // Sentence-case a snake/space code, preserving known acronyms uppercase.
-const ACRONYM = /^(cod|ppa|mrv|ipp|epc|esco|hse|rfp|loi|rma|wo|kpi|sla|vat|cpi|itp|rfi|ncr|bess|soh|rec|goo|dscr|dsra|mra|sseg|gca|rez|fco|ecn|amc|evm|wbs|poa|cpa|erpa|itmo|ed|bee|bbbee)$/i;
+const ACRONYM = /^(cod|ppa|mrv|ipp|epc|esco|hse|rfp|loi|rma|wo|kpi|sla|vat|cpi|itp|rfi|ncr|bess|soh|rec|goo|dscr|dsra|mra|sseg|gca|rez|fco|ecn|amc|evm|wbs|poa|cpa|erpa|itmo|ed|bee|bbbee|kyc|tou)$/i;
 function sentence(s: string): string {
   const words = s.toLowerCase().split(/[_\s]+/).filter(Boolean);
   return words
