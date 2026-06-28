@@ -166,8 +166,8 @@ A broader ~50-endpoint admin GET sweep the same day returned only 404s for unmou
 ### 3.5 (P2) JS bundle size — **CLOSED**
 `pages/vite.config.ts` already defines `manualChunks` + the workbenches are lazy code-split. Current `pages/dist/assets/`: main `index-*.js` **76 KB**, vendor `vendor-*.js` 793 KB (cached, recharts/lucide/jspdf), per-workstation chunks 90–126 KB each loaded on demand. No single 1.5 MB chunk remains.
 
-### 3.6 (P3) Document the support role landing
-- The support role exists in seeds but its dedicated `/support` deep-page hasn't been audited. Most support actions go through `/admin/monitoring` + `/support` impersonation flow.
+### 3.6 (P3) Document the support role landing — **CLOSED**
+Support role verified 2026-06-28: `/api/support/tickets` → 200 with a support token; support is correctly fenced from `/api/admin/monitoring/*` (403). Actions flow through `/support` + the impersonation path as designed.
 
 ### 3.7 (P3) Verify cron triggers actually run
 - `wrangler tail` against the Worker should show the */15 surveillance scan, hourly mark-price VWAP, daily metering rollup. Not validated in this session — observed via `wrangler deployments list` that triggers are bound, but their successful execution wasn't confirmed.
@@ -182,7 +182,7 @@ A broader ~50-endpoint admin GET sweep the same day returned only 404s for unmou
 - [ ] Document JWT_SECRET rotation policy and add to ops runbook
 - [ ] Tail `wrangler tail` for 24h to observe cron firings + error rate
 - [ ] Run a load test (k6 harness exists at `tests/load/`) at expected peak — match SA grid trading hour profile
-- [ ] Tighten role gates that currently allow admin-by-default (e.g. confirm `regulator` can't write to `/api/admin/*`)
+- [x] Tighten role gates that currently allow admin-by-default — verified 2026-06-28: regulator token gets 403 on `/api/admin/monitoring/cascade-dlq`, `/api/admin/users`, `/api/admin/revenue`, `/api/admin/cron/run`; support gets 403 on `/api/admin/monitoring/errors`. No admin-by-default leak.
 - [ ] Confirm SSO end-to-end with a real Microsoft Entra tenant (`AZURE_AD_CLIENT_SECRET` set as a Worker secret)
 - [ ] Snapshot D1 to R2 (the `/api/data-tier/snapshot` and `/api/backup/run` paths exist) — run a backup-restore drill
 - [ ] POPIA: confirm the 30-day breach notification timeline is wired (briefing fires + admin escalation cascades)
