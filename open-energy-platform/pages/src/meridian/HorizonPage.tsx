@@ -12,6 +12,7 @@ import { PlatformPulse } from './PlatformPulse';
 import { GettingStarted } from './GettingStarted';
 import { GuidedTour } from './GuidedTour';
 import { cleanLabel } from './labels';
+import OfftakerHorizon from './OfftakerHorizon';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/useAuth';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
@@ -48,6 +49,10 @@ function bucketTick(key: Bucket, now: Date): string {
 
 export default function HorizonPage() {
   const role = useRole();
+  // Offtaker gets the bespoke v2 "Honest Number" surface — a consumer-grade
+  // delivery summary built for a non-trader buyer. Every other role keeps the
+  // shared lane×bucket board below.
+  if (role === 'offtaker') return <OfftakerHorizon />;
   const navigate = useNavigate();
   // Admin holds no Meridian lanes — it views any role's board via the backend
   // passthrough. Non-admin roles always view their own board (boardRole === role).

@@ -1206,3 +1206,118 @@
 .mer .mer-pulse-item b { font-size:14px; color:var(--ink); font-variant-numeric:tabular-nums; }
 @keyframes mer-pulse-beat { 0%{box-shadow:0 0 0 0 var(--moss);} 70%{box-shadow:0 0 0 7px transparent;} 100%{box-shadow:0 0 0 0 transparent;} }
 @media (prefers-reduced-motion: reduce){ .mer .mer-pulse-dot{ animation:none; } }
+
+/* ════════════════════════════════════════════════════════════════════════
+ * OfftakerHorizon — v2 "Honest Number" bespoke surface.
+ * Consumer-grade delivery summary: one plain answer, three cards, pipeline.
+ * Scoped under .mer.horizon.oh so it never leaks into the shared board.
+ * ════════════════════════════════════════════════════════════════════════ */
+.mer .btn.gold { background:var(--amber-deep); border-color:var(--amber-deep); color:#fff; }
+.mer .btn.gold:hover { background:var(--amber); }
+
+.mer .oh-board { max-width:1180px; margin:0 auto; padding:0 0 24px; }
+
+/* hero honest-number card */
+.mer .oh-hero { position:relative; overflow:hidden; background:var(--card, var(--raised, #fff));
+  border:1px solid var(--line); border-radius:18px; padding:28px 30px; box-shadow:0 1px 2px rgba(13,22,38,.04), 0 10px 28px -14px rgba(13,22,38,.18); }
+.mer .oh-hero-glow { position:absolute; right:-40px; top:-40px; width:220px; height:220px; border-radius:50%;
+  background:var(--moss-tint); opacity:.55; pointer-events:none; }
+.mer .oh-eyebrow { position:relative; font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink3); font-weight:600; }
+.mer .oh-hero-title { position:relative; font-size:32px; line-height:1.14; margin:10px 0 4px; max-width:34ch;
+  color:var(--ink); font-weight:600; }
+.mer .oh-hero-sub { position:relative; font-size:15px; color:var(--ink2); max-width:66ch; margin:6px 0 0; line-height:1.5; }
+.mer .oh-hero-actions { position:relative; display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
+.mer .oh-num.ok { color:var(--moss-deep); }
+.mer .oh-num.warn { color:var(--amber-deep); }
+.mer .oh-num.bad { color:var(--oxide); }
+
+/* three plain cards */
+.mer .oh-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:18px; }
+.mer .oh-card { background:var(--card, var(--raised, #fff)); border:1px solid var(--line);
+  border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:3px; }
+.mer .oh-card.oh-card-action { border-color:#e6d9a8; border-left:4px solid var(--amber-deep);
+  background:linear-gradient(180deg,#fffdf6,#fff); }
+.mer .oh-card-l { font-size:12px; color:var(--ink3); font-weight:600; letter-spacing:.02em; }
+.mer .oh-card-l.amber { color:var(--amber-deep); font-weight:700; }
+.mer .oh-card-l.ok { color:var(--moss-deep); font-weight:700; }
+.mer .oh-card-v { font-size:26px; margin:5px 0 1px; color:var(--ink); line-height:1.1; }
+.mer .oh-card-v.ok { color:var(--moss-deep); }
+.mer .oh-card-v.warn { color:var(--amber-deep); }
+.mer .oh-card-v-action { font-size:19px; line-height:1.2; margin:5px 0 1px; color:var(--ink); }
+.mer .oh-unit { font-size:14px; color:var(--ink3); }
+.mer .oh-card-d { font-size:12.5px; color:var(--ink2); line-height:1.45; margin-bottom:8px; }
+.mer .oh-card-acts { display:flex; gap:8px; flex-wrap:wrap; margin-top:auto; }
+
+/* status pills */
+.mer .oh-pill { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600;
+  padding:4px 10px; border-radius:999px; width:fit-content; margin-top:auto; }
+.mer .oh-pill.ok { background:var(--moss-tint); color:var(--moss-deep); }
+.mer .oh-pill.warn { background:var(--amber-tint); color:var(--amber-deep); }
+.mer .oh-pill.bad { background:color-mix(in oklch, var(--oxide) 14%, #fff); color:var(--oxide); }
+
+/* contract state pipeline */
+.mer .oh-pipeline-card, .mer .oh-sites-card { background:var(--card, var(--raised, #fff));
+  border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-top:18px; }
+.mer .oh-pipeline-head { display:flex; justify-content:space-between; align-items:baseline;
+  margin-bottom:12px; gap:12px; flex-wrap:wrap; }
+.mer .oh-pipeline-head h3 { font-size:15px; color:var(--ink); }
+.mer .oh-mono { font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px;
+  color:var(--ink3); font-variant-numeric:tabular-nums; }
+.mer .pipe { display:flex; align-items:center; gap:0; flex-wrap:wrap; }
+.mer .pipe-node { font-size:10.5px; font-weight:600; padding:4px 8px; border-radius:6px;
+  background:color-mix(in oklch, var(--line) 60%, #fff); color:var(--ink3); white-space:nowrap; }
+.mer .pipe-node.done { background:var(--moss-tint); color:var(--moss-deep); }
+.mer .pipe-node.now { background:var(--moss-deep); color:#fff; }
+.mer .pipe-arw { color:var(--line); font-size:11px; padding:0 4px; }
+.mer .oh-pipeline-foot { font-size:12.5px; color:var(--ink3); margin:11px 0 0; }
+
+/* per-site table + bars */
+.mer .oh-table { border-collapse:collapse; width:100%; font-size:12.5px; }
+.mer .oh-table th { text-align:left; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink3); font-weight:600; padding:8px 12px; border-bottom:1px solid var(--line); }
+.mer .oh-table td { padding:11px 12px; border-bottom:1px solid var(--line); color:var(--ink2); }
+.mer .oh-table tr:last-child td { border-bottom:none; }
+.mer .oh-table .oh-rate { min-width:180px; }
+.mer .oh-bar-wrap { display:flex; align-items:center; gap:8px; }
+.mer .oh-bar { flex:1; height:8px; border-radius:4px; background:color-mix(in oklch, var(--line) 55%, #fff); }
+.mer .oh-bar-fill { height:100%; border-radius:4px; }
+.mer .oh-bar-fill.ok { background:var(--moss-deep); }
+.mer .oh-bar-fill.warn { background:var(--amber-deep); }
+.mer .oh-rate-v.ok { color:var(--moss-deep); }
+.mer .oh-rate-v.warn { color:var(--amber-deep); }
+
+/* contract in plain terms (hero contract card) */
+.mer .oh-contract-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px 24px; margin:4px 0 0; }
+.mer .oh-contract-k { display:block; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink3); font-weight:600; margin-bottom:4px; }
+.mer .oh-contract-v { display:block; font-size:13.5px; color:var(--ink); }
+.mer .oh-contract-v .oh-pill { margin:0; }
+.mer .oh-pill.neu { background:color-mix(in oklch, var(--line) 55%, #fff); color:var(--ink2); }
+
+/* other-contracts list */
+.mer .oh-contract-list { display:flex; flex-direction:column; gap:0; }
+.mer .oh-contract-item { display:flex; justify-content:space-between; align-items:center; gap:12px;
+  padding:12px 4px; border-bottom:1px solid var(--line); color:var(--ink); text-decoration:none;
+  transition:background .12s; border-radius:6px; }
+.mer .oh-contract-item:hover { background:color-mix(in oklch, var(--line) 30%, #fff); }
+.mer .oh-contract-item:last-child { border-bottom:none; }
+.mer .oh-contract-item .oh-mono { font-size:11.5px; color:var(--ink3); }
+
+@media (max-width:860px){
+  .mer .oh-contract-grid { grid-template-columns:1fr; }
+}
+
+/* reassurance + empty states */
+.mer .oh-reassure { margin-top:18px; background:var(--moss-tint); border:1px solid color-mix(in oklch, var(--moss) 30%, #fff);
+  border-radius:12px; padding:14px 18px; display:flex; align-items:center; gap:12px; font-size:13.5px; color:var(--moss-deep); }
+.mer .oh-reassure-tick { font-size:20px; }
+.mer .oh-empty { margin-top:18px; text-align:center; padding:36px 20px; border:1px dashed var(--line);
+  border-radius:14px; background:var(--paper); }
+.mer .oh-empty h3 { font-size:18px; color:var(--ink); margin-bottom:6px; }
+.mer .oh-empty p { color:var(--ink2); font-size:13.5px; margin:0 0 14px; }
+
+@media (max-width:860px){
+  .mer .oh-cards { grid-template-columns:1fr; }
+  .mer .oh-hero-title { font-size:26px; }
+}
