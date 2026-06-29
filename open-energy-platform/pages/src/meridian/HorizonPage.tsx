@@ -13,6 +13,7 @@ import { GettingStarted } from './GettingStarted';
 import { GuidedTour } from './GuidedTour';
 import { cleanLabel } from './labels';
 import OfftakerHorizon from './OfftakerHorizon';
+import TraderHorizon from './TraderHorizon';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/useAuth';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
@@ -53,6 +54,7 @@ export default function HorizonPage() {
   // delivery summary built for a non-trader buyer. Every other role keeps the
   // shared lane×bucket board below.
   if (role === 'offtaker') return <OfftakerHorizon />;
+  if (role === 'trader') return <TraderHorizon />;
   const navigate = useNavigate();
   // Admin holds no Meridian lanes — it views any role's board via the backend
   // passthrough. Non-admin roles always view their own board (boardRole === role).
