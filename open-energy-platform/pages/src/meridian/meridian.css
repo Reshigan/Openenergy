@@ -1894,3 +1894,77 @@
   .mer.cf .cf-board { padding: 0 14px 20px; }
   .mer.cf .cf-factors { grid-template-columns: 1fr; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   WAVE 9 — ESCO Horizon · "Work-Order Command" (v2 Option 3)
+   WIP board over 12-state work-order lifecycle.
+   Scoped under .mer.es — reuses oh-eyebrow / oh-mono.
+   ═══════════════════════════════════════════════════════════════════ */
+.mer.es .es-num.bad { color: var(--oxide); }
+.mer.es .es-num.ok { color: var(--moss); }
+.mer.es .es-num.warn { color: var(--amber-deep); }
+
+.mer.es .es-board { padding: 0 22px 24px; max-width: 1200px; }
+.mer.es .es-hero { margin-bottom: 20px; }
+.mer.es .es-hero-title { font-size: 28px; line-height: 1.22; color: var(--ink); margin: 6px 0 8px; max-width: 760px; }
+.mer.es .es-hero-sub { color: var(--ink2); font-size: 14px; line-height: 1.55; max-width: 760px; margin: 0; }
+
+/* ── KPIs ── */
+.mer.es .es-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 22px; }
+.mer.es .es-kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; text-align: center; }
+.mer.es .es-kpi-l { font-size: 13px; color: var(--ink2); margin-bottom: 6px; }
+.mer.es .es-kpi-v { font-family: 'Newsreader', serif; font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.mer.es .es-kpi-v.up { color: var(--petrol); }
+.mer.es .es-kpi-v.warn { color: var(--amber-deep); }
+.mer.es .es-kpi-v.down { color: var(--oxide); }
+.mer.es .es-kpi-d { font-size: 11.5px; color: var(--ink3, var(--ink2)); }
+.mer.es .es-kpi-d.warn { color: var(--amber-deep); }
+.mer.es .es-kpi-d.down { color: var(--oxide); }
+
+/* ── WO board ── */
+.mer.es .es-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.mer.es .es-col { background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.mer.es .es-col-h { display: flex; justify-content: space-between; align-items: center;
+  padding: 13px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink2); border-bottom: 1px solid var(--line); }
+.mer.es .es-col-h .es-col-t { color: var(--ink); font-weight: 600; }
+.mer.es .es-wo-list { display: flex; flex-direction: column; }
+.mer.es .es-wo { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.mer.es .es-wo:last-child { border-bottom: 0; }
+.mer.es .es-wo.hot { background: color-mix(in oklch, var(--oxide) 5%, transparent); }
+.mer.es .es-wid { font-size: 11px; color: var(--ink3, var(--ink2)); margin-bottom: 4px; }
+.mer.es .es-wt { font-size: 15px; color: var(--ink); margin: 0 0 8px; }
+.mer.es .es-wf { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.mer.es .es-chip {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+  padding: 2px 6px; border-radius: 4px; white-space: nowrap;
+}
+.mer.es .es-chip.red { color: #fff; background: var(--oxide); }
+.mer.es .es-chip.amber { color: var(--amber-deep); background: color-mix(in oklch, var(--amber) 14%, #fff); }
+.mer.es .es-chip.green { color: var(--moss-deep); background: color-mix(in oklch, var(--moss) 14%, #fff); }
+.mer.es .es-chip.dim { color: var(--ink3, var(--ink2)); background: var(--line); }
+.mer.es .es-zar { font-size: 11px; color: var(--ink3, var(--ink2)); }
+.mer.es .es-sla { font-size: 11px; margin-top: 6px; }
+.mer.es .es-sla.red { color: var(--oxide); }
+.mer.es .es-sla.amber { color: var(--amber-deep); }
+.mer.es .es-sla.green { color: var(--moss-deep); }
+.mer.es .es-sla.dim { color: var(--ink3, var(--ink2)); }
+.mer.es .es-wo-empty { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink2); padding: 20px 0; }
+
+/* ── lanes summary ── */
+.mer.es .es-lanes { margin-top: 22px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; }
+.mer.es .es-lanes-h { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .08em;
+  color: var(--ink3, var(--ink2)); margin-bottom: 14px; }
+.mer.es .es-lanes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.mer.es .es-lane-card { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.mer.es .es-lane-name { font-size: 15px; color: var(--ink); margin: 0 0 6px; }
+.mer.es .es-lane-meta { font-size: 11.5px; color: var(--ink3, var(--ink2)); margin-bottom: 8px; }
+.mer.es .es-lane-link { font-size: 11px; color: var(--ink3, var(--ink2)); text-decoration: none; }
+.mer.es .es-lane-link:hover { color: var(--petrol); }
+
+/* responsive */
+@media (max-width: 860px){
+  .mer.es .es-hero-title { font-size: 24px; }
+  .mer.es .es-board { padding: 0 14px 20px; }
+  .mer.es .es-kpis { grid-template-columns: 1fr; }
+}
