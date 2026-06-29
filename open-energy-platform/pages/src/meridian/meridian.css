@@ -1800,3 +1800,97 @@
   .mer.su .su-hero-title { font-size: 24px; }
   .mer.su .su-board { padding: 0 14px 20px; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   WAVE 8 — Carbon fund Horizon · "Quality-Rating Cockpit" (v2 Option 3)
+   Integrity scorecard + factors breakdown.
+   Scoped under .mer.cf — reuses oh-eyebrow / oh-mono.
+   ═══════════════════════════════════════════════════════════════════ */
+.mer.cf .cf-num.bad { color: var(--oxide); }
+.mer.cf .cf-num.ok { color: var(--moss); }
+.mer.cf .cf-num.warn { color: var(--amber-deep); }
+
+.mer.cf .cf-board { padding: 0 22px 24px; max-width: 1000px; }
+.mer.cf .cf-hero { margin-bottom: 20px; }
+.mer.cf .cf-hero-title { font-size: 28px; line-height: 1.22; color: var(--ink); margin: 6px 0 8px; max-width: 760px; }
+.mer.cf .cf-hero-sub { color: var(--ink2); font-size: 14px; line-height: 1.55; max-width: 760px; margin: 0; }
+
+/* ── score hero ── */
+.mer.cf .cf-score-hero {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 24px;
+  align-items: start;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 22px;
+}
+.mer.cf .cf-gauge { position: relative; width: 160px; height: 160px; }
+.mer.cf .cf-gnum {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: grid; place-items: center;
+}
+.mer.cf .cf-grade {
+  font-family: 'Newsreader', serif;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+}
+.mer.cf .cf-gl {
+  font-family: 'Newsreader', serif;
+  font-size: 14px;
+  color: var(--ink2);
+  margin-top: 4px;
+}
+.mer.cf .cf-score-body { min-width: 0; }
+.mer.cf .cf-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.mer.cf .cf-score-title { font-size: 21px; color: var(--ink); margin: 0 0 6px; }
+.mer.cf .cf-score-meta { font-size: 12px; color: var(--ink3, var(--ink2)); }
+.mer.cf .cf-factors { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.mer.cf .cf-factor { }
+.mer.cf .cf-between { display: flex; justify-content: space-between; align-items: center; }
+.mer.cf .cf-fl { font-size: 13px; color: var(--ink2); }
+.mer.cf .cf-fv { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; }
+.mer.cf .cf-fv.ok { color: var(--moss-deep); }
+.mer.cf .cf-fv.warn { color: var(--amber-deep); }
+.mer.cf .cf-fv.bad { color: var(--oxide); }
+.mer.cf .cf-bar2 { height: 6px; background: var(--line); border-radius: 3px; margin: 6px 0; overflow: hidden; }
+.mer.cf .cf-bar2 i { display: block; height: 100%; border-radius: 3px; }
+.mer.cf .cf-factor-meta { font-size: 11px; color: var(--ink3, var(--ink2)); margin-top: 4px; }
+.mer.cf .cf-score-empty { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink2); }
+
+/* ── duty queue ── */
+.mer.cf .cf-duty { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; }
+.mer.cf .cf-duty-h { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .08em;
+  color: var(--ink3, var(--ink2)); margin-bottom: 14px; }
+.mer.cf .cf-duty-list { display: flex; flex-direction: column; }
+.mer.cf .cf-duty-row { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 16px;
+  align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.mer.cf .cf-duty-row:last-child { border-bottom: 0; }
+.mer.cf .cf-duty-score {
+  position: absolute; top: 0; left: 0; height: 100%;
+  background: color-mix(in oklch, var(--moss) 20%, transparent);
+  border-radius: 8px 0 0 8px; z-index: 0;
+}
+.mer.cf .cf-duty-body { min-width: 0; position: relative; z-index: 1; }
+.mer.cf .cf-duty-title { font-size: 15px; color: var(--ink); margin: 0 0 4px; }
+.mer.cf .cf-duty-meta { font-size: 11.5px; color: var(--ink3, var(--ink2)); }
+.mer.cf .cf-duty-acts { display: flex; gap: 8px; position: relative; z-index: 1; }
+.mer.cf .cf-duty-empty { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink2); padding: 20px 0; }
+
+/* responsive */
+@media (max-width: 860px){
+  .mer.cf .cf-score-hero { grid-template-columns: 1fr; }
+  .mer.cf .cf-hero-title { font-size: 24px; }
+  .mer.cf .cf-board { padding: 0 14px 20px; }
+  .mer.cf .cf-factors { grid-template-columns: 1fr; }
+}
