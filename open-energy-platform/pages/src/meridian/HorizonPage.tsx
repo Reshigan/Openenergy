@@ -16,6 +16,7 @@ import OfftakerHorizon from './OfftakerHorizon';
 import TraderHorizon from './TraderHorizon';
 import LenderHorizon from './LenderHorizon';
 import RegulatorHorizon from './RegulatorHorizon';
+import IppHorizon from './IppHorizon';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/useAuth';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
@@ -59,6 +60,7 @@ export default function HorizonPage() {
   if (role === 'trader') return <TraderHorizon />;
   if (role === 'lender') return <LenderHorizon />;
   if (role === 'regulator') return <RegulatorHorizon />;
+  if (role === 'ipp_developer') return <IppHorizon />;
   const navigate = useNavigate();
   // Admin holds no Meridian lanes — it views any role's board via the backend
   // passthrough. Non-admin roles always view their own board (boardRole === role).

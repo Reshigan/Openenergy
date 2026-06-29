@@ -1591,3 +1591,92 @@
   .mer.rg .rg-hero-title { font-size: 24px; }
   .mer.rg .rg-board { padding: 0 14px 20px; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   WAVE 5 — IPP developer Horizon · "Calm Milestone-Guide" (v2 Option 2)
+   Single recommended next action + linear milestone spine of workstreams.
+   Scoped under .mer.ip — reuses oh-eyebrow / oh-pill / oh-mono.
+   ═══════════════════════════════════════════════════════════════════ */
+.mer.ip .ip-num.bad { color: var(--oxide); }
+.mer.ip .ip-num.ok { color: var(--moss); }
+.mer.ip .ip-num.warn { color: var(--amber-deep); }
+
+.mer.ip .ip-board { padding: 0 22px 24px; max-width: 980px; }
+.mer.ip .ip-hero { margin-bottom: 20px; }
+.mer.ip .ip-hero-title { font-size: 28px; line-height: 1.22; color: var(--ink); margin: 6px 0 8px; max-width: 760px; }
+.mer.ip .ip-hero-sub { color: var(--ink2); font-size: 14px; line-height: 1.55; max-width: 760px; margin: 0; }
+
+/* ── next action card ── */
+.mer.ip .ip-next {
+  display: grid;
+  grid-template-columns: 108px 1fr auto;
+  gap: 18px;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--petrol);
+  border-radius: 16px;
+  padding: 20px 22px;
+  margin-bottom: 22px;
+}
+.mer.ip .ip-next-ring {
+  width: 108px; height: 108px; border-radius: 50%;
+  display: grid; place-items: center;
+}
+.mer.ip .ip-next-ring-in {
+  width: 86px; height: 86px; border-radius: 50%; background: var(--card);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.mer.ip .ip-next-ring-in b { font-family: 'IBM Plex Mono', monospace; font-size: 24px; color: var(--ink); line-height: 1; }
+.mer.ip .ip-next-ring-in span { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--ink2); margin-top: 3px; letter-spacing: .06em; text-transform: uppercase; }
+.mer.ip .ip-next-body { min-width: 0; }
+.mer.ip .ip-next-eyebrow { font-size: 10.5px; color: var(--petrol-deep); letter-spacing: .12em; margin-bottom: 6px; }
+.mer.ip .ip-next-title { font-size: 21px; color: var(--ink); line-height: 1.25; margin: 0 0 8px; }
+.mer.ip .ip-next-why { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: 12px; color: var(--ink2); align-items: center; }
+.mer.ip .ip-next-why .oh-mono { font-size: 11px; color: var(--ink3, var(--ink2)); }
+.mer.ip .ip-next-zar { color: var(--oxide); font-weight: 600; }
+.mer.ip .ip-next-line { font-size: 13.5px; color: var(--ink2); line-height: 1.55; margin: 10px 0 0; max-width: 560px; }
+.mer.ip .ip-next-empty { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink2); }
+.mer.ip .ip-next-cta { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.mer.ip .ip-next-cta .btn { white-space: nowrap; }
+
+/* ── milestone spine ── */
+.mer.ip .ip-spine { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; }
+.mer.ip .ip-spine-h { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+.mer.ip .ip-spine-h .hd-serif { font-size: 17px; color: var(--ink); }
+.mer.ip .ip-spine-list { list-style: none; margin: 0; padding: 0; }
+.mer.ip .ip-step { display: grid; grid-template-columns: 34px 1fr auto; gap: 14px; align-items: center;
+  padding: 12px 0; border-bottom: 1px solid var(--line); position: relative; }
+.mer.ip .ip-step:last-child { border-bottom: 0; }
+.mer.ip .ip-step::before {
+  content: ''; position: absolute; left: 16px; top: 100%; width: 2px; height: 12px; background: var(--line);
+}
+.mer.ip .ip-step:last-child::before { display: none; }
+.mer.ip .ip-step.now { background: color-mix(in oklch, var(--oxide) 5%, transparent); border-radius: 10px; padding: 12px 14px; margin: 0 -14px; }
+.mer.ip .ip-step.now + .ip-step::before { left: 30px; }
+.mer.ip .ip-node {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; z-index: 1;
+}
+.mer.ip .ip-node.done { background: color-mix(in oklch, var(--moss) 16%, var(--card)); color: var(--moss); border: 1px solid color-mix(in oklch, var(--moss) 30%, var(--card)); }
+.mer.ip .ip-node.now { background: var(--oxide); color: #fff; box-shadow: 0 0 0 4px color-mix(in oklch, var(--oxide) 18%, transparent); }
+.mer.ip .ip-node.next { background: var(--paper); color: var(--amber-deep); border: 1px solid color-mix(in oklch, var(--amber) 40%, var(--card)); }
+.mer.ip .ip-step-body { min-width: 0; }
+.mer.ip .ip-step-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.mer.ip .ip-step-top .hd-serif { font-size: 15px; color: var(--ink); }
+.mer.ip .ip-step-meta { font-size: 11.5px; color: var(--ink3, var(--ink2)); margin-top: 3px; }
+.mer.ip .ip-step-link { font-size: 11px; color: var(--ink3, var(--ink2)); text-decoration: none; }
+.mer.ip .ip-step-link:hover { color: var(--petrol); }
+.mer.ip .ip-spine-foot { font-size: 12.5px; color: var(--ink2); line-height: 1.55; margin: 14px 0 0; }
+.mer.ip .ip-spine-foot a { color: var(--petrol); }
+
+/* responsive */
+@media (max-width: 860px){
+  .mer.ip .ip-next { grid-template-columns: 88px 1fr; gap: 14px; }
+  .mer.ip .ip-next-cta { grid-column: 1 / -1; flex-direction: row; }
+  .mer.ip .ip-next-ring { width: 88px; height: 88px; }
+  .mer.ip .ip-next-ring-in { width: 70px; height: 70px; }
+  .mer.ip .ip-next-ring-in b { font-size: 20px; }
+  .mer.ip .ip-hero-title { font-size: 24px; }
+  .mer.ip .ip-board { padding: 0 14px 20px; }
+}
