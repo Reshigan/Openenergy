@@ -1740,3 +1740,63 @@
   .mer.ip .ip-hero-title { font-size: 24px; }
   .mer.ip .ip-board { padding: 0 14px 20px; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   WAVE 7 — Support Horizon · Help-desk ticket triage
+   Three-column board: Breached · At risk · On track.
+   Scoped under .mer.su — reuses oh-eyebrow / oh-mono.
+   ═══════════════════════════════════════════════════════════════════ */
+.mer.su .su-num.bad { color: var(--oxide); }
+.mer.su .su-num.ok { color: var(--moss); }
+.mer.su .su-num.warn { color: var(--amber-deep); }
+
+.mer.su .su-board { padding: 0 22px 24px; max-width: 1200px; }
+.mer.su .su-hero { margin-bottom: 20px; }
+.mer.su .su-hero-title { font-size: 28px; line-height: 1.22; color: var(--ink); margin: 6px 0 8px; max-width: 760px; }
+.mer.su .su-hero-sub { color: var(--ink2); font-size: 14px; line-height: 1.55; max-width: 760px; margin: 0; }
+
+/* ── ticket board ── */
+.mer.su .su-cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.mer.su .su-col { background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.mer.su .su-col-h { display: flex; justify-content: space-between; align-items: center;
+  padding: 13px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink2); border-bottom: 1px solid var(--line); }
+.mer.su .su-col-h .su-col-t { color: var(--ink); font-weight: 600; }
+.mer.su .su-col-bad { border-top: 4px solid var(--oxide); }
+.mer.su .su-col-warn { border-top: 4px solid var(--amber-deep); }
+.mer.su .su-col-ok { border-top: 4px solid var(--moss); }
+.mer.su .su-ticket-list { display: flex; flex-direction: column; }
+.mer.su .su-ticket { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.mer.su .su-ticket:last-child { border-bottom: 0; }
+.mer.su .su-ticket.hot { background: color-mix(in oklch, var(--oxide) 5%, transparent); }
+.mer.su .su-ticket-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.mer.su .su-ticket-name { font-size: 15px; color: var(--ink); }
+.mer.su .su-ticket-chain { font-size: 11px; color: var(--ink3, var(--ink2)); margin-top: 3px; }
+.mer.su .su-sla { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;
+  padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
+.mer.su .su-sla.r { color: #fff; background: var(--oxide); }
+.mer.su .su-sla.a { color: var(--amber-deep); background: color-mix(in oklch, var(--amber) 14%, #fff); }
+.mer.su .su-sla.g { color: var(--moss-deep); background: color-mix(in oklch, var(--moss) 14%, #fff); }
+.mer.su .su-state-flow { font-size: 11.5px; color: var(--ink2); margin: 8px 0; text-transform: capitalize; }
+.mer.su .su-ticket-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.mer.su .su-ticket-empty { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink2); padding: 20px 0; }
+
+/* ── lanes summary ── */
+.mer.su .su-lanes { margin-top: 22px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; }
+.mer.su .su-lanes-h { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .08em;
+  color: var(--ink3, var(--ink2)); margin-bottom: 14px; }
+.mer.su .su-lanes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.mer.su .su-lane-card { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.mer.su .su-lane-name { font-size: 15px; color: var(--ink); margin: 0 0 6px; }
+.mer.su .su-lane-meta { font-size: 11.5px; color: var(--ink3, var(--ink2)); margin-bottom: 8px; }
+.mer.su .su-lane-link { font-size: 11px; color: var(--ink3, var(--ink2)); text-decoration: none; }
+.mer.su .su-lane-link:hover { color: var(--petrol); }
+
+/* responsive */
+@media (max-width: 1100px){
+  .mer.su .su-cols { grid-template-columns: 1fr; }
+}
+@media (max-width: 860px){
+  .mer.su .su-hero-title { font-size: 24px; }
+  .mer.su .su-board { padding: 0 14px 20px; }
+}

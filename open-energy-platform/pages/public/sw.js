@@ -14,7 +14,7 @@
 // Bump this version on every release that ships new HTML / asset hashes.
 // `activate` deletes caches whose key doesn't start with SW_VERSION, so any
 // stale `/` HTML pointing at old /assets/* hashes gets evicted on next load.
-const SW_VERSION = 'oe-sw-v1.3.6';
+const SW_VERSION = 'oe-sw-v1.3.7';
 const STATIC_CACHE = `${SW_VERSION}-static`;
 const RUNTIME_CACHE = `${SW_VERSION}-runtime`;
 

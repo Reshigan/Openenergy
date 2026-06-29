@@ -18,6 +18,7 @@ import LenderHorizon from './LenderHorizon';
 import RegulatorHorizon from './RegulatorHorizon';
 import IppHorizon from './IppHorizon';
 import GridHorizon from './GridHorizon';
+import SupportHorizon from './SupportHorizon';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/useAuth';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
@@ -63,6 +64,7 @@ export default function HorizonPage() {
   if (role === 'regulator') return <RegulatorHorizon />;
   if (role === 'ipp_developer') return <IppHorizon />;
   if (role === 'grid_operator') return <GridHorizon />;
+  if (role === 'support') return <SupportHorizon />;
   const navigate = useNavigate();
   // Admin holds no Meridian lanes — it views any role's board via the backend
   // passthrough. Non-admin roles always view their own board (boardRole === role).
