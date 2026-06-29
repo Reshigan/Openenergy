@@ -1424,6 +1424,56 @@
   .mer .tr-hero-title { font-size:24px; }
 }
 
+/* ── Lender Horizon — Quiet Book (v2 Option 3) ─────────────────────────── */
+.mer.lh .lh-board { margin-top:14px; }
+.mer .lh-hero { background:var(--card, var(--raised,#fff)); border:1px solid var(--line);
+  border-radius:16px; padding:22px 24px; margin-bottom:18px; }
+.mer .lh-hero-title { font-size:28px; color:var(--ink); margin:6px 0 6px; line-height:1.15; max-width:62ch; }
+.mer .lh-hero-sub { color:var(--ink2); font-size:13.5px; max-width:66ch; margin:0 0 14px; }
+.mer .lh-num { font-family:'Newsreader', serif; font-weight:600; }
+.mer .lh-num.ok { color:var(--moss-deep); }
+.mer .lh-num.bad { color:var(--oxide); }
+
+/* quiet lane exposure — grey bars, only the overdue count colours */
+.mer .lh-lanes { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:18px; }
+.mer .lh-lane { background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:13px 15px; }
+.mer .lh-lane-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:8px; }
+.mer .lh-lane-name { font-size:13.5px; color:var(--ink); }
+.mer .lh-lane-bar { height:6px; border-radius:3px; background:color-mix(in oklch, var(--line) 50%, #fff); overflow:hidden; }
+.mer .lh-lane-fill { height:100%; border-radius:3px; background:var(--ink3); opacity:.5; }
+.mer .lh-lane-foot { margin-top:8px; font-size:12px; color:var(--ink2); display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+.mer .lh-quiet { color:var(--ink3); font-size:11.5px; font-style:italic; }
+
+/* exceptions — the only detailed list on the screen */
+.mer .lh-exc-card { background:var(--card, var(--raised,#fff)); border:1px solid var(--line); border-radius:16px; padding:18px 20px; }
+.mer .lh-exc-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; }
+.mer .lh-exc-head h3 { font-size:16px; color:var(--ink); }
+.mer .lh-exc-list { display:flex; flex-direction:column; gap:0; }
+.mer .lh-exc-row { display:grid; grid-template-columns:40px 1fr; gap:14px; padding:14px 0; border-bottom:1px solid var(--line); }
+.mer .lh-exc-row:last-child { border-bottom:none; }
+.mer .lh-exc-row.hot { background:linear-gradient(90deg, color-mix(in oklch, var(--oxide) 6%, transparent), transparent 40%);
+  border-radius:10px; padding-left:8px; margin:0 -8px; }
+.mer .lh-exc-rank { color:var(--ink3); font-size:13px; font-weight:600; padding-top:2px; }
+.mer .lh-exc-row.hot .lh-exc-rank { color:var(--oxide); }
+.mer .lh-exc-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+.mer .lh-exc-zar { color:var(--ink); font-weight:600; }
+.mer .lh-exc-title { font-size:15px; color:var(--ink); margin:2px 0 2px; line-height:1.25; }
+.mer .lh-exc-cp { font-size:12px; color:var(--ink3); margin:0 0 8px; }
+.mer .lh-exc-acts { display:flex; gap:8px; flex-wrap:wrap; }
+.mer .lh-quiet-empty { display:flex; align-items:center; gap:12px; padding:18px 8px; color:var(--moss-deep); font-size:13.5px; }
+.mer .lh-quiet-tick { font-size:20px; }
+
+/* performing reassurance — deliberately grey + quiet */
+.mer .lh-reassure { margin-top:18px; display:flex; align-items:center; gap:14px; padding:14px 18px;
+  border:1px dashed var(--line); border-radius:12px; background:var(--paper);
+  color:var(--ink3); font-size:12.5px; }
+.mer .lh-reassure-mark { font-size:10px; letter-spacing:.14em; color:var(--ink3); white-space:nowrap;
+  padding:3px 8px; border:1px solid var(--line); border-radius:4px; }
+.mer .lh-reassure a { color:var(--ink2); }
+
+@media (max-width:980px){ .mer .lh-lanes { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:860px){ .mer .lh-lanes { grid-template-columns:1fr; } .mer .lh-hero-title { font-size:24px; } }
+
 /* reassurance + empty states */
 .mer .oh-reassure { margin-top:18px; background:var(--moss-tint); border:1px solid color-mix(in oklch, var(--moss) 30%, #fff);
   border-radius:12px; padding:14px 18px; display:flex; align-items:center; gap:12px; font-size:13.5px; color:var(--moss-deep); }
