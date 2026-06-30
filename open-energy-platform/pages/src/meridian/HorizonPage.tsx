@@ -21,6 +21,7 @@ import GridHorizon from './GridHorizon';
 import SupportHorizon from './SupportHorizon';
 import CarbonHorizon from './CarbonHorizon';
 import EscHorizon from './EscHorizon';
+import AdminHorizon from './AdminHorizon';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/useAuth';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
@@ -363,6 +364,7 @@ export default function HorizonPage() {
       )}
       {role === 'carbon_fund' && <CarbonHorizon />}
       {role === 'esco' && <EscHorizon />}
+      {role === 'admin' && <AdminHorizon />}
     </div>
   );
 }
