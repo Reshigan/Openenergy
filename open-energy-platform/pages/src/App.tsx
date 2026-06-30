@@ -37,6 +37,7 @@ const NewPage               = React.lazy(() => import('./meridian/NewPage'));
 const LedgerPage            = React.lazy(() => import('./meridian/LedgerPage'));
 const DealDeskPage          = React.lazy(() => import('./meridian/DealDeskPage'));
 const MeridianSurfacePage   = React.lazy(() => import('./meridian/MeridianSurfacePage'));
+const JourneyCockpit        = React.lazy(() => import('./meridian/JourneyCockpit'));
 const CommandPalette        = React.lazy(() => import('./meridian/CommandPalette'));
 const KycSubmission         = React.lazy(() => import('./components/onboarding/KycSubmission').then(m => ({ default: m.KycSubmission })));
 
@@ -211,7 +212,7 @@ function SsoLanding() {
     const params = new URLSearchParams(frag);
     const token = params.get('token');
     const refresh_token = params.get('refresh_token') || undefined;
-    const returnTo = params.get('return_to') || '/horizon';
+    const returnTo = params.get('return_to') || '/cockpit';
     if (!token) {
       setError('Missing SSO token. Please try signing in again.');
       const t = setTimeout(() => navigate('/login?sso_error=missing_token', { replace: true }), 2000);
@@ -553,11 +554,11 @@ function LaunchRedirect() {
         if (!completed) {
           navigate('/onboard', { replace: true });
         } else {
-          navigate('/horizon', { replace: true });
+          navigate('/cockpit', { replace: true });
         }
       })
       .catch(() => {
-        navigate('/horizon', { replace: true });
+        navigate('/cockpit', { replace: true });
       });
   }, [user, navigate, logout]);
 
@@ -595,7 +596,7 @@ function AppRoutes() {
           role-specific board. Cockpit kept as a soft redirect so existing
           bookmarks keep working — but the Launchpad nav now points to
           /launch. */}
-      <Route path="/cockpit" element={<ProtectedRoute><LaunchRedirect /></ProtectedRoute>} />
+      <Route path="/cockpit" element={<ProtectedRoute><JourneyCockpit /></ProtectedRoute>} />
       <Route path="/feed" element={<ProtectedRoute><AppShellLayout><ActivityFeedShell /></AppShellLayout></ProtectedRoute>} />
       <Route path="/launch" element={<ProtectedRoute><LaunchRedirect /></ProtectedRoute>} />
       {/* Meridian Horizon board — supplies its own chrome, so no Layout/AppShell wrapper. */}
@@ -723,7 +724,7 @@ function AppRoutes() {
         <Route path="/ux-prototype/cockpit-grid"  element={<LazyWorkbench><CockpitGridPrototype /></LazyWorkbench>} />
         <Route path="/ux-prototype/launchpad-nav" element={<LazyWorkbench><LaunchpadNavPrototype /></LazyWorkbench>} />
       </Route>
-      <Route path="/" element={<Navigate to="/horizon" replace />} />
+      <Route path="/" element={<Navigate to="/cockpit" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
     {/* Meridian ⌘K palette — global on every authed page; renders null when

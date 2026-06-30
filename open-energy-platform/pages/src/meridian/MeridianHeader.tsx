@@ -38,7 +38,7 @@ export function MeridianHeader({ ctx }: { ctx?: React.ReactNode }) {
 
   return (
     <header>
-      <Link to="/horizon" className="wordmark">CEC</Link>
+      <Link to="/cockpit" className="wordmark">CEC</Link>
       {ctx && <div className="ctx">{ctx}</div>}
       <div className="spacer" />
       <nav className="quicklinks" aria-label="Platform sections">
@@ -63,7 +63,7 @@ export function MeridianHeader({ ctx }: { ctx?: React.ReactNode }) {
                 <span>{(user as { email?: string })?.email ?? (user?.role ?? '').replace(/_/g, ' ')}</span>
               </div>
               <button type="button" role="menuitem" className="avatar-item"
-                      onClick={() => { setMenuOpen(false); nav('/horizon'); }}>Horizon</button>
+                      onClick={() => { setMenuOpen(false); nav('/cockpit'); }}>Home</button>
               <button type="button" role="menuitem" className="avatar-item danger"
                       onClick={signOut}>Sign out</button>
             </div>
