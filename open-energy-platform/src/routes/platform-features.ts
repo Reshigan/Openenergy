@@ -449,6 +449,10 @@ const FAULT_ACTIONS: Record<string, { to: string; ts?: string }> = {
 };
 
 platform.post('/bulk/faults', async (c) => {
+  const user = getCurrentUser(c);
+  // Bulk-by-arbitrary-id has no per-row tenant scoping — officer-only, matching
+  // the canonical bulk-ops.ts authz (faults → admin/support).
+  if (!['admin', 'support'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const b = await c.req.json().catch(() => ({} as any));
   const ids: string[] = Array.isArray(b.ids) ? b.ids : [];
   const action = String(b.action || '');
@@ -475,6 +479,8 @@ const WO_BULK_ACTIONS = new Set([
 ]);
 
 platform.post('/bulk/work-orders', async (c) => {
+  const user = getCurrentUser(c);
+  if (!['admin', 'support'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const b = await c.req.json().catch(() => ({} as any));
   const ids: string[] = Array.isArray(b.ids) ? b.ids : [];
   const to = String(b.to || '');
@@ -504,6 +510,8 @@ platform.post('/bulk/work-orders', async (c) => {
 });
 
 platform.post('/bulk/invoices', async (c) => {
+  const user = getCurrentUser(c);
+  if (!['admin', 'support'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const b = await c.req.json().catch(() => ({} as any));
   const ids: string[] = Array.isArray(b.ids) ? b.ids : [];
   const action = String(b.action || '');

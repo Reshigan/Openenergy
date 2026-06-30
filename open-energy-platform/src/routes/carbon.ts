@@ -250,12 +250,19 @@ carbon.get('/fund/nav', async (c) => {
 
 // POST /carbon/fund/nav - Update NAV
 carbon.post('/fund/nav', async (c) => {
+  const user = getCurrentUser(c);
   const body = await c.req.json().catch(() => ({} as Record<string, unknown>));
   const { fund_id, nav_date, nav_per_unit, total_units, assets_under_management } = body as {
     fund_id?: string; nav_date?: string; nav_per_unit?: number; total_units?: number; assets_under_management?: number;
   };
   if (!fund_id || !nav_date || nav_per_unit === undefined) {
     return c.json({ success: false, error: 'fund_id, nav_date and nav_per_unit are required' }, 400);
+  }
+  // NAV is a financial mark set by the fund manager. Restrict to admin (any
+  // fund) or a carbon_fund publishing its own fund's NAV (fund_id keyed to the
+  // participant, as in /fund/insights). Prevents any authed user writing marks.
+  if (user.role !== 'admin' && !(user.role === 'carbon_fund' && fund_id === user.id)) {
+    return c.json({ success: false, error: 'Not authorised to publish NAV for this fund' }, 403);
   }
   const id = 'nf_' + Date.now().toString(36);
   await c.env.DB.prepare(`
