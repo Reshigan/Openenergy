@@ -41,14 +41,20 @@ describe('assertNoRouteShadow', () => {
     expect(() => assertNoRouteShadow([['/api/cockpit', a]])).not.toThrow();
   });
 
-  it('treats the documented popia/erasure overlap as known-intentional (WARN, no throw)', () => {
+  // The go-live popia feature-module once registered a dead POST /erasure that
+  // base popia.ts shadowed; it was removed (base owns erasure). No intentional
+  // cross-module shadows remain (KNOWN_CROSS_MODULE_SHADOWS is empty), so the
+  // assertion is fail-closed: a reintroduced duplicate /erasure must throw, not
+  // silently shadow. (The known-shadow WARN branch is unexercised until some
+  // future intentional overlap is documented alongside its own test.)
+  it('fails closed on a reintroduced popia/erasure duplicate (no longer whitelisted)', () => {
     const base = new Hono<HonoEnv>().post('/erasure', (c) => c.json({ base: 1 }));
     const feature = new Hono<HonoEnv>();
     feature.post('/erasure', (c) => c.json({ feature: 2 }));
     feature.post('/export', (c) => c.json({}));
     expect(() =>
       assertNoRouteShadow([['/api/popia', base], ['/api/popia', feature]]),
-    ).not.toThrow();
+    ).toThrowError(/route shadowing detected.*POST \/api\/popia\/erasure/s);
   });
 });
 

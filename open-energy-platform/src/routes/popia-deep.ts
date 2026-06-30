@@ -28,8 +28,10 @@ r.get('/dashboard', async (c) => {
     WHERE received_at >= date('now','-180 days')
     GROUP BY status
   `).all<any>();
-  // Erasure pipeline
-  const erasures = await c.env.DB.prepare(`SELECT status, COUNT(*) AS c FROM oe_deletion_requests GROUP BY status`).all<any>();
+  // Erasure pipeline — read the canonical, live table (base popia.ts writes
+  // popia_erasure_requests on POST /api/popia/erasure). The former
+  // oe_deletion_requests table is no longer written by any live route.
+  const erasures = await c.env.DB.prepare(`SELECT status, COUNT(*) AS c FROM popia_erasure_requests GROUP BY status`).all<any>().catch(() => ({ results: [] }));
   // Exports
   const exports_ = await c.env.DB.prepare(`SELECT status, COUNT(*) AS c FROM oe_data_export_requests WHERE requested_at >= date('now','-30 days') GROUP BY status`).all<any>();
   // PII access events (last 30d)

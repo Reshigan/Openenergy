@@ -5,7 +5,7 @@
 //   /api/mfa/*          TOTP enrolment + verify + recovery codes
 //   /api/kyc/*          KYC submission + admin review
 //   /api/consent/*      Cookie / T&Cs / privacy accepts
-//   /api/popia/*        POPIA Section 23 (export) + Section 24 (erasure)
+//   /api/popia/*        POPIA Section 23 (access + data export) — erasure (§24) is in base popia.ts
 //   /api/regulator/*    NERSA quarterly + SARS tax packs
 //
 // PUBLIC (no auth) — mounted at /api/public/*:
@@ -347,7 +347,7 @@ consent.post('/record', async (c) => {
 });
 
 // ═════════════════════════════════════════════════════════════════════════
-// POPIA — Section 23 (access) + Section 24 (erasure)
+// POPIA — Section 23 (access + data export). Erasure (§24) lives in base popia.ts.
 // ═════════════════════════════════════════════════════════════════════════
 popia.get('/requests', async (c) => {
   const user = getCurrentUser(c);
@@ -437,57 +437,11 @@ popia.get('/export/:id/download', async (c) => {
   return c.json({ success: false, error: 'storage offline' }, 503);
 });
 
-popia.post('/erasure', async (c) => {
-  const user = getCurrentUser(c);
-  const b = await c.req.json().catch(() => ({} as any));
-  // Check for blocking conditions: open invoices, lender lien, active KYC
-  const blocking = await c.env.DB.prepare(`
-    SELECT
-      (SELECT COUNT(*) FROM invoices WHERE (from_participant_id = ? OR to_participant_id = ?)
-        AND status IN ('issued','partial','overdue','disputed')) AS open_invoices,
-      (SELECT COUNT(*) FROM om_work_orders WHERE assigned_to = ?
-        AND status NOT IN ('completed','verified','closed','cancelled')) AS open_wos
-  `).bind(user.id, user.id, user.id).first<any>();
-  if (Number(blocking?.open_invoices || 0) > 0) {
-    return c.json({ success: false, error: 'cannot delete — open settlement obligations exist', data: { open_invoices: blocking.open_invoices } }, 409);
-  }
-  const id = genId('del');
-  const scheduledFor = new Date(Date.now() + 30 * 86_400_000).toISOString();
-  await c.env.DB.prepare(`
-    INSERT INTO oe_deletion_requests (id, participant_id, status, reason, scheduled_for)
-    VALUES (?,?,'cooling_off',?,?)
-  `).bind(id, user.id, b.reason || null, scheduledFor).run();
-  await fireCascade({
-    event: 'popia.erasure_requested',
-    actor_id: user.id,
-    entity_type: 'popia_deletion',
-    entity_id: id,
-    data: {
-      id, participant_id: user.id,
-      reason: b.reason || null, scheduled_for: scheduledFor,
-    },
-    env: c.env,
-  });
-  return c.json({ success: true, data: { id, scheduled_for: scheduledFor, message: '30-day cooling-off period started. Cancel any time before then.' } });
-});
-
-popia.post('/erasure/:id/cancel', async (c) => {
-  const user = getCurrentUser(c);
-  const id = c.req.param('id');
-  const row = await c.env.DB.prepare(`SELECT participant_id, status FROM oe_deletion_requests WHERE id = ?`).bind(id).first<any>();
-  if (!row || row.participant_id !== user.id) return c.json({ success: false, error: 'not found' }, 404);
-  if (row.status !== 'cooling_off') return c.json({ success: false, error: 'cannot cancel — request already finalised' }, 409);
-  await c.env.DB.prepare(`UPDATE oe_deletion_requests SET status = 'cancelled', cancelled_at = datetime('now') WHERE id = ?`).bind(id).run();
-  await fireCascade({
-    event: 'popia.erasure_cancelled',
-    actor_id: user.id,
-    entity_type: 'popia_deletion',
-    entity_id: String(id),
-    data: { id, participant_id: user.id, cancelled_by: user.id },
-    env: c.env,
-  });
-  return c.json({ success: true });
-});
+// NOTE: POPIA Section 24 erasure (POST/GET /erasure + /erasure/:id/process)
+// lives in the base popia module (src/routes/popia.ts), which mounts first and
+// is the canonical, frontend-wired flow (popia_erasure_requests + DPO review).
+// An earlier alternative erasure flow here (oe_deletion_requests + 30-day
+// cooling-off + cancel) was permanently shadowed by base popia and is removed.
 
 // ═════════════════════════════════════════════════════════════════════════
 // REGULATOR REPORTS — NERSA quarterly + SARS pack

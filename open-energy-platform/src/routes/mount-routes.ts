@@ -382,14 +382,11 @@ type RouteInfo = { method: string; path: string; basePath: string };
 // module (mounted first) wins the overlap; the duplicate handler in the
 // feature-module is dead and should be deduped by that module's owner.
 // Format: `${method} ${effectivePath}` → reason.
-const KNOWN_CROSS_MODULE_SHADOWS = new Map<string, string>([
-  // /api/popia mounted twice: src/routes/popia.ts (base, mounted first) and
-  // src/routes/go-live.ts `popia` (feature-module). go-live also contributes
-  // /requests, /export, /export/:id/download, /erasure/:id/cancel — unmounting
-  // it loses those. go-live's POST /erasure is shadowed by base popia's
-  // POST /erasure. TODO(go-live owner): drop the redundant /erasure in go-live.
-  ['POST /api/popia/erasure', 'go-live popia feature-module extends base popia; base wins /erasure'],
-]);
+// No cross-module shadows are currently intentional. The former go-live
+// `POST /api/popia/erasure` shadow was resolved by removing the dead duplicate
+// (base popia.ts owns erasure); see go-live.ts. New entries here document an
+// intentional first-wins overlap so assertNoRouteShadow WARNs instead of failing.
+const KNOWN_CROSS_MODULE_SHADOWS = new Map<string, string>([]);
 
 export function assertNoRouteShadow(mounts: Array<[string, Hono<HonoEnv>]>): void {
   // key -> Set<moduleIndex>  (distinct modules registering this (method, path))
