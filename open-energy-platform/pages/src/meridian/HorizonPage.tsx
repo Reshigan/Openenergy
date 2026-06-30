@@ -33,15 +33,6 @@ function useRole(): string {
   return user?.role ?? '';
 }
 
-// Lane-holding roles for the admin role-switcher: unique roles across all chain
-// lanes in src/utils/chain-registry-meridian.ts (backend), sorted. Admin has no
-// lanes of its own; the backend lets admin GET /api/horizon/<any role>.
-// Keep in sync with the registry (same convention as Bucket in ./lib.ts).
-const LANE_ROLES = [
-  'carbon_fund', 'epc_contractor', 'esco', 'grid_operator', 'ipp_developer',
-  'lender', 'offtaker', 'regulator', 'support', 'trader',
-];
-
 // Bucket sub-ticks, computed against "now" like the mockup's static examples.
 function bucketTick(key: Bucket, now: Date): string {
   const fmtT = (d: Date) => d.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
@@ -68,12 +59,14 @@ export default function HorizonPage() {
   if (role === 'ipp_developer') return <IppHorizon />;
   if (role === 'grid_operator') return <GridHorizon />;
   if (role === 'support') return <SupportHorizon />;
+  if (role === 'carbon_fund') return <CarbonHorizon />;
+  if (role === 'esco') return <EscHorizon />;
+  if (role === 'admin') return <AdminHorizon />;
   const navigate = useNavigate();
-  // Admin holds no Meridian lanes — it views any role's board via the backend
-  // passthrough. Non-admin roles always view their own board (boardRole === role).
-  const isAdmin = role === 'admin';
-  const [adminRole, setAdminRole] = React.useState(LANE_ROLES[0]);
-  const boardRole = isAdmin ? adminRole : role;
+  // Every lane-holding role above early-returns to its bespoke Horizon. Roles
+  // that reach here (e.g. wind, epc_contractor) have no bespoke surface and view
+  // their own shared lane×bucket board (boardRole === role).
+  const boardRole = role;
   const cfg = getRoleConfig(boardRole);
   const [data, setData] = React.useState<HorizonData | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
@@ -148,20 +141,6 @@ export default function HorizonPage() {
     try { setData(await fetchHorizon(boardRole)); } catch { /* keep last good board */ }
   }
 
-  // Admin-only: compact switcher across the lane-holding roles' boards.
-  const roleSwitcher = isAdmin && (
-    <div className="role-switch" role="group" aria-label="View board as role">
-      {LANE_ROLES.map(r => (
-        <button key={r} type="button"
-                className={r === adminRole ? 'btn pri' : 'btn ghost'}
-                aria-pressed={r === adminRole}
-                onClick={() => { if (r !== adminRole) { setAdminRole(r); setData(null); setActErr(null); } }}>
-          {cleanLabel(getRoleConfig(r)?.label ?? r.replace(/_/g, ' '))}
-        </button>
-      ))}
-    </div>
-  );
-
   if (err) {
     return (
       <div className="mer mer-error" role="alert">
@@ -173,7 +152,6 @@ export default function HorizonPage() {
   if (!data) {
     return (
       <div className="mer horizon">
-        {roleSwitcher}
         <div className="main" aria-busy="true" role="status" aria-label="Computing horizon">
           <section className="board" style={{ padding: '8px 0' }}>
             {[0, 1, 2, 3].map(r => (
@@ -199,8 +177,6 @@ export default function HorizonPage() {
       <GettingStarted />
 
       <GuidedTour surface="horizon" />
-
-      {roleSwitcher}
 
       <PlatformPulse />
 
@@ -362,9 +338,6 @@ export default function HorizonPage() {
           </div>
         </div>
       )}
-      {role === 'carbon_fund' && <CarbonHorizon />}
-      {role === 'esco' && <EscHorizon />}
-      {role === 'admin' && <AdminHorizon />}
     </div>
   );
 }
