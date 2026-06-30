@@ -578,10 +578,27 @@ pa.post('/tenants/:id/sso', async (c) => {
     b.jit_role || null, b.enabled === false ? 0 : null,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM tenant_sso_providers WHERE id = ?').bind(id).first();
+  // Audit SSO provider configuration — an auth provider that JIT-provisions
+  // users into a role is high-sensitivity and belongs on the audit chain.
+  // (client_secret_kv_key is a KV pointer, not the secret; not logged here.)
+  await fireCascade({
+    event: 'tenant.sso_configured',
+    actor_id: user.id,
+    entity_type: 'tenant_sso_providers',
+    entity_id: id,
+    data: {
+      id, tenant_id: tenantId, provider_type: b.provider_type,
+      jit_role: b.jit_role || 'offtaker', enabled: b.enabled === false ? 0 : 1,
+      configured_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
 pa.get('/tenants/:id/sso', async (c) => {
+  const user = getCurrentUser(c);
+  if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const tenantId = c.req.param('id');
   const rs = await c.env.DB.prepare(
     `SELECT id, tenant_id, provider_type, display_name, client_id, tenant_identifier,
