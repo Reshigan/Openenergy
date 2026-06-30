@@ -117,7 +117,7 @@ export type EventType =
   | 'carbon.vintage_issued' | 'carbon.mrv_submitted' | 'carbon.mrv_verified'
   | 'carbon.tax_claim_submitted'
   // Platform admin
-  | 'tenant.provisioned' | 'tenant.suspended' | 'tenant.reactivated'
+  | 'tenant.provisioned' | 'tenant.provisioning_rejected' | 'tenant.suspended' | 'tenant.reactivated'
   | 'tenant.subscription_created' | 'tenant.invoice_issued'
   | 'flag.changed' | 'flag.override_set'
   // Vault (POPIA s.23 access traceability for documents stored in R2)

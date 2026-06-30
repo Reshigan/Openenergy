@@ -199,11 +199,29 @@ pa.post('/provisioning-requests/:id/reject', async (c) => {
   if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const id = c.req.param('id');
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const existing = await c.env.DB.prepare(
+    `SELECT status FROM tenant_provisioning_requests WHERE id = ?`,
+  ).bind(id).first<{ status: string }>();
+  if (!existing) return c.json({ success: false, error: 'Request not found' }, 404);
+  if (existing.status !== 'pending') return c.json({ success: false, error: `Already ${existing.status}` }, 400);
   await c.env.DB.prepare(
     `UPDATE tenant_provisioning_requests
         SET status = 'rejected', rejection_reason = ?, approved_by = ?, approved_at = datetime('now')
       WHERE id = ?`,
   ).bind(b.reason || null, user.id, id).run();
+
+  // Audit the admin's rejection — symmetric with the approve path's
+  // tenant.provisioned cascade. Without this, a rejected tenant application
+  // left no audit trail (the `tenant` prefix routes to the same audit chain).
+  await fireCascade({
+    event: 'tenant.provisioning_rejected',
+    actor_id: user.id,
+    entity_type: 'tenant_provisioning_requests',
+    entity_id: id,
+    data: { provisioning_request_id: id, reason: b.reason || null },
+    env: c.env,
+  });
+
   return c.json({ success: true });
 });
 
