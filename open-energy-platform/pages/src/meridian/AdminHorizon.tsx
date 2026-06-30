@@ -17,25 +17,56 @@ import { HorizonKpis } from './HorizonKpis';
 import { GettingStarted } from './GettingStarted';
 import { GuidedTour } from './GuidedTour';
 import { cleanLabel } from './labels';
+import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
+import TraderHorizon from './TraderHorizon';
+import OfftakerHorizon from './OfftakerHorizon';
+import LenderHorizon from './LenderHorizon';
+import RegulatorHorizon from './RegulatorHorizon';
+import IppHorizon from './IppHorizon';
+import GridHorizon from './GridHorizon';
+import CarbonHorizon from './CarbonHorizon';
+import EscHorizon from './EscHorizon';
+import SupportHorizon from './SupportHorizon';
 
 // Bucket rank for sorting (breach first).
 const BUCKET_RANK: Record<Bucket, number> = {
   breached: 0, h2: 1, today: 2, h48: 3, week: 4, later: 5,
 };
 
+// Cross-role board passthrough. Admin holds no lanes of its own; the backend
+// lets admin GET /api/horizon/<any role>, and each bespoke Horizon hardcodes
+// its own role in fetchHorizon — so rendering one while signed in as admin
+// shows that role's live board. Ordered for the switcher tab strip.
+const ROLE_VIEWS: { role: string; Comp: React.ComponentType }[] = [
+  { role: 'trader', Comp: TraderHorizon },
+  { role: 'offtaker', Comp: OfftakerHorizon },
+  { role: 'lender', Comp: LenderHorizon },
+  { role: 'regulator', Comp: RegulatorHorizon },
+  { role: 'ipp_developer', Comp: IppHorizon },
+  { role: 'grid_operator', Comp: GridHorizon },
+  { role: 'carbon_fund', Comp: CarbonHorizon },
+  { role: 'esco', Comp: EscHorizon },
+  { role: 'support', Comp: SupportHorizon },
+];
+
 export default function AdminHorizon() {
   const navigate = useNavigate();
+  // 'admin' = the compliance desk below; any other value = that role's live
+  // board (rendered via ROLE_VIEWS). Lets admin oversee every role's Horizon
+  // without leaving its own surface (replaces the legacy HorizonPage switcher).
+  const [view, setView] = React.useState('admin');
   const [data, setData] = React.useState<HorizonData | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
   const [acting, setActing] = React.useState<string | null>(null);
 
   React.useEffect(() => {
+    if (view !== 'admin') return undefined;  // other roles fetch their own board
     let live = true;
     const load = () => fetchHorizon('admin').then(d => { if (live) setData(d); }).catch(e => { if (live) setErr(String(e)); });
     load();
     const t = setInterval(load, 60_000);
     return () => { live = false; clearInterval(t); };
-  }, []);
+  }, [view]);
 
   async function act(c: MerCase, a: MerAction) {
     if (a.fields?.length) { navigate(`/thread/${c.chain}/${c.id}?act=${encodeURIComponent(a.action)}`); return; }
@@ -48,22 +79,56 @@ export default function AdminHorizon() {
     try { setData(await fetchHorizon('admin')); } catch { /* keep last */ }
   }
 
+  // Cross-role switcher — sits above whichever board is in view. 'Compliance'
+  // is admin's own desk; the rest deep-view each lane-role's live Horizon.
+  const switcher = (
+    <nav className="mer" aria-label="View board as role">
+      <div className="role-switch" role="group">
+        <button type="button"
+                className={view === 'admin' ? 'btn pri' : 'btn ghost'}
+                aria-pressed={view === 'admin'}
+                onClick={() => setView('admin')}>
+          Compliance
+        </button>
+        {ROLE_VIEWS.map(({ role }) => (
+          <button key={role} type="button"
+                  className={view === role ? 'btn pri' : 'btn ghost'}
+                  aria-pressed={view === role}
+                  onClick={() => { if (view !== role) { setView(role); setErr(null); } }}>
+            {cleanLabel(getRoleConfig(role)?.label ?? role.replace(/_/g, ' '))}
+          </button>
+        ))}
+      </div>
+    </nav>
+  );
+
+  // Non-admin view: render that role's real bespoke Horizon under the switcher.
+  // Each hardcodes its own fetchHorizon(role); admin reaches it via passthrough.
+  if (view !== 'admin') {
+    const Comp = ROLE_VIEWS.find(v => v.role === view)!.Comp;
+    return <>{switcher}<Comp /></>;
+  }
+
   if (err) {
     return (
-      <div className="mer mer-error" role="alert">
-        Desk failed to load.{' '}
-        <button type="button" className="btn ghost" onClick={() => location.reload()}>Retry</button>
-      </div>
+      <>{switcher}
+        <div className="mer mer-error" role="alert">
+          Desk failed to load.{' '}
+          <button type="button" className="btn ghost" onClick={() => location.reload()}>Retry</button>
+        </div>
+      </>
     );
   }
   if (!data) {
     return (
-      <div className="mer horizon">
-        <div className="main" aria-busy="true" role="status" aria-label="Loading your desk">
-          <div className="skel skel-card" style={{ height: 160, marginBottom: 16 }} />
-          <div className="skel skel-card" style={{ height: 360 }} />
+      <>{switcher}
+        <div className="mer horizon">
+          <div className="main" aria-busy="true" role="status" aria-label="Loading your desk">
+            <div className="skel skel-card" style={{ height: 160, marginBottom: 16 }} />
+            <div className="skel skel-card" style={{ height: 360 }} />
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -89,6 +154,7 @@ export default function AdminHorizon() {
     : `${counts.total} live chain${counts.total === 1 ? '' : 's'} across ${lanes.length} lanes, all within their windows. Anything that breaches surfaces in the exceptions list the moment it crosses.`;
 
   return (
+    <>{switcher}
     <div className="mer horizon ad">
       <MeridianHeader ctx={<><b>Admin</b><span>{counts.total} live · {counts.breached} breaching</span></>} />
       <GettingStarted />
@@ -176,5 +242,6 @@ export default function AdminHorizon() {
         </div>
       </section>
     </div>
+    </>
   );
 }
