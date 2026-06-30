@@ -15,7 +15,7 @@
   --raised: #ffffff;
   --ink: #0e1726;
   --ink2: #3a4760;
-  --ink3: #6b7891;
+  --ink3: #5b6b85;  /* WCAG-AA muted text: 4.99:1 on paper / 5.4:1 on white. #6b7891 failed AA (4.11/4.45). */
   --line: #dde3ee;
   /* primary / brand — high-voltage indigo (CTAs, headers, eyebrows, accents) */
   --petrol: #1f3bb3;

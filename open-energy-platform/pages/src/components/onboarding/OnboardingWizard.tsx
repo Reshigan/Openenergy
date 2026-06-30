@@ -285,7 +285,7 @@ export function OnboardingWizard() {
   if (initializing) {
     return (
       <div className="min-h-screen bg-[#f4f6fa] flex items-center justify-center">
-        <div className="text-[#6b7891] text-sm">Loading…</div>
+        <div className="text-[#5b6b85] text-sm">Loading…</div>
       </div>
     );
   }
@@ -328,14 +328,14 @@ export function OnboardingWizard() {
               {/* Step header */}
               {!isWelcome && (
                 <div className="mb-6">
-                  <div className="text-[11px] font-medium text-[#6b7891] uppercase tracking-wider mb-1">
+                  <div className="text-[11px] font-medium text-[#5b6b85] uppercase tracking-wider mb-1">
                     Step {currentContentIdx + 1} of {contentSteps.length}
                   </div>
                   <h2 className="text-[20px] font-semibold text-[#0e1726] leading-snug">
                     {stepMeta?.title || step}
                   </h2>
                   {stepMeta?.subtitle && (
-                    <p className="mt-1 text-[13px] text-[#6b7891]">{stepMeta.subtitle}</p>
+                    <p className="mt-1 text-[13px] text-[#5b6b85]">{stepMeta.subtitle}</p>
                   )}
                 </div>
               )}
@@ -365,7 +365,7 @@ export function OnboardingWizard() {
             {/* Left — skip */}
             <button
               type="button"
-              className="text-[12px] text-[#6b7891] hover:text-[#3a4760] underline underline-offset-2 transition-colors"
+              className="text-[12px] text-[#5b6b85] hover:text-[#3a4760] underline underline-offset-2 transition-colors"
               onClick={() => setConfirmSkip(true)}
               disabled={loading}
             >
@@ -412,7 +412,7 @@ export function OnboardingWizard() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-[16px] font-semibold text-[#0e1726]">Skip setup?</h3>
-            <p className="mt-2 text-[13px] text-[#6b7891]">
+            <p className="mt-2 text-[13px] text-[#5b6b85]">
               You can finish it later from Horizon, but anything entered here will not be saved.
             </p>
             <div className="mt-5 flex items-center justify-end gap-3">

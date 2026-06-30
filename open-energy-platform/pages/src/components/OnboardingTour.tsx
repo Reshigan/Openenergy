@@ -64,16 +64,16 @@ export function OnboardingTour({ scope, steps }: Props) {
           <Sparkles size={14} style={{ color: 'oklch(0.46 0.16 55)' }}/>
         </div>
         <div className="flex-1">
-          <div className="text-[11px] uppercase tracking-wider text-[#6b7891]">Quick tour · {cursor + 1} of {remaining.length}</div>
+          <div className="text-[11px] uppercase tracking-wider text-[#5b6b85]">Quick tour · {cursor + 1} of {remaining.length}</div>
           <div className="font-semibold text-[14px] text-[#0e1726]">{step.title}</div>
           <div className="text-[12px] text-[#3a4760] mt-1 leading-relaxed">{step.body}</div>
         </div>
-        <button type="button" onClick={() => setSkip(true)} aria-label="Skip tour" className="text-[#6b7891] hover:text-[#0e1726] flex-none">
+        <button type="button" onClick={() => setSkip(true)} aria-label="Skip tour" className="text-[#5b6b85] hover:text-[#0e1726] flex-none">
           <X size={14}/>
         </button>
       </div>
       <div className="flex justify-end mt-3 gap-2">
-        <button type="button" onClick={() => setSkip(true)} className="h-8 px-3 text-[11px] text-[#6b7891] hover:text-[#0e1726]">Skip</button>
+        <button type="button" onClick={() => setSkip(true)} className="h-8 px-3 text-[11px] text-[#5b6b85] hover:text-[#0e1726]">Skip</button>
         <button type="button" onClick={() => void advance()} className="h-8 px-3 rounded bg-[#1f3bb3] text-white text-[11px] font-semibold inline-flex items-center gap-1">
           {step.cta || 'Got it'} <ArrowRight size={12}/>
         </button>
