@@ -12,6 +12,8 @@ import type { Hono } from 'hono';
 
 import adminPlatform from '../src/routes/admin-platform';
 import trading from '../src/routes/trading';
+import settlement from '../src/routes/settlement';
+import funder from '../src/routes/funder';
 
 function has(app: Hono<any>, method: string, path: string): boolean {
   const rs = (app as unknown as { routes: Array<{ method: string; path: string }> }).routes;
@@ -21,6 +23,8 @@ function has(app: Hono<any>, method: string, path: string): boolean {
 const MODULES: Array<[string, Hono<any>]> = [
   ['admin-platform', adminPlatform],
   ['trading', trading],
+  ['settlement', settlement],
+  ['funder', funder],
 ];
 
 const ROUTES = [

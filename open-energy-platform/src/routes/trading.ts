@@ -2039,6 +2039,12 @@ import { getChainHead, verifyChain } from '../utils/audit-chain';
 // roles/tenants from this regulator-grade evidence surface.
 const tradingAuditRead = (role: string): boolean =>
   role === 'admin' || role === 'support' || role === 'regulator' || role === 'trader';
+// Full-chain export packs (CSV/manifest) are regulator-grade evidence over
+// EVERY trader's events — officer-only, matching the officer-gated
+// POST /audit/export and the actor_id scoping in GET /audit/events. A trader
+// sees only their own events via /audit/events, never the whole-chain pack.
+const tradingAuditOfficer = (role: string): boolean =>
+  role === 'admin' || role === 'support' || role === 'regulator';
 
 // GET /trading/audit/head — quick "what's the current chain head" used by
 // the workstation badge ("verified · 12 432 events · head 4e2a…b6c1").
@@ -2211,7 +2217,7 @@ trading.post('/audit/export', async (c) => {
 // GET /trading/audit/exports — list past exports for the dashboard.
 trading.get('/audit/exports', async (c) => {
   const user = getCurrentUser(c);
-  if (!tradingAuditRead(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
+  if (!tradingAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const rs = await c.env.DB.prepare(
     `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
             chain_head_hash, generated_by, generated_at
@@ -2226,7 +2232,7 @@ trading.get('/audit/exports', async (c) => {
 // (avoids an R2 signed URL round-trip for the UI). Manifest is small.
 trading.get('/audit/exports/:id/manifest', async (c) => {
   const user = getCurrentUser(c);
-  if (!tradingAuditRead(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
+  if (!tradingAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT manifest_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'trading'`,
@@ -2242,7 +2248,7 @@ trading.get('/audit/exports/:id/manifest', async (c) => {
 
 trading.get('/audit/exports/:id/csv', async (c) => {
   const user = getCurrentUser(c);
-  if (!tradingAuditRead(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
+  if (!tradingAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT csv_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'trading'`,
