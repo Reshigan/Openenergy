@@ -245,9 +245,19 @@ async function runRoleUser(browser: Browser, role: string, token: string, user: 
     }
 
     // ── Atlas: enumerate every reachable function for this role ────────────
+    // Atlas Hybrid (platform-ease P3): the full library lives in collapsed domain
+    // accordions, with a prioritised "Your Work" card strip on top. Expand every
+    // accordion first, then harvest links from both the accordion .fn rows and the
+    // Your Work / Deal Desk cards (.atlas-card-main).
     await landAt(page, `${baseURL}/atlas`, '.mer.atlas', rpt);
     await settle(page);
-    const fnLinks = page.locator('.mer.atlas .fn');
+    const accHeads = page.locator('.mer.atlas .atlas-acc-head');
+    const accCount = await accHeads.count().catch(() => 0);
+    for (let i = 0; i < accCount; i++) {
+      await accHeads.nth(i).click().catch(() => {});
+    }
+    await settle(page, 300);
+    const fnLinks = page.locator('.mer.atlas .atlas-acc-body .fn .name, .mer.atlas .atlas-card-main');
     rpt.atlasFunctions = await fnLinks.count().catch(() => 0);
     // Harvest hrefs so we can drive ledgers/surfaces without stale-element churn.
     const hrefs: string[] = [];

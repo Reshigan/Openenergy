@@ -70,7 +70,7 @@ Key cross-cutting helpers in [src/utils/](open-energy-platform/src/utils/):
 
 ### Migrations
 
-523 numbered migrations in [migrations/](open-energy-platform/migrations/) (highest `523_*`). `wrangler.toml::migrations_dir` wires them in. Count is manual-maintained — a CI check could enforce it but none exists yet; update here when adding migrations.
+524 numbered migrations in [migrations/](open-energy-platform/migrations/) (highest `524_*` — `user_view_prefs`, the Ease customisation engine). `wrangler.toml::migrations_dir` wires them in. Count is manual-maintained — a CI check could enforce it but none exists yet; update here when adding migrations.
 
 **Migration discipline** (this is non-obvious and load-bearing):
 - 001–018 are clean and idempotent. Apply normally.

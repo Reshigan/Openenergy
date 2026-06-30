@@ -12,6 +12,8 @@ import { PlatformPulse } from './PlatformPulse';
 import { GettingStarted } from './GettingStarted';
 import { GuidedTour } from './GuidedTour';
 import { cleanLabel } from './labels';
+import { useViewPrefs } from './ease/useViewPrefs';
+import { applyViewPrefs } from './ease/applyViewPrefs';
 import OfftakerHorizon from './OfftakerHorizon';
 import TraderHorizon from './TraderHorizon';
 import LenderHorizon from './LenderHorizon';
@@ -104,6 +106,12 @@ export default function HorizonPage() {
       return next;
     });
   }, []);
+
+  // Per-user lane customisation (the role default is the starting layout; this is
+  // the user's override, server-persisted via the Ease engine). Pin floats a lane
+  // to the top of the board; hide drops it (restorable). Scoped per role so each
+  // board is tuned independently.
+  const lanePrefs = useViewPrefs(`horizon:${boardRole}`);
 
   React.useEffect(() => {
     if (!boardRole) return undefined;
@@ -200,7 +208,7 @@ export default function HorizonPage() {
             ))}
           </div>
 
-          {data.lanes.map(lane => {
+          {applyViewPrefs(data.lanes, l => l.key, lanePrefs.prefs, { dropHidden: true }).map(lane => {
             const collapsed = collapsedLanes.has(lane.key);
             const breached = lane.cases.filter(c => c.bucket === 'breached').length;
             // A lane whose cases all belong to one chain gets a clickable label
@@ -213,31 +221,34 @@ export default function HorizonPage() {
             const laneCount = `${lane.cases.length} live${breached ? ` · ${breached} overdue` : ''}`;
             return (
               <div className="lane-row" key={lane.key}>
-                {laneChain ? (
-                  <div className={collapsed ? 'lane-label lane-label-split collapsed' : 'lane-label lane-label-split'}>
-                    <button type="button" className="lane-chev-btn"
-                            aria-expanded={!collapsed}
-                            aria-label={collapsed ? 'Expand lane' : 'Collapse lane'}
-                            title={collapsed ? 'Expand lane' : 'Collapse lane'}
-                            onClick={() => toggleLane(lane.key)}>
-                      <span className="lane-chev" aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
-                    </button>
-                    <Link to={`/ledger/${laneChain}`} className="lane-label-link" title={`Open ${laneText} ledger`}>
-                      {laneText}
-                      <span className="n">{laneCount}</span>
-                    </Link>
-                  </div>
-                ) : (
-                  <button type="button"
-                          className={collapsed ? 'lane-label collapsed' : 'lane-label'}
+                <div className={collapsed ? 'lane-label lane-label-split collapsed' : 'lane-label lane-label-split'}>
+                  <button type="button" className="lane-chev-btn"
                           aria-expanded={!collapsed}
+                          aria-label={collapsed ? 'Expand lane' : 'Collapse lane'}
                           title={collapsed ? 'Expand lane' : 'Collapse lane'}
                           onClick={() => toggleLane(lane.key)}>
                     <span className="lane-chev" aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
-                    {laneText}
-                    <span className="n">{laneCount}</span>
                   </button>
-                )}
+                  {laneChain ? (
+                    <Link to={`/ledger/${laneChain}`} className="lane-label-link" title={`Open ${laneText} ledger`}>
+                      {laneText}<span className="n">{laneCount}</span>
+                    </Link>
+                  ) : (
+                    <button type="button" className="lane-label-link" onClick={() => toggleLane(lane.key)}>
+                      {laneText}<span className="n">{laneCount}</span>
+                    </button>
+                  )}
+                  <span className="lane-tools">
+                    <button type="button"
+                            className={lanePrefs.isPinned(lane.key) ? 'lane-pin on' : 'lane-pin'}
+                            aria-pressed={lanePrefs.isPinned(lane.key)}
+                            title={lanePrefs.isPinned(lane.key) ? 'Unpin lane' : 'Pin lane to top'}
+                            onClick={() => lanePrefs.togglePin(lane.key)}>★</button>
+                    <button type="button" className="lane-hide"
+                            title="Hide this lane"
+                            onClick={() => lanePrefs.toggleHidden(lane.key)}>×</button>
+                  </span>
+                </div>
                 {collapsed ? (
                   <button type="button" className="lane-collapsed-summary" onClick={() => toggleLane(lane.key)}>
                     {lane.cases.length} case{lane.cases.length === 1 ? '' : 's'}{breached ? ` · ${breached} overdue` : ''} · click to expand
@@ -257,6 +268,14 @@ export default function HorizonPage() {
               <Link to="/new" className="btn pri">+ Start a transaction</Link>
               <p className="board-empty-sub">or browse every function in <Link to="/atlas">Atlas</Link>.</p>
             </div>
+          )}
+
+          {lanePrefs.prefs.hidden.length > 0 && (
+            <button type="button" className="lane-show-hidden"
+                    title="Restore hidden lanes"
+                    onClick={() => lanePrefs.prefs.hidden.forEach(k => lanePrefs.toggleHidden(k))}>
+              Show {lanePrefs.prefs.hidden.length} hidden lane{lanePrefs.prefs.hidden.length === 1 ? '' : 's'}
+            </button>
           )}
         </section>
 

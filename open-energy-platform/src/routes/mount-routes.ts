@@ -281,6 +281,7 @@ import esumsAccrualsRoutes, { esumsInvoiceRoutes, esumsCreditRoutes } from './es
 import platformFeaturesRoutes from './platform-features';
 import onboardingRoutes from './onboarding';
 import onboardingChecklistRoutes from './onboarding-checklist';
+import prefsRoutes from './prefs';
 import onboardingKycRoutes from './onboarding-kyc';
 import {
   mfa as mfaRoutes,
@@ -777,6 +778,7 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   mount('/api/print-packs',         printPacksRoutes);
   mount('/api/onboarding', onboardingRoutes);
   mount('/api/onboarding', onboardingChecklistRoutes);
+  mount('/api/prefs', prefsRoutes);
   // Full static basePath so the /kyc segment wins over any /:param route in the
   // sibling onboarding routers (Hono silent-collision risk - deliberate).
   mount('/api/onboarding/kyc', onboardingKycRoutes);
