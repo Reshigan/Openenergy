@@ -533,7 +533,15 @@ ipp.get('/community/ed-sed/:project_id/summary', async (c) => {
 // L5 — Tamper-evident audit, NERSA generation-licence report, milestone recon.
 // ════════════════════════════════════════════════════════════════════════
 
+// Full-chain IPP audit + export packs are officer-only (admin/support/
+// regulator), matching the officer-gated POST /audit/export and the actor_id
+// scoping in GET /audit/events.
+const ippAuditOfficer = (role: string): boolean =>
+  role === 'admin' || role === 'support' || role === 'regulator';
+
 ipp.get('/audit/head', async (c) => {
+  const user = getCurrentUser(c);
+  if (!ippAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const head = await getChainHead(c.env, 'ipp');
   return c.json({ success: true, data: head });
 });
@@ -657,6 +665,8 @@ ipp.post('/audit/export', async (c) => {
 });
 
 ipp.get('/audit/exports', async (c) => {
+  const user = getCurrentUser(c);
+  if (!ippAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const rs = await c.env.DB.prepare(
     `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
             chain_head_hash, generated_by, generated_at
@@ -667,6 +677,8 @@ ipp.get('/audit/exports', async (c) => {
 });
 
 ipp.get('/audit/exports/:id/manifest', async (c) => {
+  const user = getCurrentUser(c);
+  if (!ippAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT manifest_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'ipp'`,
@@ -681,6 +693,8 @@ ipp.get('/audit/exports/:id/manifest', async (c) => {
 });
 
 ipp.get('/audit/exports/:id/csv', async (c) => {
+  const user = getCurrentUser(c);
+  if (!ippAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT csv_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'ipp'`,
@@ -801,6 +815,11 @@ ipp.post('/audit/recon', async (c) => {
 });
 
 ipp.get('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  // Recon reads match recon-write (admin/lender/ipp_developer) + support.
+  if (!['admin', 'support', 'lender', 'ipp_developer'].includes(user.role)) {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
   const rs = await c.env.DB.prepare(
     `SELECT id, source, row_count, matched_count, break_count, status,
             started_at, finished_at

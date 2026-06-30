@@ -17,6 +17,9 @@ import funder from '../src/routes/funder';
 import gridOperator from '../src/routes/grid-operator';
 import carbonRegistry from '../src/routes/carbon-registry';
 import regulatorSuite from '../src/routes/regulator-suite';
+import support from '../src/routes/support';
+import offtakerSuite from '../src/routes/offtaker-suite';
+import ippLifecycle from '../src/routes/ipp-lifecycle';
 
 function has(app: Hono<any>, method: string, path: string): boolean {
   const rs = (app as unknown as { routes: Array<{ method: string; path: string }> }).routes;
@@ -31,6 +34,9 @@ const MODULES: Array<[string, Hono<any>]> = [
   ['grid-operator', gridOperator],
   ['carbon-registry', carbonRegistry],
   ['regulator-suite', regulatorSuite],
+  ['support', support],
+  ['offtaker-suite', offtakerSuite],
+  ['ipp-lifecycle', ippLifecycle],
 ];
 
 const ROUTES = [
