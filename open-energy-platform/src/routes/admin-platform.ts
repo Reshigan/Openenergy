@@ -370,6 +370,15 @@ pa.post('/flags', async (c) => {
     typeof b.rollout_config === 'object' ? JSON.stringify(b.rollout_config) : null,
     b.enabled === false ? 0 : null, user.id,
   ).run();
+  // Audit feature-flag creation — prod config changes belong on the audit chain.
+  await fireCascade({
+    event: 'flag.changed',
+    actor_id: user.id,
+    entity_type: 'feature_flag',
+    entity_id: id,
+    data: { id, flag_key: b.flag_key, action: 'created', enabled: b.enabled === false ? 0 : 1, created_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -400,6 +409,15 @@ pa.put('/flags/:id', async (c) => {
   if (fkRow?.flag_key) {
     c.executionCtx?.waitUntil?.(invalidateFlagCache(c.env, fkRow.flag_key));
   }
+  // Audit the flag change (which fields changed are in the payload).
+  await fireCascade({
+    event: 'flag.changed',
+    actor_id: user.id,
+    entity_type: 'feature_flag',
+    entity_id: id,
+    data: { id, flag_key: fkRow?.flag_key ?? null, action: 'updated', changed: Object.keys(b), updated_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -427,6 +445,15 @@ pa.post('/flags/:id/overrides', async (c) => {
   if (fkRow?.flag_key) {
     c.executionCtx?.waitUntil?.(invalidateFlagCache(c.env, fkRow.flag_key));
   }
+  // Audit the per-tenant/participant flag override.
+  await fireCascade({
+    event: 'flag.override_set',
+    actor_id: user.id,
+    entity_type: 'feature_flag_override',
+    entity_id: id,
+    data: { id, flag_id: flagId, flag_key: fkRow?.flag_key ?? null, tenant_id: b.tenant_id || null, participant_id: b.participant_id || null, value: String(b.value), set_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
