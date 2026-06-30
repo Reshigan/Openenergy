@@ -2,8 +2,28 @@
 // cookie flag that gates the mount-time /auth/refresh (prevents the cold-load 400).
 // Backend vitest runner is node-only, so we stub document/localStorage for the
 // cookie path; statusLabel is pure TS and needs no stub.
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { statusLabel, statusTone } from '../pages/src/meridian/ease/statusLabel';
+
+// pages/src/lib/api.ts imports axios at module load (axios.create + interceptors).
+// axios is a pages/ dependency, not installed in the backend (open-energy-platform)
+// test runner, so the dynamic import below can't resolve the real package in CI
+// (it only resolves locally by node_modules hoisting). This test exercises only
+// setAuthToken's cookie path — no real HTTP — so stub axios with the minimal
+// surface api.ts touches at import time.
+vi.mock('axios', () => {
+  const instance = {
+    interceptors: { request: { use: () => {} }, response: { use: () => {} } },
+    get: async () => ({ data: {} }),
+    post: async () => ({ data: {} }),
+  };
+  const axiosMock: any = {
+    create: () => instance,
+    post: async () => ({ data: {} }),
+    AxiosHeaders: class {},
+  };
+  return { default: axiosMock, AxiosError: class extends Error {}, AxiosHeaders: class {} };
+});
 
 // Stub the browser globals setAuthToken touches. We deliberately use a
 // fake Document so we can assert cookie set/clear without a jsdom dependency.
