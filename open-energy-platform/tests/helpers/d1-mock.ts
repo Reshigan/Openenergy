@@ -13,6 +13,15 @@ export interface MockDBOptions {
 export class MockD1 {
   public tables: Record<string, Row[]> = {};
   public executed: { sql: string; bindings: unknown[] }[] = [];
+  /**
+   * Race-injection flag for the rotation UPDATE. When true, the next
+   * `UPDATE sessions SET access_jti ...` returns changes=0 (as if another
+   * caller rotated/revoked the row between our SELECT and UPDATE), then
+   * auto-clears so subsequent rotations behave normally. This lets a
+   * synchronous test exercise the replay-detected → family-revoke path
+   * that is otherwise only reachable under true concurrency.
+   */
+  public failNextRotationUpdate = false;
   private opts: MockDBOptions;
 
   constructor(opts: MockDBOptions = {}) {
@@ -89,10 +98,23 @@ export class MockD1 {
       return { meta: { changes: 1 } };
     }
 
-    // UPDATE sessions SET access_jti = ? (rotate)
+    // UPDATE sessions SET access_jti = ? (rotate) — atomic rotation.
+    // WHERE refresh_token_hash = ? AND revoked_at IS NULL. The 6th binding is
+    // the OLD refresh hash used in the WHERE clause. We match on that hash AND
+    // require revoked_at be null; otherwise changes=0 (replay/revoked signal
+    // that the caller treats as a compromise -> revoke the family).
     if (/UPDATE sessions\s+SET access_jti/i.test(trimmed)) {
-      const [access_jti, refresh_hash, expires_at, refresh_expires_at, last_used_at, id] = bindings as string[];
-      const row = this.table('sessions').find((r) => r.id === id);
+      const [access_jti, refresh_hash, expires_at, refresh_expires_at, last_used_at, old_refresh_hash] = bindings as string[];
+      // Race injection: simulate another caller mutating the row between our
+      // SELECT and this UPDATE. The atomic UPDATE matches zero rows, which
+      // rotateSession treats as a replay signal -> revoke the family.
+      if (this.failNextRotationUpdate) {
+        this.failNextRotationUpdate = false;
+        return { meta: { changes: 0 } };
+      }
+      const row = this.table('sessions').find(
+        (r) => r.refresh_token_hash === old_refresh_hash && r.revoked_at == null,
+      );
       if (!row) return { meta: { changes: 0 } };
       row.access_jti = access_jti;
       row.refresh_token_hash = refresh_hash;
@@ -269,6 +291,22 @@ export class MockD1 {
       const rows = this.table('login_attempts').filter(
         (r) =>
           r.email === email &&
+          Number(r.succeeded) === 0 &&
+          String(r.attempted_at) >= since,
+      );
+      const last = rows.reduce<string | null>(
+        (acc, r) => (acc == null || String(r.attempted_at) > acc ? String(r.attempted_at) : acc),
+        null,
+      );
+      return { n: rows.length, last_failed: last };
+    }
+
+    // SELECT COUNT(*) AS n, MAX(attempted_at) ... FROM login_attempts WHERE ip = ? AND succeeded = 0 AND attempted_at >= ?
+    if (/FROM login_attempts WHERE ip = \? AND succeeded = 0/i.test(trimmed)) {
+      const [ip, since] = bindings as string[];
+      const rows = this.table('login_attempts').filter(
+        (r) =>
+          r.ip === ip &&
           Number(r.succeeded) === 0 &&
           String(r.attempted_at) >= since,
       );

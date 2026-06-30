@@ -897,7 +897,16 @@ funder.get('/waterfall', async (c) => {
 // L5 — Tamper-evident audit, IFRS9 register export, disbursement recon.
 // ════════════════════════════════════════════════════════════════════════
 
+// Full-chain lender audit + export packs are officer-only (admin/support/
+// regulator), matching the isOfficer split in GET /audit/events and the
+// officer-gated POST /audit/export. A lender sees only their own events via
+// the actor_id-scoped /audit/events, not the whole-chain export pack.
+const funderAuditOfficer = (role: string): boolean =>
+  role === 'admin' || role === 'support' || role === 'regulator';
+
 funder.get('/audit/head', async (c) => {
+  const user = getCurrentUser(c);
+  if (!funderAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const head = await getChainHead(c.env, 'lender');
   return c.json({ success: true, data: head });
 });
@@ -1017,6 +1026,8 @@ funder.post('/audit/export', async (c) => {
 });
 
 funder.get('/audit/exports', async (c) => {
+  const user = getCurrentUser(c);
+  if (!funderAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const rs = await c.env.DB.prepare(
     `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
             chain_head_hash, generated_by, generated_at
@@ -1024,8 +1035,11 @@ funder.get('/audit/exports', async (c) => {
       ORDER BY generated_at DESC LIMIT 50`,
   ).all();
   return c.json({ success: true, data: rs.results || [] });
+});
 
 funder.get('/audit/exports/:id/manifest', async (c) => {
+  const user = getCurrentUser(c);
+  if (!funderAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT manifest_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'lender'`,
@@ -1040,6 +1054,8 @@ funder.get('/audit/exports/:id/manifest', async (c) => {
 });
 
 funder.get('/audit/exports/:id/csv', async (c) => {
+  const user = getCurrentUser(c);
+  if (!funderAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT csv_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'lender'`,
@@ -1053,7 +1069,6 @@ funder.get('/audit/exports/:id/csv', async (c) => {
       'Content-Disposition': `attachment; filename="${id}.csv"`,
     },
   });
-});
 });
 
 // POST /funder/audit/recon — disbursement reconciliation. CSV columns:
@@ -1165,6 +1180,12 @@ funder.post('/audit/recon', async (c) => {
 });
 
 funder.get('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  // Recon reads match recon-write (admin/lender do funder reconciliation) plus
+  // oversight; operational run summaries, not the full-chain evidence pack.
+  if (!['admin', 'lender', 'support', 'regulator'].includes(user.role)) {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
   const rs = await c.env.DB.prepare(
     `SELECT id, source, row_count, matched_count, break_count, status,
             started_at, finished_at

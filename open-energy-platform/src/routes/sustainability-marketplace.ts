@@ -510,6 +510,9 @@ app.post('/listings/:id/action', authMiddleware, async (c) => {
       .run();
   }
 
+  // ponytail: the 1.5% marketplace take-rate is billed on the *transaction*
+  // complete_settlement cascade (sustainability-transaction-chain.ts), not here —
+  // listing actions (activate/mark_sold_out/cancel/...) carry no settlement value.
   await fireCascade({
     event: `marketplace_listing_${action}` as EventType,
     actor_id: user.id,

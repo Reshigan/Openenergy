@@ -14,9 +14,10 @@ import CrossOptionModal from './CrossOptionModal';
 import { type RoleAction } from '../../lib/roleActions';
 import { ArrowLeft, RefreshCw, Search, HelpCircle, ChevronLeft, ChevronRight, Wand2, Map } from 'lucide-react';
 import { api } from '../../lib/api';
-import { Skeleton } from '../Skeleton';
-import { ErrorBanner } from '../ErrorBanner';
-import { EmptyState } from '../EmptyState';
+// Ease kit — plain-language shared state surfaces (meridian.css classes only).
+// Replaces the Skeleton/ErrorBanner/EmptyState early-returns in ListingTable so
+// every leaf leans on one shared, on-brand loading/error/empty vocabulary.
+import { EaseLoading, EaseError, EaseEmpty } from '../../meridian/ease/states';
 import { RoleShell, CommandRail, type CommandItem } from '../signature';
 import { themeFor, type RoleKey } from '../../lib/role-themes';
 import { useDensityPreference } from '../../lib/density';
@@ -769,10 +770,15 @@ export function ListingTable({
 
   useEffect(() => { void load(); }, [load]);
 
-  if (loading) return <Skeleton variant="card" rows={4} />;
-  if (err) return <ErrorBanner message={err} onRetry={() => void load()} />;
+  if (loading) return <EaseLoading kpis rows={5} />;
+  if (err) return <EaseError message={err} onRetry={() => void load()} />;
   if (rows.length === 0) {
-    return <EmptyState title={empty?.title || 'No data'} description={empty?.description || ''} />;
+    // EaseEmpty renders a single line; fold title + description together so the
+    // operator still gets the "how to populate it" hint the old EmptyState carried.
+    const msg = empty?.description
+      ? `${empty?.title || 'No data'} — ${empty.description}`
+      : (empty?.title || 'No data');
+    return <EaseEmpty message={msg} />;
   }
 
   const totalPages = Math.ceil(rows.length / pageSize);

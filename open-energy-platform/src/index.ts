@@ -29,6 +29,7 @@ import { rollupMetrics } from './utils/metrics-rollup';
 import {
   auditChainDailyReconcileSweep,
   auditChainQuarterlyExportSweep,
+  auditChainHourlyProposeSweep,
 } from './routes/audit-chain';
 import {
   regulatorExportDailyRefreshSweep,
@@ -36,6 +37,7 @@ import {
 } from './routes/regulator-export';
 import {
   reconciliationAttestationMonthlyAuditCommitteePackSweep,
+  reconciliationAttestationVarianceRecomputeSweep,
 } from './routes/reconciliation-attestation';
 import {
   controlEnvironmentAuditNightlyEvidenceCoverageSweep,
@@ -45,6 +47,31 @@ import {
   nttComparisonBatteryNightlyCycleRunner,
   nttComparisonBatteryMonthlyLedgerReconciliation,
 } from './routes/ntt-comparison-battery';
+import { ippScheduleHealthRecompute } from './routes/ipp-schedule-chain';
+import { ippEvmHealthRecompute } from './routes/ipp-evm-chain';
+import { ippDocControlIdcMatrixRecompute } from './routes/ipp-document-control-chain';
+import { ippRfiAgingRefresh } from './routes/ipp-rfi';
+import { ippChangeOrderCumPctRefresh } from './routes/ipp-change-order';
+import { stageGateConditionsAgingSweep } from './routes/stage-gate';
+import { scadaConnectorCertExpirySweep } from './routes/scada-connector';
+import { strateSwiftConnectorReconciliationSweep } from './routes/strate-swift-connector';
+import { sapOracleErpConnectorReconciliationSweep } from './routes/sap-oracle-erp-connector';
+import { governmentFilingConnectorFilingDeadlineSweep } from './routes/government-filing-connector';
+import { anomalyDetectionMlDriftScan } from './routes/anomaly-detection-ml';
+import { rulPredictionMlConcordanceMonitor } from './routes/rul-prediction-ml';
+import { faultFingerprintMlClassDriftScan } from './routes/fault-fingerprint-ml';
+import { pnlAttributionT1EodOpener } from './routes/pnl-attribution-chain';
+import { publishChainHeadToR2 } from './utils/audit-chain';
+import { runMonthlySubscriptionBilling } from './routes/subscription-billing-chain';
+import {
+  publishVwapMarks,
+  runMarginCallCycle,
+  runWatershedAnomalyScan,
+  runMaturityRefresh,
+  snapshotAllOrderBooks,
+  runPfmiDisclosureSweep,
+  runTradingRiskMtdDigest,
+} from './utils/cron-sweeps';
 
 // Durable Object exports — required for Cloudflare to resolve the
 // [[durable_objects.bindings]] class_name references in wrangler.toml.
@@ -230,6 +257,9 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('all_sla_sweeps', () => runAllSweeps(env));
       // Cross-role deal engine: expire stale offers + auto-clear timer auctions whose window closed.
       await safe('deal_sweep', () => runDealSweep(env));
+      // OrderBook depth snapshots — persist every active shard's book to D1 so the
+      // surveillance plane has fresh depth. No-op when ORDER_BOOK binding is absent.
+      await safe('orderbook_depth_snapshots', () => snapshotAllOrderBooks(env));
       break;
 
     case '0 * * * *':
@@ -249,6 +279,9 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
           try { await backfillStationHistory(st.id, env as never, sinceMs); } catch { /* per-station non-fatal */ }
         }
       });
+      // VWAP mark publish — without this the mark-price plane goes stale ~30 min
+      // after the last manual /mark-prices/vwap-run and pre-trade guards halt trading.
+      await safe('vwap_mark_publish', () => publishVwapMarks(env));
       break;
 
     case '5 0 * * *':
@@ -290,6 +323,9 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
         nttComparisonBatteryNightlyCycleRunner(env as never));
       await safe('telemetry_rollup_and_purge', () => runTelemetryRollupAndPurge(env));
       await safe('audit_merkle_publish', () => buildDailyMerkleRoots(env as never, yesterday));
+      // Audit-chain external anchor — publish current chain head to R2 so the
+      // tamper-evident chain has an out-of-band anchor point every night.
+      await safe('audit_chain_anchor', () => publishChainHeadToR2(env));
       // Purge resolved/abandoned DLQ rows older than 90 days to prevent unbounded growth.
       await safe('cascade_dlq_purge', async () => {
         await env.DB.prepare(
@@ -306,6 +342,21 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       });
       break;
 
+    case '15 0 * * *':
+      // W112 IPP WBS & Gantt schedule-health recompute (CPI/SPI/SV/CV + health band).
+      await safe('ipp_schedule_health_recompute', () => ippScheduleHealthRecompute(env));
+      break;
+
+    case '20 0 * * *':
+      // W113 IPP Cost & EVM nightly recompute (CPI/SPI/EAC/TCPI/VAC + contingency/MR + health band).
+      await safe('ipp_evm_health_recompute', () => ippEvmHealthRecompute(env));
+      break;
+
+    case '25 0 * * *':
+      // W114 IPP Document Control IDC matrix recompute (idc_status + completeness + doc_health_band).
+      await safe('ipp_doc_control_idc_matrix_recompute', () => ippDocControlIdcMatrixRecompute(env));
+      break;
+
     case '30 0 * * *':
       // Usage snapshot + margin-call cycle.
       await safe('imbalance_run', async () => {
@@ -314,20 +365,148 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       });
       await safe('chain_verify', () => verifyChain(env as never, ''));
       await safe('merkle_roots', () => buildDailyMerkleRoots(env as never, yesterday));
+      // Margin-call cycle — escalate overdue oe_margin_calls past their deadline.
+      await safe('margin_call_cycle', () => runMarginCallCycle(env));
+      break;
+
+    case '35 0 * * *':
+      // W116 IPP RFI nightly aging refresh (rfi_age_days + completeness + rfi_health_band).
+      await safe('ipp_rfi_aging_refresh', () => ippRfiAgingRefresh(env));
+      break;
+
+    case '40 0 * * *':
+      // W117 IPP Change Order cumulative_change_value_pct + cap_band + aging refresh.
+      await safe('ipp_change_order_cum_pct_refresh', () => ippChangeOrderCumPctRefresh(env));
       break;
 
     case '45 0 * * *':
-      // Watershed anomaly scan + maturity refresh.
+      // Watershed anomaly scan + maturity refresh + W118 audit-chain daily reconcile + chain-link verify.
+      await safe('watershed_anomaly_scan', () => runWatershedAnomalyScan(env));
+      await safe('maturity_refresh', () => runMaturityRefresh(env));
+      await safe('audit_chain_daily_reconcile_45', () => auditChainDailyReconcileSweep(env as never));
+      await safe('chain_verify_45', () => verifyChain(env as never, ''));
+      break;
+
+    case '50 0 * * *':
+      // W119 regulator-export-pack LIVE score refresh (completeness/xbrl/esg/controls/integrity + health band + days_to_quarterly_cutoff).
+      await safe('regulator_export_daily_refresh_50', () => regulatorExportDailyRefreshSweep(env as never));
+      break;
+
+    case '55 0 * * *':
+      // W120 reconciliation-attestation LIVE variance recompute (4 scoring indexes + attestation_health_band + days_to_quarterly_attestation).
+      await safe('reconciliation_attestation_variance_recompute', () =>
+        reconciliationAttestationVarianceRecomputeSweep(env as never));
+      break;
+
+    case '58 0 * * *':
+      // W121 control-environment-audit nightly evidence-coverage recompute (4 scoring indexes + control_health_band + days_to_quarterly_cutoff + days_to_annual_audit).
+      await safe('control_environment_audit_nightly_evidence_coverage_58', () =>
+        controlEnvironmentAuditNightlyEvidenceCoverageSweep(env as never));
+      break;
+
+    case '5 * * * *':
+      // W118 audit-chain hourly block proposal (Phase-B opener).
+      await safe('audit_chain_hourly_propose', () => auditChainHourlyProposeSweep(env as never));
+      break;
+
+    case '0 3 1 1,4,7,10 *':
+      // W118 audit-chain quarterly NERSA/IPPO/SARB export sweep.
+      await safe('audit_chain_quarterly_export', () => auditChainQuarterlyExportSweep(env as never));
       break;
 
     case '0 2 1 * *':
-      // Monthly platform invoice run.
+      // Monthly platform invoice run + monthly rollups.
+      await safe('subscription_monthly_billing', () => runMonthlySubscriptionBilling(env));
       await safe('regulator_export_monthly_rollup', () => regulatorExportMonthlyRollupSweep(env as never));
       await safe('control_environment_audit_annual_cycle_opener', () =>
         controlEnvironmentAuditAnnualAuditCycleOpenerSweep(env as never));
       await safe('ntt_comparison_battery_monthly_ledger_reconciliation', () =>
         nttComparisonBatteryMonthlyLedgerReconciliation(env as never));
-      await safe('audit_chain_quarterly_export', () => auditChainQuarterlyExportSweep(env as never));
+      await safe('audit_chain_quarterly_export_monthly', () => auditChainQuarterlyExportSweep(env as never));
+      break;
+
+    case '0 4 1 * *':
+      // W119 monthly_return regulator-export-pack rollup (flag closing-month packs as regulator_relevant).
+      await safe('regulator_export_monthly_rollup_4', () => regulatorExportMonthlyRollupSweep(env as never));
+      break;
+
+    case '0 5 1 * *':
+      // W120 monthly audit-committee pack rollup (flag closing-month quarterly+annual attestations regulator_relevant).
+      await safe('reconciliation_attestation_monthly_audit_committee_pack_5', () =>
+        reconciliationAttestationMonthlyAuditCommitteePackSweep(env as never));
+      break;
+
+    case '0 6 1 1 *':
+      // W121 annual external-audit cycle opener (raise iso27001_surveillance_audit_due + sox_404_attestation_pending + soc2_type2_period_open per framework).
+      await safe('control_environment_audit_annual_cycle_opener_jan', () =>
+        controlEnvironmentAuditAnnualAuditCycleOpenerSweep(env as never));
+      break;
+
+    case '0 6 * * 1':
+      // W131 Stage Gates conditions-aging sweep (Mon; flags regulator_relevant on conditions_set_at >90d).
+      await safe('stage_gate_conditions_aging_sweep', () => stageGateConditionsAgingSweep(env));
+      break;
+
+    case '0 7 * * 1':
+      // W122 SCADA connector weekly cert-expiry sweep (60d / 14d revocation warning).
+      await safe('scada_connector_cert_expiry_sweep', () => scadaConnectorCertExpirySweep(env));
+      break;
+
+    case '30 1 * * *':
+      // W124 STRATE/SWIFT settlement connector reconciliation sweep.
+      await safe('strate_swift_reconciliation_sweep', () => strateSwiftConnectorReconciliationSweep(env));
+      break;
+
+    case '45 1 * * *':
+      // W125 SAP/Oracle ERP connector reconciliation sweep.
+      await safe('sap_oracle_erp_reconciliation_sweep', () => sapOracleErpConnectorReconciliationSweep(env));
+      break;
+
+    case '0 2 * * *':
+      // W126 CIPC/SARS/NERSA government-filing connector statutory filing-deadline sweep.
+      await safe('government_filing_deadline_sweep', () => governmentFilingConnectorFilingDeadlineSweep(env));
+      break;
+
+    case '30 2 * * *':
+      // W127 Anomaly-Detection ML Model drift scan (PSI + KS + recon-error p99 + lift drift).
+      await safe('anomaly_detection_ml_drift_scan', () => anomalyDetectionMlDriftScan(env));
+      break;
+
+    case '0 3 * * *':
+      // W128 RUL Prediction ML Model concordance monitor (Harrell C + AUC + Brier + Schoenfeld PH).
+      await safe('rul_prediction_ml_concordance_monitor', () => rulPredictionMlConcordanceMonitor(env));
+      break;
+
+    case '30 3 * * *':
+      // W129 Fault-Fingerprint Multi-Class ML Model class-drift scan.
+      await safe('fault_fingerprint_ml_class_drift_scan', () => faultFingerprintMlClassDriftScan(env));
+      break;
+
+    case '15 4 * * *':
+      // W130 NTT Comparison Battery NIGHTLY CYCLE RUNNER.
+      await safe('ntt_comparison_battery_nightly_cycle_runner_4', () =>
+        nttComparisonBatteryNightlyCycleRunner(env as never));
+      break;
+
+    case '0 1 1 * *':
+      // W130 NTT Comparison Battery CUMULATIVE SAVINGS LEDGER RECONCILIATION (monthly).
+      await safe('ntt_comparison_battery_monthly_ledger_reconciliation_1', () =>
+        nttComparisonBatteryMonthlyLedgerReconciliation(env as never));
+      break;
+
+    case '0 15 * * 5':
+      // Friday trading-risk MTD digest.
+      await safe('trading_risk_mtd_digest', () => runTradingRiskMtdDigest(env));
+      break;
+
+    case '0 6 1 * *':
+      // Day 1 of month CPMI-IOSCO PFMI disclosure sweep.
+      await safe('pfmi_disclosure_sweep', () => runPfmiDisclosureSweep(env));
+      break;
+
+    case '0 18 * * *':
+      // W111 P&L attribution T+1 EOD opener.
+      await safe('pnl_attribution_t1_eod_opener', () => pnlAttributionT1EodOpener(env));
       break;
 
     default:

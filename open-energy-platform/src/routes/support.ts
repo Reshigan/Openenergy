@@ -582,7 +582,15 @@ support.get('/cross-tenant-access', async (c) => {
 // L5 — Support: cross-tenant access audit + PAIA access-request export.
 // ════════════════════════════════════════════════════════════════════════
 
+// Support audit + export packs are officer-only (admin/support/regulator);
+// support is itself an oversight role. Matches the officer-gated
+// POST /audit/export and the actor_id scoping in GET /audit/events.
+const supportAuditOfficer = (role: string): boolean =>
+  role === 'admin' || role === 'support' || role === 'regulator';
+
 support.get('/audit/head', async (c) => {
+  const user = getCurrentUser(c);
+  if (!supportAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const head = await getChainHead(c.env, 'support');
   return c.json({ success: true, data: head });
 });
@@ -689,6 +697,8 @@ support.post('/audit/export', async (c) => {
 });
 
 support.get('/audit/exports', async (c) => {
+  const user = getCurrentUser(c);
+  if (!supportAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const rs = await c.env.DB.prepare(
     `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
             chain_head_hash, generated_by, generated_at
@@ -696,8 +706,11 @@ support.get('/audit/exports', async (c) => {
       ORDER BY generated_at DESC LIMIT 50`,
   ).all();
   return c.json({ success: true, data: rs.results || [] });
+});
 
 support.get('/audit/exports/:id/manifest', async (c) => {
+  const user = getCurrentUser(c);
+  if (!supportAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT manifest_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'support'`,
@@ -712,6 +725,8 @@ support.get('/audit/exports/:id/manifest', async (c) => {
 });
 
 support.get('/audit/exports/:id/csv', async (c) => {
+  const user = getCurrentUser(c);
+  if (!supportAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT csv_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'support'`,
@@ -725,7 +740,6 @@ support.get('/audit/exports/:id/csv', async (c) => {
       'Content-Disposition': `attachment; filename="${id}.csv"`,
     },
   });
-});
 });
 
 // POST /support/audit/recon — reconcile against an external ticketing
@@ -835,6 +849,8 @@ support.post('/audit/recon', async (c) => {
 });
 
 support.get('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  if (!supportAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const rs = await c.env.DB.prepare(
     `SELECT id, source, row_count, matched_count, break_count, status,
             started_at, finished_at

@@ -127,10 +127,10 @@ describe('subscription-billing — mount reachability', () => {
   // Authoritative mount assertion: the route is wired in source AND lands before
   // the /api catch-all (platformFeaturesRoutes) so the specific mount wins.
   it('mounts the route before the /api catch-all (source-order check)', () => {
-    // Route mounts are now in mount-routes.ts; the catch-all is the last mount there.
+    // Route mounts are now in mount-routes.ts via the mount() helper; the catch-all is the last mount there.
     const src = readFileSync(join(__dirname, '..', 'src', 'routes', 'mount-routes.ts'), 'utf8');
-    const mountIdx = src.indexOf("app.route('/api/subscription/billing'");
-    const catchAllIdx = src.indexOf("app.route('/api', platformFeaturesRoutes)");
+    const mountIdx = src.indexOf("mount('/api/subscription/billing'");
+    const catchAllIdx = src.indexOf("mount('/api', platformFeaturesRoutes)");
     expect(mountIdx).toBeGreaterThan(-1);
     expect(catchAllIdx).toBeGreaterThan(-1);
     expect(mountIdx).toBeLessThan(catchAllIdx);

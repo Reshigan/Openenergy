@@ -30,6 +30,7 @@
 
 import { Hono, Context } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { requireTier } from '../middleware/entitlement';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
 import {
@@ -337,6 +338,9 @@ const app = new Hono<HonoEnv>();
 
 // All routes require auth (no public peer endpoint - this is INTERNAL ML).
 app.use('*', authMiddleware);
+// ML model governance is a paid surface: authoring/deploying models
+// requires professional|enterprise. Reads (GET) stay open.
+app.use('*', requireTier('professional', 'enterprise'));
 
 // ─── List ────────────────────────────────────────────────────────────────
 app.get('/', async (c) => {

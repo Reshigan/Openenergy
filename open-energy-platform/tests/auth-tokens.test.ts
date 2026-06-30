@@ -92,6 +92,58 @@ describe('createSession + rotateSession + revoke', () => {
     expect(await rotateSession(db as any, s2.refreshToken, 'new')).toBeNull();
     expect(await rotateSession(db as any, s3.refreshToken, 'new')).not.toBeNull();
   });
+
+  it('rotateSession: replay of an already-rotated token returns null (old hash gone)', async () => {
+    // Sequential replay: caller A rotates first (hash overwritten), caller B
+    // re-presents the same old refresh token. B's SELECT finds no row whose
+    // refresh_token_hash equals the old hash, so rotateSession returns null
+    // without issuing a new token. B is silently logged out — no new token
+    // leaked to a replayed credential.
+    const s1 = await createSession({ db: db as any, participantId: 'p_alice', accessJti: 'jti_a1' });
+    const rot = await rotateSession(db as any, s1.refreshToken, 'jti_new');
+    expect(rot).not.toBeNull();
+    expect(rot!.newRefreshToken).not.toBe(s1.refreshToken);
+    // Replaying the original token: SELECT by the old hash returns null.
+    expect(await rotateSession(db as any, s1.refreshToken, 'jti_replay')).toBeNull();
+  });
+
+  it('rotateSession: concurrent race (changes===0) revokes the whole session family', async () => {
+    // True race window: both callers SELECT the row before either UPDATEs.
+    // The atomic UPDATE ensures exactly one caller gets changes>0; the other
+    // gets changes===0 and treats it as a replay signal, revoking EVERY live
+    // session for the participant (we don't track per-token family ids, so
+    // participant-wide revocation is the practical containment). This forces
+    // a full re-login, which is the right move when a refresh token is used
+    // twice. We simulate the race with the mock's failNextRotationUpdate flag.
+    const s1 = await createSession({ db: db as any, participantId: 'p_alice', accessJti: 'jti_a1' });
+    const s2 = await createSession({ db: db as any, participantId: 'p_alice', accessJti: 'jti_a2' });
+    // Arm the race: the next rotation UPDATE returns changes=0 (as if another
+    // caller beat us to it between our SELECT and UPDATE).
+    db.failNextRotationUpdate = true;
+    const rot = await rotateSession(db as any, s1.refreshToken, 'jti_new');
+    expect(rot).toBeNull();
+    // Family revocation fired: every live session for p_alice is now revoked.
+    // s1 (the replayed one) and s2 (an innocent sibling) both dead.
+    expect(await rotateSession(db as any, s1.refreshToken, 'next')).toBeNull();
+    expect(await rotateSession(db as any, s2.refreshToken, 'next')).toBeNull();
+    // An unrelated participant is unaffected.
+    const bob = await createSession({ db: db as any, participantId: 'p_bob', accessJti: 'jti_b1' });
+    expect(await rotateSession(db as any, bob.refreshToken, 'next')).not.toBeNull();
+  });
+
+  it('rotateSession: a revoked token (explicit logout) returns null without revoking the family', async () => {
+    // Explicit logout revokes one session. A later replay of that token must
+    // return null, but it must NOT trip the family-revocation path — the
+    // SELECT finds a row with revoked_at set, so the function returns null
+    // before reaching the atomic UPDATE. Other sessions for the participant
+    // stay alive.
+    const s1 = await createSession({ db: db as any, participantId: 'p_alice', accessJti: 'jti_a1' });
+    const s2 = await createSession({ db: db as any, participantId: 'p_alice', accessJti: 'jti_a2' });
+    await revokeSessionByRefresh(db as any, s1.refreshToken, 'user_logout');
+    expect(await rotateSession(db as any, s1.refreshToken, 'next')).toBeNull();
+    // s2 is untouched — family revocation did NOT fire.
+    expect(await rotateSession(db as any, s2.refreshToken, 'next')).not.toBeNull();
+  });
 });
 
 describe('password reset tokens', () => {
@@ -161,5 +213,56 @@ describe('login lockout', () => {
       await recordLoginAttempt(db as any, 'alice@example.com', null, true);
     }
     expect((await isLockedOut(db as any, 'alice@example.com')).locked).toBe(false);
+  });
+
+  it('composite lockout: trips on the EMAIL dimension (attacker-driven lockout protects the victim)', async () => {
+    // 5 bad passwords for alice@example.com from 5 DIFFERENT IPs. Each IP
+    // bucket has only 1 failure (below threshold), but the email bucket has
+    // 5 (>= threshold) — so the email dimension trips. This is the intended
+    // behavior: an attacker cannot evade the per-email lockout by rotating
+    // IPs, and a victim whose password is being stuffed gets protected.
+    const db = new MockD1();
+    for (let i = 1; i <= authConfig.lockoutThreshold; i++) {
+      await recordLoginAttempt(db as any, 'alice@example.com', `10.0.0.${i}`, false, 'bad_password');
+    }
+    const state = await isLockedOut(db as any, 'alice@example.com', '10.0.0.99');
+    expect(state.locked).toBe(true);
+    expect(state.retryAfterSeconds).toBeGreaterThan(0);
+  });
+
+  it('composite lockout: trips on the IP dimension (credential stuffing from one IP against many accounts)', async () => {
+    // 5 bad passwords from the SAME IP against 5 DIFFERENT emails. Each email
+    // bucket has only 1 failure (below threshold), but the IP bucket has 5
+    // (>= threshold) — so the IP dimension trips. This is the intended
+    // behavior: a credential stuffer rotating target accounts from one IP
+    // cannot evade the per-IP lockout.
+    const db = new MockD1();
+    for (let i = 1; i <= authConfig.lockoutThreshold; i++) {
+      await recordLoginAttempt(db as any, `victim${i}@example.com`, '203.0.113.7', false, 'bad_password');
+    }
+    const state = await isLockedOut(db as any, 'newvictim@example.com', '203.0.113.7');
+    expect(state.locked).toBe(true);
+    expect(state.retryAfterSeconds).toBeGreaterThan(0);
+  });
+
+  it('composite lockout: a missing IP skips the IP dimension (cannot evade via null IP, only relax it)', async () => {
+    // 4 failures from a null IP — below threshold, not locked. ip=null means
+    // the IP dimension is not consulted, so the IP bucket cannot be used to
+    // trip OR to evade. The email dimension alone decides.
+    const db = new MockD1();
+    for (let i = 0; i < authConfig.lockoutThreshold - 1; i++) {
+      await recordLoginAttempt(db as any, 'alice@example.com', null, false);
+    }
+    expect((await isLockedOut(db as any, 'alice@example.com', null)).locked).toBe(false);
+  });
+
+  it('composite lockout: one IP hitting threshold locks that IP even for a different email', async () => {
+    // Confirms the IP dimension is independent of the email being checked.
+    const db = new MockD1();
+    for (let i = 1; i <= authConfig.lockoutThreshold; i++) {
+      await recordLoginAttempt(db as any, `a${i}@example.com`, '198.51.100.1', false);
+    }
+    const state = await isLockedOut(db as any, 'never-attacked@example.com', '198.51.100.1');
+    expect(state.locked).toBe(true);
   });
 });

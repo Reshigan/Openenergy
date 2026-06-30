@@ -53,52 +53,63 @@ export class OrderBook {
       return json({ error: 'shard_key and id are required' }, 400);
     }
     this.shardKey = incoming.shard_key;
-    await this.state.blockConcurrencyWhile(async () => {
+
+    // Wrap the ENTIRE critical section (hydrate -> match -> persist -> mutate
+    // book) in blockConcurrencyWhile. Previously only ensureHydrated was
+    // gated; the match/persist/mutate ran outside, so two concurrent /post
+    // calls could read the same un-mutated book, match the SAME makers, and
+    // persist DUPLICATE fills — double-spending maker volume.
+    const payload = await this.state.blockConcurrencyWhile(async () => {
       await this.ensureHydrated();
-    });
 
-    const result = matchOrder(incoming, this.book || []);
+      const result = matchOrder(incoming, this.book || []);
 
-    // Persist fills + state mutations.
-    await this.persistMatch(incoming, result.fills, result.filled_maker_ids, result.partially_filled_maker_ids, result.maker_remaining);
+      // Persist fills + state mutations.
+      await this.persistMatch(
+        incoming,
+        result.fills,
+        result.filled_maker_ids,
+        result.partially_filled_maker_ids,
+        result.maker_remaining,
+      );
 
-    // Update in-memory book.
-    if (this.book) {
-      for (const id of result.filled_maker_ids) {
-        const idx = this.book.findIndex((o) => o.id === id);
-        if (idx >= 0) this.book.splice(idx, 1);
+      // Update in-memory book.
+      if (this.book) {
+        for (const id of result.filled_maker_ids) {
+          const idx = this.book.findIndex((o) => o.id === id);
+          if (idx >= 0) this.book.splice(idx, 1);
+        }
+        for (const id of result.partially_filled_maker_ids) {
+          const row = this.book.find((o) => o.id === id);
+          if (row) row.remaining_volume_mwh = result.maker_remaining[id] ?? row.remaining_volume_mwh;
+        }
+        const takerRemaining = result.taker_remaining;
+        const isResting = !result.taker_fully_filled
+          && takerRemaining > 0
+          && incoming.order_type !== 'ioc'
+          && incoming.order_type !== 'fok'
+          && incoming.order_type !== 'market';
+        if (isResting) {
+          this.book.push({ ...incoming, remaining_volume_mwh: takerRemaining });
+          await this.persistTakerResting(incoming, takerRemaining);
+        } else if (result.fills.length === 0 && (incoming.order_type === 'ioc' || incoming.order_type === 'fok')) {
+          await this.persistTakerCancelled(incoming.id);
+        } else if (!result.taker_fully_filled) {
+          // Market or IOC order with residual volume — cancel the residual.
+          await this.persistTakerCancelled(incoming.id);
+        }
       }
-      for (const id of result.partially_filled_maker_ids) {
-        const row = this.book.find((o) => o.id === id);
-        if (row) row.remaining_volume_mwh = result.maker_remaining[id] ?? row.remaining_volume_mwh;
-      }
-      const takerRemaining = result.taker_remaining;
-      const isResting = !result.taker_fully_filled
-        && takerRemaining > 0
-        && incoming.order_type !== 'ioc'
-        && incoming.order_type !== 'fok'
-        && incoming.order_type !== 'market';
-      if (isResting) {
-        this.book.push({ ...incoming, remaining_volume_mwh: takerRemaining });
-        await this.persistTakerResting(incoming, takerRemaining);
-      } else if (result.fills.length === 0 && (incoming.order_type === 'ioc' || incoming.order_type === 'fok')) {
-        await this.persistTakerCancelled(incoming.id);
-      } else if (!result.taker_fully_filled) {
-        // Market or IOC order with residual volume — cancel the residual.
-        await this.persistTakerCancelled(incoming.id);
-      }
-    }
 
-    await this.writeDepthSnapshot();
+      await this.writeDepthSnapshot();
 
-    return json({
-      success: true,
-      data: {
+      return {
         fills: result.fills,
         taker_remaining: result.taker_remaining,
         taker_status: this.deriveTakerStatus(incoming, result),
-      },
+      };
     });
+
+    return json({ success: true, data: payload });
   }
 
   private async handleCancel(req: Request): Promise<Response> {

@@ -4,5 +4,7 @@ dist
 dist-check
 test-results
 playwright-report
+.dev.vars
+.dev.vars.*
 Marketing-High-Resolution-LTM-Logo-Group-01-2048x1312-2.png
 tests/browser/fixtures/journey-results.jsonl

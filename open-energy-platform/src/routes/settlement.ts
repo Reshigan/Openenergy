@@ -921,7 +921,16 @@ settlement.get('/invoices/:id/detail', async (c) => {
 // L5 — Tamper-evident audit, SARS/POPIA-shape export, bank-statement recon.
 // ════════════════════════════════════════════════════════════════════════
 
+// Settlement is a clearing/settlement oversight function — its audit chain and
+// export packs are officer-only (admin/support/regulator), matching the
+// isOfficer split already used in GET /audit/events and the officer-gated
+// POST /audit/export. The frontend audit panel is registered under admin.
+const settlementAuditOfficer = (role: string): boolean =>
+  role === 'admin' || role === 'support' || role === 'regulator';
+
 settlement.get('/audit/head', async (c) => {
+  const user = getCurrentUser(c);
+  if (!settlementAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const head = await getChainHead(c.env, 'settlement');
   return c.json({ success: true, data: head });
 });
@@ -1067,6 +1076,8 @@ settlement.post('/audit/export', async (c) => {
 });
 
 settlement.get('/audit/exports', async (c) => {
+  const user = getCurrentUser(c);
+  if (!settlementAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const rs = await c.env.DB.prepare(
     `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
             chain_head_hash, generated_by, generated_at
@@ -1077,6 +1088,8 @@ settlement.get('/audit/exports', async (c) => {
 });
 
 settlement.get('/audit/exports/:id/manifest', async (c) => {
+  const user = getCurrentUser(c);
+  if (!settlementAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT manifest_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'settlement'`,
@@ -1088,8 +1101,11 @@ settlement.get('/audit/exports/:id/manifest', async (c) => {
   let parsed: unknown = null;
   try { parsed = JSON.parse(text); } catch { /* */ }
   return c.json({ success: true, data: parsed ?? { raw: text } });
+});
 
 settlement.get('/audit/exports/:id/csv', async (c) => {
+  const user = getCurrentUser(c);
+  if (!settlementAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT csv_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'settlement'`,
@@ -1103,7 +1119,6 @@ settlement.get('/audit/exports/:id/csv', async (c) => {
       'Content-Disposition': `attachment; filename="${id}.csv"`,
     },
   });
-});
 });
 
 // POST /settlement/audit/recon — bank-statement reconciliation. Body:
@@ -1227,7 +1242,15 @@ settlement.post('/audit/recon', async (c) => {
   }, 201);
 });
 
+// Recon reads match the recon-write audience (admin/regulator/offtaker do
+// settlement reconciliation) plus support; these are operational run summaries,
+// not the full-chain evidence pack.
+const settlementReconRead = (role: string): boolean =>
+  role === 'admin' || role === 'regulator' || role === 'support' || role === 'offtaker';
+
 settlement.get('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  if (!settlementReconRead(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const rs = await c.env.DB.prepare(
     `SELECT id, source, row_count, matched_count, break_count, status,
             started_at, finished_at
@@ -1238,6 +1261,8 @@ settlement.get('/audit/recon', async (c) => {
 });
 
 settlement.get('/audit/recon/:id/breaks', async (c) => {
+  const user = getCurrentUser(c);
+  if (!settlementReconRead(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const rs = await c.env.DB.prepare(
     `SELECT id, break_type, external_ref, our_value, their_value, field,

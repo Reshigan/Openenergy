@@ -34,13 +34,21 @@ describe('crypto-aead field encryption', () => {
     expect(pt).toBe('sensitive-name.pdf');
   });
 
-  it('is a no-op when the gate is closed (no KYC_ENC_KEY)', async () => {
+  it('encrypt is a no-op when the gate is closed (no KYC_ENC_KEY)', async () => {
     const env = gateClosedEnv();
     const ct = await encryptField(env as never, 'plain');
     expect(ct).toBe('plain');
     expect(ct.startsWith('v1:')).toBe(false);
-    const pt = await decryptField(env as never, 'plain');
-    expect(pt).toBe('plain');
+  });
+
+  it('decrypt FAILS CLOSED (throws) when the gate is closed — never returns plaintext', async () => {
+    // Fail-closed contract: a read with no key configured is a
+    // misconfiguration, not a "dev convenience". Returning either the raw
+    // ciphertext blob or a legacy plaintext value would let a production
+    // deployment read KYC fields with no key for months. Must throw.
+    const env = gateClosedEnv();
+    await expect(decryptField(env as never, 'plain')).rejects.toThrow(/KYC_ENC_KEY/);
+    await expect(decryptField(env as never, 'v1:deadbeef:cafe')).rejects.toThrow(/KYC_ENC_KEY/);
   });
 
   it('reads a v1: value back when the same key is configured', async () => {

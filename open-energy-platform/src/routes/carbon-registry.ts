@@ -734,7 +734,15 @@ cr.post('/retirement-certificates/issue', async (c) => {
 // L5 — Tamper-evident audit, Verra-shape export, registry reconciliation.
 // ════════════════════════════════════════════════════════════════════════
 
+// Full-chain carbon audit + export packs are officer-only (admin/support/
+// regulator), matching the officer-gated POST /audit/export and the actor_id
+// scoping in GET /audit/events.
+const carbonAuditOfficer = (role: string): boolean =>
+  role === 'admin' || role === 'support' || role === 'regulator';
+
 cr.get('/audit/head', async (c) => {
+  const user = getCurrentUser(c);
+  if (!carbonAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const head = await getChainHead(c.env, 'carbon');
   return c.json({ success: true, data: head });
 });
@@ -885,6 +893,8 @@ cr.post('/audit/export', async (c) => {
 });
 
 cr.get('/audit/exports', async (c) => {
+  const user = getCurrentUser(c);
+  if (!carbonAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const rs = await c.env.DB.prepare(
     `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
             chain_head_hash, generated_by, generated_at
@@ -895,6 +905,8 @@ cr.get('/audit/exports', async (c) => {
 });
 
 cr.get('/audit/exports/:id/manifest', async (c) => {
+  const user = getCurrentUser(c);
+  if (!carbonAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT manifest_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'carbon'`,
@@ -906,8 +918,11 @@ cr.get('/audit/exports/:id/manifest', async (c) => {
   let parsed: unknown = null;
   try { parsed = JSON.parse(text); } catch { /* */ }
   return c.json({ success: true, data: parsed ?? { raw: text } });
+});
 
 cr.get('/audit/exports/:id/csv', async (c) => {
+  const user = getCurrentUser(c);
+  if (!carbonAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT csv_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'carbon'`,
@@ -921,7 +936,6 @@ cr.get('/audit/exports/:id/csv', async (c) => {
       'Content-Disposition': `attachment; filename="${id}.csv"`,
     },
   });
-});
 });
 
 // POST /carbon-registry/audit/recon — registry reconciliation. Body:
@@ -1054,6 +1068,11 @@ cr.post('/audit/recon', async (c) => {
 });
 
 cr.get('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  // Recon reads match recon-write (admin/regulator/carbon_fund) + support.
+  if (!['admin', 'regulator', 'support', 'carbon_fund'].includes(user.role)) {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
   const rs = await c.env.DB.prepare(
     `SELECT id, source, row_count, matched_count, break_count, status,
             started_at, finished_at

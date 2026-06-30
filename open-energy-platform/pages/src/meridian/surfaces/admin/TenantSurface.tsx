@@ -8,7 +8,8 @@
 // `admin:tenant_events` in surfaces.tsx, reached from Atlas (⌘K) via the roleData feature key
 // `tenant_events`. Non-chain CRUD surface (Bucket B).
 import React, { useState } from 'react';
-import { ListingTable, Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
+import { ListingTable, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
+import { StatusPill } from '../../components';
 import { api } from '../../../lib/api';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
@@ -35,7 +36,7 @@ export default function TenantSurface(_props: { role: string }) {
         empty={{ title: 'No tenant events yet', description: 'Provisioned / activated / KYC / suspended / offboarded / data-erased events for every tenant will appear here.' }}
         columns={[
           { key: 'tenant_id', label: 'Tenant', render: (r) => <span className="font-mono text-[11px]">{(r.tenant_id || '').slice(0, 12)}…</span> },
-          { key: 'event_type', label: 'Event', render: (r) => <Pill tone={r.event_type === 'activated' || r.event_type === 'reactivated' || r.event_type === 'kyc_approved' ? 'good' : r.event_type === 'suspended' || r.event_type === 'offboarded' || r.event_type === 'kyc_rejected' || r.event_type === 'data_erased' ? 'bad' : 'info'}>{r.event_type.replace(/_/g, ' ')}</Pill> },
+          { key: 'event_type', label: 'Event', render: (r) => <StatusPill status={r.event_type} tone={r.event_type === 'activated' || r.event_type === 'reactivated' || r.event_type === 'kyc_approved' ? 'good' : r.event_type === 'suspended' || r.event_type === 'offboarded' || r.event_type === 'kyc_rejected' || r.event_type === 'data_erased' ? 'bad' : 'info'} /> },
           { key: 'actor_id', label: 'Actor', render: (r) => <span className="font-mono text-[11px]">{(r.actor_id || '').slice(0, 12)}…</span> },
           { key: 'occurred_at', label: 'When', render: (r) => new Date(r.occurred_at).toLocaleString() },
           { key: 'reason', label: 'Reason', render: (r) => <span className="block truncate max-w-md" title={r.reason || ''}>{r.reason || '—'}</span> },

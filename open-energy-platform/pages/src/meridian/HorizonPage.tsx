@@ -12,6 +12,16 @@ import { PlatformPulse } from './PlatformPulse';
 import { GettingStarted } from './GettingStarted';
 import { GuidedTour } from './GuidedTour';
 import { cleanLabel } from './labels';
+import OfftakerHorizon from './OfftakerHorizon';
+import TraderHorizon from './TraderHorizon';
+import LenderHorizon from './LenderHorizon';
+import RegulatorHorizon from './RegulatorHorizon';
+import IppHorizon from './IppHorizon';
+import GridHorizon from './GridHorizon';
+import SupportHorizon from './SupportHorizon';
+import CarbonHorizon from './CarbonHorizon';
+import EscHorizon from './EscHorizon';
+import AdminHorizon from './AdminHorizon';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/useAuth';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
@@ -23,37 +33,40 @@ function useRole(): string {
   return user?.role ?? '';
 }
 
-// Lane-holding roles for the admin role-switcher: unique roles across all chain
-// lanes in src/utils/chain-registry-meridian.ts (backend), sorted. Admin has no
-// lanes of its own; the backend lets admin GET /api/horizon/<any role>.
-// Keep in sync with the registry (same convention as Bucket in ./lib.ts).
-const LANE_ROLES = [
-  'carbon_fund', 'epc_contractor', 'esco', 'grid_operator', 'ipp_developer',
-  'lender', 'offtaker', 'regulator', 'support', 'trader',
-];
-
 // Bucket sub-ticks, computed against "now" like the mockup's static examples.
 function bucketTick(key: Bucket, now: Date): string {
   const fmtT = (d: Date) => d.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
   const fmtD = (d: Date) => d.toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric' });
   switch (key) {
-    case 'breached': return 'consequence running';
-    case 'h2':       return `before ${fmtT(new Date(now.getTime() + 2 * 3600_000))}`;
-    case 'today':    return 'before 17:00';
-    case 'h48':      return `by ${fmtD(new Date(now.getTime() + 48 * 3600_000))}`;
-    case 'week':     return `by ${fmtD(new Date(now.getTime() + 7 * 86400_000))}`;
-    case 'later':    return '> 7 days';
+    case 'breached': return 'act now — past due';
+    case 'h2':       return `due by ${fmtT(new Date(now.getTime() + 2 * 3600_000))}`;
+    case 'today':    return 'due today';
+    case 'h48':      return `due ${fmtD(new Date(now.getTime() + 48 * 3600_000))}`;
+    case 'week':     return `due ${fmtD(new Date(now.getTime() + 7 * 86400_000))}`;
+    case 'later':    return 'more than 7 days';
   }
 }
 
 export default function HorizonPage() {
   const role = useRole();
+  // Offtaker gets the bespoke v2 "Honest Number" surface — a consumer-grade
+  // delivery summary built for a non-trader buyer. Every other role keeps the
+  // shared lane×bucket board below.
+  if (role === 'offtaker') return <OfftakerHorizon />;
+  if (role === 'trader') return <TraderHorizon />;
+  if (role === 'lender') return <LenderHorizon />;
+  if (role === 'regulator') return <RegulatorHorizon />;
+  if (role === 'ipp_developer') return <IppHorizon />;
+  if (role === 'grid_operator') return <GridHorizon />;
+  if (role === 'support') return <SupportHorizon />;
+  if (role === 'carbon_fund') return <CarbonHorizon />;
+  if (role === 'esco') return <EscHorizon />;
+  if (role === 'admin') return <AdminHorizon />;
   const navigate = useNavigate();
-  // Admin holds no Meridian lanes — it views any role's board via the backend
-  // passthrough. Non-admin roles always view their own board (boardRole === role).
-  const isAdmin = role === 'admin';
-  const [adminRole, setAdminRole] = React.useState(LANE_ROLES[0]);
-  const boardRole = isAdmin ? adminRole : role;
+  // Every lane-holding role above early-returns to its bespoke Horizon. Roles
+  // that reach here (e.g. wind, epc_contractor) have no bespoke surface and view
+  // their own shared lane×bucket board (boardRole === role).
+  const boardRole = role;
   const cfg = getRoleConfig(boardRole);
   const [data, setData] = React.useState<HorizonData | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
@@ -128,20 +141,6 @@ export default function HorizonPage() {
     try { setData(await fetchHorizon(boardRole)); } catch { /* keep last good board */ }
   }
 
-  // Admin-only: compact switcher across the lane-holding roles' boards.
-  const roleSwitcher = isAdmin && (
-    <div className="role-switch" role="group" aria-label="View board as role">
-      {LANE_ROLES.map(r => (
-        <button key={r} type="button"
-                className={r === adminRole ? 'btn pri' : 'btn ghost'}
-                aria-pressed={r === adminRole}
-                onClick={() => { if (r !== adminRole) { setAdminRole(r); setData(null); setActErr(null); } }}>
-          {cleanLabel(getRoleConfig(r)?.label ?? r.replace(/_/g, ' '))}
-        </button>
-      ))}
-    </div>
-  );
-
   if (err) {
     return (
       <div className="mer mer-error" role="alert">
@@ -153,7 +152,6 @@ export default function HorizonPage() {
   if (!data) {
     return (
       <div className="mer horizon">
-        {roleSwitcher}
         <div className="main" aria-busy="true" role="status" aria-label="Computing horizon">
           <section className="board" style={{ padding: '8px 0' }}>
             {[0, 1, 2, 3].map(r => (
@@ -174,13 +172,11 @@ export default function HorizonPage() {
 
   return (
     <div className="mer horizon">
-      <MeridianHeader ctx={<><b>{cleanLabel(cfg?.label ?? boardRole)}</b><span>{data.counts.total} live · {data.counts.breached} breached</span></>} />
+      <MeridianHeader ctx={<><b>{cleanLabel(cfg?.label ?? boardRole)}</b><span>{data.counts.total} live · {data.counts.breached} overdue</span></>} />
 
       <GettingStarted />
 
       <GuidedTour surface="horizon" />
-
-      {roleSwitcher}
 
       <PlatformPulse />
 
@@ -188,6 +184,9 @@ export default function HorizonPage() {
 
       <div className={dutyCollapsed ? 'main duty-collapsed' : 'main'}>
         <section className="board" aria-label="Live cases by time to consequence">
+          <p className="board-caption" style={{ margin: '0 0 10px', color: 'var(--ink3, #5b6b85)', fontSize: 13 }}>
+            Your active work, sorted left-to-right by how soon it needs you. Overdue items act on first — they cost the most while they wait.
+          </p>
           <div className="board-head">
             <div className="board-new-stack">
               <Link to="/new" className="board-new" title="Start a new transaction">+ New transaction</Link>
@@ -211,7 +210,7 @@ export default function HorizonPage() {
             // single all-button header (no single Ledger to point at).
             const laneChain = singleChainOf(lane.cases);
             const laneText = cleanLabel(laneLabel(lane.key)).toUpperCase();
-            const laneCount = `${lane.cases.length} live${breached ? ` · ${breached} breached` : ''}`;
+            const laneCount = `${lane.cases.length} live${breached ? ` · ${breached} overdue` : ''}`;
             return (
               <div className="lane-row" key={lane.key}>
                 {laneChain ? (
@@ -241,7 +240,7 @@ export default function HorizonPage() {
                 )}
                 {collapsed ? (
                   <button type="button" className="lane-collapsed-summary" onClick={() => toggleLane(lane.key)}>
-                    {lane.cases.length} case{lane.cases.length === 1 ? '' : 's'}{breached ? ` · ${breached} breached` : ''} · click to expand
+                    {lane.cases.length} case{lane.cases.length === 1 ? '' : 's'}{breached ? ` · ${breached} overdue` : ''} · click to expand
                   </button>
                 ) : BUCKETS.map(b => (
                   <div className="cell" key={b.key}>
@@ -284,7 +283,7 @@ export default function HorizonPage() {
                   <div className="why">
                     <span className="mono">{c.ref}</span>
                     {c.quantum_zar != null && <> · <span className="mono">{fmtZar(c.quantum_zar)}</span></>}
-                    {c.bucket === 'breached' && <> · <span className="due-ox">SLA breached</span></>}
+                    {c.bucket === 'breached' && <> · <span className="due-ox">overdue</span></>}
                   </div>
                   <div className="acts">
                     {c.actions.slice(0, 2).map(a => {

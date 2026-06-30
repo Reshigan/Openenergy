@@ -588,6 +588,18 @@ app.post('/:id/action', async (c) => {
   }
 
   // ── Cascade ───────────────────────────────────────────────────────────────
+  // ponytail: complete_settlement is the value-bearing transition — pass total_zar
+  // as commercial.entity_value so fee-engine collects the 1.5% marketplace take-rate
+  // (oe_fee_schedule row trigger_event='transaction_complete_settlement', pct 0.015)
+  // into oe_platform_revenue. Payer is the seller (ipp_developer per fee row).
+  const commercial =
+    action === 'complete_settlement'
+      ? {
+          entity_value: Number(row.total_zar ?? 0),
+          participant_id: (row.seller_id as string) ?? undefined,
+        }
+      : undefined;
+
   await fireCascade({
     event: `transaction_${action}` as EventType,
     actor_id: user.id, entity_type: 'sustainability_transaction', entity_id: id,
@@ -603,6 +615,7 @@ app.post('/:id/action', async (c) => {
       ...(retirementRef ? { retirement_ref: retirementRef } : {}),
       ...(settlementError ? { settlement_error: settlementError } : {}),
     },
+    commercial,
     env: c.env,
   }).catch(() => {});
 

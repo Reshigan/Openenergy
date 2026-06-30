@@ -6,7 +6,8 @@
 // dependency on workstation-page-local state. Registered as `esco:sites-portfolio` in
 // surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `sites-portfolio`.
 import React from 'react';
-import { ListingTable, Pill } from '../../../components/launch/WorkstationShell';
+import { ListingTable } from '../../../components/launch/WorkstationShell';
+import { StatusPill } from '../../components';
 
 export default function SitesPortfolioSurface(_props: { role: string }) {
   return (
@@ -17,7 +18,7 @@ export default function SitesPortfolioSurface(_props: { role: string }) {
       columns={[
         { key: 'site_name', label: 'Site', render: (r) => <span className="font-medium">{r.site_name}</span> },
         { key: 'installed_capacity_kw', label: 'Capacity', render: (r) => r.installed_capacity_kw != null ? `${(r.installed_capacity_kw / 1000).toFixed(1)} MW` : '—' },
-        { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={r.chain_status === 'in_om' ? 'good' : r.chain_status === 'failed' ? 'bad' : 'warn'}>{r.chain_status?.replace(/_/g, ' ')}</Pill> },
+        { key: 'chain_status', label: 'Status', render: (r) => <StatusPill status={r.chain_status} tone={r.chain_status === 'in_om' ? 'good' : r.chain_status === 'failed' ? 'bad' : 'warn'} /> },
         { key: 'client_name', label: 'Client' },
         { key: 'created_at', label: 'Commissioned', render: (r) => new Date(r.created_at).toLocaleDateString() },
       ]}

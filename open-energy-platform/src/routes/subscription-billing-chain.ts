@@ -324,6 +324,74 @@ app.post('/:id/action', async (c) => {
   return c.json({ success: true, data: { invoice: refreshed ? decorate(refreshed, new Date()) : null } });
 });
 
+// ── Monthly sweep (exported for cron wiring) ─────────────────────────────────
+// Enumerates active, billable participants and inserts a draft subscription
+// invoice per (participant_id, billing_period). Idempotent on the existing
+// (participant_id, billing_period) uniqueness — a second call for the same
+// period skips every participant and generates nothing. Free-tier, suspended
+// and rejected participants are excluded. Defaults periodYyyyMm to the current
+// month (YYYY-MM) when omitted.
+export async function runMonthlySubscriptionBilling(
+  env: HonoEnv['Bindings'],
+  periodYyyyMm?: string,
+): Promise<{ generated: number; skipped: number }> {
+  const period = periodYyyyMm ?? new Date().toISOString().slice(0, 7);
+  const nowIso = new Date().toISOString();
+
+  // Active participants on a billable tier (free is excluded — no charge).
+  const rs = await env.DB.prepare(
+    `SELECT id, subscription_tier FROM participants
+     WHERE status = 'active'
+       AND subscription_tier IN ('starter','professional','enterprise')`,
+  ).all<{ id: string; subscription_tier: SubscriptionTier }>();
+
+  let generated = 0;
+  let skipped = 0;
+
+  for (const p of rs.results || []) {
+    // Idempotent: skip if a non-cancelled invoice already exists for this
+    // participant + period. A cancelled invoice does not block regeneration
+    // (matches the admin POST /generate semantics).
+    const existing = await env.DB.prepare(
+      `SELECT id FROM oe_subscription_invoices
+       WHERE participant_id = ? AND billing_period = ? AND chain_status != 'cancelled'`,
+    ).bind(p.id, period).first<{ id: string }>();
+    if (existing) { skipped++; continue; }
+
+    const amounts = computeInvoiceAmounts(p.subscription_tier, 0);
+    const id = `sinv_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`;
+    const lineItems = [{
+      description: `${p.subscription_tier.charAt(0).toUpperCase() + p.subscription_tier.slice(1)} plan — ${period}`,
+      qty: 1,
+      unit_price_zar: SUBSCRIPTION_AMOUNTS_ZAR[p.subscription_tier],
+    }];
+
+    await env.DB.prepare(
+      `INSERT INTO oe_subscription_invoices
+       (id, participant_id, billing_period, subscription_tier,
+        amount_zar, vat_zar, total_zar, discount_zar, net_payable_zar,
+        line_items, dunning_notices_sent, chain_status, actor_id, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 0, 'draft', 'system', ?, ?)`,
+    ).bind(
+      id, p.id, period, p.subscription_tier,
+      amounts.amount_zar, amounts.vat_zar, amounts.total_zar, amounts.net_payable_zar,
+      JSON.stringify(lineItems), nowIso, nowIso,
+    ).run();
+
+    await fireCascade({
+      event: 'billing_evt_generated',
+      actor_id: 'system',
+      entity_type: 'subscription_invoice',
+      entity_id: id,
+      data: { participant_id: p.id, billing_period: period, tier: p.subscription_tier, ...amounts },
+      env,
+    });
+    generated++;
+  }
+
+  return { generated, skipped };
+}
+
 // ── SLA sweep (exported for cron wiring) ────────────────────────────────────
 export async function subscriptionBillingSlaSweep(
   env: HonoEnv['Bindings'],

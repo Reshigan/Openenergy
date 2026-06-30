@@ -1,6 +1,7 @@
 // All route imports and app.route() mounting in one place.
 // index.ts stays thin: create app, apply middleware, call mountRoutes(app), export.
 import { Hono } from 'hono';
+import { mergePath } from 'hono/utils/url';
 import type { HonoEnv } from '../utils/types';
 
 import authRoutes from './auth';
@@ -363,395 +364,481 @@ import dealsRoutes from './deals';
 
 // Hono's authMiddleware is applied per-module inside each route file using
 // r.use('*', authMiddleware). This function only mounts the paths.
+
+// RouteInfo mirrors Hono's internal RouterRoute shape (method/path/basePath).
+type RouteInfo = { method: string; path: string; basePath: string };
+
+// P1 guard: Hono's app.route() is additive — mounting two modules under the
+// same prefix silently merges their sub-paths and the FIRST registered handler
+// wins for any true (method, path) collision. Walk each module's own route
+// table BEFORE merging (so we still know which module owns which route) and
+// fail fast at boot if two distinct modules register the same concrete
+// (method, path). ALL (middleware) overlaps and prefix-only re-mounts only
+// WARN — those are intentional extension patterns, not shadows.
+
+// Known-intentional cross-module (method, path) overlaps. These are
+// feature-modules that extend a base module's sub-paths AND contribute other
+// unique sub-paths, so unmounting them would lose live routes. The base
+// module (mounted first) wins the overlap; the duplicate handler in the
+// feature-module is dead and should be deduped by that module's owner.
+// Format: `${method} ${effectivePath}` → reason.
+// No cross-module shadows are currently intentional. The former go-live
+// `POST /api/popia/erasure` shadow was resolved by removing the dead duplicate
+// (base popia.ts owns erasure); see go-live.ts. New entries here document an
+// intentional first-wins overlap so assertNoRouteShadow WARNs instead of failing.
+const KNOWN_CROSS_MODULE_SHADOWS = new Map<string, string>([]);
+
+export function assertNoRouteShadow(mounts: Array<[string, Hono<HonoEnv>]>): void {
+  // key -> Set<moduleIndex>  (distinct modules registering this (method, path))
+  const owners = new Map<string, Set<number>>();
+  for (let i = 0; i < mounts.length; i++) {
+    const [prefix, mod] = mounts[i];
+    const routes = (mod as unknown as { routes?: RouteInfo[] }).routes ?? [];
+    for (const r of routes) {
+      const effPath = mergePath(prefix, r.path);
+      const key = `${r.method} ${effPath}`;
+      const set = owners.get(key);
+      if (set) set.add(i);
+      else owners.set(key, new Set([i]));
+    }
+  }
+
+  const warnings: string[] = [];
+  const failures: string[] = [];
+  for (const [key, set] of owners) {
+    if (set.size < 2) continue; // single module — within-module dups are out of scope here
+    const method = key.split(' ')[0];
+    if (method === 'ALL') {
+      // Middleware overlap from multiple modules under the same prefix.
+      // Additive by design (each module's r.use('*', mw) chains). WARN only.
+      warnings.push(`WARN  ${key}  middleware registered by ${set.size} modules`);
+    } else {
+      // Cross-module concrete-method collision: first registered silently wins.
+      const known = KNOWN_CROSS_MODULE_SHADOWS.get(key);
+      if (known) {
+        warnings.push(`WARN  ${key}  known-intentional shadow (${set.size} modules): ${known}`);
+      } else {
+        failures.push(`FAIL  ${key}  registered by ${set.size} modules (first wins silently)`);
+      }
+    }
+  }
+
+  // Prefix-only re-mount WARN — same prefix mounted multiple times.
+  const prefixCounts = new Map<string, number>();
+  for (const [prefix] of mounts) prefixCounts.set(prefix, (prefixCounts.get(prefix) ?? 0) + 1);
+  for (const [prefix, n] of prefixCounts) {
+    if (n > 1) warnings.push(`WARN  prefix ${prefix} mounted ${n}x`);
+  }
+
+  for (const w of warnings) console.warn(w);
+  if (failures.length) {
+    throw new Error(
+      `route shadowing detected: ${failures.length} cross-module (method, path) collision(s) — first registered handler wins silently:\n` +
+        failures.join('\n'),
+    );
+  }
+}
+
 export function mountRoutes(app: Hono<HonoEnv>): void {
+  // Record each (prefix, module) pair so assertNoRouteShadow can detect
+  // cross-module (method, path) collisions before Hono silently merges them.
+  const mounts: Array<[string, Hono<HonoEnv>]> = [];
+  const mount = (prefix: string, mod: Hono<HonoEnv>): void => {
+    mounts.push([prefix, mod]);
+    app.route(prefix, mod);
+  };
+
   // Auth routes
-  app.route('/api/auth', authRoutes);
-  app.route('/api/auth/sso', ssoRoutes);
-  app.route('/api/cockpit', cockpitRoutes);
-  app.route('/api/pulse', pulseRoutes);
-  app.route('/api/launch', launchRoutes);
+  mount('/api/auth', authRoutes);
+  mount('/api/auth/sso', ssoRoutes);
+  mount('/api/cockpit', cockpitRoutes);
+  mount('/api/pulse', pulseRoutes);
+  mount('/api/launch', launchRoutes);
 
   // Protected routes
-  app.route('/api/participants', participantsRoutes);
-  app.route('/api/contracts', contractsRoutes);
-  app.route('/api/invoices', invoicesRoutes);
-  app.route('/api/projects', projectsRoutes);
-  app.route('/api/doc-gen', docGenerationRoutes);
-  app.route('/api/projects/:projectId/schedule', projectScheduleRoutes);
-  app.route('/api/risk', riskRoutes);
-  app.route('/api/clearing/disclosure', clearingDisclosureRoutes);
-  app.route('/api/settlement/dvp', settlementDvpRoutes);
-  app.route('/api/clearing/margin-gate', marginGateRoutes);
-  app.route('/api/trading', tradingRoutes);
-  app.route('/api/role-actions', roleActionsRoutes);
-  app.route('/api/feed', feedRoutes);
-  app.route('/api/insights', insightsRoutes);
-  app.route('/api/settlement', settlementRoutes);
-  app.route('/api/carbon', carbonRoutes);
-  app.route('/api/esg', esgRoutes);
-  app.route('/api/esg-reports', esgReportsRoutes);
-  app.route('/api/watershed', watershedRoutes);
-  app.route('/api/portal', counterpartyPortalRoutes);
-  app.route('/api/platform', platformRoutes);
-  app.route('/api/roles', roleCompletionsRoutes);
-  app.route('/api/grid', gridRoutes);
-  app.route('/api/procurement', procurementRoutes);
-  app.route('/api/dealroom', dealroomRoutes);
-  app.route('/api/modules', modulesRoutes);
-  app.route('/api/popia', popiaRoutes);
-  app.route('/api/intelligence', intelligenceRoutes);
-  app.route('/api/briefing', briefingRoutes);
-  app.route('/api/metering', meteringRoutes);
-  app.route('/api/ona', onaRoutes);
-  app.route('/api/pipeline', pipelineRoutes);
-  app.route('/api/vault', vaultRoutes);
-  app.route('/api/threads', threadsRoutes);
-  app.route('/api/marketplace', marketplaceRoutes);
-  app.route('/api/admin', adminRoutes);
-  app.route('/api/support', supportRoutes);
-  app.route('/api/ai', aiRoutes);
-  app.route('/api/lois', loiRoutes);
-  app.route('/api/offtaker', offtakerRoutes);
-  app.route('/api/funder', funderRoutes);
+  mount('/api/participants', participantsRoutes);
+  mount('/api/contracts', contractsRoutes);
+  mount('/api/invoices', invoicesRoutes);
+  mount('/api/projects', projectsRoutes);
+  mount('/api/doc-gen', docGenerationRoutes);
+  mount('/api/projects/:projectId/schedule', projectScheduleRoutes);
+  mount('/api/risk', riskRoutes);
+  mount('/api/clearing/disclosure', clearingDisclosureRoutes);
+  mount('/api/settlement/dvp', settlementDvpRoutes);
+  mount('/api/clearing/margin-gate', marginGateRoutes);
+  mount('/api/trading', tradingRoutes);
+  mount('/api/role-actions', roleActionsRoutes);
+  mount('/api/feed', feedRoutes);
+  mount('/api/insights', insightsRoutes);
+  mount('/api/settlement', settlementRoutes);
+  mount('/api/carbon', carbonRoutes);
+  mount('/api/esg', esgRoutes);
+  mount('/api/esg-reports', esgReportsRoutes);
+  mount('/api/watershed', watershedRoutes);
+  mount('/api/portal', counterpartyPortalRoutes);
+  mount('/api/platform', platformRoutes);
+  mount('/api/roles', roleCompletionsRoutes);
+  mount('/api/grid', gridRoutes);
+  mount('/api/procurement', procurementRoutes);
+  mount('/api/dealroom', dealroomRoutes);
+  mount('/api/modules', modulesRoutes);
+  mount('/api/popia', popiaRoutes);
+  mount('/api/intelligence', intelligenceRoutes);
+  mount('/api/briefing', briefingRoutes);
+  mount('/api/metering', meteringRoutes);
+  mount('/api/ona', onaRoutes);
+  mount('/api/pipeline', pipelineRoutes);
+  mount('/api/vault', vaultRoutes);
+  mount('/api/threads', threadsRoutes);
+  mount('/api/marketplace', marketplaceRoutes);
+  mount('/api/admin', adminRoutes);
+  mount('/api/support', supportRoutes);
+  mount('/api/ai', aiRoutes);
+  mount('/api/lois', loiRoutes);
+  mount('/api/offtaker', offtakerRoutes);
+  mount('/api/funder', funderRoutes);
   // /api/regulator is intentionally mounted three times (lines below + line ~650):
   //   regulatorRoutes      → /filings, /market-summary
   //   regulatorSuiteRoutes → /licences, /tariff-submissions
   //   regulatorReportRoutes (reports.ts) → /catalog, /ledger, /registry, /:role
   // Hono matches in registration order; the /:role wildcard in reports only fires
   // for paths not claimed by the first two routers. No conflicts verified.
-  app.route('/api/regulator', regulatorRoutes);
-  app.route('/api/regulator', regulatorSuiteRoutes);
-  app.route('/api/grid-operator', gridOperatorRoutes);
-  app.route('/api/trader-risk', traderRiskRoutes);
-  app.route('/api/lender', lenderSuiteRoutes);
-  app.route('/api/ipp', ippLifecycleRoutes);
-  app.route('/api/offtaker-suite', offtakerSuiteRoutes);
-  app.route('/api/carbon-registry', carbonRegistryRoutes);
-  app.route('/api/carbon/article-6', carbonArticle6Routes);
-  app.route('/api/regulator/inbox', regulatorInboxRoutes);
-  app.route('/api/lender/dunning', lenderDunningRoutes);
-  app.route('/api/offtaker/obligations', offtakerObligationsRoutes);
-  app.route('/api/grid/wheeling-charges', gridWheelingChargesRoutes);
-  app.route('/api/trader/mm-compliance', traderMmComplianceRoutes);
-  app.route('/api/ipp/bonds', ippBondsRoutes);
-  app.route('/api/carbon/mrv-chain', carbonMrvChainRoutes);
-  app.route('/api/esums/commissioning', esumsCommissioningRoutes);
-  app.route('/api/grid/dispatch-nominations', gridDispatchNominationsRoutes);
-  app.route('/api/support/ticket-chain', supportTicketChainRoutes);
-  app.route('/api/esums/warranty-claims', warrantyClaimChainRoutes);
-  app.route('/api/esums/wo-chain', woChainRoutes);
-  app.route('/api/carbon/retirement-chain', carbonRetirementChainRoutes);
-  app.route('/api/grid/planned-outages', plannedOutageChainRoutes);
-  app.route('/api/ipp/procurement-chain', procurementChainRoutes);
-  app.route('/api/ipp/cod-chain', codChainRoutes);
-  app.route('/api/lender/drawdown-chain', drawdownChainRoutes);
-  app.route('/api/offtaker/ppa-contract-chain', ppaContractChainRoutes);
-  app.route('/api/insurance/claim-chain', insuranceClaimChainRoutes);
-  app.route('/api/esums/pr-chain', prChainRoutes);
-  app.route('/api/hse/incident-chain', hseIncidentChainRoutes);
-  app.route('/api/cyber/incident-chain', cyberIncidentChainRoutes);
-  app.route('/api/ed/commitment-chain', edCommitmentChainRoutes);
-  app.route('/api/gca/connection-chain', gcaChainRoutes);
-  app.route('/api/poslimit/chain', poslimitChainRoutes);
-  app.route('/api/disbursement/chain', disbursementChainRoutes);
-  app.route('/api/disposition/chain', dispositionChainRoutes);
-  app.route('/api/take-or-pay/chain', takeOrPayChainRoutes);
-  app.route('/api/licence/renewal/chain', licenceRenewalChainRoutes);
-  app.route('/api/load-curtailment/chain', loadCurtailmentChainRoutes);
-  app.route('/api/esums/vendor-escalation/chain', vendorEscalationChainRoutes);
-  app.route('/api/best-execution/chain', bestExecutionChainRoutes);
-  app.route('/api/carbon-registration/chain', carbonRegistrationChainRoutes);
-  app.route('/api/covenant-certificate/chain', covenantCertificateChainRoutes);
-  app.route('/api/tariff-indexation/chain', tariffIndexationChainRoutes);
-  app.route('/api/compliance-inspection/chain', complianceInspectionChainRoutes);
-  app.route('/api/problem-management/chain', problemManagementChainRoutes);
-  app.route('/api/carbon-reversal/chain', carbonReversalChainRoutes);
-  app.route('/api/tariff-determination/chain', tariffDeterminationChainRoutes);
-  app.route('/api/trade-reporting/chain', tradeReportingChainRoutes);
-  app.route('/api/loan-default/chain', loanDefaultChainRoutes);
-  app.route('/api/curtailment-claim/chain', curtailmentClaimChainRoutes);
-  app.route('/api/change-enablement/chain', changeEnablementChainRoutes);
-  app.route('/api/carbon-offset-claim/chain', carbonOffsetClaimChainRoutes);
-  app.route('/api/licence-application/chain', licenceApplicationChainRoutes);
-  app.route('/api/reserve-activation/chain', reserveActivationChainRoutes);
-  app.route('/api/availability-guarantee/chain', availabilityGuaranteeChainRoutes);
-  app.route('/api/market-abuse/chain', marketAbuseChainRoutes);
-  app.route('/api/credit-origination/chain', creditOriginationChainRoutes);
-  app.route('/api/payment-security/chain', paymentSecurityChainRoutes);
-  app.route('/api/security-remediation/chain', securityRemediationChainRoutes);
-  app.route('/api/crediting-renewal/chain', creditingRenewalChainRoutes);
-  app.route('/api/sseg-registration/chain', ssegRegistrationChainRoutes);
-  app.route('/api/grid-capacity/chain', gridCapacityAllocationChainRoutes);
-  app.route('/api/pm-compliance/chain', pmComplianceChainRoutes);
-  app.route('/api/algo-cert/chain', algoCertChainRoutes);
-  app.route('/api/loan-transfer/chain', loanTransferChainRoutes);
-  app.route('/api/ppa-termination/chain', ppaTerminationChainRoutes);
-  app.route('/api/warranty-recovery/chain', warrantyRecoveryChainRoutes);
-  app.route('/api/permit-to-work/chain', permitToWorkChainRoutes);
-  app.route('/api/carbon-erpa/chain', carbonErpaChainRoutes);
-  app.route('/api/complaints/chain', complaintResolutionChainRoutes);
-  app.route('/api/grid-code-compliance/chain', gridCodeComplianceChainRoutes);
-  app.route('/api/counterparty-margin/chain', counterpartyMarginChainRoutes);
-  app.route('/api/security-perfection/chain', securityPerfectionChainRoutes);
-  app.route('/api/rec-lifecycle/chain', recLifecycleChainRoutes);
-  app.route('/api/asset-prognostics/chain', assetPrognosticsChainRoutes);
-  app.route('/api/spare-parts-provisioning/chain', sparePartsProvisioningChainRoutes);
-  app.route('/api/poa-inclusion/chain', poaCpaInclusionChainRoutes);
-  app.route('/api/levy-assessment/chain', levyAssessmentChainRoutes);
-  app.route('/api/connection-energization/chain', connectionEnergizationChainRoutes);
-  app.route('/api/trade-allocation/chain', tradeAllocationChainRoutes);
-  app.route('/api/reserve-account/chain', reserveAccountChainRoutes);
-  app.route('/api/ppa-change-in-law/chain', ppaChangeInLawChainRoutes);
-  app.route('/api/generation-revenue-assurance/chain', generationRevenueAssuranceChainRoutes);
-  app.route('/api/service-contract/chain', serviceContractChainRoutes);
-  app.route('/api/ipp/change-order/chain', projectChangeOrderChainRoutes);
-  app.route('/api/carbon-issuance/chain', carbonIssuanceChainRoutes);
-  app.route('/api/consultation-notice/chain', consultationNoticeChainRoutes);
-  app.route('/api/black-start/chain', blackStartChainRoutes);
-  app.route('/api/settlement-fail/chain', settlementFailChainRoutes);
-  app.route('/api/dscr-monitoring/chain', dscrMonitoringChainRoutes);
-  app.route('/api/ppa-nomination/chain', ppaNominationChainRoutes);
-  app.route('/api/bess-soh/chain', bessSohChainRoutes);
-  app.route('/api/oem-fco/chain', oemFcoChainRoutes);
-  app.route('/api/benchmark-transition/chain', benchmarkTransitionChainRoutes);
-  app.route('/api/ccp-assessment/chain', ccpAssessmentChainRoutes);
-  app.route('/api/ipp/project-risk/chain', projectRiskChainRoutes);
-  app.route('/api/regulator/enforcement-action/chain', enforcementActionChainRoutes);
-  app.route('/api/grid/rez-capacity/chain', rezCapacityChainRoutes);
-  app.route('/api/lender/sll-kpi/chain', sllKpiChainRoutes);
-  app.route('/api/ipp/submittal-rfi/chain', submittalRfiChainRoutes);
-  app.route('/api/ipp/dfr/chain', dfrChainRoutes);
-  app.route('/api/ipp/punch-list/chain', punchListChainRoutes);
-  app.route('/api/ipp/itp/chain', itpChainRoutes);
-  app.route('/api/ipp/handover-dossier/chain', handoverDossierChainRoutes);
-  app.route('/api/offtaker/ppa-annual-recon/chain', ppaAnnualReconChainRoutes);
-  app.route('/api/esums/soiling-audit/chain', soilingAuditChainRoutes);
-  app.route('/api/carbon/esg-disclosure/chain', esgDisclosureChainRoutes);
-  app.route('/api/support/service-request/chain', serviceRequestChainRoutes);
-  app.route('/api/grid/imbalance-settlement/chain', imbalanceSettlementChainRoutes);
-  app.route('/api/regulator/enforcement-action-s35/chain', enforcementActionS35ChainRoutes);
-  app.route('/api/trader/pretrade-credit/chain', pretradeCreditChainRoutes);
-  app.route('/api/lender/loan-restructure/chain', loanRestructureChainRoutes);
-  app.route('/api/carbon/credit-rating/chain', carbonCreditRatingChainRoutes);
-  app.route('/api/grid/transmission-outage/chain', transmissionOutageChainRoutes);
-  app.route('/api/trader/pnl-attribution/chain', pnlAttributionChainRoutes);
-  app.route('/api/ipp/wbs-schedule/chain', ippScheduleChainRoutes);
-  app.route('/api/ipp/cost-evm/chain', ippEvmChainRoutes);
-  app.route('/api/ipp/document-control/chain', ippDocumentControlChainRoutes);
-  app.route('/api/ipp/submittals/chain', ippSubmittalRoute);
-  app.route('/api/ipp/rfis/chain', ippRfiRoute);
-  app.route('/api/ipp/change-orders/chain', ippChangeOrderRoute);
-  app.route('/api/audit-chain', auditChainRoute);
-  app.route('/api/regulator-exports', regulatorExportRoutes);
-  app.route('/api/reconciliation-attestation', reconciliationAttestationRoutes);
-  app.route('/api/control-environment-audit', controlEnvironmentAuditRoutes);
-  app.route('/api/scada-connector', scadaConnectorRoutes);
-  app.route('/api/mqtt-opcua-connector', mqttOpcuaConnectorRoutes);
-  app.route('/api/strate-swift-connector', strateSwiftConnectorRoutes);
-  app.route('/api/sap-oracle-erp-connector', sapOracleErpConnectorRoutes);
-  app.route('/api/government-filing-connector', governmentFilingConnectorRoutes);
-  app.route('/api/anomaly-detection-ml', anomalyDetectionMlRoutes);
-  app.route('/api/rul-prediction-ml', rulPredictionMlRoutes);
-  app.route('/api/fault-fingerprint-ml', faultFingerprintMlRoutes);
-  app.route('/api/ntt-comparison-battery', nttComparisonBatteryRoutes);
-  app.route('/api/stage-gate', stageGateRoutes);
-  app.route('/api/ipp-issues', ippIssuesRoutes);
-  app.route('/api/ipp-risk', ippRiskRoutes);
-  app.route('/api/ipp-stakeholder', ippStakeholderRoutes);
-  app.route('/api/ipp-lessons-learned', ippLessonsLearnedRoutes);
-  app.route('/api/ipp-ncr', ippNcrRoutes);
-  app.route('/api/ipp-method-statement', ippMethodStatementRoutes);
-  app.route('/api/ipp-env-monitoring', ippEnvMonitoringRoutes);
-  app.route('/api/ipp-mir', ippMirRoutes);
-  app.route('/api/ipp-subcontractor', ippSubcontractorRoutes);
-  app.route('/api/ipp-progress-claim', ippProgressClaimRoutes);
-  app.route('/api/ipp-tq', ippTqRoutes);
-  app.route('/api/ipp-diary', ippDiaryRoutes);
-  app.route('/api/ipp-site-instruction', ippSiteInstructionRoutes);
-  app.route('/api/ipp-dlp-defect', ippDlpDefectRoutes);
-  app.route('/api/ipp-variation-order', ippVariationOrderRoutes);
-  app.route('/api/ipp-payment-cert', ippPaymentCertRoutes);
-  app.route('/api/ipp-final-completion', ippFinalCompletionRoutes);
-  app.route('/api/ipp-om-handover', ippOmHandoverRoutes);
-  app.route('/api/ipp-land-register', ippLandRegisterRoutes);
-  app.route('/api/ipp-env-closure', ippEnvClosureRoutes);
-  app.route('/api/ipp-commissioning-test', ippCommissioningTestRoutes);
-  app.route('/api/ipp-ie-cert', ippIeCertRoutes);
-  app.route('/api/ipp-tpa', ippTpaRoutes);
-  app.route('/api/ipp-ppa-variation', ippPpaVariationRoutes);
-  app.route('/api/ipp-change-of-control', ippChangeOfControlRoutes);
-  app.route('/api/ipp-refinancing', ippRefinancingRoutes);
-  app.route('/api/ipp-fm', ippFmRoutes);
-  app.route('/api/ipp-annual-report', ippAnnualReportRoutes);
-  app.route('/api/ipp-contractor-default', ippContractorDefaultRoutes);
-  app.route('/api/ipp-eco-report', ippEcoReportRoutes);
-  app.route('/api/ipp-lta-certificate', ippLtaCertificateRoutes);
-  app.route('/api/ipp-land-amendment', ippLandAmendmentRoutes);
-  app.route('/api/ipp-community-trust', ippCommunityTrustRoutes);
-  app.route('/api/ipp-grid-compliance', ippGridComplianceRoutes);
-  app.route('/api/ipp-ccc', ippCccRoutes);
-  app.route('/api/ipp-om-contract', ippOmContractRoutes);
-  app.route('/api/ipp-bfs', ippBfsRoutes);
-  app.route('/api/ipp-ea-amendment', ippEaAmendmentRoutes);
-  app.route('/api/ipp-wul', ippWulRoutes);
-  app.route('/api/ipp-hra', ippHraRoutes);
-  app.route('/api/ipp-ael', ippAelRoutes);
-  app.route('/api/ipp-force-majeure', ippForceMajeureRoutes);
-  app.route('/api/ipp-lc-reports', ippLcReportRoutes);
-  app.route('/api/ipp-milestone-certs', ippMilestoneCertRoutes);
-  app.route('/api/ipp-esmr', ippEsmrRoutes);
-  app.route('/api/ipp-ie-annual-reviews', ippIeAnnualReviewRoutes);
-  app.route('/api/ipp-insurance-renewals', ippInsuranceRenewalRoutes);
-  app.route('/api/ipp-perf-securities', ippPerfSecurityRoutes);
-  app.route('/api/ipp-cep-compliance', ippCepComplianceRoutes);
-  app.route('/api/ipp-sed-compliance', ippSedComplianceRoutes);
-  app.route('/api/ipp-bbbee-verification', ippBbbeeVerificationRoutes);
-  app.route('/api/ipp-lender-reporting', ippLenderReportingRoutes);
-  app.route('/api/ipp-licence-returns', ippLicenceReturnsRoutes);
-  app.route('/api/ipp-reipppp-reports', ippReippppReportsRoutes);
-  app.route('/api/ipp-equity-transfer', ippEquityTransferRoutes);
-  app.route('/api/ipp-quarterly-gen-reports', ippQuarterlyGenReportRoutes);
-  app.route('/api/ipp-annual-compliance-assessments', ippAnnualComplianceAssessmentRoutes);
-  app.route('/api/ipp-annual-audits', ippAnnualAuditRoutes);
-  app.route('/api/ipp-emp-compliance-reports', ippEmpComplianceReportRoutes);
-  app.route('/api/ipp-cp-tracker', ippCpTrackerRoutes);
-  app.route('/api/ipp-licence-obligations', ippLicenceObligationRoutes);
-  app.route('/api/facility-amendments', facilityAmendmentRoutes);
-  app.route('/api/esap-compliance', esapComplianceRoutes);
-  app.route('/api/protection-relay-tests', protectionRelayRoutes);
-  app.route('/api/unserved-energy-claims', unservedEnergyRoutes);
-  app.route('/api/station-participant-links', stationParticipantLinkRoutes);
-  app.route('/api/admin-platform', adminPlatformRoutes);
-  app.route('/api/settlement-auto', settlementAutoRoutes);
-  app.route('/api/imbalance', imbalanceRoutes);
-  app.route('/api/data-tier', dataTierRoutes);
-  app.route('/api/ai-briefs', aiBriefsRoutes);
-  app.route('/api/realtime', realtimeRoutes);
-  app.route('/api/siem', siemRoutes);
-  app.route('/api/reports', reportsRoutes);
-  app.route('/api/telemetry', telemetryRoutes);
-  app.route('/api/lookup', lookupRoutes);
-  app.route('/api/admin/monitoring', monitoringRoutes);
-  app.route('/api/admin/revenue', adminRevenueRoutes);
-  app.route('/api/admin/market-halt', adminMarketHaltRoutes);
+  mount('/api/regulator', regulatorRoutes);
+  mount('/api/regulator', regulatorSuiteRoutes);
+  mount('/api/grid-operator', gridOperatorRoutes);
+  mount('/api/trader-risk', traderRiskRoutes);
+  mount('/api/lender', lenderSuiteRoutes);
+  mount('/api/ipp', ippLifecycleRoutes);
+  mount('/api/offtaker-suite', offtakerSuiteRoutes);
+  mount('/api/carbon-registry', carbonRegistryRoutes);
+  mount('/api/carbon/article-6', carbonArticle6Routes);
+  mount('/api/regulator/inbox', regulatorInboxRoutes);
+  mount('/api/lender/dunning', lenderDunningRoutes);
+  mount('/api/offtaker/obligations', offtakerObligationsRoutes);
+  mount('/api/grid/wheeling-charges', gridWheelingChargesRoutes);
+  mount('/api/trader/mm-compliance', traderMmComplianceRoutes);
+  mount('/api/ipp/bonds', ippBondsRoutes);
+  mount('/api/carbon/mrv-chain', carbonMrvChainRoutes);
+  mount('/api/esums/commissioning', esumsCommissioningRoutes);
+  mount('/api/grid/dispatch-nominations', gridDispatchNominationsRoutes);
+  mount('/api/support/ticket-chain', supportTicketChainRoutes);
+  mount('/api/esums/warranty-claims', warrantyClaimChainRoutes);
+  mount('/api/esums/wo-chain', woChainRoutes);
+  mount('/api/carbon/retirement-chain', carbonRetirementChainRoutes);
+  mount('/api/grid/planned-outages', plannedOutageChainRoutes);
+  mount('/api/ipp/procurement-chain', procurementChainRoutes);
+  mount('/api/ipp/cod-chain', codChainRoutes);
+  mount('/api/lender/drawdown-chain', drawdownChainRoutes);
+  mount('/api/offtaker/ppa-contract-chain', ppaContractChainRoutes);
+  mount('/api/insurance/claim-chain', insuranceClaimChainRoutes);
+  mount('/api/esums/pr-chain', prChainRoutes);
+  mount('/api/hse/incident-chain', hseIncidentChainRoutes);
+  mount('/api/cyber/incident-chain', cyberIncidentChainRoutes);
+  mount('/api/ed/commitment-chain', edCommitmentChainRoutes);
+  mount('/api/gca/connection-chain', gcaChainRoutes);
+  mount('/api/poslimit/chain', poslimitChainRoutes);
+  mount('/api/disbursement/chain', disbursementChainRoutes);
+  mount('/api/disposition/chain', dispositionChainRoutes);
+  mount('/api/take-or-pay/chain', takeOrPayChainRoutes);
+  mount('/api/licence/renewal/chain', licenceRenewalChainRoutes);
+  mount('/api/load-curtailment/chain', loadCurtailmentChainRoutes);
+  mount('/api/esums/vendor-escalation/chain', vendorEscalationChainRoutes);
+  mount('/api/best-execution/chain', bestExecutionChainRoutes);
+  mount('/api/carbon-registration/chain', carbonRegistrationChainRoutes);
+  mount('/api/covenant-certificate/chain', covenantCertificateChainRoutes);
+  mount('/api/tariff-indexation/chain', tariffIndexationChainRoutes);
+  mount('/api/compliance-inspection/chain', complianceInspectionChainRoutes);
+  mount('/api/problem-management/chain', problemManagementChainRoutes);
+  mount('/api/carbon-reversal/chain', carbonReversalChainRoutes);
+  mount('/api/tariff-determination/chain', tariffDeterminationChainRoutes);
+  mount('/api/trade-reporting/chain', tradeReportingChainRoutes);
+  mount('/api/loan-default/chain', loanDefaultChainRoutes);
+  mount('/api/curtailment-claim/chain', curtailmentClaimChainRoutes);
+  mount('/api/change-enablement/chain', changeEnablementChainRoutes);
+  mount('/api/carbon-offset-claim/chain', carbonOffsetClaimChainRoutes);
+  mount('/api/licence-application/chain', licenceApplicationChainRoutes);
+  mount('/api/reserve-activation/chain', reserveActivationChainRoutes);
+  mount('/api/availability-guarantee/chain', availabilityGuaranteeChainRoutes);
+  mount('/api/market-abuse/chain', marketAbuseChainRoutes);
+  mount('/api/credit-origination/chain', creditOriginationChainRoutes);
+  mount('/api/payment-security/chain', paymentSecurityChainRoutes);
+  mount('/api/security-remediation/chain', securityRemediationChainRoutes);
+  mount('/api/crediting-renewal/chain', creditingRenewalChainRoutes);
+  mount('/api/sseg-registration/chain', ssegRegistrationChainRoutes);
+  mount('/api/grid-capacity/chain', gridCapacityAllocationChainRoutes);
+  mount('/api/pm-compliance/chain', pmComplianceChainRoutes);
+  mount('/api/algo-cert/chain', algoCertChainRoutes);
+  mount('/api/loan-transfer/chain', loanTransferChainRoutes);
+  mount('/api/ppa-termination/chain', ppaTerminationChainRoutes);
+  mount('/api/warranty-recovery/chain', warrantyRecoveryChainRoutes);
+  mount('/api/permit-to-work/chain', permitToWorkChainRoutes);
+  mount('/api/carbon-erpa/chain', carbonErpaChainRoutes);
+  mount('/api/complaints/chain', complaintResolutionChainRoutes);
+  mount('/api/grid-code-compliance/chain', gridCodeComplianceChainRoutes);
+  mount('/api/counterparty-margin/chain', counterpartyMarginChainRoutes);
+  mount('/api/security-perfection/chain', securityPerfectionChainRoutes);
+  mount('/api/rec-lifecycle/chain', recLifecycleChainRoutes);
+  mount('/api/asset-prognostics/chain', assetPrognosticsChainRoutes);
+  mount('/api/spare-parts-provisioning/chain', sparePartsProvisioningChainRoutes);
+  mount('/api/poa-inclusion/chain', poaCpaInclusionChainRoutes);
+  mount('/api/levy-assessment/chain', levyAssessmentChainRoutes);
+  mount('/api/connection-energization/chain', connectionEnergizationChainRoutes);
+  mount('/api/trade-allocation/chain', tradeAllocationChainRoutes);
+  mount('/api/reserve-account/chain', reserveAccountChainRoutes);
+  mount('/api/ppa-change-in-law/chain', ppaChangeInLawChainRoutes);
+  mount('/api/generation-revenue-assurance/chain', generationRevenueAssuranceChainRoutes);
+  mount('/api/service-contract/chain', serviceContractChainRoutes);
+  mount('/api/ipp/change-order/chain', projectChangeOrderChainRoutes);
+  mount('/api/carbon-issuance/chain', carbonIssuanceChainRoutes);
+  mount('/api/consultation-notice/chain', consultationNoticeChainRoutes);
+  mount('/api/black-start/chain', blackStartChainRoutes);
+  mount('/api/settlement-fail/chain', settlementFailChainRoutes);
+  mount('/api/dscr-monitoring/chain', dscrMonitoringChainRoutes);
+  mount('/api/ppa-nomination/chain', ppaNominationChainRoutes);
+  mount('/api/bess-soh/chain', bessSohChainRoutes);
+  mount('/api/oem-fco/chain', oemFcoChainRoutes);
+  mount('/api/benchmark-transition/chain', benchmarkTransitionChainRoutes);
+  mount('/api/ccp-assessment/chain', ccpAssessmentChainRoutes);
+  mount('/api/ipp/project-risk/chain', projectRiskChainRoutes);
+  mount('/api/regulator/enforcement-action/chain', enforcementActionChainRoutes);
+  mount('/api/grid/rez-capacity/chain', rezCapacityChainRoutes);
+  mount('/api/lender/sll-kpi/chain', sllKpiChainRoutes);
+  mount('/api/ipp/submittal-rfi/chain', submittalRfiChainRoutes);
+  mount('/api/ipp/dfr/chain', dfrChainRoutes);
+  mount('/api/ipp/punch-list/chain', punchListChainRoutes);
+  mount('/api/ipp/itp/chain', itpChainRoutes);
+  mount('/api/ipp/handover-dossier/chain', handoverDossierChainRoutes);
+  mount('/api/offtaker/ppa-annual-recon/chain', ppaAnnualReconChainRoutes);
+  mount('/api/esums/soiling-audit/chain', soilingAuditChainRoutes);
+  mount('/api/carbon/esg-disclosure/chain', esgDisclosureChainRoutes);
+  mount('/api/support/service-request/chain', serviceRequestChainRoutes);
+  mount('/api/grid/imbalance-settlement/chain', imbalanceSettlementChainRoutes);
+  mount('/api/regulator/enforcement-action-s35/chain', enforcementActionS35ChainRoutes);
+  mount('/api/trader/pretrade-credit/chain', pretradeCreditChainRoutes);
+  mount('/api/lender/loan-restructure/chain', loanRestructureChainRoutes);
+  mount('/api/carbon/credit-rating/chain', carbonCreditRatingChainRoutes);
+  mount('/api/grid/transmission-outage/chain', transmissionOutageChainRoutes);
+  mount('/api/trader/pnl-attribution/chain', pnlAttributionChainRoutes);
+  mount('/api/ipp/wbs-schedule/chain', ippScheduleChainRoutes);
+  mount('/api/ipp/cost-evm/chain', ippEvmChainRoutes);
+  mount('/api/ipp/document-control/chain', ippDocumentControlChainRoutes);
+  mount('/api/ipp/submittals/chain', ippSubmittalRoute);
+  mount('/api/ipp/rfis/chain', ippRfiRoute);
+  mount('/api/ipp/change-orders/chain', ippChangeOrderRoute);
+  mount('/api/audit-chain', auditChainRoute);
+  mount('/api/regulator-exports', regulatorExportRoutes);
+  mount('/api/reconciliation-attestation', reconciliationAttestationRoutes);
+  mount('/api/control-environment-audit', controlEnvironmentAuditRoutes);
+  mount('/api/scada-connector', scadaConnectorRoutes);
+  mount('/api/mqtt-opcua-connector', mqttOpcuaConnectorRoutes);
+  mount('/api/strate-swift-connector', strateSwiftConnectorRoutes);
+  mount('/api/sap-oracle-erp-connector', sapOracleErpConnectorRoutes);
+  mount('/api/government-filing-connector', governmentFilingConnectorRoutes);
+  mount('/api/anomaly-detection-ml', anomalyDetectionMlRoutes);
+  mount('/api/rul-prediction-ml', rulPredictionMlRoutes);
+  mount('/api/fault-fingerprint-ml', faultFingerprintMlRoutes);
+  mount('/api/ntt-comparison-battery', nttComparisonBatteryRoutes);
+  mount('/api/stage-gate', stageGateRoutes);
+  mount('/api/ipp-issues', ippIssuesRoutes);
+  mount('/api/ipp-risk', ippRiskRoutes);
+  mount('/api/ipp-stakeholder', ippStakeholderRoutes);
+  mount('/api/ipp-lessons-learned', ippLessonsLearnedRoutes);
+  mount('/api/ipp-ncr', ippNcrRoutes);
+  mount('/api/ipp-method-statement', ippMethodStatementRoutes);
+  mount('/api/ipp-env-monitoring', ippEnvMonitoringRoutes);
+  mount('/api/ipp-mir', ippMirRoutes);
+  mount('/api/ipp-subcontractor', ippSubcontractorRoutes);
+  mount('/api/ipp-progress-claim', ippProgressClaimRoutes);
+  mount('/api/ipp-tq', ippTqRoutes);
+  mount('/api/ipp-diary', ippDiaryRoutes);
+  mount('/api/ipp-site-instruction', ippSiteInstructionRoutes);
+  mount('/api/ipp-dlp-defect', ippDlpDefectRoutes);
+  mount('/api/ipp-variation-order', ippVariationOrderRoutes);
+  mount('/api/ipp-payment-cert', ippPaymentCertRoutes);
+  mount('/api/ipp-final-completion', ippFinalCompletionRoutes);
+  mount('/api/ipp-om-handover', ippOmHandoverRoutes);
+  mount('/api/ipp-land-register', ippLandRegisterRoutes);
+  mount('/api/ipp-env-closure', ippEnvClosureRoutes);
+  mount('/api/ipp-commissioning-test', ippCommissioningTestRoutes);
+  mount('/api/ipp-ie-cert', ippIeCertRoutes);
+  mount('/api/ipp-tpa', ippTpaRoutes);
+  mount('/api/ipp-ppa-variation', ippPpaVariationRoutes);
+  mount('/api/ipp-change-of-control', ippChangeOfControlRoutes);
+  mount('/api/ipp-refinancing', ippRefinancingRoutes);
+  mount('/api/ipp-fm', ippFmRoutes);
+  mount('/api/ipp-annual-report', ippAnnualReportRoutes);
+  mount('/api/ipp-contractor-default', ippContractorDefaultRoutes);
+  mount('/api/ipp-eco-report', ippEcoReportRoutes);
+  mount('/api/ipp-lta-certificate', ippLtaCertificateRoutes);
+  mount('/api/ipp-land-amendment', ippLandAmendmentRoutes);
+  mount('/api/ipp-community-trust', ippCommunityTrustRoutes);
+  mount('/api/ipp-grid-compliance', ippGridComplianceRoutes);
+  mount('/api/ipp-ccc', ippCccRoutes);
+  mount('/api/ipp-om-contract', ippOmContractRoutes);
+  mount('/api/ipp-bfs', ippBfsRoutes);
+  mount('/api/ipp-ea-amendment', ippEaAmendmentRoutes);
+  mount('/api/ipp-wul', ippWulRoutes);
+  mount('/api/ipp-hra', ippHraRoutes);
+  mount('/api/ipp-ael', ippAelRoutes);
+  mount('/api/ipp-force-majeure', ippForceMajeureRoutes);
+  mount('/api/ipp-lc-reports', ippLcReportRoutes);
+  mount('/api/ipp-milestone-certs', ippMilestoneCertRoutes);
+  mount('/api/ipp-esmr', ippEsmrRoutes);
+  mount('/api/ipp-ie-annual-reviews', ippIeAnnualReviewRoutes);
+  mount('/api/ipp-insurance-renewals', ippInsuranceRenewalRoutes);
+  mount('/api/ipp-perf-securities', ippPerfSecurityRoutes);
+  mount('/api/ipp-cep-compliance', ippCepComplianceRoutes);
+  mount('/api/ipp-sed-compliance', ippSedComplianceRoutes);
+  mount('/api/ipp-bbbee-verification', ippBbbeeVerificationRoutes);
+  mount('/api/ipp-lender-reporting', ippLenderReportingRoutes);
+  mount('/api/ipp-licence-returns', ippLicenceReturnsRoutes);
+  mount('/api/ipp-reipppp-reports', ippReippppReportsRoutes);
+  mount('/api/ipp-equity-transfer', ippEquityTransferRoutes);
+  mount('/api/ipp-quarterly-gen-reports', ippQuarterlyGenReportRoutes);
+  mount('/api/ipp-annual-compliance-assessments', ippAnnualComplianceAssessmentRoutes);
+  mount('/api/ipp-annual-audits', ippAnnualAuditRoutes);
+  mount('/api/ipp-emp-compliance-reports', ippEmpComplianceReportRoutes);
+  mount('/api/ipp-cp-tracker', ippCpTrackerRoutes);
+  mount('/api/ipp-licence-obligations', ippLicenceObligationRoutes);
+  mount('/api/facility-amendments', facilityAmendmentRoutes);
+  mount('/api/esap-compliance', esapComplianceRoutes);
+  mount('/api/protection-relay-tests', protectionRelayRoutes);
+  mount('/api/unserved-energy-claims', unservedEnergyRoutes);
+  mount('/api/station-participant-links', stationParticipantLinkRoutes);
+  mount('/api/admin-platform', adminPlatformRoutes);
+  mount('/api/settlement-auto', settlementAutoRoutes);
+  mount('/api/imbalance', imbalanceRoutes);
+  mount('/api/data-tier', dataTierRoutes);
+  mount('/api/ai-briefs', aiBriefsRoutes);
+  mount('/api/realtime', realtimeRoutes);
+  mount('/api/siem', siemRoutes);
+  mount('/api/reports', reportsRoutes);
+  mount('/api/telemetry', telemetryRoutes);
+  mount('/api/lookup', lookupRoutes);
+  mount('/api/admin/monitoring', monitoringRoutes);
+  mount('/api/admin/revenue', adminRevenueRoutes);
+  mount('/api/admin/market-halt', adminMarketHaltRoutes);
   // Backup routes are deliberately mounted outside /api/admin to avoid being
   // shadowed by the admin sub-app's global authMiddleware.
-  app.route('/api/backup', backupRoutes);
-  app.route('/api/search', searchRoutes);
-  app.route('/api/notifications', notificationsRoutes);
-  app.route('/api/schedule', scheduleRoutes);
-  app.route('/api/esums-portal-view', esumsOmPortalPublic);
-  app.route('/api/esums-portal', esumsOmPortalAdmin);
+  mount('/api/backup', backupRoutes);
+  mount('/api/search', searchRoutes);
+  mount('/api/notifications', notificationsRoutes);
+  mount('/api/schedule', scheduleRoutes);
+  mount('/api/esums-portal-view', esumsOmPortalPublic);
+  mount('/api/esums-portal', esumsOmPortalAdmin);
   // Native device ingestion (per-site opaque ingest keys, NO user JWT).
-  app.route('/api/esums-ingest', esumsIngestRoutes);
-  app.route('/api/esums', esumsOmRoutes);
-  app.route('/api/esums', esumsOmIntelRoutes);
-  app.route('/api/esums', esumsOmAnalysisRoutes);
-  app.route('/api/esums/data-sources', esumsDataSourcesRoutes);
-  app.route('/api/esums/projects', esumsProjectsRoutes);
-  app.route('/api/esums/solax', esumsOmSolaxRoutes);
-  app.route('/api/esums/manufacturers', esumsManufacturersRoutes);
-  app.route('/api/esums/accruals', esumsAccrualsRoutes);
-  app.route('/api/esums/settlement-invoices', esumsInvoiceRoutes);
-  app.route('/api/esums/carbon-credits', esumsCreditRoutes);
+  mount('/api/esums-ingest', esumsIngestRoutes);
+  mount('/api/esums', esumsOmRoutes);
+  mount('/api/esums', esumsOmIntelRoutes);
+  mount('/api/esums', esumsOmAnalysisRoutes);
+  mount('/api/esums/data-sources', esumsDataSourcesRoutes);
+  mount('/api/esums/projects', esumsProjectsRoutes);
+  mount('/api/esums/solax', esumsOmSolaxRoutes);
+  mount('/api/esums/manufacturers', esumsManufacturersRoutes);
+  mount('/api/esums/accruals', esumsAccrualsRoutes);
+  mount('/api/esums/settlement-invoices', esumsInvoiceRoutes);
+  mount('/api/esums/carbon-credits', esumsCreditRoutes);
   // Public status page MUST be mounted BEFORE the catch-all platform router.
-  app.route('/api/public/status', publicStatusRoutes);
-  app.route('/api/public/status', statusDeepPub);
-  app.route('/api/public/regulator', regulatorL5Pub);
-  app.route('/api/public/audit',     auditL5Pub);
-  app.route('/api/public/legal',     publicLegalRoutes);
+  mount('/api/public/status', publicStatusRoutes);
+  mount('/api/public/status', statusDeepPub);
+  mount('/api/public/regulator', regulatorL5Pub);
+  mount('/api/public/audit',     auditL5Pub);
+  mount('/api/public/legal',     publicLegalRoutes);
   // Must be BEFORE /api (platformFeaturesRoutes) which has a blanket authMiddleware.
-  app.route('/api/pdf',  pdfRoutes);
-  app.route('/api/rbac', rbacRoutes);
-  app.route('/api/mfa',         mfaRoutes);
-  app.route('/api/kyc',         kycRoutes);
-  app.route('/api/consent',     consentRoutes);
-  app.route('/api/popia',       popiaSelfServiceRoutes);
-  app.route('/api/regulator',   regulatorReportRoutes);
+  mount('/api/pdf',  pdfRoutes);
+  mount('/api/rbac', rbacRoutes);
+  mount('/api/mfa',         mfaRoutes);
+  mount('/api/kyc',         kycRoutes);
+  mount('/api/consent',     consentRoutes);
+  mount('/api/popia',       popiaSelfServiceRoutes);
+  mount('/api/regulator',   regulatorReportRoutes);
   // Depth additions
-  app.route('/api/auth-deep',     authDeepRoutes);
-  app.route('/api/kyc-deep',      kycDeepRoutes);
-  app.route('/api/status-admin',  statusDeepAdmin);
-  app.route('/api/popia-deep',    popiaDeepRoutes);
-  app.route('/api/reports-deep',  reportsDeepRoutes);
-  app.route('/api/trading-deep',    tradingDeepRoutes);
-  app.route('/api/settlement-deep', settlementDeepRoutes);
-  app.route('/api/ipp-deep',        ippDeepRoutes);
-  app.route('/api/lender-deep',     lenderDeepRoutes);
-  app.route('/api/carbon-deep',     carbonDeepRoutes);
-  app.route('/api/grid-l5',         gridL5Routes);
-  app.route('/api/regulator-l5',    regulatorL5Admin);
-  app.route('/api/trading-clearing-l5', tradingClearingL5Routes);
-  app.route('/api/audit-l5',            auditL5Admin);
-  app.route('/api/marketplace-l5',      marketplaceL5Routes);
-  app.route('/api/ai-assistant',        aiAssistantRoutes);
-  app.route('/api/polish',              polishRoutes);
-  app.route('/api/business-depth',      businessDepthRoutes);
-  app.route('/api/bulk',                bulkOpsRoutes);
-  app.route('/api/ux-state',            uxStateRoutes);
-  app.route('/api/documents',           documentsRoutes);
-  app.route('/api/print-packs',         printPacksRoutes);
-  app.route('/api/onboarding', onboardingRoutes);
-  app.route('/api/onboarding', onboardingChecklistRoutes);
+  mount('/api/auth-deep',     authDeepRoutes);
+  mount('/api/kyc-deep',      kycDeepRoutes);
+  mount('/api/status-admin',  statusDeepAdmin);
+  mount('/api/popia-deep',    popiaDeepRoutes);
+  mount('/api/reports-deep',  reportsDeepRoutes);
+  mount('/api/trading-deep',    tradingDeepRoutes);
+  mount('/api/settlement-deep', settlementDeepRoutes);
+  mount('/api/ipp-deep',        ippDeepRoutes);
+  mount('/api/lender-deep',     lenderDeepRoutes);
+  mount('/api/carbon-deep',     carbonDeepRoutes);
+  mount('/api/grid-l5',         gridL5Routes);
+  mount('/api/regulator-l5',    regulatorL5Admin);
+  mount('/api/trading-clearing-l5', tradingClearingL5Routes);
+  mount('/api/audit-l5',            auditL5Admin);
+  mount('/api/marketplace-l5',      marketplaceL5Routes);
+  mount('/api/ai-assistant',        aiAssistantRoutes);
+  mount('/api/polish',              polishRoutes);
+  mount('/api/business-depth',      businessDepthRoutes);
+  mount('/api/bulk',                bulkOpsRoutes);
+  mount('/api/ux-state',            uxStateRoutes);
+  mount('/api/documents',           documentsRoutes);
+  mount('/api/print-packs',         printPacksRoutes);
+  mount('/api/onboarding', onboardingRoutes);
+  mount('/api/onboarding', onboardingChecklistRoutes);
   // Full static basePath so the /kyc segment wins over any /:param route in the
   // sibling onboarding routers (Hono silent-collision risk - deliberate).
-  app.route('/api/onboarding/kyc', onboardingKycRoutes);
-  app.route('/api/kyc-verifications', kycChainRoutes);
-  app.route('/api/smart-meter-assets', smartMeterChainRoutes);
-  app.route('/api/carbon-tax-returns', carbonTaxChainRoutes);
-  app.route('/api/fsca-compliance-reports', fsccChainRoutes);
-  app.route('/api/green-bond-reports', greenBondChainRoutes);
-  app.route('/api/capital-adequacy-reports', capAdequacyChainRoutes);
-  app.route('/api/slb-kpi-ratchets', slbKpiChainRoutes);
-  app.route('/api/demand-response-events', demandResponseChainRoutes);
-  app.route('/api/carbon-registry-transfers', carbonRegistryTransferChainRoutes);
-  app.route('/api/milestone-variance-reports', milestoneVarianceChainRoutes);
-  app.route('/api/csat-records', csatChainRoutes);
-  app.route('/api/public-consultations', publicConsultationChainRoutes);
-  app.route('/api/green-tariff-disclosures', greenTariffChainRoutes);
-  app.route('/api/substation-assets', substationAssetChainRoutes);
-  app.route('/api/dscr-reports', dscrReportChainRoutes);
-  app.route('/api/methodology-amendments', methodologyAmendmentChainRoutes);
-  app.route('/api/esap-monitoring', esapMonitoringChainRoutes);
-  app.route('/api/eop-activations', eopActivationChainRoutes);
-  app.route('/api/fsca-conduct-reports', fscaConductReportChainRoutes);
-  app.route('/api/sla-performance-reports', slaPerformanceReportChainRoutes);
-  app.route('/api/credit-insurance', creditInsuranceChainRoutes);
-  app.route('/api/wheeling-access', wheelingAccessChainRoutes);
-  app.route('/api/market-conduct-exams', marketConductExamChainRoutes);
-  app.route('/api/export-curtailments', exportCurtailmentChainRoutes);
-  app.route('/api/cross-border-trades', crossBorderTradeChainRoutes);
-  app.route('/api/cp-clearances', cpClearanceChainRoutes);
-  app.route('/api/gtia', gtiaChainRoutes);
-  app.route('/api/carbon/scope3-disclosure/chain', scope3DisclosureChainRoutes);
-  app.route('/api/carbon/vcm-projects', vcmProjectDevelopmentChainRoutes);
-  app.route('/api/carbon/budget', carbonBudgetChainRoutes);
-  app.route('/api/rec/device-registration', recDeviceRegistrationChainRoutes);
-  app.route('/api/rec/issuance', recIssuanceChainRoutes);
-  app.route('/api/vcm/order-book', vcmOrderBookRoutes);
-  app.route('/api/sustainability/marketplace', sustainabilityMarketplaceRoutes);
-  app.route('/api/sustainability/transactions', sustainabilityTransactionChainRoutes);
-  app.route('/api/certificate-track/bundle', certBundleChainRoutes);
-  app.route('/api/subscription/billing', subscriptionBillingChainRoutes);
-  app.route('/api/offtaker/virtual-ppa-settlement', virtualPpaSettlementChainRoutes);
-  app.route('/api/ipp/cbt-sed', cbtSedChainRoutes);
-  app.route('/api/lender/construction-cost-report', constructionCostReportChainRoutes);
-  app.route('/api/trader/isda-agreement', isdaAgreementChainRoutes);
-  app.route('/api/admin/dsr', dataSubjectRequestChainRoutes);
-  app.route('/api/grid/interconnector-schedule', interconnectorScheduleChainRoutes);
+  mount('/api/onboarding/kyc', onboardingKycRoutes);
+  mount('/api/kyc-verifications', kycChainRoutes);
+  mount('/api/smart-meter-assets', smartMeterChainRoutes);
+  mount('/api/carbon-tax-returns', carbonTaxChainRoutes);
+  mount('/api/fsca-compliance-reports', fsccChainRoutes);
+  mount('/api/green-bond-reports', greenBondChainRoutes);
+  mount('/api/capital-adequacy-reports', capAdequacyChainRoutes);
+  mount('/api/slb-kpi-ratchets', slbKpiChainRoutes);
+  mount('/api/demand-response-events', demandResponseChainRoutes);
+  mount('/api/carbon-registry-transfers', carbonRegistryTransferChainRoutes);
+  mount('/api/milestone-variance-reports', milestoneVarianceChainRoutes);
+  mount('/api/csat-records', csatChainRoutes);
+  mount('/api/public-consultations', publicConsultationChainRoutes);
+  mount('/api/green-tariff-disclosures', greenTariffChainRoutes);
+  mount('/api/substation-assets', substationAssetChainRoutes);
+  mount('/api/dscr-reports', dscrReportChainRoutes);
+  mount('/api/methodology-amendments', methodologyAmendmentChainRoutes);
+  mount('/api/esap-monitoring', esapMonitoringChainRoutes);
+  mount('/api/eop-activations', eopActivationChainRoutes);
+  mount('/api/fsca-conduct-reports', fscaConductReportChainRoutes);
+  mount('/api/sla-performance-reports', slaPerformanceReportChainRoutes);
+  mount('/api/credit-insurance', creditInsuranceChainRoutes);
+  mount('/api/wheeling-access', wheelingAccessChainRoutes);
+  mount('/api/market-conduct-exams', marketConductExamChainRoutes);
+  mount('/api/export-curtailments', exportCurtailmentChainRoutes);
+  mount('/api/cross-border-trades', crossBorderTradeChainRoutes);
+  mount('/api/cp-clearances', cpClearanceChainRoutes);
+  mount('/api/gtia', gtiaChainRoutes);
+  mount('/api/carbon/scope3-disclosure/chain', scope3DisclosureChainRoutes);
+  mount('/api/carbon/vcm-projects', vcmProjectDevelopmentChainRoutes);
+  mount('/api/carbon/budget', carbonBudgetChainRoutes);
+  mount('/api/rec/device-registration', recDeviceRegistrationChainRoutes);
+  mount('/api/rec/issuance', recIssuanceChainRoutes);
+  mount('/api/vcm/order-book', vcmOrderBookRoutes);
+  mount('/api/sustainability/marketplace', sustainabilityMarketplaceRoutes);
+  mount('/api/sustainability/transactions', sustainabilityTransactionChainRoutes);
+  mount('/api/certificate-track/bundle', certBundleChainRoutes);
+  mount('/api/subscription/billing', subscriptionBillingChainRoutes);
+  mount('/api/offtaker/virtual-ppa-settlement', virtualPpaSettlementChainRoutes);
+  mount('/api/ipp/cbt-sed', cbtSedChainRoutes);
+  mount('/api/lender/construction-cost-report', constructionCostReportChainRoutes);
+  mount('/api/trader/isda-agreement', isdaAgreementChainRoutes);
+  mount('/api/admin/dsr', dataSubjectRequestChainRoutes);
+  mount('/api/grid/interconnector-schedule', interconnectorScheduleChainRoutes);
   // W7 National Dashboard — operator-only platform-wide aggregate view.
-  app.route('/api/national-dashboard', nationalDashboardRoutes);
+  mount('/api/national-dashboard', nationalDashboardRoutes);
   // Meridian — computed per-role workspace aggregator over chain registry.
-  app.route('/api/horizon', horizonRoutes);
+  mount('/api/horizon', horizonRoutes);
   // Meridian — generic two-sided case view over chain registry.
-  app.route('/api/thread', threadRoutes);
+  mount('/api/thread', threadRoutes);
   // Meridian — generic per-chain list (KPI + filters + rows) over chain registry.
-  app.route('/api/ledger', ledgerRoutes);
+  mount('/api/ledger', ledgerRoutes);
   // Generalized cross-role deal engine (offer→match→evaluate→accept→track).
   // A specific prefix must be registered BEFORE the broad /api catch-all so
   // Hono (which matches in registration order) routes it correctly.
-  app.route('/api/deals', dealsRoutes);
+  mount('/api/deals', dealsRoutes);
 
   // platformFeaturesRoutes is the catch-all for /api — it must remain LAST.
-  app.route('/api', platformFeaturesRoutes);
+  mount('/api', platformFeaturesRoutes);
+
+  // P1: fail fast at boot if two distinct modules shadow the same (method, path).
+  assertNoRouteShadow(mounts);
 }

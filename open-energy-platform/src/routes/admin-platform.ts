@@ -20,6 +20,11 @@ pa.use('*', authMiddleware);
 function requireAdmin(role: string): boolean {
   return role === 'admin';
 }
+// Read access to the admin audit chain (head / events / export packs) —
+// oversight roles only, matching the GET /audit/events gate.
+function auditReadRole(role: string): boolean {
+  return role === 'admin' || role === 'support' || role === 'regulator';
+}
 function genId(p: string) { return `${p}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`; }
 
 // ─── Tenants ───────────────────────────────────────────────────────────────
@@ -199,11 +204,29 @@ pa.post('/provisioning-requests/:id/reject', async (c) => {
   if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const id = c.req.param('id');
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const existing = await c.env.DB.prepare(
+    `SELECT status FROM tenant_provisioning_requests WHERE id = ?`,
+  ).bind(id).first<{ status: string }>();
+  if (!existing) return c.json({ success: false, error: 'Request not found' }, 404);
+  if (existing.status !== 'pending') return c.json({ success: false, error: `Already ${existing.status}` }, 400);
   await c.env.DB.prepare(
     `UPDATE tenant_provisioning_requests
         SET status = 'rejected', rejection_reason = ?, approved_by = ?, approved_at = datetime('now')
       WHERE id = ?`,
   ).bind(b.reason || null, user.id, id).run();
+
+  // Audit the admin's rejection — symmetric with the approve path's
+  // tenant.provisioned cascade. Without this, a rejected tenant application
+  // left no audit trail (the `tenant` prefix routes to the same audit chain).
+  await fireCascade({
+    event: 'tenant.provisioning_rejected',
+    actor_id: user.id,
+    entity_type: 'tenant_provisioning_requests',
+    entity_id: id,
+    data: { provisioning_request_id: id, reason: b.reason || null },
+    env: c.env,
+  });
+
   return c.json({ success: true });
 });
 
@@ -318,6 +341,8 @@ pa.post('/invoices/run', async (c) => {
 });
 
 pa.get('/invoices', async (c) => {
+  const user = getCurrentUser(c);
+  if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const tenantId = c.req.query('tenant_id');
   const rs = tenantId
     ? await c.env.DB.prepare(
@@ -331,6 +356,8 @@ pa.get('/invoices', async (c) => {
 
 // ─── Feature flags ─────────────────────────────────────────────────────────
 pa.get('/flags', async (c) => {
+  const user = getCurrentUser(c);
+  if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const rs = await c.env.DB.prepare(`SELECT * FROM feature_flags ORDER BY flag_key`).all();
   return c.json({ success: true, data: rs.results || [] });
 });
@@ -352,6 +379,15 @@ pa.post('/flags', async (c) => {
     typeof b.rollout_config === 'object' ? JSON.stringify(b.rollout_config) : null,
     b.enabled === false ? 0 : null, user.id,
   ).run();
+  // Audit feature-flag creation — prod config changes belong on the audit chain.
+  await fireCascade({
+    event: 'flag.changed',
+    actor_id: user.id,
+    entity_type: 'feature_flag',
+    entity_id: id,
+    data: { id, flag_key: b.flag_key, action: 'created', enabled: b.enabled === false ? 0 : 1, created_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -382,6 +418,15 @@ pa.put('/flags/:id', async (c) => {
   if (fkRow?.flag_key) {
     c.executionCtx?.waitUntil?.(invalidateFlagCache(c.env, fkRow.flag_key));
   }
+  // Audit the flag change (which fields changed are in the payload).
+  await fireCascade({
+    event: 'flag.changed',
+    actor_id: user.id,
+    entity_type: 'feature_flag',
+    entity_id: id,
+    data: { id, flag_key: fkRow?.flag_key ?? null, action: 'updated', changed: Object.keys(b), updated_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true });
 });
 
@@ -409,6 +454,15 @@ pa.post('/flags/:id/overrides', async (c) => {
   if (fkRow?.flag_key) {
     c.executionCtx?.waitUntil?.(invalidateFlagCache(c.env, fkRow.flag_key));
   }
+  // Audit the per-tenant/participant flag override.
+  await fireCascade({
+    event: 'flag.override_set',
+    actor_id: user.id,
+    entity_type: 'feature_flag_override',
+    entity_id: id,
+    data: { id, flag_id: flagId, flag_key: fkRow?.flag_key ?? null, tenant_id: b.tenant_id || null, participant_id: b.participant_id || null, value: String(b.value), set_by: user.id },
+    env: c.env,
+  });
   return c.json({ success: true, data: { id } }, 201);
 });
 
@@ -533,10 +587,27 @@ pa.post('/tenants/:id/sso', async (c) => {
     b.jit_role || null, b.enabled === false ? 0 : null,
   ).run();
   const row = await c.env.DB.prepare('SELECT * FROM tenant_sso_providers WHERE id = ?').bind(id).first();
+  // Audit SSO provider configuration — an auth provider that JIT-provisions
+  // users into a role is high-sensitivity and belongs on the audit chain.
+  // (client_secret_kv_key is a KV pointer, not the secret; not logged here.)
+  await fireCascade({
+    event: 'tenant.sso_configured',
+    actor_id: user.id,
+    entity_type: 'tenant_sso_providers',
+    entity_id: id,
+    data: {
+      id, tenant_id: tenantId, provider_type: b.provider_type,
+      jit_role: b.jit_role || 'offtaker', enabled: b.enabled === false ? 0 : 1,
+      configured_by: user.id,
+    },
+    env: c.env,
+  });
   return c.json({ success: true, data: row }, 201);
 });
 
 pa.get('/tenants/:id/sso', async (c) => {
+  const user = getCurrentUser(c);
+  if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const tenantId = c.req.param('id');
   const rs = await c.env.DB.prepare(
     `SELECT id, tenant_id, provider_type, display_name, client_id, tenant_identifier,
@@ -710,6 +781,8 @@ pa.get('/flag-overrides', async (c) => {
 // ════════════════════════════════════════════════════════════════════════
 
 pa.get('/audit/head', async (c) => {
+  const user = getCurrentUser(c);
+  if (!auditReadRole(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const head = await getChainHead(c.env, 'admin');
   return c.json({ success: true, data: head });
 });
@@ -832,6 +905,8 @@ pa.post('/audit/export', async (c) => {
 });
 
 pa.get('/audit/exports', async (c) => {
+  const user = getCurrentUser(c);
+  if (!auditReadRole(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const rs = await c.env.DB.prepare(
     `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
             chain_head_hash, generated_by, generated_at
@@ -839,8 +914,11 @@ pa.get('/audit/exports', async (c) => {
       ORDER BY generated_at DESC LIMIT 50`,
   ).all();
   return c.json({ success: true, data: rs.results || [] });
+});
 
 pa.get('/audit/exports/:id/manifest', async (c) => {
+  const user = getCurrentUser(c);
+  if (!auditReadRole(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT manifest_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'admin'`,
@@ -855,6 +933,8 @@ pa.get('/audit/exports/:id/manifest', async (c) => {
 });
 
 pa.get('/audit/exports/:id/csv', async (c) => {
+  const user = getCurrentUser(c);
+  if (!auditReadRole(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT csv_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'admin'`,
@@ -868,7 +948,6 @@ pa.get('/audit/exports/:id/csv', async (c) => {
       'Content-Disposition': `attachment; filename="${id}.csv"`,
     },
   });
-});
 });
 
 // POST /admin-platform/audit/recon — payment-processor / billing reconciliation.

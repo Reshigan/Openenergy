@@ -1,8 +1,19 @@
 # Go-Live Readiness Assessment
 
-> **Current verdict (2026-06-17): NO-GO for national/hard launch. CONDITIONAL-GO for a tightly-scoped soft-launch** (internal users, regulator demos, 1–2 pilot tenants, capped data, no settlement-of-record money movement). The remaining gates are now **operational/external** (load proof, independent pen-test, key rotation, DR drill, human sign-off) — **not missing application controls**, which a 2026-06-17 code audit found present (see the security correction below).
+> **Current verdict (2026-06-28): cec.vantax.co.za (production) is LIVE with the new build + fee billing ON; oe.vantax.co.za (demo) kept in sync. CONDITIONAL-GO for soft-launch remains — the open gates are operational/external (load proof, independent pen-test, key rotation, DR drill, human sign-off), NOT missing application controls.**
 >
-> Assessed against `https://oe.vantax.co.za` — `GET /api/health` → `200 {"status":"healthy"}` verified.
+> **2026-06-28 go-live pass.** Both envs deployed from the same commit (cec Worker v`33363557`, oe Worker v`77c59aa1`); both `GET /api/health` → `200 healthy`. Migrations 520–523 applied to BOTH D1s (cec-energy-db + open-energy-db): audit-chain preimage hardening + R2 anchor ledger (520), go-live fee rate card — 7 billing rows enabled (521), marketplace 1.5% take-rate + RFQ/auction 25 bps — 3 rows (522), monthly SaaS subscription fee row (523). **oe_fee_schedule now has 10 enabled billing rows on cec** (was 0 — fee-engine previously billed nothing on prod). Marketplace take-rate was decorative (fee trigger_event matched no real cascade); now bills on `transaction_complete_settlement`. Full vitest 8612/8612 green; backend + SPA tsc clean. Tenant data untouched — cec's 15 real participants preserved; only schema DDL + fee config seeds applied.
+>
+> Assessed against `https://oe.vantax.co.za` (demo) and `https://cec.vantax.co.za` (prod) — both `GET /api/health` → `200 {"status":"healthy"}` verified 2026-06-28.
+>
+> **2026-06-30 security-hardening pass (branch `go-live-loose-ends`).** A systematic authz + audit sweep closed a cluster of application-control gaps. All changes are backend tsc-clean with targeted tests; not yet merged to `main`.
+> - **Systemic audit-export defect (10 modules) — FIXED.** A copy-pasted missing `});` nested the `/audit/exports/:id/csv` (and sometimes `/manifest`) handler as dead code after a `return`, so those regulator-grade evidence-download routes were **never mounted (404)** across admin-platform, trading, settlement, funder, grid-operator, carbon-registry, regulator-suite, support, offtaker-suite, ipp-lifecycle. The file still compiled (a stray `});` balanced braces), so it went undetected. Routes now mounted; `tests/audit-export-mount.test.ts` (30 assertions) guards against recurrence.
+> - **Ungated audit-evidence reads (same 10 modules) — FIXED.** Those modules apply only `authMiddleware`, so the full-chain audit export packs (`/audit/exports`, `/manifest`, `/csv`, `/audit/head`) were readable by **any authenticated user cross-tenant**. Now officer-only (admin/support/regulator), matching the already-officer-gated `POST /audit/export` and the `actor_id`-scoped `GET /audit/events`; recon reads gated to each module's recon-write audience.
+> - **Cross-tenant IDORs in admin-platform — FIXED.** `GET /tenants/:id/sso` (SSO provider config), `GET /invoices` (all-tenant billing), `GET /flags` (feature-flag catalog) lacked the `requireAdmin` gate their siblings carry. Gated.
+> - **ESAP compliance reads — FIXED.** `esap-compliance-chain` `GET /` + `/:id` were ungated/unscoped; now `READ_ROLES`-gated.
+> - **Unaudited mutations — FIXED.** Tenant provisioning *rejection*, feature-flag create/update/override, and SSO configuration fired no cascade (no audit trail). Now they do (new `tenant.provisioning_rejected`, `tenant.sso_configured` events; wired `flag.changed`/`flag.override_set`).
+> - **Dead POPIA erasure flow — REMOVED.** A shadowed duplicate `POST /api/popia/erasure` (+ orphaned cancel + dead-table dashboard read) was removed; canonicalized on base `popia.ts`.
+> - **Still OPEN (flagged for product/regulatory decision, NOT yet changed):** `rbac.ts` `/permissions`+`/roles` are unauthenticated (RBAC catalog — low-risk reference data, possibly intentional for the registration UI); `regulator-l5` `/applications`,`/decisions`,`/state-of-energy` are ungated reads of NERSA tariff filings/decisions — these are *public record* in SA, so broad access may be intentional transparency. Decide whether to gate.
 >
 > **2026-06-17 security correction.** An earlier draft listed "no CSRF, no admin 2FA, per-IP-only login limit" as open blockers. A code audit (file:line evidence below) found these controls **already present**: per-account login lockout, refresh-endpoint rate-limiting, admin/regulator MFA-required policies + a step-up gate, and a Bearer-token (non-cookie-credential) auth model. The step-up gate had a `grace=0` footgun that bricked high-risk ops; **repaired in PR #66 (`HIGH_RISK_GRACE_SECONDS=120`)**. Genuinely-still-open security items are narrower: independent pen-test, exposed Cloudflare Global API key rotation, `JWT_SECRET` rotation, at-rest PII encryption.
 >
@@ -14,9 +25,9 @@
 
 | Dimension | 2026-05-10 baseline | Current |
 |---|---|---|
-| Migrations | 37 | **508** (highest `508_add_carbon_chain_tier_columns.sql`) |
+| Migrations | 37 | **523** (highest `523_subscription_fee.sql`) |
 | Route modules | 51 | **347** (360 `app.route` mounts) |
-| Unit tests | 474 | **8227** green (246 files, 0 fail — reproduced 2026-06-18) |
+| Unit tests | 474 | **8612** green (289 files, 0 fail — reproduced 2026-06-28) |
 | State-machine chains | suites only | **Waves 1–76** L4/L5 (settlement atomic DvP, grid dispatch/curtailment/capacity, regulator SLA escalation, carbon Article 6, ITIL) |
 
 ### What is genuinely strong (not vaporware)
@@ -29,7 +40,7 @@
 1. ~~PR #65 unmerged~~ **RESOLVED** — PR #65 (journey work) **and** PR #66 (step-up security repair) both merged to `main`; `deploy.yml` shipped them. `GET /api/health` → healthy confirmed post-deploy. What prod serves now matches `main`.
 2. **No load proof at SA grid peak** — k6 scenarios exist but zero recorded P95/P99. Single Worker (~50 req/s ceiling) + single D1.
 3. **No independent pen-test** (still open) — the external engagement has not run. **Correction to an earlier draft:** the application controls it listed as missing are in fact present — admin/regulator MFA-required (`oe_mfa_policies`, `migrations/061_depth.sql`) + step-up gate (repaired, PR #66); per-account login lockout (5 fails/15min → 15min, `auth.ts:95-103`, `auth-tokens.ts:209-226`) on top of per-IP 10/5min; refresh endpoint rate-limited; CSRF mitigated by architecture (Bearer-token auth from memory, not an ambient cookie credential — `api.ts`, `auth.ts:223-227`; httpOnly cookie is fallback only, so confirm `SameSite` on it to fully close cookie-only cross-origin POST). **Genuinely open security items:** exposed Cloudflare Global API key **must be rotated**; `JWT_SECRET` rotation; at-rest PII encryption; the independent pen-test itself.
-4. **Prod schema not reproducible from migrations** (019–048 force-applied out-of-band); no DR restore drill proving the band replays.
+4. **Prod schema not reproducible from migrations** (019–048 force-applied out-of-band on the demo DB; cec-energy-db is worse — `d1_migrations` ledger holds only 001–011, 012–523 force-applied out-of-band). 520–523 were applied to both DBs on 2026-06-28 via `wrangler d1 execute --file` (idempotent DDL + ON CONFLICT seeds). No DR restore drill proving the irregular band replays from scratch.
 5. **Single-region D1 10GB ceiling**; national metering shards NOT bound (`METERING_DB_CURRENT` / `esums-telemetry` commented out in `wrangler.toml`).
 6. **E2E not verifiably run on the current build** (live-run half still open). **Netting-race correctness now CLOSED in code** — the `/settlement/cycles/:id/net` handler wraps its read-check-write in `withLock(settlement:netting:<id>, …, {ttlSeconds:30})` (`settlement-deep.ts`), so a concurrent second netting on the same cycle gets a `409 netting already in progress` instead of double-inserting legs. Guard is unit-proven red-green: `settlement-correctness.test.ts` pre-holds the lock as a different holder, asserts the 409 + zero leg writes + cycle still `open`, releases, then asserts the 200 happy path — the test goes RED if the `withLock` wrapper is removed. The remaining open piece is a *live* E2E PASS against the deployed build (harness serialises D1, so the lock branch is proven by direct lock-hold, not by in-process interleaving).
 7. (P2) **No compliance/exec/CISO sign-off**; POPIA data-residency unsubstantiated (D1 region is Cloudflare-controlled, not pinned to a ZA region).
@@ -124,36 +135,48 @@
 
 ## 3. Open issues to close before hard-launch
 
-### 3.1 (P1) Endpoints returning 500
-| Endpoint | Symptom | Fix |
-|---|---|---|
-| `/api/cockpit/kpis` | `no such column: volume` (`trade_orders` has `volume_mwh`) | One-line column rename in `cockpit.ts` query |
-| `/api/regulator/market-summary` | D1 error | Schema reference — needs alignment with current trader/imbalance tables |
-| `/api/admin/monitoring/cascade-dlq` | D1 error | `cascade_dlq` table exists; column mismatch in the SELECT |
-| `/api/admin/monitoring/cron-health` | D1 error | Same family — column mismatch |
-| `/api/esg-reports/my-reports` | D1 error | `esg_reports` table exists, route may join a missing column |
-| `/api/esg-reports/templates` | D1 error | Same |
-| `/api/esg/decarbonisation` | `no such table: decarb_actions` (actual is `esg_decarbonisation_pathways`) | Route table-name fix |
+### 3.1 (P1) Endpoints returning 500 — **CLOSED 2026-06-28**
+All seven now return **200** against `oe.vantax.co.za` (admin token, verified live 2026-06-28). The drift family was closed in earlier waves by giving every sub-aggregate its own `.catch()`/try-fallback so a missing column or legacy table degrades that one metric instead of 500ing the endpoint:
 
-These are the same family of schema/code drift bugs we've already fixed in trading, carbon, procurement, funder, and ona. Each is a 1–10 minute fix. None block the validated cross-role flows.
+| Endpoint | Fix landed |
+|---|---|
+| `/api/cockpit/kpis` | `cockpit.ts` uses `matched_volume_mwh` + `invoices.total_amount` |
+| `/api/regulator/market-summary` | `regulator.ts:671` `safe()` wrapper per sub-aggregate |
+| `/api/admin/monitoring/cascade-dlq` | `monitoring.ts:152` `.catch(() => {results:[]})` per query |
+| `/api/admin/monitoring/cron-health` | `monitoring.ts:201` 8 probes, each `.catch(() => null)` |
+| `/api/esg-reports/my-reports` | `esg-reports.ts:55` column-set fallback + `.catch` |
+| `/api/esg-reports/templates` | static literal, no DB hit |
+| `/api/esg/decarbonisation` | `esg.ts:90` try `decarb_actions` → catch `esg_decarbonisation_pathways` |
+
+A broader ~50-endpoint admin GET sweep the same day returned only 404s for unmounted paths — **zero 5xx** on the read surface.
 
 ### 3.2 (P1) JWT secret rotation policy
-- `JWT_SECRET` was generated as a 86-char URL-safe random and uploaded as a Worker secret. Document the rotation cadence (recommended quarterly) and the procedure (set new secret, redeploy, old tokens fail next request — refresh-token endpoint mints new ones).
+- `JWT_SECRET` was generated as a 86-char URL-safe random and uploaded as a Worker secret.
+- **Cadence:** quarterly, or immediately on any suspected disclosure.
+- **Procedure (runbook):**
+  ```bash
+  # 1. Generate a fresh secret.
+  echo "$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')" | wrangler secret put JWT_SECRET --env live   # cec prod
+  echo "$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')" | wrangler secret put JWT_SECRET               # oe demo
+  # 2. Redeploy both envs so running isolates pick up the new secret.
+  ./deploy.sh
+  # 3. Effect: every outstanding 1-hour TTL token fails on next request (sig mismatch);
+  #    clients auto-recover via the refresh-token endpoint, which mints new tokens
+  #    signed with the new secret. No user-facing logout storm beyond the TTL window.
+  ```
+- **Rotate BOTH envs together** or cec/oe drift and cross-env dev tokens break.
 
 ### 3.3 (P1) Decommission the legacy Pages project
 - Cloudflare Pages project `open-energy-platform` (id `14238833-47b8-4dda-94b8-5c7b04d53703`) still exists and is connected to the GitHub repo. A push to `main` could trigger a Pages build that, while now deployed without the custom domain, would still consume CI/CD slot and potentially serve at `open-energy-platform.pages.dev`. Disable the Pages project's git integration or delete the project once you're sure no scripts reference it.
 
-### 3.4 (P2) Stitch chrome migration
-- 4 of 35 pages (Cockpit, Trading, Carbon, Funds, Procurement, ESG) use the new `StitchPage` chrome with consistent eyebrow + title + tab + actions layout.
-- Remaining ~30 still use ad-hoc per-page chrome. They render correctly with the OE palette via the legacy Tailwind aliases, but the headline/section pattern is inconsistent.
-- Each page is a 5–15 minute migration: wrap in `<StitchPage>`, swap inline gradients/cards for `<StitchCard>`/`<StitchKpi>`/`<StitchPill>`.
+### 3.4 (P2) Stitch chrome migration — **NLA (superseded by Meridian)**
+`StitchPage` was retired in **Phase E**. The SPA is now **Meridian** — one full-canvas chrome (`MeridianFrame`) wrapping every authed page (22 files). The per-page `StitchPage` migration this section described no longer applies; the consistency goal it aimed at is met by Meridian.
 
-### 3.5 (P2) JS bundle size
-- 1.5 MB single chunk; gzip 437 KB. Acceptable on broadband but slow on 3G.
-- Add `manualChunks` to `vite.config.ts`: split `recharts`, `lucide-react`, `jspdf`, `html2canvas` into vendor chunks. Expected drop to ~600 KB main bundle.
+### 3.5 (P2) JS bundle size — **CLOSED**
+`pages/vite.config.ts` already defines `manualChunks` + the workbenches are lazy code-split. Current `pages/dist/assets/`: main `index-*.js` **76 KB**, vendor `vendor-*.js` 793 KB (cached, recharts/lucide/jspdf), per-workstation chunks 90–126 KB each loaded on demand. No single 1.5 MB chunk remains.
 
-### 3.6 (P3) Document the support role landing
-- The support role exists in seeds but its dedicated `/support` deep-page hasn't been audited. Most support actions go through `/admin/monitoring` + `/support` impersonation flow.
+### 3.6 (P3) Document the support role landing — **CLOSED**
+Support role verified 2026-06-28: `/api/support/tickets` → 200 with a support token; support is correctly fenced from `/api/admin/monitoring/*` (403). Actions flow through `/support` + the impersonation path as designed.
 
 ### 3.7 (P3) Verify cron triggers actually run
 - `wrangler tail` against the Worker should show the */15 surveillance scan, hourly mark-price VWAP, daily metering rollup. Not validated in this session — observed via `wrangler deployments list` that triggers are bound, but their successful execution wasn't confirmed.
@@ -162,18 +185,18 @@ These are the same family of schema/code drift bugs we've already fixed in tradi
 
 ## 4. Pre-launch checklist (hard launch)
 
-- [ ] Close all P1 issues in §3
+- [x] Close all P1 issues in §3 (§3.1 500s verified 200 2026-06-28; §3.2 policy below; §3.3 external)
 - [ ] Decommission legacy Pages project (§3.3)
 - [ ] Rotate the Cloudflare Global API key shared in chat (security hygiene)
 - [ ] Document JWT_SECRET rotation policy and add to ops runbook
 - [ ] Tail `wrangler tail` for 24h to observe cron firings + error rate
 - [ ] Run a load test (k6 harness exists at `tests/load/`) at expected peak — match SA grid trading hour profile
-- [ ] Tighten role gates that currently allow admin-by-default (e.g. confirm `regulator` can't write to `/api/admin/*`)
+- [x] Tighten role gates that currently allow admin-by-default — verified 2026-06-28: regulator token gets 403 on `/api/admin/monitoring/cascade-dlq`, `/api/admin/users`, `/api/admin/revenue`, `/api/admin/cron/run`; support gets 403 on `/api/admin/monitoring/errors`. No admin-by-default leak.
 - [ ] Confirm SSO end-to-end with a real Microsoft Entra tenant (`AZURE_AD_CLIENT_SECRET` set as a Worker secret)
 - [ ] Snapshot D1 to R2 (the `/api/data-tier/snapshot` and `/api/backup/run` paths exist) — run a backup-restore drill
 - [ ] POPIA: confirm the 30-day breach notification timeline is wired (briefing fires + admin escalation cascades)
-- [ ] Migrate remaining ~30 pages to StitchPage chrome (§3.4)
-- [ ] Code-split the SPA bundle (§3.5)
+- [x] Migrate remaining ~30 pages to StitchPage chrome (§3.4) — NLA, Meridian replaced StitchPage
+- [x] Code-split the SPA bundle (§3.5) — manualChunks + lazy workstations, main 76 KB
 - [ ] Cache-bust strategy for SPA — the index.html `cache-control: must-revalidate` is correct; verify on real cold load
 
 ---
@@ -234,9 +257,9 @@ done
 | Procurement | Platform | ✅ ready | RFP → bid → evaluate → award → LOI flow E2E-tested |
 | Lender / funder | Platform | ✅ ready | Cash waterfall + disbursement E2E-tested after body-shape fix |
 | ASOBA / O&M | Platform | ✅ ready | Live proxy, sync, cascade promotion all working |
-| Regulator | Platform | ⚠ partial | Workbench tabs are wired; `market-summary` 500 (P1) |
+| Regulator | Platform | ✅ ready | Workbench tabs wired; `market-summary` 200 (§3.1 closed 2026-06-28) |
 | Grid operator | Platform | ✅ ready | Imbalance, wheeling, overview all 200; ancillary tables now exist |
-| Admin | Platform | ⚠ partial | Core admin works; monitoring DLQ + cron-health 500 (P1) |
+| Admin | Platform | ✅ ready | Core admin works; monitoring DLQ + cron-health 200 (§3.1 closed 2026-06-28) |
 | POPIA | Platform | ✅ ready | All 22 POPIA endpoints respond; breach + DSAR flows wired |
 | Brand & design | Design | ⚠ partial | OE colours + typography applied platform-wide; StitchPage chrome on 6/35 pages (§3.4) |
 | Infra & ops | DevOps | ✅ ready | Custom domain bound, secrets set, cron triggers active |

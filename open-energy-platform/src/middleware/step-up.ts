@@ -51,9 +51,14 @@ export function requireStepUp(opType: string) {
       : Number(policyRow?.step_up_grace_seconds || 900);
 
     if (grace > 0) {
+      // Exact op_type match only — the previous `IN (?, '*')` let any caller
+      // who recorded a '*' challenge satisfy every gated op, which is a
+      // step-up bypass footgun. If a future "any op" policy is genuinely
+      // wanted it must be encoded as an explicit allowlist here, never as a
+      // wildcard row in the DB.
       const row = await c.env.DB.prepare(`
         SELECT id, authenticated_at, expires_at FROM oe_step_up_sessions
-        WHERE participant_id = ? AND op_type IN (?, '*')
+        WHERE participant_id = ? AND op_type = ?
           AND expires_at > datetime('now')
         ORDER BY authenticated_at DESC LIMIT 1
       `).bind(user.id, opType).first<any>().catch(() => null);

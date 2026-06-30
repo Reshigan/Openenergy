@@ -5,6 +5,7 @@
 // `onRefresh` replaced by the body's own local refreshKey.
 import { useState } from 'react';
 import { ListingTable, Pill, ActionModal } from '../../../components/launch/WorkstationShell';
+import { StatusPill } from '../../components';
 
 const GTIA_TIER_TONE: Record<string, 'neutral' | 'info' | 'warn' | 'bad'> = {
   small: 'neutral', medium: 'info', large: 'warn', bulk: 'bad',
@@ -43,9 +44,9 @@ export default function GtiaSurface(_props: { role: string }) {
         empty={{ title: 'No GTIAs', description: 'Initiate a Grid Technical Interface Agreement to document protection and SCADA settings with the network operator.' }}
         columns={[
           { key: 'network_operator_name', label: 'Network operator', render: (r) => String(r.network_operator_name ?? '—').slice(0, 24) },
-          { key: 'gtia_tier', label: 'Tier', render: (r) => <Pill tone={GTIA_TIER_TONE[String(r.gtia_tier)] ?? 'neutral'}>{String(r.gtia_tier).replace(/_/g, ' ')}</Pill> },
+          { key: 'gtia_tier', label: 'Tier', render: (r) => <StatusPill status={String(r.gtia_tier)} tone={GTIA_TIER_TONE[String(r.gtia_tier)] ?? 'neutral'} /> },
           { key: 'installed_capacity_mw', label: 'Capacity', align: 'right', render: (r) => r.installed_capacity_mw != null ? `${r.installed_capacity_mw} MW` : '—' },
-          { key: 'chain_status', label: 'Status', render: (r) => <Pill tone={gtiaStatusTone(String(r.chain_status))}>{String(r.chain_status).replace(/_/g, ' ')}</Pill> },
+          { key: 'chain_status', label: 'Status', render: (r) => <StatusPill status={String(r.chain_status)} tone={gtiaStatusTone(String(r.chain_status))} /> },
           { key: 'sla_breached', label: 'SLA', render: (r) => r.sla_breached ? <Pill tone="bad">Breached</Pill> : <Pill tone="good">On track</Pill> },
           { key: 'updated_at', label: 'Updated', render: (r) => r.updated_at ? new Date(String(r.updated_at)).toLocaleDateString() : '—' },
         ]}

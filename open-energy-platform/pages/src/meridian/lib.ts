@@ -8,8 +8,8 @@ export type { LoadErrorKind } from './lib-pure';
 // Must match HorizonBucket in src/utils/chain-registry-meridian.ts (backend).
 export type Bucket = 'breached' | 'h2' | 'today' | 'h48' | 'week' | 'later';
 export const BUCKETS: { key: Bucket; label: string }[] = [
-  { key: 'breached', label: 'BREACHED' }, { key: 'h2', label: '< 2H' },
-  { key: 'today', label: 'TODAY' }, { key: 'h48', label: '48H' },
+  { key: 'breached', label: 'OVERDUE' }, { key: 'h2', label: 'NEXT 2 HRS' },
+  { key: 'today', label: 'TODAY' }, { key: 'h48', label: 'NEXT 2 DAYS' },
   { key: 'week', label: 'THIS WEEK' }, { key: 'later', label: 'LATER' },
 ];
 

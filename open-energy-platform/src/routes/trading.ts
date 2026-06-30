@@ -2033,9 +2033,24 @@ trading.post('/amend-suggestions/:id/accept', async (c) => {
 // ════════════════════════════════════════════════════════════════════════
 import { getChainHead, verifyChain } from '../utils/audit-chain';
 
+// Read access to the trading audit chain (head / events / export packs /
+// recon runs). The trader sees their own desk's audit panel; oversight roles
+// (admin/support/regulator) review it for compliance. Excludes unrelated
+// roles/tenants from this regulator-grade evidence surface.
+const tradingAuditRead = (role: string): boolean =>
+  role === 'admin' || role === 'support' || role === 'regulator' || role === 'trader';
+// Full-chain export packs (CSV/manifest) are regulator-grade evidence over
+// EVERY trader's events — officer-only, matching the officer-gated
+// POST /audit/export and the actor_id scoping in GET /audit/events. A trader
+// sees only their own events via /audit/events, never the whole-chain pack.
+const tradingAuditOfficer = (role: string): boolean =>
+  role === 'admin' || role === 'support' || role === 'regulator';
+
 // GET /trading/audit/head — quick "what's the current chain head" used by
 // the workstation badge ("verified · 12 432 events · head 4e2a…b6c1").
 trading.get('/audit/head', async (c) => {
+  const user = getCurrentUser(c);
+  if (!tradingAuditRead(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const head = await getChainHead(c.env, 'trading');
   return c.json({ success: true, data: head });
 });
@@ -2201,6 +2216,8 @@ trading.post('/audit/export', async (c) => {
 
 // GET /trading/audit/exports — list past exports for the dashboard.
 trading.get('/audit/exports', async (c) => {
+  const user = getCurrentUser(c);
+  if (!tradingAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const rs = await c.env.DB.prepare(
     `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
             chain_head_hash, generated_by, generated_at
@@ -2214,6 +2231,8 @@ trading.get('/audit/exports', async (c) => {
 // GET /trading/audit/exports/:id/manifest — fetch the manifest JSON inline
 // (avoids an R2 signed URL round-trip for the UI). Manifest is small.
 trading.get('/audit/exports/:id/manifest', async (c) => {
+  const user = getCurrentUser(c);
+  if (!tradingAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT manifest_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'trading'`,
@@ -2225,8 +2244,11 @@ trading.get('/audit/exports/:id/manifest', async (c) => {
   let parsed: unknown = null;
   try { parsed = JSON.parse(text); } catch { /* return raw text below */ }
   return c.json({ success: true, data: parsed ?? { raw: text } });
+});
 
 trading.get('/audit/exports/:id/csv', async (c) => {
+  const user = getCurrentUser(c);
+  if (!tradingAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT csv_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'trading'`,
@@ -2240,7 +2262,6 @@ trading.get('/audit/exports/:id/csv', async (c) => {
       'Content-Disposition': `attachment; filename="${id}.csv"`,
     },
   });
-});
 });
 
 // POST /trading/audit/recon — accept a counterparty CSV of trades they
@@ -2386,6 +2407,8 @@ trading.post('/audit/recon', async (c) => {
 });
 
 trading.get('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  if (!tradingAuditRead(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const rs = await c.env.DB.prepare(
     `SELECT id, source, row_count, matched_count, break_count, status,
             started_at, finished_at
@@ -2396,6 +2419,8 @@ trading.get('/audit/recon', async (c) => {
 });
 
 trading.get('/audit/recon/:id/breaks', async (c) => {
+  const user = getCurrentUser(c);
+  if (!tradingAuditRead(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const rs = await c.env.DB.prepare(
     `SELECT id, break_type, external_ref, our_value, their_value, field,

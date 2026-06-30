@@ -154,3 +154,37 @@ describe('step-up — high-risk window is strict but satisfiable', () => {
     expect((await res.json() as any).error).toBe('step_up_required');
   });
 });
+
+describe('step-up — no wildcard op_type bypass', () => {
+  // The previous `op_type IN (?, '*')` clause let any caller who recorded a
+  // '*' challenge satisfy EVERY gated op — a step-up bypass footgun. The gate
+  // now requires an EXACT op_type match. A '*' session must NOT authorise a
+  // real op, and a real-op session must NOT authorise a different real op.
+  it('a "*" step-up session does NOT authorise a high-risk op (exact match required)', async () => {
+    db.prepare(
+      `INSERT INTO oe_step_up_sessions (id, participant_id, op_type, method, authenticated_at, expires_at)
+       VALUES (?,?,?,?,?,?)`,
+    ).run(
+      'stup_wild', 'par_admin', '*', 'totp',
+      sqlTime(0), sqlTime(600),
+    );
+    const res = await req(platform, '/api-keys', await tokenFor('par_admin', 'admin'), {
+      method: 'POST', body: JSON.stringify({ name: 'wild-key' }),
+    });
+    expect(res.status).toBe(401);
+    expect((await res.json() as any).error).toBe('step_up_required');
+    expect((db.prepare(`SELECT COUNT(*) n FROM oe_api_keys`).get() as any).n).toBe(0);
+  });
+
+  it('a step-up session for one op_type does NOT authorise a different op_type', async () => {
+    // A valid, fresh api_key.create session must not satisfy webhook.create.
+    await recordStepUpAuth(env, 'par_admin', 'api_key.create', 'totp', 900);
+    const res = await req(platform, '/webhooks/subscriptions', await tokenFor('par_admin', 'admin'), {
+      method: 'POST',
+      body: JSON.stringify({ target_url: 'https://example.com/hook', events: ['trade.matched'] }),
+    });
+    expect(res.status).toBe(401);
+    expect((await res.json() as any).data.op_type).toBe('webhook.create');
+    expect((db.prepare(`SELECT COUNT(*) n FROM oe_webhook_subscriptions`).get() as any).n).toBe(0);
+  });
+});

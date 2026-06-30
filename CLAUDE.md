@@ -70,7 +70,7 @@ Key cross-cutting helpers in [src/utils/](open-energy-platform/src/utils/):
 
 ### Migrations
 
-508 numbered migrations in [migrations/](open-energy-platform/migrations/) (highest `508_add_carbon_chain_tier_columns.sql`). `wrangler.toml::migrations_dir` wires them in.
+523 numbered migrations in [migrations/](open-energy-platform/migrations/) (highest `523_*`). `wrangler.toml::migrations_dir` wires them in. Count is manual-maintained — a CI check could enforce it but none exists yet; update here when adding migrations.
 
 **Migration discipline** (this is non-obvious and load-bearing):
 - 001–018 are clean and idempotent. Apply normally.
@@ -79,18 +79,45 @@ Key cross-cutting helpers in [src/utils/](open-energy-platform/src/utils/):
 - 050 had a CREATE INDEX referencing columns that 020 was supposed to add but didn't. CI reconciles 050 column-by-column with `ALTER TABLE ADD COLUMN` and `duplicate column name` treated as a benign already-applied signal.
 - 051+ apply normally and are idempotent.
 
-`wrangler d1 migrations list ... --remote` will always show 049–508 as "to be applied" because we use `wrangler d1 execute --file` rather than `migrations apply` for the irregular band. This is intentional; don't try to "fix" the ledger.
+`wrangler d1 migrations list ... --remote` will always show 049–523 as "to be applied" because we use `wrangler d1 execute --file` rather than `migrations apply` for the irregular band. This is intentional; don't try to "fix" the ledger.
 
 ### Cron triggers
 
-Seven schedules in `wrangler.toml::[triggers]`, dispatched by `scheduled()` in [src/index.ts](open-energy-platform/src/index.ts):
-- `*/15 * * * *` — surveillance scan + OrderBook DO depth snapshots
-- `0 * * * *` — VWAP mark prices
-- `5 0 * * *` — metering + ONA rollups, audit archive prep
+Thirty-three schedules in `wrangler.toml::[env.live.triggers]` (the live env; the top-level `[triggers]` mirrors them for demo), each dispatched by `scheduled()` → `runCron()` in [src/index.ts](open-energy-platform/src/index.ts). A cron-contract test ([tests/cron-contract.test.ts](open-energy-platform/tests/cron-contract.test.ts)) asserts every declared pattern has a matching `case` so the silent-no-op class can't regress.
+
+- `*/15 * * * *` — surveillance scan + trading surveillance + SIEM dispatch + all SLA sweeps + deal sweep + OrderBook DO depth snapshots (`snapshotAllOrderBooks`)
+- `0 * * * *` — SolaX hourly ingest + VWAP mark publish (`publishVwapMarks`)
+- `5 0 * * *` — metering + ONA rollups, fault engine, late-payment fees, metrics rollup, audit-chain daily reconcile, regulator-export / reconciliation-attestation / control-environment-audit nightly refreshes, NTT nightly cycle runner, telemetry rollup/purge, Merkle roots, audit-chain R2 anchor (`publishChainHeadToR2`), cascade DLQ purge
 - `10 0 * * *` — previous-day PPA settlement run
-- `30 0 * * *` — usage snapshot + margin-call cycle
-- `45 0 * * *` — watershed anomaly scan + maturity refresh
-- `0 2 1 * *` — monthly platform invoice run
+- `15 0 * * *` — W112 IPP WBS & Gantt schedule-health recompute (`ippScheduleHealthRecompute`)
+- `20 0 * * *` — W113 IPP Cost & EVM nightly recompute (`ippEvmHealthRecompute`)
+- `25 0 * * *` — W114 IPP Document Control IDC matrix recompute (`ippDocControlIdcMatrixRecompute`)
+- `30 0 * * *` — imbalance run + chain verify + Merkle roots + margin-call cycle (`runMarginCallCycle`)
+- `35 0 * * *` — W116 IPP RFI nightly aging refresh (`ippRfiAgingRefresh`)
+- `40 0 * * *` — W117 IPP Change Order cumulative pct + cap band refresh (`ippChangeOrderCumPctRefresh`)
+- `45 0 * * *` — watershed anomaly scan (`runWatershedAnomalyScan`) + maturity refresh (`runMaturityRefresh`) + audit-chain daily reconcile + chain verify
+- `50 0 * * *` — W119 regulator-export-pack LIVE score refresh
+- `55 0 * * *` — W120 reconciliation-attestation LIVE variance recompute
+- `58 0 * * *` — W121 control-environment-audit nightly evidence-coverage recompute
+- `5 * * * *` — W118 audit-chain hourly block proposal (`auditChainHourlyProposeSweep`)
+- `0 3 1 1,4,7,10 *` — W118 audit-chain quarterly NERSA/IPPO/SARB export sweep
+- `0 2 1 * *` — monthly platform invoice run + subscription billing sweep (`runMonthlySubscriptionBilling`) + regulator-export / control-env / NTT / audit-chain monthly rollups
+- `0 4 1 * *` — W119 monthly regulator-export-pack rollup
+- `0 5 1 * *` — W120 monthly audit-committee pack rollup
+- `0 6 1 1 *` — W121 annual external-audit cycle opener
+- `0 6 * * 1` — W131 Stage Gates conditions-aging sweep (`stageGateConditionsAgingSweep`)
+- `0 7 * * 1` — W122 SCADA connector weekly cert-expiry sweep
+- `30 1 * * *` — W124 STRATE/SWIFT settlement connector reconciliation sweep
+- `45 1 * * *` — W125 SAP/Oracle ERP connector reconciliation sweep
+- `0 2 * * *` — W126 CIPC/SARS/NERSA government-filing deadline sweep
+- `30 2 * * *` — W127 Anomaly-Detection ML drift scan
+- `0 3 * * *` — W128 RUL Prediction ML concordance monitor
+- `30 3 * * *` — W129 Fault-Fingerprint ML class-drift scan
+- `15 4 * * *` — W130 NTT Comparison Battery nightly cycle runner
+- `0 1 1 * *` — W130 NTT cumulative savings ledger reconciliation (monthly)
+- `0 15 * * 5` — Friday trading-risk MTD digest
+- `0 6 1 * *` — Day 1 CPMI-IOSCO PFMI disclosure sweep
+- `0 18 * * *` — W111 P&L attribution T+1 EOD opener
 
 `scripts/smoke-cron.sh` dry-runs each via `/api/admin/cron/run` (gated on admin role).
 

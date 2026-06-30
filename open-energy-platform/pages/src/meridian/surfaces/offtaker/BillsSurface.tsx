@@ -9,6 +9,7 @@
 // roleData feature key `bills` (added in E2.6). Non-chain analytics/AI surface (Bucket D/E).
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pill } from '../../../components/launch/WorkstationShell';
+import { statusLabel } from '../../ease/statusLabel';
 import { api } from '../../../lib/api';
 
 type BillProfile = {
@@ -159,7 +160,7 @@ function RiskCard({ risk }: { risk: string | undefined }) {
   return (
     <div className="rounded-lg border border-[var(--line)] p-4" style={{ background: bg }}>
       <div className="text-[10px] uppercase tracking-wider text-[var(--ink3)]">TOU exposure</div>
-      <div className="text-[20px] font-semibold mt-1" style={{ color: fg }}>{(risk || 'unknown').toUpperCase()}</div>
+      <div className="text-[20px] font-semibold mt-1" style={{ color: fg }}>{statusLabel(risk || 'unknown').text}</div>
     </div>
   );
 }

@@ -247,6 +247,12 @@ describe('Admin platform routes', () => {
     ['POST', '/tenants/:id/sso'],
     ['GET',  '/tenants/:id/sso'],
     ['POST', '/usage/snapshot'],
+    // Audit export download routes — regression guard: these were once nested
+    // as dead code inside the GET /audit/exports handler (after its return) and
+    // silently never mounted. They must be top-level registrations.
+    ['GET',  '/audit/exports'],
+    ['GET',  '/audit/exports/:id/manifest'],
+    ['GET',  '/audit/exports/:id/csv'],
   ];
   for (const [method, path] of expected) {
     it(`${method} ${path}`, () => expect(has(adminPlatform, method, path)).toBe(true));

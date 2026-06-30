@@ -4,18 +4,30 @@
 // ═══════════════════════════════════════════════════════════════════════════
 //
 // encryptField()/decryptField() are the single place a sensitive string value
-// is turned into (and back from) its at-rest form. Encryption is DARK by
-// default: the live AES-GCM path only runs when env.KYC_ENC_KEY is set. In
-// dev/test (the default, since wrangler.toml leaves KYC_ENC_KEY unset) both
-// functions are a plaintext passthrough, so callers can wire field protection
-// in safely long before the gate is deliberately opened in production.
+// is turned into (and back from) its at-rest form.
+//
+// ENCRYPT is dark-by-default: when env.KYC_ENC_KEY is unset the plaintext is
+// returned unchanged so callers can wire field protection in safely long
+// before the gate is deliberately opened in production. (A throw here would
+// 500 every KYC write in dev/test, which is a worse outcome than plaintext.)
+//
+// DECRYPT is FAIL-CLOSED: when env.KYC_ENC_KEY is unset, decryptField THROWS
+// rather than returning a possibly-ciphertext / possibly-plaintext value. A
+// missing key on a read path is a misconfiguration, not a "dev convenience" —
+// returning a stored ciphertext blob as if it were plaintext would corrupt
+// downstream consumers, and returning legacy plaintext silently would let a
+// production deployment run for months reading KYC values with no key
+// configured. Operators who want reads to succeed must set KYC_ENC_KEY in
+// every environment (dev included). The onboarding-kyc caller already wraps
+// decryptField in try/catch and surfaces a decrypt_error flag.
 //
 // Stored format is `v1:<base64 iv>:<base64 ciphertext+tag>`. The "v1" version
 // prefix is what lets us rotate later: a future "v2:" (new key, new scheme) can
 // be introduced with a dual-read decrypt that recognises both prefixes, then a
-// backfill, without a flag-day. A value with NO known prefix is treated as
-// legacy plaintext and read back verbatim - this is what makes turning the gate
-// on a non-breaking change for rows written before encryption existed.
+// backfill, without a flag-day. A value with NO known prefix is legacy
+// plaintext — but we only hand it back when a key IS configured (so the
+// operator has chosen to turn the gate on; un-encrypted rows then read back
+// verbatim until they're re-written).
 //
 // The key is a 32-byte (256-bit) value delivered as a base64 secret via
 // `wrangler secret put KYC_ENC_KEY`. It is NOT in wrangler.toml and never
@@ -110,19 +122,33 @@ export async function encryptField(env: HonoBindings, plaintext: string): Promis
 
 /**
  * Decrypt an at-rest value.
- * No known version prefix: returns the value unchanged (legacy plaintext).
- * `v1:` prefix: decrypts; throws (fail-closed) on any integrity/format failure.
+ * FAIL-CLOSED contract: throws when KYC_ENC_KEY is unset (a read without the
+ * key configured is a misconfiguration, not legacy plaintext). When the key
+ * is set, a value with no known version prefix is returned unchanged (legacy
+ * plaintext written before encryption existed); a `v1:` value is decrypted
+ * and throws on any integrity/format failure (the GCM auth tag rejects
+ * tampered/truncated/wrong-key input).
  */
 export async function decryptField(env: HonoBindings, stored: string): Promise<string> {
-  if (!stored.startsWith(VERSION_PREFIX)) {
-    return stored; // legacy plaintext / pre-encryption value
-  }
-
   const secret = keyOf(env);
   if (!secret) {
-    // A v1: value exists but no key is configured to read it. Fail closed:
-    // returning the encrypted blob as if it were plaintext would corrupt data.
-    throw new Error('crypto-aead: encountered v1: value but KYC_ENC_KEY is not set');
+    // No key configured AND a decrypt was requested. Fail closed: returning
+    // either the raw ciphertext blob or a legacy plaintext value would let a
+    // production deployment read KYC fields with no key configured, which is
+    // the exact misconfiguration this seam exists to prevent. The caller
+    // (onboarding-kyc.ts) wraps this in try/catch and surfaces decrypt_error.
+    console.warn(
+      JSON.stringify({
+        level: 'warn',
+        event: 'crypto_aead.decrypt_no_key',
+        message: 'decryptField called but KYC_ENC_KEY is not set — failing closed',
+      }),
+    );
+    throw new Error('crypto-aead: KYC_ENC_KEY is not set; decrypt fails closed');
+  }
+
+  if (!stored.startsWith(VERSION_PREFIX)) {
+    return stored; // legacy plaintext / pre-encryption value (key is configured)
   }
 
   const rest = stored.slice(VERSION_PREFIX.length);
