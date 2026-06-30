@@ -10,7 +10,24 @@ import { useAuth } from '../lib/useAuth';
 import { MeridianFrame } from './MeridianFrame';
 import { SURFACE_REGISTRY } from './surfaces';
 import { humanizeKey } from './lib';
-import { EaseLoading } from './ease/states';
+import { EaseLoading, EaseError } from './ease/states';
+
+// Every leaf inherits graceful failure: a surface that throws renders the shared
+// EaseError card (with retry + an Atlas escape) instead of blanking the app.
+class SurfaceBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() {
+    if (this.state.failed) {
+      return (
+        <EaseError message="This surface hit an error and couldn't render." onRetry={() => this.setState({ failed: false })}>
+          <Link to="/atlas" className="btn ghost">Open Atlas</Link>
+        </EaseError>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function MeridianSurfacePage() {
   const { key = '' } = useParams();
@@ -41,9 +58,11 @@ export default function MeridianSurfacePage() {
     <MeridianFrame ctx={<b>{humanizeKey(key, true)}</b>}>
       {/* Every leaf inherits a skeletal load shape (not a bare "Loading…") while
           its lazy chunk + first fetch resolve — the platform-wide ease floor. */}
-      <React.Suspense fallback={<EaseLoading kpis rows={4} />}>
-        <Comp role={role} />
-      </React.Suspense>
+      <SurfaceBoundary>
+        <React.Suspense fallback={<EaseLoading kpis rows={4} />}>
+          <Comp role={role} />
+        </React.Suspense>
+      </SurfaceBoundary>
     </MeridianFrame>
   );
 }
