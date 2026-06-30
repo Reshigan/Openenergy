@@ -14,13 +14,15 @@ export default {
          *   Sky    #5fa8e8  centre dot (live / kinetic accent)
          * ════════════════════════════════════════════════════════════ */
 
-        /* Brand */
-        primary: '#1a3a5c',
-        'primary-deep': '#0f2540',
-        'primary-container': '#d6e3ef',
+        /* Brand — Substation identity (institutional indigo). Aligned to the
+           meridian.css --petrol token so the Tailwind surfaces (onboarding,
+           legacy shells) carry the same primary as the main app. */
+        primary: '#1f3bb3',
+        'primary-deep': '#18309a',
+        'primary-container': '#e8ecfb',
         'on-primary': '#ffffff',
-        'on-primary-container': '#0a1c30',
-        'primary-fixed-dim': '#7faac9',
+        'on-primary-container': '#16266b',
+        'primary-fixed-dim': '#9aa9e8',
 
         secondary: '#3b82c4',
         'secondary-deep': '#1a5d97',
