@@ -341,6 +341,8 @@ pa.post('/invoices/run', async (c) => {
 });
 
 pa.get('/invoices', async (c) => {
+  const user = getCurrentUser(c);
+  if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const tenantId = c.req.query('tenant_id');
   const rs = tenantId
     ? await c.env.DB.prepare(
@@ -354,6 +356,8 @@ pa.get('/invoices', async (c) => {
 
 // ─── Feature flags ─────────────────────────────────────────────────────────
 pa.get('/flags', async (c) => {
+  const user = getCurrentUser(c);
+  if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const rs = await c.env.DB.prepare(`SELECT * FROM feature_flags ORDER BY flag_key`).all();
   return c.json({ success: true, data: rs.results || [] });
 });
