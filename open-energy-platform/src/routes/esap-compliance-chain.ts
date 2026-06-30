@@ -28,6 +28,11 @@ const router = new Hono<HonoEnv>();
 router.use('*', authMiddleware);
 
 const WRITE_ROLES = ['admin', 'lender', 'ipp_developer'];
+// Read audience: oversight (admin/support/regulator) + the chain's
+// counterparties (lender/ipp_developer). oe_esap_compliance has no owner
+// column to scope by, so reads are role-gated like other chain ledgers
+// (cf. READ_ROLES in take-or-pay-chain.ts).
+const READ_ROLES = new Set(['admin', 'support', 'regulator', 'lender', 'ipp_developer']);
 
 // ─── SLA sweep (exported — called by cron) ───────────────────────────────────
 
@@ -107,6 +112,8 @@ export async function esapComplianceSlaSweep(
 // ─── GET / — list records + KPIs ─────────────────────────────────────────────
 
 router.get('/', async (c) => {
+  const user = getCurrentUser(c);
+  if (!READ_ROLES.has(user.role)) return c.json({ success: false, error: 'Forbidden' }, 403);
   const {
     status,
     commitment_tier,
@@ -174,6 +181,8 @@ router.get('/', async (c) => {
 // ─── GET /:id — single record + timeline ──────────────────────────────────────
 
 router.get('/:id', async (c) => {
+  const user = getCurrentUser(c);
+  if (!READ_ROLES.has(user.role)) return c.json({ success: false, error: 'Forbidden' }, 403);
   const { id } = c.req.param();
 
   const row = await c.env.DB
