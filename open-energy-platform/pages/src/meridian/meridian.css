@@ -377,6 +377,7 @@
   transition:transform 140ms var(--ease), background 140ms;
 }
 .mer .btn:active { transform:scale(0.97); }
+.mer .btn:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
 .mer .btn:disabled, .mer .btn[disabled], .mer .btn[aria-disabled="true"] {
   opacity:0.5; cursor:not-allowed; transform:none; pointer-events:none;
 }
