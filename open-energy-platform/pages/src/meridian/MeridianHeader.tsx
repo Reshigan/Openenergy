@@ -4,7 +4,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth';
-import { QUICKLINKS, quicklinkVisible } from './quicklinks';
 
 // Re-export so existing './MeridianHeader' importers keep resolving the symbol.
 // The pure definition lives in ./quicklinks (no React) for server-side unit tests.
@@ -41,11 +40,9 @@ export function MeridianHeader({ ctx }: { ctx?: React.ReactNode }) {
       <Link to="/cockpit" className="wordmark">CEC</Link>
       {ctx && <div className="ctx">{ctx}</div>}
       <div className="spacer" />
-      <nav className="quicklinks" aria-label="Platform sections">
-        {QUICKLINKS.filter(q => quicklinkVisible(role, q.to)).map(q => (
-          <Link key={q.to} to={q.to}>{q.label}</Link>
-        ))}
-      </nav>
+      {/* Platform-section quicklinks (Deals/ESG/Reports/…) retired — the journey
+          cockpit's tabs are the navigation now. QUICKLINKS data is kept (journeys.ts
+          derives the cross-cutting journeys from it); it's just no longer rendered here. */}
       <div className="clock mono">{clock}</div>
       <Link className="head-new" to="/new" title="Start a new transaction">+ New</Link>
       <Link className="kbd-hint" to="/atlas">Atlas — search anything <kbd>⌘K</kbd></Link>

@@ -38,6 +38,28 @@ const LedgerPage            = React.lazy(() => import('./meridian/LedgerPage'));
 const DealDeskPage          = React.lazy(() => import('./meridian/DealDeskPage'));
 const MeridianSurfacePage   = React.lazy(() => import('./meridian/MeridianSurfacePage'));
 const JourneyCockpit        = React.lazy(() => import('./meridian/JourneyCockpit'));
+
+// The cockpit is the post-login home; if it throws at runtime, show a graceful
+// fallback with an escape to the (still-live) classic Horizon board rather than
+// blanking the app for everyone.
+class CockpitBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() {
+    if (this.state.failed) {
+      return (
+        <div className="mer mer-error" role="alert" style={{ padding: 32 }}>
+          <p>Your workspace hit an error loading.</p>
+          <div className="mer-error-acts">
+            <button type="button" className="btn ghost" onClick={() => location.reload()}>Reload</button>
+            <Link to="/horizon" className="btn pri">Open the classic board</Link>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 const CommandPalette        = React.lazy(() => import('./meridian/CommandPalette'));
 const KycSubmission         = React.lazy(() => import('./components/onboarding/KycSubmission').then(m => ({ default: m.KycSubmission })));
 
@@ -596,7 +618,7 @@ function AppRoutes() {
           role-specific board. Cockpit kept as a soft redirect so existing
           bookmarks keep working — but the Launchpad nav now points to
           /launch. */}
-      <Route path="/cockpit" element={<ProtectedRoute><JourneyCockpit /></ProtectedRoute>} />
+      <Route path="/cockpit" element={<ProtectedRoute><CockpitBoundary><JourneyCockpit /></CockpitBoundary></ProtectedRoute>} />
       <Route path="/feed" element={<ProtectedRoute><AppShellLayout><ActivityFeedShell /></AppShellLayout></ProtectedRoute>} />
       <Route path="/launch" element={<ProtectedRoute><LaunchRedirect /></ProtectedRoute>} />
       {/* Meridian Horizon board — supplies its own chrome, so no Layout/AppShell wrapper. */}
