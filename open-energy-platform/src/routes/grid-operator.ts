@@ -806,7 +806,15 @@ gridOps.get('/ancillary-events', async (c) => {
 // L5 — Tamper-evident audit, NRS-shape dispatch register, Eskom recon.
 // ════════════════════════════════════════════════════════════════════════
 
+// Full-chain grid audit + export packs are officer-only (admin/support/
+// regulator), matching the officer-gated POST /audit/export and the actor_id
+// scoping in GET /audit/events.
+const gridAuditOfficer = (role: string): boolean =>
+  role === 'admin' || role === 'support' || role === 'regulator';
+
 gridOps.get('/audit/head', async (c) => {
+  const user = getCurrentUser(c);
+  if (!gridAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const head = await getChainHead(c.env, 'grid');
   return c.json({ success: true, data: head });
 });
@@ -920,6 +928,8 @@ gridOps.post('/audit/export', async (c) => {
 });
 
 gridOps.get('/audit/exports', async (c) => {
+  const user = getCurrentUser(c);
+  if (!gridAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const rs = await c.env.DB.prepare(
     `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
             chain_head_hash, generated_by, generated_at
@@ -927,8 +937,11 @@ gridOps.get('/audit/exports', async (c) => {
       ORDER BY generated_at DESC LIMIT 50`,
   ).all();
   return c.json({ success: true, data: rs.results || [] });
+});
 
 gridOps.get('/audit/exports/:id/manifest', async (c) => {
+  const user = getCurrentUser(c);
+  if (!gridAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT manifest_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'grid'`,
@@ -943,6 +956,8 @@ gridOps.get('/audit/exports/:id/manifest', async (c) => {
 });
 
 gridOps.get('/audit/exports/:id/csv', async (c) => {
+  const user = getCurrentUser(c);
+  if (!gridAuditOfficer(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT csv_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'grid'`,
@@ -956,7 +971,6 @@ gridOps.get('/audit/exports/:id/csv', async (c) => {
       'Content-Disposition': `attachment; filename="${id}.csv"`,
     },
   });
-});
 });
 
 // POST /grid-operator/audit/recon — Eskom System Operator dispatch recon.
@@ -1067,6 +1081,11 @@ gridOps.post('/audit/recon', async (c) => {
 });
 
 gridOps.get('/audit/recon', async (c) => {
+  const user = getCurrentUser(c);
+  // Recon reads match recon-write (admin/regulator/grid_operator) + support.
+  if (!['admin', 'regulator', 'support', 'grid_operator'].includes(user.role)) {
+    return c.json({ success: false, error: 'Not authorised' }, 403);
+  }
   const rs = await c.env.DB.prepare(
     `SELECT id, source, row_count, matched_count, break_count, status,
             started_at, finished_at

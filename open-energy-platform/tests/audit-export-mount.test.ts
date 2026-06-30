@@ -14,6 +14,9 @@ import adminPlatform from '../src/routes/admin-platform';
 import trading from '../src/routes/trading';
 import settlement from '../src/routes/settlement';
 import funder from '../src/routes/funder';
+import gridOperator from '../src/routes/grid-operator';
+import carbonRegistry from '../src/routes/carbon-registry';
+import regulatorSuite from '../src/routes/regulator-suite';
 
 function has(app: Hono<any>, method: string, path: string): boolean {
   const rs = (app as unknown as { routes: Array<{ method: string; path: string }> }).routes;
@@ -25,6 +28,9 @@ const MODULES: Array<[string, Hono<any>]> = [
   ['trading', trading],
   ['settlement', settlement],
   ['funder', funder],
+  ['grid-operator', gridOperator],
+  ['carbon-registry', carbonRegistry],
+  ['regulator-suite', regulatorSuite],
 ];
 
 const ROUTES = [
