@@ -20,6 +20,11 @@ pa.use('*', authMiddleware);
 function requireAdmin(role: string): boolean {
   return role === 'admin';
 }
+// Read access to the admin audit chain (head / events / export packs) —
+// oversight roles only, matching the GET /audit/events gate.
+function auditReadRole(role: string): boolean {
+  return role === 'admin' || role === 'support' || role === 'regulator';
+}
 function genId(p: string) { return `${p}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`; }
 
 // ─── Tenants ───────────────────────────────────────────────────────────────
@@ -772,6 +777,8 @@ pa.get('/flag-overrides', async (c) => {
 // ════════════════════════════════════════════════════════════════════════
 
 pa.get('/audit/head', async (c) => {
+  const user = getCurrentUser(c);
+  if (!auditReadRole(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const head = await getChainHead(c.env, 'admin');
   return c.json({ success: true, data: head });
 });
@@ -894,6 +901,8 @@ pa.post('/audit/export', async (c) => {
 });
 
 pa.get('/audit/exports', async (c) => {
+  const user = getCurrentUser(c);
+  if (!auditReadRole(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const rs = await c.env.DB.prepare(
     `SELECT id, from_ts, to_ts, row_count, csv_r2_key, manifest_r2_key,
             chain_head_hash, generated_by, generated_at
@@ -901,8 +910,11 @@ pa.get('/audit/exports', async (c) => {
       ORDER BY generated_at DESC LIMIT 50`,
   ).all();
   return c.json({ success: true, data: rs.results || [] });
+});
 
 pa.get('/audit/exports/:id/manifest', async (c) => {
+  const user = getCurrentUser(c);
+  if (!auditReadRole(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT manifest_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'admin'`,
@@ -917,6 +929,8 @@ pa.get('/audit/exports/:id/manifest', async (c) => {
 });
 
 pa.get('/audit/exports/:id/csv', async (c) => {
+  const user = getCurrentUser(c);
+  if (!auditReadRole(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const row = await c.env.DB.prepare(
     `SELECT csv_r2_key FROM audit_exports WHERE id = ? AND entity_type = 'admin'`,
@@ -930,7 +944,6 @@ pa.get('/audit/exports/:id/csv', async (c) => {
       'Content-Disposition': `attachment; filename="${id}.csv"`,
     },
   });
-});
 });
 
 // POST /admin-platform/audit/recon — payment-processor / billing reconciliation.
