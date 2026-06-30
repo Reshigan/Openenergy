@@ -15,7 +15,7 @@
   --raised: #ffffff;
   --ink: #0e1726;
   --ink2: #3a4760;
-  --ink3: #6b7891;
+  --ink3: #5b6b85;  /* WCAG-AA muted text: 4.99:1 on paper / 5.4:1 on white. #6b7891 failed AA (4.11/4.45). */
   --line: #dde3ee;
   /* primary / brand — high-voltage indigo (CTAs, headers, eyebrows, accents) */
   --petrol: #1f3bb3;
@@ -2106,3 +2106,61 @@
 .mer .lane-hide:hover { color:var(--oxide-deep); }
 .mer .lane-show-hidden { margin:12px 0 0 12px; background:transparent; border:1px dashed var(--line); border-radius:8px; padding:5px 12px; font-size:11.5px; color:var(--ink3); cursor:pointer; }
 .mer .lane-show-hidden:hover { border-color:var(--petrol); color:var(--petrol-deep); }
+
+/* ─── Journey cockpit (the single journey-shaped workspace) ──────────────────── */
+.mer.jc { display:flex; flex-direction:column; min-height:100dvh; }
+.mer .jc-tabs { display:flex; gap:4px; flex-wrap:wrap; padding:10px 24px; background:var(--raised); border-bottom:1px solid var(--line); }
+.mer .jc-tab { display:inline-flex; align-items:center; gap:7px; position:relative; background:transparent; border:none; cursor:pointer;
+  font-family:'Archivo',sans-serif; font-weight:600; font-size:13px; color:var(--ink2); padding:8px 13px; border-radius:9px; }
+.mer .jc-tab:hover { background:var(--petrol-tint); color:var(--petrol-deep); }
+.mer .jc-tab.on { background:var(--petrol); color:#fff; }
+.mer .jc-tab:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
+.mer .jc-alert { width:7px; height:7px; border-radius:50%; background:var(--oxide); position:absolute; top:5px; right:6px; }
+.mer .jc-stage { flex:1; padding:24px 28px 48px; max-width:1000px; width:100%; }
+.mer .jc-head h1 { font-size:23px; margin:0; }
+.mer .jc-sub { color:var(--ink3); font-size:14px; margin:5px 0 18px; }
+.mer .jc-starts { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 18px; }
+.mer .jc-start { display:inline-flex; align-items:center; gap:6px; background:var(--petrol); color:#fff; border:none; border-radius:9px;
+  font-family:'Archivo',sans-serif; font-weight:600; font-size:12.5px; padding:8px 13px; cursor:pointer; text-decoration:none; }
+.mer .jc-start.ghost { background:var(--raised); color:var(--ink2); border:1px solid var(--line); }
+.mer .jc-start.ghost:hover { border-color:var(--petrol); color:var(--petrol-deep); }
+.mer .jc-charge { margin-left:4px; color:var(--copper-deep); font-size:11px; }
+.mer .jc-req { margin-left:5px; font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--oxide-deep); background:var(--oxide-tint); padding:1px 6px; border-radius:5px; }
+.mer .jc-items { display:flex; flex-direction:column; gap:9px; }
+.mer .jc-item { background:var(--raised); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+.mer .jc-item.crit { border-left:3px solid var(--oxide); }
+.mer .jc-item-row { width:100%; display:flex; align-items:center; gap:11px; padding:13px 15px; background:transparent; border:none; cursor:pointer; text-align:left; }
+.mer .jc-chev { color:var(--ink3); transition:transform 120ms var(--ease); flex:0 0 auto; }
+.mer .jc-chev.open { transform:rotate(90deg); }
+.mer .jc-tag { font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--petrol-deep); background:var(--petrol-tint); padding:2px 7px; border-radius:5px; }
+.mer .jc-item-ttl { font-family:'Archivo',sans-serif; font-weight:600; font-size:14.5px; flex:1; }
+.mer .jc-zar { font-size:13px; font-weight:600; }
+.mer .jc-pill { font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 8px; border-radius:999px; white-space:nowrap; }
+.mer .jc-detail { padding:13px 16px 16px 38px; border-top:1px solid var(--line); background:#fbfcfe; }
+.mer .jc-detail-load { color:var(--ink3); font-size:12px; }
+.mer .jc-track { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:12px; }
+.mer .jc-step { font-size:11px; padding:3px 9px; border-radius:999px; background:var(--line); color:var(--ink2); }
+.mer .jc-step.done { background:var(--moss-tint); color:var(--moss-deep); }
+.mer .jc-step.now { background:var(--petrol); color:#fff; }
+.mer .jc-acts { display:flex; flex-wrap:wrap; gap:8px; }
+.mer .jc-tools { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; padding-top:16px; border-top:1px solid var(--line); }
+.mer .jc-tool { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink2); text-decoration:none; border:1px solid var(--line); border-radius:8px; padding:7px 12px; background:var(--raised); }
+.mer .jc-tool:hover { border-color:var(--petrol); color:var(--petrol-deep); }
+.mer .jc-empty { color:var(--ink3); font-size:13.5px; padding:18px; border:1px dashed var(--line); border-radius:12px; text-align:center; }
+
+/* ─── Journey crafting (admin:journeys) ──────────────────────────────────────── */
+.mer.ja { padding:0 0 48px; }
+.mer .ja-head { padding:22px 28px 16px; border-bottom:1px solid var(--line); }
+.mer .ja-head h1 { font-size:22px; margin:0; }
+.mer .ja-head p { color:var(--ink3); font-size:13.5px; margin:5px 0 14px; max-width:70ch; }
+.mer .ja-roles { display:flex; flex-wrap:wrap; gap:6px; }
+.mer .ja-body { padding:18px 28px; max-width:920px; }
+.mer .ja-journey { margin-bottom:26px; }
+.mer .ja-journey h2 { display:flex; align-items:center; gap:8px; font-family:'Archivo',sans-serif; font-weight:700; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--petrol-deep); margin:0 0 8px; }
+.mer .ja-table { width:100%; border-collapse:collapse; font-size:13.5px; }
+.mer .ja-table th { text-align:left; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink3); font-weight:700; padding:6px 10px; border-bottom:1px solid var(--line); }
+.mer .ja-table td { padding:8px 10px; border-bottom:1px solid var(--line2, #eef1f7); vertical-align:middle; }
+.mer .ja-kind { margin-left:8px; font-size:9.5px; color:var(--ink3); border:1px solid var(--line); border-radius:5px; padding:1px 6px; }
+.mer .ja-table select { font:inherit; font-size:12.5px; padding:5px 8px; border:1px solid var(--line); border-radius:7px; background:var(--raised); color:var(--ink); }
+.mer .ja-charge { width:110px; font:inherit; font-size:12.5px; padding:5px 8px; border:1px solid var(--line); border-radius:7px; background:var(--raised); color:var(--ink); }
+.mer .ja-saved td { background:var(--moss-tint); transition:background .4s; }

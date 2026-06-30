@@ -118,7 +118,7 @@ function TakeOnChoice({ data, onChange, role }: { data: Record<string, unknown>;
              : 'border-[#dde3ee] hover:border-[#c4cedb]'}`}
       >
         <div className="text-[13px] font-semibold text-[#0e1726]">{label}</div>
-        <div className="mt-1 text-[12px] text-[#6b7891] leading-snug">{desc}</div>
+        <div className="mt-1 text-[12px] text-[#5b6b85] leading-snug">{desc}</div>
       </button>
     );
   };
@@ -150,8 +150,8 @@ export function WelcomeStep({ data, onChange, role = 'admin', userName = '' }: S
         <h2 className="text-[22px] font-semibold text-[#0e1726] leading-snug">
           Welcome to Meridian, {firstName}
         </h2>
-        <p className="mt-3 text-[14px] text-[#6b7891] leading-relaxed max-w-sm mx-auto">{desc}</p>
-        <p className="mt-4 text-[12px] text-[#6b7891] font-medium uppercase tracking-wider">
+        <p className="mt-3 text-[14px] text-[#5b6b85] leading-relaxed max-w-sm mx-auto">{desc}</p>
+        <p className="mt-4 text-[12px] text-[#5b6b85] font-medium uppercase tracking-wider">
           This will take about 2 minutes
         </p>
       </div>
@@ -314,7 +314,7 @@ function DataSourceForm({
           </Field>
         </div>
         <button type="button" onClick={onRemove}
-          className="mt-6 text-[#6b7891] hover:text-[#dc2626] text-[11px] flex-none">✕</button>
+          className="mt-6 text-[#5b6b85] hover:text-[#dc2626] text-[11px] flex-none">✕</button>
       </div>
 
       {isTcp && (
@@ -374,7 +374,7 @@ function DataSourceForm({
       )}
 
       {entry.source_type === 'push_ingest' && (
-        <p className="text-[12px] text-[#6b7891] bg-white rounded border border-[#dde3ee] px-3 py-2">
+        <p className="text-[12px] text-[#5b6b85] bg-white rounded border border-[#dde3ee] px-3 py-2">
           Your device will POST readings to <code className="font-mono">/api/esums-ingest/:site_key</code>.
           An ingest key is generated automatically for your site.
         </p>
@@ -383,7 +383,7 @@ function DataSourceForm({
       {entry.source_type && (
         <div className="flex items-center gap-1.5 mt-1">
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: accentColor }} />
-          <span className="text-[11px] text-[#6b7891]">
+          <span className="text-[11px] text-[#5b6b85]">
             {isTcp ? 'Polling via edge agent — TCP devices require on-site connectivity'
               : isMqtt ? 'Edge agent subscribes to broker — requires LAN access'
               : isRest ? 'Cloud-polled — URL must be publicly reachable'
@@ -409,7 +409,7 @@ export function EsumsDataSourcesStep({ data, onChange, accentColor = '#16a34a' }
     <div className="space-y-4">
       {sources.length === 0 && (
         <div className="rounded-lg border border-dashed border-[#dde3ee] bg-[#f9fafb] p-6 text-center">
-          <div className="text-[13px] text-[#6b7891] mb-1">No data sources added yet</div>
+          <div className="text-[13px] text-[#5b6b85] mb-1">No data sources added yet</div>
           <div className="text-[11px] text-[#9ca3af]">Add your inverters, meters, MQTT brokers or REST APIs</div>
         </div>
       )}
@@ -428,7 +428,7 @@ export function EsumsDataSourcesStep({ data, onChange, accentColor = '#16a34a' }
         type="button"
         onClick={addEntry}
         className="w-full h-9 rounded border border-dashed border-[#dde3ee] text-[12px] font-medium hover:border-[oklch(0.46_0.16_55)] hover:text-[oklch(0.46_0.16_55)] transition-colors"
-        style={{ color: '#6b7891' }}
+        style={{ color: '#5b6b85' }}
       >
         + Add data source
       </button>
@@ -462,7 +462,7 @@ export function EsumsAlertsStep({ data, onChange }: StepProps) {
           value={(data.alert_threshold_pct as number) ?? 90}
           onChange={(e) => onChange('alert_threshold_pct', Number(e.target.value))}
         />
-        <div className="flex justify-between text-[11px] text-[#6b7891] mt-1"><span>80%</span><span>100%</span></div>
+        <div className="flex justify-between text-[11px] text-[#5b6b85] mt-1"><span>80%</span><span>100%</span></div>
       </Field>
       <div>
         <p className={LABEL_CLS}>Notify on</p>
@@ -720,7 +720,7 @@ export function OfftakerPpaPrefsStep({ data, onChange }: StepProps) {
           value={(data.green_commitment_pct as number) ?? 0}
           onChange={(e) => onChange('green_commitment_pct', Number(e.target.value))}
         />
-        <div className="flex justify-between text-[11px] text-[#6b7891] mt-1"><span>0%</span><span>100%</span></div>
+        <div className="flex justify-between text-[11px] text-[#5b6b85] mt-1"><span>0%</span><span>100%</span></div>
       </Field>
       <Field label={`Required availability: ${data.required_availability_pct ?? 95}%`}>
         <input
@@ -729,7 +729,7 @@ export function OfftakerPpaPrefsStep({ data, onChange }: StepProps) {
           value={(data.required_availability_pct as number) ?? 95}
           onChange={(e) => onChange('required_availability_pct', Number(e.target.value))}
         />
-        <div className="flex justify-between text-[11px] text-[#6b7891] mt-1"><span>80%</span><span>100%</span></div>
+        <div className="flex justify-between text-[11px] text-[#5b6b85] mt-1"><span>80%</span><span>100%</span></div>
       </Field>
     </div>
   );

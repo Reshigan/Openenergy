@@ -7,21 +7,23 @@ import { LogoMark } from '../Logo';
 // ─── Design tokens — matched to the in-app Meridian palette (meridian.css):
 //     warm paper, petrol primary accent, amber secondary. ────────────────────
 const T = {
-  // Dark brand panel — deep petrol, the app's primary hue
-  brandBg:     'oklch(0.18 0.030 205)',
-  brandBg2:    'oklch(0.22 0.040 205)',
-  brandText:   'oklch(0.98 0.004 85)',
-  brandSubtle: 'oklch(0.72 0.022 200)',
-  brandAccent: 'oklch(0.74 0.100 200)',   // petrol, lifted for dark bg
-  brandAmber:  'oklch(0.74 0.130 70)',     // amber, the app's secondary
-  // Form panel — warm paper, ink text
-  panelBg:  'oklch(0.985 0.004 85)',
-  text1:    'oklch(0.21 0.012 85)',
-  text2:    'oklch(0.42 0.012 85)',
-  text3:    'oklch(0.50 0.012 85)',   /* clears WCAG AA 4.5:1 on the paper panel (used at 9.5–11px) */
-  border:   'oklch(0.885 0.008 85)',
-  accent:   'oklch(0.30 0.060 205)',   // petrol-deep — links + CTA, never amber (matches app rule)
-  inputBg:  'oklch(0.965 0.006 85)',
+  // Substation identity — deep INDIGO brand panel (hue ~272), cool neutrals.
+  // Was teal (hue 205); realigned to the system brand (meridian --petrol = #1f3bb3)
+  // so the first screen matches the desk. Copper secondary; oxide error kept.
+  brandBg:     'oklch(0.19 0.055 272)',
+  brandBg2:    'oklch(0.24 0.070 272)',
+  brandText:   'oklch(0.98 0.004 255)',
+  brandSubtle: 'oklch(0.74 0.030 262)',
+  brandAccent: 'oklch(0.74 0.110 272)',   // indigo, lifted for the dark bg
+  brandAmber:  'oklch(0.70 0.110 55)',     // copper, the app's secondary
+  // Form panel — cool paper, ink text
+  panelBg:  'oklch(0.985 0.004 255)',
+  text1:    'oklch(0.21 0.012 255)',
+  text2:    'oklch(0.42 0.012 255)',
+  text3:    'oklch(0.50 0.012 255)',   /* clears WCAG AA 4.5:1 on the paper panel (used at 9.5–11px) */
+  border:   'oklch(0.885 0.008 255)',
+  accent:   'oklch(0.42 0.170 272)',   // indigo — links + CTA (= #1f3bb3, 8.99:1 white), never copper
+  inputBg:  'oklch(0.965 0.006 255)',
   errorBg:  'oklch(0.95 0.020 30)',
   errorFg:  'oklch(0.42 0.170 30)',
   errorBd:  'oklch(0.75 0.120 30)',

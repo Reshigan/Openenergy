@@ -23,6 +23,7 @@ import React from 'react';
 // Standalone surface bodies receive only the signed-in role. Adapters below translate
 // `role` into whatever props the underlying tab component actually needs.
 export type SurfaceComponent = React.ComponentType<{ role: string }>;
+const JourneyAdmin = React.lazy(() => import('./JourneyAdmin'));
 
 // ── Adapters ───────────────────────────────────────────────────────────────
 // The connector + ML tab components were authored as workstation tab bodies that take
@@ -718,6 +719,7 @@ export const SURFACE_REGISTRY: Record<
   'admin:tenant_events': AdminTenant,
   'admin:billing': AdminBilling,
   'admin:flags': AdminFlags,
+  'admin:journeys': JourneyAdmin,
   'admin:market_halt': AdminMarketHalt,
   'admin:pii_access': AdminPiiAccess,
   'admin:monitoring': AdminCascadeDlq,
