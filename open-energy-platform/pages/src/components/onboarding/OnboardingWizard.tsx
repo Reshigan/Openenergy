@@ -33,19 +33,22 @@ import {
 } from './steps';
 import type { StepProps } from './steps';
 
-// ─── Role accent colors ──────────────────────────────────────────────────────
-
+// ─── Role accent colour ───────────────────────────────────────────────────────
+// Unified to the Substation brand indigo (= meridian.css --petrol) so onboarding
+// reads as the same product as the desk it leads into. Kept as a per-role map so
+// a future controlled per-role tint can slot in without touching the call-sites.
+const SUBSTATION_INDIGO = '#1f3bb3';
 const ROLE_COLORS: Record<string, string> = {
-  esums_owner:   '#16a34a',
-  ipp_developer: 'oklch(0.46 0.16 55)',
-  trader:        '#7c3aed',
-  lender:        '#b45309',
-  offtaker:      '#0369a1',
-  carbon_fund:   '#065f46',
-  grid_operator: '#9f1239',
-  regulator:     '#374151',
-  support:       '#1d4ed8',
-  admin:         '#111827',
+  esums_owner:   SUBSTATION_INDIGO,
+  ipp_developer: SUBSTATION_INDIGO,
+  trader:        SUBSTATION_INDIGO,
+  lender:        SUBSTATION_INDIGO,
+  offtaker:      SUBSTATION_INDIGO,
+  carbon_fund:   SUBSTATION_INDIGO,
+  grid_operator: SUBSTATION_INDIGO,
+  regulator:     SUBSTATION_INDIGO,
+  support:       SUBSTATION_INDIGO,
+  admin:         SUBSTATION_INDIGO,
 };
 
 // ─── Step sequences ──────────────────────────────────────────────────────────
@@ -145,7 +148,7 @@ function ProgressDots({ steps, currentStep, accentColor }: { steps: string[]; cu
             style={{
               width: active ? 24 : 8,
               height: 8,
-              backgroundColor: active || done ? accentColor : '#dde4ec',
+              backgroundColor: active || done ? accentColor : '#dde3ee',
               opacity: done ? 0.5 : 1,
             }}
           />
@@ -281,8 +284,8 @@ export function OnboardingWizard() {
   // ── Render guards ──────────────────────────────────────────────────────────
   if (initializing) {
     return (
-      <div className="min-h-screen bg-[#f5f7fa] flex items-center justify-center">
-        <div className="text-[#6b7685] text-sm">Loading…</div>
+      <div className="min-h-screen bg-[#f4f6fa] flex items-center justify-center">
+        <div className="text-[#6b7891] text-sm">Loading…</div>
       </div>
     );
   }
@@ -304,7 +307,7 @@ export function OnboardingWizard() {
   const currentContentIdx = contentSteps.indexOf(step);
 
   return (
-    <div className="min-h-screen bg-[#f5f7fa] flex flex-col">
+    <div className="min-h-screen bg-[#f4f6fa] flex flex-col">
       {/* Top bar — subtle */}
       <div className="h-1 w-full" style={{ backgroundColor: accentColor, opacity: 0.15 }} />
 
@@ -317,7 +320,7 @@ export function OnboardingWizard() {
           <ProgressDots steps={steps} currentStep={step} accentColor={accentColor} />
 
           {/* Card */}
-          <div className="bg-white rounded-xl border border-[#dde4ec] shadow-sm overflow-hidden relative">
+          <div className="bg-white rounded-xl border border-[#dde3ee] shadow-sm overflow-hidden relative">
             {/* Accent top border */}
             <div className="h-0.5 w-full" style={{ backgroundColor: accentColor }} />
 
@@ -325,14 +328,14 @@ export function OnboardingWizard() {
               {/* Step header */}
               {!isWelcome && (
                 <div className="mb-6">
-                  <div className="text-[11px] font-medium text-[#6b7685] uppercase tracking-wider mb-1">
+                  <div className="text-[11px] font-medium text-[#6b7891] uppercase tracking-wider mb-1">
                     Step {currentContentIdx + 1} of {contentSteps.length}
                   </div>
-                  <h2 className="text-[20px] font-semibold text-[#0f1c2e] leading-snug">
+                  <h2 className="text-[20px] font-semibold text-[#0e1726] leading-snug">
                     {stepMeta?.title || step}
                   </h2>
                   {stepMeta?.subtitle && (
-                    <p className="mt-1 text-[13px] text-[#6b7685]">{stepMeta.subtitle}</p>
+                    <p className="mt-1 text-[13px] text-[#6b7891]">{stepMeta.subtitle}</p>
                   )}
                 </div>
               )}
@@ -362,7 +365,7 @@ export function OnboardingWizard() {
             {/* Left — skip */}
             <button
               type="button"
-              className="text-[12px] text-[#6b7685] hover:text-[#3a4658] underline underline-offset-2 transition-colors"
+              className="text-[12px] text-[#6b7891] hover:text-[#3a4760] underline underline-offset-2 transition-colors"
               onClick={() => setConfirmSkip(true)}
               disabled={loading}
             >
@@ -374,7 +377,7 @@ export function OnboardingWizard() {
               {!isFirst && (
                 <button
                   type="button"
-                  className="h-9 px-4 rounded border border-[#dde4ec] text-[13px] text-[#3a4658] bg-white hover:bg-[#f5f7fa] transition-colors"
+                  className="h-9 px-4 rounded border border-[#dde3ee] text-[13px] text-[#3a4760] bg-white hover:bg-[#f4f6fa] transition-colors"
                   onClick={handleBack}
                   disabled={loading}
                 >
@@ -408,14 +411,14 @@ export function OnboardingWizard() {
             className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-[16px] font-semibold text-[#0f1c2e]">Skip setup?</h3>
-            <p className="mt-2 text-[13px] text-[#6b7685]">
+            <h3 className="text-[16px] font-semibold text-[#0e1726]">Skip setup?</h3>
+            <p className="mt-2 text-[13px] text-[#6b7891]">
               You can finish it later from Horizon, but anything entered here will not be saved.
             </p>
             <div className="mt-5 flex items-center justify-end gap-3">
               <button
                 type="button"
-                className="h-9 px-4 rounded border border-[#dde4ec] text-[13px] text-[#3a4658] bg-white hover:bg-[#f5f7fa] transition-colors"
+                className="h-9 px-4 rounded border border-[#dde3ee] text-[13px] text-[#3a4760] bg-white hover:bg-[#f4f6fa] transition-colors"
                 onClick={() => setConfirmSkip(false)}
                 autoFocus
               >

@@ -58,23 +58,23 @@ export function OnboardingTour({ scope, steps }: Props) {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-sm widget-card shadow-lg border border-[#dde4ec] bg-white p-4">
+    <div className="fixed bottom-4 right-4 z-50 max-w-sm widget-card shadow-lg border border-[#dde3ee] bg-white p-4">
       <div className="flex items-start gap-2">
-        <div className="flex-none w-7 h-7 rounded-full bg-[#eaf3fb] flex items-center justify-center">
+        <div className="flex-none w-7 h-7 rounded-full bg-[#e8ecfb] flex items-center justify-center">
           <Sparkles size={14} style={{ color: 'oklch(0.46 0.16 55)' }}/>
         </div>
         <div className="flex-1">
-          <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">Quick tour · {cursor + 1} of {remaining.length}</div>
-          <div className="font-semibold text-[14px] text-[#0f1c2e]">{step.title}</div>
-          <div className="text-[12px] text-[#3a4658] mt-1 leading-relaxed">{step.body}</div>
+          <div className="text-[11px] uppercase tracking-wider text-[#6b7891]">Quick tour · {cursor + 1} of {remaining.length}</div>
+          <div className="font-semibold text-[14px] text-[#0e1726]">{step.title}</div>
+          <div className="text-[12px] text-[#3a4760] mt-1 leading-relaxed">{step.body}</div>
         </div>
-        <button type="button" onClick={() => setSkip(true)} aria-label="Skip tour" className="text-[#6b7685] hover:text-[#0f1c2e] flex-none">
+        <button type="button" onClick={() => setSkip(true)} aria-label="Skip tour" className="text-[#6b7891] hover:text-[#0e1726] flex-none">
           <X size={14}/>
         </button>
       </div>
       <div className="flex justify-end mt-3 gap-2">
-        <button type="button" onClick={() => setSkip(true)} className="h-8 px-3 text-[11px] text-[#6b7685] hover:text-[#0f1c2e]">Skip</button>
-        <button type="button" onClick={() => void advance()} className="h-8 px-3 rounded bg-[#c2873a] text-white text-[11px] font-semibold inline-flex items-center gap-1">
+        <button type="button" onClick={() => setSkip(true)} className="h-8 px-3 text-[11px] text-[#6b7891] hover:text-[#0e1726]">Skip</button>
+        <button type="button" onClick={() => void advance()} className="h-8 px-3 rounded bg-[#1f3bb3] text-white text-[11px] font-semibold inline-flex items-center gap-1">
           {step.cta || 'Got it'} <ArrowRight size={12}/>
         </button>
       </div>

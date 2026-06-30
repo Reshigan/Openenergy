@@ -14,12 +14,12 @@ export interface StepProps {
 
 // ─── Shared primitives ──────────────────────────────────────────────────────
 
-const LABEL_CLS = 'block text-[12px] font-medium text-[#3a4658] mb-1';
-const INPUT_CLS = 'w-full h-9 px-3 rounded border border-[#dde4ec] text-[13px] text-[#0f1c2e] bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.46_0.16_55)] focus-visible:border-[oklch(0.46_0.16_55)]';
+const LABEL_CLS = 'block text-[12px] font-medium text-[#3a4760] mb-1';
+const INPUT_CLS = 'w-full h-9 px-3 rounded border border-[#dde3ee] text-[13px] text-[#0e1726] bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.46_0.16_55)] focus-visible:border-[oklch(0.46_0.16_55)]';
 const SELECT_CLS = INPUT_CLS;
 const FIELD_CLS = 'space-y-1';
 const GRID2 = 'grid grid-cols-2 gap-x-4 gap-y-3';
-const CHECK_ROW_CLS = 'flex items-center gap-2 text-[13px] text-[#3a4658] cursor-pointer';
+const CHECK_ROW_CLS = 'flex items-center gap-2 text-[13px] text-[#3a4760] cursor-pointer';
 
 const PROVINCES = ['GP', 'WC', 'KZN', 'EC', 'LP', 'FS', 'NC', 'NW', 'MP'] as const;
 const PROVINCE_LABELS: Record<string, string> = {
@@ -51,7 +51,7 @@ function CheckRow({
       <input
         id={id}
         type="checkbox"
-        className="h-3.5 w-3.5 rounded border-[#dde4ec] accent-[oklch(0.46_0.16_55)]"
+        className="h-3.5 w-3.5 rounded border-[#dde3ee] accent-[oklch(0.46_0.16_55)]"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />
@@ -115,16 +115,16 @@ function TakeOnChoice({ data, onChange, role }: { data: Record<string, unknown>;
         aria-pressed={on}
         className={`flex-1 text-left rounded-lg border p-3 transition ${
           on ? 'border-[oklch(0.46_0.16_55)] bg-[oklch(0.46_0.16_55)]/[0.04] ring-2 ring-[oklch(0.46_0.16_55)]/30'
-             : 'border-[#dde4ec] hover:border-[#c4cedb]'}`}
+             : 'border-[#dde3ee] hover:border-[#c4cedb]'}`}
       >
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">{label}</div>
-        <div className="mt-1 text-[12px] text-[#6b7685] leading-snug">{desc}</div>
+        <div className="text-[13px] font-semibold text-[#0e1726]">{label}</div>
+        <div className="mt-1 text-[12px] text-[#6b7891] leading-snug">{desc}</div>
       </button>
     );
   };
   return (
     <div className="relative mt-6 text-left">
-      <p className="text-[12px] font-medium text-[#3a4658] mb-2 text-center">How are you joining?</p>
+      <p className="text-[12px] font-medium text-[#3a4760] mb-2 text-center">How are you joining?</p>
       <div className="flex gap-3 max-w-md mx-auto">
         <Card value="new" label="Starting fresh" desc="Set up from scratch — no existing portfolio to import" />
         <Card value="historic" label={cfg.historicLabel} desc={cfg.historicDesc} />
@@ -147,11 +147,11 @@ export function WelcomeStep({ data, onChange, role = 'admin', userName = '' }: S
         }}
       />
       <div className="relative">
-        <h2 className="text-[22px] font-semibold text-[#0f1c2e] leading-snug">
+        <h2 className="text-[22px] font-semibold text-[#0e1726] leading-snug">
           Welcome to Meridian, {firstName}
         </h2>
-        <p className="mt-3 text-[14px] text-[#6b7685] leading-relaxed max-w-sm mx-auto">{desc}</p>
-        <p className="mt-4 text-[12px] text-[#6b7685] font-medium uppercase tracking-wider">
+        <p className="mt-3 text-[14px] text-[#6b7891] leading-relaxed max-w-sm mx-auto">{desc}</p>
+        <p className="mt-4 text-[12px] text-[#6b7891] font-medium uppercase tracking-wider">
           This will take about 2 minutes
         </p>
       </div>
@@ -296,7 +296,7 @@ function DataSourceForm({
   const isRest = entry.source_type === 'rest_api';
 
   return (
-    <div className="rounded-lg border border-[#dde4ec] bg-[#f9fafb] p-4 space-y-3">
+    <div className="rounded-lg border border-[#dde3ee] bg-[#f9fafb] p-4 space-y-3">
       <div className="flex items-start gap-2">
         <div className="flex-1 grid grid-cols-2 gap-3">
           <Field label="Label">
@@ -314,7 +314,7 @@ function DataSourceForm({
           </Field>
         </div>
         <button type="button" onClick={onRemove}
-          className="mt-6 text-[#6b7685] hover:text-[#dc2626] text-[11px] flex-none">✕</button>
+          className="mt-6 text-[#6b7891] hover:text-[#dc2626] text-[11px] flex-none">✕</button>
       </div>
 
       {isTcp && (
@@ -374,7 +374,7 @@ function DataSourceForm({
       )}
 
       {entry.source_type === 'push_ingest' && (
-        <p className="text-[12px] text-[#6b7685] bg-white rounded border border-[#dde4ec] px-3 py-2">
+        <p className="text-[12px] text-[#6b7891] bg-white rounded border border-[#dde3ee] px-3 py-2">
           Your device will POST readings to <code className="font-mono">/api/esums-ingest/:site_key</code>.
           An ingest key is generated automatically for your site.
         </p>
@@ -383,7 +383,7 @@ function DataSourceForm({
       {entry.source_type && (
         <div className="flex items-center gap-1.5 mt-1">
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: accentColor }} />
-          <span className="text-[11px] text-[#6b7685]">
+          <span className="text-[11px] text-[#6b7891]">
             {isTcp ? 'Polling via edge agent — TCP devices require on-site connectivity'
               : isMqtt ? 'Edge agent subscribes to broker — requires LAN access'
               : isRest ? 'Cloud-polled — URL must be publicly reachable'
@@ -408,8 +408,8 @@ export function EsumsDataSourcesStep({ data, onChange, accentColor = '#16a34a' }
   return (
     <div className="space-y-4">
       {sources.length === 0 && (
-        <div className="rounded-lg border border-dashed border-[#dde4ec] bg-[#f9fafb] p-6 text-center">
-          <div className="text-[13px] text-[#6b7685] mb-1">No data sources added yet</div>
+        <div className="rounded-lg border border-dashed border-[#dde3ee] bg-[#f9fafb] p-6 text-center">
+          <div className="text-[13px] text-[#6b7891] mb-1">No data sources added yet</div>
           <div className="text-[11px] text-[#9ca3af]">Add your inverters, meters, MQTT brokers or REST APIs</div>
         </div>
       )}
@@ -427,8 +427,8 @@ export function EsumsDataSourcesStep({ data, onChange, accentColor = '#16a34a' }
       <button
         type="button"
         onClick={addEntry}
-        className="w-full h-9 rounded border border-dashed border-[#dde4ec] text-[12px] font-medium hover:border-[oklch(0.46_0.16_55)] hover:text-[oklch(0.46_0.16_55)] transition-colors"
-        style={{ color: '#6b7685' }}
+        className="w-full h-9 rounded border border-dashed border-[#dde3ee] text-[12px] font-medium hover:border-[oklch(0.46_0.16_55)] hover:text-[oklch(0.46_0.16_55)] transition-colors"
+        style={{ color: '#6b7891' }}
       >
         + Add data source
       </button>
@@ -462,7 +462,7 @@ export function EsumsAlertsStep({ data, onChange }: StepProps) {
           value={(data.alert_threshold_pct as number) ?? 90}
           onChange={(e) => onChange('alert_threshold_pct', Number(e.target.value))}
         />
-        <div className="flex justify-between text-[11px] text-[#6b7685] mt-1"><span>80%</span><span>100%</span></div>
+        <div className="flex justify-between text-[11px] text-[#6b7891] mt-1"><span>80%</span><span>100%</span></div>
       </Field>
       <div>
         <p className={LABEL_CLS}>Notify on</p>
@@ -720,7 +720,7 @@ export function OfftakerPpaPrefsStep({ data, onChange }: StepProps) {
           value={(data.green_commitment_pct as number) ?? 0}
           onChange={(e) => onChange('green_commitment_pct', Number(e.target.value))}
         />
-        <div className="flex justify-between text-[11px] text-[#6b7685] mt-1"><span>0%</span><span>100%</span></div>
+        <div className="flex justify-between text-[11px] text-[#6b7891] mt-1"><span>0%</span><span>100%</span></div>
       </Field>
       <Field label={`Required availability: ${data.required_availability_pct ?? 95}%`}>
         <input
@@ -729,7 +729,7 @@ export function OfftakerPpaPrefsStep({ data, onChange }: StepProps) {
           value={(data.required_availability_pct as number) ?? 95}
           onChange={(e) => onChange('required_availability_pct', Number(e.target.value))}
         />
-        <div className="flex justify-between text-[11px] text-[#6b7685] mt-1"><span>80%</span><span>100%</span></div>
+        <div className="flex justify-between text-[11px] text-[#6b7891] mt-1"><span>80%</span><span>100%</span></div>
       </Field>
     </div>
   );
