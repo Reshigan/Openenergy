@@ -300,8 +300,20 @@ export default function JourneyCockpit() {
               if (!laneFeats.length) return null;
               return (
                 <div className="jc-lanes">
-                  {laneFeats.map(f => {
+                  {[...laneFeats]
+                    // Populated lanes first; empty ones sink and render compact.
+                    .sort((a, b) => jcases.filter(c => c.chain === b.chainKey).length - jcases.filter(c => c.chain === a.chainKey).length)
+                    .map(f => {
                     const mine = jcases.filter(c => c.chain === f.chainKey);
+                    // A lane with no live cases collapses to a single quiet row — the full
+                    // stage track is only worth its height when something is on it.
+                    if (mine.length === 0) {
+                      return (
+                        <div className="jc-lane jc-lane-0" key={f.key}>
+                          <b>{cleanLabel(f.label)}</b><span className="jc-lane-n mono">0 live</span>
+                        </div>
+                      );
+                    }
                     // Stages = the feature's declared states, unioned with any live status
                     // actually present, so no real case is ever invisible on the lane.
                     const base = [...(f.mockStates ?? [])];

@@ -149,10 +149,11 @@
 .mer .spacer { flex:1; }
 .mer .clock { font-size:13px; color:#9aa8c0; }
 .mer .kbd-hint {
-  display:flex; align-items:center; gap:8px; font-size:12.5px; color:#cdd6e6;
+  display:flex; align-items:center; gap:8px; font-family:inherit; font-size:12.5px; color:#cdd6e6;
   border:1px solid rgba(255,255,255,0.14); border-radius:6px; padding:7px 14px; background:rgba(255,255,255,0.04);
   cursor:pointer; transition:transform 140ms var(--ease), border-color 140ms;
 }
+.mer .kbd-hint:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
 .mer .kbd-hint:hover { border-color:var(--petrol); }
 .mer .kbd-hint:active { transform:scale(0.98); }
 .mer .kbd-hint kbd {
@@ -2145,6 +2146,10 @@
 .mer .jc-lane-h { display:flex; align-items:baseline; gap:10px; margin-bottom:13px; }
 .mer .jc-lane-h b { font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; letter-spacing:-.01em; }
 .mer .jc-lane-n { margin-left:auto; font-size:11px; color:var(--ink3); }
+/* Empty lane: one quiet row, no stage track (saves the height for lanes with work). */
+.mer .jc-lane-0 { display:flex; align-items:baseline; gap:10px; padding:9px 16px; }
+.mer .jc-lane-0 b { font-family:'Archivo',sans-serif; font-size:12.5px; font-weight:600; color:var(--ink2); }
+.mer .jc-lane-0 .jc-lane-n { color:var(--ink3); }
 .mer .jc-lstages { display:flex; align-items:flex-start; }
 .mer .jc-lstage { flex:1; position:relative; padding-top:24px; text-align:center; min-width:0; }
 .mer .jc-lstage::before { content:""; position:absolute; top:6px; left:0; width:100%; height:2px; background:var(--line); }
