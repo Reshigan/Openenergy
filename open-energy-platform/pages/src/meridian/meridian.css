@@ -2129,7 +2129,13 @@
 .mer .jc-items { display:flex; flex-direction:column; gap:9px; }
 .mer .jc-item { background:var(--raised); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
 .mer .jc-item.crit { border-left:3px solid var(--oxide); }
-.mer .jc-item-row { width:100%; display:flex; align-items:center; gap:11px; padding:13px 15px; background:transparent; border:none; cursor:pointer; text-align:left; }
+.mer .jc-item-row { width:100%; display:flex; align-items:center; gap:11px; padding:9px 13px 9px 6px; }
+.mer .jc-expand { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; flex:0 0 auto; background:transparent; border:none; border-radius:7px; cursor:pointer; }
+.mer .jc-expand:hover { background:var(--petrol-tint); }
+.mer .jc-expand:focus-visible { outline:2px solid var(--petrol); outline-offset:1px; }
+.mer .jc-item-main { flex:1; min-width:0; display:flex; align-items:center; gap:9px; background:transparent; border:none; cursor:pointer; text-align:left; padding:4px 0; }
+.mer .jc-item-main:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; border-radius:4px; }
+.mer .jc-inline-acts { display:inline-flex; gap:6px; flex:0 0 auto; }
 .mer .jc-chev { color:var(--ink3); transition:transform 120ms var(--ease); flex:0 0 auto; }
 .mer .jc-chev.open { transform:rotate(90deg); }
 .mer .jc-tag { font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--petrol-deep); background:var(--petrol-tint); padding:2px 7px; border-radius:5px; }
@@ -2138,6 +2144,7 @@
 .mer .jc-pill { font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 8px; border-radius:999px; white-space:nowrap; }
 .mer .jc-detail { padding:13px 16px 16px 38px; border-top:1px solid var(--line); background:#fbfcfe; }
 .mer .jc-detail-load { color:var(--ink3); font-size:12px; }
+.mer .jc-arr { color:var(--ink3); font-size:12px; margin:0 -1px; }
 .mer .jc-track { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:12px; }
 .mer .jc-step { font-size:11px; padding:3px 9px; border-radius:999px; background:var(--line); color:var(--ink2); }
 .mer .jc-step.done { background:var(--moss-tint); color:var(--moss-deep); }
@@ -2147,6 +2154,16 @@
 .mer .jc-tool { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink2); text-decoration:none; border:1px solid var(--line); border-radius:8px; padding:7px 12px; background:var(--raised); }
 .mer .jc-tool:hover { border-color:var(--petrol); color:var(--petrol-deep); }
 .mer .jc-empty { color:var(--ink3); font-size:13.5px; padding:18px; border:1px dashed var(--line); border-radius:12px; text-align:center; }
+.mer .jc-date { color:var(--ink3); font-size:11px; letter-spacing:.05em; text-transform:uppercase; margin-bottom:4px; }
+.mer .jc-ontrack { margin-top:26px; }
+.mer .jc-seclabel { font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink3); margin:0 0 10px; }
+.mer .jc-ht-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:9px; }
+.mer .jc-ht { display:flex; flex-direction:column; gap:4px; align-items:flex-start; text-align:left; background:var(--raised); border:1px solid var(--line); border-radius:11px; padding:12px 14px; cursor:pointer; }
+.mer .jc-ht:hover { border-color:var(--petrol); }
+.mer .jc-ht:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
+.mer .jc-ht-h { display:inline-flex; align-items:center; gap:8px; font-family:'Archivo',sans-serif; font-weight:600; font-size:13.5px; color:var(--ink); }
+.mer .jc-ht-h svg { color:var(--petrol); }
+.mer .jc-ht-m { font-size:11px; color:var(--moss-deep); }
 
 /* ─── Journey crafting (admin:journeys) ──────────────────────────────────────── */
 .mer.ja { padding:0 0 48px; }

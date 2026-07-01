@@ -18,6 +18,7 @@ import { fetchHorizon, fmtZar, type HorizonData, type MerCase } from './lib';
 import { statusLabel, STATUS_TONE_CLASS } from './ease/statusLabel';
 import { byAtRisk } from './ease/money';
 import { PrimaryAction } from './ease/PrimaryAction';
+import { EaseLoading, EaseError } from './ease/states';
 import { isTileReachable, tileTarget } from './reachability';
 import { SURFACE_REGISTRY } from './surfaces';
 import { cleanLabel } from './labels';
@@ -43,10 +44,12 @@ export default function JourneyCockpit() {
   const [openId, setOpenId] = React.useState<string | null>(null);
   const [detail, setDetail] = React.useState<ThreadLite | null>(null);
   const [actErr, setActErr] = React.useState<string | null>(null);
+  const [loadErr, setLoadErr] = React.useState(false);
 
   const reload = React.useCallback(() => {
     if (!role) return;
-    fetchHorizon(role).then(setData).catch(() => setData(null));
+    setLoadErr(false);
+    fetchHorizon(role).then(setData).catch(() => setLoadErr(true));
   }, [role]);
 
   React.useEffect(() => {
@@ -86,27 +89,53 @@ export default function JourneyCockpit() {
   if (!cfg) return <div className="mer mer-error" role="alert">Unknown role.</div>;
 
   const today = (data?.duty ?? []);
+  const now = new Date();
+  const niceDate = now.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' });
+  // Journeys that are live but calm — surfaced under Today as quiet reassurance.
+  const onTrack = data
+    ? visibleJourneys.filter(j => !j.route).map(j => {
+        const cs = casesForJourney(j.key);
+        return { key: j.key, label: j.label, icon: j.icon, live: cs.length, breached: cs.filter(c => c.bucket === 'breached').length };
+      }).filter(h => h.live > 0 && h.breached === 0)
+    : [];
 
-  // ── an item card with in-context expand ──
+  // ── an item card: glance (title/money/status + inline primary action) → tap.
+  // Expanding fetches the full state track + remaining actions (folds the Thread).
   const ItemCard = ({ c, tag }: { c: MerCase; tag?: string }) => {
     const open = openId === c.id;
     const sl = statusLabel(c.status);
+    const toggle = () => setOpenId(open ? null : c.id);
+    // The case already carries its ranked actions — surface the top one inline so
+    // the operator can act without opening the item (the glance→one-tap bar).
+    const inline = (c.actions ?? []).slice(0, 1);
     return (
       <div className={c.bucket === 'breached' ? 'jc-item crit' : 'jc-item'}>
-        <button type="button" className="jc-item-row" aria-expanded={open} onClick={() => setOpenId(open ? null : c.id)}>
-          <Icon name="chevron" size={13} className={open ? 'jc-chev open' : 'jc-chev'} />
-          {tag && <span className="jc-tag">{tag}</span>}
-          <span className="jc-item-ttl">{cleanLabel(c.title)}</span>
+        <div className="jc-item-row">
+          <button type="button" className="jc-expand" aria-expanded={open} aria-label={open ? 'Collapse' : 'Expand'} onClick={toggle}>
+            <Icon name="chevron" size={13} className={open ? 'jc-chev open' : 'jc-chev'} />
+          </button>
+          <button type="button" className="jc-item-main" onClick={toggle}>
+            {tag && <span className="jc-tag">{tag}</span>}
+            <span className="jc-item-ttl">{cleanLabel(c.title)}</span>
+          </button>
           {c.quantum_zar != null && <span className="jc-zar mono">{fmtZar(c.quantum_zar)}</span>}
           <span className={`jc-pill ${STATUS_TONE_CLASS[sl.tone]}`}>{sl.text}</span>
-        </button>
+          {inline.length > 0 && (
+            <span className="jc-inline-acts">
+              {inline.map(a => (
+                <PrimaryAction key={a.action} target={{ chain: c.chain, id: c.id, ref: c.ref }}
+                  action={a as any} onActed={async () => { reload(); }} onError={setActErr} />
+              ))}
+            </span>
+          )}
+        </div>
         {open && (
           <div className="jc-detail">
-            {!detail ? <div className="jc-detail-load mono">Loading…</div> : (
+            {!detail ? <div className="jc-detail-load"><span className="skel skel-line" style={{ width: '55%' }} /></div> : (
               <>
                 <div className="jc-track">
                   {detail.events.slice(-4).map((e, i) => (
-                    <span key={i} className="jc-step done">{cleanLabel(e.event_type ?? '')}</span>
+                    <React.Fragment key={i}><span className="jc-step done">{cleanLabel(e.event_type ?? '')}</span><span className="jc-arr">›</span></React.Fragment>
                   ))}
                   <span className="jc-step now">{statusLabel(detail.case.status).text}</span>
                 </div>
@@ -147,16 +176,37 @@ export default function JourneyCockpit() {
       {actErr && <div className="act-error mer" role="alert"><span>{actErr}</span><button type="button" className="btn ghost" onClick={() => setActErr(null)}>Dismiss</button></div>}
 
       <main className="jc-stage">
-        {active === 'today' ? (
+        {loadErr ? (
+          <EaseError message="Couldn’t load your workspace." onRetry={reload} />
+        ) : !data ? (
+          <EaseLoading rows={4} />
+        ) : active === 'today' ? (
           <>
             <header className="jc-head">
-              <h1 className="hd-serif">{today.length ? `${today.length} ${today.length === 1 ? 'thing needs' : 'things need'} you` : 'Nothing needs you right now'}</h1>
-              <p className="jc-sub">Priority across every journey — ranked by what costs the most while it waits.</p>
+              <div className="jc-date mono">{niceDate}</div>
+              <h1 className="hd-serif">{today.length ? `${today.length} ${today.length === 1 ? 'thing needs' : 'things need'} you` : 'You’re all caught up'}</h1>
+              <p className="jc-sub">{today.length
+                ? 'Priority across every journey — ranked by what costs the most while it waits.'
+                : 'Nothing is overdue or due right now. Pick a journey to work ahead.'}</p>
             </header>
-            <div className="jc-items">
-              {today.map(c => <ItemCard key={c.id} c={c} tag={journeyTagFor(c, journeys, domByKey)} />)}
-              {today.length === 0 && <div className="jc-empty">All your journeys are within their windows. Pick one above to work ahead.</div>}
-            </div>
+            {today.length > 0 && (
+              <div className="jc-items">
+                {today.map(c => <ItemCard key={c.id} c={c} tag={journeyTagFor(c, journeys, domByKey)} />)}
+              </div>
+            )}
+            {onTrack.length > 0 && (
+              <section className="jc-ontrack">
+                <p className="jc-seclabel">On track</p>
+                <div className="jc-ht-grid">
+                  {onTrack.map(h => (
+                    <button key={h.key} type="button" className="jc-ht" onClick={() => { setActive(h.key); setOpenId(null); }}>
+                      <span className="jc-ht-h"><Icon name={h.icon} size={15} /> {cleanLabel(h.label)}</span>
+                      <span className="jc-ht-m mono">{h.live} live · on track</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
           </>
         ) : activeJourney ? (
           <>
