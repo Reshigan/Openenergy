@@ -107,7 +107,7 @@ export default function PpaPortfolioSurface(_props: { role: string }) {
       <div className="flex items-center justify-between mb-3">
         <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3, #8a8f98)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Underlying contracts</span>
         <button type="button" onClick={() => setAdding(true)}
-          className="h-9 px-4 rounded-md bg-[var(--petrol)] text-white text-[13px] font-semibold">+ Add PPA</button>
+          className="btn pri">+ Add PPA</button>
       </div>
 
       <ListingTable

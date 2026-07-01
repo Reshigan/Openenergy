@@ -19,6 +19,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import './meridian.css';
 import { api } from '../lib/api';
 import { fetchHorizon, fmtZar, type HorizonData, type MerAction, type MerCase } from './lib';
+import { ActErrorBar } from './components';
 import { MeridianHeader } from './MeridianHeader';
 import { HorizonKpis } from './HorizonKpis';
 import { GettingStarted } from './GettingStarted';
@@ -65,6 +66,7 @@ export default function OfftakerHorizon() {
   const [horizon, setHorizon] = React.useState<HorizonData | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
   const [acting, setActing] = React.useState<string | null>(null);
+  const [actErr, setActErr] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let live = true;
@@ -89,8 +91,8 @@ export default function OfftakerHorizon() {
     if (a.tone === 'oxide' && !window.confirm(`${a.label} — ${c.ref}?\nThis may be hard to reverse.`)) return;
     const key = `${c.id}:${a.action}`;
     setActing(key);
-    try { await api.post(a.path.replace('/api', '').replace(':id', c.id), {}); }
-    catch { /* keep last good state */ }
+    try { await api.post(a.path.replace('/api', '').replace(':id', c.id), {}); setActErr(null); }
+    catch (e: any) { setActErr(e?.response?.data?.error ?? e?.message ?? 'Action failed'); }
     finally { setActing(null); }
     try { setHorizon(await fetchHorizon('offtaker')); } catch { /* keep last */ }
   }
@@ -241,6 +243,7 @@ export default function OfftakerHorizon() {
                     : `Cure window ${fallbackUrgent!.cure === 0 ? 'closes today' : `closes in ${fallbackUrgent!.cure} day${fallbackUrgent!.cure === 1 ? '' : 's'}`}.`}
                 </div>
                 {oneThing ? (
+                  <><ActErrorBar error={actErr} onDismiss={() => setActErr(null)} />
                   <div className="oh-card-acts">
                     {oneThing.actions.slice(0, 1).map(a => {
                       const key = `${oneThing.id}:${a.action}`;
@@ -257,7 +260,7 @@ export default function OfftakerHorizon() {
                       );
                     })}
                     <Link className="btn ghost" to={`/thread/${oneThing.chain}/${oneThing.id}`}>Open</Link>
-                  </div>
+                  </div></>
                 ) : (
                   <Link className="btn gold" to="/ledger/ppa_obligation">Review cure window</Link>
                 )}

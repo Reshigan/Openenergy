@@ -34,7 +34,7 @@ export default function InsuranceSurface(_props: { role: string }) {
           { key: 'period_end', label: 'Expires', render: (r) => r.period_end },
           { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'active' ? 'good' : 'bad'}>{r.status}</Pill> },
           { key: '_actions', label: '', render: (r) => (
-            <button type="button" onClick={() => setClaiming(r)} className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md">File claim</button>
+            <button type="button" onClick={() => setClaiming(r)} className="btn pri">File claim</button>
           ) },
         ]}
       />

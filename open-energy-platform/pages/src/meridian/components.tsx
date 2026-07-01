@@ -6,6 +6,21 @@ import { Link } from 'react-router-dom';
 import { fmtZar, zarMagnitudeClass, fuseFraction, humanizeKey, type MerCase } from './lib';
 import { statusLabel, STATUS_TONE_CLASS, type StatusTone } from './ease/statusLabel';
 
+// Inline, non-fatal action error — sits above a board's action buttons; the board
+// keeps its last-good data behind it. Renders nothing when there's no error. Every
+// bespoke Horizon board used to swallow POST failures in an empty `catch {}` (a
+// silent no-op on high-consequence transitions); each now surfaces the server's
+// 409 reason through this shared bar instead.
+export function ActErrorBar({ error, onDismiss }: { error: string | null; onDismiss: () => void }) {
+  if (!error) return null;
+  return (
+    <div className="act-error" role="alert">
+      <span>{error}</span>
+      <button type="button" className="btn ghost" onClick={onDismiss}>Dismiss</button>
+    </div>
+  );
+}
+
 // Legacy Pill tone vocabulary used across the listing surfaces → StatusTone.
 // 'bad' folds onto oxide (the breach colour); 'info' onto neutral — there is no
 // "info" tone in the Meridian chip system, only neutral/good/warn/oxide.

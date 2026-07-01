@@ -15,6 +15,27 @@ import { cleanLabel } from './labels';
 import { MeridianHeader } from './MeridianHeader';
 import { GuidedTour } from './GuidedTour';
 
+// Format a raw case-record value for the L5 audit surface. Conservative on money:
+// ZAR only when the key clearly names it (this domain uses a consistent `_zar`
+// suffix — quantum_zar, settlement_paid_zar, …), so a field named `value` is never
+// wrongly stamped with R (the trap the old Ledger column-name regex fell into).
+// ISO timestamps → readable, booleans → Yes/No, snake_case enums → humanized.
+// ponytail: heuristic display-only; the real fix is a server-provided `unit` per
+// field (as the Ledger/KPI shape now carries) — swap to that when raw ships units.
+function fmtRawValue(k: string, v: unknown): string {
+  if (v == null) return '—';
+  if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+  if (typeof v === 'number') return /zar/i.test(k) ? fmtZar(v) : v.toLocaleString('en-ZA');
+  if (typeof v === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:/.test(v)) return v.slice(0, 16).replace('T', ' ');       // ISO datetime
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;                                             // ISO date
+    if (/zar/i.test(k) && /^-?\d+(\.\d+)?$/.test(v)) return fmtZar(Number(v));               // money-as-string
+    if (/^[a-z][a-z0-9]*(_[a-z0-9]+)+$/.test(v)) return humanizeKey(v);                       // snake_case enum
+    return v;
+  }
+  return String(v);
+}
+
 interface ThreadData {
   chain: { key: string; wave: number; title: string };
   case: { id: string; ref: string; title: string; status: string; deadline_at: string | null;
@@ -171,7 +192,7 @@ export default function ThreadPage() {
                 .filter(([k, v]) => v != null && !['id'].includes(k))
                 .map(([k, v]) => (
                   <React.Fragment key={k}>
-                    <dt>{humanizeKey(k, true)}</dt><dd className="mono">{String(v)}</dd>
+                    <dt>{humanizeKey(k, true)}</dt><dd className="mono">{fmtRawValue(k, v)}</dd>
                   </React.Fragment>
                 ))}
             </dl>
@@ -203,7 +224,13 @@ export default function ThreadPage() {
             {t.actions.map(a => (
               <button key={a.action} type="button" disabled={busy !== null}
                       className={`btn ${a.tone === 'oxide' ? 'ox' : 'pri'}`}
-                      title={a.cascadeHint} onClick={() => a.fields?.length ? setFormAction(a) : fire(a, {})}>
+                      title={a.cascadeHint} onClick={() => {
+                        if (a.fields?.length) { setFormAction(a); return; }
+                        // Destructive (oxide) transitions confirm before firing — matches the
+                        // Horizon board idiom; a fieldless reject/terminate is otherwise one click.
+                        if (a.tone === 'oxide' && !window.confirm(`${a.label} — ${t.case.ref}?\nThis transition may be hard to reverse.`)) return;
+                        fire(a, {});
+                      }}>
                 {busy === a.action ? '…' : a.label}
               </button>
             ))}

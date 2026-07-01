@@ -52,8 +52,8 @@ export default function CommunitySurface(_props: { role: string }) {
           </select>
         </label>
         <div className="flex gap-2">
-          <button type="button" onClick={() => setRegistering(true)} className="h-9 px-3 rounded-md bg-white border border-[var(--line)] text-[12px] font-semibold">+ Register stakeholder</button>
-          <button type="button" onClick={() => setLogging(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">+ Log engagement</button>
+          <button type="button" onClick={() => setRegistering(true)} className="btn ghost">+ Register stakeholder</button>
+          <button type="button" onClick={() => setLogging(true)} className="btn pri">+ Log engagement</button>
         </div>
       </div>
       {summary && (

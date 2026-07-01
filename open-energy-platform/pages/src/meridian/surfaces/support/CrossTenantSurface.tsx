@@ -16,7 +16,7 @@ export default function CrossTenantSurface(_props: { role: string }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button type="button" onClick={() => setLoggingAccess(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setLoggingAccess(true)} className="btn pri">
           + Log access
         </button>
       </div>

@@ -25,7 +25,7 @@ export default function ConcentrationsSurface(_props: { role: string }) {
       <div className="flex gap-1 mb-3">
         {(['ecl', 'watchlist'] as const).map((v) => (
           <button key={v} type="button" onClick={() => setView(v)}
-            className={`h-8 px-3 rounded-md text-[12px] font-semibold ${view === v ? 'bg-[var(--petrol)] text-white' : 'bg-[var(--raised)] text-[var(--ink2)]'}`}>
+            className={view === v ? 'btn pri' : 'btn ghost'}>
             {v === 'ecl' ? 'Expected credit loss' : 'Watchlist'}
           </button>
         ))}

@@ -70,8 +70,8 @@ function FileTicketModal({ onClose, onDone }: { onClose: () => void; onDone: () 
             </label>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-[var(--line)] rounded-lg hover:bg-[var(--raised)]">Cancel</button>
-            <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-[var(--petrol)] text-white rounded-lg disabled:opacity-50">
+            <button type="button" onClick={onClose} className="btn ghost">Cancel</button>
+            <button type="button" onClick={submit} disabled={saving} className="btn pri">
               {saving ? 'Filing…' : 'File ticket'}
             </button>
           </div>
@@ -90,7 +90,7 @@ export default function TicketsSurface(_props: { role: string }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setFiling(true)} className="btn pri">
           + File ticket
         </button>
       </div>
@@ -110,8 +110,8 @@ export default function TicketsSurface(_props: { role: string }) {
           { key: '_actions', label: '', render: (r) => (
             (r.status !== 'resolved' && r.status !== 'closed') ? (
               <div className="flex gap-1">
-                <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md">Transition</button>
-                <button type="button" onClick={() => setEscalating(r)} className="px-2 py-1 text-[11px] bg-white text-[var(--ink)] rounded-md border border-[var(--line)] hover:border-[var(--petrol)] hover:text-[var(--petrol)]">Escalate</button>
+                <button type="button" onClick={() => setTransitioning(r)} className="btn pri">Transition</button>
+                <button type="button" onClick={() => setEscalating(r)} className="btn ghost">Escalate</button>
               </div>
             ) : null
           ) },

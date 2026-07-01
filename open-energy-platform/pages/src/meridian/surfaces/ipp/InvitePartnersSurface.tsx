@@ -174,7 +174,7 @@ export default function InvitePartnersSurface(_props: { role: string }) {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-[var(--petrol)] text-white text-sm font-semibold px-5 py-2 hover:bg-[var(--petrol-deep)] transition-colors disabled:opacity-50"
+            className="btn pri"
           >
             {loading ? 'Generating link…' : 'Generate invite link'}
           </button>

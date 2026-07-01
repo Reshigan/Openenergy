@@ -17,7 +17,7 @@ export default function ExceptionsSurface(_props: { role: string }) {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button type="button" onClick={() => setFiling(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setFiling(true)} className="btn pri">
           + File exception
         </button>
       </div>
@@ -34,7 +34,7 @@ export default function ExceptionsSurface(_props: { role: string }) {
           { key: 'status', label: 'Status', render: (r) => <Pill tone={r.status === 'resolved' ? 'good' : r.status === 'rejected' ? 'bad' : 'warn'}>{r.status}</Pill> },
           { key: '_actions', label: '', render: (r) => (
             r.status !== 'resolved' && r.status !== 'rejected' ? (
-              <button type="button" onClick={() => setTransitioning(r)} className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md">Transition</button>
+              <button type="button" onClick={() => setTransitioning(r)} className="btn pri">Transition</button>
             ) : null
           ) },
         ]}

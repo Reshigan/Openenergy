@@ -43,8 +43,8 @@ export default function RecsSurface(_props: { role: string }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={() => setTransferring(true)} className="h-9 px-3 rounded-md bg-white border border-[var(--line)] text-[12px] font-semibold">Transfer certificate</button>
-        <button type="button" onClick={() => setRetiring(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">Retire certificate</button>
+        <button type="button" onClick={() => setTransferring(true)} className="btn ghost">Transfer certificate</button>
+        <button type="button" onClick={() => setRetiring(true)} className="btn pri">Retire certificate</button>
       </div>
       {err && <div className="text-[12px] text-[var(--oxide-deep)]">{err}</div>}
       {portfolio && (

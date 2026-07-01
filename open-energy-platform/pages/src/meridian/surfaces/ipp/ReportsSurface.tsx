@@ -89,56 +89,56 @@ export default function ReportsSurface(_props: { role: string }) {
       <div className="space-y-2">
         <p className="text-xs font-semibold text-[var(--ink3)] uppercase tracking-wide">Annual compliance report</p>
         <div className="flex gap-2 mb-4">
-          <button type="button" onClick={() => exportCsv('ipp-annual', 'ipp-annual-report.csv')} className="px-3 py-1.5 text-xs bg-[var(--petrol)] text-white rounded-md border border-transparent hover:bg-[var(--petrol-deep)]">Export CSV</button>
-          <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-white text-[var(--ink)] rounded-md border border-[var(--line)] hover:border-[var(--petrol)] hover:text-[var(--petrol)]">Print / PDF</button>
+          <button type="button" onClick={() => exportCsv('ipp-annual', 'ipp-annual-report.csv')} className="btn pri">Export CSV</button>
+          <button type="button" onClick={() => window.print()} className="btn ghost">Print / PDF</button>
         </div>
         <React.Suspense fallback={<div className="animate-pulse h-32 bg-[var(--raised)] rounded-md" />}><IppAnnualReportTab /></React.Suspense>
       </div>
       <div className="space-y-2">
         <p className="text-xs font-semibold text-[var(--ink3)] uppercase tracking-wide">DMRE quarterly generation report</p>
         <div className="flex gap-2 mb-4">
-          <button type="button" onClick={() => exportCsv('ipp-quarterly-gen', 'ipp-quarterly-gen-report.csv')} className="px-3 py-1.5 text-xs bg-[var(--petrol)] text-white rounded-md border border-transparent hover:bg-[var(--petrol-deep)]">Export CSV</button>
-          <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-white text-[var(--ink)] rounded-md border border-[var(--line)] hover:border-[var(--petrol)] hover:text-[var(--petrol)]">Print / PDF</button>
+          <button type="button" onClick={() => exportCsv('ipp-quarterly-gen', 'ipp-quarterly-gen-report.csv')} className="btn pri">Export CSV</button>
+          <button type="button" onClick={() => window.print()} className="btn ghost">Print / PDF</button>
         </div>
         <React.Suspense fallback={<div className="animate-pulse h-32 bg-[var(--raised)] rounded-md" />}><IppQuarterlyGenReportTab /></React.Suspense>
       </div>
       <div className="space-y-2">
         <p className="text-xs font-semibold text-[var(--ink3)] uppercase tracking-wide">REIPPPP annual progress report</p>
         <div className="flex gap-2 mb-4">
-          <button type="button" onClick={() => exportCsv('ipp-reipppp', 'ipp-reipppp-report.csv')} className="px-3 py-1.5 text-xs bg-[var(--petrol)] text-white rounded-md border border-transparent hover:bg-[var(--petrol-deep)]">Export CSV</button>
-          <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-white text-[var(--ink)] rounded-md border border-[var(--line)] hover:border-[var(--petrol)] hover:text-[var(--petrol)]">Print / PDF</button>
+          <button type="button" onClick={() => exportCsv('ipp-reipppp', 'ipp-reipppp-report.csv')} className="btn pri">Export CSV</button>
+          <button type="button" onClick={() => window.print()} className="btn ghost">Print / PDF</button>
         </div>
         <React.Suspense fallback={<div className="animate-pulse h-32 bg-[var(--raised)] rounded-md" />}><IppReippppReportsTab /></React.Suspense>
       </div>
       <div className="space-y-2">
         <p className="text-xs font-semibold text-[var(--ink3)] uppercase tracking-wide">Lender reporting covenant</p>
         <div className="flex gap-2 mb-4">
-          <button type="button" onClick={() => exportCsv('ipp-lender-reporting', 'ipp-lender-reporting.csv')} className="px-3 py-1.5 text-xs bg-[var(--petrol)] text-white rounded-md border border-transparent hover:bg-[var(--petrol-deep)]">Export CSV</button>
-          <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-white text-[var(--ink)] rounded-md border border-[var(--line)] hover:border-[var(--petrol)] hover:text-[var(--petrol)]">Print / PDF</button>
+          <button type="button" onClick={() => exportCsv('ipp-lender-reporting', 'ipp-lender-reporting.csv')} className="btn pri">Export CSV</button>
+          <button type="button" onClick={() => window.print()} className="btn ghost">Print / PDF</button>
         </div>
         <React.Suspense fallback={<div className="animate-pulse h-32 bg-[var(--raised)] rounded-md" />}><IppLenderReportingTab /></React.Suspense>
       </div>
       <div className="space-y-2">
         <p className="text-xs font-semibold text-[var(--ink3)] uppercase tracking-wide">EMP annual compliance report</p>
         <div className="flex gap-2 mb-4">
-          <button type="button" onClick={() => exportCsv('ipp-emp-compliance', 'ipp-emp-compliance-report.csv')} className="px-3 py-1.5 text-xs bg-[var(--petrol)] text-white rounded-md border border-transparent hover:bg-[var(--petrol-deep)]">Export CSV</button>
-          <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-white text-[var(--ink)] rounded-md border border-[var(--line)] hover:border-[var(--petrol)] hover:text-[var(--petrol)]">Print / PDF</button>
+          <button type="button" onClick={() => exportCsv('ipp-emp-compliance', 'ipp-emp-compliance-report.csv')} className="btn pri">Export CSV</button>
+          <button type="button" onClick={() => window.print()} className="btn ghost">Print / PDF</button>
         </div>
         <React.Suspense fallback={<div className="animate-pulse h-32 bg-[var(--raised)] rounded-md" />}><IppEmpComplianceReportTab /></React.Suspense>
       </div>
       <div className="space-y-2">
         <p className="text-xs font-semibold text-[var(--ink3)] uppercase tracking-wide">ECO audit report</p>
         <div className="flex gap-2 mb-4">
-          <button type="button" onClick={() => exportCsv('ipp-eco', 'ipp-eco-report.csv')} className="px-3 py-1.5 text-xs bg-[var(--petrol)] text-white rounded-md border border-transparent hover:bg-[var(--petrol-deep)]">Export CSV</button>
-          <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-white text-[var(--ink)] rounded-md border border-[var(--line)] hover:border-[var(--petrol)] hover:text-[var(--petrol)]">Print / PDF</button>
+          <button type="button" onClick={() => exportCsv('ipp-eco', 'ipp-eco-report.csv')} className="btn pri">Export CSV</button>
+          <button type="button" onClick={() => window.print()} className="btn ghost">Print / PDF</button>
         </div>
         <React.Suspense fallback={<div className="animate-pulse h-32 bg-[var(--raised)] rounded-md" />}><IppEcoReportTab /></React.Suspense>
       </div>
       <div className="space-y-2">
         <p className="text-xs font-semibold text-[var(--ink3)] uppercase tracking-wide">Local content &amp; SED compliance</p>
         <div className="flex gap-2 mb-4">
-          <button type="button" onClick={() => exportCsv('ipp-lc', 'ipp-lc-report.csv')} className="px-3 py-1.5 text-xs bg-[var(--petrol)] text-white rounded-md border border-transparent hover:bg-[var(--petrol-deep)]">Export CSV</button>
-          <button type="button" onClick={() => window.print()} className="px-3 py-1.5 text-xs bg-white text-[var(--ink)] rounded-md border border-[var(--line)] hover:border-[var(--petrol)] hover:text-[var(--petrol)]">Print / PDF</button>
+          <button type="button" onClick={() => exportCsv('ipp-lc', 'ipp-lc-report.csv')} className="btn pri">Export CSV</button>
+          <button type="button" onClick={() => window.print()} className="btn ghost">Print / PDF</button>
         </div>
         <React.Suspense fallback={<div className="animate-pulse h-32 bg-[var(--raised)] rounded-md" />}><IppLcReportTab /></React.Suspense>
       </div>

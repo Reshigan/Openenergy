@@ -847,6 +847,9 @@
   .mer .btn { min-height:44px; }
   .mer .mer-gs-action { min-height:44px; }
   .mer .mer-gs-x { min-width:44px; min-height:44px; }
+  /* Newer surfaces: bring their small controls up to the 44px touch floor. */
+  .mer .jc-expand { min-width:44px; min-height:44px; }
+  .mer .atlas-search { min-height:44px; }
 }
 
 /* ── Getting-Started card (post-onboarding "what next") ──────────────────────
@@ -2094,6 +2097,15 @@
   border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 12px; color: var(--ink3);
 }
 .mer .atlas-show-hidden:hover { border-color: var(--petrol); color: var(--petrol-deep); }
+/* Keyboard focus rings — Atlas was added without them; every other Meridian
+   surface rings its controls explicitly (there's no global catch-all). Search
+   rings the visible container via :focus-within (input itself is chromeless),
+   matching the composer idiom; the rest use the standard petrol outline. */
+.mer .atlas-search:focus-within { border-color:var(--petrol); box-shadow:0 0 0 3px oklch(0.45 0.09 165 / 0.25); }
+.mer .atlas-card-main:focus-visible { outline:2px solid var(--petrol); outline-offset:-2px; border-radius:10px; }
+.mer .atlas-acc-head:focus-visible { outline:2px solid var(--petrol); outline-offset:-2px; }
+.mer .atlas-pin:focus-visible, .mer .atlas-hide:focus-visible { outline:2px solid var(--petrol); outline-offset:-2px; border-radius:4px; }
+.mer .atlas-show-hidden:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
 
 /* ─── Horizon lane per-user tools (platform-ease P4) ────────────────────────
    Pin (float to top) / hide, in the 148px label column, hover-revealed to stay
@@ -2180,4 +2192,11 @@
 .mer .ja-kind { margin-left:8px; font-size:9.5px; color:var(--ink3); border:1px solid var(--line); border-radius:5px; padding:1px 6px; }
 .mer .ja-table select { font:inherit; font-size:12.5px; padding:5px 8px; border:1px solid var(--line); border-radius:7px; background:var(--raised); color:var(--ink); }
 .mer .ja-charge { width:110px; font:inherit; font-size:12.5px; padding:5px 8px; border:1px solid var(--line); border-radius:7px; background:var(--raised); color:var(--ink); }
+/* Keyboard focus rings — JourneyAdmin form controls (petrol halo, composer idiom). */
+.mer .ja-table select:focus-visible, .mer .ja-charge:focus-visible { border-color:var(--petrol); box-shadow:0 0 0 3px oklch(0.45 0.09 165 / 0.25); outline:none; }
+@media (max-width:640px) {
+  .mer .ja-table { font-size:12px; }
+  .mer .ja-table th, .mer .ja-table td { padding:5px 6px; }
+  .mer .ja-charge { width:100%; }
+}
 .mer .ja-saved td { background:var(--moss-tint); transition:background .4s; }

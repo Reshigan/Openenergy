@@ -123,13 +123,13 @@ export default function SubscriptionBillingSurface(_props: { role: string }) {
         <div className="flex shrink-0 items-center gap-2">
           <button type="button"
             onClick={() => setGenerating(true)}
-            className="h-8 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold hover:bg-[var(--petrol-deep)]"
+            className="btn pri"
           >
             Generate invoice
           </button>
           <button type="button"
             onClick={() => void load()}
-            className="h-8 px-3 rounded-md border border-[var(--line)] bg-white text-[12px] font-medium text-[var(--ink2)] hover:bg-[var(--raised)]"
+            className="btn ghost"
           >
             Refresh
           </button>

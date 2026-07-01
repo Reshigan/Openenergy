@@ -110,27 +110,25 @@ export default function DocStudioSurface(_: { role: string }) {
     catch { /* ignore */ }
   };
 
-  if (entitled === null) return <div className="p-6 text-[13px] text-slate-500">Loading…</div>;
+  if (entitled === null) return <div className="p-6 text-[13px] text-[var(--ink3)]">Loading…</div>;
 
   if (!entitled) {
     return (
       <div className="max-w-xl mx-auto p-8">
-        <div className="rounded-xl border p-6" style={{ borderColor: '#e2e8f0' }}>
+        <div className="rounded-xl border p-6" style={{ borderColor: 'var(--line)' }}>
           <div className="flex items-center gap-2 mb-2">
             <OEIcon name="doc-stack" size={22} tone="teal" />
-            <h2 className="text-[18px] font-bold text-slate-900">Document Studio</h2>
+            <h2 className="text-[18px] font-bold text-[var(--ink)]">Document Studio</h2>
           </div>
-          <p className="text-[13px] text-slate-600 mb-1">
+          <p className="text-[13px] text-[var(--ink2)] mb-1">
             Generate standard submission documents — PDDs, MRV reports, validation summaries,
             REC issuance requests, term sheets and information memoranda — automatically from your
             existing project data, in submission-ready format. The Studio manages the full lifecycle:
             draft → review → submit → accept.
           </p>
-          <p className="text-[12px] text-slate-500 mb-4">Professional subscription. No per-document charge.</p>
-          {error && <div className="text-[12px] text-rose-600 mb-2">{error}</div>}
-          <button type="button" onClick={enable} disabled={busy}
-            className="h-10 px-5 rounded-md text-white text-[13px] font-semibold disabled:opacity-40"
-            style={{ background: 'oklch(0.46 0.16 55)' }}>
+          <p className="text-[12px] text-[var(--ink3)] mb-4">Professional subscription. No per-document charge.</p>
+          {error && <div className="text-[12px] text-[var(--oxide-deep)] mb-2">{error}</div>}
+          <button type="button" onClick={enable} disabled={busy} className="btn pri">
             {busy ? 'Enabling…' : 'Enable Document Studio'}
           </button>
         </div>
@@ -144,32 +142,31 @@ export default function DocStudioSurface(_: { role: string }) {
     <div className="p-4 grid gap-4 lg:grid-cols-[380px_1fr]">
       {/* Generator */}
       <div className="space-y-3">
-        <div className="rounded-xl border p-4 space-y-3" style={{ borderColor: '#e2e8f0' }}>
-          <h3 className="text-[14px] font-bold text-slate-900">Generate a document</h3>
+        <div className="rounded-xl border p-4 space-y-3" style={{ borderColor: 'var(--line)' }}>
+          <h3 className="text-[14px] font-bold text-[var(--ink)]">Generate a document</h3>
           <label className="block">
-            <span className="text-[12px] font-medium text-slate-600">Document type</span>
+            <span className="text-[12px] font-medium text-[var(--ink2)]">Document type</span>
             <select value={docType} onChange={(e) => setDocType(e.target.value as DocType)}
-              className="mt-1 w-full h-9 rounded-md border border-slate-200 text-[13px] px-2">
+              className="mt-1 w-full h-9 rounded-md border border-[var(--line)] text-[13px] px-2">
               {DOC_TYPES.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
             </select>
           </label>
           <label className="block">
-            <span className="text-[12px] font-medium text-slate-600">Registry standard</span>
+            <span className="text-[12px] font-medium text-[var(--ink2)]">Registry standard</span>
             <select value={standard} onChange={(e) => setStandard(e.target.value)}
-              className="mt-1 w-full h-9 rounded-md border border-slate-200 text-[13px] px-2">
+              className="mt-1 w-full h-9 rounded-md border border-[var(--line)] text-[13px] px-2">
               {STANDARDS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </label>
           <label className="block">
-            <span className="text-[12px] font-medium text-slate-600">Subject ({subjectHint})</span>
+            <span className="text-[12px] font-medium text-[var(--ink2)]">Subject ({subjectHint})</span>
             <input value={subjectId} onChange={(e) => setSubjectId(e.target.value)}
               placeholder={`Paste the ${subjectHint}`}
-              className="mt-1 w-full h-9 rounded-md border border-slate-200 text-[13px] px-2" />
+              className="mt-1 w-full h-9 rounded-md border border-[var(--line)] text-[13px] px-2" />
           </label>
-          {error && <div className="text-[12px] text-rose-600">{error}</div>}
+          {error && <div className="text-[12px] text-[var(--oxide-deep)]">{error}</div>}
           <button type="button" onClick={generate} disabled={busy}
-            className="h-9 px-4 rounded-md text-white text-[13px] font-semibold inline-flex items-center gap-1.5 disabled:opacity-40"
-            style={{ background: 'oklch(0.46 0.16 55)' }}>
+            className="btn pri inline-flex items-center gap-1.5">
             <OEIcon name="spark" size={14} /> {busy ? 'Generating…' : 'Generate'}
           </button>
         </div>
@@ -178,35 +175,35 @@ export default function DocStudioSurface(_: { role: string }) {
       {/* Jobs + preview */}
       <div className="space-y-3">
         {preview && (
-          <div className="rounded-xl border p-4" style={{ borderColor: '#cbd5e1', background: '#f8fafc' }}>
+          <div className="rounded-xl border p-4" style={{ borderColor: 'var(--line)', background: 'var(--paper)' }}>
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-[13px] font-bold text-slate-900">{preview.title}</h4>
-              <button type="button" onClick={() => setPreview(null)} className="text-slate-400 hover:text-slate-700">
+              <h4 className="text-[13px] font-bold text-[var(--ink)]">{preview.title}</h4>
+              <button type="button" onClick={() => setPreview(null)} className="text-[var(--ink3)] hover:text-[var(--ink2)]">
                 <OEIcon name="close" size={16} />
               </button>
             </div>
-            <pre className="text-[12px] text-slate-700 whitespace-pre-wrap max-h-[420px] overflow-auto font-mono leading-relaxed">
+            <pre className="text-[12px] text-[var(--ink2)] whitespace-pre-wrap max-h-[420px] overflow-auto font-mono leading-relaxed">
               {preview.content_md || '(no content)'}
             </pre>
           </div>
         )}
 
-        <div className="rounded-xl border overflow-hidden" style={{ borderColor: '#e2e8f0' }}>
-          <div className="px-4 py-2.5 border-b bg-slate-50 text-[12px] font-semibold text-slate-600">
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--line)' }}>
+          <div className="px-4 py-2.5 border-b bg-[var(--paper)] text-[12px] font-semibold text-[var(--ink2)]">
             Documents ({jobs.length})
           </div>
           {jobs.length === 0 ? (
-            <div className="p-6 text-[13px] text-slate-500">No documents yet. Generate your first one.</div>
+            <div className="p-6 text-[13px] text-[var(--ink3)]">No documents yet. Generate your first one.</div>
           ) : (
             <ul className="divide-y">
               {jobs.map((j) => (
                 <li key={j.id} className="px-4 py-3 flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <button type="button" onClick={() => openPreview(j.id)}
-                      className="text-[13px] font-semibold text-slate-900 hover:underline text-left">
+                      className="text-[13px] font-semibold text-[var(--ink)] hover:underline text-left">
                       {j.title}
                     </button>
-                    <div className="mt-0.5 text-[11px] text-slate-500">
+                    <div className="mt-0.5 text-[11px] text-[var(--ink3)]">
                       {j.doc_type.replace(/_/g, ' ')}
                       {j.registry_standard && ` · ${j.registry_standard.replace(/_/g, ' ')}`}
                       {` · ${j.subject_label}`}
@@ -216,7 +213,7 @@ export default function DocStudioSurface(_: { role: string }) {
                     <StatusPill s={j.status} />
                     {(NEXT[j.status] ?? []).map((to) => (
                       <button key={to} type="button" onClick={() => transition(j.id, to)}
-                        className="text-[11px] font-medium px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 text-slate-700">
+                        className="btn ghost">
                         {to === 'rejected' ? 'Reject' : to === 'accepted' ? 'Accept' : to.replace(/_/g, ' ')}
                       </button>
                     ))}

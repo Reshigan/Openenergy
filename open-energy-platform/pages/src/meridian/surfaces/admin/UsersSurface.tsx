@@ -37,7 +37,7 @@ export default function UsersSurface(_props: { role: string }) {
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button type="button" onClick={() => setInviting(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setInviting(true)} className="btn pri">
           + Invite user
         </button>
       </div>
@@ -60,7 +60,7 @@ export default function UsersSurface(_props: { role: string }) {
           { key: 'bbbee_level', label: 'B-BBEE', align: 'right', render: (r) => r.bbbee_level ?? '—' },
           { key: 'last_login', label: 'Last login', render: (r) => r.last_login ? new Date(r.last_login).toLocaleDateString() : '—' },
           { key: '_actions', label: '', render: (r) => (
-            <button type="button" onClick={() => setManaging(r)} className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md">Manage</button>
+            <button type="button" onClick={() => setManaging(r)} className="btn pri">Manage</button>
           ) },
         ]}
       />

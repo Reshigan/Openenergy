@@ -12,6 +12,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './meridian.css';
 import { fetchHorizon, fmtZar, type Bucket, type HorizonData, type MerAction, type MerCase } from './lib';
+import { ActErrorBar } from './components';
 import { api } from '../lib/api';
 import { MeridianHeader } from './MeridianHeader';
 import { HorizonKpis } from './HorizonKpis';
@@ -48,6 +49,7 @@ export default function SupportHorizon() {
   const [data, setData] = React.useState<HorizonData | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
   const [acting, setActing] = React.useState<string | null>(null);
+  const [actErr, setActErr] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let live = true;
@@ -62,8 +64,8 @@ export default function SupportHorizon() {
     if (a.tone === 'oxide' && !window.confirm(`${a.label} — ${c.ref}?\nThis may be hard to reverse.`)) return;
     const key = `${c.id}:${a.action}`;
     setActing(key);
-    try { await api.post(a.path.replace('/api', '').replace(':id', c.id), {}); }
-    catch { /* keep last good state */ }
+    try { await api.post(a.path.replace('/api', '').replace(':id', c.id), {}); setActErr(null); }
+    catch (e: any) { setActErr(e?.response?.data?.error ?? e?.message ?? 'Action failed'); }
     finally { setActing(null); }
     try { setData(await fetchHorizon('support')); } catch { /* keep last */ }
   }
@@ -117,6 +119,7 @@ export default function SupportHorizon() {
         </div>
 
         {/* ── ticket board ── */}
+        <ActErrorBar error={actErr} onDismiss={() => setActErr(null)} />
         <div className="su-cols">
           {(['breached', 'risk', 'track'] as Urgency[]).map(urg => {
             const meta = URG_META[urg];

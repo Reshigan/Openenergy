@@ -28,26 +28,32 @@ import { WizardModal, WizardPicker, type WizardSpec } from './WizardModal';
 import { ProductTour, type TourDef } from './ProductTour';
 import { useTour } from '../../lib/useTour';
 
-// ─── Design tokens (mockup-b light) ──────────────────────────────────
-const BG     = 'oklch(0.96 0.003 250)';
-const BG1    = 'oklch(0.99 0.002 80)';
-const BG2    = 'oklch(0.93 0.004 250)';
-const BORDER = 'oklch(0.87 0.006 250)';
-const BORDERS= 'oklch(0.78 0.008 250)';
-const TX1    = 'oklch(0.17 0.010 250)';
-const TX2    = 'oklch(0.40 0.009 250)';
-const TX3    = 'oklch(0.60 0.007 250)';
-const ACC    = 'oklch(0.46 0.16 55)';
-const ACC_BG = 'oklch(0.96 0.05 55)';
-const ACC_BDR= 'oklch(0.80 0.12 55)';
-const GOOD   = 'oklch(0.40 0.16 155)';
-const GOOD_BG= 'oklch(0.95 0.04 155)';
-const BAD    = 'oklch(0.48 0.20 20)';
-const BAD_BG = 'oklch(0.97 0.04 20)';
-const WARN   = 'oklch(0.50 0.18 55)';
-const WARN_BG= 'oklch(0.96 0.05 55)';
-const INFO   = 'oklch(0.42 0.16 240)';
-const INFO_BG= 'oklch(0.95 0.04 240)';
+// ─── Design tokens — Substation palette ──────────────────────────────
+// Repointed from the old amber/per-role-hue "mockup-b" palette to the Substation
+// system (indigo --petrol primary, copper accent, cool neutrals, semantic
+// amber/oxide/moss) so the shared surface primitives (Pill, ActionModal, ListingTable)
+// match the .mer chrome. Values are literal (not var(--…)) on purpose: these
+// components render both inside and outside a .mer ancestor, and .mer's tokens are
+// scoped — literals stay correct everywhere. Mirror of meridian.css :root.
+const BG     = '#f4f6fa';                  // --paper (input/field surface)
+const BG1    = '#ffffff';                  // --raised (modal/card surface)
+const BG2    = '#eef1f7';                  // hover wash (between paper and line)
+const BORDER = '#dde3ee';                  // --line
+const BORDERS= '#c3cdde';                  // stronger divider
+const TX1    = '#0e1726';                  // --ink
+const TX2    = '#3a4760';                  // --ink2
+const TX3    = '#5b6b85';                  // --ink3 (WCAG-AA muted)
+const ACC    = '#1f3bb3';                  // --petrol (primary)
+const ACC_BG = '#e8ecfb';                  // --petrol-tint
+const ACC_BDR= 'oklch(0.80 0.07 265)';     // petrol-tinted border
+const GOOD   = 'oklch(0.46 0.085 165)';    // --moss-deep (AA text)
+const GOOD_BG= 'oklch(0.955 0.028 165)';   // --moss-tint
+const BAD    = 'oklch(0.42 0.17 30)';      // --oxide-deep (AA text)
+const BAD_BG = 'oklch(0.95 0.02 30)';      // --oxide-tint
+const WARN   = 'oklch(0.45 0.12 50)';      // --amber-deep (AA text)
+const WARN_BG= 'oklch(0.95 0.03 55)';      // --amber-tint
+const INFO   = '#18309a';                  // --petrol-deep
+const INFO_BG= '#e8ecfb';                  // --petrol-tint
 const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 const EASE   = 'cubic-bezier(0.23, 1, 0.32, 1)';
 
@@ -1130,7 +1136,7 @@ export function ActionModal({
                   border: 'none',
                   transition: `background-color 150ms ${EASE}`,
                 }}
-                onMouseEnter={e => { if (!saving && !saved) (e.currentTarget.style.background = cta === 'danger' ? 'oklch(0.40 0.20 20)' : 'oklch(0.38 0.18 55)'); }}
+                onMouseEnter={e => { if (!saving && !saved) (e.currentTarget.style.background = cta === 'danger' ? 'oklch(0.36 0.17 30)' : '#18309a'); }}
                 onMouseLeave={e => { if (!saving && !saved) (e.currentTarget.style.background = saved ? GOOD : cta === 'danger' ? BAD : ACC); }}
               >
                 {saved ? '✓ Done' : saving ? 'Saving…' : submitLabel}

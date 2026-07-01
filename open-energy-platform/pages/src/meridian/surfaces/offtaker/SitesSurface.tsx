@@ -16,7 +16,7 @@ export default function SitesSurface(_props: { role: string }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button type="button" onClick={() => setCreating(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setCreating(true)} className="btn pri">
           + New site group
         </button>
       </div>

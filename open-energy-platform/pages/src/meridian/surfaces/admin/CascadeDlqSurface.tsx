@@ -110,7 +110,7 @@ export default function CascadeDlqSurface(_props: { role: string }) {
         </p>
         <button type="button"
           onClick={() => void load()}
-          className="shrink-0 h-8 px-3 rounded-md border border-[var(--line)] bg-white text-[12px] font-medium text-[var(--ink2)] hover:bg-[var(--raised)]"
+          className="btn ghost"
         >
           Refresh
         </button>
@@ -195,7 +195,7 @@ export default function CascadeDlqSurface(_props: { role: string }) {
                                 <button type="button"
                                   key={s}
                                   onClick={() => setResolveStatus(s)}
-                                  className={`px-3 h-8 text-[11px] font-medium ${resolveStatus === s ? 'bg-[var(--petrol)] text-white' : 'bg-white text-[var(--ink2)] hover:bg-[var(--raised)]'}`}
+                                  className={resolveStatus === s ? 'btn pri' : 'btn ghost'}
                                 >
                                   {s}
                                 </button>
@@ -210,7 +210,7 @@ export default function CascadeDlqSurface(_props: { role: string }) {
                             <button type="button"
                               onClick={() => void submitResolve(r.id)}
                               disabled={rowBusy}
-                              className="h-8 px-3 rounded-md bg-[var(--petrol)] text-white text-[11px] font-semibold disabled:opacity-40"
+                              className="btn pri"
                             >
                               {rowBusy ? 'Saving…' : 'Confirm'}
                             </button>

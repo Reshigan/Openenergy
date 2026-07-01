@@ -138,7 +138,7 @@ export default function MarketHaltSurface(_props: { role: string }) {
                     <span className="text-[var(--ink3)] text-[12px]">lift via All markets</span>
                   )}
                   {canHalt && r.via === null && (
-                    <button onClick={() => setHaltScope(r)} className="px-2.5 py-1 rounded-md text-[12px] bg-[var(--petrol)] text-white hover:opacity-90">Halt</button>
+                    <button onClick={() => setHaltScope(r)} className="btn pri">Halt</button>
                   )}
                 </td>
               </tr>
