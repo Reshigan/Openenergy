@@ -228,6 +228,41 @@ export default function JourneyCockpit() {
                   </Link>
                 ))}
             </div>
+            {/* Lifecycle lanes — each chain in the journey drawn as its state track,
+               with live cases counted at the stage they're in. Overview above the
+               actionable item list; nothing here replaces the items below. */}
+            {(() => {
+              const jcases = casesForJourney(activeJourney.key);
+              const laneFeats = journeyFeatures(activeJourney.key)
+                .filter(f => f.chainKey && f.mockStates?.length && isTileReachable(role, f, hasSurface) && featAvailable(f.key));
+              if (!laneFeats.length) return null;
+              return (
+                <div className="jc-lanes">
+                  {laneFeats.map(f => {
+                    const mine = jcases.filter(c => c.chain === f.chainKey);
+                    return (
+                      <div className="jc-lane" key={f.key}>
+                        <div className="jc-lane-h"><b>{cleanLabel(f.label)}</b><span className="jc-lane-n mono">{mine.length} live</span></div>
+                        <div className="jc-lstages">
+                          {(f.mockStates ?? []).map(s => {
+                            const at = mine.filter(c => c.status === s);
+                            const hot = at.some(c => c.bucket === 'breached');
+                            const cls = hot ? 'jc-lstage hot' : at.length ? 'jc-lstage pass' : 'jc-lstage empty';
+                            return (
+                              <div className={cls} key={s}>
+                                <span className="jc-lnode" />
+                                <span className="jc-lsnm">{cleanLabel(s)}</span>
+                                <span className="jc-lcc mono">{at.length}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
             <div className="jc-items">
               {casesForJourney(activeJourney.key).map(c => <ItemCard key={c.id} c={c} />)}
               {casesForJourney(activeJourney.key).length === 0 && (
