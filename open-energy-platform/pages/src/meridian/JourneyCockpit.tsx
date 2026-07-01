@@ -14,8 +14,25 @@ import { api } from '../lib/api';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { getJourneys } from './journeys';
 import { Icon } from './icons';
-import { fetchHorizon, fetchLedger, fmtZar, type HorizonData, type MerCase, type LedgerActionField } from './lib';
+import { fetchHorizon, fetchLedger, fmtZar, humanizeKey, type HorizonData, type MerCase, type LedgerActionField } from './lib';
 import { FieldForm } from './FieldForm';
+
+// Format a raw case-record value for the in-cockpit detail (folds the Thread record).
+// Conservative on money (ZAR only on a clear `zar` key, so no field is wrongly stamped),
+// ISO timestamps → readable, booleans → Yes/No, snake_case enums → humanized.
+function fmtField(k: string, v: unknown): string {
+  if (v == null) return '—';
+  if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+  if (typeof v === 'number') return /zar/i.test(k) ? fmtZar(v) : v.toLocaleString('en-ZA');
+  if (typeof v === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:/.test(v)) return v.slice(0, 16).replace('T', ' ');
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    if (/zar/i.test(k) && /^-?\d+(\.\d+)?$/.test(v)) return fmtZar(Number(v));
+    if (/^[a-z][a-z0-9]*(_[a-z0-9]+)+$/.test(v)) return humanizeKey(v);
+    return v;
+  }
+  return String(v);
+}
 import { statusLabel, STATUS_TONE_CLASS } from './ease/statusLabel';
 import { byAtRisk } from './ease/money';
 import { PrimaryAction } from './ease/PrimaryAction';
@@ -27,7 +44,7 @@ import { MeridianHeader } from './MeridianHeader';
 
 type Gov = Record<string, { status: 'required' | 'optional' | 'unavailable'; charge_zar: number | null; charge_event: string | null }>;
 interface ThreadLite {
-  case: { id: string; ref: string; title: string; status: string };
+  case: { id: string; ref: string; title: string; status: string; raw?: Record<string, unknown> };
   events: { event_type?: string; created_at?: string; actor_role?: string }[];
   actions: { action: string; label: string; path: string; cascadeHint: string; tone?: string; fields?: unknown[] }[];
 }
@@ -155,6 +172,21 @@ export default function JourneyCockpit() {
                   ))}
                   <span className="jc-step now">{statusLabel(detail.case.status).text}</span>
                 </div>
+                {detail.case.raw && (
+                  <details className="jc-record">
+                    <summary>Record</summary>
+                    <dl>
+                      {Object.entries(detail.case.raw)
+                        .filter(([k, v]) => v != null && v !== '' && !['id', 'tenant_id'].includes(k))
+                        .slice(0, 14)
+                        .map(([k, v]) => (
+                          <React.Fragment key={k}>
+                            <dt>{humanizeKey(k, true)}</dt><dd className="mono">{fmtField(k, v)}</dd>
+                          </React.Fragment>
+                        ))}
+                    </dl>
+                  </details>
+                )}
                 <div className="jc-acts">
                   {detail.actions.map(a => (
                     <PrimaryAction key={a.action} target={{ chain: c.chain, id: c.id, ref: c.ref }}
