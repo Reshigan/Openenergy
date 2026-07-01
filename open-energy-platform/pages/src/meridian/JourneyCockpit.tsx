@@ -233,18 +233,24 @@ export default function JourneyCockpit() {
                actionable item list; nothing here replaces the items below. */}
             {(() => {
               const jcases = casesForJourney(activeJourney.key);
+              // A chain-feature earns a lane if it defines states OR has any live case.
               const laneFeats = journeyFeatures(activeJourney.key)
-                .filter(f => f.chainKey && f.mockStates?.length && isTileReachable(role, f, hasSurface) && featAvailable(f.key));
+                .filter(f => f.chainKey && isTileReachable(role, f, hasSurface) && featAvailable(f.key)
+                  && ((f.mockStates?.length ?? 0) > 0 || jcases.some(c => c.chain === f.chainKey)));
               if (!laneFeats.length) return null;
               return (
                 <div className="jc-lanes">
                   {laneFeats.map(f => {
                     const mine = jcases.filter(c => c.chain === f.chainKey);
+                    // Stages = the feature's declared states, unioned with any live status
+                    // actually present, so no real case is ever invisible on the lane.
+                    const base = [...(f.mockStates ?? [])];
+                    for (const c of mine) if (c.status && !base.includes(c.status)) base.push(c.status);
                     return (
                       <div className="jc-lane" key={f.key}>
                         <div className="jc-lane-h"><b>{cleanLabel(f.label)}</b><span className="jc-lane-n mono">{mine.length} live</span></div>
                         <div className="jc-lstages">
-                          {(f.mockStates ?? []).map(s => {
+                          {base.map(s => {
                             const at = mine.filter(c => c.status === s);
                             const hot = at.some(c => c.bucket === 'breached');
                             const cls = hot ? 'jc-lstage hot' : at.length ? 'jc-lstage pass' : 'jc-lstage empty';
