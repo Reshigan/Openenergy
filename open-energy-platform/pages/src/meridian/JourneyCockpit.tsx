@@ -37,8 +37,9 @@ import { statusLabel, STATUS_TONE_CLASS } from './ease/statusLabel';
 import { byAtRisk } from './ease/money';
 import { PrimaryAction } from './ease/PrimaryAction';
 import { EaseLoading, EaseError } from './ease/states';
-import { isTileReachable, tileTarget } from './reachability';
+import { isTileReachable, tileTarget, surfaceRole } from './reachability';
 import { SURFACE_REGISTRY } from './surfaces';
+import { SurfaceBoundary } from './MeridianSurfacePage';
 import { cleanLabel } from './labels';
 import { MeridianHeader } from './MeridianHeader';
 
@@ -68,6 +69,10 @@ export default function JourneyCockpit() {
   // Atlas/Ledger. Submit POSTs the real initiation endpoint (cascades fire) and reloads.
   const [compose, setCompose] = React.useState<
     { chain: string; label: string; path: string; fields: LedgerActionField[]; prefill?: Record<string, unknown> } | null>(null);
+  // Surface-in-journey: a journey "tool" (master-data CRUD, analytics, connectors)
+  // renders its registered component in a panel over the cockpit instead of
+  // navigating to /surface/:key. Same component, same CRUD — no second plane.
+  const [surfacePanel, setSurfacePanel] = React.useState<{ key: string; label: string } | null>(null);
 
   const reload = React.useCallback(() => {
     if (!role) return;
@@ -334,7 +339,15 @@ export default function JourneyCockpit() {
             <div className="jc-tools">
               {journeyFeatures(activeJourney.key)
                 .filter(f => !f.chainKey && isTileReachable(role, f, hasSurface) && featAvailable(f.key))
-                .map(f => (
+                .map(f => hasSurface(`${surfaceRole(role)}:${f.key}`) ? (
+                  // Registered surface → open in a panel over the cockpit (no navigation).
+                  <button key={f.key} type="button" className="jc-tool"
+                    onClick={() => setSurfacePanel({ key: f.key, label: cleanLabel(f.label) })}>
+                    {cleanLabel(f.label)}
+                    {featRequired(f.key) && <span className="jc-req">required</span>}
+                  </button>
+                ) : (
+                  // Non-surface (standalone route, e.g. /esg) → link out for now.
                   <Link key={f.key} className="jc-tool" to={tileTarget(role, f, hasSurface) ?? '#'}>
                     {cleanLabel(f.label)}
                     {featRequired(f.key) && <span className="jc-req">required</span>}
@@ -365,6 +378,33 @@ export default function JourneyCockpit() {
           </div>
         </div>
       )}
+
+      {/* Surface-in-journey panel — renders the registered surface component (its own
+         CRUD intact) in a wide panel over the cockpit. No navigation to /surface/:key. */}
+      {surfacePanel && (() => {
+        const Comp = SURFACE_REGISTRY[`${surfaceRole(role)}:${surfacePanel.key}`];
+        return (
+          <div className="mer veil" onClick={() => setSurfacePanel(null)}>
+            <div className="jc-surface-panel" role="dialog" aria-modal="true" aria-label={surfacePanel.label} onClick={e => e.stopPropagation()}>
+              <div className="jc-sp-head">
+                <b>{surfacePanel.label}</b>
+                <button type="button" className="jc-sp-x" onClick={() => setSurfacePanel(null)} aria-label="Close">×</button>
+              </div>
+              <div className="jc-sp-body">
+                {Comp ? (
+                  <SurfaceBoundary>
+                    <React.Suspense fallback={<EaseLoading rows={4} />}>
+                      <Comp role={surfaceRole(role)} />
+                    </React.Suspense>
+                  </SurfaceBoundary>
+                ) : (
+                  <div className="mer mer-error" role="alert">This tool isn’t available for your role.</div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

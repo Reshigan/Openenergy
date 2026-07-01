@@ -14,7 +14,7 @@ import { EaseLoading, EaseError } from './ease/states';
 
 // Every leaf inherits graceful failure: a surface that throws renders the shared
 // EaseError card (with retry + an Atlas escape) instead of blanking the app.
-class SurfaceBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
+export class SurfaceBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
   render() {
