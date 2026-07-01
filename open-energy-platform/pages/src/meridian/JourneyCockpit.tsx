@@ -14,7 +14,8 @@ import { api } from '../lib/api';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { getJourneys } from './journeys';
 import { Icon } from './icons';
-import { fetchHorizon, fmtZar, type HorizonData, type MerCase } from './lib';
+import { fetchHorizon, fetchLedger, fmtZar, type HorizonData, type MerCase, type LedgerActionField } from './lib';
+import { FieldForm } from './FieldForm';
 import { statusLabel, STATUS_TONE_CLASS } from './ease/statusLabel';
 import { byAtRisk } from './ease/money';
 import { PrimaryAction } from './ease/PrimaryAction';
@@ -45,12 +46,27 @@ export default function JourneyCockpit() {
   const [detail, setDetail] = React.useState<ThreadLite | null>(null);
   const [actErr, setActErr] = React.useState<string | null>(null);
   const [loadErr, setLoadErr] = React.useState(false);
+  // Create-in-journey: opening a "start" affordance fetches that chain's initiation
+  // schema and renders it in an in-place composer over the cockpit — no navigation to
+  // Atlas/Ledger. Submit POSTs the real initiation endpoint (cascades fire) and reloads.
+  const [compose, setCompose] = React.useState<
+    { chain: string; label: string; path: string; fields: LedgerActionField[]; prefill?: Record<string, unknown> } | null>(null);
 
   const reload = React.useCallback(() => {
     if (!role) return;
     setLoadErr(false);
     fetchHorizon(role).then(setData).catch(() => setLoadErr(true));
   }, [role]);
+
+  const openCompose = React.useCallback((chainKey: string) => {
+    setActErr(null);
+    fetchLedger(chainKey)
+      .then(d => {
+        if (d.initiation) setCompose({ chain: chainKey, ...d.initiation, prefill: d.prefill });
+        else setActErr('This can’t be started here — open it from its journey.');
+      })
+      .catch(() => setActErr('Couldn’t open the form. Try again.'));
+  }, []);
 
   React.useEffect(() => {
     if (!role) return;
@@ -213,21 +229,28 @@ export default function JourneyCockpit() {
             <header className="jc-head">
               <h1 className="hd-serif">{cleanLabel(activeJourney.label)}</h1>
             </header>
-            <div className="jc-starts">
-              <button type="button" className="jc-start" onClick={() => navigate('/new')}>
-                <Icon name="plus" size={14} /> {primaryEntity.verb} {primaryEntity.label}
-              </button>
-              {journeyFeatures(activeJourney.key)
-                .filter(f => f.chainKey && isTileReachable(role, f, hasSurface) && featAvailable(f.key))
-                .slice(0, 6)
-                .map(f => (
-                  <Link key={f.key} className="jc-start ghost" to={(tileTarget(role, f, hasSurface) ?? '#') + '?compose=1'}>
-                    <Icon name="plus" size={13} /> {cleanLabel(f.label)}
-                    {gov[f.key]?.charge_zar ? <span className="jc-charge mono">{fmtZar(gov[f.key].charge_zar)}</span> : null}
-                    {featRequired(f.key) && <span className="jc-req">required</span>}
-                  </Link>
-                ))}
-            </div>
+            {(() => {
+              const initiable = journeyFeatures(activeJourney.key)
+                .filter(f => f.chainKey && isTileReachable(role, f, hasSurface) && featAvailable(f.key));
+              const primaryChain = initiable[0]?.chainKey;
+              return (
+                <div className="jc-starts">
+                  {/* Primary create opens the composer in place (falls back to the picker
+                     only if the journey has no initiable chain). No Atlas navigation. */}
+                  <button type="button" className="jc-start"
+                    onClick={() => primaryChain ? openCompose(primaryChain) : navigate('/new')}>
+                    <Icon name="plus" size={14} /> {primaryEntity.verb} {primaryEntity.label}
+                  </button>
+                  {initiable.slice(0, 6).map(f => (
+                    <button key={f.key} type="button" className="jc-start ghost" onClick={() => openCompose(f.chainKey!)}>
+                      <Icon name="plus" size={13} /> {cleanLabel(f.label)}
+                      {gov[f.key]?.charge_zar ? <span className="jc-charge mono">{fmtZar(gov[f.key].charge_zar)}</span> : null}
+                      {featRequired(f.key) && <span className="jc-req">required</span>}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
             {/* Lifecycle lanes — each chain in the journey drawn as its state track,
                with live cases counted at the stage they're in. Overview above the
                actionable item list; nothing here replaces the items below. */}
@@ -289,6 +312,27 @@ export default function JourneyCockpit() {
           </>
         ) : null}
       </main>
+
+      {/* Create-in-journey composer — schema-driven initiation over the cockpit, no
+         navigation. Submitting POSTs the real endpoint (cascades fire) and reloads. */}
+      {compose && (
+        <div className="mer veil" onClick={() => setCompose(null)}>
+          <div className="veil-body" role="dialog" aria-modal="true" aria-label={compose.label} onClick={e => e.stopPropagation()}>
+            <FieldForm
+              fields={compose.fields}
+              prefill={compose.prefill}
+              submitLabel={compose.label}
+              ariaLabel={compose.label}
+              onSubmit={async (values) => {
+                await api.post(compose.path.replace('/api', ''), values);
+                setCompose(null);
+                reload();
+              }}
+              onCancel={() => setCompose(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
