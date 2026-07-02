@@ -278,6 +278,7 @@ import esumsProjectsRoutes from './esums-projects';
 import esumsOmSolaxRoutes from './esums-solax';
 import esumsManufacturersRoutes from './esums-manufacturers';
 import esumsAccrualsRoutes, { esumsInvoiceRoutes, esumsCreditRoutes } from './esums-accruals';
+import omRoutes from './om';
 import platformFeaturesRoutes from './platform-features';
 import onboardingRoutes from './onboarding';
 import onboardingChecklistRoutes from './onboarding-checklist';
@@ -740,6 +741,10 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   mount('/api/esums/accruals', esumsAccrualsRoutes);
   mount('/api/esums/settlement-invoices', esumsInvoiceRoutes);
   mount('/api/esums/carbon-credits', esumsCreditRoutes);
+  // Unified O&M module — canonical /api/om namespace composing the esums routers
+  // above (device model generalised to solar-independent meters). Legacy
+  // /api/esums/* paths retained above for backward compatibility.
+  mount('/api/om', omRoutes);
   // Public status page MUST be mounted BEFORE the catch-all platform router.
   mount('/api/public/status', publicStatusRoutes);
   mount('/api/public/status', statusDeepPub);
