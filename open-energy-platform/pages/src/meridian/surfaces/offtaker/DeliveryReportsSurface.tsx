@@ -86,7 +86,7 @@ export default function DeliveryReportsSurface(_props: { role: string }) {
       <div className="flex items-center justify-between mb-3">
         <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)]">Fulfilment by period</div>
         <button type="button" onClick={download} disabled={!rows?.length}
-          className="h-8 px-3 rounded-md border border-[var(--line)] text-[12px] font-semibold text-[var(--ink2)] disabled:opacity-50">
+          className="btn ghost">
           Export CSV
         </button>
       </div>
@@ -151,7 +151,7 @@ export default function DeliveryReportsSurface(_props: { role: string }) {
                 <td className="px-4 py-2 text-right">
                   {canCure(o) && o.id && (
                     <button type="button" onClick={() => setCureId(o.id!)}
-                      className="h-7 px-2 rounded-md bg-[var(--petrol)] text-white text-[11px] font-semibold">Cure</button>
+                      className="btn pri">Cure</button>
                   )}
                 </td>
               </tr>

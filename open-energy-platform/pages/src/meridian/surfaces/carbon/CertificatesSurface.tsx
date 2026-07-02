@@ -13,7 +13,7 @@ import { api } from '../../../lib/api';
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
     <div className="flex justify-end mb-3">
-      <button type="button" onClick={onCreate} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">
+      <button type="button" onClick={onCreate} className="btn pri">
         + {label}
       </button>
     </div>

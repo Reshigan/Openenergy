@@ -73,13 +73,108 @@ const PRIMARY_ENTITY: Record<string, { label: string; verb: string }> = {
   admin:         { label: 'tenant', verb: 'Provision' },
 };
 
-// Build the role's complete journey set. Coverage guarantee: every roleData domain
-// becomes a journey, so every feature (chain/surface/page) has a journey home; the
-// visible cross-cutting sections are appended.
+// Outcome model: collapse a role's roleData domains into a small set of OUTCOMES
+// (≤5 + Today), named in outcome language. Each outcome bundles one or more domain
+// keys; the union of a role's outcome domainKeys is a complete partition of its
+// domains, so every feature (chain/surface/page) still has a journey home. Any
+// domain not named here is appended as its own journey by getJourneys (safety net),
+// so coverage can never silently regress — see journey-taxonomy.test.ts.
+interface Outcome { key: string; label: string; icon: IconKey; domainKeys: string[] }
+const OUTCOME_MAP: Record<string, Outcome[]> = {
+  trader: [
+    { key: 'trade', label: 'Trade', icon: 'trade', domainKeys: ['active_trading'] },
+    { key: 'clear', label: 'Clear', icon: 'risk', domainKeys: ['risk_margin'] },
+    { key: 'settle', label: 'Settle', icon: 'settle', domainKeys: ['post_trade'] },
+    { key: 'report', label: 'Report', icon: 'reports', domainKeys: ['compliance_reporting'] },
+  ],
+  lender: [
+    { key: 'originate', label: 'Originate', icon: 'finance', domainKeys: ['origination'] },
+    { key: 'monitor', label: 'Monitor', icon: 'watch', domainKeys: ['monitoring', 'risk_lender'] },
+    { key: 'resolve', label: 'Resolve', icon: 'risk', domainKeys: ['enforcement'] },
+    { key: 'report', label: 'Report', icon: 'reports', domainKeys: ['reporting_lender'] },
+  ],
+  ipp_developer: [
+    { key: 'build', label: 'Build', icon: 'deliver', domainKeys: ['project_controls', 'construction', 'documents', 'safety_grid'] },
+    { key: 'fund', label: 'Fund', icon: 'finance', domainKeys: ['finance'] },
+    { key: 'comply', label: 'Comply', icon: 'comply', domainKeys: ['regulatory_risk', 'environmental'] },
+    { key: 'operate', label: 'Operate', icon: 'operate', domainKeys: ['risk_quality', 'predictive_ml'] },
+  ],
+  offtaker: [
+    { key: 'contract', label: 'Contract', icon: 'sell', domainKeys: ['contracts'] },
+    { key: 'deliver', label: 'Deliver', icon: 'deliver', domainKeys: ['operations_offtaker'] },
+    { key: 'secure', label: 'Secure', icon: 'finance', domainKeys: ['security_offtaker'] },
+    { key: 'report', label: 'Report', icon: 'reports', domainKeys: ['compliance_offtaker', 'reporting_offtaker'] },
+  ],
+  carbon_fund: [
+    { key: 'develop', label: 'Develop', icon: 'carbon', domainKeys: ['project_pipeline'] },
+    { key: 'verify', label: 'Verify', icon: 'comply', domainKeys: ['mrv_verification'] },
+    { key: 'issue', label: 'Issue', icon: 'finance', domainKeys: ['issuance_registry', 'article6_compliance'] },
+    { key: 'retire', label: 'Retire', icon: 'settle', domainKeys: ['retirement_offset', 'trading_markets'] },
+  ],
+  grid_operator: [
+    { key: 'dispatch', label: 'Dispatch', icon: 'grid', domainKeys: ['operations_grid'] },
+    { key: 'connect', label: 'Connect', icon: 'grid', domainKeys: ['connections'] },
+    { key: 'comply', label: 'Comply', icon: 'comply', domainKeys: ['compliance_grid'] },
+  ],
+  support: [
+    { key: 'resolve', label: 'Resolve', icon: 'people', domainKeys: ['itil_service_mgmt'] },
+    { key: 'dispatch', label: 'Dispatch', icon: 'operate', domainKeys: ['field_operations'] },
+    { key: 'supply', label: 'Supply', icon: 'more', domainKeys: ['oem_supply_chain'] },
+    { key: 'assure', label: 'Assure', icon: 'comply', domainKeys: ['platform_ops'] },
+  ],
+  regulator: [
+    { key: 'license', label: 'License', icon: 'license', domainKeys: ['licensing'] },
+    { key: 'enforce', label: 'Enforce', icon: 'watch', domainKeys: ['enforcement_regulator'] },
+    { key: 'tariff', label: 'Tariff', icon: 'tariff', domainKeys: ['tariff_determinations'] },
+    { key: 'report', label: 'Report', icon: 'reports', domainKeys: ['levies', 'data_reporting'] },
+  ],
+  admin: [
+    { key: 'provision', label: 'Provision', icon: 'people', domainKeys: ['tenants_users'] },
+    { key: 'operate', label: 'Operate', icon: 'operate', domainKeys: ['platform_admin', 'trading_admin'] },
+    { key: 'assure', label: 'Assure', icon: 'comply', domainKeys: ['compliance_admin'] },
+    { key: 'integrate', label: 'Integrate', icon: 'more', domainKeys: ['integrations', 'platform_intelligence'] },
+  ],
+  esco: [
+    { key: 'operate', label: 'Operate', icon: 'operate', domainKeys: ['operations', 'site_portfolio'] },
+    { key: 'maintain', label: 'Maintain', icon: 'deliver', domainKeys: ['work_orders', 'supply_chain'] },
+    { key: 'predict', label: 'Predict', icon: 'insight', domainKeys: ['asset_health'] },
+    { key: 'assure', label: 'Assure', icon: 'comply', domainKeys: ['safety', 'data_integrations', 'reporting'] },
+  ],
+  epc_contractor: [
+    { key: 'deliver', label: 'Deliver', icon: 'deliver', domainKeys: ['document_control', 'site_setup'] },
+    { key: 'assure', label: 'Assure', icon: 'comply', domainKeys: ['quality', 'safety'] },
+    { key: 'handover', label: 'Handover', icon: 'settle', domainKeys: ['handover'] },
+  ],
+};
+// esums_owner shares the ESCO/O&M domain set and outcomes.
+OUTCOME_MAP.esums_owner = OUTCOME_MAP.esco;
+OUTCOME_MAP.epc = OUTCOME_MAP.epc_contractor;
+
+// Build the role's complete journey set. Outcome-led: a role's domains collapse into
+// its ≤5 named outcomes; any domain the outcome map doesn't name is appended as its
+// own journey so nothing is lost (zero-orphan). Visible cross-cutting sections append
+// last. Coverage is asserted by journey-taxonomy.test.ts.
 export function getJourneys(role: string): RoleJourneys {
   const cfg = getRoleConfig(role);
+  const domains = cfg?.domains ?? [];
+  const domainKeySet = new Set(domains.map(d => d.key));
   const journeys: Journey[] = [];
-  for (const d of cfg?.domains ?? []) {
+  const covered = new Set<string>();
+
+  const outcomes = OUTCOME_MAP[role];
+  if (outcomes) {
+    for (const o of outcomes) {
+      // Keep only domain keys that actually exist for this role (defensive).
+      const keys = o.domainKeys.filter(k => domainKeySet.has(k));
+      if (!keys.length) continue;
+      keys.forEach(k => covered.add(k));
+      journeys.push({ key: o.key, label: o.label, icon: o.icon, domainKeys: keys });
+    }
+  }
+  // Safety net: any domain not folded into an outcome becomes its own journey, so
+  // no feature is ever stranded outside the journey model.
+  for (const d of domains) {
+    if (covered.has(d.key)) continue;
     journeys.push({ key: d.key, label: d.label, icon: iconForDomain(d.key, d.label), domainKeys: [d.key] });
   }
   for (const cc of CROSS_CUTTING) {

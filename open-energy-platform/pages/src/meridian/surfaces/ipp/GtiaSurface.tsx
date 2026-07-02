@@ -30,7 +30,7 @@ export default function GtiaSurface(_props: { role: string }) {
     <div>
       <div className="flex justify-end mb-3">
         <button type="button"
-          className="px-3 py-1.5 rounded-md bg-[var(--petrol)] text-white text-sm font-medium hover:bg-[var(--petrol-deep)]"
+          className="btn pri"
           onClick={() => setModal('create')}
         >
           + New GTIA

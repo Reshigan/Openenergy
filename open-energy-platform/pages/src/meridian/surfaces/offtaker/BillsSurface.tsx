@@ -125,7 +125,7 @@ function OptionGroup({
                   <button type="button"
                     onClick={() => onAct(o)}
                     disabled={busyId !== null}
-                    className="h-8 px-3 rounded-md bg-[var(--petrol)] text-white text-[11px] font-semibold disabled:opacity-60"
+                    className="btn pri"
                   >
                     {busyId === o.option_id ? '…' : actionLabel}
                   </button>
@@ -377,14 +377,14 @@ export default function BillsSurface(_props: { role: string }) {
         <button type="button"
           onClick={upload}
           disabled={uploading}
-          className="h-9 px-4 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold disabled:opacity-60"
+          className="btn pri"
         >
           {uploading ? 'Analysing…' : 'Analyse bill'}
         </button>
         <button type="button"
           onClick={optimize}
           disabled={!latest || optimizing}
-          className="h-9 px-4 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold disabled:opacity-60"
+          className="btn pri"
         >
           {optimizing ? 'Optimising…' : 'Optimise PPA mix'}
         </button>
@@ -447,7 +447,7 @@ export default function BillsSurface(_props: { role: string }) {
               <button type="button"
                 onClick={draftFromMix}
                 disabled={loiBusy !== null}
-                className="mt-3 h-9 px-4 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold disabled:opacity-60"
+                className="btn pri mt-3"
               >
                 {loiBusy === '__mix__' ? 'Drafting…' : 'Draft LOIs from this mix'}
               </button>

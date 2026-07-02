@@ -21,7 +21,7 @@ export default function BudgetsSurface(_props: { role: string }) {
           <span className="text-[var(--ink3)]">Period (YYYY-MM)</span>
           <input value={period} onChange={(e) => setPeriod(e.target.value)} placeholder="2026-05" className="mt-1 h-9 px-3 border border-[var(--line)] rounded-md text-[13px]" />
         </label>
-        <button type="button" onClick={() => setCreating(true)} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold">
+        <button type="button" onClick={() => setCreating(true)} className="btn pri">
           + Set budget
         </button>
       </div>

@@ -116,7 +116,7 @@ export default function NersaReportingSurface(_props: { role: string }) {
       <div className="flex items-center justify-between">
         <h3 className="text-[13px] font-semibold text-[var(--ink2)]">Grid constraints</h3>
         <button type="button" disabled={downloading === 'constraints'} onClick={() => downloadCsv('constraints')}
-          className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md disabled:opacity-50">
+          className="btn pri">
           {downloading === 'constraints' ? 'Exporting…' : 'Export CSV'}
         </button>
       </div>
@@ -132,7 +132,7 @@ export default function NersaReportingSurface(_props: { role: string }) {
       <div className="flex items-center justify-between">
         <h3 className="text-[13px] font-semibold text-[var(--ink2)]">Imbalance settlement</h3>
         <button type="button" disabled={downloading === 'imbalance'} onClick={() => downloadCsv('imbalance')}
-          className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md disabled:opacity-50">
+          className="btn pri">
           {downloading === 'imbalance' ? 'Exporting…' : 'Export CSV'}
         </button>
       </div>

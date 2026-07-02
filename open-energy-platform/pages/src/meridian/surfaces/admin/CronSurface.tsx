@@ -65,7 +65,7 @@ export default function CronSurface(_props: { role: string }) {
                     type="button"
                     disabled={running === s.cron}
                     onClick={() => runNow(s.cron)}
-                    className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md disabled:opacity-50"
+                    className="btn pri"
                   >
                     {running === s.cron ? 'Running…' : 'Run once'}
                   </button>

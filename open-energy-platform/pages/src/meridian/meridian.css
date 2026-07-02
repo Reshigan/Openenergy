@@ -149,10 +149,11 @@
 .mer .spacer { flex:1; }
 .mer .clock { font-size:13px; color:#9aa8c0; }
 .mer .kbd-hint {
-  display:flex; align-items:center; gap:8px; font-size:12.5px; color:#cdd6e6;
+  display:flex; align-items:center; gap:8px; font-family:inherit; font-size:12.5px; color:#cdd6e6;
   border:1px solid rgba(255,255,255,0.14); border-radius:6px; padding:7px 14px; background:rgba(255,255,255,0.04);
   cursor:pointer; transition:transform 140ms var(--ease), border-color 140ms;
 }
+.mer .kbd-hint:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
 .mer .kbd-hint:hover { border-color:var(--petrol); }
 .mer .kbd-hint:active { transform:scale(0.98); }
 .mer .kbd-hint kbd {
@@ -847,6 +848,9 @@
   .mer .btn { min-height:44px; }
   .mer .mer-gs-action { min-height:44px; }
   .mer .mer-gs-x { min-width:44px; min-height:44px; }
+  /* Newer surfaces: bring their small controls up to the 44px touch floor. */
+  .mer .jc-expand { min-width:44px; min-height:44px; }
+  .mer .atlas-search { min-height:44px; }
 }
 
 /* ── Getting-Started card (post-onboarding "what next") ──────────────────────
@@ -2094,6 +2098,15 @@
   border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 12px; color: var(--ink3);
 }
 .mer .atlas-show-hidden:hover { border-color: var(--petrol); color: var(--petrol-deep); }
+/* Keyboard focus rings — Atlas was added without them; every other Meridian
+   surface rings its controls explicitly (there's no global catch-all). Search
+   rings the visible container via :focus-within (input itself is chromeless),
+   matching the composer idiom; the rest use the standard petrol outline. */
+.mer .atlas-search:focus-within { border-color:var(--petrol); box-shadow:0 0 0 3px oklch(0.45 0.09 165 / 0.25); }
+.mer .atlas-card-main:focus-visible { outline:2px solid var(--petrol); outline-offset:-2px; border-radius:10px; }
+.mer .atlas-acc-head:focus-visible { outline:2px solid var(--petrol); outline-offset:-2px; }
+.mer .atlas-pin:focus-visible, .mer .atlas-hide:focus-visible { outline:2px solid var(--petrol); outline-offset:-2px; border-radius:4px; }
+.mer .atlas-show-hidden:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
 
 /* ─── Horizon lane per-user tools (platform-ease P4) ────────────────────────
    Pin (float to top) / hide, in the 148px label column, hover-revealed to stay
@@ -2125,11 +2138,53 @@
 .mer .jc-start.ghost { background:var(--raised); color:var(--ink2); border:1px solid var(--line); }
 .mer .jc-start.ghost:hover { border-color:var(--petrol); color:var(--petrol-deep); }
 .mer .jc-charge { margin-left:4px; color:var(--copper-deep); font-size:11px; }
+
+/* ─── Journey lifecycle lanes ── each chain's states as a track, live cases counted
+   at the stage they're in. Overview above the actionable item list. ── */
+.mer .jc-lanes { display:flex; flex-direction:column; gap:12px; margin:4px 0 20px; }
+.mer .jc-lane { background:var(--raised); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+.mer .jc-lane-h { display:flex; align-items:baseline; gap:10px; margin-bottom:13px; }
+.mer .jc-lane-h b { font-family:'Archivo',sans-serif; font-size:13px; font-weight:700; letter-spacing:-.01em; }
+.mer .jc-lane-n { margin-left:auto; font-size:11px; color:var(--ink3); }
+/* Empty lane: one quiet row, no stage track (saves the height for lanes with work). */
+.mer .jc-lane-0 { display:flex; align-items:baseline; gap:10px; padding:9px 16px; }
+.mer .jc-lane-0 b { font-family:'Archivo',sans-serif; font-size:12.5px; font-weight:600; color:var(--ink2); }
+.mer .jc-lane-0 .jc-lane-n { color:var(--ink3); }
+.mer .jc-lstages { display:flex; align-items:flex-start; }
+.mer .jc-lstage { flex:1; position:relative; padding-top:24px; text-align:center; min-width:0; }
+.mer .jc-lstage::before { content:""; position:absolute; top:6px; left:0; width:100%; height:2px; background:var(--line); }
+.mer .jc-lstage:first-child::before { left:50%; width:50%; }
+.mer .jc-lstage:last-child::before { width:50%; }
+.mer .jc-lnode { position:absolute; top:1px; left:50%; transform:translateX(-50%); width:12px; height:12px; border-radius:50%; background:var(--paper); border:2px solid var(--line); z-index:1; }
+.mer .jc-lstage.pass::before { background:var(--petrol); }
+.mer .jc-lstage.pass .jc-lnode { background:var(--petrol); border-color:var(--petrol); }
+.mer .jc-lstage.hot .jc-lnode { background:var(--oxide); border-color:var(--oxide); box-shadow:0 0 0 4px var(--oxide-tint); }
+.mer .jc-lsnm { display:block; font-size:10px; line-height:1.25; color:var(--ink3); font-weight:500; padding:0 3px; }
+.mer .jc-lstage.hot .jc-lsnm { color:var(--oxide-deep); font-weight:700; }
+.mer .jc-lcc { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; margin-top:5px; border-radius:9px; font-size:10.5px; font-weight:600; background:var(--petrol-tint); color:var(--petrol-deep); }
+.mer .jc-lstage.hot .jc-lcc { background:var(--oxide); color:#fff; }
+.mer .jc-lstage.empty .jc-lcc { background:var(--line2, #eef1f7); color:var(--ink3); }
+@media (max-width:760px){ .mer .jc-lsnm { font-size:9px; } .mer .jc-lane { overflow-x:auto; } }
+
+/* In-cockpit case record (folds the Thread's raw record into the item expansion). */
+.mer .jc-record { margin:10px 0 2px; border:1px solid var(--line); border-radius:9px; background:var(--paper); overflow:hidden; }
+.mer .jc-record summary { padding:8px 12px; cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink3); }
+.mer .jc-record summary:focus-visible { outline:2px solid var(--petrol); outline-offset:-2px; }
+.mer .jc-record dl { display:grid; grid-template-columns:minmax(130px,max-content) 1fr; margin:0; border-top:1px solid var(--line); }
+.mer .jc-record dt { padding:6px 0 6px 12px; font-size:11.5px; color:var(--ink3); border-top:1px solid var(--line2, #eef1f7); text-transform:capitalize; }
+.mer .jc-record dd { padding:6px 12px; margin:0; font-size:12px; color:var(--ink); border-top:1px solid var(--line2, #eef1f7); word-break:break-word; }
+.mer .jc-record dt:first-of-type, .mer .jc-record dd:first-of-type { border-top:none; }
 .mer .jc-req { margin-left:5px; font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--oxide-deep); background:var(--oxide-tint); padding:1px 6px; border-radius:5px; }
 .mer .jc-items { display:flex; flex-direction:column; gap:9px; }
 .mer .jc-item { background:var(--raised); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
 .mer .jc-item.crit { border-left:3px solid var(--oxide); }
-.mer .jc-item-row { width:100%; display:flex; align-items:center; gap:11px; padding:13px 15px; background:transparent; border:none; cursor:pointer; text-align:left; }
+.mer .jc-item-row { width:100%; display:flex; align-items:center; gap:11px; padding:9px 13px 9px 6px; }
+.mer .jc-expand { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; flex:0 0 auto; background:transparent; border:none; border-radius:7px; cursor:pointer; }
+.mer .jc-expand:hover { background:var(--petrol-tint); }
+.mer .jc-expand:focus-visible { outline:2px solid var(--petrol); outline-offset:1px; }
+.mer .jc-item-main { flex:1; min-width:0; display:flex; align-items:center; gap:9px; background:transparent; border:none; cursor:pointer; text-align:left; padding:4px 0; }
+.mer .jc-item-main:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; border-radius:4px; }
+.mer .jc-inline-acts { display:inline-flex; gap:6px; flex:0 0 auto; }
 .mer .jc-chev { color:var(--ink3); transition:transform 120ms var(--ease); flex:0 0 auto; }
 .mer .jc-chev.open { transform:rotate(90deg); }
 .mer .jc-tag { font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--petrol-deep); background:var(--petrol-tint); padding:2px 7px; border-radius:5px; }
@@ -2138,6 +2193,7 @@
 .mer .jc-pill { font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 8px; border-radius:999px; white-space:nowrap; }
 .mer .jc-detail { padding:13px 16px 16px 38px; border-top:1px solid var(--line); background:#fbfcfe; }
 .mer .jc-detail-load { color:var(--ink3); font-size:12px; }
+.mer .jc-arr { color:var(--ink3); font-size:12px; margin:0 -1px; }
 .mer .jc-track { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:12px; }
 .mer .jc-step { font-size:11px; padding:3px 9px; border-radius:999px; background:var(--line); color:var(--ink2); }
 .mer .jc-step.done { background:var(--moss-tint); color:var(--moss-deep); }
@@ -2145,8 +2201,36 @@
 .mer .jc-acts { display:flex; flex-wrap:wrap; gap:8px; }
 .mer .jc-tools { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; padding-top:16px; border-top:1px solid var(--line); }
 .mer .jc-tool { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink2); text-decoration:none; border:1px solid var(--line); border-radius:8px; padding:7px 12px; background:var(--raised); }
+.mer .jc-tool { font-family:inherit; cursor:pointer; }
 .mer .jc-tool:hover { border-color:var(--petrol); color:var(--petrol-deep); }
+.mer .jc-tool:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
 .mer .jc-empty { color:var(--ink3); font-size:13.5px; padding:18px; border:1px dashed var(--line); border-radius:12px; text-align:center; }
+
+/* Surface-in-journey panel — a wide sheet over the cockpit that hosts a registered
+   surface component (its own CRUD) so master-data / analytics / connectors open in
+   place, not on a separate /surface page. */
+.mer .jc-surface-panel {
+  width:min(1080px, 94vw); max-height:88vh; display:flex; flex-direction:column;
+  background:var(--paper); border:1px solid var(--line); border-radius:14px; overflow:hidden;
+  box-shadow:0 18px 60px oklch(0.21 0.012 85 / 0.20); animation:mer-panel-in 220ms var(--ease);
+}
+.mer .jc-sp-head { display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--line); background:var(--raised); flex-shrink:0; }
+.mer .jc-sp-head b { font-family:'Archivo',sans-serif; font-size:15px; font-weight:700; }
+.mer .jc-sp-x { margin-left:auto; width:34px; height:34px; border:1px solid var(--line); border-radius:8px; background:var(--paper); color:var(--ink2); font-size:18px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.mer .jc-sp-x:hover { border-color:var(--petrol); color:var(--petrol-deep); }
+.mer .jc-sp-x:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
+.mer .jc-sp-body { flex:1; min-height:0; overflow-y:auto; padding:8px 18px 22px; }
+@media (max-width:760px){ .mer .jc-surface-panel { width:100vw; max-height:94vh; border-radius:0; } }
+.mer .jc-date { color:var(--ink3); font-size:11px; letter-spacing:.05em; text-transform:uppercase; margin-bottom:4px; }
+.mer .jc-ontrack { margin-top:26px; }
+.mer .jc-seclabel { font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink3); margin:0 0 10px; }
+.mer .jc-ht-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:9px; }
+.mer .jc-ht { display:flex; flex-direction:column; gap:4px; align-items:flex-start; text-align:left; background:var(--raised); border:1px solid var(--line); border-radius:11px; padding:12px 14px; cursor:pointer; }
+.mer .jc-ht:hover { border-color:var(--petrol); }
+.mer .jc-ht:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
+.mer .jc-ht-h { display:inline-flex; align-items:center; gap:8px; font-family:'Archivo',sans-serif; font-weight:600; font-size:13.5px; color:var(--ink); }
+.mer .jc-ht-h svg { color:var(--petrol); }
+.mer .jc-ht-m { font-size:11px; color:var(--moss-deep); }
 
 /* ─── Journey crafting (admin:journeys) ──────────────────────────────────────── */
 .mer.ja { padding:0 0 48px; }
@@ -2163,4 +2247,11 @@
 .mer .ja-kind { margin-left:8px; font-size:9.5px; color:var(--ink3); border:1px solid var(--line); border-radius:5px; padding:1px 6px; }
 .mer .ja-table select { font:inherit; font-size:12.5px; padding:5px 8px; border:1px solid var(--line); border-radius:7px; background:var(--raised); color:var(--ink); }
 .mer .ja-charge { width:110px; font:inherit; font-size:12.5px; padding:5px 8px; border:1px solid var(--line); border-radius:7px; background:var(--raised); color:var(--ink); }
+/* Keyboard focus rings — JourneyAdmin form controls (petrol halo, composer idiom). */
+.mer .ja-table select:focus-visible, .mer .ja-charge:focus-visible { border-color:var(--petrol); box-shadow:0 0 0 3px oklch(0.45 0.09 165 / 0.25); outline:none; }
+@media (max-width:640px) {
+  .mer .ja-table { font-size:12px; }
+  .mer .ja-table th, .mer .ja-table td { padding:5px 6px; }
+  .mer .ja-charge { width:100%; }
+}
 .mer .ja-saved td { background:var(--moss-tint); transition:background .4s; }

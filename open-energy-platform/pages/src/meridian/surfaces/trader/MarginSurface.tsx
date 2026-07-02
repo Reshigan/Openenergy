@@ -24,7 +24,7 @@ export default function MarginSurface(_props: { role: string }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <button type="button" onClick={runScan} disabled={running} className="h-9 px-3 rounded-md bg-[var(--petrol)] text-white text-[12px] font-semibold disabled:opacity-50">
+        <button type="button" onClick={runScan} disabled={running} className="btn pri">
           {running ? 'Running…' : 'Run margin scan'}
         </button>
       </div>

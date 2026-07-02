@@ -17,6 +17,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './meridian.css';
 import { fetchHorizon, fmtZar, zarMagnitudeClass, type Bucket, type HorizonData, type MerAction, type MerCase } from './lib';
+import { ActErrorBar } from './components';
 import { api } from '../lib/api';
 import { MeridianHeader } from './MeridianHeader';
 import { HorizonKpis } from './HorizonKpis';
@@ -68,6 +69,7 @@ export default function TraderHorizon() {
   const [data, setData] = React.useState<HorizonData | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
   const [acting, setActing] = React.useState<string | null>(null);
+  const [actErr, setActErr] = React.useState<string | null>(null);
   const [selId, setSelId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -83,8 +85,8 @@ export default function TraderHorizon() {
     if (a.tone === 'oxide' && !window.confirm(`${a.label} — ${c.ref}?\nThis may be hard to reverse.`)) return;
     const key = `${c.id}:${a.action}`;
     setActing(key);
-    try { await api.post(a.path.replace('/api', '').replace(':id', c.id), {}); }
-    catch { /* keep last good state */ }
+    try { await api.post(a.path.replace('/api', '').replace(':id', c.id), {}); setActErr(null); }
+    catch (e: any) { setActErr(e?.response?.data?.error ?? e?.message ?? 'Action failed'); }
     finally { setActing(null); }
     try { setData(await fetchHorizon('trader')); } catch { /* keep last */ }
   }
@@ -228,6 +230,7 @@ export default function TraderHorizon() {
                   <span className="oh-mono"> · {cleanLabel(laneOf(sel).replace(/_/g, ' '))}</span>
                 </div>
                 {sel.counterparty && <div className="tr-rail-cp">vs {sel.counterparty}</div>}
+                <ActErrorBar error={actErr} onDismiss={() => setActErr(null)} />
                 <div className="tr-rail-acts">
                   {sel.actions.slice(0, 3).map(a => {
                     const key = `${sel.id}:${a.action}`;

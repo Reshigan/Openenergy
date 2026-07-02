@@ -337,7 +337,7 @@ export default function LoginPage() {
     setError('');
     setSsoLoading(true);
     try {
-      const r = await api.post('/auth/sso/microsoft/start', { return_to: '/horizon' });
+      const r = await api.post('/auth/sso/microsoft/start', { return_to: '/cockpit' });
       if (r.data?.success && r.data?.data?.redirect_url) {
         window.location.href = r.data.data.redirect_url;
         return;
@@ -357,11 +357,11 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password, mfaRequired ? mfaCode : undefined);
-      // Land on the populated per-role Horizon workspace, not the activity feed —
-      // the feed (oe_role_action_queue) is empty until cascades fire, so on a quiet
-      // deployment it reads as a blank screen. Horizon always carries the role's
-      // live chain cases. ponytail: deep-link `from` still wins (e.g. bookmarked /feed).
-      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/horizon';
+      // Land on the journey cockpit (the single journey-led plane): outcome journeys,
+      // lifecycle lanes, create/advance/surfaces all in place. The old per-role Horizon
+      // board stays reachable at /horizon ("classic board") but is no longer the home.
+      // ponytail: deep-link `from` still wins (e.g. a bookmarked deep path).
+      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/cockpit';
       navigate(from, { replace: true });
     } catch (err: unknown) {
       const anyErr = err as { name?: string; message?: string };

@@ -69,7 +69,7 @@ export default function MilestonesSurface(_props: { role: string }) {
                   <td className="px-4 py-2"><Pill tone={m.status === 'satisfied' ? 'good' : m.status === 'overdue' ? 'bad' : 'warn'}>{m.status}</Pill></td>
                   <td className="px-4 py-2">
                     {m.status !== 'satisfied' && (
-                      <button type="button" onClick={() => setSatisfying(m)} className="px-2 py-1 text-[11px] bg-[var(--petrol)] text-white rounded-md">Satisfy</button>
+                      <button type="button" onClick={() => setSatisfying(m)} className="btn pri">Satisfy</button>
                     )}
                   </td>
                 </tr>

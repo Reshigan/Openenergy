@@ -44,8 +44,12 @@ export function MeridianHeader({ ctx }: { ctx?: React.ReactNode }) {
           cockpit's tabs are the navigation now. QUICKLINKS data is kept (journeys.ts
           derives the cross-cutting journeys from it); it's just no longer rendered here. */}
       <div className="clock mono">{clock}</div>
-      <Link className="head-new" to="/new" title="Start a new transaction">+ New</Link>
-      <Link className="kbd-hint" to="/atlas">Atlas — search anything <kbd>⌘K</kbd></Link>
+      {/* Both open the one command surface (the global ⌘K palette) — no separate
+         /new or /atlas plane. Create otherwise happens in-journey on the cockpit. */}
+      <button type="button" className="kbd-hint" title="Search or jump (⌘K)"
+        onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}>
+        Search anything <kbd>⌘K</kbd>
+      </button>
       <div className="avatar-wrap">
         <button type="button" className="avatar" aria-haspopup="menu" aria-expanded={menuOpen}
                 aria-label="Account menu" onClick={() => setMenuOpen(o => !o)}>

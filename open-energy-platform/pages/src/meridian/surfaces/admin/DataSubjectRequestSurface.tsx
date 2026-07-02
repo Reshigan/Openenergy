@@ -115,7 +115,7 @@ export default function DataSubjectRequestSurface(_props: { role: string }) {
       <div className="flex justify-end">
         <button
           onClick={() => setCreating(true)}
-          className="px-3 py-1.5 rounded-lg bg-[var(--oe-primary)] text-white text-[12px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--oe-primary)]"
+          className="btn pri"
         >
           + Log DSR
         </button>
@@ -151,7 +151,7 @@ export default function DataSubjectRequestSurface(_props: { role: string }) {
                   {(DSR_TRANSITIONS[row.chain_status] ?? []).length > 0 && (
                     <button
                       onClick={() => setActionTarget(row)}
-                      className="text-[var(--oe-primary)] hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--oe-primary)] rounded-md"
+                      className="text-[var(--petrol-deep)] hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--petrol)] rounded-md"
                     >
                       Action
                     </button>

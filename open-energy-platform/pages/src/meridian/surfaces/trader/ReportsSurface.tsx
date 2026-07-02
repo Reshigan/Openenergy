@@ -76,14 +76,14 @@ export default function ReportsSurface(_props: { role: string }) {
               a.click();
               document.body.removeChild(a);
             }}
-            className="px-3 py-1.5 text-xs bg-[var(--petrol)] text-white rounded-md hover:bg-[var(--petrol-deep)]"
+            className="btn pri"
           >
             Export CSV
           </button>
           <button
             type="button"
             onClick={() => window.print()}
-            className="px-3 py-1.5 text-xs bg-white text-[var(--ink)] rounded-md border border-[var(--line)] hover:border-[var(--petrol)] hover:text-[var(--petrol)]"
+            className="btn ghost"
           >
             Print / PDF
           </button>

@@ -28,7 +28,7 @@ export default function TradesSurface(_props: { role: string }) {
             key={v}
             type="button"
             onClick={() => setView(v)}
-            className={`h-8 px-3 rounded-md text-[12px] font-semibold ${view === v ? 'bg-[var(--petrol)] text-white' : 'bg-[var(--raised)] text-[var(--ink2)]'}`}
+            className={view === v ? 'btn pri' : 'btn ghost'}
           >
             {v === 'fills' ? 'My fills' : 'Cleared matches'}
           </button>

@@ -52,16 +52,16 @@ export default function BillingSurface(_props: { role: string }) {
               <div className="flex gap-1 justify-end">
                 {r.status === 'draft' && (
                   <button type="button" disabled={busy === r.id} onClick={() => issue(r.id)}
-                    className="h-7 px-2 rounded-md bg-[var(--petrol)] text-white text-[11px] font-semibold disabled:opacity-60">
+                    className="btn pri">
                     {busy === r.id ? '…' : 'Issue'}
                   </button>
                 )}
                 {r.status === 'issued' && (
                   <>
                     <button type="button" onClick={() => setSel({ id: r.id, action: 'pay' })}
-                      className="h-7 px-2 rounded-md bg-[var(--petrol)] text-white text-[11px] font-semibold">Pay</button>
+                      className="btn pri">Pay</button>
                     <button type="button" onClick={() => setSel({ id: r.id, action: 'dispute' })}
-                      className="h-7 px-2 rounded-md border border-[var(--oxide)] text-[var(--oxide-deep)] text-[11px] font-semibold">Dispute</button>
+                      className="btn ox">Dispute</button>
                   </>
                 )}
               </div>

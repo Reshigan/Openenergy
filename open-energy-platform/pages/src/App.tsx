@@ -624,8 +624,10 @@ function AppRoutes() {
       {/* Meridian Horizon board — supplies its own chrome, so no Layout/AppShell wrapper. */}
       <Route path="/horizon" element={<ProtectedRoute><HorizonPage /></ProtectedRoute>} />
       <Route path="/thread/:chainKey/:id" element={<ProtectedRoute><ThreadPage /></ProtectedRoute>} />
-      <Route path="/atlas" element={<ProtectedRoute><AtlasPage /></ProtectedRoute>} />
-      <Route path="/new" element={<ProtectedRoute><NewPage /></ProtectedRoute>} />
+      {/* Retired browse planes — create is in-journey, search is the ⌘K palette.
+         Redirect into the cockpit so old links/bookmarks land on the single plane. */}
+      <Route path="/atlas" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/new" element={<Navigate to="/cockpit" replace />} />
       <Route path="/ledger/:chainKey" element={<ProtectedRoute><LedgerPage /></ProtectedRoute>} />
       {/* One parametric route for every non-chain Meridian surface (master-data CRUD,
           settings, analytics/ML panels, connectors). Resolves SURFACE_REGISTRY by
