@@ -88,7 +88,7 @@ export function PublicLegalPage() {
         {tab === 'submit' && <SubmitForm />}
 
         <footer className="text-center text-[11px] pt-2" style={{ color: TX3 }}>
-          Consolidated Energy Cockpit · oe.vantax.co.za · operated by GONXT Technology (Pty) Ltd
+          Open Energy (a Vantax product) · oe.vantax.co.za · operated by GONXT Technology (Pty) Ltd
         </footer>
       </main>
     </div>
@@ -106,7 +106,7 @@ function Overview({ manual, appCount, decisionCount }: { manual: Manual | null; 
         <p className="text-[12px] leading-relaxed" style={{ color: TX2 }}>
           This page is published under section 14 of the Promotion of Access to Information Act (PAIA, Act 2 of 2000)
           and section 18 of the Protection of Personal Information Act (POPIA, Act 4 of 2013). It documents the data
-          held by the Consolidated Energy Cockpit (CEC), who to contact to request access or correction, and how tariff applications
+          held by Open Energy (a Vantax product), who to contact to request access or correction, and how tariff applications
           and regulator decisions are made available to the public.
         </p>
       </div>

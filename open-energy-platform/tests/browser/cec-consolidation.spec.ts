@@ -1,7 +1,7 @@
 // cec-consolidation.spec.ts — proves the single-chrome cutover.
 //
 // After repointing Layout → MeridianFrame and deleting AppShell, EVERY authed
-// route must wear one chrome: the CEC header strip (`header .wordmark` === "CEC")
+// route must wear one chrome: the CEC header strip (`header .wordmark` === "OPEN ENERGY")
 // inside `.mer.mer-frame`. Routes that were previously legacy `<Layout>`/AppShell
 // pages are the interesting cases — they must now render under CEC with no crash
 // and no leftover sidebar chrome.
@@ -61,7 +61,7 @@ for (const path of PREVIOUSLY_LEGACY) {
     // CEC chrome present.
     const frame = page.locator('.mer.mer-frame');
     await expect(frame).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator('header .wordmark')).toHaveText('CEC');
+    await expect(page.locator('header .wordmark')).toHaveText('OPEN ENERGY');
 
     // No legacy "MERIDIAN" wordmark anywhere.
     await expect(page.locator('text=MERIDIAN')).toHaveCount(0);

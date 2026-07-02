@@ -12,7 +12,6 @@ import { RegisterSchema, LoginSchema, ForgotPasswordSchema, ResetPasswordSchema 
 import { authMiddleware, getCurrentUser, signToken, hashPassword, verifyPassword } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import {
-  ACCESS_TOKEN_EXPIRY_SECONDS,
   accessTokenTtlSeconds,
   createSession,
   rotateSession,
@@ -273,7 +272,7 @@ auth.post('/login', async (c) => {
   // oe_access: scoped to /api so all API routes can use it as fallback.
   // oe_refresh: scoped to /api/auth/refresh only (rotation endpoint).
   const cookieOpts = { httpOnly: true, secure: cookieSecure(c), sameSite: 'Strict' as const, path: '/api' };
-  setCookie(c, 'oe_access', token, { ...cookieOpts, maxAge: ACCESS_TOKEN_EXPIRY_SECONDS });
+  setCookie(c, 'oe_access', token, { ...cookieOpts, maxAge: accessTokenTtlSeconds(c.env) });
   setCookie(c, 'oe_refresh', session.refreshToken, {
     ...cookieOpts, path: '/api/auth/refresh',
     maxAge: REFRESH_COOKIE_MAX_AGE,
@@ -323,7 +322,7 @@ auth.post('/refresh', async (c) => {
   );
 
   const cookieOpts = { httpOnly: true, secure: cookieSecure(c), sameSite: 'Strict' as const, path: '/api' };
-  setCookie(c, 'oe_access', token, { ...cookieOpts, maxAge: ACCESS_TOKEN_EXPIRY_SECONDS });
+  setCookie(c, 'oe_access', token, { ...cookieOpts, maxAge: accessTokenTtlSeconds(c.env) });
   setCookie(c, 'oe_refresh', rot.newRefreshToken, {
     ...cookieOpts, path: '/api/auth/refresh',
     maxAge: REFRESH_COOKIE_MAX_AGE,
@@ -610,7 +609,7 @@ auth.post('/mfa/backup-code', async (c) => {
   await recordLoginAttempt(c.env.DB, email, ip, true, 'backup_code');
 
   const cookieOpts = { httpOnly: true, secure: cookieSecure(c), sameSite: 'Strict' as const, path: '/api' };
-  setCookie(c, 'oe_access', token, { ...cookieOpts, maxAge: ACCESS_TOKEN_EXPIRY_SECONDS });
+  setCookie(c, 'oe_access', token, { ...cookieOpts, maxAge: accessTokenTtlSeconds(c.env) });
   setCookie(c, 'oe_refresh', session.refreshToken, { ...cookieOpts, path: '/api/auth/refresh', maxAge: REFRESH_COOKIE_MAX_AGE });
 
   return c.json({
