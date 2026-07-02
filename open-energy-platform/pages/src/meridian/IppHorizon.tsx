@@ -199,12 +199,12 @@ export default function IppHorizon() {
                     {r.n} live{r.br ? ` · ${r.br} breaching` : ''}{r.zar > 0 ? ` · ${fmtZar(r.zar)}` : ''}
                   </div>
                 </div>
-                <Link className="ip-step-link oh-mono" to={`/atlas`}>open →</Link>
+                <Link className="ip-step-link oh-mono" to={`/cockpit`}>open →</Link>
               </li>
             ))}
           </ol>
           <p className="ip-spine-foot">
-            {performing} performing case{performing === 1 ? '' : 's'} are within their windows and deliberately recede down the spine. They're in your <Link to="/atlas">ledger</Link> when you need them — not in your face when you don't.
+            {performing} performing case{performing === 1 ? '' : 's'} are within their windows and deliberately recede down the spine. They're in your <Link to="/cockpit">cockpit</Link> when you need them — not in your face when you don't.
           </p>
         </div>
       </section>

@@ -153,12 +153,12 @@ export default function GridHorizon() {
                           {cleanLabel(c.status.replace(/_/g, ' '))}
                         </div>
                         <div className="gd-alarm-acts">
-                          {c.actions.slice(0, 2).map(a => {
+                          {c.actions.slice(0, 2).map((a, ai) => {
                             const key = `${c.id}:${a.action}`;
                             const busy = acting === key;
                             return (
                               <button key={a.action} type="button"
-                                className={a.tone === 'oxide' ? 'btn ox' : a.tone === 'amber' || a.tone === 'gold' ? 'btn gold' : 'btn pri'}
+                                className={a.tone === 'oxide' ? 'btn ox' : a.tone === 'amber' || a.tone === 'gold' ? 'btn gold' : ai === 0 ? 'btn pri' : 'btn quiet'}
                                 title={a.fields?.length ? `${a.cascadeHint} — opens the form` : a.cascadeHint}
                                 disabled={acting !== null}
                                 aria-busy={busy || undefined}
@@ -197,7 +197,7 @@ export default function GridHorizon() {
                   <div className="gd-lane-meta oh-mono">
                     {l.cases.length} live{br ? ` · ${br}!` : ''}{hasAtRisk ? ' · at risk' : ''}
                   </div>
-                  <Link className="gd-lane-link oh-mono" to={`/atlas`}>open →</Link>
+                  <Link className="gd-lane-link oh-mono" to={`/cockpit`}>open →</Link>
                 </div>
               );
             })}

@@ -197,8 +197,8 @@ export default function HorizonPage() {
           </p>
           <div className="board-head">
             <div className="board-new-stack">
-              <Link to="/new" className="board-new" title="Start a new transaction">+ New transaction</Link>
-              <Link to="/atlas" className="board-new alt" title="Browse all your records and functions">Browse records</Link>
+              <Link to="/cockpit" className="board-new" title="Start a new transaction">+ New transaction</Link>
+              <Link to="/cockpit" className="board-new alt" title="Browse all your records and functions">Browse records</Link>
             </div>
             {BUCKETS.map(b => (
               <div key={b.key} className={b.key === 'breached' ? 'bucket-h breach' : 'bucket-h'}>
@@ -265,8 +265,8 @@ export default function HorizonPage() {
           {data.lanes.length === 0 && (
             <div className="board-empty">
               <p>No live cases yet.</p>
-              <Link to="/new" className="btn pri">+ Start a transaction</Link>
-              <p className="board-empty-sub">or browse every function in <Link to="/atlas">Atlas</Link>.</p>
+              <Link to="/cockpit" className="btn pri">+ Start a transaction</Link>
+              <p className="board-empty-sub">or pick a journey from your <Link to="/cockpit">cockpit</Link>.</p>
             </div>
           )}
 
@@ -305,14 +305,14 @@ export default function HorizonPage() {
                     {c.bucket === 'breached' && <> · <span className="due-ox">overdue</span></>}
                   </div>
                   <div className="acts">
-                    {c.actions.slice(0, 2).map(a => {
+                    {c.actions.slice(0, 2).map((a, ai) => {
                       const key = `${c.id}:${a.action}`;
                       const busy = acting === key;
                       return (
                         <button
                           type="button"
                           key={a.action}
-                          className={a.tone === 'oxide' ? 'btn ox' : 'btn pri'}
+                          className={a.tone === 'oxide' ? 'btn ox' : ai === 0 ? 'btn pri' : 'btn quiet'}
                           title={a.fields?.length ? `${a.cascadeHint} — opens the form` : a.cascadeHint}
                           disabled={acting !== null}
                           aria-busy={busy || undefined}

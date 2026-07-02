@@ -366,7 +366,7 @@ export default function JourneyCockpit() {
               );
             })()}
             <div className="jc-items">
-              {casesForJourney(activeJourney.key).map(c => <ItemCard key={c.id} c={c} />)}
+              {casesForJourney(activeJourney.key).map((c, i) => <ItemCard key={c.id} c={c} rank={i} />)}
               {casesForJourney(activeJourney.key).length === 0 && (
                 <div className="jc-empty">No live items in this journey. Use “Start” above to begin one, or open a tool from the list.</div>
               )}

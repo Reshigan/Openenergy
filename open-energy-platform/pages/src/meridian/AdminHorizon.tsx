@@ -207,12 +207,12 @@ export default function AdminHorizon() {
                       </div>
                     </div>
                     <div className="ad-exc-acts">
-                      {c.actions.slice(0, 2).map(a => {
+                      {c.actions.slice(0, 2).map((a, ai) => {
                         const key = `${c.id}:${a.action}`;
                         const busy = acting === key;
                         return (
                           <button key={a.action} type="button"
-                            className={a.tone === 'oxide' ? 'btn ox' : 'btn pri'}
+                            className={a.tone === 'oxide' ? 'btn ox' : ai === 0 ? 'btn pri' : 'btn quiet'}
                             title={a.fields?.length ? `${a.cascadeHint} — opens the form` : a.cascadeHint}
                             disabled={acting !== null}
                             aria-busy={busy || undefined}
@@ -239,7 +239,7 @@ export default function AdminHorizon() {
             <span className="ad-reassure-mark" aria-hidden="true">—</span>
             <span>
               {performing} performing chain{performing === 1 ? '' : 's'} are within their windows and deliberately recede.
-              They're in your <Link to="/atlas">ledger</Link> when you need them — not in your face when you don't.
+              They're in your <Link to="/cockpit">cockpit</Link> when you need them — not in your face when you don't.
             </span>
           </div>
         </div>
