@@ -145,10 +145,10 @@ function BrandPanel() {
           </div>
           <div>
             <div style={{ display: 'inline-block', fontSize: 22, fontWeight: 800, color: T.brandText, letterSpacing: '0.14em', lineHeight: 1.1, paddingBottom: 3, borderBottom: `3px solid ${T.brandAccent}` }}>
-              CEC
+              OPEN ENERGY
             </div>
             <div style={{ fontSize: 10, letterSpacing: '0.18em', color: T.brandSubtle, textTransform: 'uppercase', fontFamily: 'ui-monospace, monospace', marginTop: 6 }}>
-              Consolidated Energy Cockpit
+              A Vantax product
             </div>
           </div>
         </div>
@@ -227,7 +227,7 @@ function BrandPanel() {
 
       {/* Footer */}
       <div style={{ position: 'relative', zIndex: 1, fontSize: 11, color: T.brandSubtle, opacity: 0.7 }}>
-        © {new Date().getFullYear()} Consolidated Energy Cockpit
+        © {new Date().getFullYear()} Open Energy · a Vantax product
       </div>
     </div>
   );
@@ -440,7 +440,7 @@ export default function LoginPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
               <LogoMark size={32} variant="colour" />
               <div style={{ fontSize: 16, fontWeight: 800, color: T.text1, letterSpacing: '-0.02em' }}>
-                Consolidated Energy Cockpit
+                Open Energy
               </div>
             </div>
 

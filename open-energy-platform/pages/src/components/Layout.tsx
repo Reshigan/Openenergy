@@ -285,7 +285,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Logo */}
         <div className="flex items-center gap-2 w-[240px]">
           <LogoMark size={28} />
-          <span className="text-white font-semibold text-lg tracking-tight">CEC</span>
+          <span className="text-white font-semibold text-lg tracking-tight">Open Energy</span>
         </div>
         
         {/* Search */}

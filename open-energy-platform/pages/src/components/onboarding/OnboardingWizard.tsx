@@ -227,10 +227,10 @@ function BrandRail({ steps, currentStep, role }: { steps: string[]; currentStep:
           </div>
           <div>
             <div className="inline-block text-[20px] font-extrabold leading-[1.1] pb-[3px]" style={{ color: B.brandText, letterSpacing: '0.14em', borderBottom: `3px solid ${B.brandAccent}` }}>
-              CEC
+              OPEN ENERGY
             </div>
             <div className="mt-1.5 text-[10px] uppercase" style={{ letterSpacing: '0.18em', color: B.brandSubtle, fontFamily: 'ui-monospace, monospace' }}>
-              Consolidated Energy Cockpit
+              A Vantax product
             </div>
           </div>
         </div>
@@ -442,7 +442,7 @@ export function OnboardingWizard() {
             <div className="rounded-md p-1" style={{ background: 'rgba(255,255,255,0.95)' }}>
               <LogoMark size={20} variant="colour" />
             </div>
-            <span className="text-[13px] font-extrabold" style={{ color: B.brandText, letterSpacing: '0.12em' }}>CEC</span>
+            <span className="text-[13px] font-extrabold" style={{ color: B.brandText, letterSpacing: '0.12em' }}>OPEN ENERGY</span>
           </div>
           <ProgressDots steps={steps} currentStep={step} accentColor="#ffffff" />
         </div>

@@ -79,7 +79,7 @@ test.describe('Meridian Horizon', () => {
     await expect(page.locator('.mer.horizon')).toBeVisible({ timeout: 25_000 });
 
     // Header chrome — single CEC brand wordmark (renamed from MERIDIAN).
-    await expect(page.locator('.wordmark')).toHaveText('CEC');
+    await expect(page.locator('.wordmark')).toHaveText('OPEN ENERGY');
 
     // Lender renders the bespoke "Quiet Book" Horizon (LenderHorizon), not the
     // shared lane×bucket board this test originally asserted: hero headline,

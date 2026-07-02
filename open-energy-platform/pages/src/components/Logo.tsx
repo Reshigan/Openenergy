@@ -1,7 +1,7 @@
 import React from 'react';
 
 /* ════════════════════════════════════════════════════════════════════════
- * CEC — Brand mark · "Cockpit Dial"
+ * Open Energy (a Vantax product) — Brand mark · "Cockpit Dial"
  *
  * An open gauge ring (the "C" of CEC, and a cockpit instrument) with a gold
  * needle swung to peak through the ring's mouth — energy read at a glance.
@@ -21,7 +21,7 @@ export interface LogoProps {
   variant?: 'colour' | 'light';
 }
 
-export function LogoMark({ size = 32, className = '', title = 'Consolidated Energy Cockpit' }: LogoProps) {
+export function LogoMark({ size = 32, className = '', title = 'Open Energy — a Vantax product' }: LogoProps) {
   const uid = React.useId().replace(/:/g, '');
   const field = `cecF-${uid}`;
   const gold = `cecG-${uid}`;
@@ -82,8 +82,8 @@ export function LogoBanner({
         className="font-display font-extrabold leading-[0.95] tracking-tight"
         style={{ fontSize: Math.round(height * 0.42) }}
       >
-        <div style={{ color: navy, letterSpacing: '0.06em' }}>CEC</div>
-        <div style={{ color: sub, fontSize: '0.5em', letterSpacing: '0.08em', fontWeight: 600 }}>CONSOLIDATED ENERGY COCKPIT</div>
+        <div style={{ color: navy, letterSpacing: '0.06em' }}>OPEN ENERGY</div>
+        <div style={{ color: sub, fontSize: '0.5em', letterSpacing: '0.08em', fontWeight: 600 }}>A VANTAX PRODUCT</div>
       </div>
     </div>
   );

@@ -67,7 +67,7 @@ export function MeridianHeader({ ctx }: { ctx?: React.ReactNode }) {
 
   return (
     <header>
-      <Link to="/cockpit" className="wordmark">CEC</Link>
+      <Link to="/cockpit" className="wordmark">OPEN ENERGY</Link>
       {ctx && <div className="ctx">{ctx}</div>}
       <div className="spacer" />
       {/* Platform-section quicklinks (Deals/ESG/Reports/…) retired — the journey

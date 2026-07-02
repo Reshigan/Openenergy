@@ -94,7 +94,7 @@ export function PublicAuditPage() {
         {tab === 'verify' && <VerifyPanel />}
 
         <footer className="text-center text-[11px] pt-2" style={{ color: TX3 }}>
-          Consolidated Energy Cockpit · transparency log · oe.vantax.co.za
+          Open Energy (a Vantax product) · transparency log · oe.vantax.co.za
         </footer>
       </main>
     </div>

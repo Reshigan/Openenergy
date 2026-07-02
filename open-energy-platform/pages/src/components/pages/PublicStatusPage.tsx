@@ -135,7 +135,7 @@ export function PublicStatusPage() {
           </div>
         </section>
         <footer className="text-center text-[11px] pt-2" style={{ color: TX3 }}>
-          Consolidated Energy Cockpit · oe.vantax.co.za · operated by GONXT Technology (Pty) Ltd
+          Open Energy (a Vantax product) · oe.vantax.co.za · operated by GONXT Technology (Pty) Ltd
         </footer>
       </main>
     </div>

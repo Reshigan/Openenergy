@@ -113,7 +113,7 @@ for (const route of RETIRED_WORKSTATION_ROUTES) {
     // Redirect lands on /horizon; the board + single CEC header chrome render.
     await page.waitForURL(/\/horizon/, { timeout: 15_000 });
     await expect(page.locator('.mer.horizon')).toBeVisible({ timeout: 25_000 });
-    await expect(page.locator('header .wordmark')).toHaveText('CEC');
+    await expect(page.locator('header .wordmark')).toHaveText('OPEN ENERGY');
 
     const real = errors.filter((e) => !isBenign(e));
     expect(real, real.join('\n')).toEqual([]);

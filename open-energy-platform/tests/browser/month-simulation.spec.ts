@@ -209,7 +209,7 @@ async function runRoleUser(browser: Browser, role: string, token: string, user: 
     if (!rpt.boardRendered) { rpt.notes.push('horizon board did not render'); }
     // Header wordmark must be the single CEC brand (consolidation contract).
     const wordmark = await page.locator('header .wordmark').first().textContent().catch(() => null);
-    if (wordmark && !/CEC|ATLAS/.test(wordmark)) rpt.notes.push(`unexpected wordmark: ${wordmark}`);
+    if (wordmark && !/OPEN ENERGY|CEC|ATLAS/.test(wordmark)) rpt.notes.push(`unexpected wordmark: ${wordmark}`);
 
     // ── WEEKS rounds of work ──────────────────────────────────────────────
     for (let week = 1; week <= WEEKS; week++) {

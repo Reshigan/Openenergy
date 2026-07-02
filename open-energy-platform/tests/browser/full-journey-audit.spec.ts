@@ -380,7 +380,7 @@ test.describe('Meridian chrome + duty-stream collapse', () => {
     // Meridian header chrome is present: CEC wordmark + the one ⌘K search entry
     // (the "Platform sections" quicklinks nav and Atlas plane retired with the
     // journey cockpit).
-    await expect(page.locator('header .wordmark')).toHaveText('CEC');
+    await expect(page.locator('header .wordmark')).toHaveText('OPEN ENERGY');
     await expect(page.locator('body')).toContainText(/Search anything/i, { timeout: 5_000 });
 
     const real = errors.filter((e) => e.startsWith('pageerror'));

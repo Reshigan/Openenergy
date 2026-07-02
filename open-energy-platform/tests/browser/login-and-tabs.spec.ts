@@ -81,7 +81,7 @@ test('admin lands on the CEC Horizon board after auth (legacy launch route redir
   // Redirect lands on Horizon; the board + single CEC header chrome render.
   await page.waitForURL(/\/horizon/, { timeout: 15_000 });
   await expect(page.locator('.mer.horizon')).toBeVisible({ timeout: 25_000 });
-  await expect(page.locator('header .wordmark')).toHaveText('CEC');
+  await expect(page.locator('header .wordmark')).toHaveText('OPEN ENERGY');
 
   // No runtime page errors during the full navigation flow.
   const real = errors.filter((e) => !isBenign(e));

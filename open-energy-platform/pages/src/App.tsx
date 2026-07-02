@@ -371,7 +371,7 @@ function RegisterPage() {
       <div className="aurora" />
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-display font-bold text-white mb-2">Consolidated Energy Cockpit</h1>
+          <h1 className="text-4xl font-display font-bold text-white mb-2">Open Energy</h1>
           <p className="text-white/75 font-mono text-[12px] uppercase tracking-[0.2em]">Industrial Energy Exchange</p>
         </div>
 
