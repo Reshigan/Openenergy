@@ -449,7 +449,9 @@
 
 /* ── Case body ───────────────────────────── */
 .mer .mer-main { flex:1; min-height:0; overflow-y:auto; }
-.mer .case-body { padding:30px 44px 40px; max-width:780px; }
+/* Centered reading measure — the case sat left with a dead right half on wide
+   screens (same fix as .ledger-body). */
+.mer .case-body { padding:30px 44px 40px; max-width:780px; margin:0 auto; }
 .mer .case-head { padding-bottom:22px; border-bottom:1px solid var(--line); }
 .mer .case-head h1 { font-size:23px; font-weight:700; letter-spacing:-0.01em; line-height:1.25; margin:4px 0 6px; }
 .mer .case-sub { display:flex; align-items:center; flex-wrap:wrap; gap:10px; font-size:12.5px; color:var(--ink2); margin-bottom:10px; }

@@ -231,9 +231,12 @@ export default function ThreadPage() {
           {/* ponytail: single action shows its own hint; with rival actions a generic prompt avoids mislabelling */}
           <div className="cascade-preview">{t.actions.length === 1 ? t.actions[0].cascadeHint : 'Pick an action below. Hover any button to preview its effect.'}</div>
           <div className="actbar-btns">
-            {t.actions.map(a => (
+            {/* Actions arrive ranked — only the top one is filled so a chain with
+               a dozen legal transitions reads as a next step + alternatives, not
+               a wall of identical primary buttons. Destructive stays oxide. */}
+            {t.actions.map((a, ai) => (
               <button key={a.action} type="button" disabled={busy !== null}
-                      className={`btn ${a.tone === 'oxide' ? 'ox' : 'pri'}`}
+                      className={`btn ${a.tone === 'oxide' ? 'ox' : ai === 0 ? 'pri' : 'quiet'}`}
                       title={a.cascadeHint} onClick={() => {
                         if (a.fields?.length) { setFormAction(a); return; }
                         // Destructive (oxide) transitions confirm before firing — matches the
