@@ -14,7 +14,7 @@ import { fetchHorizon, type MerCase } from './lib';
 import { cleanLabel } from './labels';
 import { statusLabel } from './ease/statusLabel';
 
-interface Hit { type: 'function' | 'case'; label: string; sub: string; go: () => void }
+interface Hit { type: 'function' | 'case' | 'create'; label: string; sub: string; go: () => void }
 
 // Non-Meridian chrome: the standalone UX prototypes (/apex, /ux-prototype/*) run
 // their own command surfaces. Mounting the Meridian palette there is the
@@ -79,6 +79,14 @@ export default function CommandPalette() {
   const targetFor = (f: { chainKey?: string; route?: string; key: string }) =>
     tileTarget(role, f, hasSurface);
   const hits: Hit[] = [
+    // Create-in-journey from the command bar: "New <thing>" opens the cockpit composer
+    // (via ?compose) for any initiable chain. Type "new" to see everything you can start.
+    ...cfg.domains.flatMap(d => d.features
+      .filter(f => f.chainKey)
+      .map(f => ({ f, label: `New ${cleanLabel(f.label)}` }))
+      .filter(({ label }) => label.toLowerCase().includes(ql))
+      .map(({ f, label }) => ({ type: 'create' as const, label, sub: cleanLabel(d.label),
+        go: () => nav(`/cockpit?compose=${f.chainKey}`) }))),
     ...cfg.domains.flatMap(d => d.features
       .filter(f => cleanLabel(f.label).toLowerCase().includes(ql))
       .map(f => ({ f, to: targetFor(f) }))
@@ -94,7 +102,7 @@ export default function CommandPalette() {
   return (
     <div className="mer veil" onClick={() => setOpen(false)}>
       <div className="palette" role="dialog" aria-modal="true" aria-label="Command palette" onClick={e => e.stopPropagation()}>
-        <input autoFocus value={q} placeholder="functions · cases…" aria-label="Search functions and cases"
+        <input autoFocus value={q} placeholder="Start, search or jump… (try “new”)" aria-label="Start, search or jump"
                role="combobox" aria-expanded="true" aria-controls="pal-hits" aria-autocomplete="list"
                aria-activedescendant={hits[sel] ? `pal-hit-${sel}` : undefined}
                onChange={e => { setQ(e.target.value); setSel(0); }}
@@ -108,7 +116,7 @@ export default function CommandPalette() {
             <button key={i} type="button" id={`pal-hit-${i}`} role="option" aria-selected={i === sel}
                     className={`hit ${i === sel ? 'sel' : ''}`}
                     onMouseEnter={() => setSel(i)} onClick={() => { hit.go(); setOpen(false); }}>
-              <span className={`type ${hit.type === 'function' ? 'fn' : 'case'}`}>{hit.type.toUpperCase()}</span>
+              <span className={`type ${hit.type === 'case' ? 'case' : 'fn'}`}>{hit.type.toUpperCase()}</span>
               <b>{hit.label}</b><span className="sub">{hit.sub}</span>
             </button>
           ))}

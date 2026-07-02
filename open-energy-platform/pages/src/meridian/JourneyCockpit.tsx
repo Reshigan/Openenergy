@@ -7,7 +7,7 @@
 // Reads /api/journey-config governance: hides 'unavailable', badges 'required',
 // shows a charge on charged features. Custom icons (no emoji); Substation styling.
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './meridian.css';
 import { useAuth } from '../lib/useAuth';
 import { api } from '../lib/api';
@@ -89,6 +89,15 @@ export default function JourneyCockpit() {
       })
       .catch(() => setActErr('Couldn’t open the form. Try again.'));
   }, []);
+
+  // ⌘K create-wiring: the command palette (or any deep link) can request a create
+  // with ?compose=<chainKey>; open the in-journey composer and strip the param so a
+  // reload/back-nav doesn't reopen it.
+  const location = useLocation();
+  React.useEffect(() => {
+    const ck = new URLSearchParams(location.search).get('compose');
+    if (ck) { openCompose(ck); navigate('/cockpit', { replace: true }); }
+  }, [location.search, openCompose, navigate]);
 
   React.useEffect(() => {
     if (!role) return;
