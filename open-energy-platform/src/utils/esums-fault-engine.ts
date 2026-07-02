@@ -201,9 +201,13 @@ export async function runFaultEngine(
 
     const isSolar = d.device_type === 'inverter' || d.device_type === 'string' || site.technology === 'solar';
     const isWater = site.technology === 'water';
+    // A metering device is generic (electricity/water/waste/gas/…): it reports a
+    // reading, independent of solar. Whatever medium, "no reading for a while" is a
+    // dead-meter / comms fault — the one universal meter detector.
+    const isMeter = d.device_type === 'meter';
     const hourly = hourlyLossForDevice(d, site);
 
-    let zeroRun = 0, underRun = 0, hotRun = 0, hvRun = 0, lvRun = 0, fdRun = 0, waterRun = 0;
+    let zeroRun = 0, underRun = 0, hotRun = 0, hvRun = 0, lvRun = 0, fdRun = 0, waterRun = 0, meterStallRun = 0;
     let leakLevelStart: number | null = null;
 
     for (const r of rows) {
@@ -261,6 +265,23 @@ export async function runFaultEngine(
           description: `Voltage < 360 V for 3 consecutive readings.`,
           detected_at: r.ts, hourly_loss_zar: Math.round(hourly * 0.3),
         });
+      }
+
+      // Dead/stalled meter — medium-agnostic. A meter reports SOME reading each
+      // tick (electricity interval_kwh, water treated/raw kL, or a generic flow);
+      // none of them moving for 4 consecutive ticks is a broken meter or comms
+      // dropout, whatever the medium. No revenue-loss weighting (meters observe).
+      if (isMeter) {
+        const reading = r.interval_kwh ?? r.treated_kl ?? r.raw_kl ?? r.flow_lps ?? null;
+        if (reading == null || reading <= 0) meterStallRun += 1; else meterStallRun = 0;
+        if (meterStallRun === 4) {
+          enqueue({
+            device_id: d.id, site_id: d.site_id, category: 'metering', severity: 'minor',
+            fault_code: 'detector_meter_stall',
+            description: `Meter reported no reading for 4 consecutive intervals — dead meter or comms dropout.`,
+            detected_at: r.ts, hourly_loss_zar: 0,
+          });
+        }
       }
 
       // Frequency deviation
