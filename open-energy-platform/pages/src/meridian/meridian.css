@@ -148,7 +148,9 @@
 .mer .board-new.alt:hover { background:var(--raised); color:var(--ink); }
 
 /* ── Top bar — v2 dark header ─────────────── */
-.mer header {
+/* Direct child only: widget bodies inside surfaces legitimately use <header>
+   for their own section headers — the 60px dark flex bar is chrome-exclusive. */
+.mer > header {
   height:60px; display:flex; align-items:center; gap:28px; padding:0 28px;
   border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0;
   background: radial-gradient(1200px 400px at 80% -10%, rgba(31,111,84,0.20), transparent 60%),
@@ -436,7 +438,7 @@
 .mer.thread { display:flex; flex-direction:column; min-height:100dvh; }
 
 /* ── Thread top bar ──────────────────────── */
-/* <header className="mer-head"> already inherits .mer header (60px bar). */
+/* .mer-head is historical — the chrome bar is .mer > header (direct child). */
 .mer .mer-head .back { font-size:12.5px; color:var(--petrol-deep); text-decoration:none; font-weight:600; }
 .mer .mer-head .back:hover { color:var(--petrol); }
 /* Ledger breadcrumb on Thread — "Horizon › <chain> › ref". The ‹crumb› carries a
@@ -863,7 +865,7 @@
   /* ── Header: wrap to two rows; never clip the avatar (logout) off-screen ──
      The fixed-height single-row bar can't fit everything on a phone, so let it
      wrap and hide the lowest-priority chrome. Avatar always stays visible. */
-  .mer header {
+  .mer > header {
     height:auto; min-height:56px; flex-wrap:wrap; gap:10px 14px;
     padding:8px 16px;
   }

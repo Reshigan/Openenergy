@@ -93,7 +93,9 @@ export function EsumsMeterScan() {
 
   return (
     <div className="space-y-3">
-      <header className="rounded-xl border p-5" style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}>
+      {/* div, not <header>: meridian.css styles the bare header element as the
+          chrome's flex row, which would lay the eyebrow/title/copy side-by-side. */}
+      <div className="rounded-xl border p-5" style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}>
         <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold inline-flex items-center gap-1" style={{ color: 'oklch(0.55 0.008 250)' }}>
           <Sparkles size={10} /> Meter analysis · import a meter, find the wins
         </div>
@@ -105,7 +107,7 @@ export function EsumsMeterScan() {
           deterministic algorithms (standby load, time-of-use shift, continuous flow) and estimates the annual saving.
           The free scan shows how many wins and the rough total; the full report itemises each one with its evidence.
         </p>
-      </header>
+      </div>
 
       <section className="widget-card p-4 space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
