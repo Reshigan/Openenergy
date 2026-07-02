@@ -66,6 +66,23 @@ describe('continuousFlow (water only)', () => {
   });
 });
 
+describe('input hygiene (fail-closed savings)', () => {
+  it('sorts unsorted readings before annualising (no ×365 inflation)', () => {
+    const shuffled = [elecSeries[3], elecSeries[0], elecSeries[4], elecSeries[2], elecSeries[1]];
+    const a = scanOpportunities(elecSeries, elecCtx);
+    const b = scanOpportunities(shuffled, elecCtx);
+    expect(b).toEqual(a);
+  });
+  it('rejects a negative off-peak price instead of inflating the spread', () => {
+    expect(peakShift(elecSeries, { ...elecCtx, offpeakPriceZar: -5 }, 1)).toBeNull();
+  });
+  it('clamps shiftableFraction to [0,1]', () => {
+    const o = peakShift(elecSeries, { ...elecCtx, shiftableFraction: 9 }, 1);
+    // 80 peak units × 1.0 (clamped) × 1.5 spread = 120, not 1080
+    expect(o!.estimatedSavingZarYr).toBe(120);
+  });
+});
+
 describe('scanOpportunities + freeScanSummary', () => {
   it('returns ranked opportunities; free summary hides detail', () => {
     const opps = scanOpportunities(elecSeries, elecCtx);

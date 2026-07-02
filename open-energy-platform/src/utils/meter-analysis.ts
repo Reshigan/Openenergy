@@ -71,10 +71,12 @@ export function idleLoad(series: MeterReading[], ctx: AnalysisContext, annualFac
 
 /** TOU arbitrage: shift a fraction of peak-hour load to off-peak. */
 export function peakShift(series: MeterReading[], ctx: AnalysisContext, annualFactor: number): Opportunity | null {
-  if (ctx.offpeakPriceZar == null || !(ctx.offpeakPriceZar < ctx.unitPriceZar)) return null;
+  // Fail-closed on tariff inputs: a negative off-peak price would inflate the
+  // spread (and the promised saving); a fraction outside [0,1] is nonsense.
+  if (ctx.offpeakPriceZar == null || ctx.offpeakPriceZar < 0 || !(ctx.offpeakPriceZar < ctx.unitPriceZar)) return null;
   const peak = new Set(ctx.peakHours ?? []);
   if (peak.size === 0) return null;
-  const frac = ctx.shiftableFraction ?? 0.3;
+  const frac = Math.min(1, Math.max(0, ctx.shiftableFraction ?? 0.3));
   let peakUnits = 0;
   for (const r of series) if (peak.has(hourOf(r.ts))) peakUnits += Math.max(0, r.value);
   if (peakUnits <= 0) return null;
@@ -108,8 +110,11 @@ export function continuousFlow(series: MeterReading[], ctx: AnalysisContext, ann
 
 /** Full analysis (paid report): every applicable opportunity, ranked by saving. */
 export function scanOpportunities(series: MeterReading[], ctx: AnalysisContext): Opportunity[] {
-  const af = 365 / daysCovered(series);
-  return [idleLoad(series, ctx, af), peakShift(series, ctx, af), continuousFlow(series, ctx, af)]
+  // Sort defensively: daysCovered spans first→last, so unsorted input would
+  // collapse the window to 1 day and inflate the annualisation ×365.
+  const sorted = [...series].sort((a, b) => a.ts.localeCompare(b.ts));
+  const af = 365 / daysCovered(sorted);
+  return [idleLoad(sorted, ctx, af), peakShift(sorted, ctx, af), continuousFlow(sorted, ctx, af)]
     .filter((o): o is Opportunity => o !== null)
     .sort((a, b) => b.estimatedSavingZarYr - a.estimatedSavingZarYr);
 }
