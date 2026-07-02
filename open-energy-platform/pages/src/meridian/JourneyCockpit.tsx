@@ -42,6 +42,10 @@ import { SURFACE_REGISTRY } from './surfaces';
 import { SurfaceBoundary } from './MeridianSurfacePage';
 import { cleanLabel } from './labels';
 import { MeridianHeader } from './MeridianHeader';
+import { GuidedTour } from './GuidedTour';
+import { GettingStarted } from './GettingStarted';
+import { HorizonKpis } from './HorizonKpis';
+import { PlatformPulse } from './PlatformPulse';
 
 type Gov = Record<string, { status: 'required' | 'optional' | 'unavailable'; charge_zar: number | null; charge_event: string | null }>;
 interface ThreadLite {
@@ -152,15 +156,24 @@ export default function JourneyCockpit() {
 
   // ── an item card: glance (title/money/status + inline primary action) → tap.
   // Expanding fetches the full state track + remaining actions (folds the Thread).
-  const ItemCard = ({ c, tag }: { c: MerCase; tag?: string }) => {
+  // Urgency is tiered, not uniform: breached bites (oxide), due-today warms
+  // (copper), the rest stay quiet — and only the top-ranked item keeps the filled
+  // CTA so the list reads as a priority queue, not a wall of identical buttons.
+  const ItemCard = ({ c, tag, rank }: { c: MerCase; tag?: string; rank?: number }) => {
     const open = openId === c.id;
     const sl = statusLabel(c.status);
     const toggle = () => setOpenId(open ? null : c.id);
     // The case already carries its ranked actions — surface the top one inline so
     // the operator can act without opening the item (the glance→one-tap bar).
     const inline = (c.actions ?? []).slice(0, 1);
+    const tier = c.bucket === 'breached' ? 'jc-item crit'
+      : c.bucket === 'h2' || c.bucket === 'today' ? 'jc-item warn'
+      : 'jc-item';
+    // Destructive stays oxide at any rank; otherwise only rank 0 is filled.
+    const inlineCls = (a: { tone?: string }) =>
+      a.tone === 'oxide' ? undefined : (rank ?? 0) > 0 ? 'btn quiet' : undefined;
     return (
-      <div className={c.bucket === 'breached' ? 'jc-item crit' : 'jc-item'}>
+      <div className={tier}>
         <div className="jc-item-row">
           <button type="button" className="jc-expand" aria-expanded={open} aria-label={open ? 'Collapse' : 'Expand'} onClick={toggle}>
             <Icon name="chevron" size={13} className={open ? 'jc-chev open' : 'jc-chev'} />
@@ -175,7 +188,8 @@ export default function JourneyCockpit() {
             <span className="jc-inline-acts">
               {inline.map(a => (
                 <PrimaryAction key={a.action} target={{ chain: c.chain, id: c.id, ref: c.ref }}
-                  action={a as any} onActed={async () => { reload(); }} onError={setActErr} />
+                  action={a as any} className={inlineCls(a)}
+                  onActed={async () => { reload(); }} onError={setActErr} />
               ))}
             </span>
           )}
@@ -241,7 +255,9 @@ export default function JourneyCockpit() {
 
       {actErr && <div className="act-error mer" role="alert"><span>{actErr}</span><button type="button" className="btn ghost" onClick={() => setActErr(null)}>Dismiss</button></div>}
 
+      <div className="jc-canvas">
       <main className="jc-stage">
+        <GuidedTour surface="cockpit" />
         {loadErr ? (
           <EaseError message="Couldn’t load your workspace." onRetry={reload} />
         ) : !data ? (
@@ -257,7 +273,7 @@ export default function JourneyCockpit() {
             </header>
             {today.length > 0 && (
               <div className="jc-items">
-                {today.map(c => <ItemCard key={c.id} c={c} tag={journeyTagFor(c, journeys, domByKey)} />)}
+                {today.map((c, i) => <ItemCard key={c.id} c={c} rank={i} tag={journeyTagFor(c, journeys, domByKey)} />)}
               </div>
             )}
             {onTrack.length > 0 && (
@@ -377,6 +393,17 @@ export default function JourneyCockpit() {
           </>
         ) : null}
       </main>
+
+      {/* Context rail — fills the canvas beside the work queue with the ambient
+         layer: activation checklist, the role's headline KPIs, and the live
+         generation pulse. Every widget is fail-silent (renders nothing on error),
+         so the cockpit never depends on the rail. Hidden below 1200px. */}
+      <aside className="jc-rail" aria-label="Workspace context">
+        <GettingStarted />
+        <HorizonKpis role={role} />
+        <PlatformPulse />
+      </aside>
+      </div>
 
       {/* Create-in-journey composer — schema-driven initiation over the cockpit, no
          navigation. Submitting POSTs the real endpoint (cascades fire) and reloads. */}

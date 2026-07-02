@@ -21,7 +21,7 @@ export class SurfaceBoundary extends React.Component<{ children: React.ReactNode
     if (this.state.failed) {
       return (
         <EaseError message="This surface hit an error and couldn't render." onRetry={() => this.setState({ failed: false })}>
-          <Link to="/atlas" className="btn ghost">Open Atlas</Link>
+          <Link to="/cockpit" className="btn ghost">Back to your cockpit</Link>
         </EaseError>
       );
     }
@@ -47,8 +47,13 @@ export default function MeridianSurfacePage() {
   if (!Comp) {
     return (
       <MeridianFrame ctx={<b>Surface</b>}>
-        <div className="mer mer-error" role="alert">
-          Surface not available. <Link to="/atlas">Open Atlas</Link>
+        <div className="mer-deadend" role="alert">
+          <span className="mer-deadend-glyph" aria-hidden="true">⌁</span>
+          <p className="mer-deadend-ttl">This surface isn’t available for your role.</p>
+          <p className="mer-deadend-sub">Press <kbd>⌘K</kbd> to search everything you can reach.</p>
+          <div className="mer-error-acts">
+            <Link to="/cockpit" className="btn ghost">Back to your cockpit</Link>
+          </div>
         </div>
       </MeridianFrame>
     );

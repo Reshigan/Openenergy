@@ -65,6 +65,23 @@
    actions (Retry shows only when retrying could help — see LedgerPage). */
 .mer.mer-error { flex-direction: column; }
 .mer .mer-error-acts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+/* Dead-end state (404 ledger, role-blocked surface): keeps the chrome above it,
+   centers a quiet glyph + honest message + route home. Never a bare void. */
+.mer .mer-deadend, .mer-deadend {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; text-align: center; padding: 64px 24px; min-height: 45dvh;
+}
+.mer-deadend-glyph {
+  display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 8px;
+  border-radius: 50%; border: 1px solid var(--line); background: var(--raised);
+  font-size: 22px; color: var(--ink3);
+}
+.mer-deadend-ttl { margin: 0; font-family: 'Archivo', sans-serif; font-size: 16px; font-weight: 700; color: var(--ink); }
+.mer-deadend-sub { margin: 0 0 14px; font-size: 13px; color: var(--ink3); }
+.mer-deadend-sub kbd {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 1px 6px;
+  border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; background: var(--raised);
+}
 /* Admin-only compact role switcher (admin holds no lanes; views any role's board). */
 .mer .role-switch {
   display:flex; flex-wrap:wrap; gap:8px; padding:10px 28px;
@@ -179,6 +196,16 @@
 .mer .quicklinks a:hover { background:rgba(255,255,255,0.08); color:#fff; }
 .mer .quicklinks a:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
 .mer .avatar-wrap { position:relative; }
+/* Help "?" — ghost twin of the avatar; opens the onboarding-help menu. */
+.mer .help-btn {
+  width:32px; height:32px; border-radius:50%; background:transparent; color:var(--ink3);
+  display:grid; place-items:center; font-size:14px; font-weight:700;
+  border:1px solid var(--line); padding:0; cursor:pointer;
+  transition:color 140ms, border-color 140ms, box-shadow 140ms;
+}
+.mer .help-btn:hover { color:var(--petrol); border-color:var(--petrol); }
+.mer .help-btn:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
+.mer .help-btn[aria-expanded="true"] { color:var(--petrol); box-shadow:0 0 0 3px var(--paper), 0 0 0 4px var(--petrol); }
 .mer .avatar {
   width:32px; height:32px; border-radius:50%; background:var(--petrol); color:white;
   display:grid; place-items:center; font-size:12px; font-weight:700;
@@ -1154,37 +1181,30 @@
    normal document flow at the top of the surface content (NOT position:fixed).
    Left petrol accent edge reads as "tour"; tokens reused from .mer above. */
 @keyframes mer-tour-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+/* Compact single-row strip — informs without pushing real content below the
+   fold. Replayable any time from the header ? menu. */
 .mer-tour {
+  display: flex; align-items: center; gap: 12px;
   background: var(--raised);
   border: 1px solid var(--line);
-  border-left: 3px solid var(--petrol);
   border-radius: 10px;
-  padding: 14px 18px;
-  margin: 16px 28px 4px;
+  padding: 9px 12px 9px 14px;
+  margin: 14px 28px 2px;
   animation: mer-tour-in 220ms var(--ease);
 }
-.mer-tour-eyebrow {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--ink3);
-}
-.mer-tour-title {
-  margin-top: 6px; font-size: 15px; font-weight: 700; color: var(--ink);
-}
+.mer-tour-ico { display: grid; place-items: center; color: var(--petrol); flex-shrink: 0; }
+.mer-tour-text { flex: 1; min-width: 0; font-size: 12.5px; line-height: 1.5; }
+.mer-tour-title { font-weight: 700; color: var(--ink); }
 /* --ink2 for the body so copy clears WCAG AA 4.5:1 on --raised. */
-.mer-tour-body {
-  margin-top: 4px; font-size: 13px; line-height: 1.55; color: var(--ink2);
-}
+.mer-tour-body { color: var(--ink2); }
 /* Emphasised single next step. --petrol-deep clears AA at this weight/size. */
-.mer-tour-next {
-  margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--petrol-deep);
-}
+.mer-tour-next { font-weight: 600; color: var(--petrol-deep); }
 .mer-tour-acts {
-  display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 14px;
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
 }
 .mer-tour-skip {
-  cursor: pointer; border: none; background: none; padding: 6px 8px;
-  font-family: 'Archivo', sans-serif; font-size: 13px; font-weight: 600; color: var(--ink2);
+  cursor: pointer; border: none; background: none; padding: 5px 8px;
+  font-family: 'Archivo', sans-serif; font-size: 12.5px; font-weight: 600; color: var(--ink2);
   border-radius: 6px; transition: color 120ms var(--ease), transform 120ms var(--ease);
 }
 .mer-tour-skip:hover { color: var(--ink); }
@@ -1192,13 +1212,18 @@
 .mer-tour-skip:focus-visible { outline: 2px solid var(--petrol); outline-offset: 2px; }
 .mer-tour-gotit {
   cursor: pointer; border: 1px solid var(--petrol); background: var(--petrol); color: white;
-  padding: 7px 16px; border-radius: 6px;
-  font-family: 'Archivo', sans-serif; font-size: 13px; font-weight: 700;
+  padding: 5px 14px; border-radius: 6px;
+  font-family: 'Archivo', sans-serif; font-size: 12.5px; font-weight: 700;
   transition: background-color 120ms var(--ease), transform 120ms var(--ease);
 }
 .mer-tour-gotit:hover { background: var(--petrol-deep); border-color: var(--petrol-deep); }
 .mer-tour-gotit:active { transform: scale(0.97); }
 .mer-tour-gotit:focus-visible { outline: 2px solid var(--petrol-deep); outline-offset: 2px; }
+/* Below md the strip stacks so the text never truncates on phones. */
+@media (max-width: 720px) {
+  .mer-tour { flex-wrap: wrap; margin: 12px 16px 2px; }
+  .mer-tour-acts { margin-left: auto; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .mer-tour { animation: none; }
@@ -2129,7 +2154,21 @@
 .mer .jc-tab.on { background:var(--petrol); color:#fff; }
 .mer .jc-tab:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
 .mer .jc-alert { width:7px; height:7px; border-radius:50%; background:var(--oxide); position:absolute; top:5px; right:6px; }
+/* Canvas = work queue + context rail. The stage keeps its reading measure; the
+   rail reclaims the dead right third with the ambient layer (checklist, KPIs,
+   pulse). Rail hides below 1200px so the queue never gets squeezed. */
+.mer .jc-canvas { flex:1; display:flex; align-items:flex-start; gap:8px; }
 .mer .jc-stage { flex:1; padding:24px 28px 48px; max-width:1000px; width:100%; }
+.mer .jc-rail { width:316px; flex:0 0 316px; position:sticky; top:14px; display:flex; flex-direction:column; gap:14px; padding:24px 28px 48px 0; }
+@media (max-width:1199px){ .mer .jc-rail { display:none; } }
+/* Rail-scoped re-shapes: the shared widgets were built for full-width bands —
+   inside the rail they stack. */
+.mer .jc-rail .mer-gs { margin:0; }
+.mer .jc-rail .kpi-band { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0; border-bottom:none; background:transparent; overflow:visible; }
+.mer .jc-rail .kpi-tile { min-width:0; }
+.mer .jc-rail .mer-pulse { margin:0; }
+/* The cockpit tour strip sits inside the padded stage — drop its outer margin. */
+.mer .jc-stage .mer-tour { margin:0 0 16px; }
 .mer .jc-head h1 { font-size:23px; margin:0; }
 .mer .jc-sub { color:var(--ink3); font-size:14px; margin:5px 0 18px; }
 .mer .jc-starts { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 18px; }
@@ -2176,8 +2215,29 @@
 .mer .jc-record dt:first-of-type, .mer .jc-record dd:first-of-type { border-top:none; }
 .mer .jc-req { margin-left:5px; font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--oxide-deep); background:var(--oxide-tint); padding:1px 6px; border-radius:5px; }
 .mer .jc-items { display:flex; flex-direction:column; gap:9px; }
-.mer .jc-item { background:var(--raised); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+/* Items settle in with a short stagger (capped at 8) so the queue reads
+   top-down the way it's ranked. Transform+opacity only; off under reduced motion. */
+@keyframes jc-item-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+.mer .jc-items > .jc-item { animation: jc-item-in 240ms var(--ease) backwards; }
+.mer .jc-items > .jc-item:nth-child(1) { animation-delay: 0ms; }
+.mer .jc-items > .jc-item:nth-child(2) { animation-delay: 30ms; }
+.mer .jc-items > .jc-item:nth-child(3) { animation-delay: 60ms; }
+.mer .jc-items > .jc-item:nth-child(4) { animation-delay: 90ms; }
+.mer .jc-items > .jc-item:nth-child(5) { animation-delay: 120ms; }
+.mer .jc-items > .jc-item:nth-child(6) { animation-delay: 150ms; }
+.mer .jc-items > .jc-item:nth-child(7) { animation-delay: 180ms; }
+.mer .jc-items > .jc-item:nth-child(n+8) { animation-delay: 210ms; }
+@media (prefers-reduced-motion: reduce){ .mer .jc-items > .jc-item { animation:none; } }
+.mer .jc-item { background:var(--raised); border:1px solid var(--line); border-radius:12px; overflow:hidden;
+  transition:border-color 140ms var(--ease), box-shadow 140ms var(--ease); }
+.mer .jc-item:hover { border-color:var(--ink3); box-shadow:0 2px 10px oklch(0.21 0.012 85 / 0.06); }
+/* Urgency tiers — breached bites, due-today warms, the rest stay quiet. Same
+   edge idiom as .crit (established product language), stepped down in heat. */
 .mer .jc-item.crit { border-left:3px solid var(--oxide); }
+.mer .jc-item.warn { border-left:3px solid var(--copper); }
+/* Quiet action — outline sibling of .pri for ranked lists: visible, not shouting. */
+.mer .btn.quiet { background:var(--raised); border-color:var(--petrol); color:var(--petrol-deep); }
+.mer .btn.quiet:hover { background:var(--petrol-tint); }
 .mer .jc-item-row { width:100%; display:flex; align-items:center; gap:11px; padding:9px 13px 9px 6px; }
 .mer .jc-expand { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; flex:0 0 auto; background:transparent; border:none; border-radius:7px; cursor:pointer; }
 .mer .jc-expand:hover { background:var(--petrol-tint); }

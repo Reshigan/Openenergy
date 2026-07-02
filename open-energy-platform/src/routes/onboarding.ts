@@ -283,6 +283,36 @@ onboarding.post('/skip', async (c) => {
   return c.json({ success: true, data: { ok: true } });
 });
 
+// ── POST /reset ──────────────────────────────────────────────────────────────
+// Self-service "restart setup" from the header help menu. Re-opens the wizard
+// for the CALLER only (JWT-resolved id, bound via ?). Safe to re-run: completing
+// again goes through provisionOnboarding, which is idempotent
+// (alreadyProvisioned short-circuits), so no duplicate seeding.
+onboarding.post('/reset', async (c) => {
+  const user = getCurrentUser(c);
+
+  await c.env.DB.prepare(
+    `UPDATE participants
+        SET onboarding_completed = 0,
+            onboarding_step = 'welcome',
+            onboarding_skipped = 0
+      WHERE id = ?`,
+  )
+    .bind(user.id)
+    .run();
+
+  await fireCascade({
+    event: 'onboarding.reset',
+    actor_id: user.id,
+    entity_type: 'participant',
+    entity_id: user.id,
+    data: { role: user.role },
+    env: c.env,
+  });
+
+  return c.json({ success: true, data: { ok: true } });
+});
+
 // ── POST /sandbox/enter ──────────────────────────────────────────────────────
 // Provision (or reset) an isolated sandbox demo tenant for the CALLER so they
 // can practice transactions without polluting any real tenant. Acts only on the

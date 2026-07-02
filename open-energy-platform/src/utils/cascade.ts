@@ -2004,7 +2004,7 @@ export type EventType =
   | 'rbac.invitation_created' | 'rbac.invitation_revoked'
   | 'rbac.profile_updated' | 'rbac.user_updated'
   // ─── Onboarding ─────────────────────────────────────────────────────────
-  | 'onboarding.completed' | 'onboarding.skipped' | 'onboarding.sandbox_entered'
+  | 'onboarding.completed' | 'onboarding.skipped' | 'onboarding.sandbox_entered' | 'onboarding.reset'
   // ─── Esums data sources ──────────────────────────────────────────────────
   | 'esums.data_source.created'
   // ─── W194 IPP Force Majeure ───────────────────────────────────────────────

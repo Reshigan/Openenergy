@@ -1,13 +1,15 @@
 // ════════════════════════════════════════════════════════════════════════
-// GuidedTour - first-run inline anchored intro card per Meridian surface.
+// GuidedTour - first-run inline anchored intro strip per Meridian surface.
 //
-// NOT a modal, NOT an overlay, NOT an AI popup. One small card that sits in
-// normal document flow at the top of the surface content, explaining what the
-// surface does plus the single next action. Two buttons: "Got it" (dismiss
-// just this surface) and "Skip tour" (suppress all remaining surfaces).
+// NOT a modal, NOT an overlay, NOT an AI popup. One compact single-row strip
+// that sits in normal document flow at the top of the surface content,
+// explaining what the surface does plus the single next action — without
+// pushing the real content below the fold. Two buttons: "Got it" (dismiss
+// just this surface) and "Skip tips" (suppress all remaining surfaces).
+// Dismissed tips can be replayed any time from the header ? menu.
 //
 // Seen-state is persisted per device via useTourState (the shared localStorage
-// ledger). The card is deterministic: it does NOT gate on wizard completion or
+// ledger). The strip is deterministic: it does NOT gate on wizard completion or
 // any network state. The only suppressors are seen(surface), which already
 // folds in the __skip sentinel and the oe.onboarding.skipped automation switch.
 // ════════════════════════════════════════════════════════════════════════
@@ -18,9 +20,14 @@ import { useTourState } from './useTourState';
 type TourCopy = { title: string; body: string; next: string };
 
 const COPY: Record<string, TourCopy> = {
+  cockpit: {
+    title: 'This is your cockpit',
+    body: 'Today ranks everything waiting on you across every journey, most costly first. The tabs group your work by journey.',
+    next: 'Open the top item to act on it.',
+  },
   horizon: {
     title: 'This is Horizon',
-    body: 'Your live workspace. Each lane is a transaction waiting on you, sorted by how soon it bites. Open one to act.',
+    body: 'Your live workspace. Each lane is a transaction waiting on you, sorted by how soon it bites.',
     next: 'Open a lane to see what is waiting.',
   },
   atlas: {
@@ -53,16 +60,16 @@ export function GuidedTour({ surface }: { surface: string }) {
 
   return (
     <div className="mer-tour" role="status" aria-live="polite" data-testid="mer-tour">
-      <div className="mer-tour-eyebrow">
-        <Sparkles size={13} strokeWidth={2} aria-hidden="true" />
-        Quick tour
+      <span className="mer-tour-ico" aria-hidden="true">
+        <Sparkles size={14} strokeWidth={2} />
+      </span>
+      <div className="mer-tour-text">
+        <b className="mer-tour-title">{copy.title}.</b> <span className="mer-tour-body">{copy.body}</span>{' '}
+        <span className="mer-tour-next">{copy.next}</span>
       </div>
-      <div className="mer-tour-title">{copy.title}</div>
-      <div className="mer-tour-body">{copy.body}</div>
-      <div className="mer-tour-next">{copy.next}</div>
       <div className="mer-tour-acts">
         <button type="button" className="mer-tour-skip" data-testid="mer-tour-skip" onClick={skipTour}>
-          Skip tour
+          Skip tips
         </button>
         <button type="button" className="mer-tour-gotit" data-testid="mer-tour-gotit" onClick={() => markSeen(surface)}>
           Got it

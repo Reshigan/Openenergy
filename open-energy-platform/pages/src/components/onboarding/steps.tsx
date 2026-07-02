@@ -124,8 +124,8 @@ function TakeOnChoice({ data, onChange, role }: { data: Record<string, unknown>;
   };
   return (
     <div className="relative mt-6 text-left">
-      <p className="text-[12px] font-medium text-[#3a4760] mb-2 text-center">How are you joining?</p>
-      <div className="flex gap-3 max-w-md mx-auto">
+      <p className="text-[12px] font-medium text-[#3a4760] mb-2">How are you joining?</p>
+      <div className="flex gap-3 max-w-md">
         <Card value="new" label="Starting fresh" desc="Set up from scratch — no existing portfolio to import" />
         <Card value="historic" label={cfg.historicLabel} desc={cfg.historicDesc} />
       </div>
@@ -137,23 +137,14 @@ export function WelcomeStep({ data, onChange, role = 'admin', userName = '' }: S
   const desc = ROLE_DESCS[role] || ROLE_DESCS['admin'];
   const firstName = userName ? userName.split(' ')[0] : 'there';
   return (
-    <div className="text-center space-y-4 py-2">
-      {/* Decorative grid pattern */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.03] rounded-xl"
-        style={{
-          backgroundImage: 'linear-gradient(oklch(0.88 0.006 250) 1px, transparent 1px), linear-gradient(90deg, oklch(0.88 0.006 250) 1px, transparent 1px)',
-          backgroundSize: '32px 32px',
-        }}
-      />
-      <div className="relative">
-        <h2 className="text-[22px] font-semibold text-[#0e1726] leading-snug">
-          Welcome to Meridian, {firstName}
+    // Left-aligned to sit naturally in the split-panel wizard shell (the brand
+    // rail carries the decoration; the form column stays quiet).
+    <div className="space-y-4 py-2">
+      <div>
+        <h2 className="text-[26px] font-bold text-[#0e1726] leading-snug tracking-tight">
+          Welcome to your cockpit, {firstName}
         </h2>
-        <p className="mt-3 text-[14px] text-[#5b6b85] leading-relaxed max-w-sm mx-auto">{desc}</p>
-        <p className="mt-4 text-[12px] text-[#5b6b85] font-medium uppercase tracking-wider">
-          This will take about 2 minutes
-        </p>
+        <p className="mt-3 text-[14px] text-[#5b6b85] leading-relaxed max-w-[46ch]">{desc}</p>
       </div>
       <TakeOnChoice data={data} onChange={onChange} role={role} />
     </div>
