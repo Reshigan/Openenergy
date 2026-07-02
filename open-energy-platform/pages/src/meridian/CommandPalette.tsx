@@ -10,7 +10,7 @@ import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { useAuth } from '../lib/useAuth';
 import { SURFACE_REGISTRY } from './surfaces';
 import { tileTarget } from './reachability';
-import { fetchHorizon, fetchInitiableChains, type MerCase } from './lib';
+import { fetchHorizon, fetchInitiable, type MerCase, type InitiableChain } from './lib';
 import { cleanLabel } from './labels';
 import { statusLabel } from './ease/statusLabel';
 
@@ -27,7 +27,7 @@ export default function CommandPalette() {
   const [q, setQ] = React.useState('');
   const [sel, setSel] = React.useState(0);
   const [cases, setCases] = React.useState<MerCase[]>([]);
-  const [initiable, setInitiable] = React.useState<Set<string>>(new Set());
+  const [initiable, setInitiable] = React.useState<InitiableChain[]>([]);
   const nav = useNavigate();
   const { pathname } = useLocation();
   // Hooks run unconditionally; the !cfg bail-out below handles signed-out states.
@@ -58,7 +58,7 @@ export default function CommandPalette() {
     // late resolve repopulate the list with the previous role's cases.
     let live = true;
     fetchHorizon(role).then(h => { if (live) setCases(h.lanes.flatMap(l => l.cases)); }).catch(() => { /* function hits still work */ });
-    fetchInitiableChains().then(s => { if (live) setInitiable(s); }).catch(() => { /* offer all */ });
+    fetchInitiable().then(s => { if (live) setInitiable(s); }).catch(() => { /* no creates */ });
     return () => { live = false; setCases([]); };
   }, [open, role]);
   // Restore focus to whatever had it before ⌘K, so Escape/Enter doesn't drop focus to <body>.
@@ -81,15 +81,13 @@ export default function CommandPalette() {
   const targetFor = (f: { chainKey?: string; route?: string; key: string }) =>
     tileTarget(role, f, hasSurface);
   const hits: Hit[] = [
-    // Create-in-journey from the command bar: "New <thing>" opens the cockpit composer
-    // (via ?compose) for any initiable chain. Type "new" to see everything you can start.
-    ...cfg.domains.flatMap(d => d.features
-      // Only chains the role can start (backend signal); empty set = not loaded yet, offer all.
-      .filter(f => f.chainKey && (initiable.size === 0 || initiable.has(f.chainKey)))
-      .map(f => ({ f, label: `New ${cleanLabel(f.label)}` }))
-      .filter(({ label }) => label.toLowerCase().includes(ql))
-      .map(({ f, label }) => ({ type: 'create' as const, label, sub: cleanLabel(d.label),
-        go: () => nav(`/cockpit?compose=${f.chainKey}`) }))),
+    // Create-in-journey from the command bar: the authoritative initiable list (chains
+    // with a real form the role can start). Opens the cockpit composer via ?compose.
+    // "new"/"create"/"start" all match, so typing any of them surfaces every create.
+    ...initiable
+      .filter(e => `new create start ${e.label}`.toLowerCase().includes(ql))
+      .map(e => ({ type: 'create' as const, label: e.label, sub: e.lane ? cleanLabel(e.lane) : 'start',
+        go: () => nav(`/cockpit?compose=${e.chainKey}`) })),
     ...cfg.domains.flatMap(d => d.features
       .filter(f => cleanLabel(f.label).toLowerCase().includes(ql))
       .map(f => ({ f, to: targetFor(f) }))

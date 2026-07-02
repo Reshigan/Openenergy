@@ -134,7 +134,9 @@ ledger.get('/initiable', async (c) => {
   const user = getCurrentUser(c);
   const data = MERIDIAN_CHAINS
     .filter(ch => ch.initiation && viewerCanSee(ch, user.role))
-    .map(ch => ({ chainKey: ch.key, label: ch.initiation!.label }));
+    // `lane` is the role's domain key for this chain (mirrors roleData domain keys),
+    // so the SPA can group each create under the right journey.
+    .map(ch => ({ chainKey: ch.key, label: ch.initiation!.label, lane: ch.lanes[user.role] ?? null }));
   return c.json({ success: true, data });
 });
 
