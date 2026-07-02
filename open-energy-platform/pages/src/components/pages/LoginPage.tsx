@@ -748,24 +748,6 @@ export default function LoginPage() {
             </div>
             )}
 
-            {/* Live ecosystem profiles — shown on the live host so roles can be swapped in-demo */}
-            {isLiveHost && (
-            <div style={{ margin: '22px 0 0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                <div style={{ flex: 1, height: 1, background: T.border }} />
-                <span style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'ui-monospace, monospace', whiteSpace: 'nowrap' }}>
-                  switch profile
-                </span>
-                <div style={{ flex: 1, height: 1, background: T.border }} />
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {LIVE_PERSONAS.map((p) => (
-                  <PersonaChip key={p.email} persona={p} onPick={fillDemo} />
-                ))}
-              </div>
-            </div>
-            )}
-
             {/* Register link */}
             <p style={{ marginTop: 20, textAlign: 'center', fontSize: 13, color: T.text2 }}>
               No account?{' '}
