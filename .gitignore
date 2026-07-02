@@ -4,6 +4,7 @@ dist/
 .vscode/
 .wrangler/
 .dev.vars
+.dev.vars.*
 .env
 .env.local
 *.log
@@ -33,3 +34,8 @@ CEC_Platform_*.pptx
 CEC_Platform_*.pdf
 CEC_PLATFORM_*.md
 dd-build/
+
+.dev.vars*
+!.dev.vars.example
+!.env.example
+.impeccable/
