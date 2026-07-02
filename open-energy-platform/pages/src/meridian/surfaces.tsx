@@ -320,6 +320,11 @@ const EsumsOpportunities: React.LazyExoticComponent<SurfaceComponent> = React.la
   const Adapter: SurfaceComponent = () => <EsumsOmOpportunities />;
   return { default: Adapter };
 });
+const EsumsMeterScan: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { EsumsMeterScan } = await import('../components/widgets/EsumsMeterScan');
+  const Adapter: SurfaceComponent = () => <EsumsMeterScan />;
+  return { default: Adapter };
+});
 const EsumsIntegrations: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
   const { InverterIntegrationsTab } = await import('../components/esums/InverterIntegrationsTab');
   const Adapter: SurfaceComponent = () => <InverterIntegrationsTab />;
@@ -737,6 +742,7 @@ export const SURFACE_REGISTRY: Record<
   // feature slugs). `esco:sites-portfolio` + `esco:audit` were already registered in E2.8a.
   'esco:cockpit': EsumsCockpit,
   'esco:opportunities': EsumsOpportunities,
+  'esco:meter-scan': EsumsMeterScan,
   'esco:accruals': EsumsAccruals,
   'esco:settlement-invoices': EsumsSettlementInvoices,
   'esco:carbon-credits': EsumsCarbonCredits,
