@@ -10,7 +10,7 @@ import { Hono } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import {
-  getChain, bucketFor, attentionScore, quantumZar, listSelectCols, type ChainDescriptor,
+  getChain, bucketFor, attentionScore, quantumZar, listSelectCols, MERIDIAN_CHAINS, type ChainDescriptor,
 } from '../utils/chain-registry-meridian';
 import { buildPrefill } from '../utils/autofill';
 
@@ -124,6 +124,18 @@ ledger.get('/lookup/:source', async (c) => {
   const res = await c.env.DB.prepare(sql).all();
   const rows = (res.results ?? []) as { id: string; label: string }[];
   return c.json({ success: true, data: rows });
+});
+
+// Bulk initiability signal — the chains the current role can actually START (has a
+// static initiation form AND the role can see the chain). Lets the SPA (cockpit
+// start buttons + ⌘K palette) offer only real creates, never a "can't start here".
+// Registered before /:chainKey so the literal path wins over the param.
+ledger.get('/initiable', async (c) => {
+  const user = getCurrentUser(c);
+  const data = MERIDIAN_CHAINS
+    .filter(ch => ch.initiation && viewerCanSee(ch, user.role))
+    .map(ch => ({ chainKey: ch.key, label: ch.initiation!.label }));
+  return c.json({ success: true, data });
 });
 
 ledger.get('/:chainKey', async (c) => {

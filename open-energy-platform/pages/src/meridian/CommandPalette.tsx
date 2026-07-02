@@ -10,7 +10,7 @@ import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { useAuth } from '../lib/useAuth';
 import { SURFACE_REGISTRY } from './surfaces';
 import { tileTarget } from './reachability';
-import { fetchHorizon, type MerCase } from './lib';
+import { fetchHorizon, fetchInitiableChains, type MerCase } from './lib';
 import { cleanLabel } from './labels';
 import { statusLabel } from './ease/statusLabel';
 
@@ -27,6 +27,7 @@ export default function CommandPalette() {
   const [q, setQ] = React.useState('');
   const [sel, setSel] = React.useState(0);
   const [cases, setCases] = React.useState<MerCase[]>([]);
+  const [initiable, setInitiable] = React.useState<Set<string>>(new Set());
   const nav = useNavigate();
   const { pathname } = useLocation();
   // Hooks run unconditionally; the !cfg bail-out below handles signed-out states.
@@ -57,6 +58,7 @@ export default function CommandPalette() {
     // late resolve repopulate the list with the previous role's cases.
     let live = true;
     fetchHorizon(role).then(h => { if (live) setCases(h.lanes.flatMap(l => l.cases)); }).catch(() => { /* function hits still work */ });
+    fetchInitiableChains().then(s => { if (live) setInitiable(s); }).catch(() => { /* offer all */ });
     return () => { live = false; setCases([]); };
   }, [open, role]);
   // Restore focus to whatever had it before ⌘K, so Escape/Enter doesn't drop focus to <body>.
@@ -82,7 +84,8 @@ export default function CommandPalette() {
     // Create-in-journey from the command bar: "New <thing>" opens the cockpit composer
     // (via ?compose) for any initiable chain. Type "new" to see everything you can start.
     ...cfg.domains.flatMap(d => d.features
-      .filter(f => f.chainKey)
+      // Only chains the role can start (backend signal); empty set = not loaded yet, offer all.
+      .filter(f => f.chainKey && (initiable.size === 0 || initiable.has(f.chainKey)))
       .map(f => ({ f, label: `New ${cleanLabel(f.label)}` }))
       .filter(({ label }) => label.toLowerCase().includes(ql))
       .map(({ f, label }) => ({ type: 'create' as const, label, sub: cleanLabel(d.label),

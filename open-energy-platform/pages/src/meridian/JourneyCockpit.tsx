@@ -14,7 +14,7 @@ import { api } from '../lib/api';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { getJourneys } from './journeys';
 import { Icon } from './icons';
-import { fetchHorizon, fetchLedger, fmtZar, humanizeKey, type HorizonData, type MerCase, type LedgerActionField } from './lib';
+import { fetchHorizon, fetchLedger, fetchInitiableChains, fmtZar, humanizeKey, type HorizonData, type MerCase, type LedgerActionField } from './lib';
 import { FieldForm } from './FieldForm';
 
 // Format a raw case-record value for the in-cockpit detail (folds the Thread record).
@@ -73,6 +73,9 @@ export default function JourneyCockpit() {
   // renders its registered component in a panel over the cockpit instead of
   // navigating to /surface/:key. Same component, same CRUD — no second plane.
   const [surfacePanel, setSurfacePanel] = React.useState<{ key: string; label: string } | null>(null);
+  // Chains this role can actually start — create affordances filter to this set so we
+  // never offer a create that dead-ends in "can't be started here".
+  const [initiableChains, setInitiableChains] = React.useState<Set<string>>(new Set());
 
   const reload = React.useCallback(() => {
     if (!role) return;
@@ -103,6 +106,7 @@ export default function JourneyCockpit() {
     if (!role) return;
     reload();
     api.get(`/journey-config/${role}`).then(r => setGov(r.data?.data ?? {})).catch(() => { /* defaults */ });
+    fetchInitiableChains().then(setInitiableChains).catch(() => { /* fall back to offering all */ });
   }, [role, reload]);
 
   // Open an item: fetch its thread detail in place (folds the old Thread page).
@@ -277,7 +281,10 @@ export default function JourneyCockpit() {
             </header>
             {(() => {
               const initiable = journeyFeatures(activeJourney.key)
-                .filter(f => f.chainKey && isTileReachable(role, f, hasSurface) && featAvailable(f.key));
+                .filter(f => f.chainKey && isTileReachable(role, f, hasSurface) && featAvailable(f.key))
+                // Only offer creates the role can actually start (backend signal); until
+                // it loads (empty set) offer all, so buttons never vanish on a slow fetch.
+                .filter(f => initiableChains.size === 0 || initiableChains.has(f.chainKey!));
               const primaryChain = initiable[0]?.chainKey;
               return (
                 <div className="jc-starts">

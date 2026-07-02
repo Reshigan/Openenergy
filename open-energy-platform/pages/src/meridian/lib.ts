@@ -73,6 +73,14 @@ export async function fetchLedger(chainKey: string, status?: string): Promise<Le
   return r.data.data;
 }
 
+// The set of chain keys the signed-in role can actually START (has an initiation
+// form + can see the chain). Lets create affordances offer only real creates.
+export async function fetchInitiableChains(): Promise<Set<string>> {
+  const r = await api.get('/ledger/initiable');
+  const list = (r.data?.data ?? []) as { chainKey: string }[];
+  return new Set(list.map(x => x.chainKey));
+}
+
 // Role headline stats for the Horizon KPI band. Reuses the existing role-aware
 // /cockpit/stats endpoint (KV-cached 30s) — top-level money/contract counts plus
 // a role_national block of domain KPIs. Keyed off the signed-in user's JWT, so
