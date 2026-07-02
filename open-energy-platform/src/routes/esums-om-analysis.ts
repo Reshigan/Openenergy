@@ -35,6 +35,9 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { cached, shouldBypass } from '../utils/kv-cache';
+import { fireCascade } from '../utils/cascade';
+import { scanOpportunities, freeScanSummary, type MeterReading, type AnalysisContext } from '../utils/meter-analysis';
+import { METER_UNIT, type MeterMedium } from '../utils/om-devices';
 
 const ana = new Hono<HonoEnv>();
 ana.use('*', authMiddleware);
@@ -1000,6 +1003,77 @@ ana.post('/opportunities/act', async (c) => {
     default:
       return c.json({ success: false, error: `unknown action kind: ${b.action.kind}` }, 400);
   }
+});
+
+// ─── Ad-hoc meter import → opportunity scan ─────────────────────────────
+// "Connect/import a meter, run the algorithms on a short static window." This
+// is the standalone counterpart to /opportunities (which scans onboarded fleet
+// sites): the caller pastes a short series of interval readings for ONE meter —
+// no site onboarding, no telemetry ingest — and gets ranked improvement
+// opportunities from the pure meter-analysis core.
+//
+// Two tiers: tier='scan' (default, free) returns only how many wins + a rough
+// annual total (the hook); tier='full' returns every opportunity with detail and
+// fires meter.analysis.scanned so the run is audited and — if an admin has set a
+// charge_zar on this feature in journey_feature_config — billed. Free vs paid is
+// therefore an admin config knob, not hard-coded here.
+const VALID_MEDIA = Object.keys(METER_UNIT) as MeterMedium[];
+const MAX_READINGS = 5000; // short-term static data; guards against dumping a full history
+
+ana.post('/meter-scan', async (c) => {
+  const user = getCurrentUser(c);
+  const b = await c.req.json().catch(() => ({} as any));
+
+  const medium = b.medium as MeterMedium;
+  if (!VALID_MEDIA.includes(medium)) {
+    return c.json({ success: false, error: `medium must be one of: ${VALID_MEDIA.join(', ')}` }, 400);
+  }
+  const unitPriceZar = Number(b.unitPriceZar);
+  if (!(unitPriceZar > 0)) return c.json({ success: false, error: 'unitPriceZar must be a positive number' }, 400);
+
+  const raw = Array.isArray(b.readings) ? b.readings : null;
+  if (!raw || raw.length < 2) return c.json({ success: false, error: 'readings must be an array of at least 2 {ts, value}' }, 400);
+  if (raw.length > MAX_READINGS) return c.json({ success: false, error: `readings capped at ${MAX_READINGS} (short-term static data only)` }, 400);
+  const readings: MeterReading[] = [];
+  for (const r of raw) {
+    const ts = String(r?.ts ?? '');
+    const value = Number(r?.value);
+    if (!ts || Number.isNaN(new Date(ts).getTime()) || !Number.isFinite(value)) {
+      return c.json({ success: false, error: 'each reading needs a valid ts (ISO) and numeric value' }, 400);
+    }
+    readings.push({ ts, value });
+  }
+
+  const ctx: AnalysisContext = {
+    medium, unitPriceZar,
+    offpeakPriceZar: typeof b.offpeakPriceZar === 'number' ? b.offpeakPriceZar : undefined,
+    peakHours: Array.isArray(b.peakHours) ? b.peakHours.map(Number).filter((n: number) => n >= 0 && n <= 23) : undefined,
+    offHours: Array.isArray(b.offHours) ? b.offHours.map(Number).filter((n: number) => n >= 0 && n <= 23) : undefined,
+    expectedIdlePerInterval: typeof b.expectedIdlePerInterval === 'number' ? b.expectedIdlePerInterval : undefined,
+    shiftableFraction: typeof b.shiftableFraction === 'number' ? b.shiftableFraction : undefined,
+  };
+
+  const opps = scanOpportunities(readings, ctx);
+  const summary = freeScanSummary(opps);
+  const tier = b.tier === 'full' ? 'full' : 'scan';
+
+  if (tier !== 'full') {
+    // Free scan: the hook — count + rough total, no per-opportunity detail.
+    return c.json({ success: true, data: { tier: 'scan', medium, unit: METER_UNIT[medium], ...summary } });
+  }
+
+  // Full report — audited + chargeable via journey_feature_config.
+  await fireCascade({
+    event: 'meter.analysis.scanned', actor_id: user.id,
+    entity_type: 'meter_analysis', entity_id: b.meter_ref ? String(b.meter_ref).slice(0, 64) : `adhoc_${medium}`,
+    data: { medium, readings: readings.length, opportunities: opps.length, total_est_zar_yr: summary.totalEstZarYr },
+    env: c.env,
+  }).catch(() => {}); // cascade failure must not lose the analysis result
+
+  return c.json({
+    success: true,
+    data: { tier: 'full', medium, unit: METER_UNIT[medium], ...summary, opportunities: opps },
+  });
 });
 
 export default ana;

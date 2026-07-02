@@ -67,7 +67,7 @@ export type EventType =
   // Marketplace
   | 'marketplace.bid' | 'marketplace.listed' | 'marketplace.inquired' | 'marketplace.accepted'
   // General
-  | 'demand.matched' | 'meter.ingested'
+  | 'demand.matched' | 'meter.ingested' | 'meter.analysis.scanned'
   | 'popia.consent_changed' | 'popia.data_exported' | 'popia.erasure'
   // Collaboration extras
   | 'intelligence.item_created' | 'action_queue.created'
