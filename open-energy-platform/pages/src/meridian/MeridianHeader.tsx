@@ -93,7 +93,8 @@ export function MeridianHeader({ ctx }: { ctx?: React.ReactNode }) {
             <div className="avatar-menu" role="menu" aria-label="Help">
               <div className="avatar-id">
                 <b>Help &amp; onboarding</b>
-                <span>Tips replay as you visit each page</span>
+                {/* .avatar-id span capitalizes (built for role names) — keep sentence case here. */}
+                <span style={{ textTransform: 'none' }}>Tips replay as you visit each page</span>
               </div>
               <button type="button" role="menuitem" className="avatar-item" onClick={replayTips}>
                 Replay page tips
