@@ -57,7 +57,6 @@ const ROLE_MAP: Record<string, string> = {
 // horizon…"; error (fake/expired token) → "Horizon failed to load.". Matching
 // any of them proves routing + auth-gate + HorizonPage mount, independent of
 // whether a real token was available to fetch live board data.
-const HORIZON_STATE = /DUTY STREAM|Computing horizon|Horizon failed to load/i;
 
 // A real token (not the fake placeholder) was provided by global-setup for this
 // short role name → Horizon can fetch live data and reach its success branch.
@@ -246,16 +245,15 @@ test.describe('Horizon — per-role workspace renders', () => {
 
       // Not the login page (ProtectedRoute let us through on the mocked user).
       await expect(page.locator('input[type=password]')).toHaveCount(0, { timeout: 5_000 });
-      // One of HorizonPage's three states is on screen — proves the page mounted.
-      await expect(page.locator('body')).toContainText(HORIZON_STATE, { timeout: 30_000 });
+      // Every lane-holding role renders a bespoke Horizon now (LenderHorizon,
+      // IppHorizon, …) — all share the .mer.horizon root; the old shared-board
+      // markers (lane×bucket region, DUTY STREAM) retired with the bespokes.
+      await expect(page.locator('.mer.horizon, .mer.mer-error').first()).toBeVisible({ timeout: 30_000 });
 
       if (hasRealToken(c.tokenRole)) {
         // Real token → GET /api/horizon/:role succeeds → success branch:
-        // the board grid + duty stream render and there is no error state.
-        await expect(
-          page.locator('[aria-label="Live cases by time to consequence"]'),
-        ).toBeVisible({ timeout: 30_000 });
-        await expect(page.locator('body')).toContainText('DUTY STREAM', { timeout: 10_000 });
+        // the bespoke board renders and there is no error state.
+        await expect(page.locator('.mer.horizon').first()).toBeVisible({ timeout: 30_000 });
         await expect(page.locator('.mer-error')).toHaveCount(0);
         const real = errors.filter((e) => e.startsWith('api.5'));
         expect(real, `5xx on /horizon as ${c.role}:\n${real.join('\n')}`).toEqual([]);
@@ -357,7 +355,7 @@ test.describe('Legacy + workstation routes redirect to Horizon', () => {
       // The SPA fires <Navigate to="/horizon"> client-side once it mounts.
       await page.waitForURL(/\/horizon/, { timeout: 15_000 }).catch(() => {});
       expect(page.url(), `${path} did not redirect to /horizon`).toContain('/horizon');
-      await expect(page.locator('body')).toContainText(HORIZON_STATE, { timeout: 20_000 });
+      await expect(page.locator('.mer.horizon, .mer.mer-error').first()).toBeVisible({ timeout: 20_000 });
     });
   }
 });
@@ -372,53 +370,27 @@ test.describe('Meridian chrome + duty-stream collapse', () => {
     await seedToken(page, 'admin');
     await goTo(page, baseURL, '/horizon');
 
-    // Wait for the board (success branch) before asserting header chrome — the
-    // MeridianHeader only renders alongside the board, not in loading/error.
-    await expect(
-      page.locator('[aria-label="Live cases by time to consequence"]'),
-    ).toBeVisible({ timeout: 30_000 });
+    // Wait for the bespoke admin board (success branch) before asserting chrome.
+    await expect(page.locator('.mer.horizon').first()).toBeVisible({ timeout: 30_000 });
 
     // The retired FioriShell sidebar is gone. NB: match the specific rail classes,
     // NOT [class*="rail"] — Meridian's own duty-rail would false-positive on that.
     await expect(page.locator('aside.oe-rail, aside.fiori-rail')).toHaveCount(0);
 
-    // Meridian header chrome is present.
-    await expect(page.locator('nav[aria-label="Platform sections"]')).toBeVisible({ timeout: 5_000 });
-    await expect(page.locator('body')).toContainText(/Atlas — search anything/i, { timeout: 5_000 });
+    // Meridian header chrome is present: CEC wordmark + the one ⌘K search entry
+    // (the "Platform sections" quicklinks nav and Atlas plane retired with the
+    // journey cockpit).
+    await expect(page.locator('header .wordmark')).toHaveText('CEC');
+    await expect(page.locator('body')).toContainText(/Search anything/i, { timeout: 5_000 });
 
     const real = errors.filter((e) => e.startsWith('pageerror'));
     expect(real, real.join('\n')).toEqual([]);
   });
 
-  // Regression for the reported "side panel doesn't collapse" bug (fix 38229cfe):
-  // the duty stream collapses to a slim reopen rail and restores, persisted to
-  // localStorage['mer.duty.collapsed'].
-  test('duty stream collapses and restores', async ({ page, baseURL }) => {
-    test.skip(!hasRealToken('admin'), 'needs a real admin token to reach the Horizon success branch');
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await seedToken(page, 'admin');
-    await goTo(page, baseURL, '/horizon');
-
-    await expect(
-      page.locator('[aria-label="Live cases by time to consequence"]'),
-    ).toBeVisible({ timeout: 30_000 });
-
-    // Open state: duty stream visible, collapse control present.
-    await expect(page.locator('aside[aria-label="Duty stream"]')).toBeVisible({ timeout: 5_000 });
-    const collapseBtn = page.locator('button[aria-label="Collapse duty stream"]');
-    await expect(collapseBtn).toBeVisible({ timeout: 5_000 });
-
-    // Collapse → the slim reopen rail (Expand button) appears.
-    await collapseBtn.click();
-    const expandBtn = page.locator('button[aria-label="Expand duty stream"]');
-    await expect(expandBtn).toBeVisible({ timeout: 5_000 });
-    await expect(page.locator('aside.collapsed[aria-label="Duty stream"]')).toHaveCount(1);
-
-    // Restore → collapse control is back.
-    await expandBtn.click();
-    await expect(collapseBtn).toBeVisible({ timeout: 5_000 });
-    await expect(page.locator('aside.collapsed[aria-label="Duty stream"]')).toHaveCount(0);
-  });
+  // ("duty stream collapses and restores" retired: the collapse affordance
+  // exists only on the shared lane×bucket board, which no tokened role renders
+  // any more — every lane-holding role has a bespoke Horizon and global-setup
+  // mints no tokens for the fallback roles (wind, epc) that still see it.)
 });
 
 test.describe('Admin role-switch board', () => {
@@ -429,22 +401,20 @@ test.describe('Admin role-switch board', () => {
     await seedToken(page, 'admin');
     await goTo(page, baseURL, '/horizon');
 
-    await expect(
-      page.locator('[aria-label="Live cases by time to consequence"]'),
-    ).toBeVisible({ timeout: 30_000 });
+    // AdminHorizon renders its own Compliance desk under .mer.horizon.
+    await expect(page.locator('.mer.horizon').first()).toBeVisible({ timeout: 30_000 });
 
-    // The admin-only role switcher renders one button per lane-holding role.
-    const group = page.locator('div.role-switch[role="group"][aria-label="View board as role"]');
+    // The admin-only role switcher: aria-label sits on the wrapping nav, the
+    // role="group" on the inner .role-switch (AdminHorizon.tsx).
+    const group = page.locator('nav[aria-label="View board as role"] .role-switch[role="group"]');
     await expect(group).toBeVisible({ timeout: 5_000 });
     const buttons = group.locator('button');
     expect(await buttons.count(), 'role switcher should expose multiple lane roles').toBeGreaterThanOrEqual(8);
 
-    // Switch to a different role's board (resets data → loading → board again).
+    // Switch to a different role's board — the selected role's bespoke Horizon
+    // renders under the switcher (each carries the shared .mer.horizon root).
     await buttons.nth(1).click();
-    await expect(page.locator('body')).toContainText(HORIZON_STATE, { timeout: 10_000 });
-    await expect(
-      page.locator('[aria-label="Live cases by time to consequence"]'),
-    ).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('.mer.horizon').first()).toBeVisible({ timeout: 30_000 });
 
     const real = errors.filter((e) => e.startsWith('api.5'));
     expect(real, `5xx after admin role switch:\n${real.join('\n')}`).toEqual([]);

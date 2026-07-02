@@ -95,7 +95,10 @@ export default function RegulatorHorizon() {
     );
   }
 
-  const { lanes, duty, counts } = React.useMemo(() => data, [data]);
+  // Plain destructure — a hook here sat BELOW the err/!data early returns, so
+  // the hook count changed between renders (React #310 crash on data arrival);
+  // the useMemo was an identity memo anyway.
+  const { lanes, duty, counts } = data;
   const now = new Date();
 
   // Triage bands across the WHOLE desk (every lane case), not just duty.
