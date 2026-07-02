@@ -13,6 +13,7 @@ import { authMiddleware, getCurrentUser, signToken, hashPassword, verifyPassword
 import { fireCascade } from '../utils/cascade';
 import {
   ACCESS_TOKEN_EXPIRY_SECONDS,
+  accessTokenTtlSeconds,
   createSession,
   rotateSession,
   revokeSessionByRefresh,
@@ -245,7 +246,7 @@ auth.post('/login', async (c) => {
   const token = await signToken(
     { sub: participant.id, email: participant.email, role: participant.role, name: participant.name, jti: accessJti },
     c.env,
-    { expiresInSeconds: ACCESS_TOKEN_EXPIRY_SECONDS }
+    { expiresInSeconds: accessTokenTtlSeconds(c.env) }
   );
   const session = await createSession({
     db: c.env.DB,
@@ -282,7 +283,7 @@ auth.post('/login', async (c) => {
     success: true,
     data: {
       token,
-      expires_in: ACCESS_TOKEN_EXPIRY_SECONDS,
+      expires_in: accessTokenTtlSeconds(c.env),
       refresh_token: session.refreshToken,
       refresh_expires_at: session.refreshExpiresAtIso,
       session_id: session.sessionId,
@@ -318,7 +319,7 @@ auth.post('/refresh', async (c) => {
   const token = await signToken(
     { sub: p.id, email: p.email, role: p.role, name: p.name, jti: newAccessJti },
     c.env,
-    { expiresInSeconds: ACCESS_TOKEN_EXPIRY_SECONDS }
+    { expiresInSeconds: accessTokenTtlSeconds(c.env) }
   );
 
   const cookieOpts = { httpOnly: true, secure: cookieSecure(c), sameSite: 'Strict' as const, path: '/api' };
@@ -332,7 +333,7 @@ auth.post('/refresh', async (c) => {
     success: true,
     data: {
       token,
-      expires_in: ACCESS_TOKEN_EXPIRY_SECONDS,
+      expires_in: accessTokenTtlSeconds(c.env),
       refresh_token: rot.newRefreshToken,
       refresh_expires_at: rot.refreshExpiresAtIso,
       session_id: rot.sessionId,
@@ -594,7 +595,7 @@ auth.post('/mfa/backup-code', async (c) => {
   const token = await signToken(
     { sub: participant.id, email: participant.email, role: participant.role, name: participant.name, jti: accessJti },
     c.env,
-    { expiresInSeconds: ACCESS_TOKEN_EXPIRY_SECONDS }
+    { expiresInSeconds: accessTokenTtlSeconds(c.env) }
   );
   const session = await createSession({
     db: c.env.DB,
@@ -616,7 +617,7 @@ auth.post('/mfa/backup-code', async (c) => {
     success: true,
     data: {
       token,
-      expires_in: ACCESS_TOKEN_EXPIRY_SECONDS,
+      expires_in: accessTokenTtlSeconds(c.env),
       refresh_token: session.refreshToken,
       session_id: session.sessionId,
       backup_codes_remaining: remainingCount,

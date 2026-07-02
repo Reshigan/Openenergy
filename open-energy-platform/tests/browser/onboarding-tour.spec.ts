@@ -46,9 +46,15 @@ async function seedToken(page: import('@playwright/test').Page) {
   });
   await page.addInitScript((tok) => {
     localStorage.setItem('token', tok as string);
-    // Clear the tour ledger and ensure no kill-switch so the cards paint.
-    localStorage.removeItem('oe.onboarding.tour.completed');
-    localStorage.removeItem('oe.onboarding.skipped');
+    // Clear the tour ledger and ensure no kill-switch so the cards paint —
+    // but only ONCE per browser context. addInitScript re-runs on every
+    // navigation, and re-clearing wiped the very dismiss/skip state these
+    // tests assert persists across pages/reloads (self-defeating).
+    if (!sessionStorage.getItem('pw_tour_cleared')) {
+      localStorage.removeItem('oe.onboarding.tour.completed');
+      localStorage.removeItem('oe.onboarding.skipped');
+      sessionStorage.setItem('pw_tour_cleared', '1');
+    }
   }, tokenValue);
 }
 
@@ -122,9 +128,11 @@ test('Horizon tour card shows inline, dismisses with Got it, and stays dismissed
   await expect(page.getByText('This is Horizon')).toBeVisible({ timeout: 20_000 });
 
   // It is inline, not a modal: no dialog overlay, and the board behind it is
-  // visible at the same time (the +New transaction action lives on the board).
+  // visible at the same time. The IPP role renders the bespoke IppHorizon whose
+  // hero eyebrow ("YOUR GUIDE") is the stable board affordance — the old
+  // "+ New transaction" link belonged to the shared board this role no longer sees.
   await expect(page.locator('[role="dialog"]')).toHaveCount(0);
-  await expect(page.getByText(/New transaction/i).first()).toBeVisible();
+  await expect(page.getByText(/YOUR GUIDE/i).first()).toBeVisible();
 
   // Dismiss this surface's card.
   await page.getByTestId('mer-tour-gotit').click();
@@ -132,7 +140,7 @@ test('Horizon tour card shows inline, dismisses with Got it, and stays dismissed
 
   // Persistence: a reload does NOT bring it back.
   await page.reload({ waitUntil: 'load' });
-  await expect(page.getByText(/New transaction/i).first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(/YOUR GUIDE/i).first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText('This is Horizon')).toHaveCount(0);
 
   const real = errors.filter((e) => !isBenign(e));

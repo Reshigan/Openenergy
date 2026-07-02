@@ -13,6 +13,18 @@ const LOCKOUT_DURATION_MINUTES = 15;
 
 export const ACCESS_TOKEN_EXPIRY_SECONDS = ACCESS_TTL_MINUTES * 60;
 
+// Per-environment access-token TTL override. The demo env (oe) sets
+// ACCESS_TOKEN_TTL_SECONDS in wrangler.toml [vars] because its nightly browser
+// suite runs ~4h against demo personas and 1h tokens expire mid-run (the #1
+// cause of late-suite login-page failures). The live env (cec) does NOT set
+// the var and keeps the 1h default. Clamped so a bad var can't mint
+// eternal tokens.
+export function accessTokenTtlSeconds(env: { ACCESS_TOKEN_TTL_SECONDS?: string }): number {
+  const raw = Number(env?.ACCESS_TOKEN_TTL_SECONDS);
+  if (!Number.isFinite(raw)) return ACCESS_TOKEN_EXPIRY_SECONDS;
+  return Math.min(24 * 3600, Math.max(ACCESS_TOKEN_EXPIRY_SECONDS, Math.floor(raw)));
+}
+
 export function randomId(prefix = ''): string {
   const buf = new Uint8Array(16);
   crypto.getRandomValues(buf);

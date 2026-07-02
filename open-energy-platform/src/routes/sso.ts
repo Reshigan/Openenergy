@@ -22,7 +22,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { signToken } from '../middleware/auth';
 import {
-  ACCESS_TOKEN_EXPIRY_SECONDS,
+  accessTokenTtlSeconds,
   createSession,
   randomId,
   randomOpaqueToken,
@@ -239,7 +239,7 @@ sso.get('/microsoft/callback', async (c) => {
   const token = await signToken(
     { sub: participant.id, email: participant.email, role: participant.role, name: participant.name, jti: accessJti },
     c.env,
-    { expiresInSeconds: ACCESS_TOKEN_EXPIRY_SECONDS }
+    { expiresInSeconds: accessTokenTtlSeconds(c.env) }
   );
   const session = await createSession({
     db: c.env.DB,
@@ -268,7 +268,7 @@ sso.get('/microsoft/callback', async (c) => {
   const fragment = new URLSearchParams({
     token,
     refresh_token: session.refreshToken,
-    expires_in: String(ACCESS_TOKEN_EXPIRY_SECONDS),
+    expires_in: String(accessTokenTtlSeconds(c.env)),
     return_to: returnTo,
   }).toString();
   return c.redirect(`/sso-landing#${fragment}`);

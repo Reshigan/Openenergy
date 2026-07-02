@@ -46,7 +46,7 @@ type ChecklistItemDef = {
   key: string;
   label: string;
   description: string;
-  href: string; // LIVE Meridian route only: /horizon, /new, /atlas.
+  href: string; // LIVE Meridian route only: /cockpit (creates live in-journey) or /horizon.
   probe: { sql: string };
   // One-line static rationale for the inline "next best step" assist. Used as
   // the deterministic base for `why`; AI text only enriches it when available.
@@ -85,7 +85,7 @@ const CHECKLISTS: Record<string, ChecklistItemDef[]> = {
       key: 'create_site',
       label: 'Register your first site',
       description: 'Your site appears in the commissioning chain.',
-      href: '/new',
+      href: '/cockpit',
       probe: { sql: `SELECT COUNT(*) AS n FROM om_sites WHERE participant_id = ?` },
       whyFallback: 'Registering a site is the entry point to commissioning and live monitoring.',
     },
@@ -104,7 +104,7 @@ const CHECKLISTS: Record<string, ChecklistItemDef[]> = {
       key: 'first_project',
       label: 'Register your first project',
       description: 'Start the IPP development lifecycle.',
-      href: '/new',
+      href: '/cockpit',
       probe: { sql: `SELECT COUNT(*) AS n FROM ipp_projects WHERE developer_id = ?` },
       whyFallback: 'Your first project starts the development-to-COD lifecycle you track here.',
     },
@@ -134,7 +134,7 @@ const CHECKLISTS: Record<string, ChecklistItemDef[]> = {
       key: 'start_procurement',
       label: 'Start your procurement portfolio',
       description: 'Capture what generation you need.',
-      href: '/new',
+      href: '/cockpit',
       probe: { sql: `SELECT COUNT(*) AS n FROM off_ppa_portfolio WHERE participant_id = ?` },
       whyFallback: 'Capturing your demand is the first step to matching generation.',
     },

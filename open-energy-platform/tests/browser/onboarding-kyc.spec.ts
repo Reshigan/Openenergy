@@ -175,6 +175,15 @@ test('Getting-Started surfaces the verify-to-transact item when KYC is not appro
   await page.route('**/api/horizon/**', async (route) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(HORIZON_PAYLOAD) });
   });
+  // The gate renders on user.kyc_status !== 'approved' (GettingStarted.tsx) and
+  // the demo persona IS approved on prod — patch /auth/me to a pending user so
+  // the assertion is deterministic instead of data-dependent.
+  await page.route('**/api/auth/me', async (route) => {
+    const real = await route.fetch();
+    const body = await real.json();
+    if (body?.data) body.data.kyc_status = 'pending';
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+  });
 
   await page.goto(`${baseURL}/horizon`, { waitUntil: 'load' });
 

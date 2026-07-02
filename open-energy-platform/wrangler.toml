@@ -34,6 +34,10 @@ ENVIRONMENT = "production"
 PLATFORM_NAME = "Open Energy"
 DOMAIN = "oe.vantax.co.za"
 APP_BASE_URL = "https://oe.vantax.co.za"
+# Demo-env only: 6h access tokens so the ~4h nightly browser suite outlives its
+# JWTs (1h tokens expired mid-run → every late-suite spec bounced to /login).
+# The live env ([env.live]) deliberately does NOT set this → 1h default.
+ACCESS_TOKEN_TTL_SECONDS = "21600"
 # Secrets (never committed — provision via `wrangler secret put <NAME>`):
 #   wrangler secret put JWT_SECRET          # HS256 fallback HMAC key (≥32 random bytes)
 #   wrangler secret put JWT_PRIVATE_KEY_JWK # ES256 P-256 private key JWK (run scripts/generate-jwt-keys.mjs)

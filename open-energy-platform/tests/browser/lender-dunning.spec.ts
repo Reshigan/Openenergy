@@ -65,9 +65,8 @@ function attachWatchers(page: import('@playwright/test').Page): string[] {
 test('Lender dunning tab renders KPIs, filters, and demo notices', async ({ page, baseURL }) => {
   const errors = attachWatchers(page);
   await seedToken(page);
-  await page.goto(`${baseURL}/lender-suite`, { waitUntil: 'load' });
+  await page.goto(`${baseURL}/surface/lender:dunning`, { waitUntil: 'load' });
 
-  await page.getByRole('tab', { name: /^Dunning queue$/ }).click();
   await expect(page.getByTestId('lender-dunning-tab')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('lender-dunning-kpis')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('lender-dunning-table')).toBeVisible({ timeout: 15_000 });
@@ -86,9 +85,8 @@ test('Lender dunning tab renders KPIs, filters, and demo notices', async ({ page
 test('Lender dunning drill-down shows payload and action buttons', async ({ page, baseURL }) => {
   const errors = attachWatchers(page);
   await seedToken(page);
-  await page.goto(`${baseURL}/lender-suite`, { waitUntil: 'load' });
+  await page.goto(`${baseURL}/surface/lender:dunning`, { waitUntil: 'load' });
 
-  await page.getByRole('tab', { name: /^Dunning queue$/ }).click();
   await expect(page.getByTestId('lender-dunning-tab')).toBeVisible({ timeout: 15_000 });
 
   // Click first row regardless of filter — should drill into either issued
