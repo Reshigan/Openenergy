@@ -73,6 +73,15 @@ export async function fetchLedger(chainKey: string, status?: string): Promise<Le
   return r.data.data;
 }
 
+// The chains the signed-in role can actually START (has an initiation form + can see
+// the chain), with `lane` = the role's domain key so the SPA can group each create
+// under the right journey. This is the authoritative source for create affordances.
+export interface InitiableChain { chainKey: string; label: string; lane: string | null }
+export async function fetchInitiable(): Promise<InitiableChain[]> {
+  const r = await api.get('/ledger/initiable');
+  return (r.data?.data ?? []) as InitiableChain[];
+}
+
 // Role headline stats for the Horizon KPI band. Reuses the existing role-aware
 // /cockpit/stats endpoint (KV-cached 30s) — top-level money/contract counts plus
 // a role_national block of domain KPIs. Keyed off the signed-in user's JWT, so
