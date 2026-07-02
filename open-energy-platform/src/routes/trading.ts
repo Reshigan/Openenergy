@@ -1,5 +1,5 @@
 // Trading Routes
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
@@ -16,6 +16,7 @@ import {
 import { explainRejection } from '../utils/rejection-explainer';
 import { logAiDecision } from '../utils/ai-audit';
 import { appendAudit } from '../utils/audit-chain';
+import { isRecInstrument, recSellGuard, settleRecFill, planCertTransfer } from '../utils/rec-trading';
 import type { DurableObjectNamespace } from '@cloudflare/workers-types';
 
 const trading = new Hono<HonoEnv>();
@@ -323,6 +324,21 @@ trading.post('/orders', async (c) => {
   const energyType = String(energy_type);
   const deliveryDate = (delivery_date as string | undefined) || null;
 
+  // ── REC exchange branch ─────────────────────────────────────────────────
+  // RECs are spot certificates on the instrument-generic book: no margin, no
+  // delivery/mark guards. A SELL is backed by free (issued, unlisted) holdings;
+  // on fill each covered certificate transfers to the buyer (fail-closed — a
+  // volume that can't be met by whole certs leaves a logged shortfall, never a
+  // split cert). This returns early, so the power path below is untouched.
+  if (isRecInstrument(energyType)) {
+    return await placeRecOrder(c, {
+      userId: user.id, side: side as 'buy' | 'sell', energyType, vol,
+      price: effectivePrice, orderType: (order_type as string) || 'limit',
+      timeInForce: (time_in_force as string) || 'gtc', autoMatch: auto_match === true,
+      externalRef: typeof external_ref === 'string' ? external_ref : null,
+    });
+  }
+
   // ── Pre-trade gating ────────────────────────────────────────────────────
   const snapshot = await loadRiskSnapshot(c.env, user.id, energyType, deliveryDate);
   const proposed: ProposedOrder = {
@@ -482,6 +498,95 @@ async function routeThroughOrderBook(
     taker_status: data.data?.taker_status || 'open',
     fills: data.data?.fills || [],
   };
+}
+
+// ── REC order placement + settlement (spot certificate exchange) ────────────
+interface RecOrderInput {
+  userId: string; side: 'buy' | 'sell'; energyType: string; vol: number;
+  price: number | null; orderType: string; timeInForce: string;
+  autoMatch: boolean; externalRef: string | null;
+}
+interface RecFillShape {
+  taker_participant_id: string; maker_participant_id: string;
+  side: 'buy' | 'sell'; volume_mwh: number; price: number; taker_order_id: string;
+}
+
+async function placeRecOrder(c: Context<HonoEnv>, o: RecOrderInput) {
+  const env = c.env;
+  // SELL guard — free holdings = issued certs minus this seller's still-open REC sells.
+  if (o.side === 'sell') {
+    const held = await env.DB.prepare(
+      `SELECT COALESCE(SUM(mwh_represented),0) AS m FROM oe_rec_lifecycle WHERE holder_id=? AND chain_status='issued'`,
+    ).bind(o.userId).first<{ m: number }>();
+    const listed = await env.DB.prepare(
+      `SELECT COALESCE(SUM(remaining_volume_mwh),0) AS m FROM trade_orders
+        WHERE participant_id=? AND energy_type=? AND side='sell' AND status IN ('open','partial')`,
+    ).bind(o.userId, o.energyType).first<{ m: number }>();
+    const g = recSellGuard({ volumeMwh: o.vol, heldMwh: held?.m ?? 0, alreadyListedMwh: listed?.m ?? 0 });
+    if (!g.ok) return c.json({ success: false, error: g.code, data: { detail: g.message } }, 422);
+  }
+  const orderId = 'ord_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const shardKey = deriveShardKey(o.energyType, null);
+  const now = new Date().toISOString();
+  await env.DB.prepare(`
+    INSERT INTO trade_orders
+      (id, participant_id, side, energy_type, volume_mwh, remaining_volume_mwh,
+       price, delivery_date, market_type, order_type, time_in_force, shard_key, external_ref,
+       status, created_at, updated_at, posted_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'exchange', ?, ?, ?, ?, 'open', ?, ?, ?)
+  `).bind(orderId, o.userId, o.side, o.energyType, o.vol, o.vol, o.price,
+    o.orderType, o.timeInForce, shardKey, o.externalRef, now, now, now).run();
+  await fireCascade({
+    event: 'trade.order_placed', actor_id: o.userId, entity_type: 'trade_orders', entity_id: orderId,
+    data: { side: o.side, energy_type: o.energyType, volume_mwh: o.vol, instrument: 'rec' }, env, skipAudit: true,
+  });
+
+  let fills: RecFillShape[] = [];
+  if (o.autoMatch) {
+    const doMatch = await routeThroughOrderBook(env, shardKey, {
+      id: orderId, participant_id: o.userId, side: o.side, price: o.price,
+      volume_mwh: o.vol, remaining_volume_mwh: o.vol, posted_at: now,
+      order_type: o.orderType as MatchingOrder['order_type'], shard_key: shardKey,
+    });
+    fills = (doMatch?.fills as RecFillShape[]) || [];
+    for (const f of fills) await settleRecTrade(env, f);
+  }
+  return c.json({ success: true, data: { id: orderId, status: fills.length ? 'matched' : 'open', fills, instrument: 'rec' } }, 201);
+}
+
+// Transfer the covered certificates on a matched REC fill. Whole-certificate,
+// fail-closed: a fill volume that can't be met by whole certs leaves a logged
+// shortfall for out-of-band settlement (never splits a certificate).
+async function settleRecTrade(env: HonoEnv['Bindings'], fill: RecFillShape) {
+  const sellerId = fill.side === 'sell' ? fill.taker_participant_id : fill.maker_participant_id;
+  const buyerId = fill.side === 'sell' ? fill.maker_participant_id : fill.taker_participant_id;
+  const intent = settleRecFill({ sellerId, buyerId, volumeMwh: fill.volume_mwh, priceZarPerMwh: fill.price });
+  const rows = await env.DB.prepare(
+    `SELECT id, mwh_represented AS mwh FROM oe_rec_lifecycle
+      WHERE holder_id=? AND chain_status='issued' ORDER BY created_at ASC`,
+  ).bind(sellerId).all();
+  const certs = (rows.results ?? []) as { id: string; mwh: number }[];
+  const plan = planCertTransfer(certs, intent.mwh);
+  const now = new Date().toISOString();
+  for (const id of plan.transferIds) {
+    await env.DB.prepare(
+      `UPDATE oe_rec_lifecycle
+         SET holder_id=?, holder_name=(SELECT name FROM participants WHERE id=?),
+             chain_status='transferred', updated_at=?
+       WHERE id=?`,
+    ).bind(buyerId, buyerId, now, id).run();
+  }
+  await fireCascade({
+    event: intent.cascadeEvent, actor_id: buyerId, entity_type: 'oe_rec_lifecycle',
+    entity_id: plan.transferIds[0] ?? fill.taker_order_id,
+    data: { seller: sellerId, buyer: buyerId, mwh: plan.transferredMwh, value_zar: intent.valueZar, shortfall_mwh: plan.shortfallMwh },
+    env,
+  });
+  if (plan.shortfallMwh > 1e-9) {
+    console.warn('rec_settlement_shortfall', JSON.stringify({
+      sellerId, buyerId, requested: intent.mwh, transferred: plan.transferredMwh, shortfall: plan.shortfallMwh,
+    }));
+  }
 }
 
 // GET /trading/orderbook-depth — depth snapshot for a given shard.

@@ -112,6 +112,7 @@ export type EventType =
   | 'ipp.insurance_claim_filed' | 'ipp.community_grievance_logged'
   // Offtaker
   | 'offtaker.rec_issued' | 'offtaker.rec_retired'
+  | 'rec.transferred'
   | 'offtaker.scope2_published' | 'offtaker.budget_exceeded'
   // Carbon
   | 'carbon.vintage_issued' | 'carbon.mrv_submitted' | 'carbon.mrv_verified'
