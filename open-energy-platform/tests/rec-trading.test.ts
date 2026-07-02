@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   recInstrument, isRecInstrument, parseRecInstrument,
-  recSellGuard, settleRecFill,
+  recSellGuard, settleRecFill, planCertTransfer,
 } from '../src/utils/rec-trading';
 
 describe('REC instrument codes', () => {
@@ -39,6 +39,25 @@ describe('recSellGuard — holdings-backed sells', () => {
   });
   it('allows selling the exact free balance (float-tolerant)', () => {
     expect(recSellGuard({ volumeMwh: 250, heldMwh: 250, alreadyListedMwh: 0 }).ok).toBe(true);
+  });
+});
+
+describe('planCertTransfer — whole-certificate, fail-closed', () => {
+  const certs = [{ id: 'c1', mwh: 100 }, { id: 'c2', mwh: 100 }, { id: 'c3', mwh: 50 }];
+  it('takes whole certs FIFO up to the fill volume', () => {
+    expect(planCertTransfer(certs, 200)).toEqual({ transferIds: ['c1', 'c2'], transferredMwh: 200, shortfallMwh: 0 });
+  });
+  it('never splits a certificate — leaves a shortfall the caller must settle out-of-band', () => {
+    // Two 100-MWh certs, 150 requested: c1 fits (100); c2 would overshoot and no
+    // smaller cert exists → only c1 transfers, 50 MWh shortfall (never split c2).
+    expect(planCertTransfer([{ id: 'c1', mwh: 100 }, { id: 'c2', mwh: 100 }], 150))
+      .toEqual({ transferIds: ['c1'], transferredMwh: 100, shortfallMwh: 50 });
+  });
+  it('covers exactly when certs align (100+50 skips nothing wrong)', () => {
+    expect(planCertTransfer([{ id: 'a', mwh: 100 }, { id: 'b', mwh: 50 }], 150)).toEqual({ transferIds: ['a', 'b'], transferredMwh: 150, shortfallMwh: 0 });
+  });
+  it('transfers nothing (full shortfall) when the smallest cert overshoots', () => {
+    expect(planCertTransfer([{ id: 'big', mwh: 500 }], 100)).toEqual({ transferIds: [], transferredMwh: 0, shortfallMwh: 100 });
   });
 });
 

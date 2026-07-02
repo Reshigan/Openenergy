@@ -93,6 +93,33 @@ export interface RecSettlement {
   cascadeEvent: 'rec.transferred';
 }
 
+// Certificates are DISCRETE — a fill volume is covered by transferring whole
+// certificates, never by splitting one. FIFO (oldest first) whole certificates are
+// taken while they still fit under the fill volume. Any remainder that can't be
+// covered by a whole certificate is a `shortfallMwh` the caller must settle
+// out-of-band (a pending row) rather than mis-split — fail-closed by construction.
+export interface CertHolding { id: string; mwh: number }
+export interface CertTransferPlan { transferIds: string[]; transferredMwh: number; shortfallMwh: number }
+
+export function planCertTransfer(certs: CertHolding[], volumeMwh: number): CertTransferPlan {
+  const transferIds: string[] = [];
+  let acc = 0;
+  // FIFO order as given (caller passes oldest-first). Take whole certs that keep
+  // the running total ≤ the fill volume.
+  for (const cert of certs) {
+    if (!(cert.mwh > 0)) continue;
+    if (acc + cert.mwh <= volumeMwh + 1e-9) {
+      transferIds.push(cert.id);
+      acc += cert.mwh;
+    }
+  }
+  return {
+    transferIds,
+    transferredMwh: acc,
+    shortfallMwh: Math.max(0, volumeMwh - acc),
+  };
+}
+
 /** Compute the settlement intent for a REC fill. Throws on a nonsensical fill so
  *  the caller never silently transfers zero/negative certificates. */
 export function settleRecFill(fill: RecFill): RecSettlement {
