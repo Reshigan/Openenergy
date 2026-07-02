@@ -14,7 +14,7 @@ import { api } from '../lib/api';
 import { getRoleConfig } from '../ux-alternatives/launchpad-nav/roleData';
 import { getJourneys } from './journeys';
 import { Icon } from './icons';
-import { fetchHorizon, fetchLedger, fmtZar, humanizeKey, type HorizonData, type MerCase, type LedgerActionField } from './lib';
+import { fetchHorizon, fetchLedger, fetchInitiable, fmtZar, humanizeKey, type HorizonData, type MerCase, type LedgerActionField, type InitiableChain } from './lib';
 import { FieldForm } from './FieldForm';
 
 // Format a raw case-record value for the in-cockpit detail (folds the Thread record).
@@ -73,6 +73,9 @@ export default function JourneyCockpit() {
   // renders its registered component in a panel over the cockpit instead of
   // navigating to /surface/:key. Same component, same CRUD — no second plane.
   const [surfacePanel, setSurfacePanel] = React.useState<{ key: string; label: string } | null>(null);
+  // Chains this role can actually start (with their journey lane) — the source for
+  // create affordances, so we only ever offer a create that opens a real form.
+  const [initiable, setInitiable] = React.useState<InitiableChain[]>([]);
 
   const reload = React.useCallback(() => {
     if (!role) return;
@@ -103,6 +106,7 @@ export default function JourneyCockpit() {
     if (!role) return;
     reload();
     api.get(`/journey-config/${role}`).then(r => setGov(r.data?.data ?? {})).catch(() => { /* defaults */ });
+    fetchInitiable().then(setInitiable).catch(() => { /* no creates offered if this fails */ });
   }, [role, reload]);
 
   // Open an item: fetch its thread detail in place (folds the old Thread page).
@@ -276,22 +280,17 @@ export default function JourneyCockpit() {
               <h1 className="hd-serif">{cleanLabel(activeJourney.label)}</h1>
             </header>
             {(() => {
-              const initiable = journeyFeatures(activeJourney.key)
-                .filter(f => f.chainKey && isTileReachable(role, f, hasSurface) && featAvailable(f.key));
-              const primaryChain = initiable[0]?.chainKey;
+              // Creates are sourced from the authoritative initiable list (chains with a
+              // real form the role can start), grouped into this journey by lane. Every
+              // button opens a working composer — no dead-ends. Empty → no starts row.
+              const jc = initiable.filter(e => e.lane != null && activeJourney.domainKeys.includes(e.lane));
+              if (!jc.length) return null;
               return (
                 <div className="jc-starts">
-                  {/* Primary create opens the composer in place (falls back to the picker
-                     only if the journey has no initiable chain). No Atlas navigation. */}
-                  <button type="button" className="jc-start"
-                    onClick={() => primaryChain ? openCompose(primaryChain) : navigate('/new')}>
-                    <Icon name="plus" size={14} /> {primaryEntity.verb} {primaryEntity.label}
-                  </button>
-                  {initiable.slice(0, 6).map(f => (
-                    <button key={f.key} type="button" className="jc-start ghost" onClick={() => openCompose(f.chainKey!)}>
-                      <Icon name="plus" size={13} /> {cleanLabel(f.label)}
-                      {gov[f.key]?.charge_zar ? <span className="jc-charge mono">{fmtZar(gov[f.key].charge_zar)}</span> : null}
-                      {featRequired(f.key) && <span className="jc-req">required</span>}
+                  {jc.map((e, i) => (
+                    <button key={e.chainKey} type="button" className={i === 0 ? 'jc-start' : 'jc-start ghost'}
+                      onClick={() => openCompose(e.chainKey)}>
+                      <Icon name="plus" size={i === 0 ? 14 : 13} /> {e.label}
                     </button>
                   ))}
                 </div>
