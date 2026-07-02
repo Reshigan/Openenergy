@@ -125,10 +125,20 @@ export default function ThreadPage() {
   }
 
   if (err) {
+    // Keep the chrome — a chromeless failure reads as a crashed app and strands
+    // the operator (no ⌘K, no account menu). Same idiom as the Ledger dead-end.
     return (
-      <div className="mer mer-error" role="alert">
-        Thread failed to load.{' '}
-        <button type="button" className="btn ghost" onClick={() => { setErr(null); load(); }}>Retry</button>
+      <div className="mer thread">
+        <MeridianHeader ctx={<b>Thread</b>} />
+        <div className="mer-deadend" role="alert">
+          <span className="mer-deadend-glyph" aria-hidden="true">⌁</span>
+          <p className="mer-deadend-ttl">This thread failed to load.</p>
+          <p className="mer-deadend-sub">Press <kbd>⌘K</kbd> to search everything you can reach.</p>
+          <div className="mer-error-acts">
+            <button type="button" className="btn pri" onClick={() => { setErr(null); load(); }}>Retry</button>
+            <Link to="/cockpit" className="btn ghost">Back to your cockpit</Link>
+          </div>
+        </div>
       </div>
     );
   }

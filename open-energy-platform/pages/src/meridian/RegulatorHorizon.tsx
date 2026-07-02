@@ -130,7 +130,7 @@ export default function RegulatorHorizon() {
           <h2 className="rg-hero-title hd-serif">{headline}</h2>
           <p className="rg-hero-sub">{subtext}</p>
           <div className="oh-hero-actions">
-            <Link to="/atlas" className="btn ghost">Browse functions</Link>
+            <Link to="/cockpit" className="btn ghost">Browse journeys</Link>
           </div>
         </div>
 
@@ -232,12 +232,12 @@ export default function RegulatorHorizon() {
                   <div className="rg-acts">
                     <div className="rg-acts-h oh-mono">DEFENSIBLE ACTIONS</div>
                     <div className="rg-acts-list">
-                      {focus.actions.slice(0, 4).map(a => {
+                      {focus.actions.slice(0, 4).map((a, ai) => {
                         const key = `${focus.id}:${a.action}`;
                         const busy = acting === key;
                         return (
                           <button key={a.action} type="button"
-                            className={a.tone === 'oxide' ? 'btn ox' : a.tone === 'amber' || a.tone === 'gold' ? 'btn gold' : 'btn pri'}
+                            className={a.tone === 'oxide' ? 'btn ox' : a.tone === 'amber' || a.tone === 'gold' ? 'btn gold' : ai === 0 ? 'btn pri' : 'btn quiet'}
                             title={a.fields?.length ? `${a.cascadeHint} — opens the form` : a.cascadeHint}
                             disabled={acting !== null}
                             aria-busy={busy || undefined}

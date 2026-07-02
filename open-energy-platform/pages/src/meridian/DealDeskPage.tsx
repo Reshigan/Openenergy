@@ -145,6 +145,12 @@ export default function DealDeskPage() {
        <>
       {/* AUTHOR bar — one chip per capability the role holds on each deal type. */}
       <div className="author-bar" aria-label="Author a deal">
+        {!types.some(t => t.can_request || t.can_offer) && (
+          <span className="author-bar-none">
+            Your role responds to deals rather than authoring them — requests and offers
+            sent to you appear below.
+          </span>
+        )}
         {types.map(t => (
           <React.Fragment key={t.deal_type}>
             {t.can_request && (

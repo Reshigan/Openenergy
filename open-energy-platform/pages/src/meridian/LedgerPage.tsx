@@ -117,11 +117,11 @@ export default function LedgerPage() {
       <GuidedTour surface="ledger" />
 
       <main className="ledger-body">
-        <Link to="/horizon" className="ledger-back">← Horizon</Link>
+        <Link to="/cockpit" className="ledger-back">← Cockpit</Link>
         {notice && (
           <div className="ledger-notice" role="status">
             {notice}{' '}
-            <Link to="/atlas">Browse what you can start →</Link>
+            <Link to="/cockpit">Browse what you can start →</Link>
           </div>
         )}
         {/* KPI strip */}

@@ -592,18 +592,33 @@
 /* ── Deal Desk ───────────────────────────── */
 /* Provider/demand deal engine: a requests lane + an offers lane, with a 5-step
    process rail, scored offer-compare cards, and a publish composer. Mirrors the
-   Atlas paper aesthetic (petrol/amber/oxide accents, JetBrains Mono numerics). */
-.mer .deal-desk { padding:34px 44px 60px; }
+   Atlas paper aesthetic (petrol/amber/oxide accents, JetBrains Mono numerics).
+   NOTE the root is `.mer.deal-desk` (one element) and the lanes are `.deal-col`
+   — the old `.mer .deal-desk` / `.deal-lane` selectors never matched the markup,
+   which is why the desk rendered full-bleed and unstyled. */
+.mer.deal-desk { display:flex; flex-direction:column; min-height:100dvh; }
+/* The header stays full-width; the working area gets the padded, centered measure. */
+.mer.deal-desk .author-bar,
+.mer.deal-desk .deal-cols { width:100%; max-width:1180px; margin:0 auto; padding-left:44px; padding-right:44px; }
+.mer.deal-desk .author-bar { display:flex; flex-wrap:wrap; gap:8px; padding-top:24px; }
+.mer.deal-desk .deal-cols { padding-top:22px; padding-bottom:60px; }
 
 /* Two lanes side-by-side; collapses to a single column on narrow viewports. */
 .mer .deal-cols { display:grid; grid-template-columns:1fr 1fr; gap:0 52px; align-items:start; }
 @media (max-width:900px) { .mer .deal-cols { grid-template-columns:1fr; gap:34px 0; } }
 
 /* Lane heading — same wdth/letter-spacing treatment as .domain h2. */
-.mer .deal-lane h2 {
+.mer .deal-col h2, .mer .deal-lane h2 {
   font-variation-settings:'wdth' 115; font-size:11.5px; font-weight:800; letter-spacing:0.11em;
   color:var(--petrol-deep); border-top:2px solid var(--petrol); padding-top:14px; margin-bottom:14px;
 }
+/* Composed empty lane — an invitation to act, not a bare sentence. */
+.mer .deal-empty {
+  border:1px dashed var(--line); border-radius:10px; background:var(--raised);
+  padding:26px 20px; text-align:center; font-size:13px; color:var(--ink2);
+}
+/* Responder-only roles: honest line where the author chips would be. */
+.mer .author-bar-none { font-size:12.5px; color:var(--ink3); padding:4px 0; }
 
 /* Request/offer card — tile-like border + radius; hover lifts. */
 .mer .dcard {
@@ -729,7 +744,15 @@
    the MeridianHeader stays pinned and the body scrolls. Reuses the Atlas/Deal Desk
    paper aesthetic (petrol accent, JetBrains Mono numerics) and shared .btn/.chip. */
 .mer.ledger { display:flex; flex-direction:column; min-height:100dvh; }
-.mer.ledger .ledger-body { flex:1; min-height:0; overflow-y:auto; padding:28px 44px 60px; max-width:920px; }
+/* Centered reading measure — the list held to ~920px but hugged the left edge,
+   leaving a dead right third on wide screens. */
+.mer.ledger .ledger-body { flex:1; min-height:0; overflow-y:auto; padding:28px 44px 60px; max-width:920px; width:100%; margin:0 auto; }
+/* Rows settle in with the same capped stagger as the cockpit queue. */
+.mer.ledger .lcard { animation: jc-item-in 240ms var(--ease) backwards; }
+.mer.ledger .lcard:nth-of-type(1) { animation-delay:0ms; }  .mer.ledger .lcard:nth-of-type(2) { animation-delay:30ms; }
+.mer.ledger .lcard:nth-of-type(3) { animation-delay:60ms; } .mer.ledger .lcard:nth-of-type(4) { animation-delay:90ms; }
+.mer.ledger .lcard:nth-of-type(5) { animation-delay:120ms; } .mer.ledger .lcard:nth-of-type(n+6) { animation-delay:150ms; }
+@media (prefers-reduced-motion: reduce){ .mer.ledger .lcard { animation:none; } }
 
 /* Back-to-Horizon wayfinding link (B2: IPP journey) — leads the ledger body. */
 .mer.ledger .ledger-back {

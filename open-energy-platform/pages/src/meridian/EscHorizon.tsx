@@ -216,7 +216,7 @@ export default function EscHorizon() {
                   <div className="es-lane-meta oh-mono">
                     {l.cases.length} live{br ? ` · ${br}!` : ''}{hasAtRisk ? ' · at risk' : ''}
                   </div>
-                  <Link className="es-lane-link oh-mono" to={`/atlas`}>open →</Link>
+                  <Link className="es-lane-link oh-mono" to={`/cockpit`}>open →</Link>
                 </div>
               );
             })}

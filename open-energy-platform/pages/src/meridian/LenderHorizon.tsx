@@ -109,8 +109,8 @@ export default function LenderHorizon() {
           <h2 className="lh-hero-title hd-serif">{headline}</h2>
           <p className="lh-hero-sub">{subtext}</p>
           <div className="oh-hero-actions">
-            <Link to="/new" className="btn pri">+ New facility</Link>
-            <Link to="/atlas" className="btn ghost">Browse functions</Link>
+            <Link to="/cockpit" className="btn pri">+ New facility</Link>
+            <Link to="/cockpit" className="btn ghost">Browse journeys</Link>
           </div>
         </div>
 
@@ -151,14 +151,14 @@ export default function LenderHorizon() {
                       {c.quantum_zar != null && <span className="oh-mono lh-exc-zar">{fmtZar(c.quantum_zar)} at risk</span>}
                     </div>
                     <div className="lh-exc-title hd-serif">{cleanLabel(c.title)}</div>
-                    {c.counterparty && <div className="lh-exc-cp">{c.counterparty}</div>}
+                    {c.counterparty && <div className="lh-exc-cp">{cleanLabel(c.counterparty)}</div>}
                     <div className="lh-exc-acts">
-                      {c.actions.slice(0, 2).map(a => {
+                      {c.actions.slice(0, 2).map((a, ai) => {
                         const key = `${c.id}:${a.action}`;
                         const busy = acting === key;
                         return (
                           <button key={a.action} type="button"
-                            className={a.tone === 'oxide' ? 'btn ox' : a.tone === 'amber' || a.tone === 'gold' ? 'btn gold' : 'btn pri'}
+                            className={a.tone === 'oxide' ? 'btn ox' : a.tone === 'amber' || a.tone === 'gold' ? 'btn gold' : ai === 0 ? 'btn pri' : 'btn quiet'}
                             title={a.fields?.length ? `${a.cascadeHint} — opens the form` : a.cascadeHint}
                             disabled={acting !== null}
                             aria-busy={busy || undefined}
@@ -186,7 +186,7 @@ export default function LenderHorizon() {
         {performing > 0 && (
           <div className="lh-reassure">
             <span className="lh-reassure-mark oh-mono">PERFORMING</span>
-            <span>{performing} case{performing === 1 ? '' : 's'} are within their covenants and deliberately left off this screen. They're in your <Link to="/atlas">ledger</Link> when you need them — not in your face when you don't.</span>
+            <span>{performing} case{performing === 1 ? '' : 's'} are within their covenants and deliberately left off this screen. They're in your <Link to="/cockpit">cockpit</Link> when you need them — not in your face when you don't.</span>
           </div>
         )}
       </section>

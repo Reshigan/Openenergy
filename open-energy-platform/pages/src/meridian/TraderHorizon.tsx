@@ -161,8 +161,8 @@ export default function TraderHorizon() {
           <h2 className="tr-hero-title hd-serif">{headline}</h2>
           <p className="tr-hero-sub">{subtext}</p>
           <div className="oh-hero-actions">
-            <Link to="/new" className="btn pri">+ New order</Link>
-            <Link to="/atlas" className="btn ghost">Browse functions</Link>
+            <Link to="/cockpit" className="btn pri">+ New order</Link>
+            <Link to="/cockpit" className="btn ghost">Browse journeys</Link>
           </div>
         </div>
 
@@ -232,12 +232,12 @@ export default function TraderHorizon() {
                 {sel.counterparty && <div className="tr-rail-cp">vs {sel.counterparty}</div>}
                 <ActErrorBar error={actErr} onDismiss={() => setActErr(null)} />
                 <div className="tr-rail-acts">
-                  {sel.actions.slice(0, 3).map(a => {
+                  {sel.actions.slice(0, 3).map((a, ai) => {
                     const key = `${sel.id}:${a.action}`;
                     const busy = acting === key;
                     return (
                       <button key={a.action} type="button"
-                        className={a.tone === 'oxide' ? 'btn ox' : a.tone === 'amber' || a.tone === 'gold' ? 'btn gold' : 'btn pri'}
+                        className={a.tone === 'oxide' ? 'btn ox' : a.tone === 'amber' || a.tone === 'gold' ? 'btn gold' : ai === 0 ? 'btn pri' : 'btn quiet'}
                         title={a.fields?.length ? `${a.cascadeHint} — opens the form` : a.cascadeHint}
                         disabled={acting !== null}
                         aria-busy={busy || undefined}
