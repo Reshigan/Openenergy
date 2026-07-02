@@ -201,8 +201,12 @@ test('cockpit KPIs are non-zero (real transactions exist)', async ({ request, ba
     admin: { total_users: number; total_trades: number; active_contracts: number; total_revenue_zar: number };
   }};
 
-  expect(data.market.total_trades, 'market trades should be > 0').toBeGreaterThan(0);
+  // market.total_trades is a rolling 7-day window (cockpit.ts) — on the demo env
+  // it is legitimately 0 when no trade matched this week, so assert shape only.
+  // "Real transactions exist" is proven by the all-time admin counters below.
+  expect(data.market.total_trades, 'market trades should be >= 0').toBeGreaterThanOrEqual(0);
   expect(data.admin.total_users, 'admin users should be > 0').toBeGreaterThan(0);
+  expect(data.admin.total_trades, 'all-time trades should be > 0').toBeGreaterThan(0);
   expect(data.admin.active_contracts, 'active contracts should be >= 0').toBeGreaterThanOrEqual(0);
   expect(data.admin.total_revenue_zar, 'total revenue should be > 0').toBeGreaterThan(0);
 });

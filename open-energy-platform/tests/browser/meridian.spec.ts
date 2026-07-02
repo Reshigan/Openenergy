@@ -81,21 +81,14 @@ test.describe('Meridian Horizon', () => {
     // Header chrome — single CEC brand wordmark (renamed from MERIDIAN).
     await expect(page.locator('.wordmark')).toHaveText('CEC');
 
-    // Board: section[aria-label="Live cases by time to consequence"] with the
-    // six-bucket header row; first bucket is BREACHED.
-    const board = page.getByRole('region', { name: 'Live cases by time to consequence' });
+    // Lender renders the bespoke "Quiet Book" Horizon (LenderHorizon), not the
+    // shared lane×bucket board this test originally asserted: hero headline,
+    // quiet lane exposure bars, and the ranked "Needs you" exceptions card.
+    const board = page.getByRole('region', { name: 'Your lender book' });
     await expect(board).toBeVisible();
-    await expect(board.locator('.board-head')).toContainText('BREACHED');
-
-    // Lanes are data-dependent: local D1 may have zero lender chain rows.
-    // Either at least one lane row renders, or the explicit empty state does.
-    const laneOrEmpty = board.locator('.lane-row, .board-empty');
-    await expect(laneOrEmpty.first()).toBeVisible();
-
-    // Duty stream: aside[aria-label="Duty stream"] with its ranked header.
-    const duty = page.getByRole('complementary', { name: 'Duty stream' });
-    await expect(duty).toBeVisible();
-    await expect(duty.locator('.duty-head h2')).toHaveText('DUTY STREAM');
+    await expect(board.locator('.lh-hero-title')).toBeVisible();
+    await expect(board.locator('.lh-lanes .lh-lane').first()).toBeVisible();
+    await expect(board.locator('.lh-exc-head h3')).toHaveText('Needs you');
 
     const real = errors.filter((e) => !isBenign(e));
     expect(real, real.join('\n')).toEqual([]);
@@ -116,17 +109,17 @@ test.describe('Meridian Horizon', () => {
     captureErrors(page);
 
     await seedToken(page);
-    await page.goto(`${baseURL}/horizon`, { waitUntil: 'load' });
-    await expect(page.locator('.mer.horizon')).toBeVisible({ timeout: 25_000 });
-
     // covenant_certificate is the ONLY lender chain whose second lane is
     // regulator (all others pair with ipp_developer, which has no lane-write
-    // mapping yet and 403s). CaseTile renders "{ref} · {chain}" in .ref, so
-    // filter tiles by the chain key text.
-    const covTile = page.locator('.tile').filter({ hasText: 'covenant_certificate' }).first();
-    await expect(covTile).toBeVisible({ timeout: 15_000 });
-    const href = await covTile.getAttribute('href');
-    expect(href, 'covenant tile must link to /thread/covenant_certificate/:id').toContain('/thread/covenant_certificate/');
+    // mapping yet and 403s). The shared board's CaseTiles retired with the
+    // bespoke horizons — source the thread href from the chain Ledger instead.
+    await page.goto(`${baseURL}/ledger/covenant_certificate`, { waitUntil: 'load' });
+    const firstCard = page.locator('.lcard').first();
+    await expect(firstCard).toBeVisible({ timeout: 25_000 });
+    await firstCard.click();
+    await page.waitForURL(/\/thread\/covenant_certificate\//, { timeout: 15_000 });
+    const href = new URL(page.url()).pathname;
+    expect(href, 'ledger row must open /thread/covenant_certificate/:id').toContain('/thread/covenant_certificate/');
 
     // Lender side: full thread + action bar (covenant actions allow lender).
     await page.goto(`${baseURL}${href}`, { waitUntil: 'load' });

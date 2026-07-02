@@ -105,6 +105,11 @@ export interface HonoBindings {
   // must stay dark outside prod (e.g. live email delivery in src/utils/email.ts).
   ENVIRONMENT?: string;
 
+  // Per-env access-token TTL override (seconds, clamped 1h–24h in
+  // accessTokenTtlSeconds). Set on the DEMO env only so the ~4h nightly browser
+  // suite outlives its tokens; live (cec) leaves it unset → 1h default.
+  ACCESS_TOKEN_TTL_SECONDS?: string;
+
   // ── Email (MailChannels) ──────────────────────────────────────────────────
   // Live delivery via src/utils/email.ts is gated on ENVIRONMENT==='production'
   // && EMAIL_FROM. Until both are set the sendEmail() seam is a no-op that still

@@ -20,11 +20,13 @@ import { test, expect } from '@playwright/test';
 
 const PROJECT_ID = process.env.IPP_SCHEDULE_PROJECT_ID || 'ip_001';
 
+// Projects are tenant-scoped: ip_001 belongs to the IPP persona's tenant and 404s
+// under the admin token — seed the IPP token.
 let SHARED_ADMIN_TOKEN: string | null = null;
 
 test.beforeAll(() => {
-  const tok = process.env.PLAYWRIGHT_ADMIN_TOKEN;
-  if (!tok) throw new Error('PLAYWRIGHT_ADMIN_TOKEN not set — global-setup may have failed');
+  const tok = process.env.PLAYWRIGHT_IPP_TOKEN;
+  if (!tok) throw new Error('PLAYWRIGHT_IPP_TOKEN not set — global-setup may have failed');
   SHARED_ADMIN_TOKEN = tok;
 });
 
@@ -100,11 +102,8 @@ test('IPP workstation Schedule pulse tab loads', async ({ page, baseURL }) => {
   });
 
   await seedToken(page);
-  await page.goto(`${baseURL}/ipp-lifecycle/workstation`, { waitUntil: 'load' });
-
-  // The workstation renders all tab buttons up front; switch to Schedule pulse
-  // and wait for the pulse-tab mount marker.
-  await page.getByRole('tab', { name: /Schedule pulse/i }).click();
+  // /ipp-lifecycle/workstation was retired; the pulse widget lives at its surface.
+  await page.goto(`${baseURL}/surface/ipp_developer:schedule`, { waitUntil: 'load' });
   await expect(page.getByTestId('ipp-schedule-pulse')).toBeVisible({ timeout: 15_000 });
 
   const real = errors.filter((e) => !isBenign(e));

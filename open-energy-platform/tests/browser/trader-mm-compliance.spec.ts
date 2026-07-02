@@ -64,9 +64,8 @@ function attachWatchers(page: import('@playwright/test').Page): string[] {
 test('Trader MM compliance tab renders KPIs, filters, and demo rows', async ({ page, baseURL }) => {
   const errors = attachWatchers(page);
   await seedToken(page);
-  await page.goto(`${baseURL}/trader-risk/workstation`, { waitUntil: 'load' });
+  await page.goto(`${baseURL}/surface/trader:oe_mm_obligations`, { waitUntil: 'load' });
 
-  await page.getByRole('tab', { name: /^MM compliance$/ }).click();
   await expect(page.getByTestId('trader-mm-compliance-tab')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('trader-mm-compliance-kpis')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('trader-mm-compliance-table')).toBeVisible({ timeout: 15_000 });
@@ -89,9 +88,8 @@ test('Trader MM compliance tab renders KPIs, filters, and demo rows', async ({ p
 test('Trader MM compliance drill-down shows performance history + actions', async ({ page, baseURL }) => {
   const errors = attachWatchers(page);
   await seedToken(page);
-  await page.goto(`${baseURL}/trader-risk/workstation`, { waitUntil: 'load' });
+  await page.goto(`${baseURL}/surface/trader:oe_mm_obligations`, { waitUntil: 'load' });
 
-  await page.getByRole('tab', { name: /^MM compliance$/ }).click();
   await expect(page.getByTestId('trader-mm-compliance-tab')).toBeVisible({ timeout: 15_000 });
 
   await page.getByTestId('trader-mm-compliance-filter-all').click();

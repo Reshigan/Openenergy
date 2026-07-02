@@ -157,7 +157,8 @@ test('Getting-Started card shows checklist progress and a 1-click AI next step',
 
   // 1-click accept navigates to next_best_step.action_href.
   await doThis.click();
-  await expect(page).toHaveURL(/\/new$/, { timeout: 10_000 });
+  // Creates moved in-journey: checklist deep-links land on the cockpit.
+  await expect(page).toHaveURL(/\/cockpit$/, { timeout: 10_000 });
 
   const real = errors.filter((e) => !isBenign(e));
   expect(real, real.join('\n')).toEqual([]);

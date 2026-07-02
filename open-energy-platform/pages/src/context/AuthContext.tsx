@@ -42,6 +42,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const hasSessionFlag = typeof document !== 'undefined' && document.cookie.includes('oe_session_present');
     if (!hasSessionFlag) {
+      // No cookie flag — but a seeded localStorage['token'] (Playwright helpers,
+      // SSO landings) is already sent on every request by api.ts; restore the
+      // context from it too so a full reload doesn't bounce a valid session to
+      // /login. /auth/me is the validator: a dead token 401s in refreshUser and
+      // clears both stores.
+      let seeded: string | null = null;
+      try { seeded = localStorage.getItem('token'); } catch { /* private mode */ }
+      if (seeded) {
+        setToken(seeded); // refreshUser() fires via the token useEffect below
+        return;
+      }
       setLoading(false);
       return;
     }

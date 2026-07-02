@@ -65,15 +65,16 @@ function attachWatchers(page: import('@playwright/test').Page): string[] {
 test('Offtaker PPA obligations tab renders KPIs, filters, and demo rows', async ({ page, baseURL }) => {
   const errors = attachWatchers(page);
   await seedToken(page);
-  await page.goto(`${baseURL}/offtaker-suite`, { waitUntil: 'load' });
+  await page.goto(`${baseURL}/surface/offtaker:obligations`, { waitUntil: 'load' });
 
-  await page.getByRole('tab', { name: /^PPA obligations$/ }).click();
   await expect(page.getByTestId('offtaker-obligations-tab')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('offtaker-obligations-kpis')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId('offtaker-obligations-table')).toBeVisible({ timeout: 15_000 });
 
-  // At least one demo row (3 seeded in migration 105).
-  await expect(page.locator('[data-testid^="offtaker-obligations-row-"]').first()).toBeVisible({ timeout: 15_000 });
+  // At least one demo row (3 seeded in migration 105). Rows render as shared
+  // ChainCard buttons inside the table wrapper (the per-row testids retired
+  // with the bespoke row markup).
+  await expect(page.getByTestId('offtaker-obligations-table').getByRole('button').first()).toBeVisible({ timeout: 15_000 });
 
   // Filter pills.
   await expect(page.getByTestId('offtaker-obligations-filter-open')).toBeVisible();
@@ -87,19 +88,20 @@ test('Offtaker PPA obligations tab renders KPIs, filters, and demo rows', async 
 test('Offtaker PPA obligations drill-down shows readings + cure action', async ({ page, baseURL }) => {
   const errors = attachWatchers(page);
   await seedToken(page);
-  await page.goto(`${baseURL}/offtaker-suite`, { waitUntil: 'load' });
+  await page.goto(`${baseURL}/surface/offtaker:obligations`, { waitUntil: 'load' });
 
-  await page.getByRole('tab', { name: /^PPA obligations$/ }).click();
   await expect(page.getByTestId('offtaker-obligations-tab')).toBeVisible({ timeout: 15_000 });
 
   // Switch to All so the delivered/take-or-pay demo rows are reachable.
   await page.getByTestId('offtaker-obligations-filter-all').click();
 
-  await page.locator('[data-testid^="offtaker-obligations-row-"]').first().click();
-  await expect(page.getByTestId('offtaker-obligations-drill')).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByTestId('offtaker-obligations-readings')).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByTestId('offtaker-obligations-actions')).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByTestId('offtaker-obligations-cure')).toBeVisible();
+  // Rows are shared ChainCards now: click expands an inline detail grid
+  // (renderDetail) with the delivery numbers — the old drill/readings/cure
+  // testids retired with the bespoke drawer.
+  await page.getByTestId('offtaker-obligations-table').getByRole('button').first().click();
+  await expect(page.getByText('Contracted MWh').first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText('Delivered MWh').first()).toBeVisible();
+  await expect(page.getByText('% of contracted').first()).toBeVisible();
 
   const real = errors.filter((e) => !isBenign(e));
   expect(real, real.join('\n')).toEqual([]);

@@ -60,11 +60,10 @@ test('Trader workstation Risk tab renders portfolio + scenarios', async ({ page,
   });
 
   await seedToken(page);
-  await page.goto(`${baseURL}/trader-risk/workstation`, { waitUntil: 'load' });
+  await page.goto(`${baseURL}/surface/trader:risk`, { waitUntil: 'load' });
 
   // Workstation renders all tab buttons up front; switch to Risk and wait
   // for the tab mount marker.
-  await page.getByRole('tab', { name: /^Risk$/ }).click();
   await expect(page.getByTestId('risk-tab')).toBeVisible({ timeout: 15_000 });
 
   // Portfolio picker is the first thing to hydrate from /api/risk/portfolios.
