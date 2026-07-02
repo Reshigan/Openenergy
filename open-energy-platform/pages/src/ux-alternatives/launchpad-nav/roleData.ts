@@ -786,6 +786,7 @@ const esumsDomains: Domain[] = [
     features: [
       { key: 'cockpit', label: 'Cockpit', description: 'Live fleet revenue ticker, fault register, fleet health grid and AI briefing.' },
       { key: 'opportunities', label: 'Opportunities', description: 'Rule-based scan of the fleet for monetisable performance improvements.' },
+      { key: 'meter-scan', label: 'Meter analysis', description: 'Import a short window of readings from any meter and scan for improvement opportunities.' },
       { key: 'sites', label: 'Sites', description: 'Generation sites with live KPIs.' },
       { key: 'devices', label: 'Devices', description: 'Inverters, meters, batteries and sensors across all sites.' },
       { key: 'faults', label: 'Faults', description: 'Live fault register with Revenue Impact Engine.' },
