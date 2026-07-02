@@ -74,5 +74,19 @@ export function useTourState() {
     setCompleted((prev) => new Set([...prev, SKIP_KEY]));
   }, []);
 
-  return { seen, markSeen, skipTour };
+  // "Replay the tips" from the header help menu: drop every meridian.surface.*
+  // key (including the skip sentinel) while preserving the wizard's platform.*
+  // keys sharing the same ledger. Tour cards re-render on next surface visit.
+  const resetTours = useCallback((): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      const kept = [...readLedger()].filter((k) => !k.startsWith('meridian.surface.'));
+      window.localStorage?.setItem(TOUR_LS_KEY, JSON.stringify(kept));
+      setCompleted(new Set(kept));
+    } catch {
+      /* private mode */
+    }
+  }, []);
+
+  return { seen, markSeen, skipTour, resetTours };
 }

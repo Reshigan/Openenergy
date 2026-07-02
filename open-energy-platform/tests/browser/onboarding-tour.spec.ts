@@ -139,7 +139,9 @@ test('Horizon tour card shows inline, dismisses with Got it, and stays dismissed
   expect(real, real.join('\n')).toEqual([]);
 });
 
-test('Skip tour on Atlas suppresses the card on every remaining surface', async ({ page, baseURL }) => {
+// /atlas was retired to the journey cockpit (App.tsx redirects) — the skip-all
+// behaviour is driven from the cockpit's own tour strip instead.
+test('Skip tips on the cockpit suppresses the card on every remaining surface', async ({ page, baseURL }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (msg) => { if (msg.type() === 'error') errors.push(`console.error: ${msg.text()}`); });
@@ -147,14 +149,14 @@ test('Skip tour on Atlas suppresses the card on every remaining surface', async 
   await seedToken(page);
   await mockCommon(page);
 
-  await page.goto(`${baseURL}/atlas`, { waitUntil: 'load' });
+  await page.goto(`${baseURL}/cockpit`, { waitUntil: 'load' });
 
-  // The Atlas tour card paints.
-  await expect(page.getByText('This is Atlas')).toBeVisible({ timeout: 20_000 });
+  // The cockpit tour strip paints.
+  await expect(page.getByText('This is your cockpit')).toBeVisible({ timeout: 20_000 });
 
   // Skip the whole tour.
   await page.getByTestId('mer-tour-skip').click();
-  await expect(page.getByText('This is Atlas')).toHaveCount(0);
+  await expect(page.getByText('This is your cockpit')).toHaveCount(0);
 
   // The Deal Desk card must NOT appear - skip suppresses remaining surfaces.
   await page.goto(`${baseURL}/deals`, { waitUntil: 'load' });

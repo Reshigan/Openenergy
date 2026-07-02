@@ -72,15 +72,21 @@ export default function LedgerPage() {
       unknown: 'The ledger failed to load.',
     };
     const canRetry = err === 'network' || err === 'unknown';
+    // Keep the chrome: a dead-end without the header reads as a crashed app and
+    // strands the operator (no ⌘K, no account menu, no way home but the URL bar).
     return (
-      <div className="mer mer-error" role="alert">
-        <p>{msg[err]}</p>
-        <div className="mer-error-acts">
-          {canRetry && (
-            <button type="button" className="btn ghost" onClick={() => { setErr(null); load(); }}>Retry</button>
-          )}
-          <Link to="/atlas" className="btn ghost">Browse Atlas</Link>
-          <Link to="/horizon" className="btn ghost">Back to Horizon</Link>
+      <div className="mer ledger">
+        <MeridianHeader ctx={<b>Ledger</b>} />
+        <div className="mer-deadend" role="alert">
+          <span className="mer-deadend-glyph" aria-hidden="true">⌁</span>
+          <p className="mer-deadend-ttl">{msg[err]}</p>
+          <p className="mer-deadend-sub">Press <kbd>⌘K</kbd> to search everything you can reach.</p>
+          <div className="mer-error-acts">
+            {canRetry && (
+              <button type="button" className="btn pri" onClick={() => { setErr(null); load(); }}>Retry</button>
+            )}
+            <Link to="/cockpit" className="btn ghost">Back to your cockpit</Link>
+          </div>
         </div>
       </div>
     );
