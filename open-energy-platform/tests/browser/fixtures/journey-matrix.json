@@ -2469,7 +2469,8 @@
           "path": "/api/security-perfection/chain/:id/begin-documentation",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "lender"
           ],
           "body": null,
           "tone": null,
@@ -2514,7 +2515,8 @@
           "path": "/api/security-perfection/chain/:id/execute-security",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "ipp_developer"
           ],
           "body": null,
           "tone": null,
@@ -2543,7 +2545,8 @@
           "path": "/api/security-perfection/chain/:id/lodge-registration",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "lender"
           ],
           "body": null,
           "tone": null,
@@ -2572,7 +2575,8 @@
           "path": "/api/security-perfection/chain/:id/confirm-registration",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "lender"
           ],
           "body": null,
           "tone": "primary",
@@ -2601,7 +2605,8 @@
           "path": "/api/security-perfection/chain/:id/reject-registration",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "lender"
           ],
           "body": null,
           "tone": "oxide",
@@ -2630,7 +2635,8 @@
           "path": "/api/security-perfection/chain/:id/begin-perfection-review",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "lender"
           ],
           "body": null,
           "tone": null,
@@ -2659,7 +2665,8 @@
           "path": "/api/security-perfection/chain/:id/flag-overdue",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "lender"
           ],
           "body": null,
           "tone": "ghost",
@@ -2688,7 +2695,8 @@
           "path": "/api/security-perfection/chain/:id/cure-overdue",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "lender"
           ],
           "body": null,
           "tone": "ghost",
@@ -2725,7 +2733,8 @@
           "path": "/api/security-perfection/chain/:id/release-security",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "lender"
           ],
           "body": null,
           "tone": "primary",
@@ -2762,7 +2771,8 @@
           "path": "/api/security-perfection/chain/:id/withdraw",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "lender"
           ],
           "body": null,
           "tone": "oxide",
@@ -2811,7 +2821,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -2819,7 +2829,7 @@
           {
             "key": "ipp_id",
             "label": "IPP",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -3569,7 +3579,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -3885,9 +3895,13 @@
           {
             "key": "ep_category",
             "label": "EP category",
-            "type": "string",
+            "type": "enum",
             "required": false,
-            "options": null,
+            "options": [
+              "A",
+              "B",
+              "C"
+            ],
             "unit": null
           },
           {
@@ -4257,7 +4271,7 @@
           {
             "key": "facility_id",
             "label": "Facility",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -4580,7 +4594,8 @@
         "false_alarm"
       ],
       "lanes": [
-        "trader"
+        "trader",
+        "regulator"
       ],
       "hasInitiation": false,
       "initiation": null,
@@ -4618,7 +4633,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance"
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -4649,7 +4664,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance"
+            "regulator"
           ],
           "body": null,
           "tone": "oxide",
@@ -4680,7 +4695,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance"
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -4694,7 +4709,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance"
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -4708,7 +4723,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance"
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -4731,7 +4746,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance"
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -4754,7 +4769,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance"
+            "regulator"
           ],
           "body": null,
           "tone": "primary",
@@ -4777,7 +4792,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance"
+            "regulator"
           ],
           "body": null,
           "tone": "ghost",
@@ -7392,7 +7407,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -8386,7 +8401,8 @@
         "closed"
       ],
       "lanes": [
-        "ipp_developer"
+        "ipp_developer",
+        "regulator"
       ],
       "hasInitiation": false,
       "initiation": null,
@@ -8399,7 +8415,6 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
             "ipp_developer"
           ],
           "body": null,
@@ -8423,7 +8438,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
+            "regulator",
             "ipp_developer"
           ],
           "body": null,
@@ -8463,7 +8478,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
+            "regulator",
             "ipp_developer"
           ],
           "body": null,
@@ -8503,7 +8518,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
+            "regulator",
             "ipp_developer"
           ],
           "body": null,
@@ -8527,7 +8542,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
+            "regulator",
             "ipp_developer"
           ],
           "body": null,
@@ -8559,7 +8574,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
+            "regulator",
             "ipp_developer"
           ],
           "body": null,
@@ -8591,7 +8606,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
+            "regulator",
             "ipp_developer"
           ],
           "body": null,
@@ -8600,7 +8615,7 @@
             {
               "key": "linked_wo_id",
               "label": "Linked work order",
-              "type": "string",
+              "type": "lookup",
               "required": false,
               "options": null,
               "unit": null
@@ -8615,7 +8630,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
+            "regulator",
             "ipp_developer"
           ],
           "body": null,
@@ -8639,7 +8654,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
+            "regulator",
             "ipp_developer"
           ],
           "body": null,
@@ -8663,7 +8678,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
+            "regulator",
             "ipp_developer"
           ],
           "body": null,
@@ -8687,7 +8702,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
+            "regulator",
             "ipp_developer"
           ],
           "body": null,
@@ -8711,7 +8726,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
+            "regulator",
             "ipp_developer"
           ],
           "body": null,
@@ -8735,7 +8750,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
+            "regulator",
             "ipp_developer"
           ],
           "body": null,
@@ -8779,7 +8794,6 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
             "ipp_developer"
           ],
           "body": null,
@@ -8803,7 +8817,6 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
             "ipp_developer"
           ],
           "body": null,
@@ -8843,7 +8856,6 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
             "grid_operator"
           ],
           "body": null,
@@ -8867,7 +8879,6 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
             "grid_operator"
           ],
           "body": null,
@@ -8891,8 +8902,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
-            "ipp_developer"
+            "grid_operator"
           ],
           "body": null,
           "tone": null,
@@ -8906,8 +8916,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
-            "ipp_developer"
+            "grid_operator"
           ],
           "body": null,
           "tone": null,
@@ -8930,8 +8939,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
-            "ipp_developer"
+            "grid_operator"
           ],
           "body": null,
           "tone": "primary",
@@ -8962,8 +8970,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
-            "ipp_developer"
+            "grid_operator"
           ],
           "body": null,
           "tone": null,
@@ -8977,7 +8984,6 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
             "ipp_developer"
           ],
           "body": null,
@@ -8992,8 +8998,7 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
-            "ipp_developer"
+            "grid_operator"
           ],
           "body": null,
           "tone": null,
@@ -9016,7 +9021,6 @@
           "roles": [
             "admin",
             "support",
-            "compliance",
             "ipp_developer"
           ],
           "body": null,
@@ -10484,7 +10488,9 @@
           "path": "/api/take-or-pay/chain/:id/close-year",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "offtaker"
           ],
           "body": null,
           "tone": null,
@@ -10496,7 +10502,9 @@
           "path": "/api/take-or-pay/chain/:id/issue-statement",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "offtaker"
           ],
           "body": null,
           "tone": "primary",
@@ -10508,7 +10516,9 @@
           "path": "/api/take-or-pay/chain/:id/request-evidence",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "offtaker"
           ],
           "body": null,
           "tone": null,
@@ -10520,7 +10530,9 @@
           "path": "/api/take-or-pay/chain/:id/submit-evidence",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "ipp_developer"
           ],
           "body": null,
           "tone": null,
@@ -10549,7 +10561,9 @@
           "path": "/api/take-or-pay/chain/:id/waive",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "offtaker"
           ],
           "body": null,
           "tone": null,
@@ -12754,7 +12768,8 @@
           "path": "/api/rec-lifecycle/chain/:id/begin-eligibility-review",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "ipp_developer"
           ],
           "body": null,
           "tone": null,
@@ -12799,7 +12814,8 @@
           "path": "/api/rec-lifecycle/chain/:id/reject-issuance",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "ipp_developer"
           ],
           "body": null,
           "tone": "oxide",
@@ -12828,7 +12844,8 @@
           "path": "/api/rec-lifecycle/chain/:id/list-for-transfer",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "ipp_developer"
           ],
           "body": null,
           "tone": null,
@@ -12849,7 +12866,8 @@
           "path": "/api/rec-lifecycle/chain/:id/transfer-certificate",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "ipp_developer"
           ],
           "body": null,
           "tone": null,
@@ -12894,7 +12912,8 @@
           "path": "/api/rec-lifecycle/chain/:id/raise-dispute",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "offtaker"
           ],
           "body": null,
           "tone": null,
@@ -12931,7 +12950,8 @@
           "path": "/api/rec-lifecycle/chain/:id/resolve-dispute",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "ipp_developer"
           ],
           "body": null,
           "tone": "primary",
@@ -12960,7 +12980,8 @@
           "path": "/api/rec-lifecycle/chain/:id/cancel-certificate",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "ipp_developer"
           ],
           "body": null,
           "tone": "oxide",
@@ -12989,7 +13010,8 @@
           "path": "/api/rec-lifecycle/chain/:id/expire-certificate",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "ipp_developer"
           ],
           "body": null,
           "tone": "ghost",
@@ -14420,7 +14442,9 @@
         "cancelled"
       ],
       "lanes": [
-        "carbon_fund"
+        "carbon_fund",
+        "offtaker",
+        "regulator"
       ],
       "hasInitiation": false,
       "initiation": null,
@@ -14900,7 +14924,8 @@
         "withdrawn"
       ],
       "lanes": [
-        "carbon_fund"
+        "carbon_fund",
+        "offtaker"
       ],
       "hasInitiation": true,
       "initiation": {
@@ -16186,7 +16211,8 @@
         "withdrawn"
       ],
       "lanes": [
-        "carbon_fund"
+        "carbon_fund",
+        "offtaker"
       ],
       "hasInitiation": false,
       "initiation": null,
@@ -18097,7 +18123,7 @@
           {
             "key": "counterparty_id",
             "label": "Counterparty (transferee)",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -18113,7 +18139,7 @@
           {
             "key": "project_id",
             "label": "Linked Carbon Project",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -18337,9 +18363,16 @@
           {
             "key": "deviation_type",
             "label": "Deviation Type",
-            "type": "string",
+            "type": "enum",
             "required": false,
-            "options": null,
+            "options": [
+              "emission_factor",
+              "additionality_condition",
+              "technology_change",
+              "monitoring_parameter",
+              "baseline_revision",
+              "geographic_boundary"
+            ],
             "unit": null
           },
           {
@@ -18361,7 +18394,7 @@
           {
             "key": "participant_id",
             "label": "Participant (admin/support only)",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -18498,7 +18531,8 @@
         "closed_disputed"
       ],
       "lanes": [
-        "grid_operator"
+        "grid_operator",
+        "regulator"
       ],
       "hasInitiation": false,
       "initiation": null,
@@ -18832,7 +18866,9 @@
           "path": "/api/load-curtailment/chain/:id/start-curtailment",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "ipp_developer"
           ],
           "body": null,
           "tone": null,
@@ -18844,7 +18880,9 @@
           "path": "/api/load-curtailment/chain/:id/report-target-achieved",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "ipp_developer"
           ],
           "body": null,
           "tone": null,
@@ -18865,7 +18903,9 @@
           "path": "/api/load-curtailment/chain/:id/report-partial",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "ipp_developer"
           ],
           "body": null,
           "tone": null,
@@ -18918,7 +18958,9 @@
           "path": "/api/load-curtailment/chain/:id/reconcile",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "grid_operator"
           ],
           "body": null,
           "tone": null,
@@ -18947,7 +18989,9 @@
           "path": "/api/load-curtailment/chain/:id/open-post-mortem",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "grid_operator"
           ],
           "body": null,
           "tone": null,
@@ -18968,7 +19012,9 @@
           "path": "/api/load-curtailment/chain/:id/close-post-mortem",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "grid_operator"
           ],
           "body": null,
           "tone": null,
@@ -19005,7 +19051,9 @@
           "path": "/api/load-curtailment/chain/:id/close",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "grid_operator"
           ],
           "body": null,
           "tone": "primary",
@@ -19034,7 +19082,9 @@
           "path": "/api/load-curtailment/chain/:id/withdraw",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "grid_operator"
           ],
           "body": null,
           "tone": "oxide",
@@ -19778,7 +19828,7 @@
           {
             "key": "brp_id",
             "label": "BRP",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -20264,7 +20314,8 @@
         "contract_terminated"
       ],
       "lanes": [
-        "grid_operator"
+        "grid_operator",
+        "trader"
       ],
       "hasInitiation": false,
       "initiation": null,
@@ -20630,7 +20681,7 @@
           {
             "key": "asset_id",
             "label": "Asset",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -20708,7 +20759,8 @@
           "path": "/api/grid/transmission-outage/chain/:id/start-security-assessment",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "grid_operator"
           ],
           "body": null,
           "tone": "primary",
@@ -20737,7 +20789,8 @@
           "path": "/api/grid/transmission-outage/chain/:id/reject-outage",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "grid_operator"
           ],
           "body": null,
           "tone": "oxide",
@@ -20766,7 +20819,8 @@
           "path": "/api/grid/transmission-outage/chain/:id/withdraw",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "grid_operator"
           ],
           "body": null,
           "tone": "oxide",
@@ -21109,9 +21163,19 @@
           {
             "key": "contingency_type",
             "label": "Contingency type",
-            "type": "string",
+            "type": "enum",
             "required": false,
-            "options": null,
+            "options": [
+              "line_trip",
+              "generator_trip",
+              "transformer_fault",
+              "busbar_fault",
+              "under_frequency",
+              "voltage_collapse",
+              "protection_failure",
+              "external",
+              "other"
+            ],
             "unit": null
           },
           {
@@ -23607,7 +23671,7 @@
           {
             "key": "facility_id",
             "label": "Facility",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -23623,7 +23687,7 @@
           {
             "key": "borrower_id",
             "label": "Borrower",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -23638,8 +23702,8 @@
           },
           {
             "key": "project_id",
-            "label": "Project ID",
-            "type": "string",
+            "label": "Project",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -25569,7 +25633,7 @@
           {
             "key": "generator_id",
             "label": "Generator",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -25577,7 +25641,7 @@
           {
             "key": "offtaker_id",
             "label": "Offtaker",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -25790,7 +25854,9 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "offtaker",
+            "ipp_developer"
           ],
           "body": {
             "action": "issue_statement"
@@ -25874,7 +25940,9 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "offtaker",
+            "ipp_developer"
           ],
           "body": {
             "action": "write_off"
@@ -26352,7 +26420,7 @@
           {
             "key": "licensee_user_id",
             "label": "Licensee",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -26942,7 +27010,9 @@
           "path": "/api/licence/renewal/chain/:id/check-completeness",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "regulator"
           ],
           "body": null,
           "tone": "primary",
@@ -26971,7 +27041,9 @@
           "path": "/api/licence/renewal/chain/:id/open-consultation",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -26992,7 +27064,9 @@
           "path": "/api/licence/renewal/chain/:id/start-evaluation",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -27037,7 +27111,9 @@
           "path": "/api/licence/renewal/chain/:id/draft-decision",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -27058,7 +27134,9 @@
           "path": "/api/licence/renewal/chain/:id/council-vote",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -27087,7 +27165,9 @@
           "path": "/api/licence/renewal/chain/:id/amend",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -27124,7 +27204,9 @@
           "path": "/api/licence/renewal/chain/:id/withdraw",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "support",
+            "ipp_developer"
           ],
           "body": null,
           "tone": "oxide",
@@ -29778,8 +29860,8 @@
         "fields": [
           {
             "key": "respondent_party_id",
-            "label": "Respondent Party ID",
-            "type": "string",
+            "label": "Respondent Party",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -30201,7 +30283,9 @@
         "closed"
       ],
       "lanes": [
-        "support"
+        "support",
+        "ipp_developer",
+        "esco"
       ],
       "hasInitiation": true,
       "initiation": {
@@ -30294,8 +30378,8 @@
           },
           {
             "key": "site_id",
-            "label": "Site ID",
-            "type": "string",
+            "label": "Site",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -30554,7 +30638,8 @@
         "cancelled"
       ],
       "lanes": [
-        "support"
+        "support",
+        "esco"
       ],
       "hasInitiation": true,
       "initiation": {
@@ -30564,7 +30649,7 @@
           {
             "key": "site_id",
             "label": "Site",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -32199,7 +32284,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -32245,7 +32331,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -32269,9 +32356,15 @@
             {
               "key": "defect_class",
               "label": "Defect class",
-              "type": "string",
+              "type": "enum",
               "required": false,
-              "options": null,
+              "options": [
+                "isolated",
+                "batch",
+                "serial",
+                "safety",
+                "wear_out"
+              ],
               "unit": null
             },
             {
@@ -32323,7 +32416,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -32369,7 +32463,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -32407,7 +32502,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -32453,7 +32549,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -32483,7 +32580,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -32513,7 +32611,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -32543,7 +32642,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -32573,7 +32673,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -32603,7 +32704,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -32641,7 +32743,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -32691,7 +32794,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -32729,7 +32833,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -32791,7 +32896,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -32821,7 +32927,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -32851,7 +32958,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -32897,7 +33005,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -32927,7 +33036,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "ghost",
@@ -32973,7 +33083,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -33003,7 +33114,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -33033,7 +33145,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -33071,7 +33184,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -33109,7 +33223,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -33524,7 +33639,8 @@
         "decommissioned"
       ],
       "lanes": [
-        "support"
+        "support",
+        "esco"
       ],
       "hasInitiation": true,
       "initiation": {
@@ -33813,7 +33929,8 @@
         "confirmed_failure"
       ],
       "lanes": [
-        "support"
+        "support",
+        "esco"
       ],
       "hasInitiation": false,
       "initiation": null,
@@ -33905,7 +34022,7 @@
             {
               "key": "work_order_id",
               "label": "Linked work-order id",
-              "type": "string",
+              "type": "lookup",
               "required": false,
               "options": null,
               "unit": null
@@ -34148,7 +34265,8 @@
         "closed"
       ],
       "lanes": [
-        "support"
+        "support",
+        "esco"
       ],
       "hasInitiation": false,
       "initiation": null,
@@ -34165,7 +34283,8 @@
             "esums_om",
             "ipp",
             "ipp_developer",
-            "wind"
+            "wind",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -34183,7 +34302,8 @@
             "esums_om",
             "ipp",
             "ipp_developer",
-            "wind"
+            "wind",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -34201,7 +34321,8 @@
             "esums_om",
             "ipp",
             "ipp_developer",
-            "wind"
+            "wind",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -34209,7 +34330,7 @@
             {
               "key": "linked_wo_id",
               "label": "Linked work-order id",
-              "type": "string",
+              "type": "lookup",
               "required": false,
               "options": null,
               "unit": null
@@ -34236,7 +34357,8 @@
             "esums_om",
             "ipp",
             "ipp_developer",
-            "wind"
+            "wind",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -34271,7 +34393,8 @@
             "esums_om",
             "ipp",
             "ipp_developer",
-            "wind"
+            "wind",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -34279,7 +34402,7 @@
             {
               "key": "linked_warranty_claim_id",
               "label": "Linked warranty-claim id",
-              "type": "string",
+              "type": "lookup",
               "required": false,
               "options": null,
               "unit": null
@@ -34306,7 +34429,8 @@
             "esums_om",
             "ipp",
             "ipp_developer",
-            "wind"
+            "wind",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -34349,7 +34473,8 @@
             "esums_om",
             "ipp",
             "ipp_developer",
-            "wind"
+            "wind",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -34384,7 +34509,8 @@
             "esums_om",
             "ipp",
             "ipp_developer",
-            "wind"
+            "wind",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -34419,7 +34545,8 @@
             "esums_om",
             "ipp",
             "ipp_developer",
-            "wind"
+            "wind",
+            "esco"
           ],
           "body": null,
           "tone": "ghost",
@@ -34446,7 +34573,8 @@
             "esums_om",
             "ipp",
             "ipp_developer",
-            "wind"
+            "wind",
+            "esco"
           ],
           "body": null,
           "tone": "ghost",
@@ -34583,7 +34711,7 @@
             {
               "key": "linked_wo_id",
               "label": "Linked work-order id",
-              "type": "string",
+              "type": "lookup",
               "required": false,
               "options": null,
               "unit": null
@@ -35265,7 +35393,8 @@
         "withdrawn"
       ],
       "lanes": [
-        "esco"
+        "esco",
+        "grid_operator"
       ],
       "hasInitiation": false,
       "initiation": null,
@@ -35351,9 +35480,15 @@
             {
               "key": "shortfall_tier",
               "label": "Shortfall tier",
-              "type": "string",
+              "type": "enum",
               "required": false,
-              "options": null,
+              "options": [
+                "minor_shortfall",
+                "moderate_shortfall",
+                "material_shortfall",
+                "severe_shortfall",
+                "critical_shortfall"
+              ],
               "unit": null
             },
             {
@@ -37767,7 +37902,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -38255,7 +38390,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -38550,7 +38685,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -38828,7 +38963,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -38874,7 +39010,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -38952,7 +39089,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -38998,7 +39136,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -39044,7 +39183,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -39082,7 +39222,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -39128,7 +39269,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -39174,7 +39316,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -39204,7 +39347,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -39234,7 +39378,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -39256,7 +39401,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -39286,7 +39432,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -39319,7 +39466,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -39389,7 +39537,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -39435,7 +39584,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -39489,7 +39639,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -39535,7 +39686,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -39581,7 +39733,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -39635,7 +39788,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -39697,7 +39851,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -39727,7 +39882,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -39757,7 +39913,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -39803,7 +39960,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -39849,7 +40007,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -39903,7 +40062,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -39959,7 +40119,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -40069,7 +40230,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -40139,7 +40301,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -40185,7 +40348,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -40223,7 +40387,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -40261,7 +40426,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -40307,7 +40473,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -40329,7 +40496,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -40351,7 +40519,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -40364,7 +40533,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -40386,7 +40556,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -40399,7 +40570,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -40412,7 +40584,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -41658,9 +41831,14 @@
             {
               "key": "fallback_class",
               "label": "Fallback class",
-              "type": "string",
+              "type": "enum",
               "required": false,
-              "options": null,
+              "options": [
+                "isda_protocol",
+                "bilateral_amendment",
+                "tough_legacy",
+                "pre_cessation"
+              ],
               "unit": null
             },
             {
@@ -41937,7 +42115,8 @@
       ],
       "lanes": [
         "support",
-        "regulator"
+        "regulator",
+        "ipp_developer"
       ],
       "hasInitiation": false,
       "initiation": null,
@@ -42326,7 +42505,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -42551,7 +42730,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -42776,7 +42955,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -43007,7 +43186,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -43321,7 +43500,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -43688,7 +43867,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -44103,7 +44282,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -44345,7 +44524,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -44596,7 +44775,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -44784,7 +44963,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -44981,7 +45160,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -45208,7 +45387,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -45492,7 +45671,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -46521,7 +46700,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -46884,7 +47063,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -46980,7 +47159,8 @@
           "path": "/api/ipp/cost-evm/chain/:id/draft-reforecast",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "ipp_developer"
           ],
           "body": null,
           "tone": "primary",
@@ -47214,9 +47394,17 @@
           {
             "key": "insurance_type",
             "label": "Insurance type",
-            "type": "string",
+            "type": "enum",
             "required": false,
-            "options": null,
+            "options": [
+              "political_risk",
+              "credit_risk",
+              "comprehensive",
+              "miga_guarantee",
+              "ecic_cover",
+              "atidi_cover",
+              "lloyds_syndicate"
+            ],
             "unit": null
           },
           {
@@ -47673,9 +47861,13 @@
             {
               "key": "breach_type",
               "label": "Breach type",
-              "type": "string",
+              "type": "enum",
               "required": false,
-              "options": null,
+              "options": [
+                "historical",
+                "projected",
+                "both"
+              ],
               "unit": null
             }
           ]
@@ -47730,7 +47922,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -48372,7 +48564,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -49068,7 +49260,8 @@
         "withdrawn"
       ],
       "lanes": [
-        "carbon_fund"
+        "carbon_fund",
+        "regulator"
       ],
       "hasInitiation": true,
       "initiation": {
@@ -50722,7 +50915,8 @@
         "deficient"
       ],
       "lanes": [
-        "admin"
+        "admin",
+        "regulator"
       ],
       "hasInitiation": true,
       "initiation": {
@@ -51398,7 +51592,8 @@
         "cancelled"
       ],
       "lanes": [
-        "support"
+        "support",
+        "esco"
       ],
       "hasInitiation": true,
       "initiation": {
@@ -51408,7 +51603,7 @@
           {
             "key": "site_id",
             "label": "Site",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -51460,7 +51655,7 @@
           {
             "key": "fault_id",
             "label": "Linked Fault",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -51690,7 +51885,8 @@
         "cancelled"
       ],
       "lanes": [
-        "support"
+        "support",
+        "esco"
       ],
       "hasInitiation": false,
       "initiation": null,
@@ -51702,7 +51898,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -51715,7 +51912,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -51728,7 +51926,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -51741,7 +51940,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -51754,7 +51954,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -51767,7 +51968,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -51780,7 +51982,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -51802,7 +52005,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -51815,7 +52019,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "oxide",
@@ -51837,7 +52042,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -51867,7 +52073,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": null,
@@ -51897,7 +52104,8 @@
           "method": "POST",
           "roles": [
             "admin",
-            "support"
+            "support",
+            "esco"
           ],
           "body": null,
           "tone": "primary",
@@ -51933,7 +52141,9 @@
         "blocked"
       ],
       "lanes": [
-        "carbon_fund"
+        "carbon_fund",
+        "trader",
+        "regulator"
       ],
       "hasInitiation": true,
       "initiation": {
@@ -52081,8 +52291,8 @@
         "fields": [
           {
             "key": "participant_id",
-            "label": "Participant ID",
-            "type": "string",
+            "label": "Participant",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -52643,8 +52853,8 @@
         "fields": [
           {
             "key": "participant_id",
-            "label": "Participant ID",
-            "type": "string",
+            "label": "Participant",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -52930,7 +53140,8 @@
         "withdrawn"
       ],
       "lanes": [
-        "admin"
+        "admin",
+        "regulator"
       ],
       "hasInitiation": true,
       "initiation": {
@@ -53077,7 +53288,8 @@
           "path": "/api/regulator-exports/:id/select-blocks",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -53089,7 +53301,8 @@
           "path": "/api/regulator-exports/:id/filter-leaves",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -53101,7 +53314,8 @@
           "path": "/api/regulator-exports/:id/assemble-xbrl",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -53113,7 +53327,8 @@
           "path": "/api/regulator-exports/:id/attach-narratives",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -53125,7 +53340,8 @@
           "path": "/api/regulator-exports/:id/run-internal-qa",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "regulator"
           ],
           "body": null,
           "tone": null,
@@ -53137,7 +53353,8 @@
           "path": "/api/regulator-exports/:id/package",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "regulator"
           ],
           "body": null,
           "tone": "primary",
@@ -53149,7 +53366,8 @@
           "path": "/api/regulator-exports/:id/lodge-via-api",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "regulator"
           ],
           "body": null,
           "tone": "primary",
@@ -53209,7 +53427,8 @@
           "path": "/api/regulator-exports/:id/withdraw",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "regulator"
           ],
           "body": null,
           "tone": "oxide",
@@ -53270,7 +53489,7 @@
           {
             "key": "participant_id",
             "label": "Participant",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -53278,7 +53497,7 @@
           {
             "key": "ticket_id",
             "label": "Ticket",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -54178,8 +54397,8 @@
         "fields": [
           {
             "key": "participant_id",
-            "label": "Participant ID",
-            "type": "string",
+            "label": "Participant",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -55052,8 +55271,8 @@
         "fields": [
           {
             "key": "ipp_id",
-            "label": "IPP ID",
-            "type": "string",
+            "label": "IPP",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -55540,8 +55759,8 @@
         "fields": [
           {
             "key": "project_id",
-            "label": "Project ID",
-            "type": "string",
+            "label": "Project",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -55957,9 +56176,14 @@
             {
               "key": "review_type",
               "label": "Review type",
-              "type": "string",
+              "type": "enum",
               "required": false,
-              "options": null,
+              "options": [
+                "second_party",
+                "certification",
+                "verification",
+                "rating"
+              ],
               "unit": null
             },
             {
@@ -56196,8 +56420,8 @@
         "fields": [
           {
             "key": "project_id",
-            "label": "Project ID",
-            "type": "string",
+            "label": "Project",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -56475,8 +56699,8 @@
         "fields": [
           {
             "key": "project_id",
-            "label": "Project ID",
-            "type": "string",
+            "label": "Project",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -57193,7 +57417,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -57318,7 +57542,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -57628,7 +57852,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -57952,7 +58176,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -58283,7 +58507,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -58527,7 +58751,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -58684,7 +58908,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -58965,7 +59189,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -59112,7 +59336,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -59277,7 +59501,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -59918,15 +60142,22 @@
           {
             "key": "curtailment_type",
             "label": "Curtailment type",
-            "type": "string",
+            "type": "enum",
             "required": false,
-            "options": null,
+            "options": [
+              "network_congestion",
+              "load_management",
+              "emergency_curtailment",
+              "planned_maintenance",
+              "frequency_deviation",
+              "voltage_violation"
+            ],
             "unit": null
           },
           {
             "key": "site_id",
             "label": "Site",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -61502,17 +61733,30 @@
           {
             "key": "counterparty_type",
             "label": "Counterparty type",
-            "type": "string",
+            "type": "enum",
             "required": false,
-            "options": null,
+            "options": [
+              "non_resident_firm",
+              "foreign_gov",
+              "multilateral",
+              "sadc_member",
+              "eu_firm",
+              "other"
+            ],
             "unit": null
           },
           {
             "key": "trade_type",
             "label": "Trade type",
-            "type": "string",
+            "type": "enum",
             "required": false,
-            "options": null,
+            "options": [
+              "spot_energy",
+              "forward_contract",
+              "option",
+              "swap",
+              "emissions_credit"
+            ],
             "unit": null
           },
           {
@@ -61798,8 +62042,8 @@
         "fields": [
           {
             "key": "counterparty_id",
-            "label": "Counterparty ID",
-            "type": "string",
+            "label": "Counterparty",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -62242,7 +62486,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -62584,7 +62828,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -62953,7 +63197,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -63183,7 +63427,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -63331,7 +63575,7 @@
           {
             "key": "ipp_id",
             "label": "IPP",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -63776,7 +64020,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -63907,7 +64151,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -64376,7 +64620,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -64517,7 +64761,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -65162,7 +65406,7 @@
           {
             "key": "project_id",
             "label": "Project",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -65337,8 +65581,8 @@
           },
           {
             "key": "counterparty_id",
-            "label": "Counterparty ID",
-            "type": "string",
+            "label": "Counterparty",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -66296,7 +66540,7 @@
           {
             "key": "site_id",
             "label": "Site",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -66317,7 +66561,7 @@
           {
             "key": "owner_id",
             "label": "Owner",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -66684,7 +66928,7 @@
           {
             "key": "grid_operator_id",
             "label": "Grid operator",
-            "type": "string",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
@@ -66760,7 +67004,8 @@
           "path": "/api/unserved-energy-claims/:id/action",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "grid_operator"
           ],
           "body": {
             "action": "verify_metering_data"
@@ -66864,7 +67109,9 @@
           "path": "/api/unserved-energy-claims/:id/action",
           "method": "POST",
           "roles": [
-            "admin"
+            "admin",
+            "offtaker",
+            "grid_operator"
           ],
           "body": {
             "action": "commence_adjudication"
@@ -67076,7 +67323,7 @@
           {
             "key": "operator_id",
             "label": "Operator",
-            "type": "string",
+            "type": "lookup",
             "required": false,
             "options": null,
             "unit": null
@@ -67909,8 +68156,8 @@
         "fields": [
           {
             "key": "ipp_id",
-            "label": "IPP / Generator (user id)",
-            "type": "string",
+            "label": "IPP / Generator",
+            "type": "lookup",
             "required": true,
             "options": null,
             "unit": null
