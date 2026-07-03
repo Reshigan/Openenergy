@@ -2186,7 +2186,13 @@
    pulse). Rail hides below 1200px so the queue never gets squeezed. */
 .mer .jc-canvas { flex:1; display:flex; align-items:flex-start; gap:8px; }
 .mer .jc-stage { flex:1; padding:24px 28px 48px; max-width:1000px; width:100%; }
-.mer .jc-rail { width:316px; flex:0 0 316px; position:sticky; top:14px; display:flex; flex-direction:column; gap:14px; padding:24px 28px 48px 0; }
+/* The rail is a <aside>, so it inherits `.mer aside` (the retired Horizon
+   duty-stream panel: white fill + left border + shadow + overflow:hidden). That
+   turned the fail-silent context column into an empty "book cover" box whenever
+   its widgets returned null. The rail carries no chrome of its own — its widgets
+   bring their own cards — so strip the inherited panel styling back to nothing. */
+.mer .jc-rail { width:316px; flex:0 0 316px; position:sticky; top:14px; display:flex; flex-direction:column; gap:14px; padding:24px 28px 48px 0;
+  background:transparent; border-left:none; box-shadow:none; overflow:visible; }
 @media (max-width:1199px){ .mer .jc-rail { display:none; } }
 /* Rail-scoped re-shapes: the shared widgets were built for full-width bands —
    inside the rail they stack. */
