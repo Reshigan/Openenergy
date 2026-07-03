@@ -400,7 +400,7 @@ export function KycSubmission() {
       )}
 
       {/* Returning users land here from the Getting-Started gate; offer a way back. */}
-      <button type="button" className="mer-kyc-back" onClick={() => navigate('/horizon')}>
+      <button type="button" className="mer-kyc-back" onClick={() => navigate('/cockpit')}>
         Back to workspace
       </button>
     </div>

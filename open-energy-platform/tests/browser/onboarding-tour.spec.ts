@@ -110,7 +110,9 @@ async function mockCommon(page: import('@playwright/test').Page) {
   });
 }
 
-test('Horizon tour card shows inline, dismisses with Got it, and stays dismissed', async ({ page, baseURL }) => {
+// /horizon retired (journeys-only): the got-it/persistence behaviour is driven
+// on the cockpit strip — same GuidedTour component, the surface that is home now.
+test('Cockpit tour strip shows inline, dismisses with Got it, and stays dismissed', async ({ page, baseURL }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (msg) => { if (msg.type() === 'error') errors.push(`console.error: ${msg.text()}`); });
@@ -122,26 +124,24 @@ test('Horizon tour card shows inline, dismisses with Got it, and stays dismissed
   await seedToken(page);
   await mockCommon(page);
 
-  await page.goto(`${baseURL}/horizon`, { waitUntil: 'load' });
+  await page.goto(`${baseURL}/cockpit`, { waitUntil: 'load' });
 
-  // The Horizon tour card paints.
-  await expect(page.getByText('This is Horizon')).toBeVisible({ timeout: 20_000 });
+  // The cockpit tour strip paints.
+  await expect(page.getByText('This is your cockpit')).toBeVisible({ timeout: 20_000 });
 
-  // It is inline, not a modal: no dialog overlay, and the board behind it is
-  // visible at the same time. The IPP role renders the bespoke IppHorizon whose
-  // hero eyebrow ("YOUR GUIDE") is the stable board affordance — the old
-  // "+ New transaction" link belonged to the shared board this role no longer sees.
+  // It is inline, not a modal: no dialog overlay, and the cockpit behind it is
+  // visible at the same time (the journey tab bar is the stable affordance).
   await expect(page.locator('[role="dialog"]')).toHaveCount(0);
-  await expect(page.getByText(/YOUR GUIDE/i).first()).toBeVisible();
+  await expect(page.locator('.jc-tabs .jc-tab').first()).toBeVisible();
 
-  // Dismiss this surface's card.
+  // Dismiss this surface's strip.
   await page.getByTestId('mer-tour-gotit').click();
-  await expect(page.getByText('This is Horizon')).toHaveCount(0);
+  await expect(page.getByText('This is your cockpit')).toHaveCount(0);
 
   // Persistence: a reload does NOT bring it back.
   await page.reload({ waitUntil: 'load' });
-  await expect(page.getByText(/YOUR GUIDE/i).first()).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText('This is Horizon')).toHaveCount(0);
+  await expect(page.locator('.jc-tabs .jc-tab').first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('This is your cockpit')).toHaveCount(0);
 
   const real = errors.filter((e) => !isBenign(e));
   expect(real, real.join('\n')).toEqual([]);

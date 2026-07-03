@@ -72,23 +72,18 @@ test.describe('Meridian Horizon', () => {
     });
 
     await seedToken(page);
+    // /horizon retired (journeys-only UI) — it redirects to the journey cockpit.
     await page.goto(`${baseURL}/horizon`, { waitUntil: 'load' });
+    await page.waitForURL(/\/cockpit/, { timeout: 15_000 });
+    await expect(page.locator('.mer.jc')).toBeVisible({ timeout: 25_000 });
 
-    // Lazy bundle + "Computing horizon…" loading state precede the board.
-    // 25s gives React time to download the chunk and resolve /api/horizon/lender.
-    await expect(page.locator('.mer.horizon')).toBeVisible({ timeout: 25_000 });
-
-    // Header chrome — single CEC brand wordmark (renamed from MERIDIAN).
+    // Header chrome — single brand wordmark.
     await expect(page.locator('.wordmark')).toHaveText('OPEN ENERGY');
 
-    // Lender renders the bespoke "Quiet Book" Horizon (LenderHorizon), not the
-    // shared lane×bucket board this test originally asserted: hero headline,
-    // quiet lane exposure bars, and the ranked "Needs you" exceptions card.
-    const board = page.getByRole('region', { name: 'Your lender book' });
-    await expect(board).toBeVisible();
-    await expect(board.locator('.lh-hero-title')).toBeVisible();
-    await expect(board.locator('.lh-lanes .lh-lane').first()).toBeVisible();
-    await expect(board.locator('.lh-exc-head h3')).toHaveText('Needs you');
+    // The lender's journey cockpit: journey tabs (Today first) + the Today stage.
+    await expect(page.locator('.jc-tabs .jc-tab').first()).toContainText('Today');
+    await expect(page.locator('.jc-stage')).toBeVisible();
+    await expect(page.locator('.jc-head h1')).toBeVisible({ timeout: 25_000 });
 
     const real = errors.filter((e) => !isBenign(e));
     expect(real, real.join('\n')).toEqual([]);
@@ -148,8 +143,8 @@ test.describe('Meridian Horizon', () => {
 
   test('⌘K command palette opens, searches lender functions, navigates on Enter', async ({ page, baseURL }) => {
     await seedToken(page);
-    await page.goto(`${baseURL}/horizon`, { waitUntil: 'load' });
-    await expect(page.locator('.mer.horizon')).toBeVisible({ timeout: 25_000 });
+    await page.goto(`${baseURL}/cockpit`, { waitUntil: 'load' });
+    await expect(page.locator('.mer.jc')).toBeVisible({ timeout: 25_000 });
 
     // CommandPalette listens for ctrl OR meta + k — Control+k works on every OS.
     await page.keyboard.press('Control+k');

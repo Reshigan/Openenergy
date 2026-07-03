@@ -115,7 +115,7 @@ export function VintageDetailPage() {
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: TX3, marginBottom: 8 }}>
             <Link
-              to="/horizon"
+              to="/cockpit"
               style={{ color: TX3, textDecoration: 'none' }}
               onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
               onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
@@ -267,7 +267,7 @@ export function VintageDetailPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <button
               type="button"
-              onClick={() => navigate('/horizon')}
+              onClick={() => navigate('/cockpit')}
               style={{
                 background: 'transparent', color: TX2,
                 border: `1px solid ${BORDER}`,

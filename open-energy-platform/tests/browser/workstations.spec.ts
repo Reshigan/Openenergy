@@ -78,7 +78,7 @@ function isBenign(msg: string): boolean {
 }
 
 // CEC consolidation: every legacy `/<role>/workstation` route now
-// `<Navigate to="/horizon" replace />`. The tab-based workstation surfaces are
+// `<Navigate to="/cockpit" replace />` (journeys-only UI). The tab-based workstation surfaces are
 // retired; WorkstationShell survives only as a reused primitive inside the
 // Meridian surfaces. This suite now asserts the REDIRECT CONTRACT — each
 // retired route lands on the single CEC Horizon board under one header.
@@ -110,9 +110,9 @@ for (const route of RETIRED_WORKSTATION_ROUTES) {
     await seedToken(page);
     await page.goto(`${baseURL}${route}`, { waitUntil: 'load' });
 
-    // Redirect lands on /horizon; the board + single CEC header chrome render.
-    await page.waitForURL(/\/horizon/, { timeout: 15_000 });
-    await expect(page.locator('.mer.horizon')).toBeVisible({ timeout: 25_000 });
+    // Redirect lands on the journey cockpit under the single header chrome.
+    await page.waitForURL(/\/cockpit/, { timeout: 15_000 });
+    await expect(page.locator('.mer.jc')).toBeVisible({ timeout: 25_000 });
     await expect(page.locator('header .wordmark')).toHaveText('OPEN ENERGY');
 
     const real = errors.filter((e) => !isBenign(e));

@@ -75,12 +75,12 @@ test('admin lands on the CEC Horizon board after auth (legacy launch route redir
   // consume one rate-limit slot (10/5min/IP) and cascade 429s to later specs.
   await seedToken(page);
   // /launch/:role is a retired legacy route — the CEC consolidation redirects
-  // every launch/workstation path to the single /horizon board.
+  // every launch/workstation path to the journey cockpit.
   await page.goto(`${baseURL}/launch/admin`, { waitUntil: 'load' });
 
   // Redirect lands on Horizon; the board + single CEC header chrome render.
-  await page.waitForURL(/\/horizon/, { timeout: 15_000 });
-  await expect(page.locator('.mer.horizon')).toBeVisible({ timeout: 25_000 });
+  await page.waitForURL(/\/cockpit/, { timeout: 15_000 });
+  await expect(page.locator('.mer.jc')).toBeVisible({ timeout: 25_000 });
   await expect(page.locator('header .wordmark')).toHaveText('OPEN ENERGY');
 
   // No runtime page errors during the full navigation flow.

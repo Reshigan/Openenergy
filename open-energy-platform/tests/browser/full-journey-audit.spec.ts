@@ -245,15 +245,14 @@ test.describe('Horizon — per-role workspace renders', () => {
 
       // Not the login page (ProtectedRoute let us through on the mocked user).
       await expect(page.locator('input[type=password]')).toHaveCount(0, { timeout: 5_000 });
-      // Every lane-holding role renders a bespoke Horizon now (LenderHorizon,
-      // IppHorizon, …) — all share the .mer.horizon root; the old shared-board
-      // markers (lane×bucket region, DUTY STREAM) retired with the bespokes.
-      await expect(page.locator('.mer.horizon, .mer.mer-error').first()).toBeVisible({ timeout: 30_000 });
+      // /horizon retired (journeys-only UI): every role lands on the journey
+      // cockpit — one .mer.jc root regardless of role.
+      await expect(page.locator('.mer.jc, .mer.mer-error').first()).toBeVisible({ timeout: 30_000 });
 
       if (hasRealToken(c.tokenRole)) {
         // Real token → GET /api/horizon/:role succeeds → success branch:
-        // the bespoke board renders and there is no error state.
-        await expect(page.locator('.mer.horizon').first()).toBeVisible({ timeout: 30_000 });
+        // the journey cockpit renders and there is no error state.
+        await expect(page.locator('.mer.jc').first()).toBeVisible({ timeout: 30_000 });
         await expect(page.locator('.mer-error')).toHaveCount(0);
         const real = errors.filter((e) => e.startsWith('api.5'));
         expect(real, `5xx on /horizon as ${c.role}:\n${real.join('\n')}`).toEqual([]);
@@ -349,13 +348,13 @@ test.describe('Auth flows', () => {
 
 test.describe('Legacy + workstation routes redirect to Horizon', () => {
   for (const path of REDIRECT_PATHS) {
-    test(`retired route [${path}] redirects to /horizon`, async ({ page, baseURL }) => {
+    test(`retired route [${path}] redirects to the journey cockpit`, async ({ page, baseURL }) => {
       await seedToken(page, 'admin');
       await goTo(page, baseURL, path);
-      // The SPA fires <Navigate to="/horizon"> client-side once it mounts.
-      await page.waitForURL(/\/horizon/, { timeout: 15_000 }).catch(() => {});
-      expect(page.url(), `${path} did not redirect to /horizon`).toContain('/horizon');
-      await expect(page.locator('.mer.horizon, .mer.mer-error').first()).toBeVisible({ timeout: 20_000 });
+      // The SPA fires <Navigate to="/cockpit"> client-side once it mounts.
+      await page.waitForURL(/\/cockpit/, { timeout: 15_000 }).catch(() => {});
+      expect(page.url(), `${path} did not redirect to /cockpit`).toContain('/cockpit');
+      await expect(page.locator('.mer.jc, .mer.mer-error').first()).toBeVisible({ timeout: 20_000 });
     });
   }
 });
@@ -370,8 +369,8 @@ test.describe('Meridian chrome + duty-stream collapse', () => {
     await seedToken(page, 'admin');
     await goTo(page, baseURL, '/horizon');
 
-    // Wait for the bespoke admin board (success branch) before asserting chrome.
-    await expect(page.locator('.mer.horizon').first()).toBeVisible({ timeout: 30_000 });
+    // Wait for the journey cockpit (success branch) before asserting chrome.
+    await expect(page.locator('.mer.jc').first()).toBeVisible({ timeout: 30_000 });
 
     // The retired FioriShell sidebar is gone. NB: match the specific rail classes,
     // NOT [class*="rail"] — Meridian's own duty-rail would false-positive on that.
@@ -401,8 +400,8 @@ test.describe('Admin role-switch board', () => {
     await seedToken(page, 'admin');
     await goTo(page, baseURL, '/horizon');
 
-    // AdminHorizon renders its own Compliance desk under .mer.horizon.
-    await expect(page.locator('.mer.horizon').first()).toBeVisible({ timeout: 30_000 });
+    // Admin lands on the journey cockpit; the Compliance desk is the default view.
+    await expect(page.locator('.mer.jc').first()).toBeVisible({ timeout: 30_000 });
 
     // The admin-only role switcher: aria-label sits on the wrapping nav, the
     // role="group" on the inner .role-switch (AdminHorizon.tsx).
@@ -411,10 +410,10 @@ test.describe('Admin role-switch board', () => {
     const buttons = group.locator('button');
     expect(await buttons.count(), 'role switcher should expose multiple lane roles').toBeGreaterThanOrEqual(8);
 
-    // Switch to a different role's board — the selected role's bespoke Horizon
-    // renders under the switcher (each carries the shared .mer.horizon root).
+    // Switch to a different role's view — the whole journey cockpit re-derives
+    // for that role (same .mer.jc root).
     await buttons.nth(1).click();
-    await expect(page.locator('.mer.horizon').first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('.mer.jc').first()).toBeVisible({ timeout: 30_000 });
 
     const real = errors.filter((e) => e.startsWith('api.5'));
     expect(real, `5xx after admin role switch:\n${real.join('\n')}`).toEqual([]);
