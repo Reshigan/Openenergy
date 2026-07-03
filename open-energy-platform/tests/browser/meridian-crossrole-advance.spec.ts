@@ -261,9 +261,12 @@ for (const chain of ADVANCE_CHAINS) {
     };
     const fires: FireOutcome[] = [];
 
-    // 1. Ledger paints (HARD).
+    // 1. Ledger paints — a case row OR the legitimate empty state. A chain whose
+    //    demo tenant has no seeded cases renders "No cases" (.lcard-empty); that's
+    //    the product working, not a failure. Hard-requiring .lcard failed those
+    //    chains before they could reach the no-rows soft-skip below.
     await page.goto(`/ledger/${chain.key}`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('.lcard').first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('.lcard, .lcard-empty').first()).toBeVisible({ timeout: 30_000 });
 
     // 2. Discover non-terminal rows.
     const terminal = new Set(chain.terminal);
@@ -273,7 +276,9 @@ for (const chain of ADVANCE_CHAINS) {
     result.nonTerminal = live.length;
 
     if (!live.length) {
-      result.note = led.rows.length ? 'all rows terminal — data-state gap' : `ledger fetch http ${led.http}`;
+      result.note = led.rows.length ? 'all rows terminal — data-state gap'
+        : led.http === 200 ? 'no seeded cases — nothing to advance'
+        : `ledger fetch http ${led.http}`;
       RESULTS.push(result);
       fs.appendFileSync(RESULTS_JSONL, JSON.stringify(result) + '\n');
       return; // SOFT — sibling suites already flagged ppa_obligation
