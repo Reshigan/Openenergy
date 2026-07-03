@@ -54,9 +54,18 @@ interface ThreadLite {
   actions: { action: string; label: string; path: string; cascadeHint: string; tone?: string; fields?: unknown[] }[];
 }
 
+// Roles an admin can deep-view (ported from the retired AdminHorizon board —
+// the one capability the /horizon plane had that the journey cockpit didn't).
+const ADMIN_VIEW_ROLES = ['trader', 'offtaker', 'lender', 'regulator', 'ipp_developer', 'grid_operator', 'carbon_fund', 'esco', 'support'];
+
 export default function JourneyCockpit() {
   const { user } = useAuth();
-  const role = user?.role ?? '';
+  const userRole = user?.role ?? '';
+  // Admin cross-role deep-view: everything downstream (journeys, lanes, data)
+  // keys off `role`, so switching the view re-derives the whole cockpit. The
+  // switcher renders for admin only; creates/actions still run as the admin.
+  const [adminView, setAdminView] = React.useState<string | null>(null);
+  const role = (userRole === 'admin' && adminView) ? adminView : userRole;
   const navigate = useNavigate();
   const cfg = getRoleConfig(role);
   const { journeys, primaryEntity } = React.useMemo(() => getJourneys(role), [role]);
@@ -254,6 +263,28 @@ export default function JourneyCockpit() {
   return (
     <div className="mer jc">
       <MeridianHeader ctx={<b>{cleanLabel(cfg.label)}</b>} />
+
+      {/* Admin cross-role deep-view — the retired AdminHorizon board's switcher,
+         now driving the whole journey cockpit. 'Compliance' = admin's own desk. */}
+      {userRole === 'admin' && (
+        // NB: no `mer` class here — .mer carries min-height:100dvh (page-root
+        // sizing) and a nested .mer becomes a full-viewport spacer that shoves
+        // the tabs+canvas below the fold.
+        <nav aria-label="View board as role">
+          <div className="role-switch" role="group">
+            <button type="button" className={!adminView ? 'btn pri' : 'btn ghost'} aria-pressed={!adminView}
+              onClick={() => { setAdminView(null); setActive('today'); setOpenId(null); }}>
+              Compliance
+            </button>
+            {ADMIN_VIEW_ROLES.map(r => (
+              <button key={r} type="button" className={adminView === r ? 'btn pri' : 'btn ghost'} aria-pressed={adminView === r}
+                onClick={() => { setAdminView(r); setActive('today'); setOpenId(null); }}>
+                {cleanLabel(getRoleConfig(r)?.label ?? r.replace(/_/g, ' '))}
+              </button>
+            ))}
+          </div>
+        </nav>
+      )}
 
       {/* journey tabs */}
       <nav className="jc-tabs" aria-label="Journeys">

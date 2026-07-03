@@ -328,7 +328,7 @@ export function OnboardingWizard() {
         if (completed) {
           // /launch/:role was retired in Phase E (now redirects to Horizon).
           // Send returning, already-onboarded users straight to their workspace.
-          navigate('/horizon', { replace: true });
+          navigate('/cockpit', { replace: true });
           return;
         }
         if (serverStep && serverStep !== 'welcome') {
@@ -372,7 +372,7 @@ export function OnboardingWizard() {
         // the Getting-Started card shows (the provisioning cascade writes the
         // manifest async via the queue; the card tolerates it settling).
         await api.post('/onboarding/complete', {});
-        navigate('/horizon?welcome=1', { replace: true });
+        navigate('/cockpit?welcome=1', { replace: true });
       } else {
         setStep(next_step);
       }
@@ -401,7 +401,7 @@ export function OnboardingWizard() {
       // Best-effort
     } finally {
       setLoading(false);
-      navigate('/horizon', { replace: true });
+      navigate('/cockpit', { replace: true });
     }
   };
 

@@ -145,7 +145,7 @@ test('Getting-Started card shows checklist progress and a 1-click AI next step',
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(HORIZON_PAYLOAD) });
   });
 
-  await page.goto(`${baseURL}/horizon`, { waitUntil: 'load' });
+  await page.goto(`${baseURL}/cockpit`, { waitUntil: 'load' });
 
   // Progress fraction renders (the card is mounted at HorizonPage.tsx:163 after
   // the horizon fetch resolves past the skeleton guard).
@@ -189,7 +189,7 @@ test('board never calls the disjoint /ux-state/onboarding store', async ({ page,
     });
   });
 
-  await page.goto(`${baseURL}/horizon`, { waitUntil: 'load' });
+  await page.goto(`${baseURL}/cockpit`, { waitUntil: 'load' });
 
   // Let the board settle past the skeleton + card render.
   await expect(page.getByText('1 / 3')).toBeVisible({ timeout: 20_000 });

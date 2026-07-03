@@ -32,7 +32,7 @@ test.beforeAll(async ({ request }) => {
 
 const SURFACES = [
   { name: 'atlas', path: '/atlas', sel: '.mer.atlas' },
-  { name: 'horizon', path: '/horizon', sel: '.mer' },
+  { name: 'cockpit', path: '/cockpit', sel: '.mer' },
 ];
 
 test('capture + a11y', async ({ browser }) => {

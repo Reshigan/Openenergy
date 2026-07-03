@@ -67,7 +67,7 @@ function isBenign(msg: string): boolean {
 interface RoleReport {
   role: string;
   authed: boolean;            // did the seeded token survive (no bounce to /login)?
-  boardRendered: boolean;     // did .mer.horizon paint?
+  boardRendered: boolean;     // did .mer.jc (journey cockpit) paint?
   liveCases: number;          // counts.total off the first board read
   atlasFunctions: number;     // reachable function tiles enumerated
   surfacesOpened: number;     // /surface/:key bodies that rendered
@@ -186,7 +186,7 @@ async function landAt(page: Page, url: string, selector: string, rpt: RoleReport
 
 // Land on the role's Horizon board.
 function landBoard(page: Page, baseURL: string, rpt: RoleReport): Promise<boolean> {
-  return landAt(page, `${baseURL}/horizon`, '.mer.horizon', rpt);
+  return landAt(page, `${baseURL}/cockpit`, '.mer.jc', rpt);
 }
 
 // ── Per-role month walk ───────────────────────────────────────────────────
@@ -203,7 +203,7 @@ async function runRoleUser(browser: Browser, role: string, token: string, user: 
     wireCapture(page, rpt, baseURL);
 
     // ── Land on the role's Horizon board ──────────────────────────────────
-    // landBoard() WAITS for .mer.horizon (waitFor, not the non-waiting
+    // landBoard() WAITS for .mer.jc (waitFor, not the non-waiting
     // isVisible) and tolerates the seeded-token bootstrap /login bounce.
     rpt.boardRendered = await landBoard(page, baseURL, rpt);
     if (!rpt.boardRendered) { rpt.notes.push('horizon board did not render'); }

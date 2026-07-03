@@ -185,7 +185,7 @@ test('Getting-Started surfaces the verify-to-transact item when KYC is not appro
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
   });
 
-  await page.goto(`${baseURL}/horizon`, { waitUntil: 'load' });
+  await page.goto(`${baseURL}/cockpit`, { waitUntil: 'load' });
 
   // Best-effort: the verify item depends on the GettingStarted card rendering
   // past the horizon skeleton guard. The /kyc surface test above is the
