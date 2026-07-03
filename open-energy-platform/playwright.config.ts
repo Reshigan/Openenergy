@@ -10,6 +10,14 @@ export default defineConfig({
   globalSetup: './tests/browser/global-setup.ts',
   timeout: 30_000,
   expect: { timeout: 10_000 },
+  // Retry in CI only. The full nightly suite runs serially against PROD for ~1.1h;
+  // under that sustained single-worker load, a few ledger fetches occasionally
+  // exceed the 30s paint window (D1 cold read / worker cold start) and time out —
+  // a near-disjoint set of chains each run, all verified to render fine standalone
+  // (10–11 rows each). That's prod-latency-under-load variance a real user (one
+  // request, not the 300th of the hour) never sees, so a retry absorbs it while a
+  // genuine regression still fails all attempts. Local runs keep 0 (fail fast).
+  retries: process.env.CI ? 2 : 0,
   // Run serially — 1 worker is still required to avoid concurrent navigation
   // races on the same Cloudflare origin.
   fullyParallel: false,
