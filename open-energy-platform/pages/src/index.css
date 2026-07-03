@@ -12,7 +12,9 @@
  * is mapped through MatIcon() so existing call sites keep working without
  * pulling in Google's icon font. */
 
-@import url('https://fonts.cdnfonts.com/css/metropolis-2');
+/* Metropolis (legacy display) dropped: fonts.cdnfonts.com is a flaky third-party
+   (CORP-blocked in CI and intermittently for users); the IBM Plex Sans/Inter
+   fallback stack is what actually rendered anyway. */
 
 @tailwind base;
 @tailwind components;

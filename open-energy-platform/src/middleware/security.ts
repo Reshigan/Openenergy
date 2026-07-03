@@ -262,9 +262,9 @@ export async function securityHeaders(c: Context<HonoEnv>, next: Next) {
       // edge after this header is set, so 'unsafe-inline' is required. CF challenges
       // also load from challenges.cloudflare.com.
       "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://challenges.cloudflare.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.cdnfonts.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: blob: https://lh3.googleusercontent.com",
-      "font-src 'self' data: https://fonts.gstatic.com https://fonts.cdnfonts.com",
+      "font-src 'self' data: https://fonts.gstatic.com",
       // XHR/fetch + the realtime SSE stream are same-origin.
       "connect-src 'self' https://cloudflareinsights.com",
       "worker-src 'self'",
