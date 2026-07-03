@@ -80,6 +80,14 @@ export default function JourneyCockpit() {
   // Chains this role can actually start (with their journey lane) — the source for
   // create affordances, so we only ever offer a create that opens a real form.
   const [initiable, setInitiable] = React.useState<InitiableChain[]>([]);
+  // "Start something else…" picker: big journeys hold 20+ initiable chains, so
+  // beyond the first few the creates live in one searchable veil, not a button wall.
+  const [startPicker, setStartPicker] = React.useState<InitiableChain[] | null>(null);
+  const [startQuery, setStartQuery] = React.useState('');
+  // Tools row cap — a journey like Operate holds 14 tool surfaces; show a scannable
+  // handful and fold the rest behind one expander. Reset when the journey changes.
+  const [allTools, setAllTools] = React.useState(false);
+  React.useEffect(() => { setAllTools(false); }, [active]);
 
   const reload = React.useCallback(() => {
     if (!role) return;
@@ -112,6 +120,14 @@ export default function JourneyCockpit() {
     api.get(`/journey-config/${role}`).then(r => setGov(r.data?.data ?? {})).catch(() => { /* defaults */ });
     fetchInitiable().then(setInitiable).catch(() => { /* no creates offered if this fails */ });
   }, [role, reload]);
+
+  // Escape closes the start picker (Meridian veil idiom); reset the search on close.
+  React.useEffect(() => {
+    if (!startPicker) { setStartQuery(''); return undefined; }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setStartPicker(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [startPicker]);
 
   // Open an item: fetch its thread detail in place (folds the old Thread page).
   React.useEffect(() => {
@@ -297,18 +313,27 @@ export default function JourneyCockpit() {
             </header>
             {(() => {
               // Creates are sourced from the authoritative initiable list (chains with a
-              // real form the role can start), grouped into this journey by lane. Every
-              // button opens a working composer — no dead-ends. Empty → no starts row.
+              // real form the role can start), grouped into this journey by lane. A big
+              // journey can hold 20+ initiable chains — a button per chain was a wall
+              // nobody could scan. Up to three inline starts stay (the most common way
+              // in), and everything else lives behind ONE "+ Start…" affordance that
+              // opens a searchable picker. Every row opens a working composer.
               const jc = initiable.filter(e => e.lane != null && activeJourney.domainKeys.includes(e.lane));
               if (!jc.length) return null;
+              const INLINE = 3;
               return (
                 <div className="jc-starts">
-                  {jc.map((e, i) => (
+                  {jc.slice(0, INLINE).map((e, i) => (
                     <button key={e.chainKey} type="button" className={i === 0 ? 'jc-start' : 'jc-start ghost'}
                       onClick={() => openCompose(e.chainKey)}>
                       <Icon name="plus" size={i === 0 ? 14 : 13} /> {e.label}
                     </button>
                   ))}
+                  {jc.length > INLINE && (
+                    <button type="button" className="jc-start ghost" onClick={() => setStartPicker(jc)}>
+                      Start something else… <span className="jc-start-n mono">{jc.length - INLINE}</span>
+                    </button>
+                  )}
                 </div>
               );
             })()}
@@ -342,9 +367,20 @@ export default function JourneyCockpit() {
                     // actually present, so no real case is ever invisible on the lane.
                     const base = [...(f.mockStates ?? [])];
                     for (const c of mine) if (c.status && !base.includes(c.status)) base.push(c.status);
+                    // In-context create: if this lane's chain is initiable, a quiet +
+                    // on the lane header starts one — the create lives where the
+                    // work lives, instead of in the button wall up top.
+                    const laneStart = initiable.find(e => e.chainKey === f.chainKey);
                     return (
                       <div className="jc-lane" key={f.key}>
-                        <div className="jc-lane-h"><b>{cleanLabel(f.label)}</b><span className="jc-lane-n mono">{mine.length} live</span></div>
+                        <div className="jc-lane-h"><b>{cleanLabel(f.label)}</b>
+                          {laneStart && (
+                            <button type="button" className="jc-lane-add" title={laneStart.label}
+                              aria-label={laneStart.label} onClick={() => openCompose(laneStart.chainKey)}>
+                              <Icon name="plus" size={12} />
+                            </button>
+                          )}
+                          <span className="jc-lane-n mono">{mine.length} live</span></div>
                         <div className="jc-lstages">
                           {base.map(s => {
                             const at = mine.filter(c => c.status === s);
@@ -371,25 +407,38 @@ export default function JourneyCockpit() {
                 <div className="jc-empty">No live items in this journey. Use “Start” above to begin one, or open a tool from the list.</div>
               )}
             </div>
-            {/* journey tools (non-chain surfaces/pages) */}
-            <div className="jc-tools">
-              {journeyFeatures(activeJourney.key)
-                .filter(f => !f.chainKey && isTileReachable(role, f, hasSurface) && featAvailable(f.key))
-                .map(f => hasSurface(`${surfaceRole(role)}:${f.key}`) ? (
-                  // Registered surface → open in a panel over the cockpit (no navigation).
-                  <button key={f.key} type="button" className="jc-tool"
-                    onClick={() => setSurfacePanel({ key: f.key, label: cleanLabel(f.label) })}>
-                    {cleanLabel(f.label)}
-                    {featRequired(f.key) && <span className="jc-req">required</span>}
-                  </button>
-                ) : (
-                  // Non-surface (standalone route, e.g. /esg) → link out for now.
-                  <Link key={f.key} className="jc-tool" to={tileTarget(role, f, hasSurface) ?? '#'}>
-                    {cleanLabel(f.label)}
-                    {featRequired(f.key) && <span className="jc-req">required</span>}
-                  </Link>
-                ))}
-            </div>
+            {/* journey tools (non-chain surfaces/pages) — capped to a scannable
+               handful; the rest fold behind one expander (Operate holds 14). */}
+            {(() => {
+              const tools = journeyFeatures(activeJourney.key)
+                .filter(f => !f.chainKey && isTileReachable(role, f, hasSurface) && featAvailable(f.key));
+              const CAP = 6;
+              const shown = allTools ? tools : tools.slice(0, CAP);
+              return (
+                <div className="jc-tools">
+                  {shown.map(f => hasSurface(`${surfaceRole(role)}:${f.key}`) ? (
+                    // Registered surface → open in a panel over the cockpit (no navigation).
+                    <button key={f.key} type="button" className="jc-tool"
+                      onClick={() => setSurfacePanel({ key: f.key, label: cleanLabel(f.label) })}>
+                      {cleanLabel(f.label)}
+                      {featRequired(f.key) && <span className="jc-req">required</span>}
+                    </button>
+                  ) : (
+                    // Non-surface (standalone route, e.g. /esg) → link out for now.
+                    <Link key={f.key} className="jc-tool" to={tileTarget(role, f, hasSurface) ?? '#'}>
+                      {cleanLabel(f.label)}
+                      {featRequired(f.key) && <span className="jc-req">required</span>}
+                    </Link>
+                  ))}
+                  {tools.length > CAP && (
+                    <button type="button" className="jc-tool jc-tool-more" aria-expanded={allTools}
+                      onClick={() => setAllTools(v => !v)}>
+                      {allTools ? 'Fewer tools' : `All tools · ${tools.length}`}
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
           </>
         ) : null}
       </main>
@@ -404,6 +453,30 @@ export default function JourneyCockpit() {
         <PlatformPulse />
       </aside>
       </div>
+
+      {/* Start picker — one searchable list of everything this journey can start.
+         Selecting a row opens the same in-journey composer; nothing navigates. */}
+      {startPicker && (() => {
+        const q = startQuery.trim().toLowerCase();
+        const hits = q ? startPicker.filter(e => e.label.toLowerCase().includes(q)) : startPicker;
+        return (
+          <div className="mer veil" onClick={() => setStartPicker(null)}>
+            <div className="veil-body jc-startpick" role="dialog" aria-modal="true" aria-label="Start something" onClick={e => e.stopPropagation()}>
+              <input autoFocus type="search" className="jc-sp-search" placeholder={`Search ${startPicker.length} things you can start…`}
+                value={startQuery} onChange={e => setStartQuery(e.target.value)} aria-label="Search starts" />
+              <div className="jc-sp-list" role="listbox" aria-label="Available starts">
+                {hits.map(e => (
+                  <button key={e.chainKey} type="button" role="option" aria-selected="false" className="jc-sp-row"
+                    onClick={() => { setStartPicker(null); openCompose(e.chainKey); }}>
+                    <Icon name="plus" size={13} /> {e.label}
+                  </button>
+                ))}
+                {hits.length === 0 && <div className="jc-sp-none">Nothing matches “{startQuery}”.</div>}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Create-in-journey composer — schema-driven initiation over the cockpit, no
          navigation. Submitting POSTs the real endpoint (cascades fire) and reloads. */}
