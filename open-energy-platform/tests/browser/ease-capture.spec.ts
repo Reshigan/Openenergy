@@ -5,11 +5,17 @@
 //   BASE=https://oe.vantax.co.za CAP_ROLE=ipp npx playwright test tests/browser/ease-capture.spec.ts --config=playwright.config.ts
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const BASE = process.env.BASE || 'https://oe.vantax.co.za';
 const ROLE = process.env.CAP_ROLE || 'ipp';
 const PWD = process.env.DEMO_PASSWORD || 'Demo@2024!';
-const OUT = '/private/tmp/claude-501/-Users-reshigan-Openenergy/a33d576c-71e8-45c5-b3d3-afea29b65d66/scratchpad';
+// Repo-relative output (created on demand). Was a hard-coded per-session scratch
+// path that only existed in the authoring session — every CI run ENOENT'd on the
+// first screenshot write. CAP_OUT overrides for local visual review.
+const OUT = process.env.CAP_OUT || path.join(process.cwd(), 'test-results', 'ease-capture');
+fs.mkdirSync(OUT, { recursive: true });
 
 let TOKEN = '';
 let ME: unknown = null;
@@ -31,7 +37,7 @@ test.beforeAll(async ({ request }) => {
 });
 
 const SURFACES = [
-  { name: 'atlas', path: '/atlas', sel: '.mer.atlas' },
+  // /atlas retired (journeys-only) — the cockpit is the one plane to capture.
   { name: 'cockpit', path: '/cockpit', sel: '.mer' },
 ];
 

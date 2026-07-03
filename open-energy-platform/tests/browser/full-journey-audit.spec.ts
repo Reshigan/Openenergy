@@ -272,7 +272,12 @@ test.describe('Suite pages — load without errors', () => {
       const errors = collectErrors(page);
       await seedToken(page, c.tokenRole);
       await goTo(page, baseURL, c.path);
-      await expect(page.locator('body')).toContainText(c.expectText, { timeout: 25_000 });
+      // Journeys-only: every legacy suite route redirects to the journey cockpit.
+      // The old role-copy match (expectText) survived on 6/7 only by coincidence
+      // (a journey tab label happened to contain the word). The honest assertion
+      // now is: the redirect lands on the cockpit chrome and nothing 5xx'd.
+      await page.waitForURL(/\/cockpit/, { timeout: 15_000 }).catch(() => {});
+      await expect(page.locator('.mer.jc')).toBeVisible({ timeout: 25_000 });
       const real = errors.filter((e) => e.startsWith('api.5'));
       expect(real, `5xx errors on ${c.path}:\n${real.join('\n')}`).toEqual([]);
     });
