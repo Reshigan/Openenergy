@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platform Admin — Frontend Exploration · Open Energy Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ops console — near-black, signal greens, alert ambers/reds, NOC energy */
+    --bg:#0a0c10; --bg2:#0e1117; --panel:#12161e; --panel2:#161b25;
+    --line:#1f2630; --line2:#2a323e;
+    --ink:#e8edf4; --ink2:#9aa6b6; --ink3:#5e6a7a;
+    --green:#34d399; --green-dim:#0c3a2c;
+    --amber:#fbbf24; --amber-dim:#3a2e08;
+    --red:#f87171; --red-dim:#3a1414;
+    --red-hot:#ef4444;
+    --blue:#60a5fa; --blue-dim:#0d2440;
+    --violet:#a78bfa; --violet-dim:#241a3a;
+    --gold:#e3b341;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --sans:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1360px;margin:0 auto;padding:0 24px}
+
+  /* ── page header ── */
+  .masthead{border-bottom:1px solid var(--line);background:
+     radial-gradient(1200px 400px at 80% -200px,rgba(52,211,153,.10),transparent 60%),
+     radial-gradient(900px 400px at 10% -200px,rgba(248,113,113,.07),transparent 60%),var(--bg2);}
+  .masthead .wrap{padding-top:42px;padding-bottom:34px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:10px}
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px var(--green-dim)}
+  h1{font-size:42px;font-weight:800;letter-spacing:-.02em;margin:14px 0 4px;line-height:1.04}
+  h1 .sub{color:var(--ink3);font-weight:600}
+  .lede{max-width:760px;color:var(--ink2);font-size:15px;margin-top:14px}
+  .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:28px;margin-top:26px}
+  .persona,.rationale{border:1px solid var(--line);border-radius:14px;padding:18px 20px;background:var(--panel)}
+  .persona h3,.rationale h3{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px;display:flex;gap:8px;align-items:center}
+  .persona p,.rationale p{color:var(--ink2);font-size:13.5px}
+  .persona b{color:var(--ink)}
+  .badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .chip{font-family:var(--mono);font-size:10.5px;padding:4px 9px;border-radius:6px;border:1px solid var(--line2);color:var(--ink2);background:var(--bg)}
+
+  /* ── journey-as-product strip ── */
+  .section-h{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink3);margin:0 0 16px;display:flex;align-items:center;gap:12px}
+  .section-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .jstrip{padding:40px 0 8px}
+  .jcards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .jcard{border:1px solid var(--line);border-radius:16px;padding:20px;background:linear-gradient(160deg,var(--panel2),var(--panel));position:relative;overflow:hidden}
+  .jcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--accent)}
+  .jcard .meterglyph{font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:.04em}
+  .jcard h4{font-size:17px;font-weight:700;margin:10px 0 6px;letter-spacing:-.01em}
+  .jcard .desc{color:var(--ink2);font-size:13px;min-height:38px}
+  .tier{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.05em;padding:4px 9px;border-radius:999px;text-transform:uppercase}
+  .tier.l3{color:var(--blue);background:var(--blue-dim);border:1px solid #1d3a5c}
+  .tier.l4{color:var(--amber);background:var(--amber-dim);border:1px solid #5a4810}
+  .tier.l5{color:var(--violet);background:var(--violet-dim);border:1px solid #3a2c5c}
+  .meter{margin-top:16px;border-top:1px dashed var(--line2);padding-top:13px;display:flex;justify-content:space-between;align-items:flex-end}
+  .meter .unit{font-family:var(--mono);font-size:11px;color:var(--ink2)}
+  .meter .price{font-family:var(--mono);font-weight:700;font-size:18px;color:var(--green)}
+  .meter .price small{font-size:11px;color:var(--ink3);font-weight:500}
+
+  /* ── option blocks ── */
+  .opt{padding:46px 0}
+  .opt-head{display:flex;align-items:baseline;gap:16px;margin-bottom:6px;flex-wrap:wrap}
+  .opt-num{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--bg);background:var(--accent,#34d399);border-radius:6px;padding:3px 9px}
+  .opt-head h2{font-size:25px;font-weight:800;letter-spacing:-.02em}
+  .opt-concept{color:var(--ink2);font-size:14.5px;max-width:880px;margin-bottom:24px}
+  .frames{display:grid;grid-template-columns:1fr 392px;gap:26px;align-items:start}
+  @media(max-width:1180px){.frames{grid-template-columns:1fr}.jcards{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+
+  /* desktop chrome */
+  .desktop{border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--bg2);box-shadow:0 30px 70px -30px rgba(0,0,0,.7)}
+  .winbar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:#0c0f15;border-bottom:1px solid var(--line)}
+  .winbar .traf{display:flex;gap:7px}
+  .winbar .traf i{width:11px;height:11px;border-radius:50%;display:block}
+  .winbar .url{margin-left:10px;font-family:var(--mono);font-size:11px;color:var(--ink3);background:var(--bg);border:1px solid var(--line);padding:3px 11px;border-radius:6px}
+  .winbar .winrole{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink2)}
+  .app{display:grid}
+
+  /* phone chrome */
+  .phonewrap{position:sticky;top:18px}
+  .phone{width:392px;border:10px solid #05070a;border-radius:44px;overflow:hidden;background:#000;box-shadow:0 30px 70px -25px rgba(0,0,0,.8);position:relative}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:11px 24px 6px;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink);background:var(--bg)}
+  .notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:120px;height:24px;background:#05070a;border-radius:0 0 16px 16px;z-index:5}
+  .pwahint{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;padding:5px 16px;color:var(--ink3);background:var(--bg2);border-bottom:1px solid var(--line)}
+  .pwahint .live{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+  .pscreen{background:var(--bg);min-height:560px;padding:14px;overflow:hidden}
+  .pnav{display:flex;background:var(--bg2);border-top:1px solid var(--line);padding:9px 6px 22px}
+  .pnav a{flex:1;text-align:center;font-size:9.5px;color:var(--ink3);font-family:var(--mono)}
+  .pnav a .ic{display:block;font-size:18px;margin-bottom:3px}
+  .pnav a.on{color:var(--green)}
+
+  /* shared widgets */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line)}
+  .kpi{background:var(--panel);padding:14px 15px}
+  .kpi .l{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+  .kpi .v{font-size:23px;font-weight:700;font-family:var(--mono);margin-top:6px;letter-spacing:-.01em}
+  .kpi .d{font-size:10.5px;font-family:var(--mono);margin-top:3px}
+  .up{color:var(--green)} .down{color:var(--red)} .warn{color:var(--amber)}
+  .pill{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;text-transform:uppercase;letter-spacing:.04em}
+  .pill.ok{color:var(--green);background:var(--green-dim)}
+  .pill.warnp{color:var(--amber);background:var(--amber-dim)}
+  .pill.err{color:var(--red);background:var(--red-dim)}
+  .pill.info{color:var(--blue);background:var(--blue-dim)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);font-weight:600}
+  td{padding:9px 12px;border-bottom:1px solid var(--line);color:var(--ink2)}
+  td b{color:var(--ink);font-weight:600}
+  .mono{font-family:var(--mono)}
+
+  /* footer note */
+  .foot{padding:40px 0 70px;color:var(--ink3);font-size:12px;font-family:var(--mono);text-align:center;border-top:1px solid var(--line);margin-top:30px}
+
+  /* option tabs */
+  .tabs{position:sticky;top:0;z-index:40;background:rgba(10,12,16,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .tabs .wrap{display:flex;gap:6px;padding:10px 24px}
+  .tabs button{font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;color:var(--ink2);background:transparent;border:1px solid var(--line);padding:7px 14px;border-radius:8px;cursor:pointer;transition:.15s}
+  .tabs button:hover{border-color:var(--line2);color:var(--ink)}
+  .tabs button.on{color:var(--bg);background:var(--ink);border-color:var(--ink);font-weight:600}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span>Open Energy Platform · Role Frontend Exploration · slug: admin</div>
+    <h1>Platform Admin <span class="sub">— the exchange operator's console</span></h1>
+    <p class="lede">Three ground-up directions for the operator who runs the exchange itself. Observability + control, with the
+    <b style="color:var(--green)">journey meter</b> made a first-class citizen — because the platform charges per journey, this is where that meter is configured and watched.</p>
+
+    <div class="grid2">
+      <div class="persona">
+        <h3>◐ Persona</h3>
+        <p><b>Platform operator running the exchange itself.</b> Owns tenants, users &amp; roles, the seven cron schedules, the revenue &amp; fee engine, market halt/resume, system health, Merkle audit-chain integrity and surveillance. Lives on a wide desktop with a NOC mindset and pager-duty reflexes — calm until something breaks, then fast. On mobile they don't browse; they <b>respond to incidents</b>: halt the market, ack an alert, drain a DLQ.</p>
+        <div class="badge-row">
+          <span class="chip">desktop-primary</span><span class="chip">multi-monitor</span>
+          <span class="chip">mobile = incident-response</span><span class="chip">low-light NOC</span>
+        </div>
+      </div>
+      <div class="rationale">
+        <h3>◑ Why these 3 directions</h3>
+        <p>The operator carries two heads at once — <b>SRE</b> (is the system healthy?) and <b>CFO</b> (is the meter earning?). One layout can't serve both, so each direction commits to a different bet: a live <b>observability cockpit</b>, a <b>revenue &amp; journey-metering console</b>, and a tenant/control console with the <b>market big-red-button</b>. Near-black NOC palette, monospace telemetry, signal-coded states.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- JOURNEY-AS-PRODUCT STRIP -->
+<section class="jstrip">
+  <div class="wrap">
+    <div class="section-h">Hero journeys · packaged &amp; metered products</div>
+    <div class="jcards">
+      <div class="jcard" style="--accent:var(--green)">
+        <div class="meterglyph">⬡ /admin/revenue · W-commercial + W228</div>
+        <h4>Revenue &amp; Journey Metering</h4>
+        <p class="desc">The fee engine: which journeys earn, per-tenant usage, fee splits, the price book for every monetized journey, dunning ladder.</p>
+        <span class="tier l4">● Professional · L4</span>
+        <div class="meter"><span class="unit">metered: per journey billed<br>· per tenant · per fee split</span><span class="price">R 4.20<small>/journey</small></span></div>
+      </div>
+      <div class="jcard" style="--accent:var(--red-hot)">
+        <div class="meterglyph">◩ market_halt · NERSA-authorised</div>
+        <h4>Market Halt / Resume</h4>
+        <p class="desc">NERSA-authorised circuit breaker across order books. Reason-coded halt, audit-stamped resume, cascade fan-out to every tenant.</p>
+        <span class="tier l5">● Regulator-grade · L5</span>
+        <div class="meter"><span class="unit">metered: per halt event<br>· tamper-evident, certified</span><span class="price">R 0<small>/incl. platform fee</small></span></div>
+      </div>
+      <div class="jcard" style="--accent:var(--blue)">
+        <div class="meterglyph">⬡ cron + monitoring · DLQ / cascade</div>
+        <h4>Cron &amp; System-Health Ops</h4>
+        <p class="desc">Seven schedules, manual dry-run trigger, DLQ depth, cascade error stream, OrderBook DO health — live operations.</p>
+        <span class="tier l4">● Professional · L4</span>
+        <div class="meter"><span class="unit">metered: per scheduled run<br>· per DLQ replay</span><span class="price">R 0.85<small>/run</small></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TABS -->
+<nav class="tabs">
+  <div class="wrap">
+    <button class="on" data-opt="1" onclick="switchOpt(1)">01 · Observability Cockpit</button>
+    <button data-opt="2" onclick="switchOpt(2)">02 · Revenue &amp; Metering Console</button>
+    <button data-opt="3" onclick="switchOpt(3)">03 · Tenant / Control Console</button>
+  </div>
+</nav>
+
+<!-- ════════════ OPTION 1 ════════════ -->
+<section class="opt" id="opt1" style="--accent:var(--green)">
+  <div class="wrap">
+    <div class="opt-head"><span class="opt-num">01</span><h2>Observability Cockpit</h2><span class="tier l4">SRE head</span></div>
+    <p class="opt-concept">A live NOC wall. Cron schedules, cascade/DLQ, OrderBook DO health and Merkle audit-chain integrity treated as live ops streams — Datadog density, but the "incident" here is a stalled settlement run or a broken audit block, and every panel knows what it's worth to the meter.</p>
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div class="desktop">
+        <div class="winbar">
+          <span class="traf"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+          <span class="url">oe.vantax.co.za/admin/ops</span>
+          <span class="winrole">admin@openenergy.co.za · NOC</span>
+        </div>
+        <div class="app">
+          <div class="kpis">
+            <div class="kpi"><div class="l">Worker p50</div><div class="v">41<small style="font-size:12px;color:var(--ink3)">ms</small></div><div class="d up">▲ healthy</div></div>
+            <div class="kpi"><div class="l">DLQ depth</div><div class="v warn">12</div><div class="d warn">▲ +9 / 15min</div></div>
+            <div class="kpi"><div class="l">Cron on-time</div><div class="v">6<small style="font-size:12px;color:var(--ink3)">/7</small></div><div class="d down">▼ settlement late</div></div>
+            <div class="kpi"><div class="l">Audit chain</div><div class="v up" style="font-size:18px">VERIFIED</div><div class="d up">block #84,219 · 0 gaps</div></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:1px;background:var(--line)">
+            <!-- cron lane -->
+            <div style="background:var(--panel);padding:16px 18px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <span style="font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)">⬡ Cron schedules · scheduled()</span>
+                <span class="pill info">7 triggers</span>
+              </div>
+              <table>
+                <thead><tr><th>schedule</th><th>job</th><th>last</th><th>status</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono">*/15 * * * *</td><td><b>surveillance scan</b> + DO depth snap</td><td class="mono">3m ago</td><td><span class="pill ok">ok</span></td></tr>
+                  <tr><td class="mono">0 * * * *</td><td><b>VWAP mark prices</b></td><td class="mono">28m ago</td><td><span class="pill ok">ok</span></td></tr>
+                  <tr><td class="mono">5 0 * * *</td><td><b>metering + ONA rollups</b></td><td class="mono">06:05</td><td><span class="pill ok">ok</span></td></tr>
+                  <tr style="background:var(--red-dim)"><td class="mono">10 0 * * *</td><td><b>PPA settlement run</b></td><td class="mono">— skipped</td><td><span class="pill err">stalled</span></td></tr>
+                  <tr><td class="mono">30 0 * * *</td><td><b>usage snap + margin-call</b></td><td class="mono">00:30</td><td><span class="pill ok">ok</span></td></tr>
+                  <tr><td class="mono">45 0 * * *</td><td><b>watershed anomaly + maturity</b></td><td class="mono">00:45</td><td><span class="pill ok">ok</span></td></tr>
+                  <tr><td class="mono">0 2 1 * *</td><td><b>monthly platform invoice run</b></td><td class="mono">01 Jun</td><td><span class="pill ok">ok</span></td></tr>
+                </tbody>
+              </table>
+              <div style="margin-top:12px;display:flex;gap:8px">
+                <button style="font-family:var(--mono);font-size:11px;background:var(--green);color:var(--bg);border:0;padding:7px 13px;border-radius:7px;font-weight:600;cursor:pointer">▶ Dry-run settlement</button>
+                <button style="font-family:var(--mono);font-size:11px;background:transparent;color:var(--ink2);border:1px solid var(--line2);padding:7px 13px;border-radius:7px;cursor:pointer">/api/admin/cron/run</button>
+              </div>
+            </div>
+            <!-- cascade/DLQ + audit -->
+            <div style="background:var(--panel2);padding:16px 18px">
+              <span style="font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)">◎ Cascade stream · fireCascade</span>
+              <div style="margin-top:12px;font-family:var(--mono);font-size:11.5px;line-height:1.9">
+                <div style="display:flex;gap:8px"><span style="color:var(--ink3)">06:14:02</span><span class="up">▸</span><span>ppa.settled → audit · notify · webhook</span></div>
+                <div style="display:flex;gap:8px"><span style="color:var(--ink3)">06:14:01</span><span class="up">▸</span><span>kyc.verified → briefing · queue</span></div>
+                <div style="display:flex;gap:8px;background:var(--red-dim);border-radius:5px;padding:2px 4px"><span style="color:var(--ink3)">06:13:58</span><span class="down">✕</span><span style="color:var(--red)">webhook DLQ · retry 3/3 · tenant_44</span></div>
+                <div style="display:flex;gap:8px"><span style="color:var(--ink3)">06:13:50</span><span class="up">▸</span><span>order.matched → settlement seam</span></div>
+                <div style="display:flex;gap:8px;background:var(--amber-dim);border-radius:5px;padding:2px 4px"><span style="color:var(--ink3)">06:13:44</span><span class="warn">⟳</span><span style="color:var(--amber)">briefing stage retry 1/3</span></div>
+              </div>
+              <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:13px">
+                <span style="font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)">⬓ Audit chain · W118 Merkle</span>
+                <div style="display:flex;gap:4px;margin-top:10px;align-items:center;flex-wrap:wrap">
+                  <span style="width:13px;height:13px;border-radius:3px;background:var(--green)" title="verified"></span>
+                  <span style="width:13px;height:13px;border-radius:3px;background:var(--green)"></span>
+                  <span style="width:13px;height:13px;border-radius:3px;background:var(--green)"></span>
+                  <span style="width:13px;height:13px;border-radius:3px;background:var(--green)"></span>
+                  <span style="width:13px;height:13px;border-radius:3px;background:var(--green)"></span>
+                  <span style="width:13px;height:13px;border-radius:3px;background:var(--green)"></span>
+                  <span style="width:13px;height:13px;border-radius:3px;background:var(--green)"></span>
+                  <span class="mono" style="font-size:11px;color:var(--ink2);margin-left:6px">…84,219 blocks · root 0x9f3a…d1</span>
+                </div>
+                <div style="margin-top:10px;font-size:11.5px;color:var(--ink2);font-family:var(--mono)">verify_window = 15min · last reseal 06:00 · <span class="up">0 tamper events</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE: incident response -->
+      <div class="phonewrap">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>06:14</span><span>OE·NOC</span><span>5G ▦ 82%</span></div>
+          <div class="pwahint"><span class="live"></span>Live · last sync 4s ago · offline-safe ack</div>
+          <div class="pscreen">
+            <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)">Incident Response</div>
+            <div style="background:var(--red-dim);border:1px solid #5a1f1f;border-radius:12px;padding:14px;margin-top:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span class="pill err">P1 · stalled</span><span class="mono" style="font-size:10px;color:var(--ink3)">2m ago</span></div>
+              <div style="font-weight:700;margin-top:8px;font-size:15px">PPA settlement run skipped</div>
+              <div style="color:var(--ink2);font-size:12px;margin-top:3px">cron <span class="mono">10 0 * * *</span> · advisory lock held · 312 cycles pending</div>
+              <button style="width:100%;margin-top:13px;background:var(--green);color:var(--bg);border:0;padding:13px;border-radius:10px;font-weight:700;font-family:var(--mono);font-size:13px;cursor:pointer">▶ Dry-run &amp; re-trigger</button>
+              <button style="width:100%;margin-top:8px;background:transparent;color:var(--ink);border:1px solid var(--line2);padding:11px;border-radius:10px;font-weight:600;font-size:12px;cursor:pointer">Acknowledge — silence 30m</button>
+            </div>
+            <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px">Open alerts · 3</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600;font-size:13px">DLQ depth 12 · webhook</div><div class="mono" style="font-size:10.5px;color:var(--ink3)">tenant_44 · retry exhausted</div></div><span class="pill warnp">warn</span></div>
+              <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600;font-size:13px">VWAP mark age 61m</div><div class="mono" style="font-size:10.5px;color:var(--ink3)">eskom_day_ahead shard</div></div><span class="pill warnp">warn</span></div>
+              <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600;font-size:13px">Audit chain</div><div class="mono" style="font-size:10.5px;color:var(--ink3)">0 gaps · reseal 06:00</div></div><span class="pill ok">ok</span></div>
+            </div>
+          </div>
+          <div class="pnav">
+            <a class="on"><span class="ic">◎</span>Ops</a>
+            <a><span class="ic">◩</span>Market</a>
+            <a><span class="ic">⬡</span>Revenue</a>
+            <a><span class="ic">◈</span>Tenants</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ OPTION 2 ════════════ -->
+<section class="opt hidden" id="opt2" style="--accent:#34d399">
+  <div class="wrap">
+    <div class="opt-head"><span class="opt-num" style="background:var(--gold);color:#1a1405">02</span><h2>Revenue &amp; Metering Console</h2><span class="tier l4">CFO head</span></div>
+    <p class="opt-concept">The business view. The platform charges per journey, so this is the meter room: which journeys earn, per-tenant usage, fee splits, and the editable <b>price book</b> for every monetized journey. Tier badge + metered unit on every row — the revenue model is the UI.</p>
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div class="desktop">
+        <div class="winbar">
+          <span class="traf"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+          <span class="url">oe.vantax.co.za/admin/revenue</span>
+          <span class="winrole">admin · W-commercial · W228</span>
+        </div>
+        <div class="app">
+          <div class="kpis">
+            <div class="kpi"><div class="l">MTD revenue</div><div class="v up">R 1.84<small style="font-size:12px;color:var(--ink3)">m</small></div><div class="d up">▲ 11.4% MoM</div></div>
+            <div class="kpi"><div class="l">Journeys billed</div><div class="v">438<small style="font-size:12px;color:var(--ink3)">k</small></div><div class="d up">▲ 38k WoW</div></div>
+            <div class="kpi"><div class="l">Active tenants</div><div class="v">26<small style="font-size:12px;color:var(--ink3)">/29</small></div><div class="d warn">3 in dunning</div></div>
+            <div class="kpi"><div class="l">AR overdue</div><div class="v warn">R 96<small style="font-size:12px;color:var(--ink3)">k</small></div><div class="d down">▼ ladder D-2</div></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.45fr 1fr;gap:1px;background:var(--line)">
+            <!-- price book -->
+            <div style="background:var(--panel);padding:16px 18px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <span style="font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)">⬡ Price book · monetized journeys</span>
+                <button style="font-family:var(--mono);font-size:10.5px;background:var(--green);color:var(--bg);border:0;padding:5px 11px;border-radius:6px;font-weight:600;cursor:pointer">+ price</button>
+              </div>
+              <table>
+                <thead><tr><th>journey</th><th>tier</th><th>metered unit</th><th style="text-align:right">rate</th></tr></thead>
+                <tbody>
+                  <tr><td><b>PPA settlement</b><div class="mono" style="font-size:10px;color:var(--ink3)">settlement run · W3</div></td><td><span class="tier l5" style="font-size:9px;padding:2px 6px">L5</span></td><td class="mono">per MWh settled</td><td style="text-align:right" class="mono up">R 1.10</td></tr>
+                  <tr><td><b>Market halt</b><div class="mono" style="font-size:10px;color:var(--ink3)">market_halt</div></td><td><span class="tier l5" style="font-size:9px;padding:2px 6px">L5</span></td><td class="mono">per halt event</td><td style="text-align:right" class="mono">incl.</td></tr>
+                  <tr><td><b>KYC / FICA</b><div class="mono" style="font-size:10px;color:var(--ink3)">kyc_verification · W198</div></td><td><span class="tier l3" style="font-size:9px;padding:2px 6px">L3</span></td><td class="mono">per case</td><td style="text-align:right" class="mono up">R 38.00</td></tr>
+                  <tr><td><b>Regulator export pack</b><div class="mono" style="font-size:10px;color:var(--ink3)">regulator_export_pack · W119</div></td><td><span class="tier l5" style="font-size:9px;padding:2px 6px">L5</span></td><td class="mono">per certified export</td><td style="text-align:right" class="mono up">R 240.00</td></tr>
+                  <tr><td><b>Cron run / DLQ replay</b><div class="mono" style="font-size:10px;color:var(--ink3)">cron · monitoring</div></td><td><span class="tier l4" style="font-size:9px;padding:2px 6px">L4</span></td><td class="mono">per scheduled run</td><td style="text-align:right" class="mono up">R 0.85</td></tr>
+                  <tr><td><b>Subscription (base)</b><div class="mono" style="font-size:10px;color:var(--ink3)">subscription_billing · W228</div></td><td><span class="tier l4" style="font-size:9px;padding:2px 6px">L4</span></td><td class="mono">per tenant / mo</td><td style="text-align:right" class="mono up">R 12,500</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- fee splits + per-tenant -->
+            <div style="background:var(--panel2);padding:16px 18px">
+              <span style="font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)">◐ Fee split · last PPA settlement</span>
+              <div style="margin-top:13px">
+                <div style="display:flex;height:30px;border-radius:7px;overflow:hidden;font-family:var(--mono);font-size:10px;font-weight:700">
+                  <div style="flex:62;background:var(--green-dim);color:var(--green);display:flex;align-items:center;justify-content:center">platform 62%</div>
+                  <div style="flex:23;background:var(--blue-dim);color:var(--blue);display:flex;align-items:center;justify-content:center">grid 23%</div>
+                  <div style="flex:15;background:var(--violet-dim);color:var(--violet);display:flex;align-items:center;justify-content:center">15%</div>
+                </div>
+                <div class="mono" style="font-size:11px;color:var(--ink2);margin-top:10px">R 14,820 split · payer = offtaker_07 · resolution = auto</div>
+              </div>
+              <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:13px">
+                <span style="font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)">⬡ Top tenants by journeys MTD</span>
+                <table style="margin-top:10px">
+                  <tbody>
+                    <tr><td><b>NXT Energy</b></td><td class="mono" style="text-align:right">142k</td><td class="mono up" style="text-align:right">R 412k</td></tr>
+                    <tr><td><b>Eskom DSO</b></td><td class="mono" style="text-align:right">98k</td><td class="mono up" style="text-align:right">R 298k</td></tr>
+                    <tr><td><b>Goldrush C&amp;I</b></td><td class="mono" style="text-align:right">61k</td><td class="mono up" style="text-align:right">R 184k</td></tr>
+                    <tr style="background:var(--amber-dim)"><td><b>Mthombo Co-op</b> <span class="pill warnp" style="font-size:8px">dunning</span></td><td class="mono" style="text-align:right">22k</td><td class="mono warn" style="text-align:right">R 66k</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phonewrap">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>06:14</span><span>OE·REV</span><span>5G ▦ 82%</span></div>
+          <div class="pwahint"><span class="live"></span>Meter live · billing cycle Jun · D-16</div>
+          <div class="pscreen">
+            <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)">Revenue · MTD</div>
+            <div style="background:linear-gradient(160deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:10px">
+              <div class="mono" style="font-size:11px;color:var(--ink3)">platform fee revenue</div>
+              <div style="font-size:34px;font-weight:800;font-family:var(--mono);letter-spacing:-.02em;margin-top:4px">R 1.84m</div>
+              <div class="up mono" style="font-size:12px">▲ 11.4% MoM · 438k journeys billed</div>
+              <div style="display:flex;height:7px;border-radius:4px;overflow:hidden;margin-top:14px"><div style="flex:62;background:var(--green)"></div><div style="flex:23;background:var(--blue)"></div><div style="flex:15;background:var(--violet)"></div></div>
+              <div class="mono" style="font-size:10px;color:var(--ink3);margin-top:6px">platform 62 · grid 23 · other 15</div>
+            </div>
+            <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px">Dunning · needs action</div>
+            <div style="background:var(--amber-dim);border:1px solid #5a4810;border-radius:12px;padding:13px">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:14px">Mthombo Co-op</span><span class="pill warnp">D-2 ladder</span></div>
+              <div class="mono" style="font-size:11px;color:var(--ink2);margin-top:4px">R 66k overdue · 14d · W228 dunning</div>
+              <button style="width:100%;margin-top:11px;background:var(--amber);color:#1a1405;border:0;padding:12px;border-radius:10px;font-weight:700;font-family:var(--mono);font-size:13px;cursor:pointer">Send final demand</button>
+            </div>
+            <div style="margin-top:14px;display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;justify-content:space-between;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:9px"><span style="font-size:13px;font-weight:600">NXT Energy</span><span class="mono up" style="font-size:12px">R 412k</span></div>
+              <div style="display:flex;justify-content:space-between;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:9px"><span style="font-size:13px;font-weight:600">Eskom DSO</span><span class="mono up" style="font-size:12px">R 298k</span></div>
+            </div>
+          </div>
+          <div class="pnav">
+            <a><span class="ic">◎</span>Ops</a>
+            <a><span class="ic">◩</span>Market</a>
+            <a class="on"><span class="ic">⬡</span>Revenue</a>
+            <a><span class="ic">◈</span>Tenants</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ OPTION 3 ════════════ -->
+<section class="opt hidden" id="opt3" style="--accent:#f87171">
+  <div class="wrap">
+    <div class="opt-head"><span class="opt-num" style="background:var(--red-hot);color:#fff">03</span><h2>Tenant / Control Console</h2><span class="tier l5">authority</span></div>
+    <p class="opt-concept">The command surface. Tenants, users &amp; roles, surveillance — and the <b style="color:var(--red)">market halt big-red-button</b> front and centre, reason-coded, NERSA-authorised, two-step armed. This is where authority is exercised; the layout makes the gravity of each control legible.</p>
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div class="desktop">
+        <div class="winbar">
+          <span class="traf"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+          <span class="url">oe.vantax.co.za/admin/control</span>
+          <span class="winrole">admin · NERSA-authorised controls</span>
+        </div>
+        <div class="app">
+          <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:1px;background:var(--line)">
+            <!-- big red button -->
+            <div style="background:linear-gradient(165deg,#1a0e10,var(--panel));padding:20px 18px">
+              <span style="font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--red)">◩ Market control · ERA 2006 §</span>
+              <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
+                <span class="pill ok">market OPEN</span><span class="mono" style="font-size:11px;color:var(--ink3)">all 14 shards trading</span>
+              </div>
+              <button style="width:100%;margin-top:18px;background:var(--red-hot);color:#fff;border:0;padding:22px;border-radius:14px;font-weight:800;font-family:var(--mono);font-size:17px;letter-spacing:.04em;cursor:pointer;box-shadow:0 0 0 3px rgba(239,68,68,.25),0 14px 30px -10px rgba(239,68,68,.5)">⏸ HALT MARKET</button>
+              <div class="mono" style="font-size:10.5px;color:var(--ink3);margin-top:9px;text-align:center">two-step · reason code required · cascades to every tenant</div>
+              <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:12px">
+                <div class="mono" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">reason code</div>
+                <div style="display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:11.5px;color:var(--ink2)">
+                  <label style="display:flex;gap:8px;align-items:center"><span style="width:11px;height:11px;border-radius:50%;border:2px solid var(--line2)"></span>volatility breaker</label>
+                  <label style="display:flex;gap:8px;align-items:center"><span style="width:11px;height:11px;border-radius:50%;border:2px solid var(--line2)"></span>grid emergency / load-shed</label>
+                  <label style="display:flex;gap:8px;align-items:center"><span style="width:11px;height:11px;border-radius:50%;border:2px solid var(--red);background:var(--red)"></span><span style="color:var(--ink)">NERSA directive</span></label>
+                </div>
+              </div>
+            </div>
+            <!-- tenants + surveillance -->
+            <div style="background:var(--panel2);padding:16px 18px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <span style="font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)">◈ Tenants &amp; users</span>
+                <span class="pill info">29 tenants · 1,204 users</span>
+              </div>
+              <table>
+                <thead><tr><th>tenant</th><th>state</th><th>KYC</th><th>users</th></tr></thead>
+                <tbody>
+                  <tr><td><b>NXT Energy</b></td><td><span class="pill ok">active</span></td><td><span class="pill ok">FICA ✓</span></td><td class="mono">84</td></tr>
+                  <tr><td><b>Eskom DSO</b></td><td><span class="pill ok">active</span></td><td><span class="pill ok">FICA ✓</span></td><td class="mono">211</td></tr>
+                  <tr style="background:var(--blue-dim)"><td><b>Sere Wind JV</b></td><td><span class="pill info">onboarding</span></td><td><span class="pill warnp">KYC queue</span></td><td class="mono">6</td></tr>
+                  <tr style="background:var(--red-dim)"><td><b>Karoo Trade Ltd</b></td><td><span class="pill err">suspended</span></td><td><span class="pill err">FICA fail</span></td><td class="mono">3</td></tr>
+                </tbody>
+              </table>
+              <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:13px">
+                <span style="font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)">⬓ Surveillance · last 15min scan</span>
+                <div style="margin-top:11px;display:flex;flex-direction:column;gap:7px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:var(--amber-dim);border:1px solid #5a4810;border-radius:8px;padding:9px 11px"><div><b style="font-size:12.5px">Layering pattern</b><div class="mono" style="font-size:10px;color:var(--ink3)">trader_19 · eskom_day_ahead · 4 hits</div></div><span class="pill warnp">review</span></div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 11px"><div><b style="font-size:12.5px">Wash-trade flag</b><div class="mono" style="font-size:10px;color:var(--ink3)">cleared · false positive</div></div><span class="pill ok">cleared</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE: armed halt -->
+      <div class="phonewrap">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>06:14</span><span>OE·CTRL</span><span>5G ▦ 82%</span></div>
+          <div class="pwahint"><span class="live" style="background:var(--red)"></span>Authority mode · biometric re-auth on halt</div>
+          <div class="pscreen">
+            <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)">Market control</div>
+            <div style="background:linear-gradient(165deg,#1a0e10,var(--panel));border:1px solid #5a1f1f;border-radius:16px;padding:18px;margin-top:10px;text-align:center">
+              <span class="pill ok">OPEN · 14 shards</span>
+              <div class="mono" style="font-size:11px;color:var(--ink2);margin-top:14px">slide &amp; hold to arm halt</div>
+              <button style="width:100%;margin-top:12px;background:var(--red-hot);color:#fff;border:0;padding:24px;border-radius:16px;font-weight:800;font-family:var(--mono);font-size:18px;letter-spacing:.05em;cursor:pointer;box-shadow:0 0 0 4px rgba(239,68,68,.22)">⏸ HALT MARKET</button>
+              <div class="mono" style="font-size:10px;color:var(--ink3);margin-top:10px">reason: NERSA directive · audit-stamped</div>
+            </div>
+            <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:18px 0 8px">Surveillance · 1 to review</div>
+            <div style="background:var(--amber-dim);border:1px solid #5a4810;border-radius:12px;padding:13px;display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-weight:700;font-size:14px">Layering · trader_19</div><div class="mono" style="font-size:10.5px;color:var(--ink2)">eskom_day_ahead · 4 hits</div></div>
+              <span class="pill warnp">review</span>
+            </div>
+            <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:16px 0 8px">KYC queue · 1</div>
+            <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px;display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-weight:700;font-size:14px">Sere Wind JV</div><div class="mono" style="font-size:10.5px;color:var(--ink3)">W198 · onboarding · FICA pending</div></div>
+              <span class="pill info">open</span>
+            </div>
+          </div>
+          <div class="pnav">
+            <a><span class="ic">◎</span>Ops</a>
+            <a class="on"><span class="ic">◩</span>Market</a>
+            <a><span class="ic">⬡</span>Revenue</a>
+            <a><span class="ic">◈</span>Tenants</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="foot">Open Energy Platform · Platform Admin role exploration · 3 directions × web + mobile PWA · evaluation mockup, not wired</div>
+
+<script>
+  function switchOpt(n){
+    for(var i=1;i<=3;i++){
+      document.getElementById('opt'+i).classList.toggle('hidden',i!==n);
+    }
+    var btns=document.querySelectorAll('.tabs button');
+    btns.forEach(function(b){b.classList.toggle('on',+b.dataset.opt===n);});
+  }
+</script>
+</body>
+</html>

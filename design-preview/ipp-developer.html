@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>IPP Developer — Frontend Design Exploration · Open Energy Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,18..72,400;0,18..72,500;1,18..72,400&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0a0e14; --ink-2:#10151f; --panel:#141b27; --panel-2:#1b2433;
+    --line:#26303f; --line-2:#33405380; --txt:#e7edf5; --txt-2:#9fb0c4; --txt-3:#6b7a90;
+    --solar:#f4b740; --solar-deep:#d98a17; --wind:#2fb8c6; --grid:#7c8cff;
+    --ok:#3ddc97; --warn:#ffb648; --bad:#ff6b6b; --crit:#ff4d6d;
+    --r:14px; --r-sm:9px; --shadow:0 18px 50px -18px rgba(0,0,0,.7);
+    --maxw:1280px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:
+    radial-gradient(1200px 700px at 80% -10%, rgba(124,140,255,.10), transparent 55%),
+    radial-gradient(900px 600px at 5% 0%, rgba(244,183,64,.07), transparent 50%),
+    var(--ink);
+    color:var(--txt); font-family:'Sora',system-ui,sans-serif; -webkit-font-smoothing:antialiased;}
+  a{color:inherit}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:40px 28px 96px}
+  .mono{font-family:'IBM Plex Mono',monospace}
+  h1,h2,h3{margin:0; line-height:1.05; letter-spacing:-.02em}
+  .eyebrow{font:600 11px/1 'IBM Plex Mono',monospace; letter-spacing:.22em; text-transform:uppercase; color:var(--txt-3)}
+
+  /* ── header ── */
+  .masthead{display:grid; grid-template-columns:1.4fr 1fr; gap:34px; align-items:end;
+    border-bottom:1px solid var(--line); padding-bottom:30px; margin-bottom:34px}
+  .roleflag{display:inline-flex; align-items:center; gap:10px; padding:7px 13px; border-radius:999px;
+    background:linear-gradient(120deg,rgba(244,183,64,.16),rgba(217,138,23,.06)); border:1px solid #f4b74033;
+    font:600 12px/1 'IBM Plex Mono',monospace; letter-spacing:.14em; color:var(--solar); text-transform:uppercase}
+  .roleflag .dot{width:7px;height:7px;border-radius:50%;background:var(--solar);box-shadow:0 0 12px var(--solar)}
+  .masthead h1{font-size:46px; font-weight:800; margin:18px 0 0;
+    background:linear-gradient(180deg,#fff,#b9c6d8); -webkit-background-clip:text; background-clip:text; color:transparent}
+  .persona{font:400 14.5px/1.62 'Sora',sans-serif; color:var(--txt-2)}
+  .persona b{color:var(--txt); font-weight:600}
+  .rationale{margin-top:14px; padding:14px 16px; border-radius:var(--r-sm); border:1px solid var(--line);
+    background:linear-gradient(180deg,var(--panel),#11161f); font-size:13px; color:var(--txt-2); line-height:1.55}
+  .rationale b{color:var(--solar)}
+  .specs{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px}
+  .spec{font:500 11px/1 'IBM Plex Mono',monospace; padding:6px 10px; border:1px solid var(--line);
+    border-radius:7px; color:var(--txt-2); background:#0e131c}
+  .spec span{color:var(--solar)}
+
+  /* ── journey-as-product strip ── */
+  .section-h{display:flex; align-items:baseline; gap:14px; margin:46px 0 18px}
+  .section-h h2{font-size:21px; font-weight:700}
+  .section-h .rule{flex:1; height:1px; background:linear-gradient(90deg,var(--line),transparent)}
+  .jstrip{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+  .jcard{position:relative; border:1px solid var(--line); border-radius:var(--r); overflow:hidden;
+    background:linear-gradient(180deg,var(--panel),#10151e); padding:18px 18px 16px}
+  .jcard::before{content:''; position:absolute; inset:0 0 auto 0; height:3px;
+    background:linear-gradient(90deg,var(--solar),var(--solar-deep))}
+  .jcard.j2::before{background:linear-gradient(90deg,var(--wind),#1f8d99)}
+  .jcard.j3::before{background:linear-gradient(90deg,var(--grid),#5566e0)}
+  .jc-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px}
+  .jc-key{font:500 10.5px/1 'IBM Plex Mono',monospace; color:var(--txt-3); letter-spacing:.06em}
+  .jcard h3{font-size:17px; font-weight:700; margin-top:9px}
+  .jc-meta{margin-top:13px; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .tier{font:700 10px/1 'IBM Plex Mono',monospace; letter-spacing:.1em; padding:5px 9px; border-radius:6px; text-transform:uppercase}
+  .tier.l3{background:#2fb8c61f; color:#7fe3ec; border:1px solid #2fb8c64d}
+  .tier.l4{background:#f4b7401f; color:var(--solar); border:1px solid #f4b74052}
+  .tier.l5{background:#7c8cff1f; color:#aeb8ff; border:1px solid #7c8cff52}
+  .meter{font:500 11px/1 'IBM Plex Mono',monospace; color:var(--txt-2)}
+  .meter b{color:var(--txt)}
+  .jc-states{margin-top:14px; display:flex; flex-wrap:wrap; gap:5px}
+  .pill{font:500 9.5px/1 'IBM Plex Mono',monospace; padding:4px 7px; border-radius:5px; background:#0d121a;
+    border:1px solid var(--line); color:var(--txt-3)}
+  .pill.on{color:var(--ink); background:var(--solar); border-color:var(--solar); font-weight:600}
+  .pill.done{color:var(--ok); border-color:#3ddc9755; background:#3ddc971a}
+  .jc-price{margin-top:14px; padding-top:13px; border-top:1px dashed var(--line-2); display:flex; justify-content:space-between; align-items:center}
+  .jc-price .amt{font:700 16px/1 'Sora'; color:#fff} .jc-price .amt small{font:500 11px/1 'IBM Plex Mono'; color:var(--txt-3)}
+
+  /* ── option tabs ── */
+  .tabs{display:flex; gap:8px; margin:54px 0 22px; flex-wrap:wrap; position:sticky; top:0; z-index:40;
+    padding:14px 0; background:linear-gradient(180deg,var(--ink) 70%, transparent); }
+  .tab{cursor:pointer; border:1px solid var(--line); background:var(--panel); color:var(--txt-2);
+    padding:11px 16px; border-radius:10px; font:600 13px/1 'Sora'; display:flex; gap:10px; align-items:center; transition:.18s}
+  .tab .n{font:700 10px/1 'IBM Plex Mono'; color:var(--txt-3); border:1px solid var(--line); padding:3px 5px; border-radius:5px}
+  .tab[aria-selected="true"]{color:var(--ink); background:linear-gradient(180deg,var(--solar),var(--solar-deep)); border-color:var(--solar)}
+  .tab[aria-selected="true"] .n{color:#5a3c08; border-color:#00000033}
+  .tab:focus-visible{outline:3px solid #fff; outline-offset:2px}
+  .opt{display:none} .opt.show{display:block; animation:fade .3s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+
+  .opt-head{margin-bottom:20px}
+  .opt-head h2{font-size:27px; font-weight:800}
+  .opt-head .concept{margin-top:8px; color:var(--txt-2); font-size:14.5px; max-width:760px; line-height:1.55}
+  .opt-head .concept b{color:var(--txt)}
+
+  .stage{display:grid; grid-template-columns:1fr 392px; gap:26px; align-items:start}
+  @media(max-width:1140px){.stage{grid-template-columns:1fr}}
+
+  /* desktop frame chrome */
+  .deskframe{border:1px solid var(--line); border-radius:16px; overflow:hidden; background:var(--ink-2); box-shadow:var(--shadow)}
+  .chrome{display:flex; align-items:center; gap:9px; padding:10px 14px; background:#0c1119; border-bottom:1px solid var(--line)}
+  .traf{display:flex; gap:6px} .traf i{width:11px;height:11px;border-radius:50%;display:block}
+  .traf i:nth-child(1){background:#ff5f57}.traf i:nth-child(2){background:#febc2e}.traf i:nth-child(3){background:#28c840}
+  .url{flex:1; margin-left:8px; background:#070a0f; border:1px solid var(--line); border-radius:7px; padding:6px 11px;
+    font:500 11.5px/1 'IBM Plex Mono'; color:var(--txt-2)} .url b{color:var(--solar)}
+  .label-w{font:600 10px/1 'IBM Plex Mono'; letter-spacing:.14em; color:var(--txt-3)}
+
+  /* phone frame */
+  .phonewrap{position:sticky; top:78px}
+  .phone{width:392px; border-radius:42px; border:10px solid #05080d; background:#05080d; box-shadow:var(--shadow); overflow:hidden; position:relative}
+  .phone .scr{height:760px; overflow:hidden; border-radius:32px; background:var(--ink); position:relative}
+  .statusbar{display:flex; justify-content:space-between; align-items:center; padding:14px 22px 6px; font:600 12px/1 'IBM Plex Mono'; color:var(--txt)}
+  .statusbar .ic{display:flex; gap:5px; align-items:center} .statusbar .notch{position:absolute; top:10px; left:50%; transform:translateX(-50%); width:118px; height:26px; background:#05080d; border-radius:0 0 16px 16px}
+  .offline{margin:0 16px; padding:7px 11px; border-radius:9px; font:500 11px/1.3 'IBM Plex Mono'; display:flex; gap:8px; align-items:center}
+  .offline.cache{background:#3ddc9714; border:1px solid #3ddc9740; color:#9af0cf}
+  .offline.install{background:#7c8cff14; border:1px solid #7c8cff40; color:#bcc4ff}
+  .bottomnav{position:absolute; bottom:0; left:0; right:0; display:flex; justify-content:space-around; padding:10px 8px 22px;
+    background:linear-gradient(180deg,transparent,#070a0f 28%); border-top:1px solid var(--line)}
+  .bn{display:flex; flex-direction:column; align-items:center; gap:4px; font:600 9.5px/1 'IBM Plex Mono'; color:var(--txt-3); min-width:48px}
+  .bn .g{font-size:18px} .bn.on{color:var(--solar)}
+  .fab{position:absolute; bottom:72px; right:16px; height:54px; min-width:54px; padding:0 18px; border-radius:18px; border:none;
+    background:linear-gradient(180deg,var(--solar),var(--solar-deep)); color:#1c1304; font:700 13px/1 'Sora'; display:flex; align-items:center; gap:8px;
+    box-shadow:0 12px 28px -8px rgba(244,183,64,.6); cursor:pointer}
+
+  /* shared widgets */
+  .pad{padding:18px}
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+  .kpi{background:var(--panel); padding:14px 15px}
+  .kpi .l{font:500 10px/1 'IBM Plex Mono'; letter-spacing:.08em; color:var(--txt-3); text-transform:uppercase}
+  .kpi .v{font:700 23px/1 'Sora'; margin-top:8px; color:#fff} .kpi .v small{font:600 12px/1; color:var(--txt-2)}
+  .kpi .d{font:600 11px/1 'IBM Plex Mono'; margin-top:7px} .up{color:var(--ok)} .dn{color:var(--bad)} .flat{color:var(--warn)}
+
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:12px}
+  .ph{display:flex; justify-content:space-between; align-items:center; padding:13px 15px; border-bottom:1px solid var(--line)}
+  .ph h3{font-size:13.5px; font-weight:600} .ph .sub{font:500 10.5px/1 'IBM Plex Mono'; color:var(--txt-3)}
+
+  /* ── OPTION 1: cockpit gantt + EVM ── */
+  .gantt{padding:6px 0}
+  .grow{display:grid; grid-template-columns:184px 1fr; align-items:center; gap:0; padding:7px 15px; border-bottom:1px solid #1b2330}
+  .grow:last-child{border-bottom:none}
+  .gtask{font:500 12px/1.2 'Sora'; color:var(--txt-2)} .gtask small{display:block; font:500 9.5px/1 'IBM Plex Mono'; color:var(--txt-3); margin-top:3px}
+  .gtrack{position:relative; height:18px}
+  .gbar{position:absolute; height:14px; top:2px; border-radius:5px; display:flex; align-items:center; padding:0 7px;
+    font:600 9px/1 'IBM Plex Mono'; color:#0b0f16; white-space:nowrap; overflow:hidden}
+  .gbar.crit{background:repeating-linear-gradient(45deg,#ff6b6b,#ff6b6b 6px,#e25555 6px,#e25555 12px); color:#fff}
+  .gbar.done{background:#3ddc97} .gbar.now{background:var(--solar)} .gbar.fut{background:#2b3445; color:var(--txt-2)}
+  .gdiamond{position:absolute; width:13px;height:13px; top:3px; background:var(--grid); transform:rotate(45deg); border:1.5px solid #fff3}
+  .gscale{display:grid; grid-template-columns:184px 1fr; padding:0 15px 8px}
+  .gmonths{display:flex; justify-content:space-between; font:500 9px/1 'IBM Plex Mono'; color:var(--txt-3)}
+  .nowline{position:absolute; top:0; bottom:0; width:2px; background:var(--solar); box-shadow:0 0 10px var(--solar)}
+
+  .evm{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:15px}
+  .evmbox{border:1px solid var(--line); border-radius:10px; padding:13px; background:#0e131c}
+  .evmbox .l{font:500 10px/1 'IBM Plex Mono'; color:var(--txt-3); text-transform:uppercase; letter-spacing:.07em}
+  .evmbox .v{font:700 26px/1 'Sora'; margin-top:8px}
+  .evmbox .v.good{color:var(--ok)} .evmbox .v.bad{color:var(--bad)} .evmbox .v.warn{color:var(--warn)}
+  .spark{height:34px; margin-top:9px; display:flex; align-items:flex-end; gap:2px}
+  .spark i{flex:1; background:#33405380; border-radius:2px 2px 0 0} .spark i.hi{background:var(--solar)}
+
+  .ai{margin:15px; border:1px solid #7c8cff40; border-radius:11px; background:linear-gradient(110deg,#7c8cff14,#7c8cff05); padding:13px 14px}
+  .ai .h{display:flex; align-items:center; gap:8px; font:600 12px/1 'Sora'; color:#bcc4ff}
+  .ai .h .b{font:700 8.5px/1 'IBM Plex Mono'; padding:3px 6px; border-radius:5px; background:#7c8cff26; color:#cdd4ff; letter-spacing:.1em; margin-left:auto}
+  .ai p{margin:9px 0 11px; font:400 12px/1.5 'Sora'; color:var(--txt-2)} .ai p b{color:var(--txt)}
+  .ai .act{display:flex; gap:8px} .btn{cursor:pointer; border-radius:8px; font:600 11.5px/1 'Sora'; padding:8px 13px; border:1px solid var(--line); background:#161d29; color:var(--txt)}
+  .btn.go{background:linear-gradient(180deg,#7c8cff,#5566e0); color:#fff; border:none}
+
+  /* ── OPTION 2: calm milestone narrative ── */
+  .calm{background:linear-gradient(180deg,#0b0f17,#0a0d14)}
+  .calm .ph{border-color:#1a212e}
+  .narr{padding:8px 28px 28px}
+  .phase{display:grid; grid-template-columns:38px 1fr; gap:18px; position:relative}
+  .phase::before{content:''; position:absolute; left:18px; top:30px; bottom:-6px; width:2px; background:#26303f}
+  .phase:last-child::before{display:none}
+  .pnode{width:38px;height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font:700 13px/1 'IBM Plex Mono'; z-index:2}
+  .pnode.done{background:#3ddc971f; border:1.5px solid var(--ok); color:var(--ok)}
+  .pnode.now{background:var(--solar); color:#1c1304; box-shadow:0 0 0 6px #f4b74022}
+  .pnode.fut{background:#11161f; border:1.5px solid var(--line); color:var(--txt-3)}
+  .pbody{padding-bottom:26px}
+  .pbody h4{font:500 19px/1.2 'Newsreader',serif; color:var(--txt)}
+  .pbody .when{font:500 10.5px/1 'IBM Plex Mono'; color:var(--txt-3); margin-top:5px}
+  .pbody p{font:400 13.5px/1.6 'Newsreader',serif; color:var(--txt-2); margin:9px 0 0; max-width:520px}
+  .pnow-card{margin-top:13px; border:1px solid #f4b74044; border-radius:13px; background:linear-gradient(180deg,#f4b74010,transparent); padding:15px}
+  .pnow-card .row{display:flex; justify-content:space-between; align-items:center; gap:10px}
+  .pnow-card .gate{font:600 11px/1 'IBM Plex Mono'; color:var(--solar)}
+  .cta-soft{margin-top:13px; display:inline-flex; align-items:center; gap:9px; padding:11px 17px; border-radius:11px;
+    background:linear-gradient(180deg,var(--solar),var(--solar-deep)); color:#1c1304; font:700 13px/1 'Sora'; border:none; cursor:pointer}
+  .gatebar{display:flex; gap:6px; margin-top:12px}
+  .gatebar .seg{flex:1; height:7px; border-radius:4px; background:#202938}
+  .gatebar .seg.ok{background:var(--ok)} .gatebar .seg.cur{background:var(--solar)}
+
+  /* ── OPTION 3: spatial portfolio map ── */
+  .mapstage{position:relative; height:520px; background:
+    radial-gradient(120% 120% at 50% 40%, #11203a 0%, #0a0f1a 70%);
+    border-radius:0; overflow:hidden}
+  .sa-outline{position:absolute; inset:0; opacity:.5}
+  .node{position:absolute; transform:translate(-50%,-50%); cursor:pointer}
+  .ring{width:46px;height:46px;border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font:700 11px/1 'IBM Plex Mono'; position:relative}
+  .ring .core{width:14px;height:14px;border-radius:50%}
+  .ring.healthy{box-shadow:0 0 0 2px #3ddc97, 0 0 0 7px #3ddc9722, 0 0 22px #3ddc9755} .ring.healthy .core{background:#3ddc97}
+  .ring.watch{box-shadow:0 0 0 2px #ffb648, 0 0 0 7px #ffb64822, 0 0 22px #ffb64855} .ring.watch .core{background:#ffb648}
+  .ring.risk{box-shadow:0 0 0 2px #ff4d6d, 0 0 0 7px #ff4d6d22, 0 0 26px #ff4d6d77; animation:pulse 2s infinite} .ring.risk .core{background:#ff4d6d}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 2px #ff4d6d,0 0 0 7px #ff4d6d22,0 0 26px #ff4d6d77}50%{box-shadow:0 0 0 2px #ff4d6d,0 0 0 12px #ff4d6d10,0 0 34px #ff4d6daa}}
+  .ntag{position:absolute; top:50px; left:50%; transform:translateX(-50%); white-space:nowrap; font:600 10px/1 'IBM Plex Mono'; color:var(--txt-2); padding:3px 6px; border-radius:5px; background:#0a0f1aee; border:1px solid var(--line)}
+  .legend{position:absolute; left:16px; bottom:16px; display:flex; gap:14px; background:#0a0f1aee; border:1px solid var(--line); border-radius:10px; padding:10px 13px}
+  .legend span{display:flex; align-items:center; gap:7px; font:500 11px/1 'IBM Plex Mono'; color:var(--txt-2)}
+  .legend i{width:10px;height:10px;border-radius:50%}
+  .mapside{position:absolute; right:16px; top:16px; bottom:16px; width:286px; background:#0a0f1aee; border:1px solid var(--line); border-radius:13px; padding:15px; overflow:auto}
+  .mapside h4{font:700 14px/1 'Sora'} .mapside .sub{font:500 10px/1 'IBM Plex Mono'; color:var(--txt-3); margin-top:5px}
+  .drow{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid #1a212e; font-size:12px}
+  .drow:last-child{border:none} .drow .k{color:var(--txt-3)} .drow .v{color:var(--txt); font-weight:600}
+  .miniflow{display:flex; gap:4px; margin-top:11px; flex-wrap:wrap}
+  .miniflow .s{font:600 9px/1 'IBM Plex Mono'; padding:4px 6px; border-radius:5px; background:#11161f; border:1px solid var(--line); color:var(--txt-3)}
+  .miniflow .s.on{background:var(--solar); color:#1c1304; border-color:var(--solar)}
+
+  /* tables */
+  table{width:100%; border-collapse:collapse} th{font:600 10px/1 'IBM Plex Mono'; text-transform:uppercase; letter-spacing:.07em; color:var(--txt-3); text-align:left; padding:10px 15px; border-bottom:1px solid var(--line)}
+  td{padding:11px 15px; border-bottom:1px solid #161d28; font-size:12.5px; color:var(--txt-2)}
+  td b{color:var(--txt); font-weight:600}
+  .badge{font:600 9.5px/1 'IBM Plex Mono'; padding:4px 7px; border-radius:5px}
+  .badge.rev{background:#7c8cff1f;color:#bcc4ff} .badge.app{background:#3ddc971f;color:#9af0cf} .badge.dis{background:#f4b7401f;color:var(--solar)}
+
+  /* phone-scoped scaling */
+  .scr .pad{padding:14px}
+  .scr .kpis{grid-template-columns:repeat(2,1fr)}
+  .scr .kpi .v{font-size:19px}
+  .footer{margin-top:60px; padding-top:22px; border-top:1px solid var(--line); display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; font:500 11px/1.5 'IBM Plex Mono'; color:var(--txt-3)}
+  .footer b{color:var(--txt-2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ════════ HEADER ════════ -->
+  <header class="masthead">
+    <div>
+      <span class="roleflag"><span class="dot"></span>Open Energy Platform · IPP Lifecycle</span>
+      <h1>IPP Developer</h1>
+      <p class="persona" style="margin-top:16px; max-width:560px">
+        <b>Thandi Mokoena, Project Director</b> — building utility-scale solar &amp; wind under
+        REIPPPP Bid Window 6. Her day lives in <b>schedule, cost (EVM), and stage gates DG0–DG4</b>:
+        steering construction toward COD, clearing conditions precedent, and unblocking lender
+        drawdowns. <b>Desktop is primary</b> in the PMO; tablet and phone come out on site visits.
+        Her stress is <b>milestone slippage and CP / drawdown gating</b> — a slipped diamond cascades
+        into financing, penalties and PPA exposure.
+      </p>
+      <div class="specs">
+        <div class="spec">env · <span>PMO desktop + site tablet/phone</span></div>
+        <div class="spec">tempo · <span>weekly steer · daily on site</span></div>
+        <div class="spec">expertise · <span>PMP / EVM-fluent</span></div>
+        <div class="spec">primary pain · <span>schedule × cost × gate</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="rationale">
+        <b>Why three different bets.</b> A project director scans for <i>variance</i> — where is reality
+        diverging from plan, and what does it block. Direction&nbsp;1 puts the <b>critical-path Gantt
+        and EVM</b> front-and-centre for the war-room steer. Direction&nbsp;2 trades density for a
+        <b>calm, phase-by-phase narrative</b> for the site tablet, where the question is "what's the
+        next gate and am I cleared?". Direction&nbsp;3 zooms out to a <b>spatial portfolio map of SA</b>
+        with health rings — for the morning sweep across a fleet of projects. Solar-amber identity,
+        engineering-mono for numbers, dense where it earns it.
+      </div>
+    </div>
+  </header>
+
+  <!-- ════════ JOURNEY-AS-PRODUCT STRIP ════════ -->
+  <div class="section-h"><h2>Hero journeys — metered as products</h2><div class="rule"></div>
+    <span class="eyebrow">priced per journey · complexity = tier</span></div>
+  <div class="jstrip">
+
+    <div class="jcard">
+      <div class="jc-top">
+        <div><div class="jc-key">cod_chain · NERSA §C-5</div></div>
+      </div>
+      <h3>Construction → COD</h3>
+      <div class="jc-meta">
+        <span class="tier l4">Professional · L4</span>
+        <span class="meter">meter · <b>per project to COD</b></span>
+      </div>
+      <div class="jc-states">
+        <span class="pill done">design</span><span class="pill done">procurement</span>
+        <span class="pill done">construction</span><span class="pill done">mechanical_completion</span>
+        <span class="pill on">commissioning</span><span class="pill">cod</span><span class="pill">post_cod</span>
+      </div>
+      <div class="jc-price"><span class="meter">IE-cert gate · timer-driven</span>
+        <span class="amt">R 18 600<small>/project</small></span></div>
+    </div>
+
+    <div class="jcard j2">
+      <div class="jc-top"><div><div class="jc-key">procurement_rfp · REIPPPP</div></div></div>
+      <h3>Procurement / RFP</h3>
+      <div class="jc-meta">
+        <span class="tier l4">Professional · L4</span>
+        <span class="meter">meter · <b>per RFP awarded</b></span>
+      </div>
+      <div class="jc-states">
+        <span class="pill done">draft</span><span class="pill done">issued</span>
+        <span class="pill on">evaluation</span><span class="pill">awarded</span>
+        <span class="pill">completed</span><span class="pill">cancelled</span>
+      </div>
+      <div class="jc-price"><span class="meter">scored eval · award audit</span>
+        <span class="amt">R 9 400<small>/RFP</small></span></div>
+    </div>
+
+    <div class="jcard j3">
+      <div class="jc-top"><div><div class="jc-key">drawdown · W21 · SARB IE-gate</div></div></div>
+      <h3>Lender Drawdown</h3>
+      <div class="jc-meta">
+        <span class="tier l5">Regulator-grade · L5</span>
+        <span class="meter">meter · <b>per drawdown disbursed</b></span>
+      </div>
+      <div class="jc-states">
+        <span class="pill done">draft</span><span class="pill done">ie_review</span>
+        <span class="pill on">lender_review</span><span class="pill">approved</span>
+        <span class="pill">disbursed</span><span class="pill">rejected</span>
+      </div>
+      <div class="jc-price"><span class="meter">IE + CP gate · certified trail</span>
+        <span class="amt">R 12 750<small>/drawdown</small></span></div>
+    </div>
+  </div>
+  <p style="margin:14px 2px 0; font:500 11px/1.5 'IBM Plex Mono'; color:var(--txt-3)">
+    Adjacent metered journeys in this role · <span style="color:var(--txt-2)">ipp_evm</span> (per variance-review · L4) ·
+    <span style="color:var(--txt-2)">stage_gate</span> DG0–DG4 (per gate · L4) ·
+    <span style="color:var(--txt-2)">milestone_variance_report</span> W207 (per certified report · L5) ·
+    <span style="color:var(--txt-2)">cp_tracker</span> W192 (per CP set · L4).
+  </p>
+
+  <!-- ════════ OPTION TABS ════════ -->
+  <div class="tabs" role="tablist" aria-label="Design directions">
+    <button class="tab" role="tab" aria-selected="true" aria-controls="opt1" id="t1" onclick="pick(1)"><span class="n">01</span>Project-Control Cockpit</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="opt2" id="t2" onclick="pick(2)"><span class="n">02</span>Milestone Narrative</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="opt3" id="t3" onclick="pick(3)"><span class="n">03</span>Portfolio Map</button>
+  </div>
+
+  <!-- ─────────── OPTION 1: COCKPIT ─────────── -->
+  <section class="opt show" id="opt1" role="tabpanel" aria-labelledby="t1">
+    <div class="opt-head">
+      <h2>01 · Project-Control Cockpit</h2>
+      <p class="concept">A Bloomberg-grade <b>war-room</b>: the <b>critical-path Gantt</b> and <b>EVM dial</b> are the hero,
+        with a <i>now</i>-line, slipping diamonds, and the live <b>drawdown / COD</b> state inline. Built for the weekly steer
+        where every cell is a number Thandi can act on.</p>
+    </div>
+
+    <div class="stage">
+      <!-- DESKTOP -->
+      <div>
+        <div class="deskframe">
+          <div class="chrome"><span class="traf"><i></i><i></i><i></i></span>
+            <span class="url">oe.vantax.co.za<b>/ledger/cod_chain</b> · Kuruman Solar 140 MW · BW6</span>
+            <span class="label-w">DESKTOP · 1280</span></div>
+
+          <div class="pad" style="padding-bottom:0">
+            <div class="kpis">
+              <div class="kpi"><div class="l">SPI · schedule</div><div class="v">0.94</div><div class="d dn">▼ 11 days behind plan</div></div>
+              <div class="kpi"><div class="l">CPI · cost</div><div class="v">1.02</div><div class="d up">▲ R3.1m under budget</div></div>
+              <div class="kpi"><div class="l">EAC at completion</div><div class="v">R2.18<small>bn</small></div><div class="d flat">≈ +0.3% vs BAC</div></div>
+              <div class="kpi"><div class="l">Days to COD</div><div class="v">128</div><div class="d dn">▼ at-risk · 2 CPs open</div></div>
+            </div>
+          </div>
+
+          <!-- GANTT -->
+          <div class="panel" style="margin:18px; border-radius:12px">
+            <div class="ph"><h3>Critical-path schedule · ipp_schedule</h3>
+              <span class="sub">CPM · now = 24 Jun 2026</span></div>
+            <div class="gantt">
+              <div class="grow"><div class="gtask">Civil &amp; foundations<small>WBS 3.2 · 100%</small></div>
+                <div class="gtrack"><div class="gbar done" style="left:0;width:24%">complete</div><div class="nowline" style="left:54%"></div></div></div>
+              <div class="grow"><div class="gtask">MV reticulation<small>WBS 4.1 · 88%</small></div>
+                <div class="gtrack"><div class="gbar done" style="left:18%;width:30%">complete</div><div class="nowline" style="left:54%"></div></div></div>
+              <div class="grow"><div class="gtask">PV module install<small>WBS 5.0 · 71% · CRITICAL</small></div>
+                <div class="gtrack"><div class="gbar crit" style="left:34%;width:30%">11d slip ▶</div><div class="nowline" style="left:54%"></div></div></div>
+              <div class="grow"><div class="gtask">Grid connection (GCA)<small>WBS 6.1 · gated by drawdown #4</small></div>
+                <div class="gtrack"><div class="gbar fut" style="left:60%;width:18%">planned</div><div class="gdiamond" style="left:58%" title="IE inspection"></div><div class="nowline" style="left:54%"></div></div></div>
+              <div class="grow"><div class="gtask">Commissioning<small>WBS 7.0 · now active</small></div>
+                <div class="gtrack"><div class="gbar now" style="left:62%;width:20%">commissioning</div><div class="nowline" style="left:54%"></div></div></div>
+              <div class="grow"><div class="gtask">COD milestone<small>cod_chain · NERSA §C-5</small></div>
+                <div class="gtrack"><div class="gdiamond" style="left:90%; background:var(--solar)" title="COD target"></div><div class="nowline" style="left:54%"></div></div></div>
+            </div>
+            <div class="gscale"><div></div><div class="gmonths"><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span></div></div>
+          </div>
+
+          <!-- EVM + AI -->
+          <div class="panel" style="margin:0 18px; border-radius:12px">
+            <div class="ph"><h3>Earned-value · ipp_evm · monitoring</h3><span class="sub badge dis">variance_review due Fri</span></div>
+            <div class="evm">
+              <div class="evmbox"><div class="l">Schedule variance</div><div class="v bad">−R14.2m</div>
+                <div class="spark"><i style="height:30%"></i><i style="height:42%"></i><i style="height:38%"></i><i style="height:55%"></i><i class="hi" style="height:72%"></i></div></div>
+              <div class="evmbox"><div class="l">Cost variance</div><div class="v good">+R3.1m</div>
+                <div class="spark"><i style="height:48%"></i><i style="height:44%"></i><i style="height:52%"></i><i style="height:46%"></i><i class="hi" style="height:50%"></i></div></div>
+              <div class="evmbox"><div class="l">TCPI to BAC</div><div class="v warn">1.07</div>
+                <div class="spark"><i style="height:40%"></i><i style="height:52%"></i><i style="height:60%"></i><i style="height:66%"></i><i class="hi" style="height:74%"></i></div></div>
+            </div>
+            <div class="ai">
+              <div class="h">⟡ AI variance assist <span class="b">WHY · 1-CLICK</span></div>
+              <p>PV-install slip (−11d) is on the <b>critical path</b> and threatens drawdown&nbsp;#4 (currently
+                <b>lender_review</b>). Re-sequencing string-commissioning ahead of the final 2 inverter stations
+                <b>recovers 6 days</b> and keeps the COD diamond inside the §C-5 window.</p>
+              <div class="act"><button class="btn go">Apply re-sequence to WBS 5.0</button><button class="btn">Open variance report (W207)</button></div>
+            </div>
+          </div>
+
+          <!-- drawdown table -->
+          <div class="panel" style="margin:18px; border-radius:12px">
+            <div class="ph"><h3>Drawdown pipeline · drawdown · W21</h3><span class="sub">SARB IE-gate · L5 certified</span></div>
+            <table>
+              <thead><tr><th>#</th><th>Tranche</th><th>State</th><th>IE cert</th><th>CPs</th><th>Amount</th></tr></thead>
+              <tbody>
+                <tr><td><b>DD-04</b></td><td>Module + MV</td><td><span class="badge rev">lender_review</span></td><td><span class="up">✓ signed</span></td><td><span class="flat">2 open</span></td><td><b>R 214.5m</b></td></tr>
+                <tr><td>DD-03</td><td>Civil works</td><td><span class="badge app">disbursed</span></td><td><span class="up">✓ signed</span></td><td>0</td><td>R 188.0m</td></tr>
+                <tr><td>DD-05</td><td>Grid connection</td><td><span class="badge dis">draft</span></td><td>pending</td><td>5 open</td><td>R 96.2m</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phonewrap">
+        <div class="phone"><div class="scr">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="ic">▮▮▮ ⌃ 􀙇 86%</span></div>
+          <div class="offline cache">⤓ Cached · last sync 06:12 · site has no signal</div>
+          <div class="pad">
+            <div style="font:600 11px/1 'IBM Plex Mono'; color:var(--txt-3); letter-spacing:.1em">KURUMAN SOLAR · BW6</div>
+            <div style="font:700 22px/1.1 'Sora'; margin-top:8px; color:#fff">Cockpit</div>
+            <div class="kpis" style="margin-top:14px">
+              <div class="kpi"><div class="l">SPI</div><div class="v">0.94</div><div class="d dn">▼ 11d</div></div>
+              <div class="kpi"><div class="l">CPI</div><div class="v">1.02</div><div class="d up">▲</div></div>
+              <div class="kpi"><div class="l">To COD</div><div class="v">128<small>d</small></div><div class="d dn">at-risk</div></div>
+              <div class="kpi"><div class="l">DD-04</div><div class="v" style="font-size:14px">lender<br>review</div><div class="d flat">2 CP</div></div>
+            </div>
+            <div class="panel" style="margin-top:14px">
+              <div class="ph"><h3>Critical task</h3><span class="sub badge crit" style="background:#ff6b6b1f;color:#ff9c9c">−11d</span></div>
+              <div class="pad" style="padding:14px">
+                <div style="font:600 13px/1.3 'Sora'">PV module install · WBS 5.0</div>
+                <div style="font:500 11px/1.4 'IBM Plex Mono'; color:var(--txt-3); margin-top:6px">71% · on critical path · blocks drawdown #4</div>
+                <div class="gatebar"><div class="seg ok"></div><div class="seg ok"></div><div class="seg cur"></div><div class="seg"></div></div>
+              </div>
+            </div>
+            <div class="ai" style="margin:14px 0 0">
+              <div class="h">⟡ AI assist <span class="b">WHY</span></div>
+              <p>Re-sequence string-commissioning → <b>recover 6 days</b>, keep COD in §C-5 window.</p>
+              <div class="act"><button class="btn go" style="flex:1">Apply</button></div>
+            </div>
+          </div>
+          <button class="fab">＋ Log field report</button>
+          <div class="bottomnav">
+            <div class="bn on"><span class="g">◈</span>Cockpit</div>
+            <div class="bn"><span class="g">⬡</span>Gantt</div>
+            <div class="bn"><span class="g">◎</span>Drawdown</div>
+            <div class="bn"><span class="g">▤</span>Docs</div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── OPTION 2: NARRATIVE ─────────── -->
+  <section class="opt" id="opt2" role="tabpanel" aria-labelledby="t2">
+    <div class="opt-head">
+      <h2>02 · Milestone Narrative</h2>
+      <p class="concept">For the <b>site tablet</b>. Density gives way to a <b>guided vertical timeline</b> that walks the
+        project phase-by-phase — past gates settled, the <b>current gate in focus</b> with its one decision, future phases
+        dimmed. The question it answers calmly: <b>"what's next, and am I cleared to proceed?"</b></p>
+    </div>
+
+    <div class="stage">
+      <!-- DESKTOP (tablet-leaning) -->
+      <div>
+        <div class="deskframe calm">
+          <div class="chrome"><span class="traf"><i></i><i></i><i></i></span>
+            <span class="url">oe.vantax.co.za<b>/thread/cod_chain/kuruman</b> · phase narrative</span>
+            <span class="label-w">TABLET / DESKTOP</span></div>
+
+          <div class="ph" style="padding:18px 28px; border-bottom:1px solid #1a212e">
+            <div><h3 style="font:500 22px/1 'Newsreader',serif">Kuruman Solar 140 MW</h3>
+              <span class="sub" style="margin-top:6px; display:block">Construction → COD · NERSA §C-5 · <span style="color:var(--ok)">4 of 7 phases cleared</span></span></div>
+            <span class="tier l4" style="align-self:center">Professional · L4 · per project</span>
+          </div>
+
+          <div class="narr">
+            <div class="phase">
+              <div class="pnode done">✓</div>
+              <div class="pbody"><h4>Design &amp; procurement</h4><div class="when">Cleared · 14 Jan 2026</div>
+                <p>RFP <span class="mono" style="color:var(--txt)">procurement_rfp</span> awarded to EPC consortium; design freeze signed off at DG2 gate.</p></div>
+            </div>
+            <div class="phase">
+              <div class="pnode done">✓</div>
+              <div class="pbody"><h4>Construction</h4><div class="when">Cleared · 02 May 2026</div>
+                <p>Civil, foundations and MV reticulation complete. Three drawdowns disbursed against IE-certified progress.</p></div>
+            </div>
+            <div class="phase">
+              <div class="pnode done">✓</div>
+              <div class="pbody"><h4>Mechanical completion</h4><div class="when">Cleared · 09 Jun 2026</div>
+                <p>Independent Engineer issued the mechanical-completion certificate; punch list opened with 12 minor items.</p></div>
+            </div>
+
+            <div class="phase">
+              <div class="pnode now">●</div>
+              <div class="pbody"><h4 style="color:#fff">Commissioning</h4><div class="when" style="color:var(--solar)">In progress · you are here</div>
+                <p>String and inverter commissioning underway. <b>One decision blocks the next phase</b>: drawdown #4 is
+                  awaiting lender sign-off, which funds the grid-connection works.</p>
+                <div class="pnow-card">
+                  <div class="row"><span class="gate">⚑ GATE · drawdown #4 · lender_review</span><span class="tier l5">L5 certified</span></div>
+                  <div class="gatebar"><div class="seg ok" title="draft"></div><div class="seg ok" title="ie_review"></div><div class="seg cur" title="lender_review"></div><div class="seg" title="approved"></div><div class="seg" title="disbursed"></div></div>
+                  <p style="font:400 13px/1.55 'Newsreader',serif; margin:11px 0 0; color:var(--txt-2)">
+                    IE certificate signed ✓ · 2 conditions precedent still open (CP-7 insurance endorsement, CP-9 GTIA settings).
+                    Clearing both releases <b>R214.5m</b> and unblocks grid connection.</p>
+                  <button class="cta-soft">Clear the 2 open CPs →</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="phase">
+              <div class="pnode fut">5</div>
+              <div class="pbody"><h4 style="color:var(--txt-3)">Grid connection &amp; COD</h4><div class="when">Planned · ~Oct 2026 · 128 days</div>
+                <p style="color:var(--txt-3)">GCA energisation, NERSA §C-5 COD declaration, performance test, post-COD handover dossier.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phonewrap">
+        <div class="phone"><div class="scr" style="background:#0a0d14">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="ic">▮▮▮ ⌃ 􀙇 86%</span></div>
+          <div class="offline install">⊕ Add Open Energy to Home Screen for site mode</div>
+          <div class="pad">
+            <div style="font:600 11px/1 'IBM Plex Mono'; color:var(--txt-3); letter-spacing:.1em">KURUMAN · §C-5</div>
+            <div style="font:500 24px/1.1 'Newsreader',serif; margin-top:8px; color:#fff">Where we are</div>
+            <div style="font:500 11px/1 'IBM Plex Mono'; color:var(--ok); margin-top:7px">4 of 7 phases cleared</div>
+
+            <div style="margin-top:18px">
+              <div class="phase"><div class="pnode done" style="width:30px;height:30px">✓</div>
+                <div class="pbody" style="padding-bottom:16px"><h4 style="font-size:15px">Mechanical completion</h4><div class="when">09 Jun · cleared</div></div></div>
+              <div class="phase"><div class="pnode now" style="width:30px;height:30px">●</div>
+                <div class="pbody" style="padding-bottom:16px"><h4 style="font-size:15px; color:#fff">Commissioning</h4><div class="when" style="color:var(--solar)">you are here</div>
+                  <div class="pnow-card" style="margin-top:10px; padding:12px">
+                    <div style="font:600 11px/1 'IBM Plex Mono'; color:var(--solar)">⚑ Drawdown #4 · lender_review</div>
+                    <div class="gatebar"><div class="seg ok"></div><div class="seg ok"></div><div class="seg cur"></div><div class="seg"></div><div class="seg"></div></div>
+                    <p style="font:400 12px/1.5 'Newsreader',serif; margin:9px 0 0; color:var(--txt-2)">IE signed ✓ · 2 CPs open · releases R214.5m</p>
+                  </div></div></div>
+              <div class="phase"><div class="pnode fut" style="width:30px;height:30px">5</div>
+                <div class="pbody"><h4 style="font-size:15px; color:var(--txt-3)">Grid connection &amp; COD</h4><div class="when">~Oct · 128 days</div></div></div>
+            </div>
+          </div>
+          <button class="fab">Clear 2 CPs →</button>
+          <div class="bottomnav">
+            <div class="bn on"><span class="g">◷</span>Timeline</div>
+            <div class="bn"><span class="g">⚑</span>Gates</div>
+            <div class="bn"><span class="g">▤</span>Docs</div>
+            <div class="bn"><span class="g">◉</span>Site</div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────── OPTION 3: MAP ─────────── -->
+  <section class="opt" id="opt3" role="tabpanel" aria-labelledby="t3">
+    <div class="opt-head">
+      <h2>03 · Spatial Portfolio Map</h2>
+      <p class="concept">The <b>morning sweep across the fleet</b>. Projects plotted across South Africa as <b>health rings</b> —
+        green healthy, amber watch, red at-risk pulsing. Tap a project to slide in its live <b>cod / drawdown / stage-gate</b> state.
+        Geography <i>is</i> the index: Northern Cape solar belt, Eastern Cape wind corridor.</p>
+    </div>
+
+    <div class="stage">
+      <!-- DESKTOP -->
+      <div>
+        <div class="deskframe">
+          <div class="chrome"><span class="traf"><i></i><i></i><i></i></span>
+            <span class="url">oe.vantax.co.za<b>/horizon/ipp_developer</b> · portfolio map · 6 projects</span>
+            <span class="label-w">DESKTOP · 1280</span></div>
+
+          <div class="pad" style="padding:0 0 0 0">
+            <div class="kpis" style="border:none; border-radius:0; border-bottom:1px solid var(--line)">
+              <div class="kpi"><div class="l">Portfolio MW</div><div class="v">612<small>MW</small></div><div class="d up">4 to COD this year</div></div>
+              <div class="kpi"><div class="l">At-risk projects</div><div class="v" style="color:var(--crit)">1</div><div class="d dn">▼ De Aar · SPI 0.81</div></div>
+              <div class="kpi"><div class="l">Open drawdowns</div><div class="v">R 521<small>m</small></div><div class="d flat">3 in review</div></div>
+              <div class="kpi"><div class="l">Gates this month</div><div class="v">5</div><div class="d flat">2 DG3 · 1 COD</div></div>
+            </div>
+          </div>
+
+          <div class="mapstage">
+            <!-- crude SA silhouette -->
+            <svg class="sa-outline" viewBox="0 0 600 520" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+              <path d="M120,150 L210,120 L300,110 L380,130 L450,180 L470,250 L440,320 L390,380 L330,420 L260,440 L200,420 L160,370 L130,300 L110,230 Z"
+                fill="#13233f" stroke="#2a3c5e" stroke-width="1.5"/>
+              <path d="M300,300 L340,310 L350,350 L320,375 L290,360 Z" fill="#0f1c33" stroke="#243450" stroke-width="1"/>
+            </svg>
+
+            <!-- nodes -->
+            <div class="node" style="left:30%; top:40%"><div class="ring healthy"><div class="core"></div></div><div class="ntag">Kuruman 140MW · commissioning</div></div>
+            <div class="node" style="left:24%; top:56%"><div class="ring risk"><div class="core"></div></div><div class="ntag" style="color:#ff9c9c; border-color:#ff4d6d55">De Aar 75MW · SPI 0.81 ▼</div></div>
+            <div class="node" style="left:46%; top:35%"><div class="ring healthy"><div class="core"></div></div><div class="ntag">Postmasburg 86MW · COD soon</div></div>
+            <div class="node" style="left:60%; top:62%"><div class="ring watch"><div class="core"></div></div><div class="ntag" style="color:#ffd28a">Cookhouse Wind 95MW · CP slip</div></div>
+            <div class="node" style="left:67%; top:48%"><div class="ring healthy"><div class="core"></div></div><div class="ntag">Bedford 120MW · construction</div></div>
+            <div class="node" style="left:38%; top:24%"><div class="ring watch"><div class="core"></div></div><div class="ntag" style="color:#ffd28a">Kathu 96MW · DG3 pending</div></div>
+
+            <div class="legend">
+              <span><i style="background:#3ddc97"></i>Healthy</span>
+              <span><i style="background:#ffb648"></i>Watch</span>
+              <span><i style="background:#ff4d6d"></i>At-risk</span>
+            </div>
+
+            <!-- detail drawer -->
+            <div class="mapside">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start">
+                <div><h4>De Aar Solar</h4><div class="sub">75 MW · Northern Cape · BW5</div></div>
+                <span class="tier l4" style="font-size:9px">L4</span>
+              </div>
+              <div style="margin-top:14px">
+                <div class="drow"><span class="k">Health</span><span class="v" style="color:var(--crit)">At-risk</span></div>
+                <div class="drow"><span class="k">SPI / CPI</span><span class="v">0.81 / 0.97</span></div>
+                <div class="drow"><span class="k">cod_chain</span><span class="v">construction</span></div>
+                <div class="drow"><span class="k">Stage gate</span><span class="v">DG3 pending</span></div>
+                <div class="drow"><span class="k">Drawdown</span><span class="v" style="color:var(--solar)">ie_review</span></div>
+                <div class="drow"><span class="k">Days to COD</span><span class="v">198 ▼</span></div>
+              </div>
+              <div style="font:600 10px/1 'IBM Plex Mono'; color:var(--txt-3); margin-top:16px; letter-spacing:.08em">COD_CHAIN STATE</div>
+              <div class="miniflow">
+                <span class="s">design</span><span class="s">proc</span><span class="s on">construction</span>
+                <span class="s">mech</span><span class="s">comm</span><span class="s">cod</span>
+              </div>
+              <div class="ai" style="margin:16px 0 0">
+                <div class="h" style="font-size:11px">⟡ Fleet AI <span class="b">WHY</span></div>
+                <p style="font-size:11.5px">De Aar SPI breached 0.85 floor — <b>escalate to DG3 variance review</b> before it cascades to the BW5 PPA milestone.</p>
+                <div class="act"><button class="btn go" style="flex:1; font-size:11px">Open milestone variance (W207)</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phonewrap">
+        <div class="phone"><div class="scr">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span class="ic">▮▮▮ ⌃ 􀙇 86%</span></div>
+          <div class="offline cache">⤓ Map cached · tap pin for live state</div>
+          <div class="pad" style="padding-bottom:6px">
+            <div style="font:600 11px/1 'IBM Plex Mono'; color:var(--txt-3); letter-spacing:.1em">PORTFOLIO · 6 PROJECTS</div>
+            <div style="font:700 22px/1.1 'Sora'; margin-top:8px; color:#fff">Fleet health</div>
+          </div>
+          <div class="mapstage" style="height:300px; margin:10px 14px; border-radius:14px; border:1px solid var(--line)">
+            <svg class="sa-outline" viewBox="0 0 600 520" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+              <path d="M120,150 L210,120 L300,110 L380,130 L450,180 L470,250 L440,320 L390,380 L330,420 L260,440 L200,420 L160,370 L130,300 L110,230 Z" fill="#13233f" stroke="#2a3c5e" stroke-width="1.5"/>
+            </svg>
+            <div class="node" style="left:30%; top:40%"><div class="ring healthy" style="width:30px;height:30px"><div class="core" style="width:9px;height:9px"></div></div></div>
+            <div class="node" style="left:24%; top:62%"><div class="ring risk" style="width:30px;height:30px"><div class="core" style="width:9px;height:9px"></div></div></div>
+            <div class="node" style="left:50%; top:35%"><div class="ring healthy" style="width:30px;height:30px"><div class="core" style="width:9px;height:9px"></div></div></div>
+            <div class="node" style="left:64%; top:60%"><div class="ring watch" style="width:30px;height:30px"><div class="core" style="width:9px;height:9px"></div></div></div>
+          </div>
+          <div class="pad" style="padding-top:4px">
+            <div class="panel" style="border-color:#ff4d6d44">
+              <div class="ph" style="border-color:#ff4d6d22"><h3 style="color:#ff9c9c">⚑ De Aar Solar · at-risk</h3><span class="sub">75MW</span></div>
+              <div class="pad" style="padding:12px">
+                <div class="drow"><span class="k">SPI</span><span class="v" style="color:var(--crit)">0.81 ▼</span></div>
+                <div class="drow"><span class="k">cod_chain</span><span class="v">construction</span></div>
+                <div class="drow"><span class="k">Drawdown</span><span class="v" style="color:var(--solar)">ie_review</span></div>
+                <div class="miniflow"><span class="s">design</span><span class="s on">construction</span><span class="s">cod</span></div>
+              </div>
+            </div>
+          </div>
+          <button class="fab">Variance →</button>
+          <div class="bottomnav">
+            <div class="bn on"><span class="g">◉</span>Map</div>
+            <div class="bn"><span class="g">⚑</span>Risk</div>
+            <div class="bn"><span class="g">◎</span>Drawdown</div>
+            <div class="bn"><span class="g">◈</span>List</div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <span><b>IPP Developer</b> · ipp_developer · /ipp-lifecycle · evaluation mockup — not wired to app</span>
+    <span>Real chains · cod_chain · procurement_rfp · drawdown · ipp_evm · ipp_schedule · stage_gate · cp_tracker · milestone_variance_report</span>
+  </div>
+</div>
+
+<script>
+  function pick(n){
+    for(var i=1;i<=3;i++){
+      var tab=document.getElementById('t'+i), op=document.getElementById('opt'+i);
+      var on=(i===n);
+      tab.setAttribute('aria-selected', on?'true':'false');
+      op.classList.toggle('show', on);
+    }
+  }
+  // keyboard arrow nav across tabs
+  document.querySelectorAll('[role="tab"]').forEach(function(t,i,a){
+    t.addEventListener('keydown',function(e){
+      if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+        e.preventDefault();
+        var d=e.key==='ArrowRight'?1:-1, ni=(i+d+a.length)%a.length;
+        a[ni].focus(); pick(ni+1);
+      }
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EPC Contractor — Frontend Exploration · CEC Open Energy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* EPC site identity: hi-vis amber + steel + safety-orange, hard edges, tablet-grade contrast */
+    --steel-900:#11161c;
+    --steel-800:#181f27;
+    --steel-700:#202935;
+    --steel-600:#2c3845;
+    --steel-500:#3c4a59;
+    --line:#2a333f;
+    --ink:#0c1014;
+    --paper:#f3f5f7;
+    --paper-2:#e7ebef;
+    --txt:#e9eef3;
+    --txt-dim:#9fb0bf;
+    --txt-mute:#6e7f8d;
+    --hi-vis:#ffcb05;       /* hi-vis amber */
+    --hi-vis-deep:#e0a500;
+    --safety:#ff5a1f;       /* safety orange */
+    --go:#2fbf71;           /* approved / green */
+    --hold:#3fa9f5;         /* hold/witness point */
+    --stop:#ff4d4d;         /* NCR / stop */
+    --concrete:#c7d0d8;
+    --foundation:#7a8896;
+    --professional:#3fa9f5;
+    --regulator:#b07cff;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#0a0d11;color:var(--txt);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  h1,h2,h3,h4{font-family:Archivo,sans-serif;margin:0;letter-spacing:-.01em}
+  .mono{font-family:'JetBrains Mono',monospace}
+
+  .wrap{max-width:1340px;margin:0 auto;padding:0 24px 80px}
+
+  /* ── Header band ─────────────────────────────────────────── */
+  .hero{
+    background:
+      repeating-linear-gradient(135deg,rgba(255,203,5,.05) 0 14px,transparent 14px 28px),
+      linear-gradient(180deg,#13191f,#0a0d11);
+    border-bottom:3px solid var(--hi-vis);
+    padding:30px 0 26px;
+  }
+  .hero .wrap{padding-bottom:0}
+  .kicker{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .badge-role{
+    display:inline-flex;align-items:center;gap:8px;background:var(--hi-vis);color:#1a1400;
+    font-family:Archivo;font-weight:900;font-size:13px;letter-spacing:.06em;text-transform:uppercase;
+    padding:7px 13px;border-radius:6px;
+  }
+  .badge-role::before{content:"⛑";font-size:15px}
+  .tag{font-family:'JetBrains Mono';font-size:11px;color:var(--hi-vis);border:1px solid var(--hi-vis-deep);padding:5px 9px;border-radius:5px;letter-spacing:.04em}
+  .tag.neutral{color:var(--txt-dim);border-color:var(--line)}
+  h1.title{font-size:38px;font-weight:900;line-height:1.02;margin:6px 0 0;max-width:18ch}
+  h1.title em{color:var(--hi-vis);font-style:normal}
+  .persona{display:grid;grid-template-columns:1.4fr 1fr;gap:28px;margin-top:18px}
+  .persona p{margin:0;font-size:14.5px;line-height:1.55;color:var(--txt-dim)}
+  .persona .lab{font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--hi-vis-deep);margin-bottom:6px;display:block}
+  .persona b{color:var(--txt)}
+  .rationale{background:rgba(255,255,255,.03);border:1px solid var(--line);border-left:3px solid var(--safety);border-radius:8px;padding:14px 16px}
+
+  /* ── Ease theme banner ───────────────────────────────────── */
+  .ease-band{display:flex;align-items:center;gap:14px;margin-top:22px;background:linear-gradient(90deg,rgba(255,90,31,.14),transparent);border:1px solid rgba(255,90,31,.35);border-radius:10px;padding:12px 16px}
+  .ease-band .pill{font-family:Archivo;font-weight:900;font-size:12px;letter-spacing:.1em;background:var(--safety);color:#1a0600;padding:6px 11px;border-radius:6px;text-transform:uppercase}
+  .ease-band p{margin:0;font-size:13.5px;color:var(--txt-dim)}
+  .ease-band b{color:#ffd9c9}
+
+  /* ── Journey-as-product strip ────────────────────────────── */
+  section.jstrip{margin-top:34px}
+  .sec-h{display:flex;align-items:baseline;gap:14px;margin-bottom:14px}
+  .sec-h h2{font-size:18px;font-weight:800;letter-spacing:.01em}
+  .sec-h .sub{font-size:12.5px;color:var(--txt-mute);font-family:'JetBrains Mono'}
+  .jcards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .jcard{background:linear-gradient(180deg,var(--steel-800),var(--steel-900));border:1px solid var(--line);border-radius:12px;padding:18px;position:relative;overflow:hidden}
+  .jcard::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--c)}
+  .jcard .jtop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .jcard h3{font-size:16.5px;font-weight:800;line-height:1.15;max-width:14ch}
+  .tier{font-family:Archivo;font-weight:900;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:5px 9px;border-radius:5px;white-space:nowrap}
+  .tier.foundation{background:rgba(122,136,150,.18);color:#b9c6d2;border:1px solid #4d5b69}
+  .tier.professional{background:rgba(63,169,245,.16);color:#9ed3ff;border:1px solid #2f6f9e}
+  .tier.regulator{background:rgba(176,124,255,.16);color:#d6bcff;border:1px solid #6f4fb0}
+  .jcard .chain{font-family:'JetBrains Mono';font-size:11px;color:var(--txt-mute);margin:10px 0 12px}
+  .jcard .chain b{color:var(--hi-vis-deep)}
+  .meter{display:flex;align-items:center;justify-content:space-between;background:#0a0e13;border:1px dashed var(--line);border-radius:8px;padding:10px 12px;margin-top:4px}
+  .meter .ml{font-size:11px;color:var(--txt-mute);text-transform:uppercase;letter-spacing:.08em}
+  .meter .mv{font-family:'JetBrains Mono';font-weight:700;font-size:13px;color:var(--hi-vis)}
+  .flow{display:flex;gap:5px;flex-wrap:wrap;margin-top:13px}
+  .flow span{font-family:'JetBrains Mono';font-size:10px;padding:3px 7px;border-radius:4px;background:#0c1218;border:1px solid var(--line);color:var(--txt-mute)}
+  .flow span.cur{background:var(--c);color:#0a0d11;border-color:var(--c);font-weight:700}
+
+  /* ── Option tabs ─────────────────────────────────────────── */
+  section.options{margin-top:46px}
+  .tabs{display:flex;gap:8px;border-bottom:1px solid var(--line);margin-bottom:26px;flex-wrap:wrap}
+  .tab{appearance:none;background:transparent;border:0;border-bottom:3px solid transparent;color:var(--txt-mute);font-family:Archivo;font-weight:800;font-size:14.5px;padding:13px 16px;cursor:pointer;letter-spacing:.01em;min-height:44px}
+  .tab .n{font-family:'JetBrains Mono';font-size:11px;color:var(--hi-vis-deep);display:block;letter-spacing:.05em}
+  .tab[aria-selected="true"]{color:var(--txt);border-bottom-color:var(--hi-vis)}
+  .tab:focus-visible{outline:2px solid var(--hold);outline-offset:2px}
+  .panel{display:none}
+  .panel[data-active="true"]{display:block}
+
+  .opt-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+  .opt-head .num{font-family:Archivo;font-weight:900;font-size:46px;line-height:.8;color:var(--steel-600);-webkit-text-stroke:1px var(--hi-vis-deep)}
+  .opt-head h2{font-size:24px;font-weight:900}
+  .opt-head .concept{font-size:14px;color:var(--txt-dim);margin-top:5px;max-width:62ch;line-height:1.5}
+  .ease-call{display:inline-flex;align-items:center;gap:9px;background:rgba(255,90,31,.12);border:1px solid rgba(255,90,31,.4);border-radius:8px;padding:9px 13px;margin-top:12px;font-size:13px;color:#ffd0bf}
+  .ease-call .lk{font-family:Archivo;font-weight:900;font-size:10px;letter-spacing:.12em;color:var(--safety);background:#1a0600;padding:4px 7px;border-radius:4px}
+
+  .frames{display:grid;grid-template-columns:1fr 392px;gap:26px;align-items:start}
+  @media(max-width:1180px){.frames{grid-template-columns:1fr}}
+
+  /* desktop frame chrome */
+  .desk{background:var(--steel-900);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+  .deskbar{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#0c1116;border-bottom:1px solid var(--line)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:#28c840}
+  .url{flex:1;margin-left:8px;background:#070a0d;border:1px solid var(--line);border-radius:6px;padding:5px 10px;font-family:'JetBrains Mono';font-size:11px;color:var(--txt-mute)}
+  .url b{color:var(--hi-vis)}
+
+  .label-frame{font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt-mute);margin:0 0 8px}
+
+  /* phone frame */
+  .phone{width:392px;background:#05080b;border:10px solid #1b232c;border-radius:42px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.55);position:relative}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:11px 22px 7px;font-family:'JetBrains Mono';font-size:11px;color:#cdd6de;background:#0a0e12}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:24px;background:#1b232c;border-radius:0 0 16px 16px;z-index:5}
+  .phone-screen{background:var(--steel-900);min-height:760px}
+  .offline{display:flex;align-items:center;gap:8px;background:rgba(255,203,5,.12);border-bottom:1px solid var(--hi-vis-deep);padding:7px 16px;font-size:11.5px;color:var(--hi-vis)}
+  .offline .d{width:7px;height:7px;border-radius:50%;background:var(--go);box-shadow:0 0 0 3px rgba(47,191,113,.25)}
+  .botnav{position:sticky;bottom:0;display:flex;justify-content:space-around;background:#0a0e12;border-top:1px solid var(--line);padding:9px 0 13px}
+  .botnav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;color:var(--txt-mute);min-width:54px;min-height:44px;justify-content:center}
+  .botnav a.on{color:var(--hi-vis)}
+  .botnav .ic{font-size:18px}
+  .fab{position:absolute;bottom:74px;right:18px;background:var(--safety);color:#1a0600;font-family:Archivo;font-weight:900;font-size:13px;padding:0 18px;height:52px;border-radius:14px;display:flex;align-items:center;gap:8px;box-shadow:0 10px 24px rgba(255,90,31,.4);z-index:6}
+
+  /* generic UI atoms used inside frames */
+  .pad{padding:16px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;background:#0c1116;border-bottom:1px solid var(--line)}
+  .topbar .who{display:flex;align-items:center;gap:11px}
+  .av{width:30px;height:30px;border-radius:7px;background:var(--hi-vis);color:#1a1400;font-family:Archivo;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .topbar h4{font-size:14px}.topbar .site{font-size:11px;color:var(--txt-mute);font-family:'JetBrains Mono'}
+  .stat-row{display:flex;gap:1px;background:var(--line)}
+  .stat{flex:1;background:var(--steel-800);padding:13px 15px}
+  .stat .v{font-family:Archivo;font-weight:900;font-size:26px;line-height:1}
+  .stat .l{font-size:10.5px;color:var(--txt-mute);text-transform:uppercase;letter-spacing:.07em;margin-top:5px}
+  .stat .v.stop{color:var(--stop)}.stat .v.hold{color:var(--hold)}.stat .v.go{color:var(--go)}.stat .v.amber{color:var(--hi-vis)}
+
+  .col-h{font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt-mute);padding:12px 16px 7px}
+  .row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .row:hover{background:rgba(255,255,255,.02)}
+  .chip{font-family:'JetBrains Mono';font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap;letter-spacing:.03em}
+  .chip.stop{background:rgba(255,77,77,.16);color:#ff9a9a;border:1px solid #6e2424}
+  .chip.hold{background:rgba(63,169,245,.16);color:#a9d6ff;border:1px solid #275a82}
+  .chip.go{background:rgba(47,191,113,.16);color:#92e3ba;border:1px solid #1f6443}
+  .chip.amber{background:rgba(255,203,5,.16);color:#ffe27a;border:1px solid #6e5800}
+  .chip.mute{background:#0c1218;color:var(--txt-mute);border:1px solid var(--line)}
+  .row .main{flex:1;min-width:0}
+  .row .main .t{font-size:13.5px;font-weight:600}
+  .row .main .m{font-size:11px;color:var(--txt-mute);font-family:'JetBrains Mono';margin-top:3px}
+  .row .id{font-family:'JetBrains Mono';font-size:11px;color:var(--hi-vis-deep);font-weight:700}
+  .btn{appearance:none;border:0;font-family:Archivo;font-weight:800;font-size:12.5px;border-radius:8px;padding:9px 14px;cursor:pointer;min-height:40px;display:inline-flex;align-items:center;gap:6px}
+  .btn.go{background:var(--go);color:#04130b}
+  .btn.stop{background:var(--stop);color:#1a0303}
+  .btn.amber{background:var(--hi-vis);color:#1a1400}
+  .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+
+  /* kanban (opt 1) */
+  .kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line)}
+  .kcol{background:var(--steel-900);min-height:200px}
+  .kcol .kh{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--line)}
+  .kcol .kh .ct{background:#0c1218;border:1px solid var(--line);border-radius:10px;padding:1px 7px;font-size:10px}
+  .kcard{margin:9px;background:var(--steel-800);border:1px solid var(--line);border-radius:8px;padding:11px;border-left:3px solid var(--cc)}
+  .kcard .kt{font-size:12.5px;font-weight:600;line-height:1.25}
+  .kcard .kid{font-family:'JetBrains Mono';font-size:10px;color:var(--hi-vis-deep);margin-bottom:6px;font-weight:700}
+  .kcard .kmeta{font-size:10.5px;color:var(--txt-mute);margin-top:7px;display:flex;justify-content:space-between;align-items:center}
+
+  /* day-board / inspection list (opt 1 desktop left rail keeps simple) */
+  .splitcol{display:grid;grid-template-columns:1.55fr 1fr;gap:1px;background:var(--line)}
+  .pane{background:var(--steel-900)}
+
+  /* register table (opt 2) */
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  thead th{font-family:'JetBrains Mono';font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--txt-mute);text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#0c1116}
+  tbody td{padding:11px 14px;border-bottom:1px solid var(--line)}
+  tbody tr:hover{background:rgba(255,255,255,.02)}
+  td .id2{font-family:'JetBrains Mono';font-weight:700;color:var(--hi-vis-deep);font-size:11.5px}
+  .barmini{height:6px;border-radius:3px;background:#0c1218;overflow:hidden;width:90px}
+  .barmini i{display:block;height:100%;background:var(--hold)}
+  .doclink{display:inline-flex;gap:5px;align-items:center;font-family:'JetBrains Mono';font-size:11px;color:var(--hold)}
+
+  /* itp inspection tracker (opt 3) detail */
+  .itp-detail{padding:16px}
+  .itp-rail{display:flex;flex-direction:column;gap:0}
+  .pt{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+  .pt .marker{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:Archivo;font-weight:900;font-size:13px;flex-shrink:0}
+  .pt .marker.W{background:rgba(63,169,245,.18);color:var(--hold);border:1px solid #275a82}
+  .pt .marker.H{background:rgba(255,77,77,.16);color:var(--stop);border:1px solid #6e2424}
+  .pt .marker.done{background:var(--go);color:#04130b}
+  .pt .pmain{flex:1}
+  .pt .pmain .pn{font-size:13px;font-weight:600}
+  .pt .pmain .pd{font-size:11px;color:var(--txt-mute);font-family:'JetBrains Mono';margin-top:3px}
+  .legend{display:flex;gap:14px;font-family:'JetBrains Mono';font-size:10.5px;color:var(--txt-mute);padding:0 16px 12px}
+  .legend b{color:var(--txt-dim)}
+  .gauge{display:flex;align-items:center;gap:14px;padding:16px;border-bottom:1px solid var(--line)}
+  .ring{width:64px;height:64px;border-radius:50%;background:conic-gradient(var(--go) 0 62%,#1c2530 62% 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .ring i{width:48px;height:48px;border-radius:50%;background:var(--steel-900);display:flex;align-items:center;justify-content:center;font-family:Archivo;font-weight:900;font-size:15px;font-style:normal}
+
+  .foot{margin-top:60px;border-top:1px solid var(--line);padding-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;color:var(--txt-mute);font-size:12px;font-family:'JetBrains Mono'}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER BAND ══ -->
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">
+      <span class="badge-role">EPC Contractor</span>
+      <span class="tag">CEC OPEN ENERGY · SA EXCHANGE</span>
+      <span class="tag neutral">Frontend exploration · v2</span>
+      <span class="tag neutral">Beats Procore · Aconex</span>
+    </div>
+    <h1 class="title">Build the plant. <em>Clear the blockers.</em> Close out for COD.</h1>
+
+    <div class="persona">
+      <div>
+        <span class="lab">Persona — who's holding the tablet</span>
+        <p><b>Site construction project manager</b> on a utility-scale solar/wind EPC. Splits the day between
+        the <b>site — hard-hat, gloves, glare, patchy LTE</b>, walking witness/hold inspections with the
+        engineer and subcontractors, and the <b>trailer/office desktop</b> running document control. Lives
+        inside submittals, ITPs, NCRs and the punch list; measured on whether the plant reaches COD with a
+        clean handover dossier. Stress is concrete: <b>open NCRs stall trades, a missed hold point reworks a
+        whole array, and document control decides who gets paid.</b></p>
+      </div>
+      <div class="rationale">
+        <span class="lab">Why these three directions</span>
+        <p>A site PM doesn't browse — they need <b>"what blocks me today"</b> answered in one glance, then the
+        ability to act <b>in the field on a tablet</b>. So the three bets diverge on <b>where the work lives</b>:
+        a <b>tablet day-board</b> for the walk, a <b>document-control register</b> for the desk, and a
+        <b>quality / ITP inspection tracker</b> for witness &amp; hold discipline.</p>
+      </div>
+    </div>
+
+    <div class="ease-band">
+      <span class="pill">Overarching theme · EASE</span>
+      <p><b>For a site PM, ease = today's inspections and open NCRs surface on a tablet-ready board, act on site.</b>
+      Every option below makes <b>“what blocks progress today”</b> obvious, then one-thumb actionable in the field.</p>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ══ JOURNEY-AS-PRODUCT STRIP ══ -->
+  <section class="jstrip">
+    <div class="sec-h">
+      <h2>Hero journeys — packaged &amp; metered</h2>
+      <span class="sub">// 3 real EPC chains · priced by tier &amp; usage</span>
+    </div>
+    <div class="jcards">
+
+      <article class="jcard" style="--c:var(--hold)">
+        <div class="jtop">
+          <h3>ITP — Inspection &amp; Test Plan</h3>
+          <span class="tier professional">Professional · L4</span>
+        </div>
+        <div class="chain">chain <b>itp</b> · witness/hold-point gating</div>
+        <div class="flow">
+          <span>draft</span><span>approved</span><span class="cur">in_progress</span><span>completed</span>
+        </div>
+        <div class="meter">
+          <span class="ml">Metered</span>
+          <span class="mv">per witness/hold point signed off</span>
+        </div>
+      </article>
+
+      <article class="jcard" style="--c:var(--stop)">
+        <div class="jtop">
+          <h3>NCR — Non-Conformance &amp; Corrective Action</h3>
+          <span class="tier professional">Professional · L4</span>
+        </div>
+        <div class="chain">chain <b>ncr</b> · blocks progress until closed</div>
+        <div class="flow">
+          <span class="cur">open</span><span>under_review</span><span>corrective_action</span><span>closed</span>
+        </div>
+        <div class="meter">
+          <span class="ml">Metered</span>
+          <span class="mv">per NCR raised &amp; dispositioned</span>
+        </div>
+      </article>
+
+      <article class="jcard" style="--c:var(--regulator)">
+        <div class="jtop">
+          <h3>Handover Dossier → IPP COD Turnover</h3>
+          <span class="tier regulator">Regulator-grade · L5</span>
+        </div>
+        <div class="chain">chain <b>punch_list</b> + handover evidence</div>
+        <div class="flow">
+          <span class="cur">open</span><span>in_progress</span><span>closed</span><span>certified&nbsp;export</span>
+        </div>
+        <div class="meter">
+          <span class="ml">Metered</span>
+          <span class="mv">per certified COD dossier export</span>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ══ OPTIONS ══ -->
+  <section class="options">
+    <div class="sec-h">
+      <h2>Three directions — pick a bet</h2>
+      <span class="sub">// same real chains, different home base for the work</span>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Design options">
+      <button class="tab" role="tab" id="t1" aria-controls="p1" aria-selected="true" onclick="pick(1)"><span class="n">OPTION 01</span>Site Day-Board</button>
+      <button class="tab" role="tab" id="t2" aria-controls="p2" aria-selected="false" onclick="pick(2)"><span class="n">OPTION 02</span>Document Control Register</button>
+      <button class="tab" role="tab" id="t3" aria-controls="p3" aria-selected="false" onclick="pick(3)"><span class="n">OPTION 03</span>Quality / ITP Tracker</button>
+    </div>
+
+    <!-- ───────── OPTION 1 : SITE DAY-BOARD ───────── -->
+    <div class="panel" id="p1" role="tabpanel" aria-labelledby="t1" data-active="true">
+      <div class="opt-head">
+        <div class="num">01</div>
+        <div>
+          <h2>Site Day-Board</h2>
+          <p class="concept">A glare-grade, tablet-first <b>"today on this site"</b> board. Big touch targets,
+          four blocker columns, every card acts in place. The walk drives the screen — not a menu tree.</p>
+          <div class="ease-call"><span class="lk">EASE</span>Today's hold-points &amp; open NCRs, tablet-ready — sign off, raise, or clear without leaving the board.</div>
+        </div>
+      </div>
+
+      <div class="frames">
+        <!-- desktop -->
+        <div>
+          <p class="label-frame">Desktop · trailer office · 1280px</p>
+          <div class="desk">
+            <div class="deskbar">
+              <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+              <span class="url">oe.vantax.co.za / epc / <b>day-board</b> · Kuruman Solar 75MWac · Block C</span>
+            </div>
+            <div class="topbar">
+              <div class="who"><span class="av">JM</span><div><h4>Today — Wed 27 Jun</h4><div class="site">Kuruman Solar · piling + tracker install · LTE◔</div></div></div>
+              <button class="btn amber">＋ Diary entry</button>
+            </div>
+            <div class="stat-row">
+              <div class="stat"><div class="v stop">3</div><div class="l">Open NCRs · blocking</div></div>
+              <div class="stat"><div class="v hold">5</div><div class="l">Inspections due today</div></div>
+              <div class="stat"><div class="v amber">2</div><div class="l">Submittals awaiting eng.</div></div>
+              <div class="stat"><div class="v go">12</div><div class="l">Punch items closed (wk)</div></div>
+            </div>
+            <div class="kanban">
+              <div class="kcol">
+                <div class="kh"><span>⚠ NCRs · open</span><span class="ct">3</span></div>
+                <div class="kcard" style="--cc:var(--stop)"><div class="kid">NCR-0142</div><div class="kt">Torque below spec — tracker row C-14 bolts</div><div class="kmeta"><span class="chip stop">blocks pile sign-off</span><span>2d</span></div></div>
+                <div class="kcard" style="--cc:var(--stop)"><div class="kid">NCR-0139</div><div class="kt">Cable trench depth &lt; 800mm, run C-2</div><div class="kmeta"><span class="chip stop">open</span><span>4h</span></div></div>
+                <div class="kcard" style="--cc:var(--stop)"><div class="kid">NCR-0137</div><div class="kt">Module glass micro-crack — pallet 88</div><div class="kmeta"><span class="chip amber">corrective_action</span><span>1d</span></div></div>
+              </div>
+              <div class="kcol">
+                <div class="kh"><span>◈ Inspections due</span><span class="ct">5</span></div>
+                <div class="kcard" style="--cc:var(--hold)"><div class="kid">ITP-C-018 · HOLD</div><div class="kt">Pile load test — block C array 12</div><div class="kmeta"><span class="chip hold">hold point</span><span>09:30</span></div></div>
+                <div class="kcard" style="--cc:var(--hold)"><div class="kid">ITP-C-021 · WITNESS</div><div class="kt">Tracker torque verification</div><div class="kmeta"><span class="chip hold">witness</span><span>11:00</span></div></div>
+                <div class="kcard" style="--cc:var(--hold)"><div class="kid">ITP-C-024</div><div class="kt">DC string continuity — combiner 7</div><div class="kmeta"><span class="chip mute">in_progress</span><span>14:00</span></div></div>
+              </div>
+              <div class="kcol">
+                <div class="kh"><span>▤ Awaiting eng.</span><span class="ct">2</span></div>
+                <div class="kcard" style="--cc:var(--hi-vis)"><div class="kid">SUB-0231</div><div class="kt">Tracker foundation shop drawings rev D</div><div class="kmeta"><span class="chip amber">under_review</span><span>SLA 1d</span></div></div>
+                <div class="kcard" style="--cc:var(--hi-vis)"><div class="kid">SUB-0228</div><div class="kt">Cable schedule — MV reticulation</div><div class="kmeta"><span class="chip amber">submitted</span><span>SLA 3d</span></div></div>
+              </div>
+              <div class="kcol">
+                <div class="kh"><span>● Punch / done</span><span class="ct">12</span></div>
+                <div class="kcard" style="--cc:var(--go)"><div class="kid">PL-0451</div><div class="kt">Earthing bond — inverter station 3</div><div class="kmeta"><span class="chip go">closed</span><span>✓ QA</span></div></div>
+                <div class="kcard" style="--cc:var(--go)"><div class="kid">PL-0448</div><div class="kt">Cable labels — combiner box 5</div><div class="kmeta"><span class="chip go">closed</span><span>✓ QA</span></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- phone -->
+        <div>
+          <p class="label-frame">PWA · on-site tablet/phone · 390×844</p>
+          <div class="phone">
+            <div class="notch"></div>
+            <div class="statusbar"><span>08:41</span><span>Kuruman · Block C</span><span>◔ LTE · 38%</span></div>
+            <div class="phone-screen">
+              <div class="offline"><span class="d"></span>Offline-ready · 5 actions will sync · last 07:55</div>
+              <div class="pad" style="padding-bottom:6px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <h3 style="font-size:17px">Blocks me today</h3>
+                  <span class="chip stop">3 NCR · 5 insp</span>
+                </div>
+              </div>
+              <div class="stat-row">
+                <div class="stat"><div class="v stop" style="font-size:22px">3</div><div class="l">NCRs</div></div>
+                <div class="stat"><div class="v hold" style="font-size:22px">5</div><div class="l">Inspections</div></div>
+                <div class="stat"><div class="v amber" style="font-size:22px">2</div><div class="l">Submittals</div></div>
+              </div>
+              <div class="col-h">Next up · 09:30</div>
+              <div class="row"><span class="chip hold">HOLD</span><div class="main"><div class="t">Pile load test — array 12</div><div class="m">ITP-C-018 · needs witness</div></div></div>
+              <div class="row"><span class="chip stop">NCR</span><div class="main"><div class="t">Torque below spec — C-14</div><div class="m">NCR-0142 · blocks sign-off</div></div></div>
+              <div class="row"><span class="chip hold">WITNESS</span><div class="main"><div class="t">Tracker torque verify</div><div class="m">ITP-C-021 · 11:00</div></div></div>
+              <div class="row"><span class="chip amber">SUB</span><div class="main"><div class="t">Foundation drawings rev D</div><div class="m">SUB-0231 · SLA 1d</div></div></div>
+            </div>
+            <a class="fab">＋ Sign off</a>
+            <div class="botnav">
+              <a class="on"><span class="ic">▣</span>Day-board</a>
+              <a><span class="ic">◈</span>ITPs</a>
+              <a><span class="ic">⚠</span>NCRs</a>
+              <a><span class="ic">▤</span>Docs</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───────── OPTION 2 : DOCUMENT CONTROL REGISTER ───────── -->
+    <div class="panel" id="p2" role="tabpanel" aria-labelledby="t2" data-active="false">
+      <div class="opt-head">
+        <div class="num">02</div>
+        <div>
+          <h2>Document Control Register</h2>
+          <p class="concept">The trailer-desk power tool: a dense, filterable <b>submittals · RFIs · change-orders ·
+          technical-queries</b> register with SLA clocks, revision trails and the audit chain. This is where
+          Aconex lives — and where payment certificates get decided.</p>
+          <div class="ease-call"><span class="lk">EASE</span>Every overdue submittal &amp; RFI that's blocking a contractor surfaces top-of-register with its SLA clock — chase or approve in one row.</div>
+        </div>
+      </div>
+
+      <div class="frames">
+        <div>
+          <p class="label-frame">Desktop · document control · 1280px</p>
+          <div class="desk">
+            <div class="deskbar">
+              <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+              <span class="url">oe.vantax.co.za / epc / <b>document-control</b> · register · 47 live</span>
+            </div>
+            <div class="topbar">
+              <div class="who"><span class="av">JM</span><div><h4>Document Control</h4><div class="site">Kuruman Solar · submittals · RFIs · COs · TQs</div></div></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn ghost">Filter ▾</button>
+                <button class="btn amber">＋ New submittal</button>
+              </div>
+            </div>
+            <div class="stat-row">
+              <div class="stat"><div class="v stop">4</div><div class="l">Overdue · SLA breached</div></div>
+              <div class="stat"><div class="v amber">9</div><div class="l">Under review</div></div>
+              <div class="stat"><div class="v hold">6</div><div class="l">Open RFIs</div></div>
+              <div class="stat"><div class="v go">31</div><div class="l">Approved this month</div></div>
+            </div>
+            <table>
+              <thead><tr><th>ID</th><th>Type</th><th>Title</th><th>Rev</th><th>State</th><th>SLA</th><th>Doc</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><span class="id2">SUB-0231</span></td><td>Submittal</td><td>Tracker foundation shop drawings</td><td>D</td><td><span class="chip amber">under_review</span></td><td><span class="chip stop">−6h</span></td><td><span class="doclink">⤓ rev-D.pdf</span></td><td><button class="btn go">Approve</button></td></tr>
+                <tr><td><span class="id2">RFI-0112</span></td><td>RFI</td><td>Pile embedment in weathered rock — array 12</td><td>—</td><td><span class="chip hold">open</span></td><td><span class="chip stop">−2h</span></td><td><span class="doclink">⤓ sketch</span></td><td><button class="btn amber">Respond</button></td></tr>
+                <tr><td><span class="id2">CO-0034</span></td><td>Change order</td><td>Add 1.2km MV cable — reroute around wetland</td><td>2</td><td><span class="chip amber">pending</span></td><td><span class="chip amber">2d</span></td><td><span class="doclink">⤓ ROM R3.4m</span></td><td><button class="btn ghost">Review</button></td></tr>
+                <tr><td><span class="id2">TQ-0089</span></td><td>Tech query</td><td>Inverter clearance vs NRS 097 — station 3</td><td>—</td><td><span class="chip hold">open</span></td><td><span class="chip amber">1d</span></td><td><span class="doclink">⤓ thread</span></td><td><button class="btn ghost">Open</button></td></tr>
+                <tr><td><span class="id2">SUB-0228</span></td><td>Submittal</td><td>Cable schedule — MV reticulation</td><td>B</td><td><span class="chip amber">submitted</span></td><td><span class="chip mute">3d</span></td><td><span class="doclink">⤓ rev-B</span></td><td><button class="btn ghost">Route</button></td></tr>
+                <tr><td><span class="id2">SUB-0224</span></td><td>Submittal</td><td>Earthing &amp; lightning protection design</td><td>C</td><td><span class="chip go">approved</span></td><td><span class="chip go">✓</span></td><td><span class="doclink">⤓ rev-C</span></td><td><button class="btn ghost">View</button></td></tr>
+                <tr><td><span class="id2">MS-0019</span></td><td>Method stmt</td><td>Tracker pile installation method</td><td>2</td><td><span class="chip go">approved</span></td><td><span class="chip go">✓</span></td><td><span class="doclink">⤓ MS-019</span></td><td><button class="btn ghost">View</button></td></tr>
+              </tbody>
+            </table>
+            <div style="padding:11px 16px;font-family:'JetBrains Mono';font-size:11px;color:var(--txt-mute);border-top:1px solid var(--line)">Tamper-evident revision trail · every state change hash-chained to handover audit ·
+              <span style="color:var(--regulator)">L5 certified export ready</span></div>
+          </div>
+        </div>
+        <div>
+          <p class="label-frame">PWA · quick chase from anywhere · 390×844</p>
+          <div class="phone">
+            <div class="notch"></div>
+            <div class="statusbar"><span>11:02</span><span>Document Control</span><span>● WiFi · 64%</span></div>
+            <div class="phone-screen">
+              <div class="offline"><span class="d"></span>Synced · register live · 47 items</div>
+              <div class="pad" style="padding-bottom:8px"><h3 style="font-size:17px">Overdue first</h3><div style="font-size:11px;color:var(--txt-mute);font-family:'JetBrains Mono';margin-top:3px">4 SLA-breached · pull to refresh</div></div>
+              <div class="row"><span class="chip stop">−6h</span><div class="main"><div class="t">Tracker foundation dwg rev D</div><div class="m">SUB-0231 · under_review</div></div><span class="id">⤓</span></div>
+              <div class="row"><span class="chip stop">−2h</span><div class="main"><div class="t">Pile embedment in rock</div><div class="m">RFI-0112 · open</div></div><span class="id">⤓</span></div>
+              <div class="row"><span class="chip amber">2d</span><div class="main"><div class="t">Add 1.2km MV cable reroute</div><div class="m">CO-0034 · R3.4m · pending</div></div><span class="id">⤓</span></div>
+              <div class="row"><span class="chip amber">1d</span><div class="main"><div class="t">Inverter clearance vs NRS 097</div><div class="m">TQ-0089 · open</div></div><span class="id">⤓</span></div>
+              <div class="row"><span class="chip mute">3d</span><div class="main"><div class="t">Cable schedule MV reticulation</div><div class="m">SUB-0228 · submitted</div></div><span class="id">⤓</span></div>
+            </div>
+            <a class="fab" style="background:var(--hi-vis);color:#1a1400;box-shadow:0 10px 24px rgba(255,203,5,.35)">＋ Submittal</a>
+            <div class="botnav">
+              <a><span class="ic">▣</span>Day-board</a>
+              <a><span class="ic">◈</span>ITPs</a>
+              <a><span class="ic">⚠</span>NCRs</a>
+              <a class="on"><span class="ic">▤</span>Docs</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───────── OPTION 3 : QUALITY / ITP TRACKER ───────── -->
+    <div class="panel" id="p3" role="tabpanel" aria-labelledby="t3" data-active="false">
+      <div class="opt-head">
+        <div class="num">03</div>
+        <div>
+          <h2>Quality / ITP Inspection Tracker</h2>
+          <p class="concept">Quality-first: an <b>ITP-centric</b> tracker built around witness &amp; hold points,
+          with NCRs raised inline from a failed point and a live <b>COD readiness ring</b>. The discipline that
+          decides whether the plant turns over clean.</p>
+          <div class="ease-call"><span class="lk">EASE</span>The next hold point that stops work is the first thing on screen — sign it, or raise an NCR straight off the failed point, on the tablet at the array.</div>
+        </div>
+      </div>
+
+      <div class="frames">
+        <div>
+          <p class="label-frame">Desktop · quality manager · 1280px</p>
+          <div class="desk">
+            <div class="deskbar">
+              <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+              <span class="url">oe.vantax.co.za / epc / <b>quality</b> / itp / <b>ITP-C-018</b></span>
+            </div>
+            <div class="topbar">
+              <div class="who"><span class="av">JM</span><div><h4>ITP-C-018 — Pile load test</h4><div class="site">Block C · array 12 · chain itp · in_progress</div></div></div>
+              <div style="display:flex;gap:8px"><button class="btn stop">⚠ Raise NCR</button><button class="btn go">✓ Sign hold point</button></div>
+            </div>
+            <div class="splitcol">
+              <div class="pane">
+                <div class="gauge">
+                  <div class="ring"><i>62%</i></div>
+                  <div>
+                    <div style="font-family:Archivo;font-weight:900;font-size:15px">COD readiness — Block C</div>
+                    <div style="font-size:12px;color:var(--txt-dim);margin-top:4px">18 / 29 ITP points signed · <b style="color:var(--stop)">3 open NCRs gating</b> · 5 punch items left</div>
+                  </div>
+                </div>
+                <div class="col-h">Witness &amp; hold points — ITP-C-018</div>
+                <div class="legend"><span><b style="color:var(--hold)">W</b> witness</span><span><b style="color:var(--stop)">H</b> hold — work stops</span><span><b style="color:var(--go)">✓</b> signed</span></div>
+                <div class="itp-detail" style="padding-top:0">
+                  <div class="itp-rail">
+                    <div class="pt"><div class="marker done">✓</div><div class="pmain"><div class="pn">Excavation &amp; setting-out approved</div><div class="pd">W · signed 26 Jun · eng. T. Naidoo</div></div></div>
+                    <div class="pt"><div class="marker done">✓</div><div class="pmain"><div class="pn">Reinforcement &amp; embedment depth</div><div class="pd">H · signed 26 Jun · 812mm ✓</div></div></div>
+                    <div class="pt"><div class="marker H">H</div><div class="pmain"><div class="pn">Pile load test — 1.5× design load</div><div class="pd">HOLD · work stops here · scheduled 09:30 · <b style="color:var(--hold)">your sign-off</b></div></div><span class="chip hold">due now</span></div>
+                    <div class="pt"><div class="marker W">W</div><div class="pmain"><div class="pn">Concrete cube results — 28 day</div><div class="pd">W · lab pending · 02 Jul</div></div><span class="chip mute">queued</span></div>
+                    <div class="pt"><div class="marker W">W</div><div class="pmain"><div class="pn">As-built survey &amp; tolerance check</div><div class="pd">W · after load test</div></div><span class="chip mute">queued</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="pane">
+                <div class="col-h">NCRs gating this block</div>
+                <div class="row"><span class="chip stop">open</span><div class="main"><div class="t">Torque below spec — C-14</div><div class="m">NCR-0142 · blocks pile sign-off</div></div></div>
+                <div class="row"><span class="chip amber">corr. action</span><div class="main"><div class="t">Module glass micro-crack</div><div class="m">NCR-0137 · supplier RMA raised</div></div></div>
+                <div class="row"><span class="chip stop">open</span><div class="main"><div class="t">Trench depth &lt; 800mm</div><div class="m">NCR-0139 · rework C-2</div></div></div>
+                <div class="col-h">Handover dossier · L5</div>
+                <div class="row"><span class="chip go">✓</span><div class="main"><div class="t">ITP records — Block A,B</div><div class="m">hash-chained · 58 pts</div></div></div>
+                <div class="row"><span class="chip amber">62%</span><div class="main"><div class="t">ITP records — Block C</div><div class="m">18/29 · in progress</div></div></div>
+                <div class="row"><span class="chip mute">queued</span><div class="main"><div class="t">Certified COD export → IPP</div><div class="m">NERSA-grade · per export</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="label-frame">PWA · sign at the array · 390×844</p>
+          <div class="phone">
+            <div class="notch"></div>
+            <div class="statusbar"><span>09:28</span><span>ITP-C-018 · Array 12</span><span>◔ LTE · 31%</span></div>
+            <div class="phone-screen">
+              <div class="offline"><span class="d"></span>Offline-ready · sign-off caches &amp; syncs</div>
+              <div class="pad" style="padding-bottom:6px">
+                <span class="chip hold">HOLD POINT · WORK STOPPED</span>
+                <h3 style="font-size:17px;margin-top:10px">Pile load test</h3>
+                <div style="font-size:11.5px;color:var(--txt-mute);font-family:'JetBrains Mono';margin-top:4px">ITP-C-018 · 1.5× design load · array 12</div>
+              </div>
+              <div class="gauge" style="padding:14px 16px">
+                <div class="ring" style="width:54px;height:54px"><i style="width:40px;height:40px;font-size:13px">62%</i></div>
+                <div><div style="font-family:Archivo;font-weight:900;font-size:13px">Block C → COD</div><div style="font-size:11px;color:var(--stop);margin-top:3px">3 NCRs gating</div></div>
+              </div>
+              <div class="col-h">This point</div>
+              <div class="row"><span class="chip go">✓</span><div class="main"><div class="t">Embedment depth</div><div class="m">812mm · signed</div></div></div>
+              <div class="row"><span class="chip hold">now</span><div class="main"><div class="t">Load test result</div><div class="m">awaiting your sign-off</div></div></div>
+              <div class="row"><span class="chip mute">next</span><div class="main"><div class="t">As-built survey</div><div class="m">after load test</div></div></div>
+              <div style="padding:14px 16px;display:flex;gap:10px">
+                <button class="btn stop" style="flex:1;justify-content:center">⚠ Raise NCR</button>
+                <button class="btn go" style="flex:1.4;justify-content:center">✓ Sign hold point</button>
+              </div>
+            </div>
+            <div class="botnav">
+              <a><span class="ic">▣</span>Day-board</a>
+              <a class="on"><span class="ic">◈</span>ITPs</a>
+              <a><span class="ic">⚠</span>NCRs</a>
+              <a><span class="ic">▤</span>Docs</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <div class="foot">
+    <span>EPC Contractor · CEC Open Energy · evaluation mockup — not wired to app</span>
+    <span>chains: itp · ncr · punch_list · ipp_submittal · project_change_order · ipp_method_statement · ipp_construction_diary · hse_incident</span>
+  </div>
+</div>
+
+<script>
+  function pick(n){
+    for(var i=1;i<=3;i++){
+      var tab=document.getElementById('t'+i);
+      var pan=document.getElementById('p'+i);
+      var on=(i===n);
+      tab.setAttribute('aria-selected',on?'true':'false');
+      pan.setAttribute('data-active',on?'true':'false');
+    }
+  }
+  // keyboard arrow nav on tablist
+  document.querySelectorAll('[role="tab"]').forEach(function(t,i,arr){
+    t.addEventListener('keydown',function(e){
+      if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+        e.preventDefault();
+        var d=e.key==='ArrowRight'?1:-1;
+        var nx=(i+d+arr.length)%arr.length;
+        arr[nx].focus(); pick(nx+1);
+      }
+    });
+  });
+</script>
+</body>
+</html>

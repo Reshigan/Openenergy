@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offtaker — CEC Open Energy · Design Exploration v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Calm corporate-buyer palette — slate ground, trustworthy teal, honest amber/green signal */
+    --ink:#10242b;
+    --ink-2:#2c454e;
+    --muted:#5b7079;
+    --line:#dde6e8;
+    --line-2:#c7d6da;
+    --paper:#f4f7f7;
+    --card:#ffffff;
+    --teal:#0c6b73;
+    --teal-deep:#08474d;
+    --teal-tint:#e3f1f1;
+    --green:#1c7a4a;
+    --green-tint:#e1f3e8;
+    --amber:#9a5b00;
+    --amber-tint:#fbecd2;
+    --red:#9a2a2a;
+    --red-tint:#f8e1e1;
+    --gold:#7a5a12;
+    --gold-tint:#f6edcf;
+    --shadow:0 1px 2px rgba(16,36,43,.05),0 8px 24px -12px rgba(16,36,43,.18);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-.01em}
+  .serif{font-family:'Fraunces',Georgia,serif}
+  .mono{font-family:'Roboto Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+  .wrap{max-width:1340px;margin:0 auto;padding:0 28px}
+
+  /* ── Page header band ── */
+  .band{
+    background:linear-gradient(180deg,#0a2b30 0%,#0c353b 100%);
+    color:#eaf4f4;padding:30px 0 34px;border-bottom:3px solid var(--gold);
+  }
+  .band .wrap{display:grid;grid-template-columns:1.15fr 1fr;gap:40px;align-items:start}
+  .eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#7fc5c4;font-weight:600}
+  .band h1{font-size:38px;line-height:1.04;margin:8px 0 4px;color:#fff}
+  .band h1 .ease{font-style:italic;color:#f4d77c}
+  .persona{font-size:14px;color:#bcd6d6;max-width:56ch;margin-top:10px}
+  .rationale{
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);
+    border-radius:12px;padding:16px 18px;font-size:13.5px;color:#d6e7e7;
+  }
+  .rationale b{color:#f4d77c}
+  .persona-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .chip{font-size:11.5px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);
+    color:#cfe6e6;padding:4px 10px;border-radius:999px;font-weight:500}
+
+  /* ── Journey-as-product strip ── */
+  .jstrip{background:#0e3137;color:#dfeeed;padding:22px 0 26px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .jstrip h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#86c8c6;margin-bottom:4px}
+  .jstrip .sub{font-size:12.5px;color:#9fc1c0;margin-bottom:16px}
+  .jgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .jcard{background:linear-gradient(180deg,#11434a,#0d363c);border:1px solid rgba(255,255,255,.1);
+    border-radius:14px;padding:16px 16px 14px;position:relative;overflow:hidden}
+  .jcard .jname{font-size:16.5px;font-weight:600;color:#fff;margin-bottom:2px;letter-spacing:-.01em}
+  .jcard .jkey{font-size:11px;color:#7fb4b3;font-family:'Roboto Mono',monospace}
+  .jcard .jdesc{font-size:12px;color:#bcd6d5;margin:9px 0 12px;min-height:32px}
+  .tier{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+    padding:4px 9px;border-radius:7px;letter-spacing:.02em}
+  .tier.f{background:#23484f;color:#9fe0dc;border:1px solid #2f6068}
+  .tier.p{background:#2a3d57;color:#a9c8f5;border:1px solid #3a5680}
+  .tier.r{background:#4a3a18;color:#f0d488;border:1px solid #6b561f}
+  .meter{margin-top:11px;display:flex;align-items:baseline;justify-content:space-between;
+    border-top:1px dashed rgba(255,255,255,.14);padding-top:10px}
+  .meter .lab{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#7fb4b3}
+  .meter .val{font-size:13px;font-weight:600;color:#f4d77c;font-family:'Roboto Mono',monospace}
+
+  /* ── Option tabs ── */
+  .tabs-bar{position:sticky;top:0;z-index:30;background:rgba(244,247,247,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line-2);padding:12px 0}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap}
+  .tab{font-size:13.5px;font-weight:600;border:1px solid var(--line-2);background:#fff;
+    color:var(--ink-2);padding:9px 16px;border-radius:10px;cursor:pointer;display:flex;
+    flex-direction:column;line-height:1.25;min-height:24px}
+  .tab small{font-size:11px;font-weight:500;color:var(--muted)}
+  .tab[aria-selected="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
+  .tab[aria-selected="true"] small{color:#bfe5e5}
+
+  .panel{display:none;padding:34px 0 56px}
+  .panel.active{display:block}
+  .opt-head{margin-bottom:8px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .opt-head .num{font-family:'Fraunces',serif;font-size:30px;font-weight:600;color:var(--teal)}
+  .opt-head h2{font-size:24px}
+  .concept{font-size:15px;color:var(--ink-2);max-width:80ch;margin:2px 0 4px}
+  .ease-call{display:flex;align-items:center;gap:12px;background:var(--gold-tint);
+    border:1px solid #e6d9a8;border-left:5px solid var(--gold);border-radius:10px;
+    padding:12px 16px;margin:16px 0 26px;font-size:13.5px;color:#503c08;max-width:90ch}
+  .ease-call .tag{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+    color:#fff;background:var(--gold);padding:5px 9px;border-radius:6px;white-space:nowrap}
+  .ease-call b{color:#3a2c04}
+
+  .frames{display:grid;grid-template-columns:1fr 392px;gap:30px;align-items:start}
+  @media(max-width:1180px){.frames{grid-template-columns:1fr}}
+
+  /* generic device chrome */
+  .device-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+    font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .device-label::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  .desktop{border:1px solid var(--line-2);border-radius:16px;overflow:hidden;background:var(--card);
+    box-shadow:var(--shadow)}
+  .d-chrome{display:flex;align-items:center;gap:8px;padding:9px 14px;background:#eef3f3;
+    border-bottom:1px solid var(--line)}
+  .d-dot{width:11px;height:11px;border-radius:50%;background:#cdd9da}
+  .d-url{flex:1;margin-left:8px;background:#fff;border:1px solid var(--line);border-radius:7px;
+    font-size:11.5px;color:var(--muted);padding:5px 11px;font-family:'Roboto Mono',monospace}
+  .d-body{padding:0}
+
+  /* phone */
+  .phone{width:392px;border:10px solid #16323a;border-radius:42px;overflow:hidden;background:#000;
+    box-shadow:0 30px 60px -24px rgba(16,36,43,.5);margin:0 auto}
+  .p-screen{background:var(--paper);height:844px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+  .p-status{height:34px;background:var(--teal-deep);color:#cfeaea;display:flex;align-items:center;
+    justify-content:space-between;padding:0 18px;font-size:12px;font-weight:600;flex-shrink:0}
+  .p-status .dots{display:flex;gap:5px;align-items:center}
+  .p-offline{font-size:11px;background:#0c6b73;color:#dff3f3;text-align:center;padding:5px;
+    flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:7px}
+  .p-offline.warn{background:var(--amber-tint);color:var(--amber)}
+  .p-content{flex:1;overflow-y:auto;padding:16px 16px 90px}
+  .p-nav{position:absolute;bottom:0;left:0;right:0;height:74px;background:#fff;
+    border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;
+    padding-bottom:8px}
+  .p-nav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;
+    color:var(--muted);text-decoration:none;font-weight:500;min-width:48px;min-height:48px;justify-content:center}
+  .p-nav a.on{color:var(--teal)}
+  .p-nav .ic{font-size:19px}
+  .p-fab{position:absolute;bottom:88px;right:16px;background:var(--teal);color:#fff;
+    border-radius:16px;padding:14px 18px;font-size:14px;font-weight:700;box-shadow:0 10px 24px -6px rgba(12,107,115,.6);
+    display:flex;align-items:center;gap:8px;border:none}
+
+  /* shared content atoms */
+  .stat-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;
+    padding:4px 10px;border-radius:999px}
+  .ok{background:var(--green-tint);color:var(--green)}
+  .warn{background:var(--amber-tint);color:var(--amber)}
+  .bad{background:var(--red-tint);color:var(--red)}
+  .neu{background:var(--teal-tint);color:var(--teal-deep)}
+  .btn{font-size:13px;font-weight:600;border-radius:9px;padding:9px 15px;border:1px solid var(--line-2);
+    background:#fff;color:var(--ink-2);cursor:pointer;min-height:24px}
+  .btn.pri{background:var(--teal);border-color:var(--teal);color:#fff}
+  .btn.gold{background:var(--gold);border-color:var(--gold);color:#fff}
+
+  /* state pipeline */
+  .pipe{display:flex;align-items:center;gap:0;flex-wrap:wrap}
+  .pipe .node{font-size:10.5px;font-weight:600;padding:4px 8px;border-radius:6px;background:#eef3f3;
+    color:var(--muted);white-space:nowrap}
+  .pipe .node.done{background:var(--teal-tint);color:var(--teal-deep)}
+  .pipe .node.now{background:var(--teal);color:#fff}
+  .pipe .arw{color:var(--line-2);font-size:11px;padding:0 4px}
+
+  table{border-collapse:collapse;width:100%;font-size:12.5px}
+  th{text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+    font-weight:600;padding:8px 12px;border-bottom:1px solid var(--line)}
+  td{padding:11px 12px;border-bottom:1px solid var(--line);color:var(--ink-2)}
+  tr:last-child td{border-bottom:none}
+</style>
+</head>
+<body>
+
+<!-- ░░ HEADER BAND ░░ -->
+<header class="band">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">CEC Open Energy · Role exploration v2</div>
+      <h1>Offtaker — <span class="serif ease">ease</span> for the energy buyer</h1>
+      <p class="persona">
+        <b style="color:#fff">Who:</b> a corporate procurement lead — manufacturing, retail, mining services.
+        Signed a 10-year solar PPA to hedge tariff and decarbonise. Not an energy trader, not an engineer.
+        Checks the platform a few times a week from a laptop, occasionally the phone between meetings.
+        <b style="color:#fff">What they need:</b> one honest answer — <i>"am I getting the energy I'm paying for?"</i> —
+        and a plain next step, never a wall of telemetry.
+      </p>
+      <div class="persona-meta">
+        <span class="chip">Desktop-first · light mobile</span>
+        <span class="chip">Low jargon · guided</span>
+        <span class="chip">Stress: delivery shortfall · take-or-pay exposure</span>
+      </div>
+    </div>
+    <div class="rationale">
+      <b>Why these three bets.</b> A non-expert buyer drowns in dashboards. Every option leads with a single
+      delivered-vs-contracted truth and one guided action — they differ only in <b>how</b> they tell that truth:
+      a calm consumer-grade assistant, a delivered-vs-contracted instrument panel, or a contract timeline that
+      shows obligations coming at you. The overarching theme is <b>EASE</b>: one number, plain language, next step.
+    </div>
+  </div>
+</header>
+
+<!-- ░░ JOURNEY-AS-PRODUCT STRIP ░░ -->
+<section class="jstrip">
+  <div class="wrap">
+    <h2>Hero journeys · packaged + metered</h2>
+    <div class="sub">The buyer pays per journey. Tier reflects build depth (L3 Foundation → L5 Regulator-grade); the metered unit is what each invoice counts.</div>
+    <div class="jgrid">
+      <div class="jcard">
+        <div class="jname">PPA contracts</div>
+        <div class="jkey">ppa_contract_chain · W22</div>
+        <div class="jdesc">NERSA s34 PPA execution — draft → signed → active → expiry. The backbone obligation.</div>
+        <span class="tier r">★ Regulator-grade · L5</span>
+        <div class="meter"><span class="lab">Metered</span><span class="val">per active PPA</span></div>
+      </div>
+      <div class="jcard">
+        <div class="jname">Take-or-pay obligations</div>
+        <div class="jkey">ppa_take_or_pay · W32</div>
+        <div class="jdesc">IFRS 16 + NERSA s34 — contracted → shortfall → cure window → settled. The exposure the buyer fears.</div>
+        <span class="tier p">◆ Professional · L4</span>
+        <div class="meter"><span class="lab">Metered</span><span class="val">per MWh reconciled</span></div>
+      </div>
+      <div class="jcard">
+        <div class="jname">Annual reconciliation</div>
+        <div class="jkey">ppa_annual_recon · W101</div>
+        <div class="jdesc">IFRS 15 annual true-up & financial close — opened → reconciled → signed-off → settled.</div>
+        <span class="tier r">★ Regulator-grade · L5</span>
+        <div class="meter"><span class="lab">Metered</span><span class="val">per certified true-up</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ TABS ░░ -->
+<div class="tabs-bar">
+  <div class="wrap">
+    <div class="tabs" role="tablist" aria-label="Design options">
+      <button class="tab" role="tab" aria-selected="true" aria-controls="o1" id="t1" onclick="pick(1)">Option 1 — Honest Number<small>Calm consumer-grade assistant</small></button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="o2" id="t2" onclick="pick(2)">Option 2 — Delivery Panel<small>Delivered-vs-contracted instrument</small></button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="o3" id="t3" onclick="pick(3)">Option 3 — Obligation Timeline<small>Contract dates coming at you</small></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ OPTION 1 ══════════ -->
+<section class="panel active" id="o1" role="tabpanel" aria-labelledby="t1">
+  <div class="wrap">
+    <div class="opt-head"><span class="num">01</span><h2 class="serif">The Honest Number</h2></div>
+    <p class="concept">A consumer-grade assistant. The whole screen exists to answer one question in plain English, big and first — then offers exactly one guided step. Feels like a banking app, not a control room.</p>
+    <div class="ease-call">
+      <span class="tag">Ease</span>
+      <span>Makes effortless: <b>"Am I getting what I pay for this month?"</b> — a single sentence in words, before any chart, with the one thing to do next attached.</span>
+    </div>
+
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div>
+        <div class="device-label">Desktop · 1280</div>
+        <div class="desktop">
+          <div class="d-chrome"><span class="d-dot"></span><span class="d-dot"></span><span class="d-dot"></span>
+            <span class="d-url">oe.vantax.co.za/offtaker</span></div>
+          <div class="d-body" style="padding:26px 30px;background:linear-gradient(180deg,#fbfdfd,#f4f7f7)">
+            <!-- hero answer -->
+            <div style="background:var(--card);border:1px solid var(--line);border-radius:18px;padding:30px 32px;box-shadow:var(--shadow);position:relative;overflow:hidden">
+              <div style="position:absolute;right:-30px;top:-30px;width:200px;height:200px;border-radius:50%;background:var(--green-tint);opacity:.5"></div>
+              <div style="position:relative">
+                <div style="font-size:13px;color:var(--muted);font-weight:600;letter-spacing:.04em">JUNE 2026 · so far</div>
+                <h2 class="serif" style="font-size:33px;line-height:1.15;margin:10px 0 4px;max-width:30ch">
+                  You're getting <span style="color:var(--green)">98.6%</span> of the solar you contracted.</h2>
+                <p style="font-size:15px;color:var(--ink-2);max-width:62ch;margin:6px 0 0">
+                  Sun Valley PV has delivered <b>1,184 MWh</b> against your <b>1,200 MWh</b> nomination.
+                  The 16 MWh gap is normal weather variance — well inside your tolerance. <b>No action needed.</b></p>
+                <div style="display:flex;gap:10px;margin-top:18px">
+                  <button class="btn pri">See the breakdown</button>
+                  <button class="btn">Download June statement</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- three plain cards -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px">
+              <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px">
+                <div style="font-size:12px;color:var(--muted);font-weight:600">Take-or-pay exposure</div>
+                <div class="serif" style="font-size:26px;margin:6px 0 2px;color:var(--green)">R 0</div>
+                <div style="font-size:12.5px;color:var(--ink-2)">You're taking everything you pay for. No shortfall building up this quarter.</div>
+                <div style="margin-top:9px"><span class="stat-pill ok">● Clear · contracted</span></div>
+              </div>
+              <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px">
+                <div style="font-size:12px;color:var(--muted);font-weight:600">Blended cost this month</div>
+                <div class="serif" style="font-size:26px;margin:6px 0 2px">R1.42<span style="font-size:14px;color:var(--muted)">/kWh</span></div>
+                <div style="font-size:12.5px;color:var(--ink-2)">3.1% below your Eskom alternative. Your hedge is working.</div>
+                <div style="margin-top:9px"><span class="stat-pill ok">▼ Saving vs grid</span></div>
+              </div>
+              <div style="background:#fff;border:1px solid #e6d9a8;border-radius:14px;padding:16px 18px;background:linear-gradient(180deg,#fffdf6,#fff)">
+                <div style="font-size:12px;color:var(--amber);font-weight:700">One thing needs you</div>
+                <div class="serif" style="font-size:20px;margin:6px 0 2px;line-height:1.2">Tariff indexation notice</div>
+                <div style="font-size:12.5px;color:var(--ink-2)">CPI repricing arrives in 11 days. Review the proposed +4.2% before it auto-applies.</div>
+                <div style="margin-top:10px"><button class="btn gold" style="width:100%">Review now</button></div>
+              </div>
+            </div>
+
+            <!-- guided journey row -->
+            <div style="margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px">
+              <div style="display:flex;justify-content:space-between;align-items:baseline">
+                <h3 style="font-size:15px">Where your PPA is right now</h3>
+                <span style="font-size:11.5px;color:var(--muted)">ppa_contract_chain · Sun Valley PV 60MW</span>
+              </div>
+              <div class="pipe" style="margin-top:12px">
+                <span class="node done">draft</span><span class="arw">→</span>
+                <span class="node done">negotiation</span><span class="arw">→</span>
+                <span class="node done">legal_review</span><span class="arw">→</span>
+                <span class="node done">signed</span><span class="arw">→</span>
+                <span class="node now">active</span><span class="arw">→</span>
+                <span class="node">expired</span><span class="arw">→</span>
+                <span class="node">terminated</span>
+              </div>
+              <p style="font-size:12.5px;color:var(--muted);margin:11px 0 0">In plain terms: your contract is <b>live and delivering</b>. Next milestone is the annual true-up in October.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div>
+        <div class="device-label">PWA · 390×844</div>
+        <div class="phone"><div class="p-screen">
+          <div class="p-status"><span>9:41</span><span class="dots">📶 🔋 87%</span></div>
+          <div class="p-offline"><span>●</span> Synced 2 min ago · works offline</div>
+          <div class="p-content">
+            <div style="font-size:12px;color:var(--muted);font-weight:600">JUNE · so far</div>
+            <div style="background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 18px;margin-top:8px;box-shadow:var(--shadow)">
+              <div class="serif" style="font-size:52px;color:var(--green);line-height:1">98.6%</div>
+              <div style="font-size:15px;font-weight:600;margin-top:6px">of the solar you paid for</div>
+              <p style="font-size:13px;color:var(--ink-2);margin:8px 0 0">1,184 of 1,200 MWh delivered. Normal weather gap. <b>Nothing to do.</b></p>
+            </div>
+
+            <div style="background:linear-gradient(180deg,#fffdf6,#fff);border:1px solid #e6d9a8;border-radius:14px;padding:14px 16px;margin-top:14px">
+              <div style="font-size:11px;color:var(--amber);font-weight:700;letter-spacing:.04em">ONE THING NEEDS YOU</div>
+              <div style="font-size:14.5px;font-weight:600;margin:4px 0 2px">Tariff +4.2% in 11 days</div>
+              <div style="font-size:12.5px;color:var(--ink-2)">Review the CPI repricing before it auto-applies.</div>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:14px">
+              <div style="flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px">
+                <div style="font-size:11px;color:var(--muted)">Take-or-pay</div>
+                <div class="serif" style="font-size:21px;color:var(--green)">R 0</div>
+              </div>
+              <div style="flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px">
+                <div style="font-size:11px;color:var(--muted)">Cost</div>
+                <div class="serif" style="font-size:21px">R1.42</div>
+              </div>
+            </div>
+
+            <div style="font-size:11px;color:var(--muted);font-weight:600;margin:18px 0 8px;letter-spacing:.06em">YOUR CONTRACT</div>
+            <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px">
+              <div style="font-size:13.5px;font-weight:600">Sun Valley PV · 60 MW</div>
+              <div style="margin-top:8px"><span class="stat-pill neu">active · delivering</span></div>
+              <div style="font-size:12px;color:var(--muted);margin-top:8px">Next: annual true-up · October</div>
+            </div>
+          </div>
+          <button class="p-fab">Review tariff ↗</button>
+          <div class="p-nav">
+            <a class="on"><span class="ic">◉</span>Home</a>
+            <a><span class="ic">⬓</span>Delivery</a>
+            <a><span class="ic">▤</span>Contracts</a>
+            <a><span class="ic">◈</span>Bills</a>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ OPTION 2 ══════════ -->
+<section class="panel" id="o2" role="tabpanel" aria-labelledby="t2">
+  <div class="wrap">
+    <div class="opt-head"><span class="num">02</span><h2 class="serif">The Delivery Panel</h2></div>
+    <p class="concept">A single instrument that gauges delivered-vs-contracted for every PPA and rolls them into one portfolio truth — with the take-or-pay buffer always visible. More data than Option 1, still organised around one number, for a buyer who wants to <i>see</i> the gap, not just be told.</p>
+    <div class="ease-call">
+      <span class="tag">Ease</span>
+      <span>Makes effortless: <b>"How close to my contracted volume is each site — and is any of it turning into a take-or-pay bill?"</b> One gauge per PPA, one buffer bar, color you can read across the room.</span>
+    </div>
+
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div>
+        <div class="device-label">Desktop · 1280</div>
+        <div class="desktop">
+          <div class="d-chrome"><span class="d-dot"></span><span class="d-dot"></span><span class="d-dot"></span>
+            <span class="d-url">oe.vantax.co.za/offtaker/delivery</span></div>
+          <div class="d-body" style="padding:24px 28px;background:#eef3f3">
+            <!-- portfolio headline gauge -->
+            <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:stretch">
+              <div style="background:var(--ink);color:#eaf4f4;border-radius:16px;padding:22px;text-align:center;display:flex;flex-direction:column;justify-content:center">
+                <div style="font-size:11.5px;letter-spacing:.12em;color:#86c8c6;font-weight:600">PORTFOLIO · DELIVERED VS CONTRACTED</div>
+                <div class="serif" style="font-size:60px;color:#7fe0a0;line-height:1;margin:14px 0 2px">97.2%</div>
+                <div style="font-size:13px;color:#bcd6d5">3,540 / 3,642 MWh · month-to-date</div>
+                <!-- buffer bar -->
+                <div style="margin-top:18px;text-align:left">
+                  <div style="font-size:11px;color:#9fc1c0;margin-bottom:5px">Take-or-pay buffer remaining</div>
+                  <div style="height:12px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden">
+                    <div style="height:100%;width:81%;background:linear-gradient(90deg,#1c7a4a,#7fe0a0)"></div>
+                  </div>
+                  <div style="font-size:11px;color:#bcd6d5;margin-top:5px">81% headroom · shortfall would start in Q4</div>
+                </div>
+              </div>
+
+              <!-- per-PPA gauges -->
+              <div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:6px 4px">
+                <table>
+                  <thead><tr><th>PPA / facility</th><th>Contracted</th><th>Delivered</th><th style="width:180px">Delivery rate</th><th>Take-or-pay</th><th></th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td><b style="color:var(--ink)">Sun Valley PV</b><br><span style="font-size:11px;color:var(--muted)">60 MW · active</span></td>
+                      <td class="mono">1,200</td><td class="mono">1,184</td>
+                      <td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;border-radius:4px;background:#eef3f3"><div style="height:100%;width:98%;border-radius:4px;background:var(--green)"></div></div><span class="mono" style="font-size:11.5px;color:var(--green)">98.6%</span></div></td>
+                      <td><span class="stat-pill ok">clear</span></td>
+                      <td><button class="btn" style="padding:6px 11px">Open</button></td>
+                    </tr>
+                    <tr>
+                      <td><b style="color:var(--ink)">Karoo Wind</b><br><span style="font-size:11px;color:var(--muted)">45 MW · active</span></td>
+                      <td class="mono">1,080</td><td class="mono">1,012</td>
+                      <td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;border-radius:4px;background:#eef3f3"><div style="height:100%;width:94%;border-radius:4px;background:var(--amber)"></div></div><span class="mono" style="font-size:11.5px;color:var(--amber)">93.7%</span></div></td>
+                      <td><span class="stat-pill warn">watch</span></td>
+                      <td><button class="btn" style="padding:6px 11px">Open</button></td>
+                    </tr>
+                    <tr>
+                      <td><b style="color:var(--ink)">Highveld Solar</b><br><span style="font-size:11px;color:var(--muted)">36 MW · active</span></td>
+                      <td class="mono">862</td><td class="mono">872</td>
+                      <td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;border-radius:4px;background:#eef3f3"><div style="height:100%;width:100%;border-radius:4px;background:var(--green)"></div></div><span class="mono" style="font-size:11.5px;color:var(--green)">101%</span></div></td>
+                      <td><span class="stat-pill ok">clear</span></td>
+                      <td><button class="btn" style="padding:6px 11px">Open</button></td>
+                    </tr>
+                    <tr>
+                      <td><b style="color:var(--ink)">Bloem CfD</b><br><span style="font-size:11px;color:var(--muted)">virtual · settled</span></td>
+                      <td class="mono">500</td><td class="mono">472</td>
+                      <td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;border-radius:4px;background:#eef3f3"><div style="height:100%;width:94%;border-radius:4px;background:var(--amber)"></div></div><span class="mono" style="font-size:11.5px;color:var(--amber)">94.4%</span></div></td>
+                      <td><span class="stat-pill neu">CfD settled</span></td>
+                      <td><button class="btn" style="padding:6px 11px">Open</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- take-or-pay drilldown for the watch facility -->
+            <div style="margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <h3 style="font-size:15px">Karoo Wind · take-or-pay watch <span style="font-weight:500;color:var(--muted);font-size:13px">(ppa_take_or_pay · W32)</span></h3>
+                <span class="stat-pill warn">cure window opens if shortfall ≥ 5% by 30 Jun</span>
+              </div>
+              <div class="pipe">
+                <span class="node now">contracted</span><span class="arw">→</span>
+                <span class="node">delivered</span><span class="arw">→</span>
+                <span class="node">shortfall</span><span class="arw">→</span>
+                <span class="node">cure_window</span><span class="arw">→</span>
+                <span class="node">disputed</span><span class="arw">→</span>
+                <span class="node">settled</span>
+              </div>
+              <p style="font-size:12.5px;color:var(--ink-2);margin:12px 0 0;max-width:90ch">Wind ran 6.3% under nomination this month. If it holds through month-end you'll enter the <b>cure window</b> — generator gets 10 days to make good before any deemed-energy adjustment. <b>You don't owe anything yet.</b></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div>
+        <div class="device-label">PWA · 390×844</div>
+        <div class="phone"><div class="p-screen">
+          <div class="p-status"><span>9:41</span><span class="dots">📶 🔋 87%</span></div>
+          <div class="p-offline warn"><span>⚠</span> 1 site to watch · Karoo Wind</div>
+          <div class="p-content">
+            <div style="background:var(--ink);color:#eaf4f4;border-radius:16px;padding:18px;text-align:center">
+              <div style="font-size:11px;color:#86c8c6;letter-spacing:.1em">PORTFOLIO DELIVERY</div>
+              <div class="serif" style="font-size:46px;color:#7fe0a0;line-height:1;margin:8px 0 2px">97.2%</div>
+              <div style="font-size:12.5px;color:#bcd6d5">3,540 / 3,642 MWh</div>
+              <div style="margin-top:14px;text-align:left">
+                <div style="font-size:10.5px;color:#9fc1c0;margin-bottom:4px">Take-or-pay buffer</div>
+                <div style="height:10px;border-radius:5px;background:rgba(255,255,255,.12)"><div style="height:100%;width:81%;border-radius:5px;background:linear-gradient(90deg,#1c7a4a,#7fe0a0)"></div></div>
+                <div style="font-size:10.5px;color:#bcd6d5;margin-top:4px">81% headroom</div>
+              </div>
+            </div>
+
+            <div style="font-size:11px;color:var(--muted);font-weight:600;margin:16px 0 8px;letter-spacing:.06em">PER SITE</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 14px">
+                <div style="display:flex;justify-content:space-between"><b style="font-size:13.5px">Sun Valley PV</b><span class="mono" style="color:var(--green);font-weight:600">98.6%</span></div>
+                <div style="height:7px;border-radius:4px;background:#eef3f3;margin-top:8px"><div style="height:100%;width:98%;border-radius:4px;background:var(--green)"></div></div>
+              </div>
+              <div style="background:#fff;border:1px solid #e6d9a8;border-radius:12px;padding:13px 14px">
+                <div style="display:flex;justify-content:space-between"><b style="font-size:13.5px">Karoo Wind</b><span class="mono" style="color:var(--amber);font-weight:600">93.7%</span></div>
+                <div style="height:7px;border-radius:4px;background:#eef3f3;margin-top:8px"><div style="height:100%;width:94%;border-radius:4px;background:var(--amber)"></div></div>
+                <div style="font-size:11.5px;color:var(--amber);margin-top:8px">Watch · cure window if it stays under</div>
+              </div>
+              <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 14px">
+                <div style="display:flex;justify-content:space-between"><b style="font-size:13.5px">Highveld Solar</b><span class="mono" style="color:var(--green);font-weight:600">101%</span></div>
+                <div style="height:7px;border-radius:4px;background:#eef3f3;margin-top:8px"><div style="height:100%;width:100%;border-radius:4px;background:var(--green)"></div></div>
+              </div>
+            </div>
+          </div>
+          <button class="p-fab">Open Karoo ↗</button>
+          <div class="p-nav">
+            <a><span class="ic">◉</span>Home</a>
+            <a class="on"><span class="ic">⬓</span>Delivery</a>
+            <a><span class="ic">▤</span>Contracts</a>
+            <a><span class="ic">◈</span>Bills</a>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ OPTION 3 ══════════ -->
+<section class="panel" id="o3" role="tabpanel" aria-labelledby="t3">
+  <div class="wrap">
+    <div class="opt-head"><span class="num">03</span><h2 class="serif">The Obligation Timeline</h2></div>
+    <p class="concept">A horizontal contract calendar. The buyer's real anxiety is being surprised by a date — a nomination deadline, a true-up, an indexation, a payment-security expiry. This view puts every PPA obligation on one timeline so nothing ambushes them, each marker carrying its own next step.</p>
+    <div class="ease-call">
+      <span class="tag">Ease</span>
+      <span>Makes effortless: <b>"What's coming at me, and have I done my part?"</b> — every contract deadline on one line, sorted by how soon, each with one button. Nothing falls through.</span>
+    </div>
+
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div>
+        <div class="device-label">Desktop · 1280</div>
+        <div class="desktop">
+          <div class="d-chrome"><span class="d-dot"></span><span class="d-dot"></span><span class="d-dot"></span>
+            <span class="d-url">oe.vantax.co.za/offtaker/timeline</span></div>
+          <div class="d-body" style="padding:24px 28px;background:linear-gradient(180deg,#f8fbfb,#eef3f3)">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+              <h2 class="serif" style="font-size:21px">What's coming on your contracts</h2>
+              <span style="font-size:12.5px;color:var(--muted)">4 sites · next 120 days · 1 needs you now</span>
+            </div>
+            <!-- horizon ruler -->
+            <div style="display:flex;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line-2);padding-bottom:6px;margin:14px 0 4px">
+              <span style="width:120px">Now</span><span style="flex:1">+30d</span><span style="flex:1">+60d</span><span style="flex:1">+90d</span><span style="width:80px;text-align:right">+120d</span>
+            </div>
+
+            <!-- timeline rows -->
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+
+              <!-- urgent -->
+              <div style="display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #e6c9c9;border-left:5px solid var(--red);border-radius:12px;padding:12px 16px">
+                <div style="width:106px"><div class="stat-pill bad">in 4 days</div></div>
+                <div style="flex:1;position:relative;height:10px"><div style="position:absolute;left:3%;width:14px;height:14px;border-radius:50%;background:var(--red);top:-2px;border:3px solid #fff;box-shadow:0 0 0 1px var(--red)"></div></div>
+                <div style="width:430px">
+                  <div style="font-size:14px;font-weight:600">Day-ahead nomination window closes <span style="color:var(--muted);font-weight:500;font-size:12px">· ppa_nomination W87</span></div>
+                  <div style="font-size:12.5px;color:var(--ink-2)">Confirm tomorrow's Sun Valley nomination or you settle at the deviation tariff.</div>
+                </div>
+                <button class="btn pri">Nominate</button>
+              </div>
+
+              <!-- amber tariff -->
+              <div style="display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #e6d9a8;border-left:5px solid var(--amber);border-radius:12px;padding:12px 16px">
+                <div style="width:106px"><div class="stat-pill warn">in 11 days</div></div>
+                <div style="flex:1;position:relative;height:10px"><div style="position:absolute;left:9%;width:14px;height:14px;border-radius:50%;background:var(--amber);top:-2px;border:3px solid #fff;box-shadow:0 0 0 1px var(--amber)"></div></div>
+                <div style="width:430px">
+                  <div style="font-size:14px;font-weight:600">Tariff indexation notice — proposed +4.2% <span style="color:var(--muted);font-weight:500;font-size:12px">· tariff_indexation W39</span></div>
+                  <div style="font-size:12.5px;color:var(--ink-2)">CPI repricing auto-applies if you don't dispute. State: <b>notice_issued</b>.</div>
+                </div>
+                <button class="btn gold">Review</button>
+              </div>
+
+              <!-- payment security -->
+              <div style="display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--teal);border-radius:12px;padding:12px 16px">
+                <div style="width:106px"><div class="stat-pill neu">in 38 days</div></div>
+                <div style="flex:1;position:relative;height:10px"><div style="position:absolute;left:31%;width:14px;height:14px;border-radius:50%;background:var(--teal);top:-2px;border:3px solid #fff;box-shadow:0 0 0 1px var(--teal)"></div></div>
+                <div style="width:430px">
+                  <div style="font-size:14px;font-weight:600">Payment-security LC expiry approaching <span style="color:var(--muted);font-weight:500;font-size:12px">· ppa_payment_security W54</span></div>
+                  <div style="font-size:12.5px;color:var(--ink-2)">Karoo Wind guarantee renews soon. State: <b>expiry_warning</b>.</div>
+                </div>
+                <button class="btn">Plan renewal</button>
+              </div>
+
+              <!-- true-up -->
+              <div style="display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--teal-deep);border-radius:12px;padding:12px 16px">
+                <div style="width:106px"><div class="stat-pill neu">in 96 days</div></div>
+                <div style="flex:1;position:relative;height:10px"><div style="position:absolute;left:80%;width:14px;height:14px;border-radius:50%;background:var(--teal-deep);top:-2px;border:3px solid #fff;box-shadow:0 0 0 1px var(--teal-deep)"></div></div>
+                <div style="width:430px">
+                  <div style="font-size:14px;font-weight:600">Annual reconciliation opens <span style="color:var(--muted);font-weight:500;font-size:12px">· ppa_annual_recon W101</span></div>
+                  <div style="font-size:12.5px;color:var(--ink-2)">Full-year true-up & financial close. State: <b>year_opened</b> pending.</div>
+                </div>
+                <button class="btn">Pre-fill data</button>
+              </div>
+            </div>
+
+            <!-- bottom reassurance -->
+            <div style="margin-top:18px;background:var(--green-tint);border:1px solid #bfe3cd;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px">
+              <span style="font-size:20px">✓</span>
+              <span style="font-size:13.5px;color:#0f5b34"><b>Everything else is on track.</b> Delivery is 97.2% of contracted this month and no take-or-pay shortfall is building. Only the items above need your attention.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div>
+        <div class="device-label">PWA · 390×844</div>
+        <div class="phone"><div class="p-screen">
+          <div class="p-status"><span>9:41</span><span class="dots">📶 🔋 87%</span></div>
+          <div class="p-offline warn"><span>●</span> 1 deadline in 4 days</div>
+          <div class="p-content">
+            <h2 class="serif" style="font-size:20px;margin-bottom:2px">Coming up</h2>
+            <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Sorted by how soon · 1 needs you</div>
+
+            <div style="display:flex;flex-direction:column;gap:11px">
+              <div style="background:#fff;border:1px solid #e6c9c9;border-left:5px solid var(--red);border-radius:12px;padding:13px 14px">
+                <div style="display:flex;justify-content:space-between;align-items:center"><span class="stat-pill bad">in 4 days</span><span style="font-size:10.5px;color:var(--muted)">W87</span></div>
+                <div style="font-size:14px;font-weight:600;margin-top:8px">Nomination window closes</div>
+                <div style="font-size:12px;color:var(--ink-2);margin-top:2px">Confirm tomorrow's Sun Valley nomination.</div>
+              </div>
+
+              <div style="background:#fff;border:1px solid #e6d9a8;border-left:5px solid var(--amber);border-radius:12px;padding:13px 14px">
+                <div style="display:flex;justify-content:space-between;align-items:center"><span class="stat-pill warn">in 11 days</span><span style="font-size:10.5px;color:var(--muted)">W39</span></div>
+                <div style="font-size:14px;font-weight:600;margin-top:8px">Tariff +4.2% notice</div>
+                <div style="font-size:12px;color:var(--ink-2);margin-top:2px">Review before it auto-applies.</div>
+              </div>
+
+              <div style="background:#fff;border:1px solid var(--line);border-left:5px solid var(--teal);border-radius:12px;padding:13px 14px">
+                <div style="display:flex;justify-content:space-between;align-items:center"><span class="stat-pill neu">in 38 days</span><span style="font-size:10.5px;color:var(--muted)">W54</span></div>
+                <div style="font-size:14px;font-weight:600;margin-top:8px">LC expiry approaching</div>
+                <div style="font-size:12px;color:var(--ink-2);margin-top:2px">Karoo Wind guarantee renewal.</div>
+              </div>
+
+              <div style="background:#fff;border:1px solid var(--line);border-left:5px solid var(--teal-deep);border-radius:12px;padding:13px 14px">
+                <div style="display:flex;justify-content:space-between;align-items:center"><span class="stat-pill neu">in 96 days</span><span style="font-size:10.5px;color:var(--muted)">W101</span></div>
+                <div style="font-size:14px;font-weight:600;margin-top:8px">Annual true-up opens</div>
+              </div>
+            </div>
+
+            <div style="background:var(--green-tint);border:1px solid #bfe3cd;border-radius:12px;padding:12px 14px;margin-top:14px;font-size:12.5px;color:#0f5b34">
+              ✓ <b>Everything else on track.</b> 97.2% delivered, no shortfall.
+            </div>
+          </div>
+          <button class="p-fab">Nominate now ↗</button>
+          <div class="p-nav">
+            <a><span class="ic">◉</span>Home</a>
+            <a><span class="ic">⬓</span>Delivery</a>
+            <a class="on"><span class="ic">▤</span>Timeline</a>
+            <a><span class="ic">◈</span>Bills</a>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function pick(n){
+    for(var i=1;i<=3;i++){
+      document.getElementById('o'+i).classList.toggle('active',i===n);
+      document.getElementById('t'+i).setAttribute('aria-selected',i===n?'true':'false');
+    }
+    window.scrollTo({top:document.querySelector('.tabs-bar').offsetTop-4,behavior:'smooth'});
+  }
+</script>
+</body>
+</html>

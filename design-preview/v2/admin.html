@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Platform Admin — Design Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#10151f; --panel2:#161d2b; --line:#243049;
+    --line2:#324063; --txt:#e8edf7; --txt2:#9aa8c4; --txt3:#6b7891;
+    --green:#2fe28a; --green-d:#0f3a28; --amber:#ffc24b; --amber-d:#3a2e0f;
+    --red:#ff5d6c; --red-d:#3a1218; --blue:#5aa8ff; --violet:#9d7bff;
+    --teal:#3fd9d0;
+    --foundation:#5aa8ff; --pro:#9d7bff; --reg:#2fe28a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--txt);
+    line-height:1.5; -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(900px 500px at 85% -10%,rgba(47,226,138,.06),transparent),radial-gradient(800px 600px at 0% 0%,rgba(90,168,255,.05),transparent);
+  }
+  .wrap{max-width:1340px;margin:0 auto;padding:28px 24px 80px}
+  .mono{font-family:'IBM Plex Mono',monospace}
+  .disp{font-family:'Space Grotesk',sans-serif}
+
+  /* ── Header band ── */
+  .hdr{border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,#11192a,#0d1320);padding:26px 30px;position:relative;overflow:hidden}
+  .hdr::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--green),var(--blue),var(--violet));opacity:.9;height:3px}
+  .hdr-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  .role-chip{font-family:'Space Grotesk';font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#0a0e14;background:linear-gradient(90deg,var(--green),var(--teal));padding:6px 14px;border-radius:8px}
+  .role-title{font-family:'Space Grotesk';font-weight:700;font-size:30px;letter-spacing:-.02em}
+  .role-sub{color:var(--txt2);font-size:13px}
+  .hdr-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;margin-top:6px}
+  .hdr-grid h4{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--txt3);margin-bottom:7px}
+  .hdr-grid p{font-size:13.5px;color:var(--txt2);max-width:60ch}
+  .hdr-grid p b{color:var(--txt)}
+
+  /* ── Journey-as-product strip ── */
+  .strip-h{display:flex;align-items:baseline;gap:12px;margin:32px 0 14px}
+  .strip-h h2{font-family:'Space Grotesk';font-size:18px;font-weight:600}
+  .strip-h span{font-size:12px;color:var(--txt3)}
+  .jstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .jcard{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:18px;position:relative}
+  .jcard .wv{position:absolute;top:14px;right:16px;font-size:10px;color:var(--txt3)}
+  .tier{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:6px;margin-bottom:11px}
+  .tier.f{color:var(--foundation);background:rgba(90,168,255,.13);border:1px solid rgba(90,168,255,.35)}
+  .tier.p{color:var(--pro);background:rgba(157,123,255,.13);border:1px solid rgba(157,123,255,.35)}
+  .tier.r{color:var(--reg);background:rgba(47,226,138,.13);border:1px solid rgba(47,226,138,.4)}
+  .jcard h3{font-family:'Space Grotesk';font-size:16px;font-weight:600;margin-bottom:4px}
+  .jcard .ck{font-size:11px;color:var(--txt3)}
+  .meter{margin-top:13px;padding-top:12px;border-top:1px dashed var(--line2);display:flex;justify-content:space-between;align-items:flex-end}
+  .meter .lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3)}
+  .meter .val{font-family:'IBM Plex Mono';font-weight:600;font-size:14px;color:var(--green)}
+  .meter .price{font-family:'IBM Plex Mono';font-size:12px;color:var(--txt2)}
+
+  /* ── Tabs ── */
+  .tabs{display:flex;gap:6px;margin:36px 0 20px;border:1px solid var(--line);border-radius:12px;padding:6px;background:var(--panel);width:fit-content}
+  .tab{font-family:'Space Grotesk';font-weight:600;font-size:13.5px;color:var(--txt2);background:transparent;border:0;padding:10px 18px;border-radius:8px;cursor:pointer;transition:.15s}
+  .tab:hover{color:var(--txt)}
+  .tab.on{background:var(--panel2);color:var(--txt);box-shadow:inset 0 0 0 1px var(--line2)}
+  .tab .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle}
+  .panel-opt{display:none}
+  .panel-opt.on{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .opt-head{margin-bottom:18px}
+  .opt-head .k{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.1em;color:var(--txt3);text-transform:uppercase}
+  .opt-head h2{font-family:'Space Grotesk';font-size:24px;font-weight:700;margin:4px 0 5px}
+  .opt-head p{color:var(--txt2);font-size:14px;max-width:78ch}
+  .ease{display:flex;align-items:center;gap:10px;margin-top:13px;padding:11px 15px;border-radius:11px;border:1px solid var(--line2);background:linear-gradient(90deg,rgba(47,226,138,.07),transparent)}
+  .ease .pill{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#0a0e14;background:var(--green);padding:4px 9px;border-radius:6px;flex:none}
+  .ease p{font-size:13px;color:var(--txt);max-width:none}
+  .ease b{color:var(--green)}
+
+  .frames{display:grid;grid-template-columns:1fr 392px;gap:26px;align-items:start}
+  @media(max-width:1180px){.frames{grid-template-columns:1fr}}
+
+  /* ── Desktop frame chrome ── */
+  .desk{border:1px solid var(--line2);border-radius:14px;overflow:hidden;background:var(--panel);box-shadow:0 24px 60px -30px rgba(0,0,0,.8)}
+  .dchrome{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#0c111b;border-bottom:1px solid var(--line)}
+  .dchrome .dots{display:flex;gap:6px}
+  .dchrome .dots i{width:11px;height:11px;border-radius:50%;display:block}
+  .dchrome .url{margin-left:10px;font-family:'IBM Plex Mono';font-size:11px;color:var(--txt3);background:#070b12;border:1px solid var(--line);padding:4px 12px;border-radius:7px}
+  .dbody{padding:0}
+
+  /* shared mock atoms */
+  .kpi-row{display:grid;gap:1px;background:var(--line)}
+  .kpi{background:var(--panel);padding:14px 16px}
+  .kpi .l{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3)}
+  .kpi .v{font-family:'IBM Plex Mono';font-weight:600;font-size:21px;margin-top:5px}
+  .kpi .d{font-size:11px;color:var(--txt2);margin-top:2px}
+  .ok{color:var(--green)} .warn{color:var(--amber)} .bad{color:var(--red)} .info{color:var(--blue)}
+  .sect-t{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--txt3);padding:14px 18px 8px;display:flex;justify-content:space-between;align-items:center}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--txt3);font-weight:600;padding:8px 18px;border-bottom:1px solid var(--line)}
+  td{padding:10px 18px;border-bottom:1px solid var(--line);color:var(--txt2)}
+  tr:last-child td{border-bottom:0}
+  td b{color:var(--txt);font-weight:600}
+  .badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:5px;letter-spacing:.02em}
+  .b-ok{color:var(--green);background:var(--green-d)} .b-warn{color:var(--amber);background:var(--amber-d)}
+  .b-bad{color:var(--red);background:var(--red-d)} .b-info{color:var(--blue);background:rgba(90,168,255,.12)}
+  .b-vio{color:var(--violet);background:rgba(157,123,255,.13)}
+
+  /* ── Phone frame ── */
+  .phone{width:392px;border:10px solid #05080d;border-radius:46px;overflow:hidden;background:#0a0e14;box-shadow:0 30px 70px -28px rgba(0,0,0,.9);position:relative}
+  .pscreen{height:844px;display:flex;flex-direction:column;position:relative;background:var(--bg)}
+  .pstatus{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:12px;font-weight:600;font-family:'IBM Plex Mono'}
+  .notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#05080d;border-radius:14px;z-index:5}
+  .poffline{font-size:10.5px;color:var(--amber);background:var(--amber-d);text-align:center;padding:5px;letter-spacing:.04em}
+  .ptop{padding:14px 18px 10px;border-bottom:1px solid var(--line)}
+  .ptop .h{font-family:'Space Grotesk';font-weight:700;font-size:17px}
+  .ptop .s{font-size:11px;color:var(--txt3)}
+  .pbody{flex:1;overflow:hidden;padding:14px 16px;display:flex;flex-direction:column;gap:11px}
+  .pcard{border:1px solid var(--line);border-radius:13px;background:var(--panel);padding:13px}
+  .pnav{height:66px;border-top:1px solid var(--line);background:#0c111b;display:flex;align-items:center;justify-content:space-around;padding-bottom:8px}
+  .pnav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;color:var(--txt3);text-decoration:none}
+  .pnav a.on{color:var(--green)}
+  .pnav .ic{font-size:17px}
+  .thumb{position:absolute;bottom:80px;left:16px;right:16px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:9px;font-weight:700;font-size:14px;font-family:'Space Grotesk';box-shadow:0 10px 30px -8px rgba(0,0,0,.7)}
+
+  .gw{font-size:11px;color:var(--txt3);text-align:center;margin-top:8px;font-family:'IBM Plex Mono'}
+  .footnote{margin-top:40px;border-top:1px solid var(--line);padding-top:18px;font-size:12px;color:var(--txt3)}
+  .footnote code{font-family:'IBM Plex Mono';color:var(--txt2);background:var(--panel);padding:2px 6px;border-radius:5px}
+
+  /* integrity strip / hash viz */
+  .hashbar{display:flex;gap:3px;padding:14px 18px}
+  .hblk{flex:1;height:38px;border-radius:4px;position:relative;border:1px solid transparent;cursor:default}
+  .hblk.g{background:rgba(47,226,138,.18);border-color:rgba(47,226,138,.4)}
+  .hblk.s{background:rgba(157,123,255,.18);border-color:rgba(157,123,255,.45)}
+  .hblk.r{background:rgba(255,93,108,.22);border-color:rgba(255,93,108,.55);animation:pulse 1.6s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,93,108,.4)}50%{box-shadow:0 0 0 5px rgba(255,93,108,0)}}
+  .hblk .n{position:absolute;bottom:3px;left:0;right:0;text-align:center;font-family:'IBM Plex Mono';font-size:8px;color:var(--txt2)}
+  .health-orb{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Space Grotesk';font-size:18px}
+  .orb-ok{background:radial-gradient(circle at 35% 30%,#3df09a,#0f7a4c);color:#04140c;box-shadow:0 0 24px -2px rgba(47,226,138,.6)}
+  .pipe{display:flex;align-items:center;gap:0;overflow-x:auto}
+  .pstep{flex:none;font-size:10px;font-family:'IBM Plex Mono';padding:6px 11px;border:1px solid var(--line);border-radius:7px;color:var(--txt3);white-space:nowrap}
+  .pstep.done{color:var(--green);border-color:rgba(47,226,138,.4);background:var(--green-d)}
+  .pstep.cur{color:var(--txt);border-color:var(--violet);background:rgba(157,123,255,.13);font-weight:600}
+  .arr{color:var(--txt3);padding:0 5px;font-size:11px}
+  .ledger-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:11px 18px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .ledger-row:last-child{border-bottom:0}
+  .seal{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--teal)}
+  .chk{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex:none}
+  .chk.g{background:var(--green-d);color:var(--green)}
+  .chk.v{background:rgba(157,123,255,.15);color:var(--violet)}
+  .map-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:16px 18px}
+  .tnode{border:1px solid var(--line);border-radius:9px;padding:9px;background:var(--panel2);text-align:center}
+  .tnode .nm{font-size:10.5px;font-weight:600;color:var(--txt);margin-bottom:4px}
+  .tnode .st{font-size:9px;padding:1px 6px;border-radius:4px;display:inline-block}
+  .tnode.iso{outline:2px solid rgba(47,226,138,.18)}
+  .btnp{font-family:'Space Grotesk';font-weight:600;font-size:11px;padding:5px 11px;border-radius:7px;border:1px solid var(--line2);background:var(--panel2);color:var(--txt);cursor:pointer}
+  .btnp.prime{background:var(--green);color:#04140c;border-color:var(--green)}
+  .btnp.danger{background:var(--red-d);color:var(--red);border-color:rgba(255,93,108,.4)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ── HEADER BAND ── -->
+  <header class="hdr">
+    <div class="hdr-top">
+      <span class="role-chip">Platform Admin</span>
+      <span class="role-title disp">Operations &amp; Compliance Control</span>
+      <span class="role-sub">CEC Open Energy Platform · admin@openenergy.co.za</span>
+    </div>
+    <div class="hdr-grid">
+      <div>
+        <h4>Persona</h4>
+        <p>The platform operator-of-record. Sits at a multi-monitor desk, control-panel mindset, all day in the back office. <b>Underwrites every other role's L5 evidence</b> — when the regulator asks "prove it", the proof comes from here. Lives in fear of three words: <b>tenant isolation breach, tamper-evidence break, platform down</b>. Needs the whole platform's health and audit integrity answerable in one glance, on one screen.</p>
+      </div>
+      <div>
+        <h4>Design rationale</h4>
+        <p>Three distinct bets for a high-trust operator: a <b>command center</b> (health-first), a <b>lifecycle board</b> (tenant flow-first), and an <b>integrity ledger</b> (tamper-evidence-first). Dark, dense, mono-numeric — built for sustained focus, not delight. Every option answers one question instantly: <b>is everything healthy and provably intact?</b></p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── JOURNEY-AS-PRODUCT STRIP ── -->
+  <div class="strip-h">
+    <h2 class="disp">Hero journeys, as metered products</h2>
+    <span>real chains from <span class="mono">adminDomains</span> · monetized per-journey, priced by tier</span>
+  </div>
+  <div class="jstrip">
+    <div class="jcard">
+      <span class="wv mono">W198 · kyc_verification</span>
+      <span class="tier p">● Professional · L4</span>
+      <h3 class="disp">KYC / FICA verification</h3>
+      <div class="ck mono">lane: tenants_users → verified | rejected | lapsed</div>
+      <div class="meter">
+        <div><div class="lbl">Metered unit</div><div class="val">per verification case</div></div>
+        <div class="price">R 240 / case</div>
+      </div>
+    </div>
+    <div class="jcard">
+      <span class="wv mono">W118 · audit_chain_block</span>
+      <span class="tier r">● Regulator-grade · L5</span>
+      <h3 class="disp">Hash-chain audit block</h3>
+      <div class="ck mono">Merkle seal · 2-of-3 Byzantine quorum</div>
+      <div class="meter">
+        <div><div class="lbl">Metered unit</div><div class="val">per sealed block</div></div>
+        <div class="price">R 1,150 / block</div>
+      </div>
+    </div>
+    <div class="jcard">
+      <span class="wv mono">W119 · regulator_export_pack</span>
+      <span class="tier r">● Regulator-grade · L5</span>
+      <h3 class="disp">Certified regulator export</h3>
+      <div class="ck mono">XBRL · CFO countersign · mTLS lodgement</div>
+      <div class="meter">
+        <div><div class="lbl">Metered unit</div><div class="val">per certified export</div></div>
+        <div class="price">R 4,800 / pack</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TABS ── -->
+  <div class="tabs" role="tablist">
+    <button class="tab on" onclick="sw(0)" id="t0"><span class="dot" style="background:var(--green)"></span>Option A · Command Center</button>
+    <button class="tab" onclick="sw(1)" id="t1"><span class="dot" style="background:var(--violet)"></span>Option B · Lifecycle Board</button>
+    <button class="tab" onclick="sw(2)" id="t2"><span class="dot" style="background:var(--teal)"></span>Option C · Integrity Ledger</button>
+  </div>
+
+  <!-- ════════ OPTION A — PLATFORM HEALTH COMMAND CENTER ════════ -->
+  <section class="panel-opt on" id="p0">
+    <div class="opt-head">
+      <div class="k">Option A</div>
+      <h2 class="disp">Platform Health Command Center</h2>
+      <p>NOC-style single-pane mission control. Health orbs, live cascade/DLQ telemetry, and the hash-chain integrity bar share one wall. The bet: an operator should never hunt for "is it up and is it intact" — it's the first thing the eyes land on.</p>
+      <div class="ease">
+        <span class="pill">Ease</span>
+        <p>Makes effortless: <b>platform health + hash-chain integrity, one screen, green or not.</b> If the orb is green and the chain bar is unbroken, you're done looking.</p>
+      </div>
+    </div>
+
+    <div class="frames">
+      <!-- desktop -->
+      <div>
+        <div class="desk">
+          <div class="dchrome"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="url mono">oe.vantax.co.za/admin/command</span></div>
+          <div class="dbody">
+            <!-- top health row -->
+            <div style="display:flex;align-items:center;gap:18px;padding:16px 20px;border-bottom:1px solid var(--line);background:#0c111b">
+              <div class="health-orb orb-ok">OK</div>
+              <div>
+                <div style="font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--txt3)">Platform status</div>
+                <div class="disp" style="font-size:19px;font-weight:600">All systems nominal · 6 tenants live</div>
+                <div style="font-size:11.5px;color:var(--txt2)">edge p99 142ms · D1 healthy · OrderBook DO 12 shards · last incident 31d ago</div>
+              </div>
+              <div style="margin-left:auto;text-align:right">
+                <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3)">Integrity</div>
+                <div class="mono ok" style="font-size:16px;font-weight:600">UNBROKEN · 14,802 blocks</div>
+              </div>
+            </div>
+            <!-- kpi row -->
+            <div class="kpi-row" style="grid-template-columns:repeat(5,1fr)">
+              <div class="kpi"><div class="l">Cascade queue</div><div class="v ok mono">0</div><div class="d">backlog · drained</div></div>
+              <div class="kpi"><div class="l">DLQ depth</div><div class="v warn mono">3</div><div class="d">webhook stage · retrying</div></div>
+              <div class="kpi"><div class="l">KYC queue (W198)</div><div class="v info mono">11</div><div class="d">2 SLA &lt; 4h</div></div>
+              <div class="kpi"><div class="l">Cron last run</div><div class="v ok mono">07</div><div class="d">of 7 · all green</div></div>
+              <div class="kpi"><div class="l">Tenant isolation</div><div class="v ok mono">100%</div><div class="d">0 cross-tenant leaks 24h</div></div>
+            </div>
+            <!-- hash integrity bar -->
+            <div class="sect-t">Hash-chain integrity · last 14 audit blocks (W118) <span class="seal">2-of-3 quorum · live</span></div>
+            <div class="hashbar">
+              <div class="hblk g"><span class="n">14789</span></div><div class="hblk g"><span class="n">90</span></div>
+              <div class="hblk g"><span class="n">91</span></div><div class="hblk g"><span class="n">92</span></div>
+              <div class="hblk g"><span class="n">93</span></div><div class="hblk g"><span class="n">94</span></div>
+              <div class="hblk s"><span class="n">95</span></div><div class="hblk g"><span class="n">96</span></div>
+              <div class="hblk g"><span class="n">97</span></div><div class="hblk g"><span class="n">98</span></div>
+              <div class="hblk g"><span class="n">99</span></div><div class="hblk g"><span class="n">800</span></div>
+              <div class="hblk g"><span class="n">801</span></div><div class="hblk g"><span class="n">802</span></div>
+            </div>
+            <div style="display:flex;gap:18px;padding:0 18px 6px;font-size:10.5px;color:var(--txt3)">
+              <span><span class="ok">▮</span> sealed &amp; verified</span><span><span style="color:var(--violet)">▮</span> sealing (block 14795 building Merkle)</span><span><span class="bad">▮</span> break / fork</span>
+            </div>
+            <!-- two-col: incidents + cron -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border-top:1px solid var(--line)">
+              <div style="background:var(--panel)">
+                <div class="sect-t">Operational watch</div>
+                <table>
+                  <tr><td><b>DLQ · webhook</b><br><span style="font-size:10.5px">Tenant Aurora — 3 failed retries</span></td><td style="text-align:right"><span class="badge b-warn">action</span></td></tr>
+                  <tr><td><b>Surveillance scan</b><br><span style="font-size:10.5px">*/15 — wash-trade flag, 1 case</span></td><td style="text-align:right"><span class="badge b-info">review</span></td></tr>
+                  <tr><td><b>Margin-call cycle</b><br><span style="font-size:10.5px">30 0 * * * — completed 00:31</span></td><td style="text-align:right"><span class="badge b-ok">ok</span></td></tr>
+                </table>
+              </div>
+              <div style="background:var(--panel)">
+                <div class="sect-t">Cron triggers · today</div>
+                <table>
+                  <tr><td class="mono">5 0 * * *</td><td><b>Metering + ONA rollups</b></td><td style="text-align:right"><span class="badge b-ok">00:05</span></td></tr>
+                  <tr><td class="mono">10 0 * * *</td><td><b>PPA settlement run</b></td><td style="text-align:right"><span class="badge b-ok">00:10</span></td></tr>
+                  <tr><td class="mono">45 0 * * *</td><td><b>Watershed anomaly</b></td><td style="text-align:right"><span class="badge b-ok">00:45</span></td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gw">Desktop · ~1280px · NOC single-pane</div>
+      </div>
+
+      <!-- phone -->
+      <div>
+        <div class="phone"><div class="notch"></div><div class="pscreen">
+          <div class="pstatus"><span>9:41</span><span>◉ LTE  ▮▮▮  84%</span></div>
+          <div class="poffline">⤓ Installed PWA · last synced 40s ago · push: on-call</div>
+          <div class="ptop"><div class="h disp">Command</div><div class="s">platform pulse · admin</div></div>
+          <div class="pbody">
+            <div class="pcard" style="display:flex;align-items:center;gap:14px;border-color:rgba(47,226,138,.4)">
+              <div class="health-orb orb-ok" style="width:46px;height:46px;font-size:15px">OK</div>
+              <div><div class="disp" style="font-weight:600;font-size:15px">All nominal</div><div style="font-size:11px;color:var(--txt2)">6 tenants · isolation 100%</div></div>
+            </div>
+            <div class="pcard">
+              <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-bottom:8px">Integrity</div>
+              <div class="mono ok" style="font-size:15px;font-weight:600">UNBROKEN</div>
+              <div style="display:flex;gap:3px;margin-top:9px">
+                <div class="hblk g" style="height:24px"></div><div class="hblk g" style="height:24px"></div><div class="hblk g" style="height:24px"></div><div class="hblk s" style="height:24px"></div><div class="hblk g" style="height:24px"></div><div class="hblk g" style="height:24px"></div><div class="hblk g" style="height:24px"></div>
+              </div>
+            </div>
+            <div class="pcard">
+              <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--txt3)">DLQ depth</span><span class="warn mono">3 · retrying</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:7px"><span style="color:var(--txt3)">KYC SLA &lt; 4h</span><span class="info mono">2 cases</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:7px"><span style="color:var(--txt3)">Cron green</span><span class="ok mono">7 / 7</span></div>
+            </div>
+            <div class="pcard" style="border-color:rgba(255,194,75,.35)">
+              <div style="font-size:11px;color:var(--amber);font-weight:600">⚠ 1 thing needs you</div>
+              <div style="font-size:12px;color:var(--txt);margin-top:4px">Aurora webhook DLQ — 3 failed retries</div>
+            </div>
+          </div>
+          <div class="thumb" style="background:var(--green);color:#04140c">⟳ Drain DLQ now</div>
+          <div class="pnav">
+            <a class="on"><span class="ic">◉</span>Pulse</a><a><span class="ic">⬡</span>Chain</a><a><span class="ic">◈</span>Tenants</a><a><span class="ic">⚙</span>Cron</a>
+          </div>
+        </div></div>
+        <div class="gw">PWA · 390×844 · one-thumb: drain DLQ</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ OPTION B — TENANT LIFECYCLE BOARD ════════ -->
+  <section class="panel-opt" id="p1">
+    <div class="opt-head">
+      <div class="k">Option B</div>
+      <h2 class="disp">Tenant Lifecycle Board</h2>
+      <p>A kanban-of-record for the platform's tenants: every org as a card moving onboard → KYC → active → suspend, with the KYC chain (W198) embedded in-lane. The bet: an operator's real day is moving organisations through states without ever breaking isolation between them.</p>
+      <div class="ease">
+        <span class="pill">Ease</span>
+        <p>Makes effortless: <b>every tenant's exact lifecycle state and isolation status, one board, drag to advance.</b> No tenant is ever in an unknown state, and the isolation outline tells you each one is sealed off.</p>
+      </div>
+    </div>
+
+    <div class="frames">
+      <!-- desktop -->
+      <div>
+        <div class="desk">
+          <div class="dchrome"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="url mono">oe.vantax.co.za/admin/tenants/board</span></div>
+          <div class="dbody">
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line);background:#0c111b">
+              <div class="disp" style="font-size:17px;font-weight:600">Tenant lifecycle</div>
+              <span class="badge b-ok">isolation 100% · 0 leaks 24h</span>
+              <span class="badge b-info">11 KYC in queue</span>
+              <div style="margin-left:auto;font-size:11px;color:var(--txt3)" class="mono">tenant_events · kyc_verification W198</div>
+            </div>
+            <!-- KYC chain pipeline -->
+            <div class="sect-t">KYC verification chain — Aurora Renewables (Pty) Ltd <span class="seal">SLA 3h 12m left</span></div>
+            <div class="pipe" style="padding:4px 18px 12px">
+              <span class="pstep done">submitted</span><span class="arr">→</span>
+              <span class="pstep done">screening</span><span class="arr">→</span>
+              <span class="pstep cur">edd_required</span><span class="arr">→</span>
+              <span class="pstep">compliance_review</span><span class="arr">→</span>
+              <span class="pstep">verified</span><span class="arr">/</span><span class="pstep">rejected</span><span class="arr">/</span><span class="pstep">lapsed</span>
+            </div>
+            <!-- kanban -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-top:1px solid var(--line)">
+              <!-- col -->
+              <div style="background:var(--panel);padding:12px 12px 16px">
+                <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:10px;display:flex;justify-content:space-between">Onboarding <span class="mono">2</span></div>
+                <div class="tnode iso" style="text-align:left;margin-bottom:8px"><div class="nm">Karoo Solar Trust</div><div style="font-size:10px;color:var(--txt3);margin:3px 0">FICA docs uploaded</div><span class="st b-info">kyc_pending</span></div>
+                <div class="tnode iso" style="text-align:left"><div class="nm">Drakensberg Hydro</div><div style="font-size:10px;color:var(--txt3);margin:3px 0">awaiting EDD report</div><span class="st b-warn">edd_required</span></div>
+              </div>
+              <div style="background:var(--panel);padding:12px 12px 16px">
+                <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--violet);margin-bottom:10px;display:flex;justify-content:space-between">In review <span class="mono">1</span></div>
+                <div class="tnode iso" style="text-align:left;outline-color:rgba(157,123,255,.3)"><div class="nm">Aurora Renewables</div><div style="font-size:10px;color:var(--txt3);margin:3px 0">compliance · cond. approve?</div><span class="st b-vio">compliance_review</span>
+                  <div style="margin-top:8px;display:flex;gap:5px"><button class="btnp prime">Approve cond.</button><button class="btnp danger">Reject</button></div>
+                </div>
+              </div>
+              <div style="background:var(--panel);padding:12px 12px 16px">
+                <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:10px;display:flex;justify-content:space-between">Active <span class="mono">6</span></div>
+                <div class="tnode iso" style="text-align:left;margin-bottom:8px"><div class="nm">Goldrush NXT IPP</div><div style="font-size:10px;color:var(--txt3);margin:3px 0">live · 47 MW · 9 sites</div><span class="st b-ok">active</span></div>
+                <div class="tnode iso" style="text-align:left;margin-bottom:8px"><div class="nm">Meridian Trading</div><div style="font-size:10px;color:var(--txt3);margin:3px 0">live · MM compliant</div><span class="st b-ok">active</span></div>
+                <div class="tnode iso" style="text-align:left"><div class="nm">CEC Settlement Co</div><div style="font-size:10px;color:var(--txt3);margin:3px 0">live · DvP healthy</div><span class="st b-ok">active</span></div>
+              </div>
+              <div style="background:var(--panel);padding:12px 12px 16px">
+                <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:10px;display:flex;justify-content:space-between">Suspended <span class="mono">1</span></div>
+                <div class="tnode" style="text-align:left;outline:2px solid rgba(255,93,108,.2)"><div class="nm">Highveld Carbon Ltd</div><div style="font-size:10px;color:var(--txt3);margin:3px 0">KYC lapsed · access frozen</div><span class="st b-bad">suspended</span>
+                  <div style="margin-top:8px;display:flex;gap:5px"><button class="btnp">Reinstate</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gw">Desktop · ~1280px · kanban-of-record</div>
+      </div>
+
+      <!-- phone -->
+      <div>
+        <div class="phone"><div class="notch"></div><div class="pscreen">
+          <div class="pstatus"><span>9:41</span><span>◉ LTE  ▮▮▮  84%</span></div>
+          <div class="poffline">⤓ Installed PWA · 11 KYC cases · push: SLA breach</div>
+          <div class="ptop"><div class="h disp">Tenants</div><div class="s">lifecycle · isolation 100%</div></div>
+          <div class="pbody">
+            <div class="pcard" style="border-color:rgba(157,123,255,.4)">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span class="disp" style="font-weight:600;font-size:14px">Aurora Renewables</span><span class="badge b-vio">in review</span></div>
+              <div style="font-size:11px;color:var(--txt2);margin:6px 0">KYC W198 · compliance_review · SLA 3h 12m</div>
+              <div style="display:flex;gap:3px;margin-top:6px">
+                <span class="pstep done" style="font-size:8px;padding:3px 6px">sub</span><span class="pstep done" style="font-size:8px;padding:3px 6px">scr</span><span class="pstep done" style="font-size:8px;padding:3px 6px">edd</span><span class="pstep cur" style="font-size:8px;padding:3px 6px">review</span><span class="pstep" style="font-size:8px;padding:3px 6px">verified</span>
+              </div>
+            </div>
+            <div class="pcard">
+              <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:8px">By state</div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span>🟦 Onboarding</span><span class="mono info">2</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span>🟪 In review</span><span class="mono" style="color:var(--violet)">1</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span>🟩 Active</span><span class="mono ok">6</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px"><span>🟥 Suspended</span><span class="mono bad">1</span></div>
+            </div>
+            <div class="pcard" style="border-color:rgba(255,93,108,.3)">
+              <div style="font-size:11px;color:var(--red);font-weight:600">Highveld Carbon · suspended</div>
+              <div style="font-size:11px;color:var(--txt2);margin-top:3px">KYC lapsed — access frozen, isolation held</div>
+            </div>
+          </div>
+          <div class="thumb" style="background:var(--violet);color:#0a0613">✓ Approve Aurora conditionally</div>
+          <div class="pnav">
+            <a><span class="ic">◉</span>Pulse</a><a><span class="ic">⬡</span>Chain</a><a class="on"><span class="ic">◈</span>Tenants</a><a><span class="ic">⚙</span>Cron</a>
+          </div>
+        </div></div>
+        <div class="gw">PWA · 390×844 · one-thumb: advance KYC</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ OPTION C — AUDIT-INTEGRITY LEDGER ════════ -->
+  <section class="panel-opt" id="p2">
+    <div class="opt-head">
+      <div class="k">Option C</div>
+      <h2 class="disp">Audit-Integrity Ledger</h2>
+      <p>The proof-of-record view. A vertical, append-only ledger of sealed audit blocks (W118), certified exports (W119) and control-environment audits (W121), each with its Merkle seal, quorum status and one-click verify. The bet: the admin's deepest job is being able to say "here is the proof, and here is that it is intact" — instantly, to a regulator.</p>
+      <div class="ease">
+        <span class="pill">Ease</span>
+        <p>Makes effortless: <b>tamper-evidence verifiable at a glance — every seal green, every export countersigned, re-verify in one click.</b> The whole chain of custody for every other role's L5 evidence, on one ledger.</p>
+      </div>
+    </div>
+
+    <div class="frames">
+      <!-- desktop -->
+      <div>
+        <div class="desk">
+          <div class="dchrome"><span class="dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="url mono">oe.vantax.co.za/admin/integrity</span></div>
+          <div class="dbody">
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line);background:#0c111b">
+              <div class="disp" style="font-size:17px;font-weight:600">Integrity ledger</div>
+              <span class="badge b-ok">chain UNBROKEN</span>
+              <span class="seal mono">root 14802 · 0x9f3a…c41e</span>
+              <button class="btnp prime" style="margin-left:auto">⟳ Re-verify full chain</button>
+            </div>
+            <!-- kpi -->
+            <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+              <div class="kpi"><div class="l">Sealed blocks (W118)</div><div class="v ok mono">14,802</div><div class="d">2-of-3 quorum · 0 forks</div></div>
+              <div class="kpi"><div class="l">Certified exports (W119)</div><div class="v info mono">38</div><div class="d">QTD · all countersigned</div></div>
+              <div class="kpi"><div class="l">Control audit (W121)</div><div class="v" style="color:var(--violet)">ToOE</div><div class="d">2 exceptions open</div></div>
+              <div class="kpi"><div class="l">Last verify</div><div class="v ok mono">14s</div><div class="d">ago · pass</div></div>
+            </div>
+            <!-- ledger -->
+            <div class="sect-t">Append-only ledger <span class="seal">newest first · click any row to verify lineage</span></div>
+            <div>
+              <div class="ledger-row">
+                <div class="chk v">⬡</div>
+                <div><b>Block #14,802 · sealing</b><br><span style="font-size:10.5px;color:var(--txt3)" class="mono">build_merkle · 1,204 segments · verify_integrity next</span></div>
+                <div style="text-align:right"><span class="badge b-vio">sealing</span><br><span class="seal">quorum 1/3</span></div>
+              </div>
+              <div class="ledger-row">
+                <div class="chk g">✓</div>
+                <div><b>Export pack #Q2-NERSA-07 · countersigned</b><br><span style="font-size:10.5px;color:var(--txt3)" class="mono">W119 · XBRL · CFO mTLS 0x77ab…9e · regulator_target: NERSA</span></div>
+                <div style="text-align:right"><span class="badge b-ok">lodged</span><br><span class="seal">per-export · R4,800</span></div>
+              </div>
+              <div class="ledger-row">
+                <div class="chk g">✓</div>
+                <div><b>Block #14,801 · sealed &amp; verified</b><br><span style="font-size:10.5px;color:var(--txt3)" class="mono">root 0x9f3a…c41e · prev 0x88d1…aa20 · 980 segments</span></div>
+                <div style="text-align:right"><span class="badge b-ok">verified</span><br><span class="seal">quorum 3/3</span></div>
+              </div>
+              <div class="ledger-row">
+                <div class="chk v">⬓</div>
+                <div><b>Control-environment audit · CEC-2026 · ToOE</b><br><span style="font-size:10.5px;color:var(--txt3)" class="mono">W121 · SOC2 / ISO27001 · sample 25 · 2 exceptions · accept_with_exception?</span></div>
+                <div style="text-align:right"><span class="badge b-vio">tooe</span><br><span class="seal">SLA 6d</span></div>
+              </div>
+              <div class="ledger-row">
+                <div class="chk g">✓</div>
+                <div><b>Block #14,800 · sealed &amp; verified</b><br><span style="font-size:10.5px;color:var(--txt3)" class="mono">root 0x88d1…aa20 · settlement + carbon segments</span></div>
+                <div style="text-align:right"><span class="badge b-ok">verified</span><br><span class="seal">quorum 3/3</span></div>
+              </div>
+            </div>
+            <div style="padding:12px 18px;border-top:1px solid var(--line);font-size:11px;color:var(--txt3)" class="mono">⚠ Break protocol: emergency-seal crosses regulator inbox EVERY tier immediately · 0 invocations YTD</div>
+          </div>
+        </div>
+        <div class="gw">Desktop · ~1280px · append-only proof ledger</div>
+      </div>
+
+      <!-- phone -->
+      <div>
+        <div class="phone"><div class="notch"></div><div class="pscreen">
+          <div class="pstatus"><span>9:41</span><span>◉ LTE  ▮▮▮  84%</span></div>
+          <div class="poffline">⤓ Installed PWA · chain unbroken · push: break alarm</div>
+          <div class="ptop"><div class="h disp">Integrity</div><div class="s">proof ledger · admin</div></div>
+          <div class="pbody">
+            <div class="pcard" style="border-color:rgba(63,217,208,.4);text-align:center">
+              <div class="ok disp" style="font-size:17px;font-weight:700">CHAIN UNBROKEN</div>
+              <div class="seal mono" style="margin-top:3px">root 14802 · 0x9f3a…c41e</div>
+              <div style="font-size:10.5px;color:var(--txt3);margin-top:4px">last verify 14s ago · pass</div>
+            </div>
+            <div class="pcard">
+              <div class="ledger-row" style="padding:8px 0;border:0;grid-template-columns:auto 1fr auto"><div class="chk v" style="width:18px;height:18px;font-size:10px">⬡</div><div style="font-size:11.5px"><b>#14,802</b> sealing</div><span class="badge b-vio">1/3</span></div>
+              <div class="ledger-row" style="padding:8px 0;border:0;grid-template-columns:auto 1fr auto"><div class="chk g" style="width:18px;height:18px;font-size:10px">✓</div><div style="font-size:11.5px"><b>#14,801</b> verified</div><span class="badge b-ok">3/3</span></div>
+              <div class="ledger-row" style="padding:8px 0;border:0;grid-template-columns:auto 1fr auto"><div class="chk g" style="width:18px;height:18px;font-size:10px">✓</div><div style="font-size:11.5px"><b>#14,800</b> verified</div><span class="badge b-ok">3/3</span></div>
+            </div>
+            <div class="pcard">
+              <div style="font-size:11px;color:var(--txt3)">Certified export · ready to lodge</div>
+              <div style="font-size:12.5px;color:var(--txt);margin-top:3px"><b>Q2-NERSA-07</b> · CFO countersigned</div>
+              <div class="seal mono" style="margin-top:3px">W119 · XBRL · per-export R4,800</div>
+            </div>
+          </div>
+          <div class="thumb" style="background:var(--teal);color:#04140c">⟳ Re-verify full chain</div>
+          <div class="pnav">
+            <a><span class="ic">◉</span>Pulse</a><a class="on"><span class="ic">⬡</span>Chain</a><a><span class="ic">◈</span>Tenants</a><a><span class="ic">⚙</span>Cron</a>
+          </div>
+        </div></div>
+        <div class="gw">PWA · 390×844 · one-thumb: re-verify chain</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footnote">
+    Real chains from <code>adminDomains</code> in <code>roleData.ts</code>: <code>kyc_verification</code> (W198), <code>audit_chain_block</code> (W118), <code>regulator_export_pack</code> (W119), <code>control_environment_audit</code> (W121), tenant lifecycle (<code>tenant_events</code>). States, lanes, terminals and actions taken from <code>chain-registry-meridian.ts</code>. Evaluation mockup — not wired into the app.
+  </div>
+</div>
+
+<script>
+  function sw(i){
+    for(var n=0;n<3;n++){
+      document.getElementById('p'+n).classList.toggle('on',n===i);
+      document.getElementById('t'+n).classList.toggle('on',n===i);
+    }
+  }
+</script>
+</body>
+</html>

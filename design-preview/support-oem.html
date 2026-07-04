@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Support / OEM — Frontend Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Field-ops high-contrast palette — sunlight legible, AA+ everywhere */
+    --ink:#0c1116;        /* near-black text */
+    --ink-2:#3a4654;
+    --paper:#f4f6f8;
+    --card:#ffffff;
+    --line:#d3dae2;
+    --hi:#0a6b3a;         /* deep field green */
+    --hi-2:#0d8a4d;
+    --amber:#b45309;      /* SLA warn — 5.4:1 on white */
+    --red:#b21d2b;        /* breach — 6.0:1 */
+    --blue:#114b8f;       /* dispatch */
+    --violet:#5b2a86;     /* prognostics */
+    --safe:#0a6b3a;
+    --chip:#eef2f6;
+    --shadow:0 1px 2px rgba(12,17,22,.06),0 8px 24px rgba(12,17,22,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Inter Tight",system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace;}
+  .wrap{max-width:1340px;margin:0 auto;padding:28px 22px 80px;}
+
+  /* ── Header band ── */
+  header.band{
+    background:linear-gradient(180deg,#0c1116,#16202b);color:#eef3f7;border-radius:18px;
+    padding:30px 32px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+  }
+  header.band::after{content:"⬡";position:absolute;right:-28px;top:-40px;font-size:230px;
+    color:#1d2a37;opacity:.55;line-height:1;}
+  .role-tag{display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:700;
+    letter-spacing:.14em;text-transform:uppercase;color:#7fe1ac;}
+  .role-tag b{background:#0a6b3a;color:#eafff3;padding:2px 8px;border-radius:6px;font-weight:800;}
+  h1{font-size:38px;line-height:1.02;margin:12px 0 6px;font-weight:800;letter-spacing:-.02em;max-width:760px;}
+  .persona{max-width:680px;font-size:15px;line-height:1.5;color:#c2cfdb;margin:10px 0 0;}
+  .rationale{max-width:680px;font-size:13.5px;line-height:1.5;color:#8fa3b5;margin:12px 0 0;
+    border-left:3px solid #0d8a4d;padding-left:12px;}
+
+  /* ── Journey-as-product strip ── */
+  .strip-h{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-2);margin:34px 0 12px;}
+  .jstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .jcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;
+    box-shadow:var(--shadow);position:relative;}
+  .jcard .glyph{font-size:22px;}
+  .jname{font-size:17px;font-weight:800;margin:8px 0 2px;letter-spacing:-.01em;}
+  .jcode{font-size:11px;color:var(--ink-2);font-weight:600;}
+  .tier{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;
+    letter-spacing:.05em;padding:4px 9px;border-radius:999px;margin-top:12px;text-transform:uppercase;}
+  .tier.f{background:#e6f5ec;color:#0a6b3a;border:1px solid #b6e2c8;}
+  .tier.p{background:#e7f0fb;color:#114b8f;border:1px solid #b8d2ef;}
+  .tier.r{background:#f0e9f7;color:#5b2a86;border:1px solid #d6c2e8;}
+  .meter{margin-top:12px;font-size:12.5px;color:var(--ink-2);line-height:1.45;border-top:1px dashed var(--line);padding-top:10px;}
+  .meter b{color:var(--ink);}
+  .price{font-weight:800;color:var(--hi);font-size:13px;}
+
+  /* ── Option tabs ── */
+  .tabs{display:flex;gap:8px;margin:40px 0 18px;flex-wrap:wrap;}
+  .tab{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:11px 16px;
+    font-size:13.5px;font-weight:700;color:var(--ink-2);cursor:pointer;display:flex;gap:9px;align-items:center;}
+  .tab .n{font-family:"JetBrains Mono",monospace;font-size:11px;background:var(--chip);
+    padding:2px 7px;border-radius:6px;color:var(--ink);}
+  .tab[aria-selected="true"]{color:#fff;border-color:transparent;box-shadow:var(--shadow);}
+  .tab[data-opt="1"][aria-selected="true"]{background:var(--hi);}
+  .tab[data-opt="2"][aria-selected="true"]{background:var(--blue);}
+  .tab[data-opt="3"][aria-selected="true"]{background:var(--violet);}
+  .tab[aria-selected="true"] .n{background:rgba(255,255,255,.22);color:#fff;}
+
+  .panel{display:none;}
+  .panel[data-active="true"]{display:block;}
+  .concept{font-size:15px;color:var(--ink-2);max-width:780px;line-height:1.5;margin:0 0 20px;}
+  .concept b{color:var(--ink);}
+
+  /* ── Frames layout ── */
+  .frames{display:grid;grid-template-columns:1fr 392px;gap:22px;align-items:start;}
+  @media(max-width:1180px){.frames{grid-template-columns:1fr;}.jstrip{grid-template-columns:1fr;}}
+
+  /* desktop chrome */
+  .desk{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);}
+  .dchrome{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#0c1116;color:#cdd9e3;}
+  .dchrome .dot{width:11px;height:11px;border-radius:50%;}
+  .dchrome .u{margin-left:12px;font-size:12px;color:#8fa3b5;font-family:"JetBrains Mono",monospace;}
+  .dbody{padding:0;}
+
+  /* phone */
+  .phone{width:392px;background:#0c1116;border-radius:40px;padding:12px;box-shadow:var(--shadow);justify-self:center;}
+  .pscreen{background:var(--paper);border-radius:30px;overflow:hidden;height:812px;display:flex;flex-direction:column;position:relative;}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:12px 20px 6px;font-size:12px;font-weight:700;}
+  .statusbar .right{display:flex;gap:6px;align-items:center;}
+  .offline{background:var(--amber);color:#fff;font-size:11px;font-weight:800;text-align:center;padding:5px;letter-spacing:.03em;}
+  .pinstall{background:#0c1116;color:#eef3f7;font-size:12px;font-weight:600;display:flex;justify-content:space-between;align-items:center;padding:9px 16px;}
+  .pinstall button{background:#0d8a4d;color:#fff;border:0;border-radius:8px;padding:7px 12px;font-weight:800;font-size:12px;}
+  .pbody{flex:1;overflow:hidden;padding:14px 14px 0;}
+  .bottomnav{display:flex;justify-content:space-around;padding:10px 8px 16px;background:var(--card);border-top:1px solid var(--line);}
+  .bottomnav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--ink-2);text-decoration:none;}
+  .bottomnav a .ic{font-size:19px;}
+  .bottomnav a[aria-current]{color:var(--hi);}
+  .fab{position:absolute;right:18px;bottom:84px;background:var(--hi);color:#fff;border:0;border-radius:18px;
+    padding:16px 20px;font-weight:800;font-size:15px;box-shadow:0 8px 22px rgba(10,107,58,.4);display:flex;gap:9px;align-items:center;min-height:56px;}
+
+  /* shared cards */
+  .sect{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);margin:0 0 8px;}
+  .pill{font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.04em;}
+  .p1{background:#fbe3e5;color:var(--red);} .p2{background:#fdeed6;color:var(--amber);}
+  .p3{background:#e7f0fb;color:var(--blue);} .p4{background:#eef2f6;color:var(--ink-2);}
+  .clock{font-family:"JetBrains Mono",monospace;font-weight:700;}
+  .clock.warn{color:var(--amber);} .clock.crit{color:var(--red);} .clock.ok{color:var(--hi);}
+
+  /* OPTION 1 — field card */
+  .fcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);}
+  .fcard.crit{border-left:5px solid var(--red);}
+  .fcard.warn{border-left:5px solid var(--amber);}
+  .fcard.ok{border-left:5px solid var(--hi);}
+  .fcard h4{margin:0;font-size:17px;font-weight:800;letter-spacing:-.01em;}
+  .fcard .meta{font-size:13px;color:var(--ink-2);margin-top:3px;}
+  .frow{display:flex;justify-content:space-between;align-items:center;margin-top:12px;}
+  .bigbtn{background:var(--hi);color:#fff;border:0;border-radius:12px;padding:14px;width:100%;font-weight:800;font-size:15px;min-height:52px;display:flex;justify-content:center;gap:8px;align-items:center;margin-top:12px;}
+  .ghostbtn{background:#fff;color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:13px;font-weight:800;font-size:14px;min-height:50px;}
+  .step{display:flex;gap:8px;align-items:center;font-size:11.5px;font-weight:700;color:var(--ink-2);overflow-x:auto;padding-bottom:4px;}
+  .step .s{padding:5px 9px;border-radius:8px;background:var(--chip);white-space:nowrap;}
+  .step .s.done{background:#e6f5ec;color:var(--hi);}
+  .step .s.now{background:var(--hi);color:#fff;}
+  .camchip{display:inline-flex;gap:7px;align-items:center;background:#0c1116;color:#eef3f7;border-radius:12px;padding:12px 14px;font-weight:800;font-size:14px;min-height:48px;}
+
+  /* OPTION 2 — kanban */
+  .board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:18px;background:#f0f3f6;}
+  .col{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;min-height:380px;}
+  .colh{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);margin-bottom:10px;padding:0 2px;}
+  .colh .cnt{background:var(--chip);border-radius:6px;padding:1px 7px;font-size:11px;color:var(--ink);}
+  .kcard{background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px;margin-bottom:9px;box-shadow:0 1px 1px rgba(0,0,0,.04);}
+  .kcard.breach{border-color:var(--red);box-shadow:0 0 0 1px var(--red);}
+  .kcard .t{font-size:13.5px;font-weight:700;line-height:1.25;}
+  .kcard .b{display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
+  .slabar{height:5px;border-radius:3px;background:var(--chip);margin-top:9px;overflow:hidden;}
+  .slabar i{display:block;height:100%;}
+  .topbar2{display:flex;align-items:center;gap:14px;padding:14px 18px;background:#fff;border-bottom:1px solid var(--line);}
+  .topbar2 .kpi{display:flex;flex-direction:column;}
+  .topbar2 .kpi .v{font-size:20px;font-weight:800;font-family:"JetBrains Mono",monospace;}
+  .topbar2 .kpi .l{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);}
+
+  /* OPTION 3 — prognostics */
+  .pgrid{display:grid;grid-template-columns:300px 1fr;gap:0;}
+  .asset-list{background:#120c1c;color:#e7def2;padding:14px;min-height:560px;}
+  .asset-row{padding:12px;border-radius:10px;margin-bottom:7px;cursor:pointer;border:1px solid transparent;}
+  .asset-row.active{background:#27163c;border-color:#5b2a86;}
+  .asset-row .an{font-weight:800;font-size:14px;}
+  .asset-row .am{font-size:11.5px;color:#b6a6cb;margin-top:2px;}
+  .rul-badge{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:12px;float:right;}
+  .pg-detail{padding:22px;background:linear-gradient(180deg,#fbfaff,#fff);min-height:560px;}
+  .gauge-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0;}
+  .gauge{background:#fff;border:1px solid #e3dbef;border-radius:14px;padding:16px;text-align:center;box-shadow:var(--shadow);}
+  .gauge .gv{font-size:30px;font-weight:800;font-family:"JetBrains Mono",monospace;}
+  .gauge .gl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);margin-top:4px;}
+  .spark{height:64px;background:repeating-linear-gradient(90deg,#f0e9f7 0 1px,transparent 1px 26px);border-radius:10px;position:relative;overflow:hidden;border:1px solid #e3dbef;}
+  .spark svg{position:absolute;inset:0;width:100%;height:100%;}
+  .fault{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;border:1px solid #e3dbef;border-radius:11px;margin-bottom:8px;background:#fff;}
+  .fault .fn{font-weight:700;font-size:13.5px;}
+  .conf{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:13px;color:var(--violet);}
+  .savings{background:#27163c;color:#e7def2;border-radius:14px;padding:16px;margin-top:14px;}
+  .savings .big{font-size:26px;font-weight:800;font-family:"JetBrains Mono",monospace;color:#c7a8f0;}
+  .vs{font-size:11.5px;color:#b6a6cb;}
+
+  .legend{font-size:12px;color:var(--ink-2);margin-top:10px;display:flex;gap:16px;flex-wrap:wrap;}
+  .legend span{display:inline-flex;gap:6px;align-items:center;}
+  .sw{width:11px;height:11px;border-radius:3px;display:inline-block;}
+  footer{margin-top:50px;font-size:12px;color:var(--ink-2);text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER BAND -->
+  <header class="band">
+    <span class="role-tag"><b>SUPPORT / OEM</b> field service · service desk</span>
+    <h1>Built for the tech in gloves, not the analyst at a desk.</h1>
+    <p class="persona">
+      Thandi is an OEM field-service technician and Tier-2 service-desk owner. Half her week is at
+      remote solar &amp; wind sites — direct sunlight, gloves on, one-bar LTE that drops in the
+      switchyard. The other half she runs the SLA clock on P1–P4 tickets. She needs work orders,
+      warranty/RMA, spare parts and a predictive read on which asset fails next — usable one-handed,
+      offline, glance-fast.
+    </p>
+    <p class="rationale">
+      Mobile is the primary surface. Three bets: a <b>glove-friendly field-ops PWA</b> (offline cards,
+      big taps, camera-to-RMA), a <b>SLA-clock dispatch board</b> for desk triage, and a
+      <b>predictive asset-health console</b> that puts RUL / anomaly / fault-fingerprint ahead of
+      reactive NTT-style O&amp;M.
+    </p>
+  </header>
+
+  <!-- JOURNEY-AS-PRODUCT STRIP -->
+  <div class="strip-h">Hero journeys — packaged &amp; metered</div>
+  <div class="jstrip">
+    <div class="jcard">
+      <div class="glyph" style="color:var(--hi)">⬡</div>
+      <div class="jname">Work-order dispatch</div>
+      <div class="jcode mono">work_order · W16 · P6 field chain</div>
+      <span class="tier p">● Professional · L4</span>
+      <div class="meter">
+        States: <span class="mono">planned → assigned → parts_requested → travelling → on_site → completed → verified</span>.
+        <div style="margin-top:8px"><b>Metered:</b> per work order dispatched · <span class="price">R18 / WO</span></div>
+      </div>
+    </div>
+    <div class="jcard">
+      <div class="glyph" style="color:var(--blue)">◈</div>
+      <div class="jname">Support ticket — priority SLA</div>
+      <div class="jcode mono">support_tickets · W14 · ITIL P1–P4</div>
+      <span class="tier f">● Foundation · L3</span>
+      <div class="meter">
+        SLA tiers: <b>P1 60m · P2 120m · P3 240m</b>. States: <span class="mono">open → in_progress → resolved → closed</span>.
+        <div style="margin-top:8px"><b>Metered:</b> per ticket resolved · <span class="price">R6 / ticket</span></div>
+      </div>
+    </div>
+    <div class="jcard">
+      <div class="glyph" style="color:var(--violet)">◎</div>
+      <div class="jname">Predictive asset health</div>
+      <div class="jcode mono">asset_prognostics · W71 · anomaly+RUL+fault</div>
+      <span class="tier r">● Regulator-grade · L5</span>
+      <div class="meter">
+        6-method anomaly ensemble · OLS degradation · RUL · 12-mode fault fingerprint vs reactive O&amp;M.
+        <div style="margin-top:8px"><b>Metered:</b> per active asset under prognostics · <span class="price">R240 / asset·mo</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION TABS -->
+  <div class="tabs" role="tablist" aria-label="Design directions">
+    <button class="tab" data-opt="1" role="tab" aria-selected="true" onclick="pick(1)"><span class="n">01</span> Field-Ops PWA</button>
+    <button class="tab" data-opt="2" role="tab" aria-selected="false" onclick="pick(2)"><span class="n">02</span> SLA Dispatch Board</button>
+    <button class="tab" data-opt="3" role="tab" aria-selected="false" onclick="pick(3)"><span class="n">03</span> Prognostics Console</button>
+  </div>
+
+  <!-- ================= OPTION 1 ================= -->
+  <section class="panel" data-opt="1" data-active="true" role="tabpanel">
+    <p class="concept"><b>Direction 1 — Field-Ops First.</b> Designed mobile-first for sunlight + gloves:
+      one job per screen, 52px+ tap targets, offline-cached cards that sync on reconnect, and a
+      camera-to-RMA flow. The desktop view is the companion planning board, not the main act.</p>
+
+    <div class="frames">
+      <!-- desktop companion -->
+      <div class="desk">
+        <div class="dchrome"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="u">oe.vantax.co.za/support · field planner</span></div>
+        <div class="dbody">
+          <div style="display:flex;align-items:center;gap:18px;padding:16px 20px;border-bottom:1px solid var(--line);">
+            <strong style="font-size:16px;">Today · 7 work orders</strong>
+            <span class="pill p1">2 P1</span><span class="pill p2">3 P2</span><span class="pill p3">2 P3</span>
+            <span style="margin-left:auto;font-size:12px;color:var(--ink-2)" class="mono">3 cached offline · last sync 4m ago</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:18px;">
+            <div class="fcard crit">
+              <div style="display:flex;justify-content:space-between"><span class="pill p1">P1 · WO-4471</span><span class="clock crit">SLA 38:12</span></div>
+              <h4 style="margin-top:10px">Inverter trip — De Aar PV 2</h4>
+              <div class="meta">String 7 offline · fault FF-04 arc-fault flagged by prognostics</div>
+              <div class="step" style="margin-top:12px"><span class="s done">planned</span><span class="s done">assigned</span><span class="s now">parts_requested</span><span class="s">travelling</span><span class="s">on_site</span><span class="s">completed</span><span class="s">verified</span></div>
+            </div>
+            <div class="fcard warn">
+              <div style="display:flex;justify-content:space-between"><span class="pill p2">P2 · WO-4468</span><span class="clock warn">SLA 1:42:00</span></div>
+              <h4 style="margin-top:10px">Tracker motor swap — Kuruman Wind 1</h4>
+              <div class="meta">RMA-2231 part in transit · ETA on-site 11:20</div>
+              <div class="step" style="margin-top:12px"><span class="s done">planned</span><span class="s done">assigned</span><span class="s done">parts_requested</span><span class="s now">travelling</span><span class="s">on_site</span><span class="s">completed</span><span class="s">verified</span></div>
+            </div>
+            <div class="fcard ok">
+              <div style="display:flex;justify-content:space-between"><span class="pill p3">P3 · WO-4459</span><span class="clock ok">SLA 3:51:00</span></div>
+              <h4 style="margin-top:10px">PM compliance — combiner inspection</h4>
+              <div class="meta">IEC 62446 PM due · deferral window closes Fri</div>
+              <div class="step" style="margin-top:12px"><span class="s done">planned</span><span class="s now">assigned</span><span class="s">parts_requested</span><span class="s">travelling</span><span class="s">on_site</span><span class="s">completed</span><span class="s">verified</span></div>
+            </div>
+            <div class="fcard ok">
+              <div style="display:flex;justify-content:space-between"><span class="pill p4">P4 · WO-4452</span><span class="clock ok">SLA 6:00:00</span></div>
+              <h4 style="margin-top:10px">Firmware patch CVE-2026-118</h4>
+              <div class="meta">security_remediation W55 · CVSS 7.4 · change RFC approved</div>
+              <div class="step" style="margin-top:12px"><span class="s done">planned</span><span class="s done">assigned</span><span class="s now">travelling</span><span class="s">on_site</span><span class="s">completed</span><span class="s">verified</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- phone -->
+      <div class="phone"><div class="pscreen">
+        <div class="statusbar"><span>09:41</span><span class="right">📶 1-bar · ▒ 38% · ⚡</span></div>
+        <div class="offline">⚠ OFFLINE — 2 actions queued, will sync on signal</div>
+        <div class="pinstall"><span>Add Field-Ops to Home Screen</span><button>Install</button></div>
+        <div class="pbody">
+          <div class="sect">Now — De Aar PV 2</div>
+          <div class="fcard crit" style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center"><span class="pill p1">P1 · WO-4471</span><span class="clock crit">38:12</span></div>
+            <h4 style="margin-top:9px;font-size:19px">Inverter trip — String 7</h4>
+            <div class="meta">Arc-fault FF-04 · isolate before work</div>
+            <div class="step" style="margin-top:10px"><span class="s done">assgn</span><span class="s now">parts</span><span class="s">travel</span><span class="s">on-site</span></div>
+            <button class="bigbtn">📷 Photo → start RMA</button>
+            <button class="ghostbtn" style="width:100%;margin-top:8px">Arrived on site</button>
+          </div>
+          <div class="sect" style="margin-top:6px">Next up</div>
+          <div class="fcard warn" style="padding:13px">
+            <div style="display:flex;justify-content:space-between"><span class="pill p2">P2 · WO-4468</span><span class="clock warn">1:42</span></div>
+            <h4 style="margin-top:7px;font-size:15px">Tracker motor swap — Kuruman</h4>
+            <div class="meta">Part in transit · cached</div>
+          </div>
+        </div>
+        <button class="fab">＋ New RMA</button>
+        <nav class="bottomnav">
+          <a href="#" aria-current="page"><span class="ic">⬡</span>Jobs</a>
+          <a href="#"><span class="ic">📷</span>RMA</a>
+          <a href="#"><span class="ic">◩</span>Parts</a>
+          <a href="#"><span class="ic">◈</span>Tickets</a>
+        </nav>
+      </div></div>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--red)"></i>P1 ≤60m</span>
+      <span><i class="sw" style="background:var(--amber)"></i>P2 ≤120m</span>
+      <span><i class="sw" style="background:var(--blue)"></i>P3 ≤240m</span>
+      <span><i class="sw" style="background:var(--hi)"></i>on track</span>
+      <span>All taps ≥52px · offline-first cache · camera → warranty_claim (W15)</span>
+    </div>
+  </section>
+
+  <!-- ================= OPTION 2 ================= -->
+  <section class="panel" data-opt="2" data-active="false" role="tabpanel">
+    <p class="concept"><b>Direction 2 — SLA Dispatch Board.</b> A service-desk Kanban where columns are
+      ITIL ticket states and every card carries a live SLA clock as a draining bar. The board sorts by
+      time-to-breach; P1 cards float to the top. Mobile is a one-thumb triage stack of the same queue.</p>
+
+    <div class="frames">
+      <div class="desk">
+        <div class="dchrome"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="u">oe.vantax.co.za/support · dispatch board</span></div>
+        <div class="topbar2">
+          <div class="kpi"><span class="v" style="color:var(--red)">2</span><span class="l">Breaching &lt;15m</span></div>
+          <div class="kpi"><span class="v">31</span><span class="l">Open tickets</span></div>
+          <div class="kpi"><span class="v" style="color:var(--hi)">96.4%</span><span class="l">SLA adherence MTD</span></div>
+          <div class="kpi"><span class="v">7m12s</span><span class="l">Avg first-response</span></div>
+          <span style="margin-left:auto;font-size:12px;color:var(--ink-2)" class="mono">W217 SLA report · live</span>
+        </div>
+        <div class="board">
+          <div class="col">
+            <div class="colh">Open <span class="cnt">9</span></div>
+            <div class="kcard breach"><div class="t">SCADA link down — Springbok</div><div class="b"><span class="pill p1">P1</span><span class="clock crit">07:44</span></div><div class="slabar"><i style="width:14%;background:var(--red)"></i></div></div>
+            <div class="kcard"><div class="t">Comms gateway timeout</div><div class="b"><span class="pill p2">P2</span><span class="clock warn">48:10</span></div><div class="slabar"><i style="width:42%;background:var(--amber)"></i></div></div>
+            <div class="kcard"><div class="t">Tariff meter mismatch</div><div class="b"><span class="pill p3">P3</span><span class="clock ok">2:18:00</span></div><div class="slabar"><i style="width:64%;background:var(--hi)"></i></div></div>
+          </div>
+          <div class="col">
+            <div class="colh">In progress <span class="cnt">12</span></div>
+            <div class="kcard breach"><div class="t">Inverter trip — De Aar PV 2</div><div class="b"><span class="pill p1">P1</span><span class="clock crit">38:12</span></div><div class="slabar"><i style="width:38%;background:var(--red)"></i></div></div>
+            <div class="kcard"><div class="t">DC arc warning — combiner 3</div><div class="b"><span class="pill p2">P2</span><span class="clock warn">1:02:30</span></div><div class="slabar"><i style="width:51%;background:var(--amber)"></i></div></div>
+            <div class="kcard"><div class="t">CSAT follow-up call</div><div class="b"><span class="pill p4">P4</span><span class="clock ok">5:40:00</span></div><div class="slabar"><i style="width:88%;background:var(--hi)"></i></div></div>
+          </div>
+          <div class="col">
+            <div class="colh">Waiting <span class="cnt">6</span></div>
+            <div class="kcard"><div class="t">RMA-2231 part in transit</div><div class="b"><span class="pill p2">P2</span><span class="clock ok">paused</span></div><div class="slabar"><i style="width:60%;background:#9aa7b4"></i></div></div>
+            <div class="kcard"><div class="t">Awaiting OEM RCA — W41</div><div class="b"><span class="pill p3">P3</span><span class="clock ok">paused</span></div><div class="slabar"><i style="width:55%;background:#9aa7b4"></i></div></div>
+          </div>
+          <div class="col">
+            <div class="colh">Resolved <span class="cnt">4</span></div>
+            <div class="kcard"><div class="t">Firmware patch verified</div><div class="b"><span class="pill p4">P4</span><span class="clock ok">✓ met</span></div><div class="slabar"><i style="width:100%;background:var(--hi)"></i></div></div>
+            <div class="kcard"><div class="t">PM combiner inspection</div><div class="b"><span class="pill p3">P3</span><span class="clock ok">✓ met</span></div><div class="slabar"><i style="width:100%;background:var(--hi)"></i></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone"><div class="pscreen">
+        <div class="statusbar"><span>09:41</span><span class="right">📶 ▒ 38% · ⚡</span></div>
+        <div class="pinstall"><span>Install Dispatch Board PWA</span><button>Install</button></div>
+        <div class="pbody">
+          <div style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto">
+            <span class="pill p1" style="padding:7px 11px">Breaching · 2</span>
+            <span class="pill p4" style="padding:7px 11px;background:var(--ink);color:#fff">All · 31</span>
+            <span class="pill p4" style="padding:7px 11px">Mine · 9</span>
+          </div>
+          <div class="sect">Sorted by time-to-breach</div>
+          <div class="kcard breach" style="padding:13px"><div class="t" style="font-size:14.5px">SCADA link down — Springbok</div><div class="b"><span class="pill p1">P1 · open</span><span class="clock crit">07:44</span></div><div class="slabar"><i style="width:14%;background:var(--red)"></i></div></div>
+          <div class="kcard breach" style="padding:13px"><div class="t" style="font-size:14.5px">Inverter trip — De Aar PV 2</div><div class="b"><span class="pill p1">P1 · in&nbsp;prog</span><span class="clock crit">38:12</span></div><div class="slabar"><i style="width:38%;background:var(--red)"></i></div></div>
+          <div class="kcard" style="padding:13px"><div class="t" style="font-size:14.5px">DC arc warning — combiner 3</div><div class="b"><span class="pill p2">P2 · in&nbsp;prog</span><span class="clock warn">1:02</span></div><div class="slabar"><i style="width:51%;background:var(--amber)"></i></div></div>
+          <div class="kcard" style="padding:13px"><div class="t" style="font-size:14.5px">Comms gateway timeout</div><div class="b"><span class="pill p2">P2 · open</span><span class="clock warn">48:10</span></div><div class="slabar"><i style="width:42%;background:var(--amber)"></i></div></div>
+        </div>
+        <button class="fab" style="background:var(--blue);box-shadow:0 8px 22px rgba(17,75,143,.4)">⤴ Take P1</button>
+        <nav class="bottomnav">
+          <a href="#" aria-current="page"><span class="ic" style="color:var(--blue)">◈</span>Board</a>
+          <a href="#"><span class="ic">⬡</span>WOs</a>
+          <a href="#"><span class="ic">⚠</span>Escalate</a>
+          <a href="#"><span class="ic">▤</span>SLA</a>
+        </nav>
+      </div></div>
+    </div>
+    <div class="legend">
+      <span>Columns = ITIL states <span class="mono">open · in_progress · waiting · resolved</span></span>
+      <span>Bar = SLA budget remaining (P1 60m / P2 120m / P3 240m)</span>
+      <span>Outlined card = breaching</span>
+    </div>
+  </section>
+
+  <!-- ================= OPTION 3 ================= -->
+  <section class="panel" data-opt="3" data-active="false" role="tabpanel">
+    <p class="concept"><b>Direction 3 — Prognostics Console.</b> Asset health as the hero. RUL,
+      anomaly score and the 12-mode fault fingerprint lead; the work order is the <em>output</em> of a
+      prediction, not the start. A live savings ledger quantifies the win over reactive NTT-style O&amp;M.</p>
+
+    <div class="frames">
+      <div class="desk">
+        <div class="dchrome"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="u">oe.vantax.co.za/support · prognostics W71</span></div>
+        <div class="pgrid">
+          <div class="asset-list">
+            <div class="sect" style="color:#b6a6cb">Assets — by failure risk</div>
+            <div class="asset-row active"><div class="an">De Aar PV 2 · INV-07 <span class="rul-badge" style="color:#ff8a8a">RUL 11d</span></div><div class="am">anomaly 0.91 · FF-04 arc-fault</div></div>
+            <div class="asset-row"><div class="an">Kuruman W1 · GBX-03 <span class="rul-badge" style="color:#ffce6b">RUL 34d</span></div><div class="am">anomaly 0.62 · bearing wear</div></div>
+            <div class="asset-row"><div class="an">Springbok · TRK-12 <span class="rul-badge" style="color:#ffce6b">RUL 58d</span></div><div class="am">anomaly 0.48 · motor torque</div></div>
+            <div class="asset-row"><div class="an">De Aar PV 1 · INV-02 <span class="rul-badge" style="color:#9fe6bf">RUL 210d</span></div><div class="am">anomaly 0.12 · nominal</div></div>
+            <div class="asset-row"><div class="an">Kuruman W2 · GEN-05 <span class="rul-badge" style="color:#9fe6bf">RUL 320d</span></div><div class="am">anomaly 0.08 · nominal</div></div>
+          </div>
+          <div class="pg-detail">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div><h3 style="margin:0;font-size:21px">De Aar PV 2 · Inverter 07</h3>
+              <div style="font-size:12.5px;color:var(--ink-2);margin-top:3px" class="mono">prognostics_id APROG-8841 · L5 evidence chain</div></div>
+              <span class="tier r" style="margin:0">● Regulator-grade · L5</span>
+            </div>
+            <div class="gauge-row">
+              <div class="gauge"><div class="gv" style="color:var(--red)">11d</div><div class="gl">Remaining useful life</div></div>
+              <div class="gauge"><div class="gv" style="color:var(--amber)">0.91</div><div class="gl">Anomaly score (6-method)</div></div>
+              <div class="gauge"><div class="gv" style="color:var(--violet)">94%</div><div class="gl">Fault confidence</div></div>
+            </div>
+            <div class="sect">Degradation trend — OLS efficiency drift</div>
+            <div class="spark"><svg viewBox="0 0 400 64" preserveAspectRatio="none"><polyline fill="none" stroke="#5b2a86" stroke-width="2.5" points="0,12 50,14 100,18 150,20 200,26 250,33 300,42 350,52 400,58"/><polyline fill="none" stroke="#b21d2b" stroke-width="2" stroke-dasharray="4 4" points="350,52 400,62"/></svg></div>
+            <div class="sect" style="margin-top:16px">Fault fingerprint — 12-mode physics classifier</div>
+            <div class="fault"><span class="fn">FF-04 · DC arc-fault</span><span class="conf">94%</span></div>
+            <div class="fault"><span class="fn">FF-09 · IGBT thermal cycling</span><span class="conf">31%</span></div>
+            <div class="fault"><span class="fn">FF-02 · DC capacitor ESR rise</span><span class="conf">18%</span></div>
+            <div class="savings">
+              <div class="vs">Predictive vs reactive (NTT-style) O&amp;M — this asset, YTD</div>
+              <div class="big">R 1.84M saved</div>
+              <div class="vs">3 avoided unplanned trips · −28% O&amp;M spend · −41% downtime MWh</div>
+              <button class="bigbtn" style="background:#7c3fb5;margin-top:12px">⟶ Raise pre-emptive work order (W16)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone"><div class="pscreen">
+        <div class="statusbar"><span>09:41</span><span class="right">📶 ▒ 38% · ⚡</span></div>
+        <div class="pinstall" style="background:#120c1c"><span>Install Prognostics PWA</span><button style="background:#7c3fb5">Install</button></div>
+        <div class="pbody" style="background:#fbfaff">
+          <div class="sect" style="color:var(--violet)">Highest risk now</div>
+          <div style="background:#120c1c;color:#e7def2;border-radius:16px;padding:16px;margin-bottom:12px">
+            <div style="font-weight:800;font-size:17px">De Aar PV 2 · INV-07</div>
+            <div style="font-size:12px;color:#b6a6cb;margin-top:2px" class="mono">APROG-8841</div>
+            <div style="display:flex;gap:10px;margin-top:14px">
+              <div style="flex:1;text-align:center"><div class="mono" style="font-size:24px;font-weight:800;color:#ff8a8a">11d</div><div style="font-size:10px;color:#b6a6cb">RUL</div></div>
+              <div style="flex:1;text-align:center"><div class="mono" style="font-size:24px;font-weight:800;color:#ffce6b">0.91</div><div style="font-size:10px;color:#b6a6cb">ANOM</div></div>
+              <div style="flex:1;text-align:center"><div class="mono" style="font-size:24px;font-weight:800;color:#c7a8f0">94%</div><div style="font-size:10px;color:#b6a6cb">FAULT</div></div>
+            </div>
+          </div>
+          <div class="fault" style="border-color:#e3dbef"><span class="fn">FF-04 · DC arc-fault</span><span class="conf">94%</span></div>
+          <div class="savings" style="margin-top:12px"><div class="vs">vs reactive O&amp;M, YTD</div><div class="big">R 1.84M</div><div class="vs">3 trips avoided · −28% spend</div></div>
+        </div>
+        <button class="fab" style="background:#7c3fb5;box-shadow:0 8px 22px rgba(124,63,181,.4)">⟶ Pre-empt WO</button>
+        <nav class="bottomnav">
+          <a href="#" aria-current="page"><span class="ic" style="color:var(--violet)">◎</span>Health</a>
+          <a href="#"><span class="ic">⬡</span>WOs</a>
+          <a href="#"><span class="ic">◩</span>Parts</a>
+          <a href="#"><span class="ic">▤</span>Savings</a>
+        </nav>
+      </div></div>
+    </div>
+    <div class="legend">
+      <span>Drives <span class="mono">spare_parts_provisioning (W72)</span> demand from RUL</span>
+      <span>Pre-emptive output → <span class="mono">work_order (W16)</span></span>
+      <span>L5 tamper-evident prognostics evidence chain</span>
+    </div>
+  </section>
+
+  <footer>Open Energy Platform · Support / OEM design exploration · evaluation mockups, not wired into the app</footer>
+</div>
+
+<script>
+  function pick(n){
+    document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected', t.dataset.opt==n));
+    document.querySelectorAll('.panel').forEach(p=>p.setAttribute('data-active', p.dataset.opt==n));
+  }
+</script>
+</body>
+</html>

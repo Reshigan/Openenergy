@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Regulator — Frontend Exploration · Open Energy Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* Authoritative, formal, ink-on-paper with a state-seal teal/oxblood */
+    --paper:#f6f4ee;        /* warm document paper */
+    --paper2:#efece3;
+    --ink:#161512;          /* near-black ink */
+    --ink2:#46443d;         /* secondary ink */
+    --ink3:#74705f;         /* tertiary */
+    --rule:#d9d4c6;         /* hairline rule */
+    --rule2:#c8c2b0;
+    --seal:#0e4f4a;         /* state seal teal-green */
+    --seal2:#0b3d39;
+    --oxblood:#7a1f24;      /* enforcement / breach */
+    --gold:#9a7a25;         /* certified / determination */
+    --amber:#a86a12;        /* SLA warning */
+    --slate:#2c3340;        /* oversight chrome */
+    --ok:#1f6b46;
+    --shadow:0 1px 0 rgba(0,0,0,.04),0 8px 30px -16px rgba(0,0,0,.28);
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --serif:'Newsreader',Georgia,serif;
+    --sans:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      repeating-linear-gradient(180deg,transparent,transparent 27px,rgba(14,79,74,.025) 27px,rgba(14,79,74,.025) 28px),
+      var(--paper);
+    color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  .wrap{max-width:1340px;margin:0 auto;padding:34px 26px 90px}
+
+  /* ---------- masthead ---------- */
+  .mast{border-top:3px solid var(--seal);border-bottom:1px solid var(--rule2);padding:22px 0 20px;margin-bottom:26px}
+  .mast .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--seal);font-weight:600}
+  .mast h1{font-family:var(--serif);font-weight:600;font-size:42px;line-height:1.04;margin:8px 0 2px;letter-spacing:-.01em}
+  .mast h1 em{font-style:italic;color:var(--seal)}
+  .mast .sub{font-family:var(--serif);font-size:16px;color:var(--ink2);font-style:italic;margin-top:2px}
+  .mast .seal{float:right;width:74px;height:74px;border:2px solid var(--seal);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-weight:600;color:var(--seal);font-size:11px;text-align:center;line-height:1.1;margin-left:18px;position:relative}
+  .mast .seal::before{content:"";position:absolute;inset:5px;border:1px solid var(--seal);border-radius:50%;opacity:.45}
+
+  .grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:24px;margin-bottom:30px}
+  .persona,.rationale{border:1px solid var(--rule2);background:#fffdf8;padding:18px 20px;box-shadow:var(--shadow)}
+  .blocklabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink3);margin-bottom:9px;display:flex;align-items:center;gap:8px}
+  .blocklabel::before{content:"§";color:var(--seal);font-family:var(--serif);font-style:italic}
+  .persona p,.rationale p{margin:0 0 9px;font-size:14px;color:var(--ink2)}
+  .persona p:last-child,.rationale p:last-child{margin:0}
+  .persona b{color:var(--ink)}
+
+  /* ---------- journey-as-product strip ---------- */
+  .jstrip{margin-bottom:34px}
+  .jhead{display:flex;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:7px;margin-bottom:14px}
+  .jhead h2{font-family:var(--serif);font-size:21px;font-weight:600;margin:0}
+  .jhead span{font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:.05em}
+  .jcards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .jcard{border:1px solid var(--rule2);background:#fffdf8;padding:16px 17px;position:relative;box-shadow:var(--shadow)}
+  .jcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--seal)}
+  .jcard.enf::before{background:var(--oxblood)}
+  .jcard.cmp::before{background:var(--gold)}
+  .jcard .wcode{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:.1em}
+  .jcard h3{font-family:var(--serif);font-size:18px;font-weight:600;margin:5px 0 4px;line-height:1.15}
+  .jcard .law{font-size:12px;color:var(--ink3);font-style:italic;font-family:var(--serif);margin-bottom:11px}
+  .tier{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:4px 9px;border-radius:2px}
+  .tier.l5{background:#0e4f4a;color:#eafff8}
+  .tier.l4{background:#1d2733;color:#e7eef5}
+  .tier .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .meter{margin-top:12px;border-top:1px dashed var(--rule2);padding-top:10px;display:flex;align-items:baseline;justify-content:space-between}
+  .meter .unit{font-family:var(--mono);font-size:11px;color:var(--ink2)}
+  .meter .price{font-family:var(--serif);font-weight:600;font-size:17px;color:var(--seal)}
+  .meter .price small{font-size:11px;color:var(--ink3);font-weight:400;font-family:var(--mono)}
+
+  /* ---------- option tabs ---------- */
+  .tabs{display:flex;gap:0;border:1px solid var(--rule2);border-radius:4px;overflow:hidden;width:fit-content;margin:0 auto 26px;background:#fffdf8;box-shadow:var(--shadow)}
+  .tabs button{border:0;background:transparent;font-family:var(--mono);font-size:12px;letter-spacing:.06em;padding:11px 20px;cursor:pointer;color:var(--ink3);border-right:1px solid var(--rule2);transition:.15s;font-weight:500}
+  .tabs button:last-child{border-right:0}
+  .tabs button.on{background:var(--seal);color:#eafff8}
+  .tabs button:hover:not(.on){background:var(--paper2);color:var(--ink)}
+  .tabs button:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+
+  .opt{display:none}
+  .opt.on{display:block}
+  .opt-h{text-align:center;margin-bottom:22px}
+  .opt-h .n{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--seal);text-transform:uppercase}
+  .opt-h h2{font-family:var(--serif);font-size:30px;font-weight:600;margin:6px 0 4px}
+  .opt-h p{margin:0;color:var(--ink2);font-size:14.5px;max-width:660px;margin-inline:auto}
+
+  .stage{display:grid;grid-template-columns:1fr 392px;gap:26px;align-items:start}
+  @media(max-width:1180px){.stage{grid-template-columns:1fr}}
+
+  /* generic frame chrome */
+  .frame{border:1px solid var(--rule2);border-radius:8px;overflow:hidden;background:#fffdf8;box-shadow:0 22px 60px -34px rgba(0,0,0,.5)}
+  .winbar{display:flex;align-items:center;gap:8px;padding:9px 13px;background:var(--paper2);border-bottom:1px solid var(--rule2)}
+  .winbar .dots{display:flex;gap:6px}
+  .winbar .dots i{width:11px;height:11px;border-radius:50%;display:block;background:#cfc9ba}
+  .winbar .url{font-family:var(--mono);font-size:11px;color:var(--ink3);background:#fffdf8;border:1px solid var(--rule);border-radius:4px;padding:3px 11px;margin-left:8px}
+  .winbar .lock{color:var(--seal)}
+
+  .flabel{text-align:center;font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);margin:0 0 9px}
+
+  /* ===== badges/pills shared ===== */
+  .pill{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.05em;padding:2px 7px;border-radius:3px;text-transform:uppercase;white-space:nowrap}
+  .pill.sla{background:#f7e6c9;color:#6d4a06}
+  .pill.sla.crit{background:#f2c7c8;color:var(--oxblood)}
+  .pill.sla.ok{background:#d6ecd9;color:var(--ok)}
+  .pill.stage{background:#dfeae8;color:var(--seal2)}
+  .pill.enf{background:#f0d3d4;color:var(--oxblood)}
+  .pill.cert{background:#efe3c6;color:var(--gold)}
+
+  /* ============ OPTION 1 — DOCKET / INBOX ============ */
+  .desk{font-size:13px}
+  .desk .topstrip{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--rule2);background:#fffefb}
+  .desk .topstrip .t{font-family:var(--serif);font-size:17px;font-weight:600}
+  .desk .topstrip .t small{font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:.1em;margin-left:9px;font-weight:400}
+  .desk .topstrip .stat{display:flex;gap:22px}
+  .desk .topstrip .stat div{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+  .desk .topstrip .stat b{display:block;font-family:var(--serif);font-size:19px;color:var(--ink);font-weight:600}
+  .desk .topstrip .stat .crit b{color:var(--oxblood)}
+  .desk-body{display:grid;grid-template-columns:188px 1fr;min-height:540px}
+  .queue-nav{border-right:1px solid var(--rule2);padding:12px 0;background:var(--paper2)}
+  .queue-nav .grp{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);padding:9px 16px 5px}
+  .queue-nav a{display:flex;align-items:center;justify-content:space-between;padding:7px 16px;color:var(--ink2);text-decoration:none;font-size:12.5px;border-left:3px solid transparent}
+  .queue-nav a.on{background:#fffdf8;border-left-color:var(--seal);color:var(--ink);font-weight:600}
+  .queue-nav a:hover:not(.on){background:#fffdf8}
+  .queue-nav a .c{font-family:var(--mono);font-size:10px;color:var(--ink3);background:#e8e3d4;border-radius:9px;padding:1px 6px}
+  .queue-nav a.on .c{background:#cfe6e2;color:var(--seal2)}
+  .queue-nav a .c.crit{background:#f2c7c8;color:var(--oxblood)}
+
+  .docket{padding:0}
+  .docket .qhead{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--rule2)}
+  .docket .qhead h4{font-family:var(--serif);margin:0;font-size:16px;font-weight:600}
+  .docket .qhead .sort{font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+  .case-row{display:grid;grid-template-columns:46px 1fr 132px;gap:0;padding:12px 16px;border-bottom:1px solid var(--rule);align-items:center;cursor:default;position:relative}
+  .case-row:hover{background:#fffefb}
+  .case-row .clock{display:flex;flex-direction:column;align-items:center}
+  .case-row .clock .ring{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:600;border:2.5px solid var(--ok);color:var(--ink)}
+  .case-row .clock .ring.warn{border-color:var(--amber);color:var(--amber)}
+  .case-row .clock .ring.crit{border-color:var(--oxblood);color:var(--oxblood)}
+  .case-row .meta .id{font-family:var(--mono);font-size:10.5px;color:var(--ink3);letter-spacing:.04em}
+  .case-row .meta .ttl{font-family:var(--serif);font-size:15px;font-weight:600;line-height:1.2;margin:1px 0 5px}
+  .case-row .meta .tags{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .case-row .meta .party{font-size:11.5px;color:var(--ink3)}
+  .case-row .act{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .case-row .act .due{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+  .case-row .act .due b{color:var(--oxblood)}
+  .btn{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em;border:1px solid var(--seal);background:var(--seal);color:#eafff8;padding:6px 13px;border-radius:4px;cursor:pointer}
+  .btn.ghost{background:transparent;color:var(--seal);border-color:var(--seal)}
+  .btn.dang{background:var(--oxblood);border-color:var(--oxblood);color:#fff1f1}
+  .btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+  /* state machine ribbon */
+  .chainline{display:flex;align-items:center;gap:0;margin-top:6px;flex-wrap:wrap}
+  .chainline .st{font-family:var(--mono);font-size:9px;letter-spacing:.02em;color:var(--ink3);padding:2px 6px;border:1px solid var(--rule2);border-right:0;background:#fff;white-space:nowrap}
+  .chainline .st:last-child{border-right:1px solid var(--rule2)}
+  .chainline .st.done{background:#e4efed;color:var(--seal2);border-color:#bcd9d4}
+  .chainline .st.cur{background:var(--seal);color:#eafff8;border-color:var(--seal);font-weight:600}
+  .chainline .st.next{color:var(--ink3)}
+
+  /* ============ OPTION 2 — DOSSIER ============ */
+  .dossier{display:grid;grid-template-columns:1fr;font-size:13px}
+  .dos-head{padding:20px 26px 16px;border-bottom:2px solid var(--ink);position:relative;background:
+    repeating-linear-gradient(135deg,transparent,transparent 11px,rgba(14,79,74,.02) 11px,rgba(14,79,74,.02) 12px),#fffdf8}
+  .dos-head .file{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--seal);text-transform:uppercase}
+  .dos-head h3{font-family:var(--serif);font-size:25px;font-weight:600;margin:6px 0 3px;letter-spacing:-.01em}
+  .dos-head .parties{font-size:13px;color:var(--ink2);font-family:var(--serif);font-style:italic}
+  .dos-head .cstamp{position:absolute;right:24px;top:18px;border:2px solid var(--seal);color:var(--seal);font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.1em;padding:6px 10px;transform:rotate(-7deg);text-align:center;line-height:1.4;background:rgba(255,253,248,.7)}
+  .dos-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .dos-col{padding:18px 24px}
+  .dos-col+.dos-col{border-left:1px solid var(--rule2)}
+  .secttl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);border-bottom:1px solid var(--rule);padding-bottom:6px;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+  .secttl .ord{color:var(--seal);font-family:var(--serif);font-style:italic;font-weight:600}
+
+  /* tamper-evident audit chain */
+  .audit{position:relative;padding-left:22px}
+  .audit::before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--seal),var(--rule2))}
+  .ablk{position:relative;margin-bottom:13px}
+  .ablk::before{content:"";position:absolute;left:-19px;top:4px;width:11px;height:11px;border-radius:2px;background:#fffdf8;border:2px solid var(--seal);transform:rotate(45deg)}
+  .ablk .when{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+  .ablk .what{font-size:13px;font-weight:600;font-family:var(--serif)}
+  .ablk .who{font-size:11.5px;color:var(--ink2)}
+  .ablk .hash{font-family:var(--mono);font-size:9.5px;color:var(--seal2);background:#e7efed;border-radius:3px;padding:1px 6px;display:inline-block;margin-top:3px;letter-spacing:.02em}
+  .ablk .hash .chk{color:var(--ok)}
+
+  .evidence li{list-style:none;display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px dotted var(--rule2);font-size:12.5px}
+  .evidence{margin:0;padding:0}
+  .evidence .ic{width:24px;height:30px;border:1px solid var(--rule2);border-radius:2px 2px 0 0;background:#fff;position:relative;flex:none}
+  .evidence .ic::after{content:"";position:absolute;right:0;top:0;border:5px solid transparent;border-top-color:var(--paper2);border-right-color:var(--paper2)}
+  .evidence .nm{flex:1}
+  .evidence .nm small{display:block;color:var(--ink3);font-family:var(--mono);font-size:9.5px}
+  .evidence .seal-mini{color:var(--ok);font-family:var(--mono);font-size:10px;font-weight:600}
+
+  .det-rows{width:100%;border-collapse:collapse;font-size:12.5px}
+  .det-rows td{padding:6px 0;border-bottom:1px dotted var(--rule2);vertical-align:top}
+  .det-rows td:first-child{color:var(--ink3);width:42%;font-family:var(--mono);font-size:11px}
+  .det-rows td:last-child{font-weight:500}
+
+  .export-bar{grid-column:1/-1;border-top:2px solid var(--ink);background:var(--paper2);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .export-bar .note{font-size:12px;color:var(--ink2);font-family:var(--serif);font-style:italic;max-width:520px}
+  .export-bar .acts{display:flex;gap:10px}
+  .btn.cert{background:var(--gold);border-color:var(--gold);color:#fff8e8}
+
+  /* ============ OPTION 3 — OVERSIGHT DASHBOARD ============ */
+  .ovr{background:#10161f;color:#dde4ec;font-size:13px;font-family:var(--sans)}
+  .ovr .obar{display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-bottom:1px solid #232c3a}
+  .ovr .obar .t{font-family:var(--serif);font-size:18px;font-weight:600;color:#f1f5fa}
+  .ovr .obar .t small{font-family:var(--mono);font-size:10px;color:#7d8a9c;letter-spacing:.16em;display:block;margin-top:1px;text-transform:uppercase}
+  .ovr .obar .live{font-family:var(--mono);font-size:10.5px;color:#67d6b5;display:flex;align-items:center;gap:7px}
+  .ovr .obar .live i{width:7px;height:7px;border-radius:50%;background:#67d6b5;display:block;box-shadow:0 0 0 0 rgba(103,214,181,.7);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(103,214,181,.6)}70%{box-shadow:0 0 0 7px rgba(103,214,181,0)}100%{box-shadow:0 0 0 0 rgba(103,214,181,0)}}
+  .ovr-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#232c3a;border-bottom:1px solid #232c3a}
+  .ovr-kpi{background:#141b25;padding:15px 18px}
+  .ovr-kpi .lab{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#7d8a9c}
+  .ovr-kpi .v{font-family:var(--serif);font-size:30px;font-weight:600;color:#f1f5fa;line-height:1.1;margin-top:4px}
+  .ovr-kpi .v.bad{color:#f0888c}
+  .ovr-kpi .v.warn{color:#f0b95a}
+  .ovr-kpi .d{font-family:var(--mono);font-size:10px;color:#67d6b5;margin-top:2px}
+  .ovr-kpi .d.dn{color:#f0888c}
+  .ovr-main{display:grid;grid-template-columns:1.4fr 1fr;gap:1px;background:#232c3a}
+  .ovr-panel{background:#141b25;padding:16px 18px}
+  .ovr-panel h5{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#9aa6b6;margin:0 0 13px;font-weight:600}
+
+  /* breach board */
+  .breach{display:flex;flex-direction:column;gap:8px}
+  .brow{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;background:#1a222e;border-left:3px solid #f0888c;padding:9px 12px;border-radius:0 4px 4px 0}
+  .brow.warn{border-left-color:#f0b95a}
+  .brow.watch{border-left-color:#5b86c4}
+  .brow .who{font-family:var(--serif);font-size:14px;font-weight:600;color:#eef3f9}
+  .brow .who small{display:block;font-family:var(--mono);font-size:10px;color:#7d8a9c;font-weight:400;margin-top:1px}
+  .brow .sev{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 8px;border-radius:3px;background:#3a2326;color:#f0888c}
+  .brow.warn .sev{background:#3a3019;color:#f0b95a}
+  .brow.watch .sev{background:#22324a;color:#9cc0f0}
+  .brow .age{font-family:var(--mono);font-size:11px;color:#aeb8c6;text-align:right}
+
+  /* enforcement pipeline (funnel) */
+  .pipe{display:flex;flex-direction:column;gap:7px}
+  .pstep{display:flex;align-items:center;gap:10px}
+  .pstep .bar{height:30px;border-radius:3px;display:flex;align-items:center;padding:0 11px;font-family:var(--mono);font-size:11px;color:#0c1016;font-weight:600;min-width:46px}
+  .pstep .nm{font-size:12px;color:#c3cdd9;flex:none;width:118px;font-family:var(--mono);font-size:10.5px}
+  .pstep .ct{font-family:var(--mono);font-size:11px;color:#7d8a9c;margin-left:auto}
+
+  /* heat row */
+  .heat{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:6px}
+  .heat .cell{aspect-ratio:1.6;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600;color:#0c1016}
+  .heat .lab{font-family:var(--mono);font-size:8.5px;color:#7d8a9c;text-align:center;letter-spacing:.04em}
+
+  /* ============ PHONE FRAMES ============ */
+  .phone{width:392px;justify-self:center}
+  .pframe{width:392px;height:812px;border:11px solid #14130f;border-radius:46px;overflow:hidden;position:relative;box-shadow:0 30px 70px -30px rgba(0,0,0,.6);background:#fffdf8}
+  .pframe.dark{background:#10161f}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:27px;background:#14130f;border-radius:0 0 17px 17px;z-index:30}
+  .pstatus{display:flex;align-items:center;justify-content:space-between;padding:9px 20px 4px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
+  .pstatus.lt{color:#dde4ec}
+  .pstatus .r{display:flex;gap:5px;align-items:center}
+  .offline{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;background:#e7efed;color:var(--seal2);padding:5px 14px;border-bottom:1px solid var(--rule2)}
+  .offline i{width:6px;height:6px;border-radius:50%;background:var(--seal);display:block}
+  .offline.dk{background:#1a222e;color:#9cc0f0;border-color:#232c3a}
+  .pbody{height:calc(812px - 27px - 30px - 66px);overflow:hidden;position:relative}
+  .pbody.scroll-hint::after{content:"";position:absolute;bottom:0;left:0;right:0;height:30px;background:linear-gradient(transparent,rgba(255,253,248,.95))}
+  .pnav{position:absolute;bottom:0;left:0;right:0;height:66px;border-top:1px solid var(--rule2);background:#fffefb;display:flex;align-items:center;justify-content:space-around;padding-bottom:9px}
+  .pnav-i{display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:.04em}
+  .pnav-i .g{font-size:17px;line-height:1}
+  .pnav-i.on{color:var(--seal);font-weight:600}
+  .pnav.dk{background:#141b25;border-color:#232c3a}
+  .pnav.dk .pnav-i{color:#7d8a9c}
+  .pnav.dk .pnav-i.on{color:#67d6b5}
+  /* phone fab thumb action */
+  .fab{position:absolute;bottom:80px;right:16px;background:var(--seal);color:#eafff8;font-family:var(--mono);font-size:12px;font-weight:600;padding:13px 18px;border-radius:30px;box-shadow:0 10px 24px -8px rgba(14,79,74,.7);display:flex;align-items:center;gap:8px;z-index:20}
+  .fab.dang{background:var(--oxblood)}
+
+  /* phone case cards */
+  .pcasewrap{padding:12px 13px}
+  .ph-title{font-family:var(--serif);font-size:19px;font-weight:600;padding:4px 4px 9px}
+  .ph-title small{display:block;font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:.1em;font-weight:400;text-transform:uppercase}
+  .pcard{border:1px solid var(--rule2);border-radius:8px;background:#fffefb;padding:12px 13px;margin-bottom:11px;position:relative;overflow:hidden}
+  .pcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ok)}
+  .pcard.warn::before{background:var(--amber)}
+  .pcard.crit::before{background:var(--oxblood)}
+  .pcard .pid{font-family:var(--mono);font-size:9.5px;color:var(--ink3);letter-spacing:.06em}
+  .pcard .pt{font-family:var(--serif);font-size:15.5px;font-weight:600;line-height:1.2;margin:2px 0 6px}
+  .pcard .prow{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+  .pcard .sla-mini{font-family:var(--mono);font-size:11px;font-weight:600}
+  .pcard .sla-mini.crit{color:var(--oxblood)}
+  .pcard .sla-mini.warn{color:var(--amber)}
+  .pcard .sla-mini.ok{color:var(--ok)}
+
+  /* phone dossier */
+  .pdoss{padding:13px}
+  .pdoss .dh{border-bottom:2px solid var(--ink);padding-bottom:11px;margin-bottom:13px}
+  .pdoss .dh .f{font-family:var(--mono);font-size:10px;color:var(--seal);letter-spacing:.12em;text-transform:uppercase}
+  .pdoss .dh h4{font-family:var(--serif);font-size:20px;margin:5px 0 2px;font-weight:600}
+  .signbox{border:1.5px dashed var(--seal);border-radius:8px;padding:15px 14px;text-align:center;margin-top:13px;background:#f3faf8}
+  .signbox .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--seal);margin-bottom:10px}
+  .signbox .sig{font-family:var(--serif);font-style:italic;font-size:26px;color:var(--ink);border-bottom:1px solid var(--ink2);padding-bottom:5px;display:inline-block;min-width:200px}
+  .signbox .meta{font-family:var(--mono);font-size:9px;color:var(--ink3);margin-top:8px}
+
+  /* phone oversight */
+  .povr-kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:13px}
+  .povr-kpi .k{background:#141b25;border:1px solid #232c3a;border-radius:8px;padding:12px}
+  .povr-kpi .k .l{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#7d8a9c}
+  .povr-kpi .k .v{font-family:var(--serif);font-size:26px;font-weight:600;color:#f1f5fa;margin-top:3px}
+  .povr-kpi .k .v.bad{color:#f0888c}
+
+  .footnote{margin-top:42px;border-top:1px solid var(--rule2);padding-top:16px;font-family:var(--mono);font-size:10.5px;color:var(--ink3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ MASTHEAD ============ -->
+  <header class="mast">
+    <div class="seal">NERSA<br>OE</div>
+    <div class="kicker">Open Energy Platform · Role Frontend Exploration</div>
+    <h1>The <em>Regulator</em> Bench</h1>
+    <div class="sub">Authority, due process, and evidence — for the officer who adjudicates the market.</div>
+  </header>
+
+  <!-- ============ PERSONA + RATIONALE ============ -->
+  <section class="grid2">
+    <div class="persona">
+      <div class="blocklabel">Persona</div>
+      <p><b>NERSA regulatory officer.</b> Adjudicates licence applications, runs compliance inspections,
+         resolves complaints, and signs determinations under ERA 2006 and the NERSA Grid Code. Every act
+         must withstand appeal — due process and the evidentiary record are the job.</p>
+      <p><b>Environment:</b> Desktop, dual-monitor, in chambers. Reads long dossiers; rarely on the move.
+         Lives in an <b>SLA-clocked inbox fed by every other role's escalations</b> — levies, take-or-pay,
+         curtailment claims, defaults, surveillance — all surface here.</p>
+      <p><b>Needs:</b> A prioritised queue that never lets an SLA lapse, a certified file behind every
+         decision, tamper-evident audit, and one-click certified exports for the gazette and the courts.</p>
+    </div>
+    <div class="rationale">
+      <div class="blocklabel">Design rationale</div>
+      <p>Formal, serif-tinged, ink-on-paper identity — this is a <b>bench, not a trading floor</b>.
+         Calm authority, never playful, generous reading measure, certified seals as first-class UI.</p>
+      <p>Three bets for one officer's day: <b>(1)</b> the docket — triage the SLA queue;
+         <b>(2)</b> the dossier — work one case as a tamper-evident certified file;
+         <b>(3)</b> oversight — see the whole market's compliance posture and enforcement pipeline.
+         Mobile collapses to <b>triage + sign-off</b> only.</p>
+    </div>
+  </section>
+
+  <!-- ============ JOURNEY-AS-PRODUCT STRIP ============ -->
+  <section class="jstrip">
+    <div class="jhead">
+      <h2>Hero journeys, metered as products</h2>
+      <span>billed per regulator act · tier = workflow depth</span>
+    </div>
+    <div class="jcards">
+      <div class="jcard">
+        <div class="wcode">W49 · ERA ss.8–11 · chain: licence_application</div>
+        <h3>Licence Application &amp; Adjudication</h3>
+        <div class="law">received → completeness → public participation → technical eval → council decision → granted/refused</div>
+        <span class="tier l5"><span class="dot"></span>Regulator-grade · L5</span>
+        <div class="meter">
+          <span class="unit">metered: per case adjudicated</span>
+          <span class="price">R 4,800<small>/case</small></span>
+        </div>
+      </div>
+      <div class="jcard enf">
+        <div class="wcode">W40 · NERSA §10/§34 · chain: compliance_inspection</div>
+        <h3>Compliance Inspection &amp; Enforcement</h3>
+        <div class="law">scheduled → notice → on-site → preliminary findings → response → final report → enforcement</div>
+        <span class="tier l5"><span class="dot"></span>Regulator-grade · L5</span>
+        <div class="meter">
+          <span class="unit">metered: per inspection + enforcement act</span>
+          <span class="price">R 6,200<small>/inspection</small></span>
+        </div>
+      </div>
+      <div class="jcard cmp">
+        <div class="wcode">W66 · ERA s30 · chain: complaint_resolution</div>
+        <h3>Complaints &amp; Dispute Resolution</h3>
+        <div class="law">lodged → acknowledged → investigation → consultation → determination → appeal → closed</div>
+        <span class="tier l5"><span class="dot"></span>Regulator-grade · L5</span>
+        <div class="meter">
+          <span class="unit">metered: per certified determination export</span>
+          <span class="price">R 3,100<small>/determination</small></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPTION TABS ============ -->
+  <div class="tabs" role="tablist" aria-label="Design directions">
+    <button id="t1" class="on" role="tab" aria-selected="true" aria-controls="o1" onclick="pick(1)">01 · The Docket</button>
+    <button id="t2" role="tab" aria-selected="false" aria-controls="o2" onclick="pick(2)">02 · The Dossier</button>
+    <button id="t3" role="tab" aria-selected="false" aria-controls="o3" onclick="pick(3)">03 · Oversight</button>
+  </div>
+
+  <!-- ============ OPTION 1 — THE DOCKET ============ -->
+  <section class="opt on" id="o1" role="tabpanel" aria-labelledby="t1">
+    <div class="opt-h">
+      <div class="n">Direction 01</div>
+      <h2>The Docket — SLA-clocked case management</h2>
+      <p>The officer's day is a prioritised queue of clocked cases fed by every chain. The clock is the
+         interface: nothing lapses silently, the most-breached case rises to the top.</p>
+    </div>
+
+    <div class="stage">
+      <!-- DESKTOP -->
+      <div>
+        <p class="flabel">Desktop · 1280 — regulator-suite/docket</p>
+        <div class="frame">
+          <div class="winbar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="url"><span class="lock">⚿</span> oe.vantax.co.za/regulator-suite/docket</span></div>
+          <div class="desk">
+            <div class="topstrip">
+              <div class="t">Regulatory Docket <small>OFFICER: M. KHUMALO · NERSA EL-PD</small></div>
+              <div class="stat">
+                <div>OPEN<b>47</b></div>
+                <div class="crit">SLA BREACH<b>3</b></div>
+                <div>DUE ≤24H<b>9</b></div>
+                <div>ADJUDICATED MTD<b>112</b></div>
+              </div>
+            </div>
+            <div class="desk-body">
+              <nav class="queue-nav" aria-label="Case queues">
+                <div class="grp">Licensing</div>
+                <a class="on" href="#">Applications <span class="c crit">6</span></a>
+                <a href="#">Renewals <span class="c">4</span></a>
+                <a href="#">SSEG register <span class="c">11</span></a>
+                <div class="grp">Enforcement</div>
+                <a href="#">Inspections <span class="c">5</span></a>
+                <a href="#">Complaints <span class="c crit">8</span></a>
+                <a href="#">Surveillance / STOR <span class="c">3</span></a>
+                <a href="#">Dispositions <span class="c">2</span></a>
+                <div class="grp">Tariff &amp; Levy</div>
+                <a href="#">MYPD determinations <span class="c">2</span></a>
+                <a href="#">Levy assessments <span class="c">6</span></a>
+                <div class="grp">Inbox</div>
+                <a href="#">Cross-chain escalations <span class="c">14</span></a>
+              </nav>
+
+              <div class="docket">
+                <div class="qhead">
+                  <h4>Licence applications · ERA ss.8–11</h4>
+                  <div class="sort">sorted by SLA urgency ▾</div>
+                </div>
+
+                <!-- CRITICAL -->
+                <div class="case-row">
+                  <div class="clock"><div class="ring crit">−2d</div></div>
+                  <div class="meta">
+                    <div class="id">LIC-2026-0418 · W49</div>
+                    <div class="ttl">Karoo Wind 140MW — generation licence</div>
+                    <div class="tags">
+                      <span class="pill stage">Technical evaluation</span>
+                      <span class="pill sla crit">SLA breached</span>
+                      <span class="party">Applicant: Karoo Wind (Pty) Ltd</span>
+                    </div>
+                    <div class="chainline">
+                      <span class="st done">received</span>
+                      <span class="st done">completeness</span>
+                      <span class="st done">public partic.</span>
+                      <span class="st cur">technical eval</span>
+                      <span class="st next">council</span>
+                      <span class="st next">granted</span>
+                    </div>
+                  </div>
+                  <div class="act">
+                    <div class="due">due <b>2 days ago</b></div>
+                    <button class="btn dang">Adjudicate ▸</button>
+                  </div>
+                </div>
+
+                <!-- WARN -->
+                <div class="case-row">
+                  <div class="clock"><div class="ring warn">9h</div></div>
+                  <div class="meta">
+                    <div class="id">LIC-2026-0421 · W49</div>
+                    <div class="ttl">Saldanha Green H2 — trading licence</div>
+                    <div class="tags">
+                      <span class="pill stage">Public participation</span>
+                      <span class="pill sla">9h to close</span>
+                      <span class="party">Applicant: Saldanha H2 Consortium</span>
+                    </div>
+                    <div class="chainline">
+                      <span class="st done">received</span>
+                      <span class="st done">completeness</span>
+                      <span class="st cur">public partic.</span>
+                      <span class="st next">technical eval</span>
+                      <span class="st next">council</span>
+                    </div>
+                  </div>
+                  <div class="act">
+                    <div class="due">comment window closes 17:00</div>
+                    <button class="btn">Review submissions ▸</button>
+                  </div>
+                </div>
+
+                <!-- OK -->
+                <div class="case-row">
+                  <div class="clock"><div class="ring">4d</div></div>
+                  <div class="meta">
+                    <div class="id">LIC-2026-0409 · W49</div>
+                    <div class="ttl">Mooi River Solar 75MW — generation licence</div>
+                    <div class="tags">
+                      <span class="pill stage">Council decision</span>
+                      <span class="pill sla ok">on track</span>
+                      <span class="party">Applicant: Mooi River PV Ltd · recommended GRANT</span>
+                    </div>
+                    <div class="chainline">
+                      <span class="st done">received</span>
+                      <span class="st done">completeness</span>
+                      <span class="st done">public partic.</span>
+                      <span class="st done">technical eval</span>
+                      <span class="st cur">council</span>
+                      <span class="st next">granted</span>
+                    </div>
+                  </div>
+                  <div class="act">
+                    <div class="due">tabled for council 26 Jun</div>
+                    <button class="btn ghost">Open file ▸</button>
+                  </div>
+                </div>
+
+                <!-- complaint cross-feed -->
+                <div class="case-row">
+                  <div class="clock"><div class="ring crit">−1d</div></div>
+                  <div class="meta">
+                    <div class="id">CMP-2026-0337 · W66 · ERA s30</div>
+                    <div class="ttl">Tariff billing dispute — Nelson Mandela Bay Metro</div>
+                    <div class="tags">
+                      <span class="pill stage">Investigation</span>
+                      <span class="pill sla crit">SLA breached</span>
+                      <span class="pill enf">escalated from Offtaker</span>
+                    </div>
+                    <div class="chainline">
+                      <span class="st done">lodged</span>
+                      <span class="st done">acknowledged</span>
+                      <span class="st cur">investigation</span>
+                      <span class="st next">consultation</span>
+                      <span class="st next">determination</span>
+                    </div>
+                  </div>
+                  <div class="act">
+                    <div class="due">due <b>yesterday</b></div>
+                    <button class="btn dang">Resume ▸</button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phone">
+        <p class="flabel">PWA · 390×812 — Triage</p>
+        <div class="pframe">
+          <div class="notch"></div>
+          <div class="pstatus"><span>09:41</span><span class="r">5G · ▰▰▰ · 84%</span></div>
+          <div class="offline"><i></i> Synced 09:39 · 2 cases cached offline</div>
+          <div class="pbody scroll-hint">
+            <div class="pcasewrap">
+              <div class="ph-title">Triage<small>3 breaches · 9 due today</small></div>
+              <div class="pcard crit">
+                <div class="pid">LIC-2026-0418 · W49</div>
+                <div class="pt">Karoo Wind 140MW — gen licence</div>
+                <span class="pill stage">Technical eval</span>
+                <div class="prow">
+                  <span class="sla-mini crit">⚠ SLA −2d</span>
+                  <span class="pill sla crit">breached</span>
+                </div>
+              </div>
+              <div class="pcard crit">
+                <div class="pid">CMP-2026-0337 · W66</div>
+                <div class="pt">NMB Metro tariff dispute</div>
+                <span class="pill stage">Investigation</span>
+                <div class="prow">
+                  <span class="sla-mini crit">⚠ SLA −1d</span>
+                  <span class="pill enf">from Offtaker</span>
+                </div>
+              </div>
+              <div class="pcard warn">
+                <div class="pid">LIC-2026-0421 · W49</div>
+                <div class="pt">Saldanha Green H2 — trading</div>
+                <span class="pill stage">Public participation</span>
+                <div class="prow">
+                  <span class="sla-mini warn">◷ 9h left</span>
+                  <span class="pill sla">today</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="fab dang">⚖ Adjudicate breach</div>
+          <nav class="pnav">
+            <div class="pnav-i on"><span class="g">▤</span>Triage</div>
+            <div class="pnav-i"><span class="g">◈</span>Cases</div>
+            <div class="pnav-i"><span class="g">✎</span>Sign-off</div>
+            <div class="pnav-i"><span class="g">◉</span>Inbox</div>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPTION 2 — THE DOSSIER ============ -->
+  <section class="opt" id="o2" role="tabpanel" aria-labelledby="t2">
+    <div class="opt-h">
+      <div class="n">Direction 02</div>
+      <h2>The Dossier — evidence-grade certified file</h2>
+      <p>One case opened as a formal file: every act is a block in a tamper-evident audit chain, every
+         exhibit is sealed, and the whole record exports as one certified pack — court- and gazette-ready.</p>
+    </div>
+
+    <div class="stage">
+      <!-- DESKTOP -->
+      <div>
+        <p class="flabel">Desktop · 1280 — thread/compliance_inspection/INS-0091</p>
+        <div class="frame">
+          <div class="winbar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="url"><span class="lock">⚿</span> oe.vantax.co.za/thread/compliance_inspection/INS-0091</span></div>
+          <div class="dossier">
+            <div class="dos-head">
+              <div class="cstamp">CERTIFIED<br>RECORD<br>⚿ sealed</div>
+              <div class="file">File INS-2026-0091 · W40 · NERSA §10/§34</div>
+              <h3>Compliance Inspection — Drakensberg Hydro 60MW</h3>
+              <div class="parties">In re: Drakensberg Hydro (Pty) Ltd · Inspecting officer: M. Khumalo · Status: On-site → Preliminary findings</div>
+            </div>
+
+            <div class="dos-grid">
+              <!-- LEFT: audit chain -->
+              <div class="dos-col">
+                <div class="secttl"><span class="ord">i.</span> Tamper-evident audit chain</div>
+                <div class="audit">
+                  <div class="ablk">
+                    <div class="when">2026-06-10 08:14 SAST</div>
+                    <div class="what">Inspection scheduled</div>
+                    <div class="who">officer M. Khumalo · notice INS-0091</div>
+                    <div class="hash">blk#0001 · sha256 9f3a…c1e7 <span class="chk">✓ verified</span></div>
+                  </div>
+                  <div class="ablk">
+                    <div class="when">2026-06-12 07:00 SAST</div>
+                    <div class="what">Notice of inspection issued (§34)</div>
+                    <div class="who">served on Drakensberg Hydro · ack received</div>
+                    <div class="hash">blk#0002 · sha256 a17b…44d0 ↩ prev <span class="chk">✓</span></div>
+                  </div>
+                  <div class="ablk">
+                    <div class="when">2026-06-18 09:30 SAST</div>
+                    <div class="what">On-site inspection conducted</div>
+                    <div class="who">officer + tech assessor · 4 exhibits captured</div>
+                    <div class="hash">blk#0003 · sha256 6c20…be9f ↩ prev <span class="chk">✓</span></div>
+                  </div>
+                  <div class="ablk">
+                    <div class="when">2026-06-20 16:42 SAST</div>
+                    <div class="what">Preliminary findings drafted</div>
+                    <div class="who">2 non-conformances · grid-code §4.2, §6.1</div>
+                    <div class="hash">blk#0004 · sha256 d8f1…07ac ↩ prev <span class="chk">✓</span></div>
+                  </div>
+                </div>
+
+                <div class="secttl" style="margin-top:22px"><span class="ord">ii.</span> Sealed exhibits</div>
+                <ul class="evidence">
+                  <li><span class="ic"></span><span class="nm">Inspection notice INS-0091.pdf<small>served 2026-06-12 · ack signed</small></span><span class="seal-mini">⚿ sealed</span></li>
+                  <li><span class="ic"></span><span class="nm">Site photographs (4) — turbine hall<small>geotagged · hash-chained</small></span><span class="seal-mini">⚿ sealed</span></li>
+                  <li><span class="ic"></span><span class="nm">SCADA export — protection settings<small>NRS 097 deviation flagged</small></span><span class="seal-mini">⚿ sealed</span></li>
+                  <li><span class="ic"></span><span class="nm">Operator response — §6.1<small>received 2026-06-21</small></span><span class="seal-mini">⚿ sealed</span></li>
+                </ul>
+              </div>
+
+              <!-- RIGHT: the determination -->
+              <div class="dos-col">
+                <div class="secttl"><span class="ord">iii.</span> Case particulars</div>
+                <table class="det-rows">
+                  <tr><td>Chain</td><td>compliance_inspection · W40 (L5)</td></tr>
+                  <tr><td>Statutory basis</td><td>NERSA Grid Code §10 / ERA §34</td></tr>
+                  <tr><td>Licensee</td><td>Drakensberg Hydro (Pty) Ltd · GEN-0044</td></tr>
+                  <tr><td>Current state</td><td><span class="pill stage">Preliminary findings</span></td></tr>
+                  <tr><td>Response period</td><td>14 days · 8 remaining</td></tr>
+                  <tr><td>Non-conformances</td><td>2 (§4.2 reactive support, §6.1 protection)</td></tr>
+                  <tr><td>Recommended</td><td><span class="pill enf">Enforcement notice</span></td></tr>
+                </table>
+
+                <div class="secttl" style="margin-top:22px"><span class="ord">iv.</span> Officer's finding &amp; disposition</div>
+                <table class="det-rows">
+                  <tr><td>§4.2 finding</td><td>Reactive power support below grid-code band on 6 of 30 days. <b>Material.</b></td></tr>
+                  <tr><td>§6.1 finding</td><td>Protection coordination study not lodged within 30d of re-tuning. <b>Procedural.</b></td></tr>
+                  <tr><td>Disposition</td><td>Issue §34 enforcement notice; 30-day remediation; re-inspection.</td></tr>
+                </table>
+
+                <div class="chainline" style="margin-top:14px">
+                  <span class="st done">scheduled</span>
+                  <span class="st done">notice</span>
+                  <span class="st done">on-site</span>
+                  <span class="st cur">prelim findings</span>
+                  <span class="st next">response</span>
+                  <span class="st next">final report</span>
+                  <span class="st next">enforcement</span>
+                </div>
+              </div>
+
+              <!-- export bar -->
+              <div class="export-bar">
+                <div class="note">Certified export bundles the sealed record + audit chain + Merkle root,
+                  countersigned for the gazette and admissible on review. <b>Metered per certified export.</b></div>
+                <div class="acts">
+                  <button class="btn ghost">Verify chain ⚿</button>
+                  <button class="btn">Issue enforcement notice ▸</button>
+                  <button class="btn cert">Certify &amp; export pack ⤓</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phone">
+        <p class="flabel">PWA · 390×812 — Sign-off</p>
+        <div class="pframe">
+          <div class="notch"></div>
+          <div class="pstatus"><span>09:41</span><span class="r">5G · ▰▰▰ · 84%</span></div>
+          <div class="offline"><i></i> File cached · sign offline, syncs on connect</div>
+          <div class="pbody">
+            <div class="pdoss">
+              <div class="dh">
+                <div class="f">File INS-2026-0091 · W40</div>
+                <h4>Drakensberg Hydro — inspection</h4>
+                <span class="pill stage">Preliminary findings</span>
+              </div>
+              <table class="det-rows">
+                <tr><td>Basis</td><td>NERSA §10 / ERA §34</td></tr>
+                <tr><td>Non-conf.</td><td>2 (§4.2, §6.1)</td></tr>
+                <tr><td>Recommend</td><td>§34 enforcement notice</td></tr>
+                <tr><td>Chain</td><td>blk#0004 ✓ verified</td></tr>
+              </table>
+              <div class="signbox">
+                <div class="lbl">Officer sign-off · §34 enforcement</div>
+                <div class="sig">M. Khumalo</div>
+                <div class="meta">⚿ binds to blk#0005 · 2026-06-22 09:41 · POPIA-logged</div>
+              </div>
+            </div>
+          </div>
+          <div class="fab">✎ Sign &amp; seal</div>
+          <nav class="pnav">
+            <div class="pnav-i"><span class="g">▤</span>Triage</div>
+            <div class="pnav-i"><span class="g">◈</span>Cases</div>
+            <div class="pnav-i on"><span class="g">✎</span>Sign-off</div>
+            <div class="pnav-i"><span class="g">◉</span>Inbox</div>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPTION 3 — OVERSIGHT ============ -->
+  <section class="opt" id="o3" role="tabpanel" aria-labelledby="t3">
+    <div class="opt-h">
+      <div class="n">Direction 03</div>
+      <h2>Oversight — market-wide compliance posture</h2>
+      <p>Step back from the case to the market: who is in breach, where the enforcement pipeline is jammed,
+         and which sectors are heating up. A standing-back view for the supervisory mandate.</p>
+    </div>
+
+    <div class="stage">
+      <!-- DESKTOP -->
+      <div>
+        <p class="flabel">Desktop · 1280 — regulator-suite/oversight</p>
+        <div class="frame">
+          <div class="winbar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="url"><span class="lock">⚿</span> oe.vantax.co.za/regulator-suite/oversight</span></div>
+          <div class="ovr">
+            <div class="obar">
+              <div class="t">Market Compliance Oversight<small>NERSA · national posture · all chains</small></div>
+              <div class="live"><i></i> live · updated 09:41 SAST</div>
+            </div>
+
+            <div class="ovr-kpis">
+              <div class="ovr-kpi"><div class="lab">Active breaches</div><div class="v bad">17</div><div class="d dn">▲ 4 vs last wk</div></div>
+              <div class="ovr-kpi"><div class="lab">SLA compliance</div><div class="v warn">93.4%</div><div class="d dn">▼ 1.2pt</div></div>
+              <div class="ovr-kpi"><div class="lab">Cases adjudicated MTD</div><div class="v">112</div><div class="d">▲ on target</div></div>
+              <div class="ovr-kpi"><div class="lab">Levies in arrears</div><div class="v bad">R 8.4m</div><div class="d dn">3 in enforcement</div></div>
+            </div>
+
+            <div class="ovr-main">
+              <!-- breach board -->
+              <div class="ovr-panel">
+                <h5>Who's in breach — ranked by severity</h5>
+                <div class="breach">
+                  <div class="brow">
+                    <div class="who">Karoo Wind (Pty) Ltd<small>LIC-0418 · licence adjudication overdue</small></div>
+                    <span class="sev">SLA BREACH</span>
+                    <span class="age">−2d</span>
+                  </div>
+                  <div class="brow">
+                    <div class="who">Eskom Distribution — NMB<small>CMP-0337 · ERA s30 complaint</small></div>
+                    <span class="sev">SLA BREACH</span>
+                    <span class="age">−1d</span>
+                  </div>
+                  <div class="brow warn">
+                    <div class="who">Drakensberg Hydro<small>INS-0091 · §4.2 reactive support</small></div>
+                    <span class="sev">NON-CONF</span>
+                    <span class="age">8d resp.</span>
+                  </div>
+                  <div class="brow warn">
+                    <div class="who">Highveld Coal IPP<small>LEV-0212 · levy final demand · W74</small></div>
+                    <span class="sev">ARREARS</span>
+                    <span class="age">90d</span>
+                  </div>
+                  <div class="brow watch">
+                    <div class="who">Saldanha H2 Consortium<small>LIC-0421 · public participation</small></div>
+                    <span class="sev">WATCH</span>
+                    <span class="age">9h</span>
+                  </div>
+                  <div class="brow watch">
+                    <div class="who">Mpumalanga Solar Cluster<small>surveillance · price-deviation alerts</small></div>
+                    <span class="sev">WATCH</span>
+                    <span class="age">3 alerts</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- pipeline + heat -->
+              <div class="ovr-panel">
+                <h5>Enforcement pipeline · W40 → W31</h5>
+                <div class="pipe">
+                  <div class="pstep"><span class="nm">Inspections</span><div class="bar" style="width:100%;background:#5b86c4">22</div></div>
+                  <div class="pstep"><span class="nm">Prelim findings</span><div class="bar" style="width:64%;background:#67a0d6">14</div></div>
+                  <div class="pstep"><span class="nm">Response period</span><div class="bar" style="width:41%;background:#f0b95a">9</div></div>
+                  <div class="pstep"><span class="nm">Enforcement notice</span><div class="bar" style="width:23%;background:#e08a4e">5</div></div>
+                  <div class="pstep"><span class="nm">Disposition (W31)</span><div class="bar" style="width:14%;background:#f0888c">3</div></div>
+                </div>
+
+                <h5 style="margin-top:22px">SLA compliance by sector · 7d</h5>
+                <div class="heat">
+                  <div class="cell" style="background:#67d6b5">99</div>
+                  <div class="cell" style="background:#9ad97a">96</div>
+                  <div class="cell" style="background:#f0b95a">88</div>
+                  <div class="cell" style="background:#67d6b5">99</div>
+                  <div class="cell" style="background:#e08a4e">82</div>
+                  <div class="cell" style="background:#9ad97a">95</div>
+                  <div class="cell" style="background:#f0888c">71</div>
+                </div>
+                <div class="heat" style="margin-top:4px">
+                  <div class="lab">Gen</div><div class="lab">Trade</div><div class="lab">Carbon</div>
+                  <div class="lab">Grid</div><div class="lab">Lender</div><div class="lab">Offtk</div><div class="lab">Levy</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phone">
+        <p class="flabel">PWA · 390×812 — Posture</p>
+        <div class="pframe dark">
+          <div class="notch"></div>
+          <div class="pstatus lt"><span>09:41</span><span class="r">5G · ▰▰▰ · 84%</span></div>
+          <div class="offline dk"><i></i> Live posture · last 09:41 SAST</div>
+          <div class="pbody">
+            <div class="povr-kpi">
+              <div class="k"><div class="l">Active breaches</div><div class="v bad">17</div></div>
+              <div class="k"><div class="l">SLA comp.</div><div class="v">93.4%</div></div>
+              <div class="k"><div class="l">Adjudicated</div><div class="v">112</div></div>
+              <div class="k"><div class="l">Arrears</div><div class="v bad">R8.4m</div></div>
+            </div>
+            <div style="padding:0 13px">
+              <h5 style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#9aa6b6;margin:4px 0 10px">Top breaches</h5>
+              <div class="breach">
+                <div class="brow"><div class="who">Karoo Wind<small>LIC-0418</small></div><span class="sev">BREACH</span><span class="age">−2d</span></div>
+                <div class="brow"><div class="who">Eskom NMB<small>CMP-0337</small></div><span class="sev">BREACH</span><span class="age">−1d</span></div>
+                <div class="brow warn"><div class="who">Highveld IPP<small>LEV-0212</small></div><span class="sev">ARREARS</span><span class="age">90d</span></div>
+              </div>
+            </div>
+          </div>
+          <nav class="pnav dk">
+            <div class="pnav-i"><span class="g">▤</span>Triage</div>
+            <div class="pnav-i"><span class="g">◈</span>Cases</div>
+            <div class="pnav-i"><span class="g">✎</span>Sign-off</div>
+            <div class="pnav-i on"><span class="g">◉</span>Posture</div>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footnote">
+    <span>Open Energy Platform · Regulator role exploration · evaluation mockup, not wired</span>
+    <span>Journeys: W49 licence_application · W40 compliance_inspection · W66 complaint_resolution · all L5</span>
+  </footer>
+</div>
+
+<script>
+  function pick(n){
+    for(var i=1;i<=3;i++){
+      var p=document.getElementById('o'+i), t=document.getElementById('t'+i);
+      var on = (i===n);
+      p.classList.toggle('on',on);
+      t.classList.toggle('on',on);
+      t.setAttribute('aria-selected', on?'true':'false');
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carbon Fund — CEC Open Energy · Frontend Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0d1812;          /* deep forest ink */
+    --ink-2:#1c2c24;
+    --paper:#f4f1e9;        /* warm archival paper */
+    --paper-2:#ece7da;
+    --line:#cfc8b6;
+    --line-2:#ddd6c4;
+    --green:#1f6f4a;        /* registry green */
+    --green-d:#124a31;
+    --green-l:#e3efe5;
+    --teal:#0f6e7a;
+    --gold:#9a6b16;         /* certified seal gold (AA on paper) */
+    --gold-l:#f3e7c9;
+    --rose:#a23a32;         /* reversal / breach */
+    --rose-l:#f6e2df;
+    --violet:#5b3f86;       /* article-6 */
+    --violet-l:#ece4f5;
+    --slate:#3c4a44;
+    --mut:#5d655c;
+    --ok:#1f6f4a;
+    --warn:#9a6b16;
+    --bad:#a23a32;
+    --shadow:0 1px 0 rgba(13,24,18,.04),0 8px 28px rgba(13,24,18,.10);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:'Inter Tight',system-ui,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, #ecefe8 0%, transparent 60%),
+      radial-gradient(900px 500px at -5% 5%, #f0ecdf 0%, transparent 55%),
+      var(--paper);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.45;
+  }
+  .wrap{max-width:1360px;margin:0 auto;padding:34px 26px 90px}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .serif{font-family:'Fraunces',serif}
+  h1,h2,h3{margin:0;letter-spacing:-.01em}
+  a{color:inherit}
+
+  /* ── header band ── */
+  .band{
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:linear-gradient(180deg,#fbfaf4,#f3efe4);
+    box-shadow:var(--shadow);
+    padding:26px 30px;
+    position:relative;overflow:hidden;
+  }
+  .band::after{
+    content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;
+    background:repeating-radial-gradient(circle at center, rgba(31,111,74,.06) 0 1px, transparent 1px 9px);
+    opacity:.8;pointer-events:none;
+  }
+  .crumb{display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);font-weight:600}
+  .seal{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--green);color:var(--green);font-size:11px}
+  .band h1{font-family:'Fraunces',serif;font-size:40px;font-weight:600;margin:14px 0 4px;line-height:1.02}
+  .band .role-sub{font-size:15px;color:var(--ink-2);max-width:62ch}
+  .persona-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:26px;margin-top:18px;padding-top:18px;border-top:1px solid var(--line-2)}
+  .persona-grid h4{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--green-d);margin:0 0 6px;font-weight:700}
+  .persona-grid p{margin:0;font-size:13.5px;color:var(--slate)}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .chip{font-size:11.5px;border:1px solid var(--line);background:#fbfaf4;border-radius:999px;padding:4px 10px;color:var(--ink-2);font-weight:500}
+
+  /* ── journey strip ── */
+  .section-label{display:flex;align-items:center;gap:12px;margin:38px 0 14px}
+  .section-label h2{font-family:'Fraunces',serif;font-size:21px;font-weight:600}
+  .section-label .ln{flex:1;height:1px;background:var(--line)}
+  .section-label .tag{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);font-weight:600}
+
+  .journeys{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .jcard{
+    border:1px solid var(--line);border-radius:var(--radius);background:#fbfaf4;
+    padding:18px;position:relative;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px;
+  }
+  .jcard .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .jcard h3{font-size:16.5px;font-weight:600;line-height:1.15}
+  .jcard .jk{font-size:11px;color:var(--mut)}
+  .tier{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:6px;white-space:nowrap}
+  .t-found{background:var(--green-l);color:var(--green-d);border:1px solid #b9d6bf}
+  .t-pro{background:var(--gold-l);color:#5f4209;border:1px solid #e0cb96}
+  .t-reg{background:var(--violet-l);color:#3c2860;border:1px solid #cbbce0}
+  .pipe{display:flex;gap:4px;flex-wrap:wrap}
+  .st{font-size:10px;font-weight:600;padding:3px 7px;border-radius:5px;background:#eef0e8;color:var(--slate);border:1px solid var(--line-2)}
+  .st.now{background:var(--ink);color:#f4f1e9;border-color:var(--ink)}
+  .st.done{background:var(--green-l);color:var(--green-d);border-color:#b9d6bf}
+  .meter{display:flex;align-items:baseline;gap:8px;border-top:1px dashed var(--line);padding-top:11px;margin-top:2px}
+  .meter .price{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:15px;color:var(--green-d)}
+  .meter .unit{font-size:11.5px;color:var(--mut)}
+
+  /* ── option tabs ── */
+  .tabs{display:flex;gap:8px;margin:42px 0 18px;flex-wrap:wrap;position:sticky;top:0;z-index:20;
+    background:linear-gradient(180deg,var(--paper) 70%,transparent);padding:14px 0 12px}
+  .tab{
+    border:1px solid var(--line);background:#fbfaf4;border-radius:10px;padding:11px 16px;cursor:pointer;
+    font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;gap:9px;
+    transition:.15s;min-height:44px;
+  }
+  .tab small{display:block;font-weight:500;font-size:11px;color:var(--mut)}
+  .tab .dot{width:9px;height:9px;border-radius:50%}
+  .tab[aria-selected="true"]{background:var(--ink);color:#f4f1e9;border-color:var(--ink)}
+  .tab[aria-selected="true"] small{color:#c8cfc2}
+  .panel{display:none}
+  .panel[data-active="true"]{display:block;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .opt-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:18px}
+  .opt-num{font-family:'Fraunces',serif;font-size:46px;font-weight:600;line-height:.8;color:var(--green);opacity:.5}
+  .opt-head h2{font-family:'Fraunces',serif;font-size:25px;font-weight:600}
+  .opt-head p{margin:5px 0 0;font-size:14px;color:var(--slate);max-width:74ch}
+  .ease{
+    margin-top:12px;display:inline-flex;align-items:center;gap:10px;
+    background:var(--green-l);border:1px solid #b9d6bf;border-radius:10px;padding:9px 14px;color:var(--green-d);
+    font-size:13px;font-weight:600;
+  }
+  .ease .eb{font-size:10px;letter-spacing:.12em;text-transform:uppercase;background:var(--green);color:#fff;padding:3px 7px;border-radius:5px}
+
+  .frames{display:grid;grid-template-columns:1fr 392px;gap:24px;align-items:start}
+  @media(max-width:1180px){.frames{grid-template-columns:1fr}}
+
+  /* desktop chrome */
+  .desktop{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);background:#fff}
+  .dbar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:#e9e4d6;border-bottom:1px solid var(--line)}
+  .dbar .dots{display:flex;gap:6px}
+  .dbar .dots i{width:11px;height:11px;border-radius:50%;display:block}
+  .url{flex:1;background:#fbfaf4;border:1px solid var(--line);border-radius:7px;padding:5px 11px;font-size:12px;color:var(--mut);font-family:'JetBrains Mono',monospace}
+  .dbar .badge{font-size:10.5px;font-weight:600;color:var(--green-d);background:var(--green-l);border:1px solid #b9d6bf;border-radius:5px;padding:3px 8px}
+
+  /* phone */
+  .phone-col{display:flex;flex-direction:column;gap:10px;align-items:center}
+  .phone{width:392px;height:844px;border-radius:42px;background:#0d1812;padding:11px;box-shadow:0 24px 60px rgba(13,24,18,.30);position:relative}
+  .pscreen{width:100%;height:100%;border-radius:32px;overflow:hidden;background:var(--paper);position:relative;display:flex;flex-direction:column}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#0d1812;border-radius:0 0 16px 16px;z-index:30}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:11px 22px 6px;font-size:12px;font-weight:600;color:var(--ink)}
+  .pwa-hint{display:flex;align-items:center;gap:7px;justify-content:center;font-size:11px;background:var(--ink);color:#dfe6dc;padding:6px;font-weight:500}
+  .pwa-hint .ofl{display:flex;align-items:center;gap:5px;color:#9ec3a8}
+  .pbody{flex:1;overflow:hidden;padding:14px 14px 0}
+  .pnav{display:flex;justify-content:space-around;align-items:center;padding:10px 8px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:#fbfaf4}
+  .pnav button{background:none;border:0;font-family:inherit;font-size:10px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:3px;min-width:54px;min-height:44px;cursor:pointer;font-weight:600}
+  .pnav button.on{color:var(--green-d)}
+  .pnav .ic{font-size:18px;line-height:1}
+  .pnav .fab{background:var(--green);color:#fff;width:50px;height:50px;border-radius:16px;display:grid;place-items:center;font-size:24px;box-shadow:0 8px 18px rgba(31,111,74,.4);margin-top:-22px}
+
+  /* generic ui atoms */
+  .pad{padding:18px 20px}
+  .row{display:flex;align-items:center;gap:10px}
+  .between{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .muted{color:var(--mut)}
+  .xs{font-size:11px}.sm{font-size:12.5px}
+  .kpi{font-family:'JetBrains Mono',monospace;font-weight:600}
+  .pill{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:999px;letter-spacing:.02em}
+  .p-ok{background:var(--green-l);color:var(--green-d)}
+  .p-warn{background:var(--gold-l);color:#5f4209}
+  .p-bad{background:var(--rose-l);color:#7d241d}
+  .p-info{background:#e2eef0;color:#0c545d}
+  .p-vio{background:var(--violet-l);color:#3c2860}
+  .seal-chk{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--green);color:#fff;font-size:10px}
+  .btn{font-family:inherit;font-weight:600;font-size:13px;border-radius:9px;padding:9px 14px;cursor:pointer;border:1px solid var(--line);background:#fbfaf4;color:var(--ink);min-height:40px}
+  .btn.primary{background:var(--green);color:#fff;border-color:var(--green-d)}
+  .btn.gold{background:var(--gold);color:#fff;border-color:#7a540f}
+  table{width:100%;border-collapse:collapse}
+
+  /* ───── OPTION 1 : Evidence-Chain Ledger ───── */
+  .ledger{font-family:'JetBrains Mono',monospace}
+  .led-grid{display:grid;grid-template-columns:230px 1fr 320px}
+  .led-side{background:var(--ink);color:#d9e2da;padding:16px 14px;min-height:560px}
+  .led-side h5{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#7fae8d;margin:0 0 8px;font-family:'Inter Tight'}
+  .led-nav a{display:flex;justify-content:space-between;font-size:12.5px;padding:8px 9px;border-radius:7px;color:#cdd8cf;margin-bottom:2px;text-decoration:none;font-family:'Inter Tight'}
+  .led-nav a.on{background:rgba(255,255,255,.10);color:#fff}
+  .led-nav a .n{color:#7fae8d;font-size:11px}
+  .led-main{padding:18px 20px;border-right:1px solid var(--line);background:#fff}
+  .led-main h3{font-family:'Fraunces';font-size:19px}
+  .chainrow{display:grid;grid-template-columns:26px 1fr auto;gap:12px;padding:13px 0;border-bottom:1px solid var(--line-2);align-items:start}
+  .chainrow .node{width:26px}
+  .node .ring{width:20px;height:20px;border-radius:50%;border:2px solid var(--green);display:grid;place-items:center;font-size:10px;color:var(--green);background:#fff}
+  .node .ring.done{background:var(--green);color:#fff}
+  .node .ring.now{border-color:var(--ink);color:var(--ink);box-shadow:0 0 0 4px rgba(13,24,18,.07)}
+  .node .ring.wait{border-color:var(--line);color:var(--line)}
+  .node .bar{width:2px;height:34px;background:var(--line-2);margin:2px auto 0}
+  .node .bar.lit{background:var(--green)}
+  .chainrow .body .t{font-family:'Inter Tight';font-weight:600;font-size:13.5px}
+  .chainrow .body .m{font-size:11px;color:var(--mut)}
+  .hashline{font-size:10.5px;color:var(--teal);word-break:break-all}
+  .led-aside{padding:16px 16px;background:var(--paper-2)}
+  .led-aside h5{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--green-d);font-family:'Inter Tight';margin:0 0 8px}
+  .evf{display:flex;align-items:center;gap:9px;background:#fbfaf4;border:1px solid var(--line);border-radius:8px;padding:9px;margin-bottom:7px;font-family:'Inter Tight'}
+  .evf .ico{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;background:var(--green-l);color:var(--green-d);font-size:13px}
+  .evf .nm{font-size:12px;font-weight:600;flex:1}
+
+  /* ───── OPTION 2 : Lifecycle Pipeline ───── */
+  .pipe-board{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:18px 20px;background:#fbfaf4}
+  .lane{background:var(--paper-2);border:1px solid var(--line);border-radius:11px;padding:10px;min-height:430px}
+  .lane h6{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--green-d);margin:0 0 4px;display:flex;justify-content:space-between;font-family:'Inter Tight';font-weight:700}
+  .lane .cnt{color:var(--mut)}
+  .lcard{background:#fff;border:1px solid var(--line-2);border-radius:9px;padding:10px;margin-top:8px;box-shadow:0 1px 2px rgba(13,24,18,.05);font-family:'Inter Tight'}
+  .lcard .id{font-family:'JetBrains Mono';font-size:10px;color:var(--mut)}
+  .lcard .tt{font-size:12.5px;font-weight:600;margin:3px 0 6px;line-height:1.2}
+  .lcard .vol{font-family:'JetBrains Mono';font-size:11px;color:var(--ink-2);font-weight:600}
+  .lcard .ev{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--green-d);margin-top:6px}
+  .progressbar{height:5px;border-radius:3px;background:var(--line-2);overflow:hidden;margin-top:6px}
+  .progressbar i{display:block;height:100%;background:var(--green)}
+  .integrity-strip{display:flex;gap:0;padding:14px 20px;background:var(--ink);color:#dfe6dc;flex-wrap:wrap}
+  .integrity-strip .ik{flex:1;min-width:150px;padding:0 16px;border-left:1px solid rgba(255,255,255,.12)}
+  .integrity-strip .ik:first-child{border-left:0;padding-left:0}
+  .integrity-strip .ik .v{font-family:'JetBrains Mono';font-size:21px;font-weight:600;color:#fff}
+  .integrity-strip .ik .l{font-size:10.5px;color:#9ec3a8;letter-spacing:.04em}
+
+  /* ───── OPTION 3 : Quality-Rating Cockpit ───── */
+  .cockpit{padding:20px;background:radial-gradient(700px 400px at 80% -10%,#eef3f4,transparent),#fff}
+  .score-hero{display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:center;margin-bottom:18px}
+  .gauge{position:relative;width:200px;height:200px}
+  .gauge svg{transform:rotate(-90deg)}
+  .gauge .gnum{position:absolute;inset:0;display:grid;place-items:center;flex-direction:column;text-align:center}
+  .gauge .gnum .g{font-family:'Fraunces';font-size:54px;font-weight:600;line-height:1;color:var(--green-d)}
+  .gauge .gnum .gl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin-top:4px}
+  .factors{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .factor{border:1px solid var(--line);border-radius:10px;padding:11px 13px;background:#fbfaf4}
+  .factor .between{margin-bottom:7px}
+  .factor .fl{font-size:12px;font-weight:600}
+  .factor .fv{font-family:'JetBrains Mono';font-weight:600;font-size:13px}
+  .bar2{height:7px;border-radius:4px;background:var(--line-2);overflow:hidden}
+  .bar2 i{display:block;height:100%}
+  .ratings-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:6px}
+  .rcard{border:1px solid var(--line);border-radius:11px;padding:13px;background:#fff;box-shadow:var(--shadow)}
+  .rcard .rg{font-family:'Fraunces';font-size:30px;font-weight:600;line-height:1}
+  .rcard .ag{font-size:11px;color:var(--mut);margin-top:2px}
+  .rcard .src{font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--teal);margin-bottom:5px}
+
+  /* phone-specific atoms */
+  .pcard{background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px;box-shadow:0 1px 3px rgba(13,24,18,.06);margin-bottom:11px}
+  .pcard.dark{background:var(--ink);color:#dfe6dc;border-color:var(--ink)}
+  .pcard .ph{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:8px}
+  .pcard.dark .ph{color:#7fae8d}
+  .ptask{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line-2)}
+  .ptask:last-child{border-bottom:0}
+  .pminipipe{display:flex;gap:3px;margin-top:6px}
+  .pminipipe span{flex:1;height:5px;border-radius:3px;background:var(--line-2)}
+  .pminipipe span.on{background:var(--green)}
+  .pbig{font-family:'JetBrains Mono';font-weight:600;font-size:26px}
+  .one-thumb{position:absolute;left:14px;right:14px;bottom:78px;background:var(--green);color:#fff;border:0;border-radius:14px;padding:15px;font-family:inherit;font-weight:700;font-size:15px;box-shadow:0 10px 24px rgba(31,111,74,.4);display:flex;align-items:center;justify-content:center;gap:9px}
+
+  .footnote{margin-top:14px;font-size:11.5px;color:var(--mut);text-align:center}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--mut);margin-top:10px}
+  .legend b{color:var(--ink-2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ════════ HEADER BAND ════════ -->
+  <header class="band">
+    <div class="crumb"><span class="seal">✦</span> CEC Open Energy · Frontend Exploration · v2</div>
+    <h1>Carbon Fund <span class="serif" style="color:var(--green)">/ MRV Registry Desk</span></h1>
+    <p class="role-sub">Where credits earn their integrity. From PDD draft to corresponding adjustment — every claim carries its evidence, and every export is registry-grade.</p>
+
+    <div class="persona-grid">
+      <div>
+        <h4>The Persona</h4>
+        <p><b>Thandeka — Carbon Asset Manager &amp; MRV Lead.</b> Runs a portfolio of Gold Standard / Verra projects from a desk, two monitors, mostly keyboard. Methodical and audit-minded: she lives in evidence completeness, double-counting risk, and whether a certified export will survive a Verra or SARS audit. Calm in motion, allergic to surprises. Phone is for approvals on the move, not analysis.</p>
+        <div class="chips">
+          <span class="chip">Desktop-first · dual monitor</span>
+          <span class="chip">Evidence-heavy</span>
+          <span class="chip">Audit-minded</span>
+          <span class="chip">Low tolerance for ambiguity</span>
+          <span class="chip">Certified-export gatekeeper</span>
+        </div>
+      </div>
+      <div>
+        <h4>Design Rationale</h4>
+        <p>Three different bets on the same anxiety — <i>can I prove this credit is real and uniquely retired?</i> Each option foregrounds <b>EASE</b>: the evidence chain is always visible, and a certified export is one click away with proof pre-attached. No purple gradients — archival paper, registry green, a certified-seal gold. It should feel like a registry, not a SaaS dashboard.</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ════════ JOURNEY-AS-PRODUCT STRIP ════════ -->
+  <div class="section-label">
+    <h2 class="serif">Hero journeys, priced as products</h2>
+    <span class="ln"></span>
+    <span class="tag">metered · tiered · real chains</span>
+  </div>
+
+  <div class="journeys">
+    <div class="jcard">
+      <div class="top">
+        <div><h3>MRV Verification Chain</h3><div class="jk mono">mrv_submissions · W11 · 14-state UNFCCC</div></div>
+        <span class="tier t-pro">Professional · L4</span>
+      </div>
+      <div class="pipe">
+        <span class="st done">validation</span><span class="st now">site_audit</span><span class="st">cra_review</span><span class="st">issuance_pending</span><span class="st">issued</span>
+      </div>
+      <div class="meter">
+        <span class="price">R 4,800</span><span class="unit">/ verification cycle · + R0.40 per tCO₂e verified</span>
+      </div>
+    </div>
+
+    <div class="jcard">
+      <div class="top">
+        <div><h3>Article 6 ITMO Ledger</h3><div class="jk mono">article6_adjustment · W4 · corresponding adj.</div></div>
+        <span class="tier t-reg">Regulator-grade · L5</span>
+      </div>
+      <div class="pipe">
+        <span class="st">pending_transfer</span><span class="st now">under_review</span><span class="st">adjusted</span><span class="st">retired</span><span class="st">disputed</span>
+      </div>
+      <div class="meter">
+        <span class="price">R 12,500</span><span class="unit">/ certified adjustment export (DNA-grade)</span>
+      </div>
+    </div>
+
+    <div class="jcard">
+      <div class="top">
+        <div><h3>Project Registration / PDD</h3><div class="jk mono">carbon_registration · W37 · GS / Verra / Art 6.4</div></div>
+        <span class="tier t-found">Foundation · L3</span>
+      </div>
+      <div class="pipe">
+        <span class="st done">pdd_draft</span><span class="st now">validation</span><span class="st">public_comment</span><span class="st">dna_loa</span><span class="st">registered</span>
+      </div>
+      <div class="meter">
+        <span class="price">R 2,200</span><span class="unit">/ active project registration / month</span>
+      </div>
+    </div>
+  </div>
+  <div class="legend">
+    <span><b>Tiers</b></span>
+    <span><span class="pill t-found" style="border:0">Foundation L3</span> state machine + validation + audit</span>
+    <span><span class="pill t-pro" style="border:0">Professional L4</span> gating · cascades · timers · evidence chain</span>
+    <span><span class="pill t-reg" style="border:0">Regulator-grade L5</span> tamper-evident · certified export · external recon</span>
+  </div>
+
+  <!-- ════════ OPTION TABS ════════ -->
+  <div class="tabs" role="tablist" aria-label="Design options">
+    <button class="tab" role="tab" aria-selected="true" aria-controls="p1" id="t1" onclick="pick(0)">
+      <span class="dot" style="background:var(--green)"></span>
+      <span>Option 1<small>Evidence-Chain Ledger</small></span>
+    </button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="p2" id="t2" onclick="pick(1)">
+      <span class="dot" style="background:var(--teal)"></span>
+      <span>Option 2<small>Credit-Lifecycle Pipeline</small></span>
+    </button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="p3" id="t3" onclick="pick(2)">
+      <span class="dot" style="background:var(--violet)"></span>
+      <span>Option 3<small>Quality-Rating Cockpit</small></span>
+    </button>
+  </div>
+
+  <!-- ──────────── OPTION 1 ──────────── -->
+  <section class="panel" data-active="true" id="p1" role="tabpanel" aria-labelledby="t1">
+    <div class="opt-head">
+      <div class="opt-num">01</div>
+      <div>
+        <h2 class="serif">Evidence-Chain Ledger</h2>
+        <p>A registry as a vertical, hash-linked ledger. Every MRV state is a node; every node carries its evidence dossier inline. Reads like an audit log you can act on — built for the desk that has to <i>defend</i> a credit, not just move it.</p>
+        <div class="ease"><span class="eb">Ease</span> Certified export in one click — every node's evidence is pre-attached and hash-verified, so the export pack assembles itself.</div>
+      </div>
+    </div>
+
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div class="desktop">
+        <div class="dbar">
+          <div class="dots"><i style="background:#e0695a"></i><i style="background:#e3b34a"></i><i style="background:#5aa56a"></i></div>
+          <div class="url">oe.vantax.co.za/carbon/ledger/mrv_submissions/MRV-2024-0417</div>
+          <span class="badge">⛓ chain verified</span>
+        </div>
+        <div class="led-grid">
+          <!-- side -->
+          <aside class="led-side">
+            <h5>Pipeline</h5>
+            <nav class="led-nav">
+              <a class="on">Verification chain <span class="n">7</span></a>
+              <a>Registration / PDD <span class="n">3</span></a>
+              <a>Crediting renewal <span class="n">2</span></a>
+              <a>CCP eligibility <span class="n">5</span></a>
+              <a>Article 6 ITMO <span class="n">4</span></a>
+              <a>Retirement <span class="n">9</span></a>
+              <a>Reversals / buffer <span class="n">1</span></a>
+            </nav>
+            <h5 style="margin-top:18px">Integrity</h5>
+            <div style="font-family:'Inter Tight';font-size:12px;color:#cdd8cf;line-height:1.7">
+              <div class="between"><span>Hash chain</span><span style="color:#9ec3a8">✓ contiguous</span></div>
+              <div class="between"><span>Double-count scan</span><span style="color:#9ec3a8">✓ clear</span></div>
+              <div class="between"><span>Evidence gaps</span><span style="color:#e8c98a">2 open</span></div>
+            </div>
+          </aside>
+          <!-- main -->
+          <main class="led-main">
+            <div class="between" style="margin-bottom:4px">
+              <h3>Mokala Solar · MRV-2024-0417</h3>
+              <span class="pill p-info">Vintage 2024</span>
+            </div>
+            <div class="sm muted" style="margin-bottom:14px;font-family:'Inter Tight'">Verra VM0042 · 184,200 tCO₂e claimed · CRA: TÜV SÜD · <span class="mono">block #00417</span></div>
+
+            <div class="chainrow">
+              <div class="node"><div class="ring done">✓</div><div class="bar lit"></div></div>
+              <div class="body">
+                <div class="t">validation <span class="pill p-ok" style="font-weight:700">passed</span></div>
+                <div class="m">2024-09-12 · methodology applicability confirmed · 14 docs</div>
+                <div class="hashline">sha256:9f3a…validation→ 0x7c12e</div>
+              </div>
+              <div class="muted xs">Mar 12</div>
+            </div>
+
+            <div class="chainrow">
+              <div class="node"><div class="ring now">●</div><div class="bar"></div></div>
+              <div class="body">
+                <div class="t">site_audit <span class="pill p-warn" style="font-weight:700">in progress</span></div>
+                <div class="m">On-site verification at Mokala · auditor uploads pending · SLA T-3d</div>
+                <div class="hashline">awaiting field evidence → hash open</div>
+              </div>
+              <div class="muted xs">now</div>
+            </div>
+
+            <div class="chainrow">
+              <div class="node"><div class="ring wait">○</div><div class="bar"></div></div>
+              <div class="body"><div class="t">cra_review</div><div class="m">CRA opinion &amp; quantification check</div></div>
+              <div class="muted xs">—</div>
+            </div>
+            <div class="chainrow">
+              <div class="node"><div class="ring wait">○</div><div class="bar"></div></div>
+              <div class="body"><div class="t">issuance_pending</div><div class="m">Registry issuance request queued</div></div>
+              <div class="muted xs">—</div>
+            </div>
+            <div class="chainrow" style="border-bottom:0">
+              <div class="node"><div class="ring wait">○</div></div>
+              <div class="body"><div class="t">issued → ledger mint</div><div class="m">Serial range assigned · corresponding-adjustment flagged</div></div>
+              <div class="muted xs">—</div>
+            </div>
+          </main>
+          <!-- aside evidence -->
+          <aside class="led-aside">
+            <div class="between"><h5>Evidence dossier · this node</h5><span class="pill p-warn">2 gaps</span></div>
+            <div class="evf"><span class="ico">📄</span><span class="nm">Monitoring report v3</span><span class="seal-chk">✓</span></div>
+            <div class="evf"><span class="ico">🛰</span><span class="nm">Satellite baseline tiles</span><span class="seal-chk">✓</span></div>
+            <div class="evf"><span class="ico">📐</span><span class="nm">Meter calibration certs</span><span class="seal-chk">✓</span></div>
+            <div class="evf" style="border-color:var(--gold);background:var(--gold-l)"><span class="ico" style="background:#fff;color:var(--gold)">!</span><span class="nm" style="color:#5f4209">Field audit photos</span><span class="pill p-warn">missing</span></div>
+            <div class="evf" style="border-color:var(--gold);background:var(--gold-l)"><span class="ico" style="background:#fff;color:var(--gold)">!</span><span class="nm" style="color:#5f4209">Stakeholder sign-off</span><span class="pill p-warn">missing</span></div>
+
+            <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px">
+              <button class="btn gold" style="width:100%">⬇ Generate certified export — evidence pre-attached</button>
+              <button class="btn" style="width:100%;font-family:'Inter Tight'">Advance node · cra_review</button>
+            </div>
+            <p class="xs muted" style="margin:10px 0 0;font-family:'Inter Tight'">Export blocked until 2 evidence gaps close. The pack will hash-bind all 5 dossier items + the full chain.</p>
+          </aside>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phone-col">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="pscreen">
+            <div class="statusbar"><span>9:41</span><span>Carbon Registry</span><span>􀙇 􀛨 100%</span></div>
+            <div class="pwa-hint"><span>Installed · oe.vantax.co.za</span><span class="ofl">● cached offline</span></div>
+            <div class="pbody">
+              <div class="pcard dark">
+                <div class="ph">Awaiting your sign-off</div>
+                <div class="between"><span style="font-family:'Fraunces';font-size:18px">3 chain nodes</span><span class="pill p-warn">2 evidence gaps</span></div>
+                <div style="font-size:11.5px;color:#9ec3a8;margin-top:6px">Tap to attach evidence from camera or close the gap.</div>
+              </div>
+
+              <div class="pcard">
+                <div class="ph">MRV-2024-0417 · Mokala</div>
+                <div style="font-family:'Inter Tight';font-weight:600;font-size:13.5px">site_audit · in progress</div>
+                <div class="pminipipe"><span class="on"></span><span class="on"></span><span></span><span></span><span></span></div>
+                <div class="ptask">
+                  <span class="seal-chk" style="background:var(--gold)">!</span>
+                  <div><div class="sm" style="font-weight:600;font-family:'Inter Tight'">Field audit photos missing</div><div class="xs muted">Blocks certified export</div></div>
+                </div>
+                <div class="ptask">
+                  <span class="seal-chk" style="background:var(--gold)">!</span>
+                  <div><div class="sm" style="font-weight:600;font-family:'Inter Tight'">Stakeholder sign-off</div><div class="xs muted">1 signatory pending</div></div>
+                </div>
+              </div>
+
+              <div class="pcard">
+                <div class="ph">Chain integrity</div>
+                <div class="row" style="justify-content:space-between"><span class="sm" style="font-family:'Inter Tight'">Hash chain contiguous</span><span class="pill p-ok">✓</span></div>
+                <div class="row" style="justify-content:space-between;margin-top:8px"><span class="sm" style="font-family:'Inter Tight'">Double-count scan</span><span class="pill p-ok">clear</span></div>
+              </div>
+            </div>
+            <button class="one-thumb">📷 Attach field evidence</button>
+            <div class="pnav">
+              <button class="on"><span class="ic">⛓</span>Chain</button>
+              <button><span class="ic">◈</span>Pipeline</button>
+              <button class="fab">+</button>
+              <button><span class="ic">⬡</span>Retire</button>
+              <button><span class="ic">⬇</span>Exports</button>
+            </div>
+          </div>
+        </div>
+        <p class="footnote">PWA · one-thumb evidence capture · offline-cached chain</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────── OPTION 2 ──────────── -->
+  <section class="panel" id="p2" role="tabpanel" aria-labelledby="t2">
+    <div class="opt-head">
+      <div class="opt-num" style="color:var(--teal)">02</div>
+      <div>
+        <h2 class="serif">Credit-Lifecycle Pipeline</h2>
+        <p>The whole portfolio as one left-to-right credit flow: <b>registration → MRV → issuance → Article 6 adjustment → retirement</b>. A Kanban for tonnes of CO₂e. See where every credit sits, how much volume is stuck before each gate, and the running double-count ledger underneath it all.</p>
+        <div class="ease"><span class="eb">Ease</span> Drag a credit across the buffer gate and the corresponding-adjustment + retirement certificate auto-issue with the evidence bundle already stamped — no double-count, by construction.</div>
+      </div>
+    </div>
+
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div class="desktop">
+        <div class="dbar">
+          <div class="dots"><i style="background:#e0695a"></i><i style="background:#e3b34a"></i><i style="background:#5aa56a"></i></div>
+          <div class="url">oe.vantax.co.za/carbon/pipeline</div>
+          <span class="badge">⛓ no double-count</span>
+        </div>
+
+        <!-- integrity strip on top -->
+        <div class="integrity-strip">
+          <div class="ik"><div class="v">1.24M</div><div class="l">tCO₂e in pipeline</div></div>
+          <div class="ik"><div class="v">184.2k</div><div class="l">awaiting verification</div></div>
+          <div class="ik"><div class="v">0</div><div class="l">double-count flags ✓</div></div>
+          <div class="ik"><div class="v">96k</div><div class="l">in buffer pool</div></div>
+          <div class="ik"><div class="v">R12.5k</div><div class="l">/ certified Art-6 export</div></div>
+        </div>
+
+        <div class="pipe-board">
+          <!-- lane 1 -->
+          <div class="lane">
+            <h6>Registration <span class="cnt">3</span></h6>
+            <div class="lcard">
+              <div class="id">CR-0231 · W37</div>
+              <div class="tt">Kgalagadi Wind PDD</div>
+              <div class="vol">312,000 tCO₂e</div>
+              <span class="pill p-warn" style="display:inline-block;margin-top:6px">validation</span>
+            </div>
+            <div class="lcard">
+              <div class="id">CR-0229 · W37</div>
+              <div class="tt">Loskop Hydro</div>
+              <div class="vol">44,800 tCO₂e</div>
+              <span class="pill p-info" style="display:inline-block;margin-top:6px">public_comment</span>
+            </div>
+          </div>
+          <!-- lane 2 -->
+          <div class="lane" style="border-color:var(--teal)">
+            <h6 style="color:#0c545d">MRV / Verify <span class="cnt">7</span></h6>
+            <div class="lcard" style="border-color:var(--teal)">
+              <div class="id">MRV-0417 · W11</div>
+              <div class="tt">Mokala Solar</div>
+              <div class="vol">184,200 tCO₂e</div>
+              <div class="progressbar"><i style="width:40%"></i></div>
+              <div class="ev"><span class="seal-chk" style="width:14px;height:14px;font-size:8px">✓</span> 3 / 5 evidence</div>
+              <span class="pill p-warn" style="display:inline-block;margin-top:6px">site_audit</span>
+            </div>
+            <div class="lcard">
+              <div class="id">MRV-0411 · W11</div>
+              <div class="tt">De Aar Cluster</div>
+              <div class="vol">521,000 tCO₂e</div>
+              <div class="progressbar"><i style="width:75%"></i></div>
+              <span class="pill p-info" style="display:inline-block;margin-top:6px">cra_review</span>
+            </div>
+          </div>
+          <!-- lane 3 -->
+          <div class="lane">
+            <h6>Issuance <span class="cnt">2</span></h6>
+            <div class="lcard">
+              <div class="id">ISS-0098</div>
+              <div class="tt">Mokala '23 vintage</div>
+              <div class="vol">176,400 tCO₂e</div>
+              <div class="ev"><span class="seal-chk" style="width:14px;height:14px;font-size:8px">✓</span> serials assigned</div>
+              <span class="pill p-ok" style="display:inline-block;margin-top:6px">issuance_pending</span>
+            </div>
+          </div>
+          <!-- lane 4 -->
+          <div class="lane" style="border-color:var(--violet)">
+            <h6 style="color:#3c2860">Article 6 <span class="cnt">4</span></h6>
+            <div class="lcard" style="border-color:var(--violet)">
+              <div class="id">A6-0044 · W4</div>
+              <div class="tt">Kenya→SA ITMO</div>
+              <div class="vol">90,000 tCO₂e</div>
+              <span class="pill p-vio" style="display:inline-block;margin-top:6px">under_review</span>
+              <div class="ev" style="color:#7d241d"><span style="color:var(--rose)">⚠</span> corresponding-adj. required</div>
+            </div>
+          </div>
+          <!-- lane 5 -->
+          <div class="lane" style="border-color:var(--gold)">
+            <h6 style="color:#5f4209">Retired <span class="cnt">9</span></h6>
+            <div class="lcard" style="border-color:var(--gold)">
+              <div class="id">RET-1102 · W17</div>
+              <div class="tt">Scope-2 offset · client A</div>
+              <div class="vol">12,000 tCO₂e</div>
+              <div class="ev"><span class="seal-chk" style="width:14px;height:14px;font-size:8px">✓</span> certificate issued</div>
+              <span class="pill p-ok" style="display:inline-block;margin-top:6px">retired</span>
+            </div>
+            <div class="lcard" style="border-color:var(--rose);background:#fdf6f5">
+              <div class="id">REV-0007 · W42</div>
+              <div class="tt">Buffer reversal</div>
+              <div class="vol">3,400 tCO₂e</div>
+              <span class="pill p-bad" style="display:inline-block;margin-top:6px">reversal</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phone-col">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="pscreen">
+            <div class="statusbar"><span>9:41</span><span>Pipeline</span><span>􀙇 􀛨 100%</span></div>
+            <div class="pwa-hint"><span>Installed · oe.vantax.co.za</span><span class="ofl">● synced 2m ago</span></div>
+            <div class="pbody">
+              <div class="pcard dark">
+                <div class="ph">Portfolio in flight</div>
+                <div class="pbig" style="color:#fff">1.24M <span style="font-size:13px;color:#9ec3a8">tCO₂e</span></div>
+                <div class="row" style="gap:14px;margin-top:8px">
+                  <span style="font-size:11px;color:#9ec3a8">0 double-count ✓</span>
+                  <span style="font-size:11px;color:#e8c98a">96k in buffer</span>
+                </div>
+              </div>
+
+              <div class="pcard">
+                <div class="ph">By stage · tap to open lane</div>
+                <div class="ptask"><span class="pill p-warn">3</span><div style="flex:1"><div class="sm" style="font-weight:600;font-family:'Inter Tight'">Registration</div></div><span class="kpi sm">356k</span></div>
+                <div class="ptask"><span class="pill p-info">7</span><div style="flex:1"><div class="sm" style="font-weight:600;font-family:'Inter Tight'">MRV / Verify</div></div><span class="kpi sm">705k</span></div>
+                <div class="ptask"><span class="pill p-vio">4</span><div style="flex:1"><div class="sm" style="font-weight:600;font-family:'Inter Tight'">Article 6</div></div><span class="kpi sm">90k</span></div>
+                <div class="ptask"><span class="pill p-ok">9</span><div style="flex:1"><div class="sm" style="font-weight:600;font-family:'Inter Tight'">Retired</div></div><span class="kpi sm">88k</span></div>
+              </div>
+
+              <div class="pcard" style="border-color:var(--violet)">
+                <div class="ph" style="color:#3c2860">Needs you · Article 6</div>
+                <div class="sm" style="font-weight:600;font-family:'Inter Tight'">Kenya→SA ITMO · 90k tCO₂e</div>
+                <div class="xs muted">Corresponding adjustment required before retirement.</div>
+              </div>
+            </div>
+            <button class="one-thumb" style="background:var(--violet)">⬓ Approve adjustment</button>
+            <div class="pnav">
+              <button class="on"><span class="ic">◈</span>Pipeline</button>
+              <button><span class="ic">⛓</span>Chain</button>
+              <button class="fab" style="background:var(--teal)">+</button>
+              <button><span class="ic">⬓</span>Art 6</button>
+              <button><span class="ic">⬇</span>Export</button>
+            </div>
+          </div>
+        </div>
+        <p class="footnote">PWA · stage rollups · one-thumb adjustment approval</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────── OPTION 3 ──────────── -->
+  <section class="panel" id="p3" role="tabpanel" aria-labelledby="t3">
+    <div class="opt-head">
+      <div class="opt-num" style="color:var(--violet)">03</div>
+      <div>
+        <h2 class="serif">Quality-Rating Cockpit</h2>
+        <p>Integrity as a single number, then the receipts. A composite CCP-eligibility score up front, broken into the factors that move it — additionality, permanence, MRV rigour, double-count risk — each tracing straight back to evidence. Built for the conversation with an investor or a regulator who asks <i>"why should I trust this credit?"</i></p>
+        <div class="ease"><span class="eb">Ease</span> One click turns the rating into a regulator-grade integrity pack — every factor's score links to the exact evidence node and the third-party rater's opinion, pre-bundled.</div>
+      </div>
+    </div>
+
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div class="desktop">
+        <div class="dbar">
+          <div class="dots"><i style="background:#e0695a"></i><i style="background:#e3b34a"></i><i style="background:#5aa56a"></i></div>
+          <div class="url">oe.vantax.co.za/carbon/quality/MRV-2024-0417</div>
+          <span class="badge">ICVCM CCP · L5</span>
+        </div>
+        <div class="cockpit">
+          <div class="score-hero">
+            <div class="gauge">
+              <svg width="200" height="200" viewBox="0 0 200 200">
+                <circle cx="100" cy="100" r="86" fill="none" stroke="#e4ded0" stroke-width="16"/>
+                <circle cx="100" cy="100" r="86" fill="none" stroke="#1f6f4a" stroke-width="16" stroke-linecap="round"
+                  stroke-dasharray="540" stroke-dashoffset="113"/>
+              </svg>
+              <div class="gnum"><div><div class="g">A-</div><div class="gl">CCP eligible</div></div></div>
+            </div>
+            <div>
+              <div class="between" style="margin-bottom:10px">
+                <div>
+                  <div style="font-family:'Fraunces';font-size:21px;font-weight:600">Mokala Solar · 2024 vintage</div>
+                  <div class="sm muted" style="font-family:'Inter Tight'">Verra VM0042 · 184,200 tCO₂e · composite integrity 79 / 100</div>
+                </div>
+                <button class="btn gold">⬇ Generate integrity pack</button>
+              </div>
+              <div class="factors">
+                <div class="factor">
+                  <div class="between"><span class="fl">Additionality</span><span class="fv" style="color:var(--green-d)">88</span></div>
+                  <div class="bar2"><i style="width:88%;background:var(--green)"></i></div>
+                  <div class="xs muted" style="margin-top:5px;font-family:'Inter Tight'">→ baseline tiles · financial test</div>
+                </div>
+                <div class="factor">
+                  <div class="between"><span class="fl">Permanence</span><span class="fv" style="color:var(--green-d)">82</span></div>
+                  <div class="bar2"><i style="width:82%;background:var(--green)"></i></div>
+                  <div class="xs muted" style="margin-top:5px;font-family:'Inter Tight'">→ buffer pool 11% · reversal risk low</div>
+                </div>
+                <div class="factor">
+                  <div class="between"><span class="fl">MRV rigour</span><span class="fv" style="color:var(--gold)">71</span></div>
+                  <div class="bar2"><i style="width:71%;background:var(--gold)"></i></div>
+                  <div class="xs muted" style="margin-top:5px;font-family:'Inter Tight'">→ 2 evidence gaps open · site_audit</div>
+                </div>
+                <div class="factor" style="border-color:var(--rose)">
+                  <div class="between"><span class="fl">Double-count risk</span><span class="fv" style="color:var(--green-d)">95</span></div>
+                  <div class="bar2"><i style="width:95%;background:var(--green)"></i></div>
+                  <div class="xs muted" style="margin-top:5px;font-family:'Inter Tight'">→ Art-6 corresponding-adj. confirmed</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ph" style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:700;margin:6px 0 10px;font-family:'Inter Tight'">Third-party rater consensus</div>
+          <div class="ratings-row">
+            <div class="rcard">
+              <div class="src">ICVCM</div>
+              <div class="rg" style="color:var(--green-d)">CCP</div>
+              <div class="ag">Eligible · core principles met</div>
+            </div>
+            <div class="rcard">
+              <div class="src">Calyx Global</div>
+              <div class="rg" style="color:var(--green-d)">B+</div>
+              <div class="ag">Above-market integrity</div>
+            </div>
+            <div class="rcard">
+              <div class="src">Sylvera</div>
+              <div class="rg" style="color:var(--gold)">BBB</div>
+              <div class="ag">Solid · MRV watch-item</div>
+            </div>
+            <div class="rcard" style="border-color:var(--green)">
+              <div class="src">Our composite</div>
+              <div class="rg" style="color:var(--green-d)">A-</div>
+              <div class="ag">79 / 100 · evidence-traced</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phone-col">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="pscreen">
+            <div class="statusbar"><span>9:41</span><span>Quality</span><span>􀙇 􀛨 100%</span></div>
+            <div class="pwa-hint"><span>Installed · oe.vantax.co.za</span><span class="ofl">● offline ready</span></div>
+            <div class="pbody">
+              <div class="pcard" style="text-align:center;padding-top:18px">
+                <div style="font-family:'Fraunces';font-size:56px;font-weight:600;color:var(--green-d);line-height:1">A-</div>
+                <div class="xs" style="letter-spacing:.14em;text-transform:uppercase;color:var(--mut);font-weight:700">CCP eligible · 79/100</div>
+                <div class="sm muted" style="margin-top:6px;font-family:'Inter Tight'">Mokala Solar · 2024 vintage</div>
+              </div>
+
+              <div class="pcard">
+                <div class="ph">Integrity factors</div>
+                <div class="between" style="margin-bottom:9px"><span class="sm" style="font-family:'Inter Tight'">Additionality</span><span class="kpi sm" style="color:var(--green-d)">88</span></div>
+                <div class="between" style="margin-bottom:9px"><span class="sm" style="font-family:'Inter Tight'">Permanence</span><span class="kpi sm" style="color:var(--green-d)">82</span></div>
+                <div class="between" style="margin-bottom:9px"><span class="sm" style="font-family:'Inter Tight'">MRV rigour</span><span class="kpi sm" style="color:var(--gold)">71 ⚠</span></div>
+                <div class="between"><span class="sm" style="font-family:'Inter Tight'">Double-count</span><span class="kpi sm" style="color:var(--green-d)">95</span></div>
+              </div>
+
+              <div class="pcard">
+                <div class="ph">Rater consensus</div>
+                <div class="row" style="gap:8px;flex-wrap:wrap">
+                  <span class="pill p-ok">ICVCM · CCP</span>
+                  <span class="pill p-ok">Calyx B+</span>
+                  <span class="pill p-warn">Sylvera BBB</span>
+                </div>
+              </div>
+            </div>
+            <button class="one-thumb" style="background:var(--gold)">⬇ Generate integrity pack</button>
+            <div class="pnav">
+              <button class="on"><span class="ic">◎</span>Rating</button>
+              <button><span class="ic">⛓</span>Chain</button>
+              <button class="fab" style="background:var(--violet)">+</button>
+              <button><span class="ic">◈</span>Pipeline</button>
+              <button><span class="ic">⬇</span>Pack</button>
+            </div>
+          </div>
+        </div>
+        <p class="footnote">PWA · score-first · one-thumb integrity pack</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="footnote" style="margin-top:40px">Three bets · same anxiety — <b>can I prove this credit is real and uniquely retired?</b> · Evidence-Chain Ledger (defend) · Lifecycle Pipeline (flow) · Quality-Rating Cockpit (persuade).</p>
+</div>
+
+<script>
+  function pick(i){
+    var tabs=document.querySelectorAll('.tab');
+    var panels=document.querySelectorAll('.panel');
+    tabs.forEach(function(t,n){t.setAttribute('aria-selected', n===i?'true':'false');});
+    panels.forEach(function(p,n){p.setAttribute('data-active', n===i?'true':'false');});
+  }
+</script>
+</body>
+</html>

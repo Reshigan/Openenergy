@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>IPP Developer — Frontend Exploration · CEC Open Energy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#0c1018; --ink2:#161c28; --line:#262f40; --line2:#1b2230;
+  --paper:#0a0d14; --panel:#10151f; --panel2:#141a26;
+  --txt:#eef2f8; --txt2:#aab4c6; --txt3:#7c8699;
+  --gold:#f2b431; --gold2:#ffd166;
+  --steel:#5aa0ff; --steel2:#86bcff;
+  --green:#37d39b; --amber:#ffb547; --red:#ff6a6a; --violet:#9d8cff;
+  --rad:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#05070c;color:var(--txt);font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',monospace}
+.wrap{max-width:1340px;margin:0 auto;padding:32px 24px 96px}
+a{color:inherit}
+
+/* ── intro ── */
+.crumb{font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:var(--txt3);text-transform:uppercase}
+.head{margin:14px 0 28px;display:grid;grid-template-columns:1.35fr 1fr;gap:28px;align-items:end}
+.head h1{margin:8px 0 0;font-weight:900;font-size:46px;line-height:.98;letter-spacing:-.02em}
+.head h1 b{color:var(--gold)}
+.head .sub{margin-top:14px;color:var(--txt2);font-size:15px;line-height:1.6;max-width:62ch}
+.persona{background:linear-gradient(180deg,#10151f,#0c111a);border:1px solid var(--line);border-radius:var(--rad);padding:18px 20px}
+.persona h3{margin:0 0 8px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.persona p{margin:0 0 10px;font-size:13px;line-height:1.55;color:var(--txt2)}
+.persona p:last-child{margin:0}
+.persona .tag{display:inline-block;font:600 11px/1 'IBM Plex Mono',monospace;color:var(--steel2);background:rgba(90,160,255,.12);border:1px solid rgba(90,160,255,.3);padding:4px 8px;border-radius:6px;margin:2px 4px 2px 0}
+
+/* ── journey strip ── */
+.jstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:8px 0 36px}
+.jcard{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--rad);padding:18px 18px 16px;overflow:hidden}
+.jcard:before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--c)}
+.jcard .jh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.jcard h4{margin:6px 0 2px;font-size:18px;font-weight:800;letter-spacing:-.01em}
+.jcard .chain{font:500 11px 'IBM Plex Mono',monospace;color:var(--txt3)}
+.tier{font:700 10px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;padding:5px 8px;border-radius:999px;white-space:nowrap;text-transform:uppercase}
+.tier.f{color:#0a0d14;background:var(--steel2)}
+.tier.p{color:#0a0d14;background:var(--gold2)}
+.tier.r{color:#0a0d14;background:var(--green)}
+.meter{margin-top:12px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--txt2)}
+.meter .px{font:700 12px 'IBM Plex Mono',monospace;color:var(--gold)}
+.meter .unit{color:var(--txt3)}
+.flow{margin-top:12px;display:flex;flex-wrap:wrap;gap:4px}
+.flow span{font:500 10px 'IBM Plex Mono',monospace;color:var(--txt3);padding:3px 6px;border:1px solid var(--line2);border-radius:5px}
+.flow span.on{color:#0a0d14;background:var(--c);border-color:transparent;font-weight:700}
+
+/* ── tabs ── */
+.tabs{position:sticky;top:0;z-index:30;display:flex;gap:6px;padding:10px;background:rgba(5,7,12,.86);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;margin:0 0 24px}
+.tabs button{flex:1;cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;letter-spacing:.01em;color:var(--txt2);background:transparent;border:1px solid transparent;border-radius:9px;padding:12px 14px;text-align:left;line-height:1.25}
+.tabs button small{display:block;font:500 11px 'IBM Plex Mono',monospace;color:var(--txt3);margin-top:3px}
+.tabs button[aria-selected=true]{color:var(--txt);background:var(--panel2);border-color:var(--line)}
+.tabs button[aria-selected=true] .dot{color:var(--accent)}
+.dot{color:var(--txt3)}
+
+.opt{display:none}
+.opt[data-active=true]{display:block}
+.opthead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:6px 0 6px}
+.opthead h2{margin:0;font-size:26px;font-weight:900;letter-spacing:-.02em}
+.opthead .concept{color:var(--txt2);font-size:14px}
+.ease{display:flex;align-items:center;gap:12px;margin:0 0 22px;padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(90deg,rgba(242,180,49,.10),transparent 70%)}
+.ease .lab{font:800 10px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:#0a0d14;background:var(--gold);padding:6px 9px;border-radius:6px}
+.ease p{margin:0;font-size:14px;color:var(--txt);line-height:1.45}
+.ease b{color:var(--gold2)}
+
+.frames{display:grid;grid-template-columns:1fr 392px;gap:24px;align-items:start}
+@media(max-width:1180px){.frames{grid-template-columns:1fr}}
+
+/* ── desktop chrome ── */
+.desk{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--paper);box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.deskbar{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#0d1119;border-bottom:1px solid var(--line)}
+.deskbar i{width:11px;height:11px;border-radius:50%;display:inline-block}
+.deskbar .u{flex:1;margin-left:10px;background:#070a10;border:1px solid var(--line2);border-radius:7px;padding:5px 10px;font:500 11px 'IBM Plex Mono',monospace;color:var(--txt3)}
+.deskbody{padding:0}
+
+/* phone */
+.phonewrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.phone{width:392px;height:844px;border-radius:46px;background:#05070c;border:1px solid var(--line);padding:12px;box-shadow:0 24px 60px rgba(0,0,0,.55);position:relative}
+.screen{width:100%;height:100%;border-radius:36px;overflow:hidden;background:var(--paper);display:flex;flex-direction:column;position:relative}
+.statusbar{display:flex;justify-content:space-between;align-items:center;padding:12px 22px 6px;font:600 13px 'IBM Plex Mono',monospace;color:var(--txt)}
+.notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#05070c;border-radius:0 0 16px 16px;z-index:5}
+.pwa-hint{display:flex;align-items:center;gap:7px;margin:0 14px 8px;padding:7px 11px;border-radius:10px;font-size:11px;background:rgba(55,211,155,.10);border:1px solid rgba(55,211,155,.28);color:var(--green)}
+.pwa-hint .o{margin-left:auto;color:var(--txt3);font-family:'IBM Plex Mono',monospace}
+.pbody{flex:1;overflow:hidden;padding:0 14px}
+.btnav{display:flex;justify-content:space-around;padding:10px 8px 22px;border-top:1px solid var(--line);background:#0b0f17}
+.btnav a{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--txt3);min-width:48px}
+.btnav a.on{color:var(--gold)}
+.btnav .ic{font-size:18px;line-height:1}
+.fab{position:absolute;right:18px;bottom:96px;background:var(--gold);color:#0a0d14;border:none;border-radius:16px;padding:14px 18px;font:800 14px 'Archivo';display:flex;align-items:center;gap:8px;box-shadow:0 10px 26px rgba(242,180,49,.4);z-index:6}
+
+/* shared bits */
+.pill{font:700 10px/1 'IBM Plex Mono',monospace;padding:4px 7px;border-radius:6px;letter-spacing:.04em;text-transform:uppercase}
+.pill.ok{color:#062014;background:var(--green)}
+.pill.warn{color:#241700;background:var(--amber)}
+.pill.bad{color:#fff;background:var(--red)}
+.pill.idle{color:var(--txt2);background:#1c2433}
+.pill.live{color:#062014;background:var(--green)}
+h5.sec{margin:0;font:700 11px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3)}
+.kv{font:700 11px 'IBM Plex Mono',monospace;color:var(--txt3)}
+
+/* ===== OPT 1: ROADMAP / GANTT-SPATIAL ===== */
+.o1side{width:200px;background:#0a0e16;border-right:1px solid var(--line);padding:14px 0}
+.o1side .pj{padding:10px 16px;cursor:default;border-left:3px solid transparent}
+.o1side .pj.on{border-left-color:var(--gold);background:rgba(242,180,49,.07)}
+.o1side .pj b{display:block;font-size:13px}
+.o1side .pj small{font:500 11px 'IBM Plex Mono',monospace;color:var(--txt3)}
+.o1top{display:flex;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line);background:#0b0f18}
+.o1stat b{display:block;font-size:22px;font-weight:900}
+.o1stat small{font:500 11px 'IBM Plex Mono',monospace;color:var(--txt3)}
+.gantt{padding:8px 18px 20px}
+.glane{display:grid;grid-template-columns:160px 1fr;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line2)}
+.glane .gl{font-size:12px;color:var(--txt2)}
+.gl .ph{font:600 10px 'IBM Plex Mono',monospace;color:var(--txt3)}
+.gtrack{position:relative;height:26px;background:#0a0e16;border-radius:7px;border:1px solid var(--line2)}
+.gbar{position:absolute;top:3px;bottom:3px;border-radius:5px;display:flex;align-items:center;padding:0 8px;font:700 10px 'IBM Plex Mono',monospace;color:#0a0d14;overflow:hidden;white-space:nowrap}
+.gnow{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--gold)}
+.gnow:after{content:"TODAY";position:absolute;top:-15px;left:-16px;font:700 8px 'IBM Plex Mono',monospace;color:var(--gold)}
+.gmile{position:absolute;top:50%;width:11px;height:11px;transform:translate(-50%,-50%) rotate(45deg);border:2px solid #0a0e16}
+.gantt-legend{display:flex;gap:14px;padding:6px 18px 0;font:500 11px 'IBM Plex Mono',monospace;color:var(--txt3);flex-wrap:wrap}
+.gantt-legend i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:5px;vertical-align:middle}
+
+/* ===== OPT 2: CALM MILESTONE-GUIDED ===== */
+.o2{padding:26px 30px;background:radial-gradient(140% 100% at 0 0,#0e131d,#080b11)}
+.o2 .next{display:flex;gap:18px;align-items:center;border:1px solid var(--line);background:linear-gradient(120deg,rgba(242,180,49,.10),transparent 60%);border-radius:18px;padding:22px 24px}
+.o2 .ring{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--gold) 0 72%,#1c2433 72% 100%);flex:none}
+.o2 .ring b{width:60px;height:60px;border-radius:50%;background:#0a0d14;display:grid;place-items:center;font:800 18px 'IBM Plex Mono',monospace}
+.o2 .next h3{margin:0 0 4px;font-size:21px;font-weight:800}
+.o2 .next p{margin:0;color:var(--txt2);font-size:13px}
+.o2 .cta{margin-left:auto;background:var(--gold);color:#0a0d14;border:none;border-radius:11px;padding:13px 20px;font:800 14px 'Archivo';white-space:nowrap}
+.o2steps{margin-top:22px;display:flex;flex-direction:column;gap:0}
+.o2step{display:grid;grid-template-columns:34px 1fr auto;gap:16px;align-items:center;padding:16px 4px;border-bottom:1px solid var(--line2)}
+.o2node{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 12px 'IBM Plex Mono',monospace;justify-self:center}
+.o2node.done{background:var(--green);color:#062014}
+.o2node.now{background:var(--gold);color:#0a0d14;box-shadow:0 0 0 5px rgba(242,180,49,.18)}
+.o2node.next{background:#1c2433;color:var(--txt2);border:1px solid var(--line)}
+.o2step b{font-size:15px}.o2step .d{font-size:12px;color:var(--txt3);margin-top:2px}
+.o2meta{text-align:right;font:600 12px 'IBM Plex Mono',monospace;color:var(--txt2)}
+.o2meta small{display:block;color:var(--txt3);font-weight:500;margin-top:2px}
+
+/* ===== OPT 3: DENSE PORTFOLIO COCKPIT ===== */
+.o3{display:grid;grid-template-columns:1fr 290px}
+.o3main{border-right:1px solid var(--line)}
+.o3bar{display:flex;gap:0;border-bottom:1px solid var(--line);background:#0b0f18}
+.o3kpi{flex:1;padding:12px 14px;border-right:1px solid var(--line2)}
+.o3kpi b{display:block;font-size:20px;font-weight:900;letter-spacing:-.01em}
+.o3kpi small{font:500 10px 'IBM Plex Mono',monospace;color:var(--txt3);text-transform:uppercase;letter-spacing:.04em}
+.o3kpi .delta{font:700 11px 'IBM Plex Mono',monospace}
+table.grid{width:100%;border-collapse:collapse;font-size:12px}
+table.grid th{text-align:left;font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3);padding:9px 12px;border-bottom:1px solid var(--line);background:#0a0e16}
+table.grid td{padding:9px 12px;border-bottom:1px solid var(--line2);color:var(--txt2)}
+table.grid tr:hover td{background:rgba(90,160,255,.05)}
+table.grid td b{color:var(--txt);font-weight:700}
+.mini{height:18px;display:flex;align-items:flex-end;gap:2px}
+.mini i{width:4px;background:var(--steel);border-radius:1px;display:inline-block}
+.o3rail{padding:14px 14px}
+.alert{display:flex;gap:10px;padding:11px 12px;border-radius:10px;border:1px solid var(--line);margin-bottom:9px;background:#0c111a}
+.alert.crit{border-color:rgba(255,106,106,.4);background:rgba(255,106,106,.07)}
+.alert.warn{border-color:rgba(255,181,71,.35);background:rgba(255,181,71,.06)}
+.alert .ai{font-size:11px;line-height:1.4}
+.alert .ai b{display:block;font-size:12px;color:var(--txt);margin-bottom:2px}
+.alert .acc{margin-top:6px;display:inline-block;font:700 10px 'IBM Plex Mono',monospace;color:var(--gold);cursor:pointer}
+
+/* phone cards */
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:11px}
+.pcard h4{margin:0 0 2px;font-size:14px}
+.pcard .pj{font:500 10px 'IBM Plex Mono',monospace;color:var(--txt3)}
+.prog{height:7px;border-radius:4px;background:#1c2433;margin:10px 0 8px;overflow:hidden}
+.prog i{display:block;height:100%;border-radius:4px}
+.pstates{display:flex;gap:3px;flex-wrap:wrap}
+.pstates span{font:600 9px 'IBM Plex Mono',monospace;color:var(--txt3);padding:2px 5px;border:1px solid var(--line2);border-radius:4px}
+.pstates span.on{color:#0a0d14;background:var(--gold);border-color:transparent}
+.psumm{display:flex;gap:8px;margin:6px 0 12px}
+.psumm div{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px}
+.psumm b{font-size:19px;font-weight:900;display:block}
+.psumm small{font:500 9px 'IBM Plex Mono',monospace;color:var(--txt3);text-transform:uppercase}
+.foot{margin-top:36px;text-align:center;color:var(--txt3);font:500 11px 'IBM Plex Mono',monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="crumb">CEC Open Energy Platform · Frontend Exploration · oe.vantax.co.za</div>
+  <div class="head">
+    <div>
+      <h1>IPP Developer <b>workspace</b></h1>
+      <div class="sub">Three bold bets for the developer who steers a renewable project from REIPPPP bid through financial close, construction, COD and grid energization — every direction built around one headline: <b style="color:var(--gold2)">EASE</b>. One glance to what matters. Lowest cognitive load to act.</div>
+    </div>
+    <div class="persona">
+      <h3>Persona</h3>
+      <p><b style="color:var(--txt)">Thandi M.</b> — Project Director / asset manager at an IPP. Runs 3–7 utility-scale plants across phases. Deep domain expert; lives in financial-close deadlines, lender conditions-precedent and Independent-Engineer COD gates.</p>
+      <p>Office-heavy on a large desktop, with periodic site visits where the phone becomes the cockpit. Wants the single blocking item surfaced — not a dashboard to mine.</p>
+      <span class="tag">desktop-first</span><span class="tag">high expertise</span><span class="tag">deadline-driven</span><span class="tag">site-PWA</span>
+    </div>
+  </div>
+
+  <!-- JOURNEY-AS-PRODUCT -->
+  <div class="jstrip">
+    <div class="jcard" style="--c:var(--gold)">
+      <div class="jh"><div><div class="chain mono">cod_chain · NERSA §C-5</div><h4>Construction → COD</h4></div><span class="tier p">L4 · Professional</span></div>
+      <div class="meter"><span class="px">R 4 200</span><span class="unit">/ active facility / mo · IE-gated</span></div>
+      <div class="flow">
+        <span>design</span><span>procurement</span><span>construction</span><span>mechanical_completion</span><span class="on">commissioning</span><span>cod</span><span>post_cod</span>
+      </div>
+    </div>
+    <div class="jcard" style="--c:var(--steel)">
+      <div class="jh"><div><div class="chain mono">drawdown · SARB / Equator (W21)</div><h4>Financing Drawdown</h4></div><span class="tier p">L4 · Professional</span></div>
+      <div class="meter"><span class="px">R 1 850</span><span class="unit">/ drawdown request · IE+lender gated</span></div>
+      <div class="flow">
+        <span>draft</span><span>ie_review</span><span class="on">lender_review</span><span>approved</span><span>disbursed</span><span>rejected</span>
+      </div>
+    </div>
+    <div class="jcard" style="--c:var(--green)">
+      <div class="jh"><div><div class="chain mono">stage_gate · DG0–DG4 · audit</div><h4>Development Stage Gates</h4></div><span class="tier r">L5 · Regulator-grade</span></div>
+      <div class="meter"><span class="px">R 9 600</span><span class="unit">/ gate review · certified export</span></div>
+      <div class="flow">
+        <span>dg0</span><span>dg1</span><span class="on">dg2_pending</span><span>dg3</span><span>dg4</span><span>approved</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-opt="1" onclick="pick(1)"><span class="dot" style="--accent:var(--gold)">01 ▸ </span>Roadmap Spatial<small>Gantt timeline as the home surface</small></button>
+    <button role="tab" aria-selected="false" data-opt="2" onclick="pick(2)"><span class="dot" style="--accent:var(--steel)">02 ▸ </span>Calm Milestone-Guide<small>One next action, nothing else</small></button>
+    <button role="tab" aria-selected="false" data-opt="3" onclick="pick(3)"><span class="dot" style="--accent:var(--green)">03 ▸ </span>Portfolio Cockpit<small>Dense multi-plant control room</small></button>
+  </div>
+
+  <!-- ============ OPTION 1 ============ -->
+  <section class="opt" data-opt="1" data-active="true">
+    <div class="opthead"><h2 style="color:var(--gold)">01 · Roadmap Spatial</h2><span class="concept">The project schedule <em>is</em> the home screen — phases, the IE gate and the critical milestone all on one timeline.</span></div>
+    <div class="ease"><span class="lab">Ease</span><p>Makes effortless: <b>one glance to what's blocking COD.</b> The TODAY line cuts the timeline; the late bar and the next gate diamond are the only things that pull your eye — no clicking to find the slip.</p></div>
+
+    <div class="frames">
+      <!-- desktop -->
+      <div class="desk">
+        <div class="deskbar"><i style="background:#ff6a6a"></i><i style="background:#ffb547"></i><i style="background:#37d39b"></i><span class="u mono">oe.vantax.co.za/ipp/roadmap — Karoo Solar One · 75 MW</span><span class="pill live">● live</span></div>
+        <div class="deskbody" style="display:flex">
+          <div class="o1side">
+            <div class="pj on"><b>Karoo Solar One</b><small>75 MW · commissioning</small></div>
+            <div class="pj"><b>Hex River Wind</b><small>140 MW · construction</small></div>
+            <div class="pj"><b>De Aar PV 2</b><small>100 MW · procurement</small></div>
+            <div class="pj"><b>Komsberg North</b><small>220 MW · design</small></div>
+            <div style="padding:14px 16px;margin-top:6px;border-top:1px solid var(--line2)">
+              <div class="kv">PORTFOLIO</div>
+              <div style="font:900 28px/1 Archivo;margin-top:6px">535 <span style="font-size:14px;color:var(--txt3)">MW</span></div>
+              <div class="kv" style="margin-top:4px;color:var(--txt2)">4 projects · 1 at gate</div>
+            </div>
+          </div>
+          <div style="flex:1">
+            <div class="o1top">
+              <div class="o1stat"><b style="color:var(--gold)">CG-D2</b><small class="mono">stage gate · dg2_pending</small></div>
+              <div class="o1stat"><b style="color:var(--amber)">+9d</b><small class="mono">commissioning slip</small></div>
+              <div class="o1stat"><b style="color:var(--steel)">R 1.85m</b><small class="mono">drawdown · lender_review</small></div>
+              <div class="o1stat"><b style="color:var(--green)">7/8</b><small class="mono">CPs satisfied (W192)</small></div>
+              <div style="margin-left:auto;align-self:center"><span class="pill warn">COD at risk · 9 Aug</span></div>
+            </div>
+            <div class="gantt-legend"><span><i style="background:#37d39b"></i>complete</span><span><i style="background:#5aa0ff"></i>in progress</span><span><i style="background:#ffb547"></i>delayed</span><span><i style="background:#262f40"></i>planned</span><span><i style="background:var(--gold);transform:rotate(45deg)"></i>milestone / gate</span></div>
+            <div class="gantt">
+              <div style="position:relative">
+                <div class="gnow" style="left:62%"></div>
+
+                <div class="glane"><div class="gl">Design &amp; permitting<div class="ph mono">cod_chain · design</div></div><div class="gtrack"><div class="gbar" style="left:0;width:18%;background:#37d39b">done</div></div></div>
+                <div class="glane"><div class="gl">Procurement / RFP<div class="ph mono">procurement_rfp · awarded</div></div><div class="gtrack"><div class="gbar" style="left:14%;width:20%;background:#37d39b">awarded</div></div></div>
+                <div class="glane"><div class="gl">Construction<div class="ph mono">cod_chain · construction</div></div><div class="gtrack"><div class="gbar" style="left:30%;width:34%;background:#37d39b">mech. complete</div></div></div>
+                <div class="glane"><div class="gl">Commissioning<div class="ph mono">cod_chain · commissioning</div></div><div class="gtrack"><div class="gbar" style="left:58%;width:18%;background:#ffb547">+9d slip</div><div class="gmile" style="left:76%;background:var(--gold)" title="IE COD certificate"></div></div></div>
+                <div class="glane"><div class="gl">Grid connection<div class="ph mono">gca_connection · C-1</div></div><div class="gtrack"><div class="gbar" style="left:64%;width:14%;background:#5aa0ff">energization</div></div></div>
+                <div class="glane"><div class="gl">COD / post-COD<div class="ph mono">cod_chain · cod</div></div><div class="gtrack"><div class="gbar" style="left:78%;width:16%;background:#262f40;color:var(--txt2)">planned</div><div class="gmile" style="left:78%;background:var(--gold)"></div></div></div>
+
+                <div class="glane"><div class="gl" style="color:var(--steel2)">Drawdown #4<div class="ph mono">drawdown · lender_review</div></div><div class="gtrack"><div class="gbar" style="left:54%;width:10%;background:#5aa0ff">R1.85m</div></div></div>
+                <div class="glane"><div class="gl" style="color:var(--green)">Stage gate DG2<div class="ph mono">stage_gate · dg2_pending</div></div><div class="gtrack"><div class="gmile" style="left:60%;background:var(--gold)"></div></div></div>
+              </div>
+            </div>
+            <div style="padding:0 18px 18px;display:flex;gap:10px">
+              <button style="background:var(--gold);color:#0a0d14;border:none;border-radius:10px;padding:11px 16px;font:800 13px Archivo">Resolve commissioning slip →</button>
+              <button style="background:transparent;color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:11px 16px;font:700 13px Archivo">Open DG2 gate pack</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- phone -->
+      <div class="phonewrap">
+        <div class="phone"><div class="notch"></div><div class="screen">
+          <div class="statusbar"><span>9:41</span><span class="mono">CEC · IPP</span><span>▮▮▮ 5G</span></div>
+          <div class="pwa-hint">◵ Cached on-site · last sync 2m ago<span class="o">offline-ready</span></div>
+          <div class="pbody">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin:2px 0 10px">
+              <div><div style="font-weight:900;font-size:18px">Karoo Solar One</div><div class="pj">75 MW · commissioning</div></div>
+              <span class="pill warn">+9d</span>
+            </div>
+            <div class="pcard" style="border-color:rgba(255,181,71,.4)">
+              <div style="display:flex;justify-content:space-between"><h4>COD timeline</h4><span class="kv" style="color:var(--amber)">9 Aug · at risk</span></div>
+              <div class="pj mono">cod_chain</div>
+              <div class="prog"><i style="width:62%;background:linear-gradient(90deg,#37d39b,#ffb547)"></i></div>
+              <div class="pstates"><span>design</span><span>proc</span><span>constr</span><span>mech</span><span class="on">comm</span><span>cod</span></div>
+            </div>
+            <div class="pcard">
+              <div style="display:flex;justify-content:space-between"><h4>Next IE gate</h4><span class="pill warn">DG2</span></div>
+              <div class="pj mono">stage_gate · dg2_pending</div>
+              <div style="font-size:12px;color:var(--txt2);margin-top:8px">Independent Engineer commissioning sign-off due before COD certificate.</div>
+            </div>
+            <div class="pcard">
+              <div style="display:flex;justify-content:space-between"><h4>Drawdown #4</h4><span class="pill idle">lender_review</span></div>
+              <div class="pj mono">drawdown · R 1.85m</div>
+            </div>
+          </div>
+          <button class="fab">＋ Site note</button>
+          <div class="btnav">
+            <a class="on"><span class="ic">▤</span>Roadmap</a><a><span class="ic">◎</span>Finance</a><a><span class="ic">⬡</span>Site</a><a><span class="ic">◩</span>Gates</a>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPTION 2 ============ -->
+  <section class="opt" data-opt="2">
+    <div class="opthead"><h2 style="color:var(--steel2)">02 · Calm Milestone-Guide</h2><span class="concept">Strips the cockpit to a single recommended next action and a linear, reassuring milestone spine.</span></div>
+    <div class="ease"><span class="lab">Ease</span><p>Makes effortless: <b>knowing the one thing to do next.</b> No portfolio mining — the screen names the next gated action, why it matters, and a single button to act. Everything else recedes.</p></div>
+
+    <div class="frames">
+      <!-- desktop -->
+      <div class="desk">
+        <div class="deskbar"><i style="background:#ff6a6a"></i><i style="background:#ffb547"></i><i style="background:#37d39b"></i><span class="u mono">oe.vantax.co.za/ipp/guide — Karoo Solar One</span></div>
+        <div class="deskbody"><div class="o2">
+          <h5 class="sec">Your next action</h5>
+          <div class="next" style="margin-top:12px">
+            <div class="ring"><b>72%</b></div>
+            <div>
+              <h3>Clear the Independent-Engineer commissioning gate</h3>
+              <p>DG2 is the only item between Karoo Solar One and its COD certificate. 6 of 8 evidence items uploaded · IE site visit confirmed for 4 Aug.</p>
+            </div>
+            <button class="cta">Open DG2 gate pack →</button>
+          </div>
+
+          <div style="margin-top:26px"><h5 class="sec">Karoo Solar One · path to COD</h5></div>
+          <div class="o2steps">
+            <div class="o2step"><span class="o2node done">✓</span><div><b>Financial close</b><div class="d">cp_tracker · 7/8 CPs satisfied · closed 12 Mar</div></div><div class="o2meta">done<small>W192</small></div></div>
+            <div class="o2step"><span class="o2node done">✓</span><div><b>Construction → mechanical completion</b><div class="d">cod_chain · mechanical_completion certified</div></div><div class="o2meta">done<small>18 Jul</small></div></div>
+            <div class="o2step" style="background:rgba(90,160,255,.05);border-radius:10px"><span class="o2node now">●</span><div><b>Commissioning &amp; DG2 gate</b><div class="d">stage_gate · dg2_pending — IE sign-off pending</div></div><div class="o2meta" style="color:var(--steel2)">now<small>due 4 Aug</small></div></div>
+            <div class="o2step"><span class="o2node next">3</span><div><b>Drawdown #4 release</b><div class="d">drawdown · lender_review — auto-unblocks on DG2 pass</div></div><div class="o2meta">queued<small>R 1.85m</small></div></div>
+            <div class="o2step"><span class="o2node next">4</span><div><b>Grid energization</b><div class="d">gca_connection · C-1 — SCADA settings pending</div></div><div class="o2meta">queued<small>14 Aug</small></div></div>
+            <div class="o2step"><span class="o2node next">5</span><div><b>COD certificate</b><div class="d">cod_chain · cod → post_cod</div></div><div class="o2meta">target<small>9 Aug</small></div></div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- phone -->
+      <div class="phonewrap">
+        <div class="phone"><div class="notch"></div><div class="screen">
+          <div class="statusbar"><span>9:41</span><span class="mono">CEC · IPP</span><span>▮▮▮ 5G</span></div>
+          <div class="pwa-hint">◵ Installed PWA · works offline<span class="o">v2.4</span></div>
+          <div class="pbody">
+            <div style="text-align:center;margin:8px 0 4px"><h5 class="sec">Do this next</h5></div>
+            <div class="pcard" style="text-align:center;border-color:rgba(90,160,255,.4);background:linear-gradient(180deg,rgba(90,160,255,.08),transparent)">
+              <div style="margin:6px auto 10px;width:84px;height:84px;border-radius:50%;background:conic-gradient(var(--steel) 0 72%,#1c2433 72%);display:grid;place-items:center">
+                <div style="width:66px;height:66px;border-radius:50%;background:#0a0d14;display:grid;place-items:center;font:800 18px 'IBM Plex Mono'">72%</div>
+              </div>
+              <h4 style="font-size:16px">Clear the IE commissioning gate</h4>
+              <div style="font-size:12px;color:var(--txt2);margin:6px 4px 0">DG2 is the only block before COD. 6/8 evidence uploaded.</div>
+            </div>
+            <div style="margin:14px 0 8px"><h5 class="sec">Path to COD</h5></div>
+            <div style="display:flex;flex-direction:column;gap:0;padding-left:4px">
+              <div style="display:flex;gap:12px;align-items:center;padding:9px 0"><span class="o2node done" style="width:22px;height:22px;font-size:11px">✓</span><div style="font-size:13px"><b>Financial close</b><div style="font:500 10px 'IBM Plex Mono';color:var(--txt3)">7/8 CPs</div></div></div>
+              <div style="display:flex;gap:12px;align-items:center;padding:9px 0"><span class="o2node done" style="width:22px;height:22px;font-size:11px">✓</span><div style="font-size:13px"><b>Mechanical completion</b></div></div>
+              <div style="display:flex;gap:12px;align-items:center;padding:9px 0;background:rgba(90,160,255,.06);border-radius:9px"><span class="o2node now" style="width:22px;height:22px;font-size:11px">●</span><div style="font-size:13px"><b>Commissioning · DG2</b><div style="font:500 10px 'IBM Plex Mono';color:var(--steel2)">due 4 Aug</div></div></div>
+              <div style="display:flex;gap:12px;align-items:center;padding:9px 0"><span class="o2node next" style="width:22px;height:22px;font-size:11px">3</span><div style="font-size:13px"><b>Drawdown #4</b><div style="font:500 10px 'IBM Plex Mono';color:var(--txt3)">R 1.85m queued</div></div></div>
+              <div style="display:flex;gap:12px;align-items:center;padding:9px 0"><span class="o2node next" style="width:22px;height:22px;font-size:11px">4</span><div style="font-size:13px"><b>COD certificate</b><div style="font:500 10px 'IBM Plex Mono';color:var(--txt3)">target 9 Aug</div></div></div>
+            </div>
+          </div>
+          <button class="fab" style="background:var(--steel)">Open DG2 →</button>
+          <div class="btnav">
+            <a class="on" style="color:var(--steel2)"><span class="ic">◎</span>Next</a><a><span class="ic">▤</span>Path</a><a><span class="ic">◩</span>Evidence</a><a><span class="ic">⬡</span>More</a>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPTION 3 ============ -->
+  <section class="opt" data-opt="3">
+    <div class="opthead"><h2 style="color:var(--green)">03 · Portfolio Cockpit</h2><span class="concept">A dense control room for the asset manager watching every plant, gate, drawdown and obligation at once.</span></div>
+    <div class="ease"><span class="lab">Ease</span><p>Makes effortless: <b>spotting the one plant that needs you across the whole portfolio.</b> Every chain state, slip and CP sits in one scan-grid; the AI rail pre-ranks what to act on so no plant hides.</p></div>
+
+    <div class="frames">
+      <!-- desktop -->
+      <div class="desk">
+        <div class="deskbar"><i style="background:#ff6a6a"></i><i style="background:#ffb547"></i><i style="background:#37d39b"></i><span class="u mono">oe.vantax.co.za/ipp/cockpit — 4 projects · 535 MW</span><span class="pill live">● live</span></div>
+        <div class="deskbody"><div class="o3">
+          <div class="o3main">
+            <div class="o3bar">
+              <div class="o3kpi"><small>Portfolio MW</small><b>535</b><span class="delta" style="color:var(--green)">+100 q/q</span></div>
+              <div class="o3kpi"><small>Open gates</small><b style="color:var(--gold)">3</b><span class="delta" style="color:var(--amber)">1 due ≤7d</span></div>
+              <div class="o3kpi"><small>Drawdowns live</small><b style="color:var(--steel)">R 4.1m</b><span class="delta" style="color:var(--txt3)">2 in review</span></div>
+              <div class="o3kpi"><small>COD at risk</small><b style="color:var(--red)">1</b><span class="delta" style="color:var(--red)">Karoo +9d</span></div>
+              <div class="o3kpi"><small>CP satisfaction</small><b>91%</b><span class="delta" style="color:var(--green)">▲ on plan</span></div>
+            </div>
+            <table class="grid">
+              <thead><tr><th>Project</th><th>MW</th><th>COD chain</th><th>Gate</th><th>Drawdown</th><th>ED / CP</th><th>Health</th></tr></thead>
+              <tbody>
+                <tr><td><b>Karoo Solar One</b></td><td>75</td><td><span class="pill warn">commissioning</span></td><td class="mono" style="color:var(--gold)">dg2_pending</td><td class="mono" style="color:var(--steel2)">R1.85m · lender_review</td><td class="mono">7/8 CP</td><td><div class="mini"><i style="height:60%"></i><i style="height:80%"></i><i style="height:55%;background:var(--amber)"></i><i style="height:45%;background:var(--amber)"></i></div></td></tr>
+                <tr><td><b>Hex River Wind</b></td><td>140</td><td><span class="pill idle">construction</span></td><td class="mono" style="color:var(--txt3)">dg1 ✓</td><td class="mono" style="color:var(--steel2)">R2.25m · ie_review</td><td class="mono">active ED</td><td><div class="mini"><i style="height:70%"></i><i style="height:75%"></i><i style="height:85%"></i><i style="height:90%;background:var(--green)"></i></div></td></tr>
+                <tr><td><b>De Aar PV 2</b></td><td>100</td><td><span class="pill idle">procurement</span></td><td class="mono" style="color:var(--gold)">dg2_pending</td><td class="mono" style="color:var(--txt3)">—</td><td class="mono">evaluation</td><td><div class="mini"><i style="height:50%"></i><i style="height:60%"></i><i style="height:62%"></i><i style="height:65%"></i></div></td></tr>
+                <tr><td><b>Komsberg North</b></td><td>220</td><td><span class="pill idle">design</span></td><td class="mono" style="color:var(--gold)">dg0_pending</td><td class="mono" style="color:var(--txt3)">—</td><td class="mono">5/9 CP</td><td><div class="mini"><i style="height:40%"></i><i style="height:48%"></i><i style="height:52%"></i><i style="height:58%"></i></div></td></tr>
+              </tbody>
+            </table>
+            <div style="padding:11px 12px;border-top:1px solid var(--line);display:flex;gap:18px;font:600 11px 'IBM Plex Mono';color:var(--txt3)">
+              <span>HSE: <b style="color:var(--amber)">1 investigating</b></span>
+              <span>Bonds: <b style="color:var(--txt2)">2 expiring ≤90d</b></span>
+              <span>ED commitments: <b style="color:var(--green)">compliant</b></span>
+              <span>Insurance claim: <b style="color:var(--amber)">1 investigating</b></span>
+            </div>
+          </div>
+          <div class="o3rail">
+            <h5 class="sec" style="margin-bottom:10px">Act first · AI-ranked</h5>
+            <div class="alert crit">
+              <span class="pill bad" style="align-self:flex-start">1</span>
+              <div class="ai"><b>Karoo COD slips 9d unless DG2 clears by 4 Aug</b>Commissioning gate is the long pole; drawdown #4 is gated behind it. <span class="acc">Open gate pack ▸</span></div>
+            </div>
+            <div class="alert warn">
+              <span class="pill warn" style="align-self:flex-start">2</span>
+              <div class="ai"><b>Hex River drawdown in ie_review 6 days</b>Independent-Engineer query on civils QA evidence outstanding. <span class="acc">Reply to IE ▸</span></div>
+            </div>
+            <div class="alert warn">
+              <span class="pill warn" style="align-self:flex-start">3</span>
+              <div class="ai"><b>Komsberg DG0 gate pack 80% complete</b>Resource &amp; consent pack due before procurement can issue. <span class="acc">Resume DG0 ▸</span></div>
+            </div>
+            <div class="alert">
+              <span class="pill idle" style="align-self:flex-start">4</span>
+              <div class="ai"><b>2 performance bonds expire ≤90d</b>ipp_performance_bonds — schedule renewal to avoid CP breach. <span class="acc">Renew bonds ▸</span></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- phone -->
+      <div class="phonewrap">
+        <div class="phone"><div class="notch"></div><div class="screen">
+          <div class="statusbar"><span>9:41</span><span class="mono">CEC · IPP</span><span>▮▮▮ 5G</span></div>
+          <div class="pwa-hint">◵ Synced · 4 plants cached<span class="o">offline-ready</span></div>
+          <div class="pbody">
+            <div class="psumm">
+              <div><b>535</b><small>MW</small></div>
+              <div><b style="color:var(--gold)">3</b><small>gates</small></div>
+              <div><b style="color:var(--red)">1</b><small>at risk</small></div>
+            </div>
+            <div style="margin-bottom:8px"><h5 class="sec">Act first</h5></div>
+            <div class="pcard" style="border-color:rgba(255,106,106,.4);background:rgba(255,106,106,.06)">
+              <div style="display:flex;justify-content:space-between"><h4>Karoo · DG2</h4><span class="pill bad">COD −9d</span></div>
+              <div style="font-size:12px;color:var(--txt2);margin-top:6px">Commissioning gate blocks COD + drawdown #4.</div>
+              <div class="acc" style="margin-top:8px">Open gate pack ▸</div>
+            </div>
+            <div class="pcard">
+              <div style="display:flex;justify-content:space-between"><h4>Hex River Wind</h4><span class="pill idle">construction</span></div>
+              <div class="pj mono">drawdown · ie_review · R2.25m</div>
+              <div class="prog"><i style="width:78%;background:var(--green)"></i></div>
+            </div>
+            <div class="pcard">
+              <div style="display:flex;justify-content:space-between"><h4>De Aar PV 2</h4><span class="pill warn">dg2</span></div>
+              <div class="pj mono">procurement_rfp · evaluation</div>
+            </div>
+          </div>
+          <button class="fab" style="background:var(--green);color:#062014">⚡ Act first</button>
+          <div class="btnav">
+            <a class="on" style="color:var(--green)"><span class="ic">◩</span>Cockpit</a><a><span class="ic">▤</span>Plants</a><a><span class="ic">◎</span>Finance</a><a><span class="ic">⬓</span>Compliance</a>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">Evaluation mockup · not wired into Meridian · real chains from roleData.ts (cod_chain · drawdown · stage_gate · cp_tracker · ed_commitment · procurement_rfp · gca_connection)</div>
+</div>
+
+<script>
+function pick(n){
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected', b.dataset.opt==String(n)));
+  document.querySelectorAll('.opt').forEach(s=>s.setAttribute('data-active', s.dataset.opt==String(n)));
+}
+</script>
+</body>
+</html>
