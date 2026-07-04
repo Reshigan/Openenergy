@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Offtaker — Frontend Design Exploration · Open Energy Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Calm, trustworthy buyer palette — deep teal-green + warm paper, never alarming */
+    --bg:#0e1614;
+    --paper:#f6f3ec;          /* warm paper for light surfaces */
+    --paper-2:#ece7da;
+    --ink:#16201d;            /* near-black green ink */
+    --ink-soft:#46524d;
+    --line:#dcd6c7;
+    --teal:#0e7c66;           /* primary action — AA on paper & on white */
+    --teal-deep:#0a5d4d;
+    --teal-ghost:#e2efe9;
+    --leaf:#3f7d3a;           /* delivered / good */
+    --amber:#9a6212;          /* attention, never red-panic */
+    --rust:#9c3a28;           /* dispute / forfeit only */
+    --sky:#1f6f8b;            /* carbon / scope-2 */
+    --gold:#8a6d1f;           /* L5 regulator-grade */
+    --shadow:0 1px 2px rgba(20,32,29,.06),0 8px 28px rgba(20,32,29,.08);
+    --r:14px;
+    --r-sm:10px;
+    font-synthesis-weight:none;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:
+      radial-gradient(1200px 600px at 85% -5%, #14241f 0%, transparent 60%),
+      radial-gradient(900px 500px at -5% 10%, #122a23 0%, transparent 55%),
+      var(--bg);
+    color:#e7eee9;font-family:Inter,system-ui,sans-serif;line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1360px;margin:0 auto;padding:40px 28px 90px}
+  h1,h2,h3,h4{font-family:Fraunces,Georgia,serif;font-weight:500;letter-spacing:-.01em;margin:0}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+  a{color:inherit}
+
+  /* ───── Page header ───── */
+  .masthead{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap;
+    border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:30px;margin-bottom:30px}
+  .roleTag{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#7fb5a4;font-weight:600}
+  .masthead h1{font-size:clamp(34px,5vw,54px);color:#f3f8f5;line-height:1.02;margin:8px 0 0}
+  .masthead .lead{max-width:560px}
+  .persona{max-width:560px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+    border-radius:var(--r);padding:18px 20px;color:#c7d6cf;font-size:14.5px}
+  .persona b{color:#eaf3ef}
+  .rationale{margin-top:12px;font-size:13.5px;color:#90a89f;max-width:560px}
+
+  /* ───── Journey-as-product strip ───── */
+  .strip-h{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#7fb5a4;
+    font-weight:600;margin:38px 0 14px}
+  .journeys{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .jcard{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.025));
+    border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:18px 18px 16px;position:relative;overflow:hidden}
+  .jcard::after{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--accent,#0e7c66)}
+  .jcard .jn{font-family:Fraunces,serif;font-size:20px;color:#f1f7f4;margin:6px 0 4px}
+  .jcard .jchain{font-size:11.5px;color:#7c948b}
+  .jcard .jdesc{font-size:13px;color:#b7c8c0;margin:9px 0 14px;min-height:38px}
+  .tier{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+    letter-spacing:.04em;padding:4px 9px;border-radius:999px;text-transform:uppercase}
+  .tier-L4{background:#11463a;color:#7fe3c6;border:1px solid #1d6a57}
+  .tier-L5{background:#3a3413;color:#f0d878;border:1px solid #6a5f1d}
+  .meter{display:flex;align-items:baseline;gap:7px;border-top:1px dashed rgba(255,255,255,.12);
+    padding-top:11px;margin-top:4px}
+  .meter .mlbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#809a90}
+  .meter .mval{font-family:Fraunces,serif;font-size:15px;color:#dfeee7}
+  .meter .mper{font-size:12px;color:#8aa69b}
+
+  /* ───── Option section ───── */
+  .opt{margin-top:64px}
+  .opt-head{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+  .opt-num{font-family:Fraunces,serif;font-size:13px;color:#0e1614;background:#7fe3c6;
+    width:30px;height:30px;display:grid;place-items:center;border-radius:8px;font-weight:600}
+  .opt-head h2{font-size:30px;color:#f3f8f5}
+  .opt-concept{color:#9fb6ad;font-size:15px;max-width:760px;margin:6px 0 26px}
+  .frames{display:grid;grid-template-columns:1fr 392px;gap:26px;align-items:start}
+  @media(max-width:1100px){.frames{grid-template-columns:1fr}.journeys{grid-template-columns:1fr}}
+
+  /* Desktop chrome */
+  .desk{border-radius:16px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.08)}
+  .deskbar{background:#e7e1d3;display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .deskurl{margin-left:10px;background:#fff;border:1px solid var(--line);border-radius:7px;
+    font-size:12px;color:#5a6661;padding:5px 12px;flex:1;font-family:ui-monospace,monospace}
+  .canvas{background:var(--paper);color:var(--ink);min-height:520px}
+
+  /* Phone chrome */
+  .phone{width:392px;justify-self:center;border-radius:42px;background:#0b1311;padding:11px;
+    box-shadow:0 30px 80px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.1)}
+  .screen{border-radius:32px;overflow:hidden;background:var(--paper);color:var(--ink);height:780px;position:relative;display:flex;flex-direction:column}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:9px 22px 4px;font-size:12px;font-weight:600;color:var(--ink)}
+  .statusbar .r{display:flex;gap:5px;align-items:center}
+  .pwahint{font-size:11px;background:var(--teal-ghost);color:var(--teal-deep);
+    text-align:center;padding:5px;font-weight:600;border-bottom:1px solid var(--line)}
+  .pbody{flex:1;overflow:hidden;position:relative}
+  .bottomnav{display:flex;border-top:1px solid var(--line);background:#fbf9f3}
+  .bottomnav a{flex:1;text-align:center;padding:9px 0 16px;font-size:10.5px;color:#7b857f;text-decoration:none;font-weight:600}
+  .bottomnav a .ic{display:block;font-size:18px;margin-bottom:2px}
+  .bottomnav a[aria-current]{color:var(--teal-deep)}
+  .thumbcta{position:absolute;left:14px;right:14px;bottom:74px;background:var(--teal);color:#fff;
+    border:none;border-radius:14px;padding:15px;font-weight:700;font-size:15px;
+    box-shadow:0 10px 26px rgba(10,93,77,.4);display:flex;justify-content:center;gap:8px;align-items:center}
+
+  /* ───── Shared light-surface UI ───── */
+  .pad{padding:22px 24px}
+  .ppad{padding:16px 18px}
+  .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7b857f;font-weight:600}
+  .h-sm{font-family:Fraunces,serif;font-size:22px;color:var(--ink)}
+  .sub{color:var(--ink-soft);font-size:13.5px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:.02em}
+  .pill-ok{background:#e4f0e3;color:#2f6a2c}
+  .pill-watch{background:#f6ecd5;color:#7d5210}
+  .pill-act{background:var(--teal-ghost);color:var(--teal-deep)}
+  .pill-disp{background:#f3e0db;color:#8a3322}
+  .pill-l5{background:#f3edd4;color:#6a5512}
+  .btn{display:inline-flex;align-items:center;gap:7px;border:none;border-radius:10px;font-weight:600;
+    font-size:14px;padding:11px 16px;cursor:pointer;font-family:inherit}
+  .btn-pri{background:var(--teal);color:#fff}
+  .btn-ghost{background:#fff;color:var(--teal-deep);border:1.5px solid #b9d8cd}
+  .num{font-family:Fraunces,serif;letter-spacing:-.01em}
+
+  /* progress / state machine rail */
+  .rail{display:flex;align-items:center;gap:0;flex-wrap:wrap}
+  .rail .step{display:flex;align-items:center;gap:7px;font-size:11.5px;color:#9aa39d;font-weight:600}
+  .rail .step .dot2{width:9px;height:9px;border-radius:50%;background:#d6d0c1;border:2px solid #d6d0c1}
+  .rail .step.done{color:var(--teal-deep)}
+  .rail .step.done .dot2{background:var(--teal);border-color:var(--teal)}
+  .rail .step.now{color:var(--ink)}
+  .rail .step.now .dot2{background:#fff;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-ghost)}
+  .rail .bar{width:26px;height:2px;background:#e2dccd;margin:0 6px}
+  .rail .bar.done{background:var(--teal)}
+
+  /* AI inline card */
+  .ai{background:linear-gradient(180deg,#eef6f2,#e6f1ec);border:1px solid #bfe0d4;border-radius:var(--r-sm);padding:13px 14px}
+  .ai .ahd{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--teal-deep);letter-spacing:.06em;text-transform:uppercase}
+  .ai .why{font-size:13px;color:#33443d;margin:6px 0 10px}
+  .ai .accept{background:var(--teal-deep);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer}
+
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#8b948e;font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)}
+  td{padding:11px 10px;border-bottom:1px solid #efeadd;color:var(--ink)}
+  tr:last-child td{border-bottom:none}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:var(--r-sm);padding:13px 14px}
+  .kpi .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8b948e;font-weight:600}
+  .kpi .v{font-family:Fraunces,serif;font-size:26px;color:var(--ink);margin-top:2px}
+  .kpi .d{font-size:12px;margin-top:1px}
+  .up{color:var(--leaf)}.dn{color:var(--rust)}
+
+  .legendline{display:flex;gap:14px;font-size:11.5px;color:#7b857f;flex-wrap:wrap}
+  .legendline span{display:inline-flex;gap:5px;align-items:center}
+  .sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  /* big guided choice (Option 1) */
+  .bigq{font-family:Fraunces,serif;font-size:27px;line-height:1.2;color:var(--ink)}
+  .choice{display:flex;flex-direction:column;gap:12px;margin-top:18px}
+  .choicebtn{display:flex;justify-content:space-between;align-items:center;background:#fff;
+    border:1.5px solid var(--line);border-radius:14px;padding:16px 18px;text-align:left;cursor:pointer;width:100%;font-family:inherit}
+  .choicebtn:hover,.choicebtn.sel{border-color:var(--teal);background:var(--teal-ghost)}
+  .choicebtn .ct{font-weight:700;font-size:15px;color:var(--ink)}
+  .choicebtn .cd{font-size:12.5px;color:var(--ink-soft);margin-top:2px}
+  .choicebtn .arr{color:var(--teal);font-size:20px}
+  .stepper{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#8b948e;font-weight:600}
+  .stepper b{color:var(--teal-deep)}
+
+  /* portfolio bars (Option 2) */
+  .pbar{height:9px;border-radius:6px;background:#e7e1d3;overflow:hidden;display:flex}
+  .pbar i{display:block;height:100%}
+  .donut{--p:0;width:96px;height:96px;border-radius:50%;
+    background:conic-gradient(var(--sky) calc(var(--p)*1%), #e7e1d3 0);display:grid;place-items:center}
+  .donut .hole{width:66px;height:66px;border-radius:50%;background:#fff;display:grid;place-items:center;text-align:center}
+
+  /* sustainability ledger (Option 3) */
+  .ledgerrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #efeadd}
+  .prov{display:flex;align-items:center;gap:6px;font-size:11px;color:#5a6661}
+  .prov .nodelink{width:18px;height:1px;background:#c8c1b1}
+  .seal{font-size:10.5px;font-weight:700;color:var(--gold);background:#f3edd4;border:1px solid #d8c98c;border-radius:6px;padding:3px 7px;letter-spacing:.04em}
+
+  .footnote{margin-top:60px;color:#7d958c;font-size:12.5px;text-align:center;border-top:1px solid rgba(255,255,255,.08);padding-top:22px}
+
+  /* tab switcher for options on small focus */
+  .tabs{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ════════ MASTHEAD ════════ -->
+  <header class="masthead">
+    <div class="lead">
+      <div class="roleTag">Open Energy Platform · Role frontend exploration</div>
+      <h1>Offtaker</h1>
+      <div class="rationale">
+        Three calm bets for a non-expert buyer: <b style="color:#cfe6dc">(1)</b> a bill-to-savings guided
+        path, one decision per screen · <b style="color:#cfe6dc">(2)</b> a consolidated-PPA cockpit that
+        rolls up the whole portfolio · <b style="color:#cfe6dc">(3)</b> a sustainability ledger that makes
+        REC / Scope-2 provenance the hero. The quietest interface of any role — mobile-first throughout.
+      </div>
+    </div>
+    <div class="persona">
+      <div class="eyebrow" style="color:#7fb5a4;margin-bottom:6px">The person</div>
+      <b>Head of Energy &amp; Sustainability at a C&amp;I retail group (e.g. Goldrush).</b>
+      Buys power for dozens of sites; not a trader or lawyer. Lives between a desk and a phone in
+      site visits. Mental model is simple: <i>“my bill is too high → get cleaner, cheaper supply.”</i>
+      Needs plain language, calm pacing, and one obvious next action — never a terminal.
+    </div>
+  </header>
+
+  <!-- ════════ JOURNEY-AS-PRODUCT STRIP ════════ -->
+  <div class="strip-h">Hero journeys — packaged &amp; metered products</div>
+  <div class="journeys">
+    <div class="jcard" style="--accent:#0e7c66">
+      <span class="tier tier-L4">● Professional · L4</span>
+      <div class="jn">PPA Portfolio Management</div>
+      <div class="jchain mono">ppa_contract_chain · W22 · NERSA s34</div>
+      <div class="jdesc">Execute &amp; run power-purchase agreements: draft → negotiation → legal review → signed → active. Contracted-vs-delivered, indexation, take-or-pay all hang off this.</div>
+      <div class="meter">
+        <span class="mlbl">Metered</span>
+        <span class="mval">R 4 200</span><span class="mper">/ active PPA · month</span>
+      </div>
+    </div>
+    <div class="jcard" style="--accent:#9a6212">
+      <span class="tier tier-L4">● Professional · L4</span>
+      <div class="jn">Curtailment / Take-or-Pay Claim</div>
+      <div class="jchain mono">curtailment_claim · W46 · deemed-energy</div>
+      <div class="jdesc">Recover money for energy you contracted but couldn't take or that was curtailed: claim_lodged → validated → quantum_agreed → settled, with dispute &amp; arbitration branches.</div>
+      <div class="meter">
+        <span class="mlbl">Metered</span>
+        <span class="mval">R 1 850</span><span class="mper">/ claim filed</span>
+      </div>
+    </div>
+    <div class="jcard" style="--accent:#8a6d1f">
+      <span class="tier tier-L5">★ Regulator-grade · L5</span>
+      <div class="jn">REC Retirement / Carbon Offset</div>
+      <div class="jchain mono">rec_lifecycle W70 · carbon_offset_claim</div>
+      <div class="jdesc">Retire I-REC / SAREC attribute certificates for a tamper-evident Scope-2 zero-carbon claim, plus Carbon Tax Act offset claims — with certified export.</div>
+      <div class="meter">
+        <span class="mlbl">Metered</span>
+        <span class="mval">R 980</span><span class="mper">/ certified Scope-2 claim</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ OPTION 1 — GUIDED BILL-TO-SAVINGS ════════ -->
+  <section class="opt">
+    <div class="opt-head">
+      <span class="opt-num">1</span>
+      <h2>“Lower My Bill” — guided path</h2>
+    </div>
+    <p class="opt-concept">A single plain-language journey from a high bill to cleaner, cheaper supply.
+      One decision per screen, a visible step counter, and an AI assist that explains <i>why</i> before
+      you commit. Built for the buyer who has never seen an energy terminal and never wants to.</p>
+
+    <div class="frames">
+      <!-- desktop -->
+      <div class="desk">
+        <div class="deskbar">
+          <span class="dot" style="background:#e06c5b"></span><span class="dot" style="background:#e4b34a"></span><span class="dot" style="background:#69b06b"></span>
+          <span class="deskurl">oe.vantax.co.za/offtaker/lower-my-bill</span>
+        </div>
+        <div class="canvas pad">
+          <div class="stepper" style="margin-bottom:18px">
+            <span>Lower my bill</span>·<b>Step 2 of 4 — Choose how to save</b>·<span style="color:#b7beb8">Pick · Review · Send</span>
+          </div>
+          <div class="grid2" style="gap:22px;align-items:start">
+            <div>
+              <div class="bigq">Your March bill was <span class="num" style="color:var(--rust)">R 1.42m</span> across 38 sites.<br>How would you like to cut it?</div>
+              <div class="choice">
+                <button class="choicebtn sel">
+                  <span><span class="ct">Buy more solar under a PPA</span><span class="cd">Replace ~30% of grid load · est. saving R 318k/mo · cleaner</span></span>
+                  <span class="arr">→</span>
+                </button>
+                <button class="choicebtn">
+                  <span><span class="ct">Switch eligible sites to a green tariff</span><span class="cd">No new contract · est. saving R 96k/mo</span></span>
+                  <span class="arr">→</span>
+                </button>
+                <button class="choicebtn">
+                  <span><span class="ct">File a curtailment / take-or-pay claim</span><span class="cd">2 sites under-delivered in Feb · recover ~R 210k</span></span>
+                  <span class="arr">→</span>
+                </button>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div class="ai">
+                <div class="ahd">◇ AI suggestion</div>
+                <div class="why">Sites <b>JHB-North</b> & <b>PTA-Central</b> have flat midday load and high TOU peaks — a solar PPA there beats a green tariff on both cost and carbon. I drafted an RFP for 12 MW.</div>
+                <button class="accept">Use this draft →</button>
+              </div>
+              <div class="card ppad">
+                <div class="eyebrow">What happens next</div>
+                <div class="rail" style="margin-top:10px">
+                  <span class="step done"><span class="dot2"></span>draft</span><span class="bar done"></span>
+                  <span class="step now"><span class="dot2"></span>negotiation</span><span class="bar"></span>
+                  <span class="step"><span class="dot2"></span>legal_review</span><span class="bar"></span>
+                  <span class="step"><span class="dot2"></span>signed</span><span class="bar"></span>
+                  <span class="step"><span class="dot2"></span>active</span>
+                </div>
+                <div class="sub" style="margin-top:12px">This is the <b>PPA Portfolio Management</b> journey (L4). You'll be guided through each step — we'll only ask for one thing at a time.</div>
+              </div>
+              <button class="btn btn-pri" style="align-self:flex-start">Continue — review the deal →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- phone -->
+      <div class="phone"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span class="r">●●● ▮▮ 🔋</span></div>
+        <div class="pwahint">↓ Add to Home Screen · works offline on site</div>
+        <div class="pbody">
+          <div class="ppad">
+            <div class="stepper" style="margin-bottom:14px"><span>Step</span> <b>2 of 4</b> <span>· choose how to save</span></div>
+            <div class="bigq" style="font-size:21px">March bill <span class="num" style="color:var(--rust)">R1.42m</span>.<br>How would you like to cut it?</div>
+            <div class="choice" style="margin-top:14px">
+              <button class="choicebtn sel" style="padding:14px">
+                <span><span class="ct">Buy solar under a PPA</span><span class="cd">−R318k/mo · cleaner</span></span><span class="arr">→</span>
+              </button>
+              <button class="choicebtn" style="padding:14px">
+                <span><span class="ct">Switch to green tariff</span><span class="cd">−R96k/mo · no contract</span></span><span class="arr">→</span>
+              </button>
+              <button class="choicebtn" style="padding:14px">
+                <span><span class="ct">File a claim</span><span class="cd">recover ~R210k</span></span><span class="arr">→</span>
+              </button>
+            </div>
+            <div class="ai" style="margin-top:14px">
+              <div class="ahd">◇ AI</div>
+              <div class="why" style="margin-bottom:6px">JHB-North fits solar best. Drafted a 12 MW RFP.</div>
+              <button class="accept">Use draft</button>
+            </div>
+          </div>
+          <button class="thumbcta">Continue — review deal →</button>
+        </div>
+        <nav class="bottomnav">
+          <a href="#" aria-current="page"><span class="ic">◎</span>Lower bill</a>
+          <a href="#"><span class="ic">▤</span>PPAs</a>
+          <a href="#"><span class="ic">◈</span>Bills</a>
+          <a href="#"><span class="ic">⬓</span>Carbon</a>
+        </nav>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ════════ OPTION 2 — CONSOLIDATED PPA COCKPIT ════════ -->
+  <section class="opt">
+    <div class="opt-head">
+      <span class="opt-num">2</span>
+      <h2>Portfolio Cockpit — contracted vs delivered</h2>
+    </div>
+    <p class="opt-concept">A master rollup of every PPA: total contracted MW, blended price, and delivered-vs-contracted
+      at a glance, with the take-or-pay &amp; curtailment exposure surfaced before it becomes a problem. Denser than
+      Option 1, but still plain-spoken — the cockpit a buyer opens every morning.</p>
+
+    <div class="frames">
+      <!-- desktop -->
+      <div class="desk">
+        <div class="deskbar">
+          <span class="dot" style="background:#e06c5b"></span><span class="dot" style="background:#e4b34a"></span><span class="dot" style="background:#69b06b"></span>
+          <span class="deskurl">oe.vantax.co.za/offtaker/portfolio</span>
+        </div>
+        <div class="canvas pad">
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px">
+            <div><div class="eyebrow">PPA portfolio · Goldrush Retail Group</div><div class="h-sm">12 active agreements · 4 generators</div></div>
+            <button class="btn btn-ghost">+ New PPA</button>
+          </div>
+          <div class="grid3" style="margin-bottom:16px">
+            <div class="kpi"><div class="k">Contracted</div><div class="v">86.4 MW</div><div class="d sub">across 38 delivery points</div></div>
+            <div class="kpi"><div class="k">Blended price</div><div class="v">R 1.04<span style="font-size:14px">/kWh</span></div><div class="d up">▼ 11% vs grid TOU</div></div>
+            <div class="kpi"><div class="k">Delivered MTD</div><div class="v">94.2%</div><div class="d dn">▼ 2 PPAs under contract</div></div>
+          </div>
+
+          <div class="card ppad" style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <div class="eyebrow">Contracted vs delivered — this month</div>
+              <div class="legendline">
+                <span><i class="sw" style="background:var(--leaf)"></i>delivered</span>
+                <span><i class="sw" style="background:var(--amber)"></i>shortfall (take-or-pay)</span>
+                <span><i class="sw" style="background:#e7e1d3"></i>contracted headroom</span>
+              </div>
+            </div>
+            <table>
+              <thead><tr><th>PPA / generator</th><th>Contracted</th><th>Delivered</th><th>Fill</th><th>State</th><th>Exposure</th></tr></thead>
+              <tbody>
+                <tr><td><b>Goldrush Solar I</b><div class="sub">Karoo PV · NERSA s34</div></td><td>22.0 MW</td><td>21.6 MW</td>
+                  <td style="width:160px"><div class="pbar"><i style="width:98%;background:var(--leaf)"></i></div></td>
+                  <td><span class="pill pill-ok">● active</span></td><td class="sub">—</td></tr>
+                <tr><td><b>Highveld Wind</b><div class="sub">Mpumalanga · CfD</div></td><td>30.0 MW</td><td>26.4 MW</td>
+                  <td><div class="pbar"><i style="width:88%;background:var(--leaf)"></i><i style="width:12%;background:var(--amber)"></i></div></td>
+                  <td><span class="pill pill-watch">● shortfall</span></td><td style="color:var(--amber);font-weight:700">R 188k ToP</td></tr>
+                <tr><td><b>Cape Coastal PV</b><div class="sub">W Cape · curtailed</div></td><td>18.4 MW</td><td>14.9 MW</td>
+                  <td><div class="pbar"><i style="width:81%;background:var(--leaf)"></i><i style="width:19%;background:var(--amber)"></i></div></td>
+                  <td><span class="pill pill-disp">● curtailed</span></td><td style="color:var(--rust);font-weight:700">claim R 210k</td></tr>
+                <tr><td><b>Free State Solar II</b><div class="sub">in legal review</div></td><td>16.0 MW</td><td>—</td>
+                  <td><div class="pbar"><i style="width:0%"></i></div></td>
+                  <td><span class="pill pill-act">● legal_review</span></td><td class="sub">pending</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="grid2">
+            <div class="ai">
+              <div class="ahd">◇ AI — exposure alert</div>
+              <div class="why">Highveld Wind is in a <b>cure_window</b> until 5 Apr. If it stays short, your take-or-pay invoice is ~R 188k. I can pre-draft the shortfall notice now so you don't miss the window.</div>
+              <button class="accept">Draft ToP notice →</button>
+            </div>
+            <div class="card ppad">
+              <div class="eyebrow">Cape Coastal — curtailment claim</div>
+              <div class="rail" style="margin-top:10px">
+                <span class="step done"><span class="dot2"></span>claim_lodged</span><span class="bar done"></span>
+                <span class="step now"><span class="dot2"></span>validated</span><span class="bar"></span>
+                <span class="step"><span class="dot2"></span>quantum_agreed</span><span class="bar"></span>
+                <span class="step"><span class="dot2"></span>settled</span>
+              </div>
+              <button class="btn btn-pri" style="margin-top:12px">Open claim →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- phone -->
+      <div class="phone"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span class="r">●●● ▮▮ 🔋</span></div>
+        <div class="pwahint">● Live · synced 2 min ago</div>
+        <div class="pbody" style="overflow:auto">
+          <div class="ppad">
+            <div class="eyebrow">Portfolio</div>
+            <div class="h-sm" style="font-size:19px;margin-bottom:12px">86.4 MW contracted</div>
+            <div class="grid2" style="gap:10px;margin-bottom:14px">
+              <div class="kpi" style="padding:11px"><div class="k">Blended</div><div class="v" style="font-size:21px">R1.04</div><div class="d up">▼11% vs grid</div></div>
+              <div class="kpi" style="padding:11px"><div class="k">Delivered</div><div class="v" style="font-size:21px">94.2%</div><div class="d dn">2 short</div></div>
+            </div>
+            <div class="eyebrow" style="margin-bottom:8px">Needs you</div>
+            <div class="card ppad" style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between"><b>Highveld Wind</b><span class="pill pill-watch">shortfall</span></div>
+              <div class="pbar" style="margin:9px 0"><i style="width:88%;background:var(--leaf)"></i><i style="width:12%;background:var(--amber)"></i></div>
+              <div class="sub">Cure window to 5 Apr · <b style="color:var(--amber)">R188k ToP</b></div>
+            </div>
+            <div class="card ppad">
+              <div style="display:flex;justify-content:space-between"><b>Cape Coastal PV</b><span class="pill pill-disp">curtailed</span></div>
+              <div class="sub" style="margin-top:6px">Claim R210k · state <b>validated</b></div>
+            </div>
+          </div>
+          <button class="thumbcta">Draft ToP notice →</button>
+        </div>
+        <nav class="bottomnav">
+          <a href="#" aria-current="page"><span class="ic">▤</span>Portfolio</a>
+          <a href="#"><span class="ic">◈</span>Delivery</a>
+          <a href="#"><span class="ic">◉</span>Claims</a>
+          <a href="#"><span class="ic">⬓</span>Carbon</a>
+        </nav>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ════════ OPTION 3 — SUSTAINABILITY LEDGER ════════ -->
+  <section class="opt">
+    <div class="opt-head">
+      <span class="opt-num">3</span>
+      <h2>Sustainability Ledger — Scope-2 provenance</h2>
+    </div>
+    <p class="opt-concept">For the ESG-minded buyer: RECs, carbon offsets and the Scope-2 zero-carbon claim are
+      the hero. Every retired certificate traces back to a generator, a meter reading and a tamper-evident audit
+      seal — the regulator-grade (L5) journey, presented as a clean green ledger rather than a compliance form.</p>
+
+    <div class="frames">
+      <!-- desktop -->
+      <div class="desk">
+        <div class="deskbar">
+          <span class="dot" style="background:#e06c5b"></span><span class="dot" style="background:#e4b34a"></span><span class="dot" style="background:#69b06b"></span>
+          <span class="deskurl">oe.vantax.co.za/offtaker/sustainability</span>
+        </div>
+        <div class="canvas pad" style="background:linear-gradient(180deg,#f6f3ec,#eef4ef)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+            <div><div class="eyebrow" style="color:var(--sky)">Scope-2 claim · FY2026</div><div class="h-sm">Renewable provenance ledger</div></div>
+            <span class="seal">★ L5 · TAMPER-EVIDENT · CERTIFIED EXPORT</span>
+          </div>
+          <div class="grid3" style="margin-bottom:18px">
+            <div class="card ppad" style="display:flex;gap:14px;align-items:center">
+              <div class="donut" style="--p:72"><div class="hole"><div><div class="num" style="font-size:20px;color:var(--sky)">72%</div><div class="sub" style="font-size:10px">renewable</div></div></div></div>
+              <div><div class="eyebrow">Coverage</div><div class="sub">of 142 GWh consumed</div><div class="sub" style="margin-top:4px">target 100% by FY28</div></div>
+            </div>
+            <div class="kpi"><div class="k">RECs retired</div><div class="v">102 480</div><div class="d sub">MWh · I-REC + SAREC</div></div>
+            <div class="kpi"><div class="k">Offset claimed</div><div class="v">38 200 t</div><div class="d sub">CO₂e · Carbon Tax Act</div></div>
+          </div>
+
+          <div class="card ppad">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <div class="eyebrow">Retirement ledger — full provenance chain</div>
+              <span class="pill pill-l5">● rec_lifecycle · W70</span>
+            </div>
+            <div class="ledgerrow">
+              <div style="flex:1">
+                <div><b>REC-ZA-0094213</b> · 21 600 MWh</div>
+                <div class="prov"><span>Goldrush Solar I</span><span class="nodelink"></span><span>meter M-22A · 14 Mar</span><span class="nodelink"></span><span>issued 22 Mar</span><span class="nodelink"></span><span style="color:var(--leaf)">● retired</span></div>
+              </div>
+              <span class="seal">SHA ✓ 8f3c…a2</span>
+            </div>
+            <div class="ledgerrow">
+              <div style="flex:1">
+                <div><b>REC-ZA-0094088</b> · 18 200 MWh</div>
+                <div class="prov"><span>Highveld Wind</span><span class="nodelink"></span><span>meter M-30 · 11 Mar</span><span class="nodelink"></span><span>issued 19 Mar</span><span class="nodelink"></span><span style="color:var(--leaf)">● retired</span></div>
+              </div>
+              <span class="seal">SHA ✓ c1d9…77</span>
+            </div>
+            <div class="ledgerrow" style="border-bottom:none">
+              <div style="flex:1">
+                <div><b>REC-ZA-0094301</b> · 9 400 MWh</div>
+                <div class="prov"><span>Cape Coastal PV</span><span class="nodelink"></span><span>meter M-11 · 17 Mar</span><span class="nodelink"></span><span style="color:var(--teal-deep)">● transferred</span></div>
+              </div>
+              <span class="pill pill-act">awaiting retire</span>
+            </div>
+          </div>
+
+          <div class="grid2" style="margin-top:14px">
+            <div class="ai">
+              <div class="ahd">◇ AI — close the gap</div>
+              <div class="why">You're 28% short of 100% renewable. Retiring the <b>9 400 MWh</b> REC-ZA-0094301 now lifts you to 78% and is ready to certify — its provenance chain is complete.</div>
+              <button class="accept">Retire &amp; certify →</button>
+            </div>
+            <div class="card ppad">
+              <div class="eyebrow">Carbon offset claim</div>
+              <div class="rail" style="margin-top:10px">
+                <span class="step done"><span class="dot2"></span>device_registered</span><span class="bar done"></span>
+                <span class="step done"><span class="dot2"></span>metered</span><span class="bar done"></span>
+                <span class="step done"><span class="dot2"></span>issued</span><span class="bar done"></span>
+                <span class="step now"><span class="dot2"></span>retired</span>
+              </div>
+              <button class="btn btn-pri" style="margin-top:12px">Export certified statement →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- phone -->
+      <div class="phone"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span class="r">●●● ▮▮ 🔋</span></div>
+        <div class="pwahint" style="background:#e3eef2;color:var(--sky);border-color:#bcd9e2">★ Certified Scope-2 statement ready</div>
+        <div class="pbody" style="overflow:auto;background:linear-gradient(180deg,#f6f3ec,#eef4ef)">
+          <div class="ppad">
+            <div class="eyebrow" style="color:var(--sky)">FY2026 Scope-2</div>
+            <div class="h-sm" style="font-size:19px">Renewable provenance</div>
+            <div style="display:flex;justify-content:center;margin:16px 0">
+              <div class="donut" style="--p:72;width:128px;height:128px"><div class="hole" style="width:88px;height:88px"><div><div class="num" style="font-size:26px;color:var(--sky)">72%</div><div class="sub" style="font-size:10px">renewable</div></div></div></div>
+            </div>
+            <div class="grid2" style="gap:10px;margin-bottom:14px">
+              <div class="kpi" style="padding:11px"><div class="k">RECs retired</div><div class="v" style="font-size:19px">102 480</div><div class="d sub">MWh</div></div>
+              <div class="kpi" style="padding:11px"><div class="k">Offset</div><div class="v" style="font-size:19px">38 200t</div><div class="d sub">CO₂e</div></div>
+            </div>
+            <div class="card ppad">
+              <div style="display:flex;justify-content:space-between"><b>REC-ZA-0094301</b><span class="seal">SHA ✓</span></div>
+              <div class="prov" style="margin-top:6px;flex-wrap:wrap">Cape Coastal PV<span class="nodelink"></span>meter M-11<span class="nodelink"></span>issued</div>
+              <div class="sub" style="margin-top:6px">9 400 MWh · <b style="color:var(--teal-deep)">awaiting retire</b></div>
+            </div>
+            <div class="ai" style="margin-top:12px">
+              <div class="ahd">◇ AI</div>
+              <div class="why" style="margin-bottom:6px">Retire this REC → 78% renewable, ready to certify.</div>
+              <button class="accept">Retire &amp; certify</button>
+            </div>
+          </div>
+          <button class="thumbcta" style="background:var(--sky);box-shadow:0 10px 26px rgba(31,111,139,.4)">★ Export certified statement</button>
+        </div>
+        <nav class="bottomnav">
+          <a href="#"><span class="ic">▤</span>Portfolio</a>
+          <a href="#"><span class="ic">◉</span>Claims</a>
+          <a href="#" aria-current="page"><span class="ic">⬓</span>Carbon</a>
+          <a href="#"><span class="ic">▤</span>Reports</a>
+        </nav>
+      </div></div>
+    </div>
+  </section>
+
+  <div class="footnote">
+    Open Energy Platform · Offtaker role exploration · evaluation mockup, not wired into the app.
+    Journeys &amp; states sourced from <span class="mono">roleData.ts</span> (W22 · W46 · W70).
+  </div>
+
+</div>
+</body>
+</html>

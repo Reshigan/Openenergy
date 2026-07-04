@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lender — Open Energy Platform · Frontend Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* sober DFI / project-finance palette — slate ink + DFI teal + signal ambers/reds */
+    --ink:#0f1822; --ink-2:#1b2733; --paper:#f4f2ec; --paper-2:#ece8df;
+    --line:#cfc9bd; --line-2:#3a4654;
+    --teal:#0e6e6e; --teal-d:#0a4f4f;
+    --gold:#9a6b12; --amber:#b4720a; --red:#9c2b2b; --green:#1f6b45;
+    --watch:#a8550e;
+    --mut:#5c6470; --mut-d:#9aa6b2;
+    --radius:6px;
+    font-synthesis:none; -webkit-font-smoothing:antialiased;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'IBM Plex Sans',system-ui,sans-serif;background:#dcd8cd;color:var(--ink);line-height:1.45;}
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+  .wrap{max-width:1360px;margin:0 auto;padding:32px 24px 80px;}
+
+  /* ---------- page header ---------- */
+  .phead{border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:26px 28px;position:relative;overflow:hidden}
+  .phead:before{content:"";position:absolute;inset:0;background:
+    repeating-linear-gradient(90deg,transparent 0 38px,rgba(14,110,110,.04) 38px 39px);pointer-events:none}
+  .kicker{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--teal-d);font-weight:600}
+  h1{font-family:'Newsreader',serif;font-size:40px;font-weight:600;letter-spacing:-.01em;margin:6px 0 4px;line-height:1.05}
+  .h1tag{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mut);background:var(--paper-2);border:1px solid var(--line);padding:2px 8px;border-radius:4px;vertical-align:middle;margin-left:10px}
+  .persona{max-width:760px;color:var(--ink-2);font-size:14.5px;margin-top:10px}
+  .rationale{max-width:820px;color:var(--mut);font-size:13px;margin-top:10px;border-left:3px solid var(--teal);padding-left:12px}
+
+  /* ---------- journey-as-product strip ---------- */
+  .jstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+  .jcard{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:16px 16px 14px;position:relative}
+  .jcard h3{font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .jcard .chain{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--mut);margin-top:2px}
+  .jcard p{font-size:12.5px;color:var(--ink-2);margin-top:8px;min-height:34px}
+  .tier{display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:4px}
+  .tier.f{background:#e7eeea;color:#1b5b40;border:1px solid #b9d4c6}
+  .tier.p{background:#e6efef;color:var(--teal-d);border:1px solid #aacece}
+  .tier.r{background:#efe7d6;color:#7a5008;border:1px solid #d8c49a}
+  .meter{margin-top:12px;border-top:1px dashed var(--line);padding-top:9px;display:flex;justify-content:space-between;align-items:baseline}
+  .meter .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
+  .meter .val{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--ink)}
+
+  /* ---------- option tabs ---------- */
+  .tabs{display:flex;gap:8px;margin:38px 0 18px;flex-wrap:wrap;position:sticky;top:0;z-index:20;background:#dcd8cd;padding:10px 0;border-bottom:1px solid var(--line)}
+  .tab{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:600;letter-spacing:.04em;padding:9px 16px;border:1px solid var(--line);background:var(--paper);border-radius:6px;cursor:pointer;color:var(--ink-2)}
+  .tab[aria-selected="true"]{background:var(--ink);color:#f4f2ec;border-color:var(--ink)}
+  .tab small{display:block;font-family:'IBM Plex Sans';font-weight:400;font-size:10.5px;color:inherit;opacity:.7;letter-spacing:0;text-transform:none}
+
+  .opt{display:none}
+  .opt.on{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+  .opthead{margin-bottom:16px}
+  .opthead .name{font-family:'Newsreader',serif;font-size:24px;font-weight:600}
+  .opthead .concept{font-size:13.5px;color:var(--mut);max-width:760px;margin-top:3px}
+
+  .frames{display:grid;grid-template-columns:1fr 392px;gap:24px;align-items:start}
+  @media(max-width:1180px){.frames{grid-template-columns:1fr}}
+
+  /* ---------- desktop frame chrome ---------- */
+  .desk{border:1px solid var(--line-2);border-radius:9px;overflow:hidden;background:var(--ink);box-shadow:0 14px 40px rgba(15,24,34,.22)}
+  .deskbar{height:32px;background:#0a121b;display:flex;align-items:center;gap:7px;padding:0 12px;border-bottom:1px solid #223141}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .deskbar .url{margin-left:10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--mut-d);background:#111c27;padding:3px 12px;border-radius:5px;flex:1}
+  .deskbody{background:var(--paper);min-height:560px}
+
+  /* ---------- phone frame ---------- */
+  .phonewrap{position:sticky;top:80px}
+  .phone{width:392px;border:10px solid #0a121b;border-radius:42px;overflow:hidden;background:#0c1620;box-shadow:0 16px 44px rgba(15,24,34,.3);position:relative}
+  .statusbar{height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#cfd6dd;background:#0a121b}
+  .notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:96px;height:20px;background:#0a121b;border-radius:14px;z-index:5}
+  .pbody{background:var(--paper);min-height:720px;position:relative}
+  .pwa-hint{display:flex;align-items:center;gap:8px;font-size:11px;background:#e6efef;color:var(--teal-d);padding:6px 14px;border-bottom:1px solid #aacece}
+  .pwa-hint .off{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mut)}
+  .botnav{position:absolute;bottom:0;left:0;right:0;height:62px;background:#0a121b;display:flex;align-items:center;justify-content:space-around;padding-bottom:6px}
+  .botnav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;color:#7e8c9a;text-decoration:none;font-family:'IBM Plex Mono'}
+  .botnav a.act{color:#7fd4d4}
+  .botnav .ic{font-size:18px;line-height:1}
+  .fab{position:absolute;bottom:78px;left:16px;right:16px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:15px;color:#fff;background:var(--teal);box-shadow:0 6px 18px rgba(14,110,110,.45);text-decoration:none}
+
+  /* ---------- generic UI atoms reused inside frames ---------- */
+  .topnav{height:46px;background:var(--ink);display:flex;align-items:center;padding:0 16px;gap:18px;color:#cdd6df}
+  .brand{font-family:'Newsreader',serif;font-size:16px;font-weight:600;color:#fff;letter-spacing:-.01em}
+  .brand b{color:var(--teal);font-weight:600}
+  .topnav nav{display:flex;gap:16px;font-family:'IBM Plex Mono';font-size:11.5px;color:#8b97a4}
+  .topnav nav .a{color:#fff;border-bottom:2px solid var(--teal);padding-bottom:2px}
+  .topnav .who{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:11px;color:#9aa6b2}
+  .topnav .who .av{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#0e6e6e,#0a4f4f);display:grid;place-items:center;font-size:10px;color:#fff;font-weight:600}
+
+  .pad{padding:16px 18px}
+  .row{display:flex;gap:14px}
+  .col{flex:1}
+  .sech{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--mut);font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .sech .ct{font-family:'IBM Plex Mono';background:var(--paper-2);border:1px solid var(--line);border-radius:4px;padding:0 6px;font-size:10px;color:var(--ink-2)}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .kpi{border:1px solid var(--line);background:var(--paper);border-radius:7px;padding:11px 12px}
+  .kpi .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+  .kpi .v{font-family:'IBM Plex Mono';font-size:21px;font-weight:600;margin-top:3px}
+  .kpi .d{font-size:11px;margin-top:2px}
+  .up{color:var(--green)} .dn{color:var(--red)} .fl{color:var(--watch)}
+
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{text-align:left;font-family:'IBM Plex Mono';font-weight:500;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);padding:7px 8px;border-bottom:1px solid var(--line)}
+  td{padding:8px;border-bottom:1px solid var(--paper-2);vertical-align:middle}
+  tr:hover td{background:var(--paper-2)}
+  .pill{display:inline-block;font-family:'IBM Plex Mono';font-size:10px;font-weight:600;padding:2px 7px;border-radius:11px;letter-spacing:.02em}
+  .pill.ok{background:#e3efe8;color:#1b5b40} .pill.watch{background:#f5e6d2;color:#8a4a08}
+  .pill.brk{background:#f3dada;color:#8a2222} .pill.rev{background:#e6efef;color:#0a4f4f}
+  .pill.pend{background:#ece8df;color:#5c6470}
+
+  .bar{height:7px;background:var(--paper-2);border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+  .bar i{display:block;height:100%}
+  .btn{font-family:'IBM Plex Sans';font-size:12.5px;font-weight:600;border:1px solid var(--teal);background:var(--teal);color:#fff;border-radius:6px;padding:7px 14px;cursor:pointer}
+  .btn.ghost{background:transparent;color:var(--teal-d);border-color:var(--teal)}
+  .btn.dng{background:var(--red);border-color:var(--red)}
+  .btn.warn{background:transparent;color:var(--gold);border-color:var(--gold)}
+
+  /* chain rail (state machine) */
+  .rail{display:flex;align-items:center;gap:0;flex-wrap:wrap}
+  .rail .st{font-family:'IBM Plex Mono';font-size:10px;padding:4px 9px;border:1px solid var(--line);background:var(--paper);color:var(--mut);border-radius:13px;white-space:nowrap}
+  .rail .st.done{background:#e3efe8;color:#1b5b40;border-color:#b9d4c6}
+  .rail .st.now{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:600}
+  .rail .st.term{background:#f3dada;color:#8a2222;border-color:#e0b3b3}
+  .rail .sep{width:14px;height:1px;background:var(--line);margin:0 2px}
+
+  /* heatmap */
+  .heat{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+  .cell{aspect-ratio:1.6;border-radius:4px;display:grid;place-items:center;font-family:'IBM Plex Mono';font-size:10px;color:#fff;font-weight:600}
+
+  /* radar / list of breaches */
+  .breach{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:var(--paper);margin-bottom:7px}
+  .breach .sev{width:6px;align-self:stretch;border-radius:3px}
+  .ai{border:1px dashed var(--teal);background:#eef5f5;border-radius:7px;padding:10px 12px;font-size:12px;color:var(--teal-d);position:relative}
+  .ai .why{font-size:10.5px;color:var(--mut);margin-top:4px}
+  .ai .acc{position:absolute;top:9px;right:10px;font-family:'IBM Plex Mono';font-size:10.5px;background:var(--teal);color:#fff;border:none;border-radius:5px;padding:4px 9px;cursor:pointer;font-weight:600}
+
+  /* dossier / file UI */
+  .file{border:1px solid var(--line);background:var(--paper);border-radius:7px;overflow:hidden}
+  .filehd{background:var(--ink-2);color:#dce4ec;padding:10px 14px;display:flex;align-items:center;gap:10px;font-family:'IBM Plex Mono';font-size:12px}
+  .seal{font-family:'IBM Plex Mono';font-size:9.5px;color:#1b5b40;background:#e3efe8;border:1px solid #b9d4c6;border-radius:4px;padding:1px 6px}
+  .docrow{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--paper-2);font-size:12px}
+  .docrow .hash{font-family:'IBM Plex Mono';font-size:10px;color:var(--mut)}
+  .docrow .vchk{color:var(--green);font-size:13px}
+
+  /* approval queue card */
+  .qcard{border:1px solid var(--line);border-left:4px solid var(--teal);background:var(--paper);border-radius:7px;padding:13px 15px;margin-bottom:11px}
+  .qcard.brk{border-left-color:var(--red)} .qcard.watch{border-left-color:var(--watch)}
+  .qmeta{display:flex;gap:14px;font-size:11px;color:var(--mut);margin-top:6px;flex-wrap:wrap}
+  .qmeta b{color:var(--ink);font-family:'IBM Plex Mono'}
+  .qacts{display:flex;gap:8px;margin-top:11px}
+  .sla{font-family:'IBM Plex Mono';font-size:10.5px;font-weight:600}
+  .sla.tight{color:var(--red)} .sla.ok{color:var(--green)}
+
+  .mini{font-size:11px} .muted{color:var(--mut)}
+  .note{font-size:11px;color:var(--mut);margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--mut);margin-top:10px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ PAGE HEADER ============ -->
+  <header class="phead">
+    <div class="kicker">Open Energy Platform · Frontend Exploration</div>
+    <h1>Lender<span class="h1tag">role: lender · project finance</span></h1>
+    <p class="persona"><b>Who:</b> A project-finance credit officer at a DFI or commercial bank — books R200m–R3bn senior debt against REIPPPP / private-wire IPPs. Lives in covenants, DSCR/LLCR, reserve accounts (DSRA/MRA), IE certifications, security perfection, IFRS9 staging and Equator Principles. <b>Environment:</b> dual-monitor desk, deep concentration, audit-trail obsessed, decisions go to credit committee. <b>Device:</b> desktop for analysis and certified exports; phone for time-boxed approvals and watch-list alerts on the move.</p>
+    <p class="rationale"><b>Why these directions:</b> the lender's value is judgment under evidence — so all three are sober, data-dense and tamper-evident. They differ in <i>what the day organises around</i>: portfolio risk (console), the facility-as-file (dossier), or the queue of gated decisions (command center).</p>
+
+    <!-- journey-as-product strip -->
+    <div class="jstrip">
+      <article class="jcard">
+        <div style="display:flex;justify-content:space-between;align-items:start"><div><h3>Drawdown approval</h3><div class="chain mono">chain: drawdown · W30 (IE + CP gated)</div></div><span class="tier p">L4 · Professional</span></div>
+        <p>IE-review → CP test → lender approval → disbursement, with clawback on UoP breach and SARB large-exposure check.</p>
+        <div class="meter"><span class="lbl">Metered</span><span class="val">per drawdown approved</span></div>
+      </article>
+      <article class="jcard">
+        <div style="display:flex;justify-content:space-between;align-items:start"><div><h3>Covenant workout</h3><div class="chain mono">covenant_workout + covenant_certificate W38 · DSCR W86</div></div><span class="tier p">L4 · Professional</span></div>
+        <p>Breach → investigation → waiver / cure / lock-up, timer-driven with cure deadlines and inline AI advisor.</p>
+        <div class="meter"><span class="lbl">Metered</span><span class="val">per active facility</span></div>
+      </article>
+      <article class="jcard">
+        <div style="display:flex;justify-content:space-between;align-items:start"><div><h3>Restructure &amp; A&amp;E</h3><div class="chain mono">chain: loan_restructure · W108 (LMA Amend &amp; Extend)</div></div><span class="tier r">L5 · Regulator-grade</span></div>
+        <p>Trigger → proposal → credit-committee gate → term sheet → effective date, with tamper-evident audit + IFRS9 certified export.</p>
+        <div class="meter"><span class="lbl">Metered</span><span class="val">per certified IFRS9 export</span></div>
+      </article>
+    </div>
+  </header>
+
+  <!-- ============ OPTION TABS ============ -->
+  <div class="tabs" role="tablist" aria-label="Design directions">
+    <button class="tab" role="tab" aria-selected="true" aria-controls="o1" id="t1" onclick="pick(1)">Option 1<small>Risk-control console</small></button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="o2" id="t2" onclick="pick(2)">Option 2<small>Deal-dossier (the file)</small></button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="o3" id="t3" onclick="pick(3)">Option 3<small>Approvals command center</small></button>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- OPTION 1 — INSTITUTIONAL RISK-CONTROL CONSOLE -->
+  <!-- ====================================================================== -->
+  <section class="opt on" id="o1" role="tabpanel" aria-labelledby="t1">
+    <div class="opthead">
+      <div class="name">Option 1 — Institutional Risk-Control Console</div>
+      <p class="concept">The whole book on one screen: a sector × covenant <b>risk heatmap</b> and a <b>covenant breach radar</b> that triages the portfolio before you touch a single file.</p>
+    </div>
+    <div class="frames">
+      <!-- desktop -->
+      <div class="desk">
+        <div class="deskbar"><span class="dot" style="background:#e0584f"></span><span class="dot" style="background:#e6b23c"></span><span class="dot" style="background:#3fa86a"></span><span class="url mono">oe.vantax.co.za/lender-suite/risk</span></div>
+        <div class="deskbody">
+          <div class="topnav">
+            <span class="brand">Open<b>Energy</b> · Lender</span>
+            <nav><span class="a">Risk</span><span>Facilities</span><span>Drawdowns</span><span>Covenants</span><span>Enforcement</span><span>Reports</span></nav>
+            <span class="who"><span>Credit · DFI desk</span><span class="av">PL</span></span>
+          </div>
+          <div class="pad">
+            <div class="kpis">
+              <div class="kpi"><div class="l">Portfolio NAV</div><div class="v">R 4.82bn</div><div class="d up">▲ 1.4% qoq</div></div>
+              <div class="kpi"><div class="l">Active facilities</div><div class="v">38</div><div class="d muted">metered · per facility</div></div>
+              <div class="kpi"><div class="l">Watch-list</div><div class="v fl">5</div><div class="d fl">2 new this wk</div></div>
+              <div class="kpi"><div class="l">Wtd. DSCR</div><div class="v">1.34×</div><div class="d dn">▼ from 1.41×</div></div>
+            </div>
+
+            <div class="row" style="margin-top:16px">
+              <div class="col">
+                <div class="sech">Risk heatmap <span class="ct">sector × covenant headroom</span></div>
+                <div class="heat" aria-label="risk heatmap, 8 columns of facility exposure tiles colored by covenant headroom">
+                  <div class="cell" style="background:#1f6b45">PV-01</div>
+                  <div class="cell" style="background:#2f7e52">PV-04</div>
+                  <div class="cell" style="background:#cf9a32;color:#2a2107">WND-2</div>
+                  <div class="cell" style="background:#1f6b45">PV-09</div>
+                  <div class="cell" style="background:#9c2b2b">WND-7</div>
+                  <div class="cell" style="background:#2f7e52">BESS3</div>
+                  <div class="cell" style="background:#b4720a;color:#2a1c03">CSP-1</div>
+                  <div class="cell" style="background:#1f6b45">PV-12</div>
+                  <div class="cell" style="background:#2f7e52">PV-15</div>
+                  <div class="cell" style="background:#1f6b45">WND-3</div>
+                  <div class="cell" style="background:#9c2b2b">PV-22</div>
+                  <div class="cell" style="background:#2f7e52">BESS1</div>
+                  <div class="cell" style="background:#cf9a32;color:#2a2107">WND-9</div>
+                  <div class="cell" style="background:#1f6b45">PV-18</div>
+                  <div class="cell" style="background:#2f7e52">CSP-2</div>
+                  <div class="cell" style="background:#1f6b45">PV-30</div>
+                </div>
+                <div class="legend">
+                  <span><i class="sw" style="background:#1f6b45"></i>headroom &gt;25%</span>
+                  <span><i class="sw" style="background:#cf9a32"></i>tight 10–25%</span>
+                  <span><i class="sw" style="background:#b4720a"></i>cure window</span>
+                  <span><i class="sw" style="background:#9c2b2b"></i>breach / watch</span>
+                </div>
+
+                <div class="sech" style="margin-top:18px">Facility book <span class="ct">38 · IFRS9 staged</span></div>
+                <table>
+                  <thead><tr><th>Facility</th><th>Commitment</th><th>DSCR</th><th>DSRA</th><th>IFRS9</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr><td><b>WND-7</b> Karusa Wind</td><td class="mono">R 1.18bn</td><td class="mono" style="color:#9c2b2b">1.06×</td><td><span class="pill brk">shortfall</span></td><td class="mono">St.2</td><td><span class="pill watch">watchlist</span></td></tr>
+                    <tr><td><b>PV-22</b> Kathu Solar</td><td class="mono">R 640m</td><td class="mono" style="color:#9c2b2b">1.11×</td><td><span class="pill pend">cure</span></td><td class="mono">St.2</td><td><span class="pill brk">breach</span></td></tr>
+                    <tr><td><b>CSP-1</b> Redstone</td><td class="mono">R 880m</td><td class="mono fl">1.22×</td><td><span class="pill ok">funded</span></td><td class="mono">St.1</td><td><span class="pill rev">under review</span></td></tr>
+                    <tr><td><b>PV-01</b> De Aar PV</td><td class="mono">R 410m</td><td class="mono up">1.52×</td><td><span class="pill ok">funded</span></td><td class="mono">St.1</td><td><span class="pill ok">performing</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div style="width:320px">
+                <div class="sech">Covenant breach radar <span class="ct">live</span></div>
+                <div class="breach"><div class="sev" style="background:#9c2b2b"></div><div style="flex:1"><b class="mini">WND-7 · DSCR 1.06× &lt; 1.15×</b><div class="muted mini">Q2 lock-up triggered · cure 18d</div></div><span class="sla tight">18d</span></div>
+                <div class="breach"><div class="sev" style="background:#9c2b2b"></div><div style="flex:1"><b class="mini">PV-22 · DSRA shortfall_flagged</b><div class="muted mini">reserve_account W77 · R8.4m</div></div><span class="sla tight">6d</span></div>
+                <div class="breach"><div class="sev" style="background:#b4720a"></div><div style="flex:1"><b class="mini">CSP-1 · covenant cert under_review</b><div class="muted mini">covenant_certificate W38</div></div><span class="sla">11d</span></div>
+                <div class="breach"><div class="sev" style="background:#cf9a32"></div><div style="flex:1"><b class="mini">WND-9 · SLL KPI ratchet pending</b><div class="muted mini">sll_kpi W95 · +25bps risk</div></div><span class="sla">22d</span></div>
+
+                <div class="sech" style="margin-top:16px">AI risk advisor</div>
+                <div class="ai">
+                  <button class="acc">Accept</button>
+                  <b>Move WND-7 to formal workout now.</b> DSCR fell 3 consecutive quarters and DSRA cannot cover next debt service.
+                  <div class="why">Why: dscr_monitoring W86 = breach_recorded ×3 + reserve_account = shortfall_flagged. Earlier action shortens lock-up exposure.</div>
+                </div>
+
+                <div class="sech" style="margin-top:16px">Large-exposure (SARB)</div>
+                <div class="kpi" style="border-radius:7px"><div class="l">Single-counterparty cap</div><div class="bar" style="margin-top:8px"><i style="width:71%;background:var(--watch)"></i></div><div class="d fl" style="margin-top:5px">71% of 25% capital limit · Karusa group</div></div>
+              </div>
+            </div>
+            <p class="note">Console organises the day around the <b>book</b>. Tiles and radar are the entry points; clicking any facility opens its workout / drawdown chain. Heatmap colour = covenant headroom, not P&amp;L.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- phone -->
+      <div class="phonewrap">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>09:41</span><span>Watch-list · DFI</span><span>5G ▤ 88%</span></div>
+          <div class="pbody">
+            <div class="pwa-hint">⬇ Add to Home Screen · alerts<span class="off">offline: last sync 4m</span></div>
+            <div class="pad">
+              <div class="sech">Risk pulse</div>
+              <div class="kpis" style="grid-template-columns:1fr 1fr">
+                <div class="kpi"><div class="l">Watch-list</div><div class="v fl">5</div></div>
+                <div class="kpi"><div class="l">Wtd DSCR</div><div class="v">1.34×</div></div>
+              </div>
+              <div class="sech" style="margin-top:16px">Breach radar</div>
+              <div class="breach"><div class="sev" style="background:#9c2b2b"></div><div style="flex:1"><b class="mini">WND-7 DSCR 1.06×</b><div class="muted mini">lock-up · cure 18d</div></div><span class="sla tight">18d</span></div>
+              <div class="breach"><div class="sev" style="background:#9c2b2b"></div><div style="flex:1"><b class="mini">PV-22 DSRA shortfall</b><div class="muted mini">R8.4m · 6d</div></div><span class="sla tight">6d</span></div>
+              <div class="breach"><div class="sev" style="background:#b4720a"></div><div style="flex:1"><b class="mini">CSP-1 cert review</b><div class="muted mini">W38 · 11d</div></div><span class="sla">11d</span></div>
+              <div class="ai" style="margin-top:14px"><b>WND-7 → workout.</b><div class="why">Why: DSCR breach ×3 + DSRA shortfall.</div></div>
+            </div>
+            <a class="fab" href="#">⬓ Open WND-7 workout</a>
+            <div class="botnav">
+              <a class="act"><span class="ic">◎</span>Risk</a>
+              <a><span class="ic">◩</span>Facilities</a>
+              <a><span class="ic">⬓</span>Workout</a>
+              <a><span class="ic">▤</span>Reports</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================== -->
+  <!-- OPTION 2 — DEAL-DOSSIER (THE FILE) -->
+  <!-- ====================================================================== -->
+  <section class="opt" id="o2" role="tabpanel" aria-labelledby="t2">
+    <div class="opthead">
+      <div class="name">Option 2 — Deal-Dossier · the facility is a file</div>
+      <p class="concept">Every facility is a <b>tamper-evident file</b>: evidence, hashes, IE certs and the chain history bound into one dossier. Built for the credit officer who reasons from documents.</p>
+    </div>
+    <div class="frames">
+      <!-- desktop -->
+      <div class="desk">
+        <div class="deskbar"><span class="dot" style="background:#e0584f"></span><span class="dot" style="background:#e6b23c"></span><span class="dot" style="background:#3fa86a"></span><span class="url mono">oe.vantax.co.za/lender-suite/facility/WND-7/dossier</span></div>
+        <div class="deskbody">
+          <div class="topnav">
+            <span class="brand">Open<b>Energy</b> · Lender</span>
+            <nav><span>Risk</span><span class="a">Facilities</span><span>Drawdowns</span><span>Covenants</span><span>Reports</span></nav>
+            <span class="who"><span>Credit · DFI desk</span><span class="av">PL</span></span>
+          </div>
+          <div class="pad">
+            <div style="display:flex;align-items:baseline;gap:12px">
+              <div style="font-family:'Newsreader',serif;font-size:22px;font-weight:600">Facility WND-7 · Karusa Wind</div>
+              <span class="seal">⛓ tamper-evident · 1,284 events sealed</span>
+              <span class="pill watch" style="margin-left:auto">watchlist · St.2</span>
+            </div>
+            <div class="muted mini" style="margin-top:3px;font-family:'IBM Plex Mono'">Senior debt R1.18bn · LMA · Equator Principles IV · IFRS9 Stage 2 · DFI co-lend</div>
+
+            <div class="row" style="margin-top:16px">
+              <div class="col">
+                <div class="sech">Open journey <span class="ct">loan_restructure · W108</span></div>
+                <div class="rail" style="margin-bottom:14px">
+                  <span class="st done">trigger_event</span><span class="sep"></span>
+                  <span class="st done">proposal_drafted</span><span class="sep"></span>
+                  <span class="st now">credit_committee_review</span><span class="sep"></span>
+                  <span class="st">term_sheet_signed</span><span class="sep"></span>
+                  <span class="st">effective_date</span><span class="sep"></span>
+                  <span class="st">completed</span><span class="sep"></span>
+                  <span class="st term">escalated_to_default</span>
+                </div>
+
+                <div class="file">
+                  <div class="filehd">📁 Dossier · evidence chain<span class="seal" style="margin-left:auto">SHA-256 verified</span></div>
+                  <div class="docrow"><span class="vchk">✔</span><div style="flex:1"><b>IE certification — Q2 production</b><div class="hash">0x9af3…c21 · signed Sutherland Eng. · 14 Jun</div></div><span class="pill ok">accepted</span></div>
+                  <div class="docrow"><span class="vchk">✔</span><div style="flex:1"><b>DSCR computation — 1.06× (W86)</b><div class="hash">0x4b1c…7e9 · auto-sealed · 30 Jun</div></div><span class="pill brk">breach</span></div>
+                  <div class="docrow"><span class="vchk">✔</span><div style="flex:1"><b>DSRA statement — shortfall R8.4m</b><div class="hash">0x77d0…ab2 · reserve_account W77</div></div><span class="pill brk">shortfall</span></div>
+                  <div class="docrow"><span class="vchk">✔</span><div style="flex:1"><b>Security perfection — cession registered</b><div class="hash">0x1e88…44f · STRATE · W69 perfected</div></div><span class="pill ok">perfected</span></div>
+                  <div class="docrow"><span style="color:var(--watch)">◷</span><div style="flex:1"><b>Restructure term sheet — draft v3</b><div class="hash">awaiting credit-committee gate</div></div><span class="pill rev">pending</span></div>
+                </div>
+
+                <div class="sech" style="margin-top:16px">Covenant ledger</div>
+                <table>
+                  <thead><tr><th>Covenant</th><th>Test</th><th>Actual</th><th>Headroom</th><th>State</th></tr></thead>
+                  <tbody>
+                    <tr><td>DSCR (backward)</td><td class="mono">≥1.15×</td><td class="mono" style="color:#9c2b2b">1.06×</td><td><div class="bar" style="width:80px"><i style="width:8%;background:#9c2b2b"></i></div></td><td><span class="pill brk">breach</span></td></tr>
+                    <tr><td>LLCR</td><td class="mono">≥1.30×</td><td class="mono fl">1.34×</td><td><div class="bar" style="width:80px"><i style="width:18%;background:#b4720a"></i></div></td><td><span class="pill watch">tight</span></td></tr>
+                    <tr><td>Gearing</td><td class="mono">≤75%</td><td class="mono up">68%</td><td><div class="bar" style="width:80px"><i style="width:62%;background:#1f6b45"></i></div></td><td><span class="pill ok">clean</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div style="width:300px">
+                <div class="sech">Credit-committee gate <span class="ct">L5 · regulator-grade</span></div>
+                <div class="qcard brk">
+                  <b>Decision required — A&amp;E proposal v3</b>
+                  <div class="qmeta"><span>Quantum <b>R1.18bn</b></span><span>IFRS9 <b>Stage 2</b></span></div>
+                  <div class="qmeta"><span>Gate <b>credit_committee</b></span><span class="sla tight">SLA 4d</span></div>
+                  <div class="qacts"><button class="btn">Approve term sheet</button><button class="btn ghost">Refer back</button></div>
+                </div>
+
+                <div class="sech" style="margin-top:16px">AI memo assist</div>
+                <div class="ai"><button class="acc">Insert</button><b>Recommend A&amp;E with 6-mo amortisation holiday.</b><div class="why">Why: DSCR breach is transient (turbine retrofit complete Aug); LLCR 1.34× supports extension over enforcement.</div></div>
+
+                <div class="sech" style="margin-top:16px">Certified export</div>
+                <button class="btn ghost" style="width:100%">▤ IFRS9 staging export (PDF + XBRL)</button>
+                <p class="muted mini" style="margin-top:7px">Sealed export · counts as <b>1 certified IFRS9 export</b> (metered). Reconciles to ERP via SAP connector W125.</p>
+              </div>
+            </div>
+            <p class="note">Dossier = the unit of work and of <b>evidence</b>. Every state transition and document is hash-sealed; the credit-committee decision and the certified export are the two billable moments.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- phone -->
+      <div class="phonewrap">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>09:41</span><span>Dossier</span><span>5G ▤ 88%</span></div>
+          <div class="pbody">
+            <div class="pwa-hint">⬇ Install · evidence cached<span class="off">offline-ready</span></div>
+            <div class="pad">
+              <div style="font-family:'Newsreader',serif;font-size:18px;font-weight:600">WND-7 · Karusa</div>
+              <div class="seal" style="margin-top:5px">⛓ tamper-evident · 1,284 sealed</div>
+              <div class="sech" style="margin-top:14px">A&amp;E · credit-committee</div>
+              <div class="rail" style="font-size:9px"><span class="st done">draft</span><span class="sep"></span><span class="st now">committee</span><span class="sep"></span><span class="st">term sheet</span></div>
+              <div class="file" style="margin-top:12px">
+                <div class="filehd" style="font-size:11px">📁 Evidence<span class="seal" style="margin-left:auto">SHA-256</span></div>
+                <div class="docrow" style="padding:8px 12px"><span class="vchk">✔</span><div style="flex:1"><b class="mini">DSCR 1.06×</b><div class="hash">0x4b1c…7e9</div></div><span class="pill brk">breach</span></div>
+                <div class="docrow" style="padding:8px 12px"><span class="vchk">✔</span><div style="flex:1"><b class="mini">DSRA shortfall</b><div class="hash">R8.4m</div></div><span class="pill brk">flag</span></div>
+                <div class="docrow" style="padding:8px 12px"><span class="vchk">✔</span><div style="flex:1"><b class="mini">Security perfected</b><div class="hash">STRATE W69</div></div><span class="pill ok">ok</span></div>
+              </div>
+              <div class="ai" style="margin-top:12px"><b>A&amp;E + 6-mo holiday.</b><div class="why">Why: breach transient, LLCR 1.34× supports.</div></div>
+            </div>
+            <a class="fab" href="#" style="background:var(--ink)">Review evidence → decide</a>
+            <div class="botnav">
+              <a><span class="ic">◎</span>Risk</a>
+              <a class="act"><span class="ic">📁</span>Dossier</a>
+              <a><span class="ic">⬓</span>Workout</a>
+              <a><span class="ic">▤</span>Export</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================== -->
+  <!-- OPTION 3 — APPROVALS-QUEUE COMMAND CENTER -->
+  <!-- ====================================================================== -->
+  <section class="opt" id="o3" role="tabpanel" aria-labelledby="t3">
+    <div class="opthead">
+      <div class="name">Option 3 — Approvals Command Center</div>
+      <p class="concept">The lender's day <b>is an inbox of gated decisions</b> — drawdowns, waivers, restructures — each with SLA, evidence summary and a one-action verdict. Built for throughput.</p>
+    </div>
+    <div class="frames">
+      <!-- desktop -->
+      <div class="desk">
+        <div class="deskbar"><span class="dot" style="background:#e0584f"></span><span class="dot" style="background:#e6b23c"></span><span class="dot" style="background:#3fa86a"></span><span class="url mono">oe.vantax.co.za/lender-suite/queue</span></div>
+        <div class="deskbody">
+          <div class="topnav">
+            <span class="brand">Open<b>Energy</b> · Lender</span>
+            <nav><span>Risk</span><span>Facilities</span><span class="a">Decisions</span><span>Covenants</span><span>Reports</span></nav>
+            <span class="who"><span>Credit · DFI desk</span><span class="av">PL</span></span>
+          </div>
+          <div class="pad">
+            <div class="kpis">
+              <div class="kpi"><div class="l">Awaiting you</div><div class="v">9</div><div class="d fl">3 SLA-tight</div></div>
+              <div class="kpi"><div class="l">Drawdowns today</div><div class="v">4</div><div class="d muted">metered · per approval</div></div>
+              <div class="kpi"><div class="l">Cleared this wk</div><div class="v up">23</div><div class="d up">▲ avg 1.4d</div></div>
+              <div class="kpi"><div class="l">Escalated</div><div class="v dn">2</div><div class="d dn">→ default desk</div></div>
+            </div>
+
+            <div class="row" style="margin-top:16px">
+              <div style="width:560px">
+                <div class="sech">Decision queue <span class="ct">gated · sorted by SLA</span></div>
+
+                <div class="qcard">
+                  <div style="display:flex;align-items:center"><b>Drawdown #DD-2218 · PV-01 De Aar</b><span class="pill rev" style="margin-left:auto">lender_review</span></div>
+                  <div class="rail" style="margin-top:8px;font-size:9px"><span class="st done">draft</span><span class="sep"></span><span class="st done">ie_review</span><span class="sep"></span><span class="st now">approved?</span><span class="sep"></span><span class="st">disbursed</span><span class="sep"></span><span class="st term">clawback</span></div>
+                  <div class="qmeta"><span>Tranche <b>R 64.0m</b></span><span>IE <b>✔ signed</b></span><span>CP test <b>✔ 12/12</b></span><span>UoP <b>EPC milestone 4</b></span><span class="sla ok">SLA 2d ok</span></div>
+                  <div class="qacts"><button class="btn">Approve &amp; disburse</button><button class="btn warn">Conditions</button><button class="btn ghost">Open file</button></div>
+                </div>
+
+                <div class="qcard brk">
+                  <div style="display:flex;align-items:center"><b>Waiver req · WND-7 DSCR breach</b><span class="pill brk" style="margin-left:auto">breach</span></div>
+                  <div class="rail" style="margin-top:8px;font-size:9px"><span class="st done">requested</span><span class="sep"></span><span class="st done">submitted</span><span class="sep"></span><span class="st now">under_review</span><span class="sep"></span><span class="st">waiver/cure</span><span class="sep"></span><span class="st term">acceleration</span></div>
+                  <div class="qmeta"><span>DSCR <b style="color:#9c2b2b">1.06×</b></span><span>vs <b>1.15×</b></span><span>DSRA <b style="color:#9c2b2b">shortfall</b></span><span class="sla tight">SLA 18d · lock-up live</span></div>
+                  <div class="ai" style="margin-top:10px"><button class="acc">Pre-fill</button><b>Grant conditional waiver, require DSRA top-up R8.4m in 30d.</b><div class="why">Why: covenant_certificate W38 + dscr W86 show transient breach; enforcement disproportionate.</div></div>
+                  <div class="qacts"><button class="btn warn">Conditional waiver</button><button class="btn dng">Escalate → default</button><button class="btn ghost">Open file</button></div>
+                </div>
+
+                <div class="qcard watch">
+                  <div style="display:flex;align-items:center"><b>Restructure A&amp;E · CSP-1 Redstone</b><span class="pill rev" style="margin-left:auto">committee_review</span></div>
+                  <div class="rail" style="margin-top:8px;font-size:9px"><span class="st done">trigger</span><span class="sep"></span><span class="st done">proposal</span><span class="sep"></span><span class="st now">committee</span><span class="sep"></span><span class="st">term_sheet</span><span class="sep"></span><span class="st">effective</span></div>
+                  <div class="qmeta"><span>Quantum <b>R 880m</b></span><span>IFRS9 <b>Stage 1→2</b></span><span>Tier <b>L5</b></span><span class="sla">SLA 4d</span></div>
+                  <div class="qacts"><button class="btn">Recommend approve</button><button class="btn ghost">Refer back</button><button class="btn ghost">Open dossier</button></div>
+                </div>
+              </div>
+
+              <div style="flex:1">
+                <div class="sech">Evidence summary <span class="ct">DD-2218</span></div>
+                <div class="file">
+                  <div class="docrow"><span class="vchk">✔</span><div style="flex:1"><b class="mini">IE certificate</b><div class="hash">Sutherland Eng · signed</div></div></div>
+                  <div class="docrow"><span class="vchk">✔</span><div style="flex:1"><b class="mini">CP checklist 12/12</b><div class="hash">conditions precedent met</div></div></div>
+                  <div class="docrow"><span class="vchk">✔</span><div style="flex:1"><b class="mini">UoP — EPC milestone 4</b><div class="hash">use-of-proceeds verified</div></div></div>
+                  <div class="docrow"><span class="vchk">✔</span><div style="flex:1"><b class="mini">SARB large-exposure</b><div class="hash">within 25% cap</div></div></div>
+                </div>
+                <div class="sech" style="margin-top:16px">Today's verdicts</div>
+                <table class="mini">
+                  <tbody>
+                    <tr><td>DD-2210 PV-09</td><td><span class="pill ok">approved</span></td></tr>
+                    <tr><td>WV-118 BESS3</td><td><span class="pill watch">conditions</span></td></tr>
+                    <tr><td>DD-2204 PV-15</td><td><span class="pill ok">approved</span></td></tr>
+                    <tr><td>RS-44 PV-22</td><td><span class="pill brk">escalated</span></td></tr>
+                  </tbody>
+                </table>
+                <p class="muted mini" style="margin-top:10px">Each cleared <b>drawdown</b> = 1 metered approval. Waivers and restructures bill per active facility &amp; per certified export.</p>
+              </div>
+            </div>
+            <p class="note">Command center optimises for <b>throughput under SLA</b>: every card is a gated chain state, evidence is one glance away, and the one-action verdict advances the real state machine.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- phone -->
+      <div class="phonewrap">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>09:41</span><span>9 to decide</span><span>5G ▤ 88%</span></div>
+          <div class="pbody">
+            <div class="pwa-hint">⬇ Install · approve on the move<span class="off">offline: queued</span></div>
+            <div class="pad">
+              <div class="sech">Decide · sorted by SLA</div>
+
+              <div class="qcard brk" style="margin-bottom:10px">
+                <div style="display:flex"><b class="mini">Waiver · WND-7 DSCR</b><span class="sla tight" style="margin-left:auto">18d</span></div>
+                <div class="qmeta" style="margin-top:5px"><span>1.06× / 1.15×</span><span>DSRA shortfall</span></div>
+                <div class="ai" style="margin-top:9px;padding:8px 10px"><b>Conditional waiver + DSRA R8.4m/30d.</b><div class="why">Why: transient breach.</div></div>
+                <div class="qacts" style="margin-top:9px"><button class="btn warn" style="flex:1">Waiver</button><button class="btn dng" style="flex:1">Escalate</button></div>
+              </div>
+
+              <div class="qcard" style="margin-bottom:10px">
+                <div style="display:flex"><b class="mini">Drawdown DD-2218 · PV-01</b><span class="sla ok" style="margin-left:auto">2d</span></div>
+                <div class="qmeta" style="margin-top:5px"><span>R64.0m</span><span>IE ✔</span><span>CP 12/12</span></div>
+              </div>
+            </div>
+            <a class="fab" href="#">✔ Approve &amp; disburse R64.0m</a>
+            <div class="botnav">
+              <a><span class="ic">◎</span>Risk</a>
+              <a class="act"><span class="ic">⬓</span>Decide</a>
+              <a><span class="ic">📁</span>Files</a>
+              <a><span class="ic">▤</span>Reports</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  function pick(n){
+    for(var i=1;i<=3;i++){
+      var tab=document.getElementById('t'+i), panel=document.getElementById('o'+i);
+      var on=(i===n);
+      tab.setAttribute('aria-selected',on?'true':'false');
+      panel.classList.toggle('on',on);
+    }
+  }
+  // keyboard arrow nav across tabs (AA)
+  document.querySelectorAll('[role=tab]').forEach(function(t,i,a){
+    t.addEventListener('keydown',function(e){
+      if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+        var dir=e.key==='ArrowRight'?1:-1, n=((i+dir)+a.length)%a.length;
+        a[n].focus(); pick(n+1);
+      }
+    });
+  });
+</script>
+</body>
+</html>

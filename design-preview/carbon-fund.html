@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carbon Fund — Frontend Directions · Open Energy Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;450;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* provenance / forest identity — deep slate-green, not eco-clipart */
+    --ink:#0c1512;
+    --ink-2:#16241e;
+    --paper:#f4f1e9;        /* registry parchment */
+    --paper-2:#ece7da;
+    --line:#d7d0bf;
+    --line-2:#c3bba6;
+    --moss:#1f6e4f;         /* primary provenance green */
+    --moss-d:#13503a;
+    --moss-l:#2e9b6f;
+    --sprout:#7fb04f;
+    --amber:#b07d18;        /* metering / value */
+    --amber-l:#e3a52c;
+    --rust:#a33a22;         /* reversal / risk */
+    --slate:#5b6b63;
+    --gold:#9a7b1f;
+    --r:14px;
+    --r-s:9px;
+    --shadow:0 1px 2px rgba(12,21,18,.06),0 8px 24px rgba(12,21,18,.07);
+    --shadow-lg:0 2px 6px rgba(12,21,18,.10),0 24px 60px rgba(12,21,18,.14);
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --serif:'Fraunces',Georgia,serif;
+    --sans:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:
+      radial-gradient(1200px 600px at 12% -8%,rgba(31,110,79,.10),transparent 60%),
+      radial-gradient(900px 500px at 100% 0%,rgba(176,125,24,.07),transparent 55%),
+      var(--paper);
+    color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  .wrap{max-width:1320px;margin:0 auto;padding:0 28px}
+
+  /* ── Page header ── */
+  header.page{padding:44px 0 22px}
+  .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--moss-d);font-weight:600}
+  h1.title{font-family:var(--serif);font-weight:600;font-size:52px;line-height:.98;letter-spacing:-.02em;margin:12px 0 0}
+  h1.title .reg{color:var(--moss)}
+  .persona-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:26px;margin-top:26px;align-items:start}
+  .persona{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:22px 24px;box-shadow:var(--shadow)}
+  .persona h3{margin:0 0 8px;font-size:12px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--slate)}
+  .persona p{margin:0 0 10px;color:var(--ink-2);font-size:14.5px}
+  .persona p:last-child{margin-bottom:0}
+  .rationale{background:linear-gradient(160deg,var(--ink) 0%,#15281f 100%);color:#eef3ef;border-radius:var(--r);padding:22px 24px;box-shadow:var(--shadow)}
+  .rationale h3{margin:0 0 8px;font-size:12px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--moss-l)}
+  .rationale p{margin:0;font-size:14px;color:#d7e2db}
+
+  /* ── Journey-as-product strip ── */
+  .jp{margin:34px 0 8px}
+  .jp-head{display:flex;align-items:baseline;justify-content:space-between;gap:18px;margin-bottom:14px}
+  .jp-head h2{font-family:var(--serif);font-size:23px;font-weight:600;margin:0;letter-spacing:-.01em}
+  .jp-head .note{font-family:var(--mono);font-size:11.5px;color:var(--slate);letter-spacing:.04em}
+  .jp-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .jcard{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:18px 20px 16px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+  .jcard:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--moss)}
+  .jcard.l5:before{background:linear-gradient(var(--gold),var(--amber))}
+  .jcard.l4:before{background:var(--moss-l)}
+  .jcard .jk{font-family:var(--mono);font-size:11px;color:var(--slate);letter-spacing:.08em}
+  .jcard h4{font-family:var(--serif);font-size:20px;font-weight:600;margin:6px 0 4px;letter-spacing:-.01em}
+  .jcard .desc{font-size:13px;color:var(--ink-2);min-height:34px}
+  .tier{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;border:1px solid}
+  .tier.l5{color:#6b4e0c;background:#fbf3dc;border-color:#e6cf8e}
+  .tier.l4{color:var(--moss-d);background:#dff0e7;border-color:#a9d6bf}
+  .tier.l3{color:#3b4f78;background:#e3eaf6;border-color:#b6c5e3}
+  .meter{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line-2)}
+  .meter .unit{font-family:var(--mono);font-size:12px;color:var(--ink);font-weight:500}
+  .meter .price{font-family:var(--mono);font-size:12.5px;color:var(--amber);font-weight:600}
+  .meter .unit small{display:block;color:var(--slate);font-size:10.5px;font-weight:400;letter-spacing:.04em}
+
+  /* ── Option tabs ── */
+  .tabs{position:sticky;top:0;z-index:30;background:rgba(244,241,233,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);margin-top:36px}
+  .tabs .wrap{display:flex;gap:6px;padding-top:10px;padding-bottom:10px;align-items:center;flex-wrap:wrap}
+  .tabs .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--slate);margin-right:8px}
+  .tab{appearance:none;border:1px solid var(--line-2);background:#fff;border-radius:999px;padding:9px 16px;font-family:var(--sans);font-weight:600;font-size:13px;cursor:pointer;color:var(--ink-2);transition:.15s}
+  .tab .n{font-family:var(--mono);color:var(--moss);margin-right:7px}
+  .tab[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .tab[aria-selected="true"] .n{color:var(--amber-l)}
+  .tab:focus-visible{outline:3px solid var(--moss-l);outline-offset:2px}
+
+  .panel{display:none;padding:34px 0 60px}
+  .panel[data-active="true"]{display:block}
+  .opt-head{margin-bottom:22px}
+  .opt-head .tagk{font-family:var(--mono);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--moss-d);font-weight:600}
+  .opt-head h2{font-family:var(--serif);font-size:34px;font-weight:600;margin:6px 0 4px;letter-spacing:-.015em}
+  .opt-head p{margin:0;color:var(--ink-2);max-width:760px;font-size:15px}
+
+  .frames{display:grid;grid-template-columns:1fr 392px;gap:30px;align-items:start}
+  @media(max-width:1180px){.frames{grid-template-columns:1fr}}
+
+  /* desktop chrome */
+  .desktop{border:1px solid var(--line-2);border-radius:16px;background:#fff;box-shadow:var(--shadow-lg);overflow:hidden}
+  .dchrome{display:flex;align-items:center;gap:10px;padding:11px 16px;background:linear-gradient(var(--paper-2),var(--paper));border-bottom:1px solid var(--line)}
+  .dots{display:flex;gap:7px}
+  .dots i{width:11px;height:11px;border-radius:50%;display:block}
+  .dots i:nth-child(1){background:#d9776a}.dots i:nth-child(2){background:#e3c167}.dots i:nth-child(3){background:#7cb78e}
+  .urlbar{flex:1;background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 12px;font-family:var(--mono);font-size:11.5px;color:var(--slate);display:flex;align-items:center;gap:8px}
+  .urlbar b{color:var(--moss-d);font-weight:600}
+  .lock{color:var(--moss)}
+  .dbody{padding:0}
+
+  /* phone chrome */
+  .phonewrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .phone{width:392px;height:812px;border-radius:46px;background:#0c1512;padding:11px;box-shadow:var(--shadow-lg);position:relative}
+  .pscreen{width:100%;height:100%;border-radius:36px;overflow:hidden;background:var(--paper);position:relative;display:flex;flex-direction:column}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:128px;height:26px;background:#0c1512;border-radius:0 0 16px 16px;z-index:20}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:9px 22px 4px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
+  .statusbar .sb-r{display:flex;gap:5px;align-items:center}
+  .pwa-hint{margin:0 14px;display:flex;align-items:center;gap:7px;background:#dff0e7;border:1px solid #a9d6bf;border-radius:8px;padding:6px 10px;font-size:11px;color:var(--moss-d);font-family:var(--mono)}
+  .pwa-hint .off{margin-left:auto;color:var(--slate)}
+  .pcontent{flex:1;overflow:hidden;position:relative}
+  .bottomnav{display:flex;border-top:1px solid var(--line);background:#fff}
+  .bottomnav a{flex:1;text-align:center;padding:9px 0 10px;font-size:10px;font-family:var(--mono);color:var(--slate);text-decoration:none}
+  .bottomnav a .ic{display:block;font-size:18px;line-height:1.1}
+  .bottomnav a[aria-current]{color:var(--moss-d);font-weight:600}
+  .fab{position:absolute;right:16px;bottom:74px;background:var(--moss);color:#fff;border:none;border-radius:16px;height:54px;min-width:54px;padding:0 18px;font-weight:600;font-family:var(--sans);font-size:14px;box-shadow:0 8px 22px rgba(31,110,79,.45);display:flex;align-items:center;gap:8px;z-index:15}
+
+  .cap{font-family:var(--mono);font-size:11px;color:var(--slate);text-align:center;letter-spacing:.06em}
+
+  /* ── shared ui atoms ── */
+  .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:6px;letter-spacing:.04em;text-transform:uppercase}
+  .pill.green{background:#dff0e7;color:var(--moss-d)}
+  .pill.amber{background:#fbf0d6;color:#7a5610}
+  .pill.rust{background:#f6e0d9;color:#8a2f19}
+  .pill.slate{background:#e7e9e6;color:#445}
+  .pill.blue{background:#e3eaf6;color:#345}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+  /* =========================================================
+     OPTION 1 — Provenance Ledger (vertical credit chain)
+     ========================================================= */
+  .o1{display:grid;grid-template-columns:208px 1fr 264px;height:560px}
+  .o1 .rail{background:var(--ink);color:#cfe0d6;padding:18px 14px;display:flex;flex-direction:column;gap:3px}
+  .o1 .rail .brand{font-family:var(--serif);color:#fff;font-size:19px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .o1 .rail .brand .mk{width:22px;height:22px;border-radius:6px;background:linear-gradient(var(--moss-l),var(--moss-d));display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+  .o1 .rail a{padding:8px 10px;border-radius:8px;font-size:13px;color:#a9bdb1;text-decoration:none;display:flex;align-items:center;gap:9px}
+  .o1 .rail a.on{background:rgba(46,155,111,.18);color:#fff}
+  .o1 .rail a .ic{width:16px;text-align:center;opacity:.85}
+  .o1 .rail .sec{margin-top:14px;font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:#5d7468;padding:0 10px 4px}
+  .o1 .center{padding:20px 22px;overflow:auto;background:linear-gradient(180deg,#fff,var(--paper))}
+  .o1 .ch-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px}
+  .o1 .ch-head h3{font-family:var(--serif);font-size:22px;font-weight:600;margin:0}
+  .o1 .ch-sub{font-family:var(--mono);font-size:11.5px;color:var(--slate);margin-bottom:18px}
+  .chain{position:relative;margin-left:18px}
+  .chain:before{content:"";position:absolute;left:0;top:8px;bottom:18px;width:2px;background:linear-gradient(var(--moss-l),var(--line-2));}
+  .node{position:relative;padding:0 0 18px 28px}
+  .node .knob{position:absolute;left:-7px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--moss-l);box-shadow:0 0 0 4px rgba(46,155,111,.12)}
+  .node.done .knob{background:var(--moss);border-color:var(--moss)}
+  .node.cur .knob{border-color:var(--amber);background:#fff;box-shadow:0 0 0 5px rgba(176,125,24,.18);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 5px rgba(176,125,24,.18)}50%{box-shadow:0 0 0 9px rgba(176,125,24,.05)}}
+  .node.todo .knob{border-color:var(--line-2)}
+  .node .nh{display:flex;align-items:center;gap:9px}
+  .node .nh b{font-size:14.5px;font-weight:600}
+  .node .nmeta{font-family:var(--mono);font-size:11px;color:var(--slate);margin-top:3px;display:flex;gap:14px;flex-wrap:wrap}
+  .node.todo .nh b{color:var(--slate)}
+  .node .hashline{font-family:var(--mono);font-size:10.5px;color:var(--moss-d);background:#eef5f0;border:1px solid #cfe6da;border-radius:6px;padding:2px 7px;margin-top:6px;display:inline-block;letter-spacing:.02em}
+  .o1 .insp{border-left:1px solid var(--line);padding:18px 18px;background:#fbfaf6;overflow:auto}
+  .insp h4{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--slate);margin:0 0 12px}
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+  .kv .k{color:var(--slate);font-family:var(--mono);font-size:11px}
+  .kv .v{font-weight:600;text-align:right}
+  .prov-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:14px}
+  .prov-card .pc-h{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--moss-d);text-transform:uppercase;margin-bottom:8px}
+  .verify-btn{margin-top:14px;width:100%;background:var(--moss);color:#fff;border:none;border-radius:10px;padding:11px;font-weight:600;font-size:13px;cursor:pointer;font-family:var(--sans)}
+
+  /* =========================================================
+     OPTION 2 — Registry-grade certified workspace
+     ========================================================= */
+  .o2{height:560px;display:grid;grid-template-rows:auto auto 1fr}
+  .o2 .topbar{display:flex;align-items:center;gap:16px;padding:14px 22px;border-bottom:1px solid var(--line);background:#fff}
+  .o2 .topbar .crest{font-family:var(--serif);font-weight:700;font-size:18px;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+  .o2 .topbar .crest .seal{width:26px;height:26px;border-radius:50%;border:2px solid var(--gold);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+  .o2 .topbar .breadcrumb{font-family:var(--mono);font-size:11.5px;color:var(--slate)}
+  .o2 .topbar .breadcrumb b{color:var(--ink)}
+  .o2 .topbar .spacer{flex:1}
+  .o2 .topbar .certbadge{font-family:var(--mono);font-size:11px;background:#fbf3dc;border:1px solid #e6cf8e;color:#6b4e0c;padding:5px 11px;border-radius:7px;font-weight:600;display:flex;align-items:center;gap:6px}
+  .o2 .ribbon{display:flex;gap:0;background:var(--paper-2);border-bottom:1px solid var(--line);padding:0 22px}
+  .o2 .ribbon .seg{padding:14px 18px;display:flex;flex-direction:column;gap:2px;border-right:1px solid var(--line)}
+  .o2 .ribbon .seg .lab{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--slate)}
+  .o2 .ribbon .seg .val{font-family:var(--serif);font-size:21px;font-weight:600}
+  .o2 .ribbon .seg .val.amber{color:var(--amber)}
+  .o2 .ribbon .seg .val.green{color:var(--moss)}
+  .o2 .ribbon .seg .sub{font-size:11px;color:var(--slate)}
+  .o2 .doc{display:grid;grid-template-columns:1fr 300px;overflow:hidden}
+  .o2 .docmain{padding:22px 26px;overflow:auto;background:
+     repeating-linear-gradient(180deg,transparent,transparent 31px,rgba(31,110,79,.04) 31px,rgba(31,110,79,.04) 32px),#fff}
+  .doc-title{font-family:var(--serif);font-size:25px;font-weight:600;margin:0 0 2px;letter-spacing:-.01em}
+  .doc-meta{font-family:var(--mono);font-size:11px;color:var(--slate);margin-bottom:18px}
+  .clause{border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden}
+  .clause .ch{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--paper);border-bottom:1px solid var(--line)}
+  .clause .ch .num{font-family:var(--mono);font-weight:600;color:var(--moss-d);font-size:12px}
+  .clause .ch b{font-size:13.5px}
+  .clause .ch .st{margin-left:auto}
+  .clause .cb{padding:11px 14px;font-size:13px;color:var(--ink-2)}
+  .clause .cb .row{display:flex;justify-content:space-between;padding:4px 0;font-family:var(--mono);font-size:11.5px}
+  .clause .cb .row span:first-child{color:var(--slate)}
+  .o2 .audit{border-left:1px solid var(--line);background:#fbfaf6;padding:18px 16px;overflow:auto}
+  .o2 .audit h4{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--slate);margin:0 0 12px}
+  .atrail{position:relative;padding-left:16px}
+  .atrail .ae{position:relative;padding:0 0 14px 12px;border-left:2px solid var(--line)}
+  .atrail .ae:before{content:"";position:absolute;left:-5px;top:3px;width:8px;height:8px;border-radius:50%;background:var(--moss)}
+  .atrail .ae .ah{font-size:12px;font-weight:600}
+  .atrail .ae .am{font-family:var(--mono);font-size:10px;color:var(--slate);margin-top:2px}
+  .atrail .ae .hash{font-family:var(--mono);font-size:9.5px;color:var(--moss-d);word-break:break-all;margin-top:3px}
+  .export-cta{margin-top:16px;width:100%;background:linear-gradient(var(--gold),#7d6418);color:#fff;border:none;border-radius:10px;padding:12px;font-weight:600;font-size:13px;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:8px}
+  .export-cta small{font-weight:400;opacity:.85;font-family:var(--mono);font-size:10px;display:block}
+
+  /* =========================================================
+     OPTION 3 — Carbon Trading Book
+     ========================================================= */
+  .o3{height:560px;background:#0c1512;color:#dfe9e3;display:grid;grid-template-rows:auto 1fr}
+  .o3 .tb-top{display:flex;align-items:center;gap:16px;padding:11px 18px;background:#0a120f;border-bottom:1px solid #1d2c25}
+  .o3 .tb-top .mk{font-family:var(--serif);font-weight:600;color:#fff;font-size:16px;display:flex;align-items:center;gap:8px}
+  .o3 .tb-top .mk .sq{width:9px;height:9px;background:var(--moss-l);border-radius:2px;box-shadow:0 0 10px var(--moss-l)}
+  .o3 .tb-top .ticker{flex:1;display:flex;gap:22px;font-family:var(--mono);font-size:11.5px;overflow:hidden}
+  .o3 .tb-top .ticker .t b{color:#fff}
+  .o3 .tb-top .ticker .up{color:#54c98a}
+  .o3 .tb-top .ticker .dn{color:#e08363}
+  .o3 .tb-top .clock{font-family:var(--mono);font-size:11px;color:#7d958a}
+  .o3 .grid3{display:grid;grid-template-columns:1.15fr 1.3fr .95fr;overflow:hidden}
+  .o3 .col{border-right:1px solid #1d2c25;display:flex;flex-direction:column;overflow:hidden}
+  .o3 .col:last-child{border-right:none}
+  .o3 .colh{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#7d958a;padding:9px 14px;border-bottom:1px solid #1d2c25;display:flex;justify-content:space-between}
+  .o3 .colh .live{color:#54c98a;display:flex;align-items:center;gap:5px}
+  .o3 .colh .live i{width:6px;height:6px;border-radius:50%;background:#54c98a;display:inline-block;animation:blink 1.6s infinite}
+  @keyframes blink{50%{opacity:.3}}
+  .o3 .colbody{overflow:auto;flex:1}
+  .book-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:7px 14px;font-family:var(--mono);font-size:12px;align-items:center;border-bottom:1px solid #15211b}
+  .book-row .sym{color:#dfe9e3}
+  .book-row .sym small{display:block;color:#6f877c;font-size:9.5px;letter-spacing:.05em}
+  .book-row .px{font-weight:600;text-align:right}
+  .book-row .px.bid{color:#54c98a}.book-row .px.ask{color:#e08363}
+  .book-row .rt{display:inline-flex;align-items:center;gap:4px;justify-content:flex-end}
+  .rate{font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;font-family:var(--mono)}
+  .rate.aaa{background:#103a2a;color:#54c98a}
+  .rate.aa{background:#143425;color:#74c98a}
+  .rate.bbb{background:#3a3414;color:#e3c167}
+  .rate.b{background:#3a2014;color:#e08363}
+  .depth{padding:14px}
+  .depth h5{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:#7d958a;margin:0 0 12px;text-transform:uppercase}
+  .ladder .lrow{display:grid;grid-template-columns:70px 1fr 70px;gap:8px;align-items:center;font-family:var(--mono);font-size:11px;margin-bottom:5px}
+  .ladder .bar{height:16px;border-radius:3px}
+  .ladder .bar.b{background:linear-gradient(90deg,transparent,rgba(84,201,138,.35));justify-self:end;text-align:right}
+  .ladder .bar.a{background:linear-gradient(90deg,rgba(224,131,99,.35),transparent)}
+  .ladder .pxc{color:#fff;font-weight:600;text-align:center}
+  .ticket{margin:6px 14px 14px;background:#0f1a15;border:1px solid #21342b;border-radius:12px;padding:14px}
+  .ticket h5{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:#7d958a;margin:0 0 12px;text-transform:uppercase}
+  .ticket .seg2{display:flex;gap:6px;margin-bottom:11px}
+  .ticket .seg2 button{flex:1;border:1px solid #2b463a;background:transparent;color:#9fb6aa;border-radius:8px;padding:8px;font-family:var(--mono);font-weight:600;font-size:12px;cursor:pointer}
+  .ticket .seg2 button.buy{background:#103a2a;color:#54c98a;border-color:#1d6e4a}
+  .ticket .tk-field{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1d2c25;font-family:var(--mono);font-size:12px}
+  .ticket .tk-field .lab{color:#7d958a}
+  .ticket .tk-field input{background:#0c1512;border:1px solid #2b463a;color:#fff;border-radius:6px;padding:5px 9px;font-family:var(--mono);width:96px;text-align:right;font-size:12px}
+  .ticket .submit{margin-top:13px;width:100%;background:var(--moss-l);color:#04140d;border:none;border-radius:9px;padding:11px;font-weight:700;font-family:var(--sans);font-size:13px;cursor:pointer}
+  .ticket .meterline{margin-top:9px;font-family:var(--mono);font-size:10px;color:#8aa499;text-align:center}
+  .ticket .meterline b{color:var(--amber-l)}
+
+  /* phone bodies */
+  .p1{padding:14px 14px 8px;overflow:auto;height:100%}
+  .p-h{font-family:var(--serif);font-size:21px;font-weight:600;margin:6px 0 2px}
+  .p-sub{font-family:var(--mono);font-size:11px;color:var(--slate);margin-bottom:14px}
+  .pchain{position:relative;margin-left:12px;margin-bottom:8px}
+  .pchain:before{content:"";position:absolute;left:0;top:6px;bottom:10px;width:2px;background:var(--line-2)}
+  .pnode{position:relative;padding:0 0 14px 22px}
+  .pnode .k{position:absolute;left:-6px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid var(--line-2)}
+  .pnode.done .k{background:var(--moss);border-color:var(--moss)}
+  .pnode.cur .k{border-color:var(--amber);box-shadow:0 0 0 4px rgba(176,125,24,.18)}
+  .pnode b{font-size:14px}
+  .pnode .m{font-family:var(--mono);font-size:10.5px;color:var(--slate);margin-top:2px}
+  .pcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:11px;box-shadow:var(--shadow)}
+  .pcard .pc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+  .pcard .pc-top b{font-size:14px}
+  .pcard .big{font-family:var(--serif);font-size:26px;font-weight:600;line-height:1}
+  .pcard .big.amber{color:var(--amber)}
+  .pcard .lbl{font-family:var(--mono);font-size:10px;color:var(--slate);letter-spacing:.08em;text-transform:uppercase}
+  .pcard .meterstub{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line-2);display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px}
+  .pcard .meterstub .pr{color:var(--amber);font-weight:600}
+
+  /* phone option 2 doc */
+  .pclause{border:1px solid var(--line);border-radius:10px;background:#fff;padding:11px 13px;margin-bottom:10px}
+  .pclause .ch{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+  .pclause .ch .num{font-family:var(--mono);color:var(--moss-d);font-size:11px}
+  .pclause .row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--slate);margin-top:6px}
+  .pseal{background:linear-gradient(160deg,#15281f,#0c1512);color:#dfeae3;border-radius:14px;padding:16px;margin-bottom:12px}
+  .pseal .pcap{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--moss-l)}
+  .pseal .pn{font-family:var(--serif);font-size:24px;font-weight:600;margin:5px 0}
+  .pseal .ph{font-family:var(--mono);font-size:10px;color:#7d958a;word-break:break-all}
+
+  /* phone option 3 dark */
+  .p3{background:#0c1512;color:#dfe9e3;height:100%;overflow:auto;padding:12px 12px 8px}
+  .p3 .pbook{background:#0f1a15;border:1px solid #21342b;border-radius:12px;overflow:hidden;margin-bottom:12px}
+  .p3 .pbook .row{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:9px 12px;font-family:var(--mono);font-size:12px;border-bottom:1px solid #15211b;align-items:center}
+  .p3 .pbook .row .sym small{display:block;color:#6f877c;font-size:9px}
+  .p3 .pbook .bid{color:#54c98a;font-weight:600;text-align:right}
+  .p3 .pbook .ask{color:#e08363;font-weight:600;text-align:right}
+  .p3 .ph{font-family:var(--serif);font-size:20px;font-weight:600;margin:4px 0 2px;color:#fff}
+  .p3 .psub{font-family:var(--mono);font-size:11px;color:#7d958a;margin-bottom:12px}
+
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+  footer{padding:30px 0 60px;color:var(--slate);font-family:var(--mono);font-size:11.5px;text-align:center;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header class="page">
+  <div class="wrap">
+    <div class="eyebrow">Open Energy Platform · Role frontend exploration</div>
+    <h1 class="title">Carbon Fund <span class="reg">/ Registry</span></h1>
+    <div class="persona-grid">
+      <div class="persona">
+        <h3>Persona — Project developer &amp; fund manager</h3>
+        <p>Runs a portfolio of REIPPPP / VCM projects from PDD through issuance to retirement. Lives inside registration documents, MRV verifications, Article&nbsp;6 corresponding-adjustment ledgers and ERPA forward-delivery schedules. Spends the day cross-referencing Verra / Gold Standard registry IDs against the platform's own state.</p>
+        <p><b>Environment:</b> dual-monitor desktop, deep document work, long sessions. Phone is for <i>on-the-move attestation</i> — approving a retirement, checking a delivery window, signing a clause — not heavy editing.</p>
+        <p><b>Non-negotiable:</b> provenance and a tamper-evident audit trail. Every tonne must be traceable to its PDD, its verification body, its serial range, and its corresponding adjustment. Double-counting ends a fund.</p>
+      </div>
+      <div class="rationale">
+        <h3>Why these three directions</h3>
+        <p>The carbon role is fundamentally about <b>chain of custody over a unit (tCO₂e)</b>. So one direction makes the credit's life-story the literal UI (Ledger); one treats the platform as a <b>certifying registry</b> where the certified export is the hero (Workspace); and one serves the <b>market-maker instinct</b> — spot/forward OTC book with quality ratings (Trading Book). Same forest-provenance identity, three jobs.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- JOURNEY-AS-PRODUCT STRIP -->
+<section class="wrap jp" aria-label="Journeys as metered products">
+  <div class="jp-head">
+    <h2>Hero journeys, priced as products</h2>
+    <span class="note">tier = module depth · metered unit = billing event</span>
+  </div>
+  <div class="jp-cards">
+    <article class="jcard l5">
+      <div class="jk">carbon_registration · W37</div>
+      <h4>Project registration / PDD</h4>
+      <div class="desc">Gold Standard / Verra / Art 6.4 registration: <span class="pill slate">pdd_draft → validation → public_comment → dna_loa → registered</span></div>
+      <div style="margin-top:12px"><span class="tier l5">★ Regulator-grade · L5</span></div>
+      <div class="meter">
+        <div class="unit">per project registered<small>certified PDD + DNA letter of approval</small></div>
+        <div class="price">R 48,000 / reg</div>
+      </div>
+    </article>
+    <article class="jcard l4">
+      <div class="jk">carbon_issuance + carbon_retirement · W17</div>
+      <h4>Credit issuance &amp; retirement</h4>
+      <div class="desc">Serial-range issuance off verified MRV, then per-scope SLA retirement: <span class="pill slate">requested → validation → retired</span></div>
+      <div style="margin-top:12px"><span class="tier l4">● Professional · L4</span></div>
+      <div class="meter">
+        <div class="unit">per tonne issued / retired<small>tCO₂e — metered on the registry event</small></div>
+        <div class="price">R 1.40 / tCO₂e</div>
+      </div>
+    </article>
+    <article class="jcard l4">
+      <div class="jk">carbon_erpa · W65</div>
+      <h4>Forward ERPA delivery</h4>
+      <div class="desc">Forward delivery / make-good: <span class="pill slate">execution → monitoring → delivery_window → delivery_verified → settled → make_good</span></div>
+      <div style="margin-top:12px"><span class="tier l4">● Professional · L4</span></div>
+      <div class="meter">
+        <div class="unit">per certified delivery<small>+ make-good event on shortfall</small></div>
+        <div class="price">R 9,500 / delivery</div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- TABS -->
+<nav class="tabs" aria-label="Design options">
+  <div class="wrap">
+    <span class="lbl">Direction</span>
+    <button class="tab" role="tab" aria-selected="true"  aria-controls="p1" id="t1" onclick="pick(1)"><span class="n">01</span>Provenance Ledger</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="p2" id="t2" onclick="pick(2)"><span class="n">02</span>Certified Workspace</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="p3" id="t3" onclick="pick(3)"><span class="n">03</span>Carbon Trading Book</button>
+  </div>
+</nav>
+
+<!-- ============== OPTION 1 ============== -->
+<section class="panel" id="p1" data-active="true" role="tabpanel" aria-labelledby="t1">
+  <div class="wrap">
+    <div class="opt-head">
+      <div class="tagk">Direction 01</div>
+      <h2>Provenance Ledger</h2>
+      <p>The credit's life-story <em>is</em> the interface. A single vertical chain from PDD to retirement — every node hash-linked, every tonne traceable back to its verification body and serial range. Built for the developer who must prove no double-counting, ever.</p>
+    </div>
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div>
+        <div class="desktop">
+          <div class="dchrome">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <div class="urlbar"><span class="lock">🔒</span> oe.vantax.co.za/carbon-registry/<b>thread/carbon_registration/KAR-PV-04</b></div>
+          </div>
+          <div class="dbody">
+            <div class="o1">
+              <!-- rail -->
+              <nav class="rail" aria-label="Carbon registry navigation">
+                <div class="brand"><span class="mk">◎</span> Provenance</div>
+                <a class="on" href="#"><span class="ic">◈</span> Project Pipeline</a>
+                <a href="#"><span class="ic">◩</span> MRV &amp; Verification</a>
+                <a href="#"><span class="ic">◎</span> Issuance &amp; Registry</a>
+                <a href="#"><span class="ic">⬡</span> Retirement &amp; Offset</a>
+                <a href="#"><span class="ic">⬓</span> Article 6 &amp; ITMO</a>
+                <div class="sec">PORTFOLIO</div>
+                <a href="#"><span class="ic">◈</span> 11 active projects</a>
+                <a href="#"><span class="ic">◩</span> 3 in verification</a>
+              </nav>
+              <!-- center chain -->
+              <div class="center">
+                <div class="ch-head">
+                  <h3>Karoo PV Cluster · Phase 4</h3>
+                  <span class="pill amber"><span class="dot" style="background:var(--amber)"></span> validation</span>
+                </div>
+                <div class="ch-sub">carbon_registration · W37 · Verra VCS · DNA: DFFE · 86,400 tCO₂e/yr est.</div>
+                <div class="chain">
+                  <div class="node done">
+                    <span class="knob"></span>
+                    <div class="nh"><b>PDD draft</b><span class="pill green">complete</span></div>
+                    <div class="nmeta"><span>by L. Mokoena</span><span>03 Apr 2026</span><span>VCS v4.4</span></div>
+                    <span class="hashline">⛓ a3f1…9c · sealed</span>
+                  </div>
+                  <div class="node cur">
+                    <span class="knob"></span>
+                    <div class="nh"><b>Validation</b><span class="pill amber">in progress · DOE site visit</span></div>
+                    <div class="nmeta"><span>DOE: TÜV SÜD</span><span>due 18 Jul 2026</span><span>SLA 42d left</span></div>
+                    <span class="hashline">⛓ awaiting validation report upload</span>
+                  </div>
+                  <div class="node todo">
+                    <span class="knob"></span>
+                    <div class="nh"><b>Public comment</b></div>
+                    <div class="nmeta"><span>30-day window</span><span>opens on validation pass</span></div>
+                  </div>
+                  <div class="node todo">
+                    <span class="knob"></span>
+                    <div class="nh"><b>DNA letter of approval</b></div>
+                    <div class="nmeta"><span>DFFE</span><span>Art 6.2 host authorisation</span></div>
+                  </div>
+                  <div class="node todo">
+                    <span class="knob"></span>
+                    <div class="nh"><b>Registered</b></div>
+                    <div class="nmeta"><span>serial range reserved</span><span>crediting period 10y</span></div>
+                  </div>
+                </div>
+              </div>
+              <!-- inspector -->
+              <aside class="insp" aria-label="Node detail">
+                <h4>Selected · Validation</h4>
+                <div class="kv"><span class="k">Project ID</span><span class="v">KAR-PV-04</span></div>
+                <div class="kv"><span class="k">Standard</span><span class="v">Verra VCS</span></div>
+                <div class="kv"><span class="k">Methodology</span><span class="v">VM0007</span></div>
+                <div class="kv"><span class="k">Est. issuance</span><span class="v">86,400 t/yr</span></div>
+                <div class="kv"><span class="k">Corr. adjustment</span><span class="v">Art 6.2 ✓</span></div>
+                <div class="prov-card">
+                  <div class="pc-h">⛓ Provenance hash chain</div>
+                  <div style="font-family:var(--mono);font-size:10.5px;color:var(--slate);line-height:1.7">
+                    PDD&nbsp;<b style="color:var(--moss-d)">a3f1…9c</b><br>
+                    → Validation&nbsp;<b style="color:var(--amber)">pending</b><br>
+                    → LoA → Serial range → Issuance
+                  </div>
+                </div>
+                <button class="verify-btn">Upload validation report →</button>
+              </aside>
+            </div>
+          </div>
+        </div>
+        <p class="cap" style="margin-top:12px">Desktop · vertical hash-linked provenance chain with node inspector</p>
+      </div>
+      <!-- PHONE -->
+      <div class="phonewrap">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="pscreen">
+            <div class="statusbar"><span>9:41</span><span class="sb-r">5G ▦ 84%</span></div>
+            <div class="pwa-hint">↧ Add to Home Screen<span class="off">● synced</span></div>
+            <div class="pcontent">
+              <div class="p1">
+                <div class="p-h">Karoo PV · Ph 4</div>
+                <div class="p-sub">carbon_registration · validation</div>
+                <div class="pchain">
+                  <div class="pnode done"><span class="k"></span><b>PDD draft</b><div class="m">sealed · a3f1…9c</div></div>
+                  <div class="pnode cur"><span class="k"></span><b>Validation</b><div class="m">TÜV SÜD · 42d SLA left</div></div>
+                  <div class="pnode"><span class="k"></span><b>Public comment</b><div class="m">30-day window</div></div>
+                  <div class="pnode"><span class="k"></span><b>DNA LoA</b><div class="m">DFFE · Art 6.2</div></div>
+                  <div class="pnode"><span class="k"></span><b>Registered</b><div class="m">serial range</div></div>
+                </div>
+                <div class="pcard">
+                  <div class="pc-top"><b>Estimated issuance</b><span class="pill green">VCS</span></div>
+                  <div class="big amber">86,400</div>
+                  <div class="lbl">tCO₂e / year</div>
+                  <div class="meterstub"><span>billed per project registered</span><span class="pr">R 48,000</span></div>
+                </div>
+              </div>
+              <button class="fab" aria-label="Attest validation step">✓ Attest step</button>
+            </div>
+            <nav class="bottomnav" aria-label="Primary">
+              <a href="#" aria-current="page"><span class="ic">◈</span>Pipeline</a>
+              <a href="#"><span class="ic">◩</span>MRV</a>
+              <a href="#"><span class="ic">⬡</span>Retire</a>
+              <a href="#"><span class="ic">⛓</span>Audit</a>
+            </nav>
+          </div>
+        </div>
+        <p class="cap">PWA · one-thumb “Attest step”, offline-synced provenance</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== OPTION 2 ============== -->
+<section class="panel" id="p2" data-active="false" role="tabpanel" aria-labelledby="t2">
+  <div class="wrap">
+    <div class="opt-head">
+      <div class="tagk">Direction 02</div>
+      <h2>Certified Workspace</h2>
+      <p>Audit-first. The platform behaves like a registry of record: the document is the canvas, the right rail is an immutable hash-chained audit trail, and the hero action is a <strong>certified export</strong> (Verra serial block + Article 6 corresponding adjustment) you can hand to NERSA or a verifier unchanged.</p>
+    </div>
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div>
+        <div class="desktop">
+          <div class="dchrome">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <div class="urlbar"><span class="lock">🔒</span> oe.vantax.co.za/carbon-registry/<b>surface/article6_adjustment</b></div>
+          </div>
+          <div class="dbody">
+            <div class="o2">
+              <div class="topbar">
+                <div class="crest"><span class="seal">◎</span> Registry of Record</div>
+                <div class="breadcrumb">Article 6 &amp; Compliance / <b>ITMO corresponding adjustment</b></div>
+                <div class="spacer"></div>
+                <div class="certbadge">✓ Tamper-evident · L5</div>
+              </div>
+              <div class="ribbon">
+                <div class="seg"><span class="lab">Credits under custody</span><span class="val">412,800</span><span class="sub">tCO₂e · 6 projects</span></div>
+                <div class="seg"><span class="lab">Pending adjustment</span><span class="val amber">86,400</span><span class="sub">Art 6.2 transfer</span></div>
+                <div class="seg"><span class="lab">Buffer pool held</span><span class="val green">41,280</span><span class="sub">10% AFOLU reversal cover</span></div>
+                <div class="seg"><span class="lab">Certified exports YTD</span><span class="val">37</span><span class="sub">metered events</span></div>
+              </div>
+              <div class="doc">
+                <div class="docmain">
+                  <h3 class="doc-title">ITMO Corresponding Adjustment — Transfer TR-2026-118</h3>
+                  <div class="doc-meta">article6_adjustment · W4 · status: under_review · host: ZA → acquiring: CH · UNFCCC Art 6.2</div>
+                  <div class="clause">
+                    <div class="ch"><span class="num">§1</span><b>Authorised quantity</b><span class="st pill green">verified</span></div>
+                    <div class="cb">
+                      <div class="row"><span>Vintage</span><span>2025</span></div>
+                      <div class="row"><span>Serial range</span><span>ZA-VCS-118-0001 → 0864-00</span></div>
+                      <div class="row"><span>Quantity</span><span>86,400 tCO₂e</span></div>
+                    </div>
+                  </div>
+                  <div class="clause">
+                    <div class="ch"><span class="num">§2</span><b>Corresponding adjustment ledger</b><span class="st pill amber">under_review</span></div>
+                    <div class="cb">
+                      <div class="row"><span>Host adjustment (ZA)</span><span>− 86,400 from NDC</span></div>
+                      <div class="row"><span>First-transfer date</span><span>14 Jun 2026</span></div>
+                      <div class="row"><span>Double-counting check</span><span>✓ no overlap</span></div>
+                    </div>
+                  </div>
+                  <div class="clause">
+                    <div class="ch"><span class="num">§3</span><b>Reversal &amp; buffer pool linkage</b><span class="st pill slate">pending_transfer</span></div>
+                    <div class="cb">
+                      <div class="row"><span>Buffer contribution</span><span>8,640 tCO₂e (10%)</span></div>
+                      <div class="row"><span>Reversal chain</span><span>carbon_reversal · W42 armed</span></div>
+                    </div>
+                  </div>
+                </div>
+                <aside class="audit" aria-label="Audit trail">
+                  <h4>⛓ Immutable audit trail</h4>
+                  <div class="atrail">
+                    <div class="ae"><div class="ah">Transfer initiated</div><div class="am">L. Mokoena · 14 Jun · 09:12</div><div class="hash">⛓ 7e2a91c…04f</div></div>
+                    <div class="ae"><div class="ah">Host NDC adjustment posted</div><div class="am">DFFE-DNA · 14 Jun · 14:38</div><div class="hash">⛓ b14d8f…aa2</div></div>
+                    <div class="ae"><div class="ah">Double-counting screen ✓</div><div class="am">system · 14 Jun · 14:38</div><div class="hash">⛓ c90e3b…71d</div></div>
+                    <div class="ae"><div class="ah">Under verifier review</div><div class="am">TÜV SÜD · 15 Jun · 08:00</div><div class="hash">⛓ f205a7…9e0</div></div>
+                  </div>
+                  <button class="export-cta">Generate certified export <small>Verra block + Art 6 CA · metered</small></button>
+                </aside>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="cap" style="margin-top:12px">Desktop · clause-structured record + hash-chained audit + certified export hero</p>
+      </div>
+      <!-- PHONE -->
+      <div class="phonewrap">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="pscreen">
+            <div class="statusbar"><span>9:41</span><span class="sb-r">5G ▦ 84%</span></div>
+            <div class="pwa-hint">↧ Add to Home Screen<span class="off">● certified offline copy</span></div>
+            <div class="pcontent">
+              <div class="p1">
+                <div class="p-h">Transfer TR-118</div>
+                <div class="p-sub">article6_adjustment · under_review</div>
+                <div class="pseal">
+                  <div class="pcap">⛓ Latest seal</div>
+                  <div class="pn">Double-count ✓ clear</div>
+                  <div class="ph">⛓ c90e3b9f47a1…71d</div>
+                </div>
+                <div class="pclause">
+                  <div class="ch"><span class="num">§1</span> Authorised quantity <span class="pill green" style="margin-left:auto">verified</span></div>
+                  <div class="row"><span>Serial range</span><span>118-0001→0864-00</span></div>
+                  <div class="row"><span>Quantity</span><span>86,400 t</span></div>
+                </div>
+                <div class="pclause">
+                  <div class="ch"><span class="num">§2</span> Host NDC adjustment <span class="pill amber" style="margin-left:auto">review</span></div>
+                  <div class="row"><span>ZA −86,400</span><span>14 Jun</span></div>
+                </div>
+              </div>
+              <button class="fab" aria-label="Generate certified export">⤓ Certify</button>
+            </div>
+            <nav class="bottomnav" aria-label="Primary">
+              <a href="#"><span class="ic">◎</span>Custody</a>
+              <a href="#" aria-current="page"><span class="ic">⬓</span>Art 6</a>
+              <a href="#"><span class="ic">⛓</span>Audit</a>
+              <a href="#"><span class="ic">⤓</span>Exports</a>
+            </nav>
+          </div>
+        </div>
+        <p class="cap">PWA · carries a certified offline copy; one-tap “Certify” export</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== OPTION 3 ============== -->
+<section class="panel" id="p3" data-active="false" role="tabpanel" aria-labelledby="t3">
+  <div class="wrap">
+    <div class="opt-head">
+      <div class="tagk">Direction 03</div>
+      <h2>Carbon Trading Book</h2>
+      <p>For the fund manager in market-maker mode. A dense OTC spot/forward book with live quality ratings (AAA→B), depth ladder, and a one-keystroke deal ticket — but every line still carries its provenance grade, because in carbon, quality <em>is</em> price.</p>
+    </div>
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div>
+        <div class="desktop">
+          <div class="dchrome">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <div class="urlbar"><span class="lock">🔒</span> oe.vantax.co.za/carbon-registry/<b>thread/carbon_erpa/ERPA-2026-09</b></div>
+          </div>
+          <div class="dbody">
+            <div class="o3">
+              <div class="tb-top">
+                <div class="mk"><span class="sq"></span> Carbon Book</div>
+                <div class="ticker" aria-hidden="true">
+                  <span class="t">VCS-AGR <b class="up">R 312 ▲</b></span>
+                  <span class="t">GS-WIND <b class="up">R 408 ▲</b></span>
+                  <span class="t">Art6-ZA <b class="dn">R 540 ▼</b></span>
+                  <span class="t">REC-SA <b class="up">R 96 ▲</b></span>
+                </div>
+                <div class="clock">JSE-SRL · 14:32:08 SAST</div>
+              </div>
+              <div class="grid3">
+                <!-- OTC book -->
+                <div class="col">
+                  <div class="colh">OTC book <span class="live"><i></i>live</span></div>
+                  <div class="colbody">
+                    <div class="book-row"><span class="sym">Karoo PV ’25<small>VM0007 · Art6</small></span><span class="px bid">R 318</span><span class="rt"><span class="rate aaa">AAA</span></span></div>
+                    <div class="book-row"><span class="sym">Tsitsa Hydro<small>ACM0002</small></span><span class="px bid">R 401</span><span class="rt"><span class="rate aa">AA</span></span></div>
+                    <div class="book-row"><span class="sym">Komati Wind<small>GS4GG</small></span><span class="px bid">R 388</span><span class="rt"><span class="rate aa">AA</span></span></div>
+                    <div class="book-row"><span class="sym">Limpopo Cook<small>GS-AGR PoA</small></span><span class="px ask">R 142</span><span class="rt"><span class="rate bbb">BBB</span></span></div>
+                    <div class="book-row"><span class="sym">Buffer-AFOLU<small>reversal risk</small></span><span class="px ask">R 88</span><span class="rt"><span class="rate b">B</span></span></div>
+                    <div class="book-row"><span class="sym">REC-SA ’26<small>I-REC</small></span><span class="px bid">R 96</span><span class="rt"><span class="rate aa">AA</span></span></div>
+                  </div>
+                </div>
+                <!-- depth / ERPA -->
+                <div class="col">
+                  <div class="colh">Karoo PV ’25 · depth <span class="live"><i></i>L2</span></div>
+                  <div class="depth">
+                    <div class="ladder">
+                      <div class="lrow"><span class="bar b" style="width:60%"></span><span class="pxc">320</span><span></span></div>
+                      <div class="lrow"><span class="bar b" style="width:85%"></span><span class="pxc">319</span><span></span></div>
+                      <div class="lrow"><span class="bar b" style="width:100%"></span><span class="pxc">318</span><span></span></div>
+                      <div class="lrow" style="margin:8px 0"><span></span><span class="pxc" style="color:var(--amber-l)">— 318.50 mid —</span><span></span></div>
+                      <div class="lrow"><span></span><span class="pxc">322</span><span class="bar a" style="width:90%"></span></div>
+                      <div class="lrow"><span></span><span class="pxc">324</span><span class="bar a" style="width:70%"></span></div>
+                      <div class="lrow"><span></span><span class="pxc">327</span><span class="bar a" style="width:45%"></span></div>
+                    </div>
+                  </div>
+                  <div class="colh" style="border-top:1px solid #1d2c25">Forward ERPA · ERPA-2026-09</div>
+                  <div style="padding:11px 14px;font-family:var(--mono);font-size:11.5px;color:#9fb6aa">
+                    <div style="display:flex;justify-content:space-between;padding:4px 0"><span>State</span><span style="color:#54c98a">monitoring</span></div>
+                    <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Delivery window</span><span>Q4 2026</span></div>
+                    <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Contracted</span><span>50,000 t @ R305</span></div>
+                    <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Delivered</span><span style="color:#e3c167">38,200 t · make_good risk</span></div>
+                  </div>
+                </div>
+                <!-- ticket -->
+                <div class="col">
+                  <div class="colh">Deal ticket</div>
+                  <div class="ticket">
+                    <h5>New OTC order</h5>
+                    <div class="seg2"><button class="buy">BUY</button><button>SELL</button></div>
+                    <div class="tk-field"><span class="lab">Instrument</span><span style="color:#fff">Karoo PV ’25</span></div>
+                    <div class="tk-field"><span class="lab">Grade</span><span class="rate aaa">AAA</span></div>
+                    <div class="tk-field"><span class="lab">Qty (t)</span><input value="10,000" aria-label="Quantity tonnes"></div>
+                    <div class="tk-field"><span class="lab">Limit R/t</span><input value="318.50" aria-label="Limit price"></div>
+                    <div class="tk-field"><span class="lab">Settle</span><span style="color:#fff">T+2 · DvP</span></div>
+                    <button class="submit">Submit · R 3,185,000</button>
+                    <div class="meterline">metered <b>R 1.40 / tCO₂e</b> on registry transfer</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="cap" style="margin-top:12px">Desktop · OTC book with quality ratings + depth ladder + forward ERPA + deal ticket</p>
+      </div>
+      <!-- PHONE -->
+      <div class="phonewrap">
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="pscreen">
+            <div class="statusbar" style="color:#dfe9e3;background:#0c1512"><span>9:41</span><span class="sb-r">5G ▦ 84%</span></div>
+            <div class="pcontent">
+              <div class="p3">
+                <div class="pwa-hint" style="background:#0f1a15;border-color:#21342b;color:#54c98a;margin:0 0 12px">↧ Install book<span class="off" style="color:#7d958a">● 14:32 live</span></div>
+                <div class="ph">Carbon Book</div>
+                <div class="psub">tap a line to deal · grade = price</div>
+                <div class="pbook">
+                  <div class="row"><span class="sym">Karoo PV ’25<small>Art6 · VM0007</small></span><span class="bid">R 318</span><span><span class="rate aaa">AAA</span></span></div>
+                  <div class="row"><span class="sym">Komati Wind<small>GS4GG</small></span><span class="bid">R 388</span><span><span class="rate aa">AA</span></span></div>
+                  <div class="row"><span class="sym">Limpopo Cook<small>PoA</small></span><span class="ask">R 142</span><span><span class="rate bbb">BBB</span></span></div>
+                  <div class="row"><span class="sym">Buffer-AFOLU<small>reversal</small></span><span class="ask">R 88</span><span><span class="rate b">B</span></span></div>
+                </div>
+                <div class="pbook" style="padding:12px 13px">
+                  <div style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:#7d958a;text-transform:uppercase;margin-bottom:9px">ERPA-2026-09 · monitoring</div>
+                  <div style="font-family:var(--mono);font-size:11.5px;color:#9fb6aa;display:flex;justify-content:space-between;padding:3px 0"><span>Delivered</span><span style="color:#e3c167">38.2k / 50k t</span></div>
+                  <div style="font-family:var(--mono);font-size:11.5px;color:#9fb6aa;display:flex;justify-content:space-between;padding:3px 0"><span>Window</span><span style="color:#fff">Q4 2026</span></div>
+                </div>
+              </div>
+              <button class="fab" style="background:var(--moss-l);color:#04140d;box-shadow:0 8px 22px rgba(46,155,111,.5)" aria-label="Quick deal ticket">⊕ Deal</button>
+            </div>
+            <nav class="bottomnav" aria-label="Primary" style="background:#0a120f;border-color:#1d2c25">
+              <a href="#" aria-current="page" style="color:#54c98a"><span class="ic">▦</span>Book</a>
+              <a href="#" style="color:#7d958a"><span class="ic">↗</span>Forward</a>
+              <a href="#" style="color:#7d958a"><span class="ic">◷</span>Blotter</a>
+              <a href="#" style="color:#7d958a"><span class="ic">⛓</span>Audit</a>
+            </nav>
+          </div>
+        </div>
+        <p class="cap">PWA · dark book, grade-coloured tickers, one-thumb “Deal”</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">Open Energy Platform · Carbon Fund role · evaluation mockups — not wired into the app · real chains: carbon_registration (W37) · carbon_issuance · carbon_retirement (W17) · carbon_erpa (W65) · article6_adjustment (W4) · carbon_reversal (W42)</div>
+</footer>
+
+<script>
+  function pick(n){
+    for(var i=1;i<=3;i++){
+      var tab=document.getElementById('t'+i);
+      var panel=document.getElementById('p'+i);
+      var on=(i===n);
+      tab.setAttribute('aria-selected',on?'true':'false');
+      panel.setAttribute('data-active',on?'true':'false');
+    }
+    window.scrollTo({top:document.querySelector('.tabs').offsetTop,behavior:'smooth'});
+  }
+  // arrow-key tab nav
+  document.querySelectorAll('.tab').forEach(function(t,i,arr){
+    t.addEventListener('keydown',function(e){
+      if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+        e.preventDefault();
+        var d=e.key==='ArrowRight'?1:-1;
+        var ni=(i+d+arr.length)%arr.length;
+        arr[ni].focus();pick(ni+1);
+      }
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trader — CEC Open Energy · Frontend Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070a0e; --panel:#0d1219; --panel2:#111927; --line:#1d2838; --line2:#27374b;
+    --ink:#e8eef6; --ink2:#9fb0c5; --ink3:#647793;
+    --buy:#2bd47a; --buy-d:#0e3d27; --sell:#ff4d5e; --sell-d:#3d1218;
+    --amber:#ffb02e; --amber-d:#3d2c08; --cyan:#37c6e0; --violet:#9d7bff;
+    --gold:#d9a441; --grade-f:#3a7bd5; --grade-p:#8a63d2; --grade-r:#d9a441;
+    --ok:#2bd47a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter Tight',system-ui,sans-serif;font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+  .wrap{max-width:1360px;margin:0 auto;padding:28px 24px 80px}
+  a{color:inherit}
+  h1,h2,h3{font-weight:700;letter-spacing:-.02em}
+
+  /* ─── Header band ─── */
+  .band{border:1px solid var(--line);border-radius:14px;background:
+    radial-gradient(120% 140% at 0% 0%, #11202e 0%, var(--panel) 55%);
+    padding:22px 26px;display:grid;grid-template-columns:1.4fr 1fr;gap:26px}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+  .band h1{font-size:30px;margin:6px 0 2px}
+  .band .sub{color:var(--ink2);font-size:13px;max-width:46ch}
+  .persona{border-left:2px solid var(--line2);padding-left:16px}
+  .persona b{color:var(--ink)}
+  .persona p{color:var(--ink2);font-size:12.5px;margin-top:4px}
+  .ratl{margin-top:10px;font-size:12px;color:var(--ink3)}
+  .ratl b{color:var(--cyan)}
+
+  /* ─── Journey strip ─── */
+  .strip{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .jcard{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:15px 16px;position:relative;overflow:hidden}
+  .jcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px}
+  .jcard.f::before{background:var(--grade-f)} .jcard.p::before{background:var(--grade-p)} .jcard.r::before{background:var(--grade-r)}
+  .jcard .jt{font-size:13.5px;font-weight:700;margin-bottom:2px}
+  .jcard .jk{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink3);letter-spacing:.04em}
+  .jcard .jd{font-size:11.5px;color:var(--ink2);margin:8px 0 12px;min-height:30px}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:.05em;padding:3px 8px;border-radius:999px;text-transform:uppercase}
+  .b-f{background:rgba(58,123,213,.16);color:#7fb3ff;border:1px solid rgba(58,123,213,.4)}
+  .b-p{background:rgba(138,99,210,.16);color:#bda3ff;border:1px solid rgba(138,99,210,.4)}
+  .b-r{background:rgba(217,164,65,.14);color:#f0c879;border:1px solid rgba(217,164,65,.4)}
+  .meter{display:flex;align-items:center;justify-content:space-between;border-top:1px dashed var(--line2);padding-top:9px;margin-top:2px}
+  .meter .mu{font-size:10.5px;color:var(--ink3)} .meter .mp{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--gold);font-weight:600}
+
+  /* ─── Tabs ─── */
+  .tabs{display:flex;gap:8px;margin:30px 0 18px;border-bottom:1px solid var(--line);padding-bottom:0}
+  .tab{appearance:none;background:none;border:1px solid var(--line);border-bottom:none;color:var(--ink2);
+    font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.02em;padding:11px 18px;border-radius:9px 9px 0 0;cursor:pointer;position:relative;top:1px}
+  .tab b{color:var(--ink);font-family:'Inter Tight';font-weight:700;display:block;font-size:13px}
+  .tab[a-sel="1"]{background:var(--panel2);color:var(--ink);border-color:var(--line2)}
+  .tab[a-sel="1"]::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--gold)}
+  .pane{display:none} .pane[a-sel="1"]{display:block}
+
+  .ohead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+  .ohead h2{font-size:20px}
+  .ohead .concept{color:var(--ink2);font-size:13px}
+  .ease{display:inline-flex;gap:8px;align-items:center;background:linear-gradient(90deg,rgba(217,164,65,.14),rgba(217,164,65,.02));border:1px solid rgba(217,164,65,.35);border-radius:10px;padding:9px 13px;margin:12px 0 20px}
+  .ease .lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:700}
+  .ease .txt{font-size:12.5px;color:var(--ink)}
+
+  .frames{display:grid;grid-template-columns:1fr 392px;gap:22px;align-items:start}
+
+  /* ── desktop chrome ── */
+  .desk{border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--panel);box-shadow:0 30px 70px -30px #000}
+  .dchrome{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#0a0e14;border-bottom:1px solid var(--line)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .dchrome .url{margin-left:10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink3)}
+  .dchrome .clk{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink2)}
+
+  /* ── phone chrome ── */
+  .phone{width:392px;border:10px solid #1b232e;border-radius:42px;background:#000;overflow:hidden;box-shadow:0 30px 70px -25px #000;position:relative}
+  .pstatus{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:var(--bg);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink)}
+  .notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:120px;height:22px;background:#000;border-radius:0 0 16px 16px;z-index:5}
+  .pbody{background:var(--bg);height:760px;overflow:hidden;position:relative}
+  .pwa-hint{display:flex;gap:7px;align-items:center;font-size:10.5px;background:var(--panel2);border-bottom:1px solid var(--line);padding:6px 14px;color:var(--ink2)}
+  .pwa-hint .d{width:7px;height:7px;border-radius:50%;background:var(--buy)}
+  .pnav{position:absolute;bottom:0;left:0;right:0;display:flex;background:#0a0e14;border-top:1px solid var(--line);padding:8px 6px 14px}
+  .pnav a{flex:1;text-align:center;font-size:9.5px;color:var(--ink3);font-family:'IBM Plex Mono',monospace}
+  .pnav a.on{color:var(--gold)} .pnav a .ic{display:block;font-size:17px;margin-bottom:2px}
+  .fab{position:absolute;bottom:74px;right:16px;background:var(--buy);color:#04140c;border:none;border-radius:14px;padding:13px 18px;font-weight:800;font-family:'Inter Tight';font-size:14px;box-shadow:0 12px 26px -8px rgba(43,212,122,.6)}
+
+  /* shared small bits */
+  .pill{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 7px;border-radius:5px;font-weight:600;letter-spacing:.03em}
+  .p-buy{background:var(--buy-d);color:var(--buy)} .p-sell{background:var(--sell-d);color:var(--sell)}
+  .p-warn{background:var(--amber-d);color:var(--amber)} .p-ok{background:var(--buy-d);color:var(--buy)}
+  .p-mut{background:#16202d;color:var(--ink3)}
+  table{width:100%;border-collapse:collapse}
+  .blink{animation:bl 1.6s steps(2) infinite}@keyframes bl{50%{opacity:.35}}
+  .label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+
+  /* ===== OPTION 1 — terminal ===== */
+  .t1{display:grid;grid-template-columns:188px 1fr 256px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;min-height:560px}
+  .t1 .col{border-right:1px solid var(--line);padding:0}
+  .t1 .sech{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);padding:9px 12px 5px;border-bottom:1px solid var(--line)}
+  .t1 .nav a{display:flex;justify-content:space-between;padding:6px 12px;color:var(--ink2);border-left:2px solid transparent}
+  .t1 .nav a.on{background:#0f1825;color:var(--ink);border-left-color:var(--gold)}
+  .t1 .nav a .ct{color:var(--ink3)}
+  .ob{padding:2px 0}
+  .ob .r{display:grid;grid-template-columns:1fr 1fr 1fr;padding:3px 12px;cursor:pointer}
+  .ob .r:hover{background:#13202f}
+  .ob .r.ask .px{color:var(--sell)} .ob .r.bid .px{color:var(--buy)}
+  .ob .r .sz{color:var(--ink2);text-align:center}
+  .ob .r .dep{text-align:right;color:var(--ink3)}
+  .ob .depthbar{position:relative}
+  .ob .depthbar i{position:absolute;right:0;top:0;bottom:0;opacity:.10}
+  .ob .ask i{background:var(--sell)} .ob .bid i{background:var(--buy)}
+  .spread{display:flex;justify-content:space-between;padding:6px 12px;background:#0a0e14;color:var(--ink2);border-block:1px solid var(--line)}
+  .spread b{color:var(--gold)}
+  .t1 .blot th{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
+  .t1 .blot td{padding:5px 10px;border-bottom:1px solid #131c28;color:var(--ink2)}
+  .ticket{padding:10px 12px}
+  .ticket .row{display:flex;gap:6px;margin-bottom:7px}
+  .ticket .seg{flex:1;display:flex;border:1px solid var(--line2);border-radius:6px;overflow:hidden}
+  .ticket .seg button{flex:1;background:none;border:none;color:var(--ink2);padding:6px;font-family:inherit;font-size:11px;cursor:pointer}
+  .ticket .seg .b.on{background:var(--buy);color:#04140c;font-weight:700}
+  .ticket .seg .s.on{background:var(--sell);color:#fff;font-weight:700}
+  .ticket input,.ticket .fakein{width:100%;background:#060a0f;border:1px solid var(--line2);border-radius:6px;color:var(--ink);padding:7px 9px;font-family:inherit;font-size:12px}
+  .ticket label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);display:block;margin-bottom:3px}
+  .guards{margin:8px 0;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .guards .g{display:flex;align-items:center;gap:7px;padding:5px 9px;font-size:10.5px;border-bottom:1px solid #131c28}
+  .guards .g:last-child{border-bottom:none}
+  .gd{width:8px;height:8px;border-radius:50%;flex:none}
+  .gd.ok{background:var(--buy)} .gd.warn{background:var(--amber)} .gd.bad{background:var(--sell)}
+  .guards .g .gx{margin-left:auto;color:var(--ink3)}
+  .submit{width:100%;background:var(--buy);color:#04140c;border:none;border-radius:8px;padding:11px;font-weight:800;font-size:13px;font-family:'Inter Tight';cursor:pointer}
+  .submit.held{background:var(--amber-d);color:var(--amber);border:1px solid var(--amber)}
+  .kbd{font-family:'IBM Plex Mono',monospace;font-size:9.5px;background:#0a0e14;border:1px solid var(--line2);border-radius:4px;padding:1px 5px;color:var(--ink2)}
+  .rejex{margin-top:8px;background:#160d10;border:1px solid var(--sell-d);border-left:3px solid var(--sell);border-radius:7px;padding:8px 10px;font-size:10.5px;color:#ffb9bf}
+  .rejex b{color:#fff}
+  .rejex .fix{margin-top:6px;display:flex;gap:6px}
+  .rejex .fix button{flex:1;background:#1c2330;border:1px solid var(--line2);color:var(--cyan);border-radius:5px;padding:5px;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer}
+
+  /* ===== OPTION 2 — command palette ===== */
+  .cmdwrap{padding:34px;min-height:560px;background:radial-gradient(80% 60% at 50% -10%,#101a26 0%,var(--panel) 60%)}
+  .cmd-context{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+  .ctx{border:1px solid var(--line);border-radius:9px;padding:8px 12px;background:var(--panel2);min-width:130px}
+  .ctx .l{font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3)}
+  .ctx .v{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;margin-top:1px}
+  .ctx .v.g{color:var(--buy)} .ctx .v.r{color:var(--sell)} .ctx .v.a{color:var(--amber)}
+  .palette{max-width:660px;margin:8px auto;border:1px solid var(--line2);border-radius:14px;background:#070b11;box-shadow:0 40px 90px -30px #000;overflow:hidden}
+  .pinput{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--line)}
+  .pinput .gt{color:var(--gold);font-family:'IBM Plex Mono',monospace}
+  .pinput .typed{font-family:'IBM Plex Mono',monospace;font-size:16px;color:var(--ink)}
+  .pinput .cur{display:inline-block;width:8px;height:18px;background:var(--gold);vertical-align:-3px;margin-left:1px}
+  .pinput .esc{margin-left:auto}
+  .presolve{padding:10px 18px;border-bottom:1px solid var(--line);display:flex;gap:14px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink2)}
+  .presolve b{color:var(--ink)} .presolve .ok{color:var(--buy)}
+  .presults .opt{display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid #121b27}
+  .presults .opt.sel{background:#0f1a27}
+  .presults .opt .ico{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;background:#13202f;color:var(--gold);font-size:15px;flex:none}
+  .presults .opt .t{font-size:13px;font-weight:600} .presults .opt .s{font-size:11px;color:var(--ink3)}
+  .presults .opt .meta{margin-left:auto;text-align:right}
+  .presults .opt .meta .gd{display:inline-block} .presults .opt .meta .en{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink3);margin-top:3px}
+  .palette .guardline{display:flex;align-items:center;gap:8px;padding:11px 18px;background:#0e1018;font-size:11.5px}
+  .palette .guardline .ck{color:var(--buy)} .palette .guardline .warn{color:var(--amber)}
+  .palette .actbar{display:flex;align-items:center;gap:10px;padding:12px 18px;border-top:1px solid var(--line)}
+  .palette .actbar .go{background:var(--buy);color:#04140c;border:none;border-radius:8px;padding:9px 22px;font-weight:800;font-family:'Inter Tight';font-size:13px}
+  .palette .actbar .hint{margin-left:auto;font-size:10.5px;color:var(--ink3);font-family:'IBM Plex Mono',monospace}
+  .recent{max-width:660px;margin:18px auto 0;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .recent .chip{font-family:'IBM Plex Mono',monospace;font-size:10.5px;border:1px solid var(--line);border-radius:7px;padding:5px 10px;color:var(--ink2);background:var(--panel)}
+
+  /* ===== OPTION 3 — risk radar ===== */
+  .radarwrap{display:grid;grid-template-columns:1fr 340px;min-height:560px}
+  .radar{position:relative;padding:22px;border-right:1px solid var(--line);background:
+    radial-gradient(60% 60% at 38% 42%,#0c1622 0%,var(--panel) 70%)}
+  .radar h3{font-size:13px;margin-bottom:4px} .radar .rsub{font-size:11px;color:var(--ink3);margin-bottom:10px}
+  .stage{position:relative;width:430px;height:430px;margin:8px auto}
+  .ring{position:absolute;border-radius:50%;border:1px solid var(--line);inset:0}
+  .ring.r2{inset:62px} .ring.r3{inset:124px} .ring.r4{inset:186px}
+  .ringlbl{position:absolute;left:50%;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.1em;color:var(--ink3);background:var(--bg);padding:0 4px}
+  .center{position:absolute;inset:186px;border-radius:50%;background:radial-gradient(circle,#13202f,#0a0f16);display:grid;place-items:center;text-align:center;border:1px solid var(--line2)}
+  .center .big{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;color:var(--buy)}
+  .center .cl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+  .blip{position:absolute;width:auto;transform:translate(-50%,-50%);text-align:center}
+  .blip .dotg{width:13px;height:13px;border-radius:50%;margin:0 auto 3px;box-shadow:0 0 0 4px rgba(255,255,255,.04)}
+  .blip .nm{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--ink)}
+  .blip .vv{font-size:9px;color:var(--ink3)}
+  .blip.ok .dotg{background:var(--buy)} .blip.warn .dotg{background:var(--amber)} .blip.bad .dotg{background:var(--sell);animation:bl 1.4s steps(2) infinite}
+  .sweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(43,212,122,.16),transparent 28%);animation:sweep 6s linear infinite}
+  @keyframes sweep{to{transform:rotate(360deg)}}
+  .quotepanel{padding:0}
+  .qp-h{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .qp-h .label{margin:0}
+  .quote{padding:14px 16px;border-bottom:1px solid var(--line)}
+  .quote .qtop{display:flex;align-items:baseline;justify-content:space-between}
+  .quote .sym{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700}
+  .quote .px{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700}
+  .quote .px.buy{color:var(--buy)} .quote .px.sell{color:var(--sell)}
+  .quote .qsub{font-size:11px;color:var(--ink3);margin:3px 0 10px}
+  .qguard{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
+  .qg{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;padding:3px 7px;border-radius:6px;background:#0c141d;border:1px solid var(--line)}
+  .qg .gd{width:7px;height:7px}
+  .qacts{display:flex;gap:8px}
+  .qacts button{flex:1;border:none;border-radius:9px;padding:11px;font-weight:800;font-family:'Inter Tight';font-size:14px;cursor:pointer}
+  .qacts .buy{background:var(--buy);color:#04140c} .qacts .sell{background:var(--sell);color:#fff}
+  .qhint{font-size:10px;color:var(--ink3);margin-top:7px;font-family:'IBM Plex Mono',monospace}
+
+  /* phone shared rows */
+  .pwrap{padding:12px 14px}
+  .pwrap .ph-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .pwrap .ph-h .t{font-size:16px;font-weight:800}
+  .pcard{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:12px;margin-bottom:10px}
+  .pquote{display:flex;align-items:center;justify-content:space-between}
+  .pquote .sym{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px}
+  .pquote .px{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700}
+  .pswipe{margin-top:11px;display:flex;border-radius:11px;overflow:hidden;border:1px solid var(--line2)}
+  .pswipe button{flex:1;border:none;padding:13px;font-weight:800;font-family:'Inter Tight';font-size:15px}
+  .pswipe .b{background:var(--buy);color:#04140c} .pswipe .s{background:var(--sell);color:#fff}
+  .pguardrow{display:flex;gap:6px;margin-top:9px;font-size:10px;color:var(--ink2)}
+  .pgchip{flex:1;display:flex;align-items:center;gap:5px;background:#0c141d;border-radius:7px;padding:5px 7px;font-family:'IBM Plex Mono',monospace;font-size:9px}
+  .ptl{position:relative;padding-left:18px}
+  .ptl::before{content:"";position:absolute;left:5px;top:4px;bottom:4px;width:2px;background:var(--line2)}
+  .ptl .ev{position:relative;margin-bottom:9px}
+  .ptl .ev::before{content:"";position:absolute;left:-16px;top:4px;width:9px;height:9px;border-radius:50%;background:var(--ink3);border:2px solid var(--bg)}
+  .ptl .ev.done::before{background:var(--buy)} .ptl .ev.now::before{background:var(--amber);animation:bl 1.5s steps(2) infinite}
+  .ptl .ev .ttl{font-size:12px;font-weight:600} .ptl .ev .ts{font-size:10px;color:var(--ink3);font-family:'IBM Plex Mono',monospace}
+
+  .foot{margin-top:40px;border-top:1px solid var(--line);padding-top:16px;color:var(--ink3);font-size:11px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:10.5px;color:var(--ink3)}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .sq{width:9px;height:9px;border-radius:2px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ─────────── HEADER BAND ─────────── -->
+  <div class="band">
+    <div>
+      <div class="eyebrow">CEC Open Energy · Role Exploration</div>
+      <h1>Trader</h1>
+      <div class="sub">Power &amp; carbon trading desk on the SA energy exchange — order book, pre-trade risk, settlement and surveillance, end to end.</div>
+      <div class="ratl">Rationale: three different bets on <b>speed-to-act + zero risk ambiguity</b> — a Bloomberg-dense terminal, a keyboard-first command palette, and a spatial risk-radar. All make acting on a quote near-zero-click and explain guard rejections inline.</div>
+    </div>
+    <div class="persona">
+      <b>Who.</b> <span style="color:var(--ink2)">Lerato — senior power/carbon trader.</span>
+      <p><b style="color:var(--ink)">Environment:</b> 3-monitor desk, sub-second decisions, high intraday stress, runs a market-making book with consecutive-miss obligations.</p>
+      <p><b style="color:var(--ink)">Device:</b> keyboard-first power user on desktop; phone is for monitoring + one-thumb confirms when away from the desk.</p>
+      <p><b style="color:var(--ink)">Needs:</b> instant fills, pre-trade risk at a glance, no modal friction, and a clear reason — never a dead-end — when a guard blocks an order.</p>
+    </div>
+  </div>
+
+  <!-- ─────────── JOURNEY-AS-PRODUCT STRIP ─────────── -->
+  <div class="strip">
+    <div class="jcard p">
+      <span class="badge b-p">● Professional · L4</span>
+      <div class="jt" style="margin-top:8px">Order → Match → Best-Execution</div>
+      <div class="jk">best_execution · OrderBook DO</div>
+      <div class="jd">RFQ out → quotes received → quote selected → executed → confirmed, gated by pre-trade credit/exposure/halt guards.</div>
+      <div class="meter"><span class="mu">Metered per</span><span class="mp">executed order</span></div>
+    </div>
+    <div class="jcard f">
+      <span class="badge b-f">● Foundation · L3</span>
+      <div class="jt" style="margin-top:8px">Settlement DvP &amp; Allocation</div>
+      <div class="jk">settlement_fail · trade_allocation (W76)</div>
+      <div class="jd">executed → pending_allocation → allocated → affirmed → matched → settled; breaks routed to exceptions.</div>
+      <div class="meter"><span class="mu">Metered per</span><span class="mp">MWh settled</span></div>
+    </div>
+    <div class="jcard r">
+      <span class="badge b-r">● Regulator-grade · L5</span>
+      <div class="jt" style="margin-top:8px">Trade Reporting &amp; STOR</div>
+      <div class="jk">trade_report (W44) · market_abuse_case (W52)</div>
+      <div class="jd">FMA post-trade repo: submitted → acknowledged → accepted; surveillance monitoring → alert → file_stor, certified.</div>
+      <div class="meter"><span class="mu">Metered per</span><span class="mp">certified report</span></div>
+    </div>
+  </div>
+
+  <!-- ─────────── TABS ─────────── -->
+  <div class="tabs" role="tablist">
+    <button class="tab" a-sel="1" onclick="pick(0)" role="tab"><span class="mono">01</span><b>Terminal</b></button>
+    <button class="tab" onclick="pick(1)" role="tab"><span class="mono">02</span><b>Command Palette</b></button>
+    <button class="tab" onclick="pick(2)" role="tab"><span class="mono">03</span><b>Risk Radar</b></button>
+  </div>
+
+  <!-- ═══════════ OPTION 1 — TERMINAL ═══════════ -->
+  <section class="pane" a-sel="1">
+    <div class="ohead">
+      <h2>01 · Terminal</h2>
+      <span class="concept">Bloomberg-dense, every surface on one screen — book + ticket + blotter, no navigation, no modals.</span>
+    </div>
+    <div class="ease">
+      <span class="lbl">Ease</span>
+      <span class="txt">Lift a price off the book straight into the ticket and fire it — <b>act on a quote without lifting your hands from the keyboard</b> (click a level → <span class="kbd">B</span>/<span class="kbd">S</span> → <span class="kbd">⏎</span>).</span>
+    </div>
+
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div class="desk">
+        <div class="dchrome">
+          <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+          <span class="url mono">oe.vantax.co.za/desk</span>
+          <span class="clk mono"><span class="blink">●</span> LIVE · 14:32:07 SAST · book latency 41ms</span>
+        </div>
+        <div class="t1">
+          <!-- left nav -->
+          <div class="col nav">
+            <div class="sech">Active Trading</div>
+            <a class="on">Open orders <span class="ct">7</span></a>
+            <a>Positions <span class="ct">12</span></a>
+            <a>Blotter <span class="ct">38</span></a>
+            <a>Rejections <span class="ct" style="color:var(--sell)">2</span></a>
+            <div class="sech">Risk &amp; Margin</div>
+            <a>VaR / scenarios</a>
+            <a>Margin calls <span class="ct p-warn" style="padding:0 4px;border-radius:3px">1</span></a>
+            <a>Position limits <span class="ct" style="color:var(--amber)">warn</span></a>
+            <div class="sech">Post-trade</div>
+            <a>Settlement</a>
+            <a>Allocation</a>
+            <a>Trade report <span class="ct">sub</span></a>
+            <div class="sech">Compliance</div>
+            <a>Surveillance</a>
+            <a>MM obligations</a>
+          </div>
+
+          <!-- centre: book + blotter -->
+          <div class="col" style="border-right:1px solid var(--line)">
+            <div class="spread"><span>EM-PWR · Day-Ahead Base · 28-Jun</span><span>VWAP <b>R1,142</b>/MWh</span></div>
+            <div class="ob">
+              <div class="r ask depthbar"><span class="px">1,151.00</span><span class="sz">120</span><span class="dep">3.2k</span><i style="width:58%"></i></div>
+              <div class="r ask depthbar"><span class="px">1,149.50</span><span class="sz">85</span><span class="dep">2.1k</span><i style="width:40%"></i></div>
+              <div class="r ask depthbar" style="background:#13202f"><span class="px">1,148.00</span><span class="sz">60</span><span class="dep">1.4k</span><i style="width:28%"></i></div>
+              <div class="spread" style="background:#0c1118"><span>SPREAD</span><span><b>R2.00</b> · 0.17%</span></div>
+              <div class="r bid depthbar" style="background:#0f1e16"><span class="px">1,146.00</span><span class="sz">140</span><span class="dep">1.6k</span><i style="width:32%"></i></div>
+              <div class="r bid depthbar"><span class="px">1,144.50</span><span class="sz">95</span><span class="dep">2.4k</span><i style="width:46%"></i></div>
+              <div class="r bid depthbar"><span class="px">1,143.00</span><span class="sz">210</span><span class="dep">3.9k</span><i style="width:70%"></i></div>
+            </div>
+            <table class="blot">
+              <thead><tr><th>Time</th><th>Sym</th><th>Side</th><th>Qty</th><th>Px</th><th>State</th><th>P&amp;L</th></tr></thead>
+              <tbody>
+                <tr><td>14:31:58</td><td>EM-PWR</td><td><span class="pill p-buy">BUY</span></td><td>50</td><td>1,146.00</td><td><span class="pill p-ok">matched</span></td><td style="color:var(--buy)">+R4.1k</td></tr>
+                <tr><td>14:29:12</td><td>CARB-ITMO</td><td><span class="pill p-sell">SELL</span></td><td>2,000</td><td>318.50</td><td><span class="pill p-mut">allocated</span></td><td style="color:var(--buy)">+R12k</td></tr>
+                <tr><td>14:22:40</td><td>EM-PWR</td><td><span class="pill p-buy">BUY</span></td><td>120</td><td>1,144.50</td><td><span class="pill p-mut">settled</span></td><td style="color:var(--ink3)">—</td></tr>
+                <tr><td>14:18:03</td><td>EM-GAS</td><td><span class="pill p-sell">SELL</span></td><td>75</td><td>892.00</td><td><span class="pill p-warn">rejected</span></td><td style="color:var(--sell)">guard</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- right: ticket -->
+          <div class="ticket">
+            <div class="label" style="margin-bottom:7px">Order ticket · EM-PWR</div>
+            <div class="row"><div class="seg"><button class="b on">BUY</button><button class="s">SELL</button></div></div>
+            <div class="row"><div style="flex:1"><label>Qty (MWh)</label><div class="fakein mono">120</div></div><div style="flex:1"><label>Limit px</label><div class="fakein mono" style="color:var(--buy)">1,148.00</div></div></div>
+            <div class="row"><div style="flex:1"><label>TIF</label><div class="fakein mono">IOC</div></div><div style="flex:1"><label>Notional</label><div class="fakein mono">R137,760</div></div></div>
+
+            <div class="label" style="margin:9px 0 4px">Pre-trade guards</div>
+            <div class="guards">
+              <div class="g"><span class="gd ok"></span>Credit headroom<span class="gx mono">R4.2m free</span></div>
+              <div class="g"><span class="gd ok"></span>Net exposure limit<span class="gx mono">62% used</span></div>
+              <div class="g"><span class="gd warn"></span>Mark age<span class="gx mono">8s — stale&gt;10s</span></div>
+              <div class="g"><span class="gd ok"></span>Trading halt<span class="gx mono">open</span></div>
+              <div class="g"><span class="gd ok"></span>KYC / mandate<span class="gx mono">valid</span></div>
+            </div>
+
+            <button class="submit">Send order &nbsp;<span class="kbd" style="background:#04140c;border-color:#0a3a22">⏎</span></button>
+            <div style="font-size:9.5px;color:var(--ink3);margin-top:6px;text-align:center" class="mono">B / S side · ↑↓ qty · Esc clears</div>
+
+            <!-- inline rejection explainer -->
+            <div class="rejex">
+              <b>Last reject · EM-GAS SELL 75</b> — blocked by <b>net-exposure guard</b>: order would push gas short to R9.1m vs R8.5m sleeve limit (107%).
+              <div class="fix">
+                <button>Trim to 55 MWh</button>
+                <button>Request limit bump</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="pstatus"><span>14:32</span><span>CEC · Trader</span><span>5G ▮▮▮ 84%</span></div>
+        <div class="pbody">
+          <div class="pwa-hint"><span class="d"></span>Installed PWA · live book · 1 order pending confirm</div>
+          <div class="pwrap">
+            <div class="ph-h"><span class="t">Quick fill</span><span class="pill p-ok">guards green</span></div>
+            <div class="pcard">
+              <div class="pquote"><span class="sym">EM-PWR</span><span class="px" style="color:var(--buy)">1,146.00</span></div>
+              <div style="font-size:11px;color:var(--ink3);margin-top:2px" class="mono">Day-Ahead Base · spread R2.00 · VWAP 1,142</div>
+              <div class="pguardrow">
+                <span class="pgchip"><span class="gd ok" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--buy)"></span>credit</span>
+                <span class="pgchip"><span class="gd" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--buy)"></span>limit</span>
+                <span class="pgchip"><span class="gd" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber)"></span>mark 8s</span>
+              </div>
+              <div class="pswipe"><button class="b">BUY 120 ▸</button><button class="s">◂ SELL</button></div>
+              <div style="font-size:10px;color:var(--ink3);margin-top:7px;text-align:center" class="mono">Swipe to confirm · IOC · R137,760</div>
+            </div>
+            <div class="ph-h" style="margin-top:4px"><span class="t" style="font-size:13px">Working orders</span></div>
+            <div class="pcard" style="padding:10px 12px">
+              <div style="display:flex;justify-content:space-between;font-size:12px"><span class="mono">EM-PWR · BUY 50</span><span class="pill p-ok">matched</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:7px"><span class="mono">CARB-ITMO · SELL 2k</span><span class="pill p-mut">allocated</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:7px"><span class="mono">EM-GAS · SELL 75</span><span class="pill p-warn">rejected</span></div>
+            </div>
+          </div>
+          <button class="fab">⌁ New order</button>
+          <div class="pnav">
+            <a class="on"><span class="ic">◈</span>Book</a>
+            <a><span class="ic">◩</span>Risk</a>
+            <a><span class="ic">◎</span>Settle</a>
+            <a><span class="ic">⬓</span>Survl</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ OPTION 2 — COMMAND PALETTE ═══════════ -->
+  <section class="pane" a-sel="">
+    <div class="ohead">
+      <h2>02 · Command Palette</h2>
+      <span class="concept">Linear-style. One input drives the whole desk — type an order in plain syntax, guards resolve live, ⏎ to fire.</span>
+    </div>
+    <div class="ease">
+      <span class="lbl">Ease</span>
+      <span class="txt">No screens to navigate — <b>type the trade as a sentence and the desk does the rest</b>: <span class="kbd">buy 120 em-pwr @1148 ioc</span> resolves credit, exposure, mark-age before your finger leaves <span class="kbd">⏎</span>.</span>
+    </div>
+
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div class="desk">
+        <div class="dchrome">
+          <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+          <span class="url mono">oe.vantax.co.za/desk · ⌘K</span>
+          <span class="clk mono"><span class="blink">●</span> LIVE · zero-modal mode</span>
+        </div>
+        <div class="cmdwrap">
+          <!-- context strip -->
+          <div class="cmd-context">
+            <div class="ctx"><div class="l">Day P&amp;L</div><div class="v g">+R41.2k</div></div>
+            <div class="ctx"><div class="l">Net exposure</div><div class="v a">62%</div></div>
+            <div class="ctx"><div class="l">Credit free</div><div class="v g">R4.2m</div></div>
+            <div class="ctx"><div class="l">Open VaR (1d)</div><div class="v">R880k</div></div>
+            <div class="ctx"><div class="l">MM miss streak</div><div class="v a">2 / 3</div></div>
+          </div>
+
+          <!-- the palette -->
+          <div class="palette">
+            <div class="pinput">
+              <span class="gt mono">▸</span>
+              <span class="typed">buy 120 em-pwr @1148 ioc</span><span class="cur"></span>
+              <span class="pill p-buy esc">parsed</span>
+            </div>
+            <div class="presolve">
+              <span><b>EM-PWR</b> Day-Ahead Base 28-Jun</span>
+              <span>side <b style="color:var(--buy)">BUY</b></span>
+              <span>120 MWh</span>
+              <span>@ R1,148.00</span>
+              <span>IOC</span>
+              <span>notional <b>R137,760</b></span>
+              <span class="ok">▸ matches 1,148 ask · fill ≈100%</span>
+            </div>
+            <div class="guardline">
+              <span class="ck">✓ credit R4.2m</span> · <span class="ck">✓ exposure 62%→66%</span> · <span class="ck">✓ halt open</span> · <span class="ck">✓ KYC</span> · <span class="warn">⚠ mark 8s (stale&gt;10s)</span>
+            </div>
+            <div class="presults">
+              <div class="opt sel"><div class="ico">⌁</div><div><div class="t">Send order — BUY 120 EM-PWR @1148 IOC</div><div class="s">passes all guards · 1 soft warning</div></div><div class="meta"><span class="badge b-p">Professional</span><div class="en mono">best_execution · per order</div></div></div>
+              <div class="opt"><div class="ico">◩</div><div><div class="t">Run as RFQ instead</div><div class="s">solicit 3 quotes → best-execution audit trail</div></div><div class="meta"><span class="badge b-p">Professional</span><div class="en mono">quotes_received</div></div></div>
+              <div class="opt"><div class="ico">◎</div><div><div class="t">Stage for allocation</div><div class="s">block order → per-account split (W76)</div></div><div class="meta"><span class="badge b-f">Foundation</span><div class="en mono">pending_allocation</div></div></div>
+            </div>
+            <div class="actbar">
+              <button class="go">Send ⏎</button>
+              <span style="font-size:11px;color:var(--ink2)">soft warning won't block — confirms at executable price</span>
+              <span class="hint">↑↓ pick · ⇥ RFQ · ⌘⏎ allocate · esc</span>
+            </div>
+          </div>
+
+          <div class="recent">
+            <span class="chip">⟲ sell 2000 carb-itmo @318.5</span>
+            <span class="chip">⟲ report trade T-88421 → FMA</span>
+            <span class="chip">⟲ show rejections</span>
+            <span class="chip">⟲ stor case MA-2207</span>
+            <span class="chip">⟲ settle run 28-jun</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="pstatus"><span>14:32</span><span>CEC · ⌘K</span><span>5G ▮▮▮ 84%</span></div>
+        <div class="pbody">
+          <div class="pwa-hint"><span class="d"></span>PWA · offline-safe queue · voice-to-order ready</div>
+          <div class="pwrap">
+            <div class="ph-h"><span class="t">Command</span><span class="pill p-mut">⌘K</span></div>
+            <div class="pcard" style="padding:13px">
+              <div style="display:flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:10px;padding:11px 12px;background:#060a0f">
+                <span class="gt mono" style="color:var(--gold)">▸</span>
+                <span class="mono" style="font-size:13px">buy 120 em-pwr @1148<span class="cur" style="display:inline-block;width:7px;height:15px;background:var(--gold);vertical-align:-2px"></span></span>
+              </div>
+              <div style="font-size:11px;color:var(--ink2);margin-top:10px" class="mono">BUY 120 · R137,760 · IOC · fill ≈100%</div>
+              <div class="pguardrow" style="margin-top:9px">
+                <span class="pgchip"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--buy)"></span>credit</span>
+                <span class="pgchip"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--buy)"></span>exposure</span>
+                <span class="pgchip"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber)"></span>mark 8s</span>
+              </div>
+            </div>
+            <div class="pcard" style="padding:11px 12px">
+              <div class="label" style="margin-bottom:7px">Suggestions</div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid #131c28"><span>Send order</span><span class="badge b-p">Pro</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid #131c28"><span>Run as RFQ</span><span class="badge b-p">Pro</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0"><span>Stage allocation</span><span class="badge b-f">Found.</span></div>
+            </div>
+          </div>
+          <button class="fab" style="background:var(--gold);color:#1a1305">Send ⏎</button>
+          <div class="pnav">
+            <a class="on"><span class="ic">⌘</span>Cmd</a>
+            <a><span class="ic">◈</span>Book</a>
+            <a><span class="ic">◩</span>Risk</a>
+            <a><span class="ic">⬓</span>Survl</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ OPTION 3 — RISK RADAR ═══════════ -->
+  <section class="pane" a-sel="">
+    <div class="ohead">
+      <h2>03 · Risk Radar</h2>
+      <span class="concept">Spatial. Positions and chain cases plotted by distance-to-limit; the closer to centre the calmer — act from the live quote rail without leaving the picture.</span>
+    </div>
+    <div class="ease">
+      <span class="lbl">Ease</span>
+      <span class="txt">See every risk and live quote in one glance and act in place — <b>fire from the quote rail while watching the whole book's distance-to-limit</b>, no tab-hunting for what's about to breach.</span>
+    </div>
+
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div class="desk">
+        <div class="dchrome">
+          <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+          <span class="url mono">oe.vantax.co.za/desk/radar</span>
+          <span class="clk mono"><span class="blink">●</span> sweep 6s · 14:32 SAST</span>
+        </div>
+        <div class="radarwrap">
+          <!-- radar -->
+          <div class="radar">
+            <h3>Distance-to-limit radar</h3>
+            <div class="rsub mono">centre = safe · outer ring = limit breach · colour = guard state</div>
+            <div class="stage">
+              <div class="sweep"></div>
+              <div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div><div class="ring r4"></div>
+              <div class="ringlbl" style="top:0">LIMIT</div>
+              <div class="ringlbl" style="top:62px">90%</div>
+              <div class="ringlbl" style="top:124px">75%</div>
+              <div class="center"><div><div class="big">62%</div><div class="cl">net exposure</div></div></div>
+
+              <!-- blips: positioned around -->
+              <div class="blip warn" style="left:73%;top:24%"><div class="dotg"></div><div class="nm">PosLimit</div><div class="vv">warn · 88%</div></div>
+              <div class="blip bad" style="left:18%;top:18%"><div class="dotg"></div><div class="nm">CP-margin</div><div class="vv">call · met by 15:00</div></div>
+              <div class="blip ok" style="left:64%;top:74%"><div class="dotg"></div><div class="nm">EM-PWR</div><div class="vv">+R41k · 66%</div></div>
+              <div class="blip ok" style="left:30%;top:70%"><div class="dotg"></div><div class="nm">CARB-ITMO</div><div class="vv">+R12k · 44%</div></div>
+              <div class="blip warn" style="left:80%;top:52%"><div class="dotg"></div><div class="nm">MM miss</div><div class="vv">2 / 3 streak</div></div>
+              <div class="blip ok" style="left:46%;top:30%"><div class="dotg"></div><div class="nm">Mark age</div><div class="vv">8s</div></div>
+            </div>
+          </div>
+
+          <!-- quote rail -->
+          <div class="quotepanel">
+            <div class="qp-h"><span class="label">Live quote rail</span><span class="pill p-ok mono">act in place</span></div>
+            <div class="quote">
+              <div class="qtop"><span class="sym">EM-PWR</span><span class="px buy">1,146.00</span></div>
+              <div class="qsub mono">Day-Ahead Base · spread R2.00 · 120 ask</div>
+              <div class="qguard">
+                <span class="qg"><span class="gd ok" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--buy)"></span>credit</span>
+                <span class="qg"><span class="gd" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--buy)"></span>exposure 66%</span>
+                <span class="qg"><span class="gd" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber)"></span>mark 8s</span>
+              </div>
+              <div class="qacts"><button class="buy">BUY 120</button><button class="sell">SELL</button></div>
+              <div class="qhint">⏎ confirms at quote · guards re-check on send</div>
+            </div>
+            <div class="quote">
+              <div class="qtop"><span class="sym">CARB-ITMO</span><span class="px sell">318.50</span></div>
+              <div class="qsub mono">Art-6 ITMO · 2,000 lots offered</div>
+              <div class="qguard">
+                <span class="qg"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--buy)"></span>credit</span>
+                <span class="qg"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--buy)"></span>corr-adj ok</span>
+              </div>
+              <div class="qacts"><button class="buy">BUY</button><button class="sell">SELL 2k</button></div>
+            </div>
+            <div class="quote" style="border-bottom:none">
+              <div class="label" style="margin-bottom:7px">Radar reject · in place</div>
+              <div class="rejex" style="margin:0">
+                <b>EM-GAS short</b> would cross into the outer ring — <b>sleeve limit 107%</b>. No order sent.
+                <div class="fix"><button>Trim to 55</button><button>Counterparty margin first</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="pstatus"><span>14:32</span><span>CEC · Radar</span><span>5G ▮▮▮ 84%</span></div>
+        <div class="pbody">
+          <div class="pwa-hint"><span class="d" style="background:var(--amber)"></span>PWA · 1 margin call due 15:00 · 1 limit warn</div>
+          <div class="pwrap">
+            <div class="ph-h"><span class="t">Risk first</span><span class="pill p-warn">2 watch</span></div>
+            <!-- mini radar -->
+            <div class="pcard" style="text-align:center;padding:16px">
+              <div style="position:relative;width:170px;height:170px;margin:0 auto">
+                <div style="position:absolute;inset:0;border-radius:50%;border:1px solid var(--line)"></div>
+                <div style="position:absolute;inset:30px;border-radius:50%;border:1px solid var(--line)"></div>
+                <div style="position:absolute;inset:60px;border-radius:50%;background:radial-gradient(circle,#13202f,#0a0f16);display:grid;place-items:center;border:1px solid var(--line2)"><div><div class="mono" style="font-size:18px;font-weight:700;color:var(--buy)">62%</div><div style="font-size:8px;letter-spacing:.1em;color:var(--ink3)">EXPOSURE</div></div></div>
+                <div style="position:absolute;left:78%;top:20%;width:11px;height:11px;border-radius:50%;background:var(--sell);box-shadow:0 0 0 4px rgba(255,77,94,.12)"></div>
+                <div style="position:absolute;left:20%;top:30%;width:11px;height:11px;border-radius:50%;background:var(--amber)"></div>
+                <div style="position:absolute;left:64%;top:74%;width:11px;height:11px;border-radius:50%;background:var(--buy)"></div>
+              </div>
+            </div>
+            <div class="pcard" style="padding:11px 12px">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px"><span class="mono">CP-margin</span> · call</span><span class="pill p-sell">due 15:00</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span style="font-size:12px"><span class="mono">PosLimit</span> · 88%</span><span class="pill p-warn">warn</span></div>
+            </div>
+            <!-- act in place quote -->
+            <div class="pcard">
+              <div class="pquote"><span class="sym">EM-PWR</span><span class="px" style="color:var(--buy)">1,146.00</span></div>
+              <div class="pswipe"><button class="b">BUY 120 ▸</button><button class="s">◂ SELL</button></div>
+              <div class="qhint" style="text-align:center;margin-top:7px">guards re-check on send</div>
+            </div>
+          </div>
+          <button class="fab" style="background:var(--sell);color:#fff">Meet margin call</button>
+          <div class="pnav">
+            <a class="on"><span class="ic">◎</span>Radar</a>
+            <a><span class="ic">◈</span>Book</a>
+            <a><span class="ic">◩</span>Margin</a>
+            <a><span class="ic">⬓</span>Survl</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOT -->
+  <div class="foot">
+    <div class="legend">
+      <span><span class="sq" style="background:var(--buy)"></span>guard pass / buy</span>
+      <span><span class="sq" style="background:var(--amber)"></span>soft warning</span>
+      <span><span class="sq" style="background:var(--sell)"></span>blocked / sell</span>
+      <span><span class="sq" style="background:var(--grade-f)"></span>Foundation L3</span>
+      <span><span class="sq" style="background:var(--grade-p)"></span>Professional L4</span>
+      <span><span class="sq" style="background:var(--grade-r)"></span>Regulator-grade L5</span>
+    </div>
+    <div class="mono">Real chains: best_execution · trade_allocation (W76) · trade_report (W44) · market_abuse_case (W52) · poslimit_case (W29) · counterparty_margin (W68)</div>
+  </div>
+</div>
+
+<script>
+  function pick(i){
+    document.querySelectorAll('.tab').forEach((t,n)=>t.setAttribute('a-sel',n===i?'1':''));
+    document.querySelectorAll('.pane').forEach((p,n)=>p.setAttribute('a-sel',n===i?'1':''));
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lender — Open Energy Platform · Design Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Project-finance credit desk: parchment + ink + ledger-green, alarm-amber, default-red */
+    --ink:#13161c;
+    --ink-2:#2a2f3a;
+    --paper:#f4f1ea;
+    --paper-2:#ece7dc;
+    --line:#d8d2c4;
+    --line-strong:#bcb4a1;
+    --green:#1f6b4a;        /* compliant / clean */
+    --green-bg:#e3efe7;
+    --amber:#9a6310;        /* watch / cure clock */
+    --amber-bg:#f6ead2;
+    --red:#a3231f;          /* breach / default */
+    --red-bg:#f7ddd8;
+    --blue:#274b8f;         /* informational / IE */
+    --blue-bg:#dfe6f4;
+    --gold:#8a6d2f;
+    --shadow:0 1px 0 rgba(0,0,0,.04), 0 8px 28px -16px rgba(20,18,12,.45);
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+    --serif:"Newsreader",Georgia,serif;
+    --sans:"Inter",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#1b1d22;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:28px clamp(14px,3vw,48px) 80px}
+  a{color:inherit}
+  h1,h2,h3,h4{margin:0;font-weight:600}
+  .wrap{max-width:1360px;margin:0 auto}
+
+  /* ---------- Header band ---------- */
+  .band{
+    background:linear-gradient(180deg,#23262e,#1b1d22);
+    border:1px solid #34373f;border-radius:16px;padding:26px 30px;color:#eceadf;
+    display:grid;grid-template-columns:1.35fr 1fr;gap:30px;align-items:start;
+  }
+  .role-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#9a9486}
+  .band h1{font-family:var(--serif);font-size:40px;line-height:1.05;letter-spacing:-.01em;margin:6px 0 4px;color:#fbf8ef}
+  .band .sub{font-family:var(--mono);font-size:12px;color:#c5b98f}
+  .persona{font-size:13.5px;line-height:1.55;color:#cbc7ba;margin-top:14px;max-width:60ch}
+  .persona b{color:#fbf8ef;font-weight:600}
+  .rationale{margin-top:14px;border-left:3px solid var(--gold);padding:8px 0 8px 14px;font-size:12.5px;line-height:1.5;color:#d8d3c4}
+  .rationale .k{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#9a9486;display:block;margin-bottom:3px}
+  .ease-hero{margin-top:16px;background:#2c2218;border:1px solid #4a3a23;border-radius:11px;padding:12px 14px;display:flex;gap:11px;align-items:flex-start}
+  .ease-hero .dot{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--amber-bg);color:#5e3d05;display:grid;place-items:center;font-weight:700;font-family:var(--serif);font-size:15px}
+  .ease-hero p{margin:0;font-size:12.5px;line-height:1.5;color:#e9d9bd}
+  .ease-hero b{color:#f7c873}
+
+  /* ---------- Journey-as-product strip ---------- */
+  .journeys{margin-top:18px;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+  .journeys .head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+  .journeys .head h2{font-family:var(--serif);font-size:18px}
+  .journeys .head .meta{font-family:var(--mono);font-size:11px;color:#6f6a5d}
+  .jgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .jcard{border:1px solid var(--line);border-radius:13px;background:#fbf9f3;padding:15px 16px;position:relative;overflow:hidden}
+  .jcard:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+  .jcard.j1{--accent:var(--blue)} .jcard.j2{--accent:var(--green)} .jcard.j3{--accent:var(--red)}
+  .jcard .wno{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:#8b8474;text-transform:uppercase}
+  .jcard h3{font-family:var(--serif);font-size:18px;margin:4px 0 2px;line-height:1.1}
+  .jcard .chain{font-family:var(--mono);font-size:11px;color:#6f6a5d}
+  .tier{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;margin-top:11px}
+  .tier .lv{font-size:9px;opacity:.85}
+  .tier.foundation{background:#e7eef3;color:#274b66;border:1px solid #c3d4df}
+  .tier.professional{background:var(--amber-bg);color:#5e3d05;border:1px solid #e3c98e}
+  .tier.regulator{background:#efe6f3;color:#5a2f6b;border:1px solid #d8c3e0}
+  .meter{margin-top:12px;display:flex;align-items:baseline;justify-content:space-between;border-top:1px dashed var(--line-strong);padding-top:10px}
+  .meter .lab{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:#8b8474;font-family:var(--mono)}
+  .meter .val{font-family:var(--serif);font-size:15px;color:var(--ink)}
+  .meter .val small{font-family:var(--sans);font-size:11px;color:#6f6a5d}
+
+  /* ---------- Option tabs ---------- */
+  .tabs{margin-top:26px;display:flex;gap:6px;background:#22252c;padding:6px;border-radius:13px;border:1px solid #34373f;width:max-content;max-width:100%}
+  .tabs button{appearance:none;border:0;background:transparent;color:#b9b4a6;font-family:var(--sans);font-weight:600;font-size:13px;padding:9px 16px;border-radius:9px;cursor:pointer;display:flex;flex-direction:column;gap:2px;line-height:1.1;min-height:24px}
+  .tabs button .t{font-size:10px;font-family:var(--mono);letter-spacing:.1em;color:#7d7868;text-transform:uppercase}
+  .tabs button[aria-selected="true"]{background:var(--paper);color:var(--ink)}
+  .tabs button[aria-selected="true"] .t{color:var(--gold)}
+
+  .panel{display:none;margin-top:18px}
+  .panel.active{display:block}
+  .opt-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:14px;color:#eceadf}
+  .opt-head h2{font-family:var(--serif);font-size:26px;color:#fbf8ef}
+  .opt-head .concept{font-size:13px;color:#c5c0b2;max-width:62ch;margin-top:5px;line-height:1.5}
+  .ease-tag{flex:0 0 auto;max-width:320px;background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:11px;padding:11px 13px}
+  .ease-tag .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);display:block;margin-bottom:4px}
+  .ease-tag p{margin:0;font-size:12px;line-height:1.45;color:var(--ink-2)}
+
+  .frames{display:grid;grid-template-columns:1fr 392px;gap:22px;align-items:start}
+
+  /* ---------- Desktop frame chrome ---------- */
+  .desktop{background:#cfc9bb;border-radius:13px;padding:10px;box-shadow:var(--shadow)}
+  .dchrome{display:flex;align-items:center;gap:8px;padding:4px 6px 9px}
+  .dchrome .dots{display:flex;gap:6px} .dchrome .dots i{width:11px;height:11px;border-radius:50%;display:block}
+  .dchrome .dots i:nth-child(1){background:#e3675f} .dchrome .dots i:nth-child(2){background:#e7b04a} .dchrome .dots i:nth-child(3){background:#69b46a}
+  .dchrome .url{flex:1;background:#efeadf;border-radius:7px;font-family:var(--mono);font-size:11px;color:#6f6a5d;padding:5px 11px}
+  .screen{background:var(--paper);border-radius:8px;overflow:hidden;border:1px solid var(--line-strong)}
+
+  /* app top bar */
+  .appbar{display:flex;align-items:center;gap:14px;padding:11px 16px;background:#fbf9f3;border-bottom:1px solid var(--line)}
+  .brand{font-family:var(--serif);font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .brand .mk{width:22px;height:22px;border-radius:6px;background:var(--ink);color:#f4f1ea;display:grid;place-items:center;font-family:var(--mono);font-size:12px}
+  .appbar nav{display:flex;gap:3px;margin-left:6px}
+  .appbar nav a{font-size:12px;color:#6f6a5d;padding:6px 10px;border-radius:7px;text-decoration:none}
+  .appbar nav a.on{background:var(--paper-2);color:var(--ink);font-weight:600}
+  .appbar .spacer{flex:1}
+  .appbar .who{font-family:var(--mono);font-size:11px;color:#6f6a5d;display:flex;align-items:center;gap:8px}
+  .avatar{width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:600;font-size:11px;font-family:var(--sans)}
+
+  .stat-strip{display:flex;gap:0;border-bottom:1px solid var(--line);background:#fbf9f3}
+  .stat{flex:1;padding:11px 16px;border-right:1px solid var(--line)}
+  .stat:last-child{border-right:0}
+  .stat .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#8b8474}
+  .stat .v{font-family:var(--serif);font-size:22px;line-height:1.1;margin-top:3px}
+  .stat .v.red{color:var(--red)} .stat .v.amber{color:var(--amber)} .stat .v.green{color:var(--green)}
+  .stat .d{font-size:10.5px;color:#6f6a5d;margin-top:2px}
+
+  /* badges & pills */
+  .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+  .pill.green{background:var(--green-bg);color:#0f4a31}
+  .pill.amber{background:var(--amber-bg);color:#5e3d05}
+  .pill.red{background:var(--red-bg);color:#7a1714}
+  .pill.blue{background:var(--blue-bg);color:#1c3666}
+  .pill.grey{background:var(--paper-2);color:#5a554a}
+  .clock{font-family:var(--mono);font-weight:600;letter-spacing:.02em}
+  .clock.hot{color:var(--red)} .clock.warm{color:var(--amber)}
+
+  /* ===== Option 1: portfolio risk heatmap ===== */
+  .body1{display:grid;grid-template-columns:1.5fr 1fr;gap:0}
+  .col-l{padding:16px;border-right:1px solid var(--line)}
+  .col-r{padding:16px;background:#fbf9f3}
+  .sec-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px}
+  .sec-h h4{font-family:var(--serif);font-size:16px}
+  .sec-h .more{font-family:var(--mono);font-size:10px;color:#8b8474;text-transform:uppercase;letter-spacing:.08em}
+  .heat{display:grid;grid-template-columns:120px repeat(4,1fr);gap:6px;font-size:11px}
+  .heat .hx{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#8b8474;align-self:end;text-align:center;padding-bottom:3px}
+  .heat .ry{font-family:var(--sans);font-size:11.5px;color:var(--ink-2);align-self:center;font-weight:500}
+  .cell{height:42px;border-radius:7px;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;font-family:var(--mono);font-weight:600;font-size:12px;cursor:pointer;position:relative;border:1px solid rgba(0,0,0,.06)}
+  .cell small{font-size:8.5px;opacity:.9;font-weight:500}
+  .c-ok{background:#2f7d57} .c-watch{background:#b9831f} .c-breach{background:#a3231f} .c-na{background:#c9c2b3;color:#5a554a}
+  .cell.flag:after{content:"";position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px rgba(0,0,0,.18)}
+
+  .legend{display:flex;gap:14px;margin-top:11px;font-family:var(--mono);font-size:9.5px;color:#6f6a5d}
+  .legend span{display:flex;align-items:center;gap:5px} .legend i{width:11px;height:11px;border-radius:3px;display:block}
+
+  .alarm{background:#fff;border:1px solid var(--red);border-left:4px solid var(--red);border-radius:11px;padding:13px 14px;box-shadow:0 6px 18px -12px rgba(120,20,16,.5)}
+  .alarm .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .alarm h4{font-family:var(--serif);font-size:16px;color:var(--red)}
+  .alarm .deal{font-family:var(--mono);font-size:11px;color:#6f6a5d;margin-top:1px}
+  .alarm .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .kv .l{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8b8474}
+  .kv .v{font-family:var(--serif);font-size:17px;margin-top:2px}
+  .kv .v.red{color:var(--red)}
+  .cure{margin-top:12px;background:var(--red-bg);border-radius:9px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center}
+  .cure .lab{font-size:11px;color:#7a1714;font-weight:600}
+  .cure .t{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--red)}
+  .btnrow{display:flex;gap:8px;margin-top:12px}
+  .btn{appearance:none;border:1px solid var(--line-strong);background:#fbf9f3;border-radius:8px;font-family:var(--sans);font-weight:600;font-size:12px;padding:9px 13px;cursor:pointer;min-height:24px;color:var(--ink)}
+  .btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+  .btn.dark{background:var(--ink);border-color:var(--ink);color:#f4f1ea}
+
+  .wl{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+  .wl-item{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 11px}
+  .wl-item .nm{flex:1;font-size:12.5px;font-weight:500}
+  .wl-item .nm small{display:block;font-family:var(--mono);font-size:10px;color:#8b8474;font-weight:400;margin-top:1px}
+
+  /* ===== Option 2: covenant waterfall single deal ===== */
+  .deal-hd{padding:16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:14px;background:#fbf9f3}
+  .deal-hd h3{font-family:var(--serif);font-size:21px}
+  .deal-hd .meta{font-family:var(--mono);font-size:11px;color:#6f6a5d;margin-top:4px;display:flex;gap:14px;flex-wrap:wrap}
+  .body2{display:grid;grid-template-columns:230px 1fr;gap:0}
+  .flow{padding:16px;border-right:1px solid var(--line);background:#fbf9f3}
+  .flow h4{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8b8474;margin-bottom:12px}
+  .step{display:flex;gap:10px;position:relative;padding-bottom:14px}
+  .step:before{content:"";position:absolute;left:8px;top:18px;bottom:-2px;width:2px;background:var(--line-strong)}
+  .step:last-child:before{display:none}
+  .step .node{flex:0 0 auto;width:18px;height:18px;border-radius:50%;border:2px solid var(--line-strong);background:#fff;z-index:1;margin-top:1px}
+  .step.done .node{background:var(--green);border-color:var(--green)}
+  .step.now .node{background:var(--red);border-color:var(--red);box-shadow:0 0 0 4px var(--red-bg)}
+  .step .lab{font-size:12px;line-height:1.3}
+  .step .lab small{display:block;font-family:var(--mono);font-size:9.5px;color:#8b8474;margin-top:1px}
+  .step.now .lab{font-weight:600;color:var(--red)}
+
+  .wf{padding:16px}
+  .wf-card{border:1px solid var(--line);border-radius:11px;overflow:hidden;margin-bottom:13px}
+  .wf-card .hd{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;background:#fbf9f3;border-bottom:1px solid var(--line)}
+  .wf-card .hd h5{font-family:var(--serif);font-size:14px}
+  .wf-card .bd{padding:12px 13px}
+  .cov-row{display:grid;grid-template-columns:1fr 90px 90px 110px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px dashed var(--line)}
+  .cov-row:last-child{border-bottom:0}
+  .cov-row .name{font-size:12.5px;font-weight:500}
+  .cov-row .name small{display:block;font-family:var(--mono);font-size:10px;color:#8b8474;font-weight:400}
+  .cov-row .num{font-family:var(--mono);font-size:13px;text-align:right}
+  .cov-row .num.req{color:#6f6a5d}
+  .bar{height:6px;border-radius:4px;background:var(--paper-2);overflow:hidden;margin-top:4px}
+  .bar i{display:block;height:100%}
+
+  .wfall{padding:12px 13px}
+  .wfall .step2{display:flex;justify-content:space-between;align-items:center;padding:9px 11px;border-radius:8px;margin-bottom:7px;font-size:12px}
+  .wfall .step2 .amt{font-family:var(--mono);font-weight:600}
+  .wfall .s-rev{background:var(--green-bg)} .wfall .s-cost{background:var(--paper-2)} .wfall .s-debt{background:var(--blue-bg)} .wfall .s-dsra{background:var(--amber-bg)} .wfall .s-fail{background:var(--red-bg);color:#7a1714;font-weight:600}
+
+  /* ===== Option 3: calm watchlist with alarms ===== */
+  .body3{padding:18px 20px}
+  .calm-lead{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid var(--amber);border-left:5px solid var(--amber);border-radius:13px;padding:16px 18px;margin-bottom:16px}
+  .calm-lead .ring{flex:0 0 auto;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--red) 0 70%, var(--paper-2) 0);position:relative}
+  .calm-lead .ring:after{content:"";position:absolute;inset:8px;border-radius:50%;background:#fff}
+  .calm-lead .ring span{position:relative;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--red);line-height:1;text-align:center}
+  .calm-lead .ring span small{display:block;font-size:8px;color:#6f6a5d;font-weight:500}
+  .calm-lead .txt h4{font-family:var(--serif);font-size:19px}
+  .calm-lead .txt p{margin:4px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.45;max-width:54ch}
+  .calm-lead .txt b{color:var(--red)}
+  .calm-lead .act{margin-left:auto;display:flex;flex-direction:column;gap:7px}
+
+  .rows{display:flex;flex-direction:column;gap:9px}
+  .row{display:grid;grid-template-columns:14px 1fr 130px 150px 120px;gap:14px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:11px;padding:12px 15px}
+  .row .tick{width:10px;height:10px;border-radius:50%;justify-self:center}
+  .tick.ok{background:var(--green)} .tick.watch{background:var(--amber)} .tick.breach{background:var(--red)}
+  .row .who h5{font-family:var(--serif);font-size:15px}
+  .row .who small{font-family:var(--mono);font-size:10.5px;color:#8b8474}
+  .row .stat-c{font-size:12px}
+  .row .stat-c .l{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#8b8474}
+  .row .stat-c .v{font-family:var(--serif);font-size:15px;margin-top:1px}
+  .row .next .l{font-family:var(--mono);font-size:9px;text-transform:uppercase;color:#8b8474}
+  .row .next .v{font-size:12px;margin-top:2px}
+
+  /* ---------- Phone frame ---------- */
+  .phone{width:392px;background:#23262e;border-radius:42px;padding:11px;box-shadow:var(--shadow);justify-self:end}
+  .pscreen{background:var(--paper);border-radius:32px;overflow:hidden;height:812px;display:flex;flex-direction:column;position:relative}
+  .pstatus{display:flex;justify-content:space-between;align-items:center;padding:10px 22px 6px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
+  .pstatus .right{display:flex;gap:6px;align-items:center}
+  .notch{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:118px;height:26px;background:#23262e;border-radius:0 0 16px 16px;z-index:5}
+  .pwa-hint{display:flex;align-items:center;gap:8px;margin:0 14px 10px;background:var(--ink);color:#e9e4d6;border-radius:10px;padding:8px 11px;font-size:11px}
+  .pwa-hint .o{margin-left:auto;font-family:var(--mono);font-size:9px;color:#a8e6c0;display:flex;align-items:center;gap:5px}
+  .pwa-hint .o:before{content:"";width:6px;height:6px;border-radius:50%;background:#3ecf8e}
+  .phd{padding:4px 16px 12px}
+  .phd .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#8b8474}
+  .phd h3{font-family:var(--serif);font-size:21px;margin-top:2px}
+  .pbody{flex:1;overflow:hidden;padding:0 14px}
+
+  .palarm{background:#fff;border:1px solid var(--red);border-left:4px solid var(--red);border-radius:14px;padding:14px;box-shadow:0 8px 22px -14px rgba(120,20,16,.55)}
+  .palarm .tag{display:inline-flex;font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--red);padding:3px 8px;border-radius:6px}
+  .palarm h4{font-family:var(--serif);font-size:18px;margin:9px 0 1px}
+  .palarm .sub{font-family:var(--mono);font-size:11px;color:#6f6a5d}
+  .palarm .curep{margin-top:12px;background:var(--red-bg);border-radius:10px;padding:11px;text-align:center}
+  .palarm .curep .t{font-family:var(--mono);font-size:30px;font-weight:600;color:var(--red);line-height:1}
+  .palarm .curep .l{font-size:10px;color:#7a1714;margin-top:3px;text-transform:uppercase;letter-spacing:.08em}
+  .palarm .mini{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .palarm .mini .b{background:var(--paper);border-radius:9px;padding:8px 10px}
+  .palarm .mini .b .l{font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:#8b8474}
+  .palarm .mini .b .v{font-family:var(--serif);font-size:15px;margin-top:1px}
+  .palarm .mini .b .v.red{color:var(--red)}
+
+  .plist{margin-top:13px;display:flex;flex-direction:column;gap:8px}
+  .pitem{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 12px}
+  .pitem .ti{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .pitem .nm{flex:1;font-size:12.5px;font-weight:500}
+  .pitem .nm small{display:block;font-family:var(--mono);font-size:10px;color:#8b8474;font-weight:400;margin-top:1px}
+  .pitem .cl{font-family:var(--mono);font-size:12px;font-weight:600}
+
+  .pthumb{padding:11px 14px calc(11px + env(safe-area-inset-bottom));}
+  .pthumb .big{width:100%;border:0;border-radius:13px;padding:15px;font-family:var(--sans);font-weight:700;font-size:15px;color:#fff;background:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;min-height:24px}
+  .pthumb .big.dark{background:var(--ink)} .pthumb .big.green{background:var(--green)}
+  .pnav{display:flex;background:#fbf9f3;border-top:1px solid var(--line);padding:8px 6px calc(10px + env(safe-area-inset-bottom))}
+  .pnav a{flex:1;text-align:center;text-decoration:none;font-family:var(--mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:#8b8474;display:flex;flex-direction:column;gap:4px;align-items:center;padding:4px 0;min-height:24px}
+  .pnav a .ic{font-size:17px;line-height:1}
+  .pnav a.on{color:var(--ink)} .pnav a.on .ic{color:var(--red)}
+
+  /* phone option-2 covenant detail */
+  .pcov{margin-top:4px;display:flex;flex-direction:column;gap:9px}
+  .pcov .c{background:#fff;border:1px solid var(--line);border-radius:11px;padding:11px 13px}
+  .pcov .c .top{display:flex;justify-content:space-between;align-items:center}
+  .pcov .c h5{font-family:var(--serif);font-size:14px}
+  .pcov .c .nums{font-family:var(--mono);font-size:11px;color:#6f6a5d;margin-top:7px;display:flex;justify-content:space-between}
+  .pcov .c .nums b{font-size:13px}
+
+  .caption{font-family:var(--mono);font-size:10.5px;color:#9a9486;text-align:center;margin-top:9px;letter-spacing:.02em}
+
+  @media (max-width:1080px){
+    .band,.jgrid,.body1,.body2{grid-template-columns:1fr}
+    .frames{grid-template-columns:1fr}
+    .phone{justify-self:center}
+  }
+  .a11y{margin-top:34px;background:var(--paper);border:1px solid var(--line);border-radius:13px;padding:16px 20px;font-size:12px;color:var(--ink-2);line-height:1.6}
+  .a11y h4{font-family:var(--serif);font-size:15px;margin-bottom:6px}
+  .a11y code{font-family:var(--mono);background:var(--paper-2);padding:1px 5px;border-radius:4px;font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ========= HEADER BAND ========= -->
+  <header class="band">
+    <div>
+      <div class="role-eyebrow">Open Energy Platform · Role design exploration</div>
+      <h1>Lender</h1>
+      <div class="sub">Project-finance credit desk · /lender-suite</div>
+      <p class="persona">
+        A <b>project-finance credit officer</b> at a DFI or commercial debt fund, carrying a book of REIPPPP
+        and merchant-IPP facilities. Works <b>desktop-first, deliberately, analytically</b> — long sessions across
+        covenant certificates, DSCR tests, drawdown use-of-proceeds and DSRA/MRA reserve positions.
+        Their stress lives entirely on the downside: a <b>covenant breach, an event of default, step-in, write-off</b>.
+        What they need is not more dashboards — it's for the one facility that is slipping to <b>announce itself</b>,
+        with the cure window already counting down.
+      </p>
+      <div class="rationale">
+        <span class="k">Design rationale</span>
+        Three genuinely different bets on how risk reaches a credit officer: a <b>portfolio heatmap</b> that drills to the
+        breach, a <b>single-deal covenant waterfall</b> for forensic depth, and a <b>calm watchlist</b> that stays quiet
+        until a clock starts. All three obey one law — the at-risk covenant surfaces itself.
+      </div>
+      <div class="ease-hero">
+        <div class="dot">⏱</div>
+        <p><b>Ease, for a lender:</b> the risk that matters finds you. Every option opens already pointed at the breaching
+        covenant — its cure clock running, its waterfall failing — so you never hunt through a table to learn what is
+        about to default.</p>
+      </div>
+    </div>
+
+    <!-- Journey-as-product strip -->
+    <div class="journeys" style="margin-top:0">
+      <div class="head">
+        <h2>Hero journeys, priced as products</h2>
+        <span class="meta">metered · tiered · audit-backed</span>
+      </div>
+      <div class="jgrid" style="grid-template-columns:1fr">
+        <div class="jcard j1">
+          <span class="wno">W38 · chain: covenant_certificate</span>
+          <h3>Covenant Certificates</h3>
+          <span class="chain">requested → under_review → compliant · breach · acceleration</span>
+          <span class="tier professional"><span class="lv">L4</span> Professional</span>
+          <div class="meter"><span class="lab">Metered</span><span class="val">R per certificate <small>reviewed + filed</small></span></div>
+        </div>
+        <div class="jcard j2">
+          <span class="wno">W86 · chain: dscr_monitoring</span>
+          <h3>DSCR / LLCR Monitoring</h3>
+          <span class="chain">period_open → computed → watch → breach_recorded → lock_up → cure → certified_clean</span>
+          <span class="tier regulator"><span class="lv">L5</span> Regulator-grade</span>
+          <div class="meter"><span class="lab">Metered</span><span class="val">R per facility <small>· per quarterly test, certified</small></span></div>
+        </div>
+        <div class="jcard j3">
+          <span class="wno">W45 · chain: loan_default</span>
+          <h3>Default &amp; Enforcement / Step-in</h3>
+          <span class="chain">performing → watchlist → event_of_default → standstill → enforcement → step_in → write_off</span>
+          <span class="tier professional"><span class="lv">L4</span> Professional</span>
+          <div class="meter"><span class="lab">Metered</span><span class="val">R per enforcement case <small>opened</small></span></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========= OPTION TABS ========= -->
+  <div class="tabs" role="tablist" aria-label="Design options">
+    <button role="tab" aria-selected="true" aria-controls="p1" id="t1" onclick="pick(1)"><span class="t">Option 1</span>Portfolio Risk Heatmap</button>
+    <button role="tab" aria-selected="false" aria-controls="p2" id="t2" onclick="pick(2)"><span class="t">Option 2</span>Covenant Waterfall</button>
+    <button role="tab" aria-selected="false" aria-controls="p3" id="t3" onclick="pick(3)"><span class="t">Option 3</span>Calm Watchlist</button>
+  </div>
+
+  <!-- ================= OPTION 1 ================= -->
+  <section class="panel active" id="p1" role="tabpanel" aria-labelledby="t1">
+    <div class="opt-head">
+      <div>
+        <h2>Option 1 — Portfolio Risk Heatmap</h2>
+        <p class="concept">A facility × covenant-class grid. Green is clean, amber is on watch, red is breached — the red cell
+        is already exploded into a live breach panel on the right. Built for the credit officer who manages by exception across a whole book.</p>
+      </div>
+      <div class="ease-tag">
+        <span class="k">⏱ Ease — the one effortless thing</span>
+        <p>The reddest cell pre-selects itself: the breach panel and its cure clock are open before you click anything.</p>
+      </div>
+    </div>
+
+    <div class="frames">
+      <!-- desktop -->
+      <div class="desktop">
+        <div class="dchrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">oe.vantax.co.za/lender-suite/risk</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <span class="brand"><span class="mk">◈</span>Lender Suite</span>
+            <nav><a class="on" href="#">Risk</a><a href="#">Portfolio</a><a href="#">Drawdowns</a><a href="#">Covenants</a><a href="#">Enforcement</a></nav>
+            <span class="spacer"></span>
+            <span class="who">Nedbank Energy Finance <span class="avatar">NM</span></span>
+          </div>
+          <div class="stat-strip">
+            <div class="stat"><div class="l">Facilities monitored</div><div class="v">34</div><div class="d">R 18.4bn committed</div></div>
+            <div class="stat"><div class="l">On watch</div><div class="v amber">5</div><div class="d">DSCR within 0.10x</div></div>
+            <div class="stat"><div class="l">In breach</div><div class="v red">2</div><div class="d">cure clocks running</div></div>
+            <div class="stat"><div class="l">Lowest DSCR</div><div class="v red">1.08x</div><div class="d">covenant ≥ 1.20x</div></div>
+          </div>
+
+          <div class="body1">
+            <div class="col-l">
+              <div class="sec-h"><h4>Covenant heatmap · 34 facilities</h4><span class="more">click cell → drill</span></div>
+              <div class="heat">
+                <span></span><span class="hx">DSCR<br>(W86)</span><span class="hx">Cov. cert<br>(W38)</span><span class="hx">DSRA/MRA<br>(W77)</span><span class="hx">Use-of-<br>proceeds</span>
+                <span class="ry">Karoo Solar 1</span>
+                <span class="cell c-breach flag"><span>1.08x</span><small>BREACH</small></span><span class="cell c-watch"><span>waiver</span></span><span class="cell c-watch"><span>short</span></span><span class="cell c-ok"><span>✓</span></span>
+                <span class="ry">Komani Wind</span>
+                <span class="cell c-watch"><span>1.24x</span><small>watch</small></span><span class="cell c-ok"><span>✓</span></span><span class="cell c-ok"><span>✓</span></span><span class="cell c-ok"><span>✓</span></span>
+                <span class="ry">De Aar PV 2</span>
+                <span class="cell c-breach flag"><span>1.15x</span><small>BREACH</small></span><span class="cell c-breach"><span>fail</span></span><span class="cell c-ok"><span>✓</span></span><span class="cell c-watch"><span>flag</span></span>
+                <span class="ry">Mooi River BESS</span>
+                <span class="cell c-ok"><span>1.51x</span></span><span class="cell c-ok"><span>✓</span></span><span class="cell c-watch"><span>short</span></span><span class="cell c-na"><span>n/a</span></span>
+                <span class="ry">Saldanha Wind 3</span>
+                <span class="cell c-ok"><span>1.62x</span></span><span class="cell c-ok"><span>✓</span></span><span class="cell c-ok"><span>✓</span></span><span class="cell c-ok"><span>✓</span></span>
+                <span class="ry">Tygervalley CSP</span>
+                <span class="cell c-watch"><span>1.27x</span><small>watch</small></span><span class="cell c-ok"><span>✓</span></span><span class="cell c-ok"><span>✓</span></span><span class="cell c-ok"><span>✓</span></span>
+              </div>
+              <div class="legend">
+                <span><i style="background:#2f7d57"></i>compliant</span>
+                <span><i style="background:#b9831f"></i>watch / cure</span>
+                <span><i style="background:#a3231f"></i>breach · clock running</span>
+                <span><i style="background:#c9c2b3"></i>n/a</span>
+              </div>
+            </div>
+
+            <div class="col-r">
+              <div class="alarm">
+                <div class="top">
+                  <div><h4>Covenant breach — Karoo Solar 1</h4><div class="deal">FAC-2287 · DSCR test Q2-2026 · chain dscr_monitoring</div></div>
+                  <span class="pill red">breach_recorded</span>
+                </div>
+                <div class="grid2">
+                  <div class="kv"><div class="l">Tested DSCR</div><div class="v red">1.08x</div></div>
+                  <div class="kv"><div class="l">Covenant floor</div><div class="v">1.20x</div></div>
+                  <div class="kv"><div class="l">Lock-up</div><div class="v">distributions blocked</div></div>
+                  <div class="kv"><div class="l">Exposure at risk</div><div class="v">R 612m</div></div>
+                </div>
+                <div class="cure">
+                  <span class="lab">Cure period — equity cure deadline</span>
+                  <span class="t clock hot">06d 11h</span>
+                </div>
+                <div class="btnrow">
+                  <button class="btn primary">Open cure workflow</button>
+                  <button class="btn">Request waiver</button>
+                  <button class="btn dark">Escalate to default →</button>
+                </div>
+              </div>
+
+              <div class="sec-h" style="margin-top:16px"><h4>Watchlist</h4><span class="more">5 facilities</span></div>
+              <div class="wl">
+                <div class="wl-item"><span class="pill amber">watch</span><span class="nm">De Aar PV 2<small>cov. certificate failed — under_review</small></span><span class="clock warm">02d 18h</span></div>
+                <div class="wl-item"><span class="pill amber">watch</span><span class="nm">Komani Wind<small>DSCR 1.24x trending down</small></span><span class="clock">Q3 test</span></div>
+                <div class="wl-item"><span class="pill amber">short</span><span class="nm">Mooi River BESS<small>DSRA shortfall — cure_pending (W77)</small></span><span class="clock warm">09d 04h</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- phone -->
+      <div class="phone">
+        <div class="pscreen">
+          <div class="notch"></div>
+          <div class="pstatus"><span>9:41</span><span class="right">5G ▦ 84%</span></div>
+          <div class="pwa-hint">Add Lender Suite to Home Screen<span class="o">offline cache ready</span></div>
+          <div class="phd"><div class="eyebrow">Risk · 2 breaches</div><h3>What needs you now</h3></div>
+          <div class="pbody">
+            <div class="palarm">
+              <span class="tag">DSCR breach · highest priority</span>
+              <h4>Karoo Solar 1</h4>
+              <div class="sub">FAC-2287 · dscr_monitoring · breach_recorded</div>
+              <div class="curep"><div class="t">06d 11h</div><div class="l">equity cure deadline</div></div>
+              <div class="mini">
+                <div class="b"><div class="l">Tested DSCR</div><div class="v red">1.08x</div></div>
+                <div class="b"><div class="l">Floor</div><div class="v">1.20x</div></div>
+                <div class="b"><div class="l">At risk</div><div class="v">R 612m</div></div>
+                <div class="b"><div class="l">Status</div><div class="v">lock-up</div></div>
+              </div>
+            </div>
+            <div class="plist">
+              <div class="pitem"><span class="ti" style="background:var(--red)"></span><span class="nm">De Aar PV 2<small>cov. cert failed · under_review</small></span><span class="cl clock warm">02d 18h</span></div>
+              <div class="pitem"><span class="ti" style="background:var(--amber)"></span><span class="nm">Mooi River BESS<small>DSRA shortfall · cure_pending</small></span><span class="cl clock warm">09d 04h</span></div>
+              <div class="pitem"><span class="ti" style="background:var(--amber)"></span><span class="nm">Komani Wind<small>DSCR 1.24x · watch</small></span><span class="cl">Q3</span></div>
+            </div>
+          </div>
+          <div class="pthumb"><button class="big">Open cure workflow →</button></div>
+          <div class="pnav">
+            <a class="on" href="#"><span class="ic">◎</span>Risk</a>
+            <a href="#"><span class="ic">◩</span>Covenants</a>
+            <a href="#"><span class="ic">◈</span>Portfolio</a>
+            <a href="#"><span class="ic">⬓</span>Default</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Desktop ~1280px · Phone 390×844 PWA — Option 1</div>
+  </section>
+
+  <!-- ================= OPTION 2 ================= -->
+  <section class="panel" id="p2" role="tabpanel" aria-labelledby="t2">
+    <div class="opt-head">
+      <div>
+        <h2>Option 2 — Single-Deal Covenant Waterfall</h2>
+        <p class="concept">Forensic depth on one facility: the dscr_monitoring chain on the left, every covenant tested in the
+        middle, and the actual cash waterfall below showing exactly where the shortfall bites. For the officer building the cure / waiver case.</p>
+      </div>
+      <div class="ease-tag">
+        <span class="k">⏱ Ease — the one effortless thing</span>
+        <p>The failing waterfall tier is highlighted red — you see precisely which line starved DSCR, no manual reconciliation.</p>
+      </div>
+    </div>
+
+    <div class="frames">
+      <div class="desktop">
+        <div class="dchrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">oe.vantax.co.za/lender-suite/facility/FAC-2287</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <span class="brand"><span class="mk">◈</span>Lender Suite</span>
+            <nav><a href="#">Risk</a><a class="on" href="#">Facility</a><a href="#">Drawdowns</a><a href="#">Reserves</a></nav>
+            <span class="spacer"></span><span class="who"><span class="avatar">NM</span></span>
+          </div>
+          <div class="deal-hd">
+            <div>
+              <h3>Karoo Solar 1 · FAC-2287</h3>
+              <div class="meta"><span>100 MW PV · REIPPPP BW4</span><span>Committed R 612m</span><span>Borrower: Karoo Renewables (Pty) Ltd</span><span>Test: Q2-2026</span></div>
+            </div>
+            <span class="pill red">DSCR breach_recorded</span>
+          </div>
+
+          <div class="body2">
+            <div class="flow">
+              <h4>dscr_monitoring · W86</h4>
+              <div class="step done"><span class="node"></span><span class="lab">period_open<small>Q2-2026 opened 01 Apr</small></span></div>
+              <div class="step done"><span class="node"></span><span class="lab">computed<small>DSCR = 1.08x</small></span></div>
+              <div class="step done"><span class="node"></span><span class="lab">watch<small>below 1.20x floor</small></span></div>
+              <div class="step now"><span class="node"></span><span class="lab">breach_recorded<small>lock-up engaged · cure clock 06d 11h</small></span></div>
+              <div class="step"><span class="node"></span><span class="lab">lock_up<small>distributions blocked</small></span></div>
+              <div class="step"><span class="node"></span><span class="lab">cure_in_progress<small>equity cure / DSRA draw</small></span></div>
+              <div class="step"><span class="node"></span><span class="lab">certified_clean<small>or → accelerated</small></span></div>
+            </div>
+
+            <div class="wf">
+              <div class="wf-card">
+                <div class="hd"><h5>Covenant test panel</h5><span class="clock hot">cure 06d 11h</span></div>
+                <div class="bd">
+                  <div class="cov-row">
+                    <div class="name">DSCR (annual)<small>quarterly rolling</small></div>
+                    <div class="num">1.08x</div><div class="num req">≥ 1.20x</div><span class="pill red">breach</span>
+                  </div>
+                  <div class="cov-row">
+                    <div class="name">LLCR<small>loan-life cover</small></div>
+                    <div class="num">1.31x</div><div class="num req">≥ 1.30x</div><span class="pill amber">tight</span>
+                  </div>
+                  <div class="cov-row">
+                    <div class="name">DSRA balance (W77)<small>6-month reserve</small></div>
+                    <div class="num">R 24.1m</div><div class="num req">R 31.0m</div><span class="pill red">shortfall</span>
+                  </div>
+                  <div class="cov-row">
+                    <div class="name">Cov. certificate (W38)<small>quarterly compliance cert</small></div>
+                    <div class="num">due</div><div class="num req">—</div><span class="pill amber">waiver req.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="wf-card">
+                <div class="hd"><h5>Cash waterfall — Q2-2026</h5><span class="pill grey">where it breaks</span></div>
+                <div class="wfall">
+                  <div class="step2 s-rev"><span>1 · Energy revenue (PPA + merchant)</span><span class="amt">R 41.2m</span></div>
+                  <div class="step2 s-cost"><span>2 · O&amp;M + insurance + lease</span><span class="amt">− R 9.8m</span></div>
+                  <div class="step2 s-cost"><span>3 · Senior interest</span><span class="amt">− R 14.1m</span></div>
+                  <div class="step2 s-debt"><span>4 · Scheduled principal</span><span class="amt">− R 14.9m</span></div>
+                  <div class="step2 s-fail"><span>5 · CFADS / Debt service = <b>1.08x</b> — fails ≥1.20x floor</span><span class="amt">SHORT R 5.1m</span></div>
+                  <div class="step2 s-dsra"><span>6 · DSRA top-up (would fund cure)</span><span class="amt">R 6.9m short</span></div>
+                </div>
+              </div>
+
+              <div class="btnrow">
+                <button class="btn primary">Draft equity cure notice</button>
+                <button class="btn">Approve DSRA drawdown</button>
+                <button class="btn dark">Convene credit committee</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- phone -->
+      <div class="phone">
+        <div class="pscreen">
+          <div class="notch"></div>
+          <div class="pstatus"><span>9:41</span><span class="right">5G ▦ 84%</span></div>
+          <div class="pwa-hint">Facility FAC-2287 pinned<span class="o">synced 2m ago</span></div>
+          <div class="phd"><div class="eyebrow">Facility · breach</div><h3>Karoo Solar 1</h3></div>
+          <div class="pbody">
+            <div class="palarm">
+              <span class="tag">DSCR 1.08x · floor 1.20x</span>
+              <h4>Cash shortfall</h4>
+              <div class="sub">CFADS short R 5.1m this quarter</div>
+              <div class="curep"><div class="t">06d 11h</div><div class="l">equity cure deadline</div></div>
+            </div>
+            <div class="pcov">
+              <div class="c"><div class="top"><h5>DSCR</h5><span class="pill red">breach</span></div><div class="nums"><span>tested <b>1.08x</b></span><span>floor 1.20x</span></div></div>
+              <div class="c"><div class="top"><h5>DSRA (W77)</h5><span class="pill red">shortfall</span></div><div class="nums"><span><b>R 24.1m</b></span><span>req R 31.0m</span></div></div>
+              <div class="c"><div class="top"><h5>Cov. cert (W38)</h5><span class="pill amber">waiver req.</span></div><div class="nums"><span>quarterly</span><span>due now</span></div></div>
+              <div class="c"><div class="top"><h5>LLCR</h5><span class="pill amber">tight</span></div><div class="nums"><span><b>1.31x</b></span><span>min 1.30x</span></div></div>
+            </div>
+          </div>
+          <div class="pthumb"><button class="big dark">Draft equity cure notice →</button></div>
+          <div class="pnav">
+            <a href="#"><span class="ic">◎</span>Risk</a>
+            <a class="on" href="#"><span class="ic">◩</span>Facility</a>
+            <a href="#"><span class="ic">▦</span>Reserves</a>
+            <a href="#"><span class="ic">⬓</span>Default</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Desktop ~1280px · Phone 390×844 PWA — Option 2</div>
+  </section>
+
+  <!-- ================= OPTION 3 ================= -->
+  <section class="panel" id="p3" role="tabpanel" aria-labelledby="t3">
+    <div class="opt-head">
+      <div>
+        <h2>Option 3 — Calm Watchlist with Alarms</h2>
+        <p class="concept">A deliberately quiet, low-density book. Everything performing fades to ledger-grey; the screen stays
+        silent until a clock starts — then one breach rises to the top as a single loud alarm. For the officer who wants zero noise and total trust.</p>
+      </div>
+      <div class="ease-tag">
+        <span class="k">⏱ Ease — the one effortless thing</span>
+        <p>Silence means safe. The breach is the only loud thing on screen — it interrupts you, you don't go looking for it.</p>
+      </div>
+    </div>
+
+    <div class="frames">
+      <div class="desktop">
+        <div class="dchrome"><span class="dots"><i></i><i></i><i></i></span><span class="url">oe.vantax.co.za/lender-suite/watchlist</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <span class="brand"><span class="mk">◈</span>Lender Suite</span>
+            <nav><a class="on" href="#">Watchlist</a><a href="#">Portfolio</a><a href="#">Covenants</a><a href="#">Reports</a></nav>
+            <span class="spacer"></span>
+            <span class="who">1 alarm · 32 calm <span class="avatar">NM</span></span>
+          </div>
+
+          <div class="body3">
+            <div class="calm-lead">
+              <div class="ring"><span>06d<small>11h left</small></span></div>
+              <div class="txt">
+                <h4>One facility needs you — Karoo Solar 1</h4>
+                <p><b>DSCR breach (1.08x vs 1.20x).</b> Lock-up engaged, R 612m exposure. Everything else in the book is performing —
+                this is the only thing on your desk. The cure clock is already running.</p>
+              </div>
+              <div class="act">
+                <button class="btn primary">Open cure workflow</button>
+                <button class="btn">Snooze 24h</button>
+              </div>
+            </div>
+
+            <div class="sec-h"><h4>The book · 34 facilities</h4><span class="more">sorted by time-to-breach</span></div>
+            <div class="rows">
+              <div class="row" style="border-color:var(--red);background:#fff">
+                <span class="tick breach"></span>
+                <div class="who"><h5>Karoo Solar 1</h5><small>FAC-2287 · dscr_monitoring</small></div>
+                <div class="stat-c"><div class="l">DSCR</div><div class="v" style="color:var(--red)">1.08x</div></div>
+                <div class="next"><div class="l">State</div><div class="v"><span class="pill red">breach_recorded</span></div></div>
+                <div class="next"><div class="l">Cure left</div><div class="v clock hot">06d 11h</div></div>
+              </div>
+              <div class="row">
+                <span class="tick watch"></span>
+                <div class="who"><h5>De Aar PV 2</h5><small>FAC-2104 · covenant_certificate</small></div>
+                <div class="stat-c"><div class="l">Cert</div><div class="v">failed</div></div>
+                <div class="next"><div class="l">State</div><div class="v"><span class="pill amber">under_review</span></div></div>
+                <div class="next"><div class="l">Cure left</div><div class="v clock warm">02d 18h</div></div>
+              </div>
+              <div class="row">
+                <span class="tick watch"></span>
+                <div class="who"><h5>Mooi River BESS</h5><small>FAC-2310 · reserve_account</small></div>
+                <div class="stat-c"><div class="l">DSRA</div><div class="v">short</div></div>
+                <div class="next"><div class="l">State</div><div class="v"><span class="pill amber">cure_pending</span></div></div>
+                <div class="next"><div class="l">Cure left</div><div class="v clock warm">09d 04h</div></div>
+              </div>
+              <div class="row" style="opacity:.62">
+                <span class="tick ok"></span>
+                <div class="who"><h5>Saldanha Wind 3</h5><small>FAC-1998 · dscr_monitoring</small></div>
+                <div class="stat-c"><div class="l">DSCR</div><div class="v" style="color:var(--green)">1.62x</div></div>
+                <div class="next"><div class="l">State</div><div class="v"><span class="pill green">certified_clean</span></div></div>
+                <div class="next"><div class="l">Next test</div><div class="v">Q3-2026</div></div>
+              </div>
+              <div class="row" style="opacity:.62">
+                <span class="tick ok"></span>
+                <div class="who"><h5>Tygervalley CSP</h5><small>FAC-1872 · dscr_monitoring</small></div>
+                <div class="stat-c"><div class="l">DSCR</div><div class="v" style="color:var(--green)">1.27x</div></div>
+                <div class="next"><div class="l">State</div><div class="v"><span class="pill green">compliant</span></div></div>
+                <div class="next"><div class="l">Next test</div><div class="v">Q3-2026</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- phone -->
+      <div class="phone">
+        <div class="pscreen">
+          <div class="notch"></div>
+          <div class="pstatus"><span>9:41</span><span class="right">5G ▦ 84%</span></div>
+          <div class="pwa-hint">Push alerts on<span class="o">live</span></div>
+          <div class="phd"><div class="eyebrow">Watchlist · 1 alarm</div><h3>Your book is calm</h3></div>
+          <div class="pbody">
+            <div class="palarm">
+              <span class="tag">1 alarm · everything else clear</span>
+              <h4>Karoo Solar 1</h4>
+              <div class="sub">DSCR 1.08x · breach_recorded</div>
+              <div class="curep"><div class="t">06d 11h</div><div class="l">cure clock running</div></div>
+            </div>
+            <div class="plist">
+              <div class="pitem"><span class="ti" style="background:var(--amber)"></span><span class="nm">De Aar PV 2<small>cov. cert · under_review</small></span><span class="cl clock warm">02d 18h</span></div>
+              <div class="pitem"><span class="ti" style="background:var(--amber)"></span><span class="nm">Mooi River BESS<small>DSRA · cure_pending</small></span><span class="cl clock warm">09d 04h</span></div>
+              <div class="pitem" style="opacity:.6"><span class="ti" style="background:var(--green)"></span><span class="nm">Saldanha Wind 3<small>certified_clean · 1.62x</small></span><span class="cl">Q3</span></div>
+              <div class="pitem" style="opacity:.6"><span class="ti" style="background:var(--green)"></span><span class="nm">Tygervalley CSP<small>compliant · 1.27x</small></span><span class="cl">Q3</span></div>
+            </div>
+          </div>
+          <div class="pthumb"><button class="big green">Open the one that matters →</button></div>
+          <div class="pnav">
+            <a class="on" href="#"><span class="ic">◔</span>Watch</a>
+            <a href="#"><span class="ic">◈</span>Portfolio</a>
+            <a href="#"><span class="ic">◩</span>Covenants</a>
+            <a href="#"><span class="ic">▤</span>Reports</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="caption">Desktop ~1280px · Phone 390×844 PWA — Option 3</div>
+  </section>
+
+  <div class="a11y">
+    <h4>Accessibility &amp; identity notes</h4>
+    Palette is parchment/ink ledger, never AI-purple. State colour is reinforced by text labels and shape (tick, pill, node) — never colour alone.
+    Text-on-fill pairs meet WCAG AA: white on <code>--red #a3231f</code> ≈ 6.4:1, ink on <code>--paper</code> ≈ 14:1, <code>--amber #9a6310</code> on amber-bg ≈ 5.1:1.
+    All buttons and nav items are ≥24px tap height. Cure clocks use monospace for glanceable countdown. Tabs use <code>role="tablist"</code> with <code>aria-selected</code>.
+  </div>
+</div>
+
+<script>
+  function pick(n){
+    for(var i=1;i<=3;i++){
+      document.getElementById('p'+i).classList.toggle('active', i===n);
+      var t=document.getElementById('t'+i);
+      t.setAttribute('aria-selected', i===n ? 'true':'false');
+    }
+  }
+</script>
+</body>
+</html>

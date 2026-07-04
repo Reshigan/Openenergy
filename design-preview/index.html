@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open Energy — Per-Role Frontend Design Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0d1626; --ink-2:#33415c; --muted:#5b6b85; --line:#dde4ee;
+    --paper:#f6f8fb; --card:#ffffff; --accent:#1f6f54; --accent-2:#b45a1c;
+    --found:#0e7490; --pro:#1f6f54; --reg:#7c3a12;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Inter Tight',system-ui,sans-serif;color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+  /* header */
+  header{background:
+      radial-gradient(1200px 400px at 80% -10%, rgba(31,111,84,.16), transparent 60%),
+      linear-gradient(180deg,#0d1626,#13203a);color:#eef3fb;padding:56px 0 48px}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#7fd1b3}
+  h1{font-family:'Newsreader',serif;font-weight:600;font-size:clamp(30px,4.6vw,52px);line-height:1.04;margin:14px 0 0;letter-spacing:-.01em}
+  .lede{max-width:64ch;margin:16px 0 0;font-size:17px;line-height:1.6;color:#c4d0e2}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+  .chip{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#cfe7dd;border:1px solid rgba(127,209,179,.4);border-radius:999px;padding:6px 12px}
+  /* tier explainer */
+  .tiers{margin:38px 0 8px}
+  .tiers h2,.roles h2{font-family:'Newsreader',serif;font-weight:600;font-size:26px;margin:0 0 6px}
+  .tiers p.sub,.roles p.sub{color:var(--muted);margin:0 0 22px;font-size:15px;max-width:74ch;line-height:1.55}
+  .tiergrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .tier{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;border-top:4px solid var(--line)}
+  .tier.f{border-top-color:var(--found)} .tier.p{border-top-color:var(--pro)} .tier.r{border-top-color:var(--reg)}
+  .tier .badge{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:4px 9px;border-radius:6px;display:inline-block}
+  .tier.f .badge{background:#e0f2f6;color:#0e6178} .tier.p .badge{background:#e1efe9;color:#155e45} .tier.r .badge{background:#f6e8dd;color:#7c3a12}
+  .tier h3{font-size:17px;margin:12px 0 4px} .tier .lvl{font-family:'IBM Plex Mono',monospace;color:var(--muted);font-size:12px}
+  .tier p{font-size:14px;color:var(--ink-2);line-height:1.55;margin:10px 0 0}
+  /* roles */
+  .roles{margin:46px 0 60px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px}
+  .role{display:block;text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;transition:transform .12s ease,box-shadow .12s ease,border-color .12s}
+  .role:hover{transform:translateY(-3px);box-shadow:0 18px 40px -22px rgba(13,22,38,.45);border-color:#c3cfe0}
+  .role .swatch{height:78px;position:relative;display:flex;align-items:flex-end;padding:14px 16px}
+  .role .swatch .tag{font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(255,255,255,.92);letter-spacing:.08em}
+  .role .body{padding:16px 17px 18px}
+  .role .nm{font-size:18px;font-weight:600;letter-spacing:-.01em}
+  .role .opts{color:var(--muted);font-size:13px;margin-top:3px;font-family:'IBM Plex Mono',monospace}
+  .role .jr{font-size:13.5px;color:var(--ink-2);line-height:1.5;margin-top:11px}
+  .role .go{margin-top:13px;font-size:13px;font-weight:600;color:var(--accent)}
+  /* per-role swatch identities */
+  .sw-ipp{background:linear-gradient(120deg,#10243f,#1d4e6e)}
+  .sw-trader{background:linear-gradient(120deg,#07090e,#161b27);} .sw-trader .tag{color:#6ee7b7}
+  .sw-lender{background:linear-gradient(120deg,#1c2333,#33405c)}
+  .sw-offtaker{background:linear-gradient(120deg,#0f5c4d,#1f8f6f)}
+  .sw-carbon{background:linear-gradient(120deg,#0c2620,#1d5a45)}
+  .sw-grid{background:linear-gradient(120deg,#0a0d12,#1a2b33);} .sw-grid .tag{color:#7dd3fc}
+  .sw-support{background:linear-gradient(120deg,#7a3b06,#c2740f)}
+  .sw-regulator{background:linear-gradient(120deg,#23211c,#4a4232);} .sw-regulator .tag{color:#e8d9b8}
+  .sw-admin{background:linear-gradient(120deg,#13182a,#2b3556)}
+  .sw-esco{background:linear-gradient(120deg,#1a2a12,#3f6e1f);}
+  footer{border-top:1px solid var(--line);padding:26px 0 60px;color:var(--muted);font-size:13px;line-height:1.6}
+  code{font-family:'IBM Plex Mono',monospace;background:#eef2f7;padding:1px 6px;border-radius:5px;font-size:12.5px}
+  @media(max-width:760px){.tiergrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Open Energy Platform · Design Exploration</div>
+    <h1>One frontend per role.<br>Journeys you can price.</h1>
+    <p class="lede">Ten ground-up frontend designs — one tailored to each role's job, environment, and device habits. Not constrained by the current Meridian chrome. Every role shows <strong>2–3 distinct directions</strong>, each rendered as <strong>web + mobile PWA</strong>. The spine of every design is the role's real user journeys, surfaced as <strong>packaged, metered products</strong> — because module complexity is what we charge for.</p>
+    <div class="meta">
+      <span class="chip">10 roles</span>
+      <span class="chip">2–3 options each</span>
+      <span class="chip">web + mobile PWA</span>
+      <span class="chip">journey-as-product</span>
+      <span class="chip">real chains, no lorem</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="tiers">
+    <h2>How journeys are priced</h2>
+    <p class="sub">Each role's hero journeys carry a tier badge mapped to the platform's feature-depth rubric. The tier sets the price; the metered unit sets the meter. The badges and metered units appear inside every mockup so the value a customer pays for is legible in the product itself.</p>
+    <div class="tiergrid">
+      <div class="tier f">
+        <span class="badge">Foundation</span><span class="lvl"> · L3</span>
+        <h3>State machine + audit</h3>
+        <p>Validated transitions, server-side rules, an audit trail. The entry tier — a journey that's real, not a form.</p>
+      </div>
+      <div class="tier p">
+        <span class="badge">Professional</span><span class="lvl"> · L4</span>
+        <h3>Full workflow</h3>
+        <p>Pre-trade gating, downstream cascades, calendar/timer-driven SLAs, structured reason codes, dunning &amp; escalation, evidence chain.</p>
+      </div>
+      <div class="tier r">
+        <span class="badge">Regulator-grade</span><span class="lvl"> · L5</span>
+        <h3>Certified &amp; reconciled</h3>
+        <p>Tamper-evident audit, certified exports (NERSA / EMIR / Verra), reconciliation against external systems. Top tier.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="roles">
+    <h2>The ten roles</h2>
+    <p class="sub">Open each in a browser. Tabs inside switch between the 2–3 design directions; each shows a desktop frame and a phone (PWA) frame side by side.</p>
+    <div class="grid">
+
+      <a class="role" href="ipp-developer.html">
+        <div class="swatch sw-ipp"><span class="tag">ipp_developer</span></div>
+        <div class="body"><div class="nm">IPP Developer</div>
+          <div class="opts">3 options · cockpit / timeline / map</div>
+          <div class="jr">Construction→COD, Procurement/RFP, Drawdown. CPM-Gantt + EVM, stage gates, lender-gated cashflow.</div>
+          <div class="go">Open designs →</div></div>
+      </a>
+
+      <a class="role" href="trader.html">
+        <div class="swatch sw-trader"><span class="tag">trader</span></div>
+        <div class="body"><div class="nm">Trader</div>
+          <div class="opts">3 options · terminal / command / risk-radar</div>
+          <div class="jr">Counterparty margin &amp; default, Best-execution/RFQ, Position limits. Dense dark book + one-thumb kill-switch.</div>
+          <div class="go">Open designs →</div></div>
+      </a>
+
+      <a class="role" href="lender.html">
+        <div class="swatch sw-lender"><span class="tag">lender</span></div>
+        <div class="body"><div class="nm">Lender</div>
+          <div class="opts">3 options · risk-console / dossier / approvals</div>
+          <div class="jr">Drawdown approval, Covenant workout, Restructure. Portfolio risk heatmap, IFRS9 certified export.</div>
+          <div class="go">Open designs →</div></div>
+      </a>
+
+      <a class="role" href="offtaker.html">
+        <div class="swatch sw-offtaker"><span class="tag">offtaker</span></div>
+        <div class="body"><div class="nm">Offtaker</div>
+          <div class="opts">3 options · guided / portfolio / sustainability</div>
+          <div class="jr">PPA portfolio, Curtailment/take-or-pay claim, REC retirement. Plain-language, calmest, mobile-first.</div>
+          <div class="go">Open designs →</div></div>
+      </a>
+
+      <a class="role" href="carbon-fund.html">
+        <div class="swatch sw-carbon"><span class="tag">carbon_fund</span></div>
+        <div class="body"><div class="nm">Carbon Fund</div>
+          <div class="opts">3 options · ledger / certified / trading-book</div>
+          <div class="jr">Project registration/PDD, Issuance, Retirement/ERPA. Provenance chain, Article 6 corresponding adjustments.</div>
+          <div class="go">Open designs →</div></div>
+      </a>
+
+      <a class="role" href="grid-operator.html">
+        <div class="swatch sw-grid"><span class="tag">grid_operator</span></div>
+        <div class="body"><div class="nm">Grid Operator</div>
+          <div class="opts">3 options · wallboard / map / incident-command</div>
+          <div class="jr">Reserve activation, Load curtailment, Connection/capacity queue. Real-time control-room, field acks.</div>
+          <div class="go">Open designs →</div></div>
+      </a>
+
+      <a class="role" href="support-oem.html">
+        <div class="swatch sw-support"><span class="tag">support / oem</span></div>
+        <div class="body"><div class="nm">Support / OEM</div>
+          <div class="opts">3 options · field-ops / dispatch / prognostics</div>
+          <div class="jr">Work orders, Tickets (SLA-tiered), Predictive asset health. Mobile-primary, glove-friendly, offline.</div>
+          <div class="go">Open designs →</div></div>
+      </a>
+
+      <a class="role" href="regulator.html">
+        <div class="swatch sw-regulator"><span class="tag">regulator</span></div>
+        <div class="body"><div class="nm">Regulator</div>
+          <div class="opts">3 options · docket / dossier / oversight</div>
+          <div class="jr">Licence adjudication, Compliance inspection, Complaints. Evidence-grade, certified export, mostly L5.</div>
+          <div class="go">Open designs →</div></div>
+      </a>
+
+      <a class="role" href="admin.html">
+        <div class="swatch sw-admin"><span class="tag">admin</span></div>
+        <div class="body"><div class="nm">Platform Admin</div>
+          <div class="opts">3 options · observability / revenue / control</div>
+          <div class="jr">Revenue &amp; journey-metering, Market halt, Cron/health ops. Where the journey price-book lives.</div>
+          <div class="go">Open designs →</div></div>
+      </a>
+
+      <a class="role" href="esco.html">
+        <div class="swatch sw-esco"><span class="tag">esco / o&amp;m</span></div>
+        <div class="body"><div class="nm">ESCO / O&amp;M</div>
+          <div class="opts">3 options · fleet-map / LD-cockpit / work-cockpit</div>
+          <div class="jr">Availability guarantee &amp; LD, PM compliance, Asset prognostics. Live Solax telemetry, field-relevant.</div>
+          <div class="go">Open designs →</div></div>
+      </a>
+
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    Evaluation mockups — static HTML, not wired into the app. Real journeys, chain keys and lifecycle states read from <code>roleData.ts</code>. Shared brief: <code>design-preview/DESIGN_BRIEF.md</code>. EPC Contractor deferred (optional 11th role). Pick directions here, then we build.
+  </div>
+</footer>
+</body>
+</html>

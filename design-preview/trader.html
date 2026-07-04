@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open Energy — Trader frontend exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#06080c; --panel:#0c1118; --panel2:#10161f; --line:#1c2533; --line2:#27323f;
+    --ink:#e7eef6; --ink-dim:#8d9bac; --ink-faint:#5d6b7d;
+    --amber:#ffb01f; --amber-d:#7a5408;
+    --buy:#1fd17a; --sell:#ff4d5e; --info:#4aa8ff; --warn:#ffb01f; --crit:#ff4d5e;
+    --mono:'IBM Plex Mono',ui-monospace,monospace; --sans:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:1360px;margin:0 auto;padding:32px 24px 96px}
+
+  /* ── header band ── */
+  .masthead{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#0d141d,#080c12);padding:26px 30px;position:relative;overflow:hidden}
+  .masthead::after{content:"";position:absolute;inset:0;background:radial-gradient(900px 240px at 88% -40%,rgba(255,176,31,.10),transparent);pointer-events:none}
+  .role-tag{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--amber);text-transform:uppercase;display:flex;align-items:center;gap:10px}
+  .role-tag b{width:7px;height:7px;border-radius:50%;background:var(--amber);box-shadow:0 0 12px var(--amber)}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:10px 0 4px}
+  h1 span{color:var(--amber)}
+  .persona{display:grid;grid-template-columns:1.6fr 1fr;gap:34px;margin-top:16px}
+  .persona p{color:var(--ink-dim);max-width:60ch;font-size:13.5px}
+  .persona .rationale{border-left:2px solid var(--amber-d);padding-left:16px}
+  .persona .rationale h4{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px}
+
+  /* ── journey strip ── */
+  .section-h{display:flex;align-items:baseline;gap:14px;margin:42px 0 16px}
+  .section-h h2{font-size:13px;font-family:var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink)}
+  .section-h .ln{flex:1;height:1px;background:var(--line)}
+  .section-h em{font-style:normal;color:var(--ink-faint);font-size:12px;font-family:var(--mono)}
+
+  .journeys{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .jcard{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:18px;position:relative;overflow:hidden}
+  .jcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--amber)}
+  .jcard.j2::before{background:var(--info)} .jcard.j3::before{background:var(--sell)}
+  .jhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .jname{font-weight:700;font-size:15px}
+  .jchain{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);margin-top:2px}
+  .tier{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:999px;white-space:nowrap}
+  .tier.l4{background:rgba(74,168,255,.14);color:#9ccbff;border:1px solid rgba(74,168,255,.35)}
+  .tier.l5{background:rgba(255,176,31,.14);color:var(--amber);border:1px solid rgba(255,176,31,.4)}
+  .jdesc{color:var(--ink-dim);font-size:12.5px;margin:12px 0 14px}
+  .jstates{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+  .pill{font-family:var(--mono);font-size:10px;padding:3px 7px;border-radius:5px;background:var(--panel2);border:1px solid var(--line2);color:var(--ink-dim)}
+  .pill.on{background:rgba(255,176,31,.16);border-color:var(--amber);color:var(--amber);font-weight:600}
+  .pill.crit{background:rgba(255,77,94,.16);border-color:var(--sell);color:#ff8a96}
+  .meter{display:flex;align-items:center;justify-content:space-between;border-top:1px dashed var(--line2);padding-top:11px}
+  .meter .lbl{font-size:11px;color:var(--ink-faint);font-family:var(--mono)}
+  .meter .val{font-family:var(--mono);font-weight:700;color:var(--ink)}
+  .meter .val s{text-decoration:none;color:var(--ink-faint);font-weight:400;font-size:11px}
+
+  /* ── option tabs ── */
+  .tabs{display:flex;gap:6px;margin:48px 0 22px;border:1px solid var(--line);border-radius:12px;padding:6px;background:var(--panel);position:sticky;top:14px;z-index:20;backdrop-filter:blur(8px)}
+  .tab{flex:1;text-align:left;padding:12px 16px;border-radius:8px;cursor:pointer;border:1px solid transparent;background:none;color:var(--ink-dim);font-family:inherit;font-size:13px;transition:.16s}
+  .tab b{display:block;font-size:14px;color:var(--ink);font-weight:700;margin-bottom:2px}
+  .tab small{font-size:11px;color:var(--ink-faint)}
+  .tab[aria-selected="true"]{background:var(--panel2);border-color:var(--line2)}
+  .tab[aria-selected="true"] b{color:var(--amber)}
+  .tab:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+
+  .opt{display:none}
+  .opt[data-active="true"]{display:block;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+
+  .opt-head{margin-bottom:18px}
+  .opt-head .ot{font-size:20px;font-weight:800;letter-spacing:-.01em}
+  .opt-head .oc{color:var(--ink-dim);font-size:13.5px;margin-top:4px;max-width:74ch}
+  .frames{display:grid;grid-template-columns:1fr 392px;gap:24px;align-items:start}
+  @media(max-width:1180px){.frames{grid-template-columns:1fr}}
+
+  /* desktop chrome */
+  .desk{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);box-shadow:0 30px 80px -40px #000}
+  .deskbar{display:flex;align-items:center;gap:8px;padding:9px 13px;background:#0a0e14;border-bottom:1px solid var(--line)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:#28c840}
+  .deskurl{margin-left:10px;font-family:var(--mono);font-size:11px;color:var(--ink-faint);background:var(--panel2);padding:4px 12px;border-radius:6px;flex:1}
+  .deskmeta{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)}
+
+  /* phone chrome */
+  .phone{width:392px;border:1px solid var(--line2);border-radius:38px;background:#000;padding:11px;box-shadow:0 30px 80px -40px #000;position:relative}
+  .phone .scr{border-radius:28px;overflow:hidden;background:var(--bg);height:780px;display:flex;flex-direction:column;position:relative}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:8px 18px 6px;font-family:var(--mono);font-size:11px;color:var(--ink);background:var(--bg)}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#000;border-radius:0 0 16px 16px;z-index:5}
+  .pwa-hint{display:flex;align-items:center;gap:7px;justify-content:center;font-size:11px;color:var(--ink-faint);padding:5px;background:var(--panel);border-bottom:1px solid var(--line)}
+  .pwa-hint .live{width:6px;height:6px;border-radius:50%;background:var(--buy);box-shadow:0 0 8px var(--buy)}
+  .pbody{flex:1;overflow:hidden;position:relative}
+  .botnav{display:flex;border-top:1px solid var(--line);background:#0a0e14}
+  .botnav a{flex:1;text-align:center;padding:9px 0 10px;font-size:10px;color:var(--ink-faint);font-family:var(--mono)}
+  .botnav a .ic{display:block;font-size:17px;margin-bottom:2px;color:var(--ink-dim)}
+  .botnav a.on{color:var(--amber)} .botnav a.on .ic{color:var(--amber)}
+  .thumb{margin:10px 12px;padding:15px;border-radius:14px;text-align:center;font-weight:800;font-size:15px;letter-spacing:.02em}
+  .thumb.kill{background:linear-gradient(180deg,#ff4d5e,#c61828);color:#fff;box-shadow:0 8px 24px -8px rgba(255,77,94,.6)}
+  .thumb.kill small{display:block;font-weight:500;font-size:10.5px;opacity:.85;margin-top:2px}
+
+  /* generic UI atoms used inside frames */
+  .mono{font-family:var(--mono)}
+  .up{color:var(--buy)} .dn{color:var(--sell)}
+  .grid-pane{display:grid;font-family:var(--mono);font-size:12px}
+  table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px}
+  th{text-align:left;color:var(--ink-faint);font-weight:500;padding:6px 10px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.05em;text-transform:uppercase}
+  td{padding:6px 10px;border-bottom:1px solid var(--line);color:var(--ink-dim)}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .badge{font-family:var(--mono);font-size:9.5px;padding:2px 6px;border-radius:4px;font-weight:600}
+  .b-mon{background:rgba(74,168,255,.14);color:#9ccbff}
+  .b-call{background:rgba(255,176,31,.18);color:var(--amber)}
+  .b-def{background:rgba(255,77,94,.18);color:#ff8a96}
+  .b-ok{background:rgba(31,209,122,.16);color:#6ee7a8}
+
+  /* footnote */
+  .foot{margin-top:60px;border-top:1px solid var(--line);padding-top:18px;color:var(--ink-faint);font-size:11.5px;font-family:var(--mono);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ════ MASTHEAD ════ -->
+  <header class="masthead">
+    <div class="role-tag"><b></b>Open Energy Platform · Role frontend exploration</div>
+    <h1>Trader <span>· terminal</span></h1>
+    <div class="persona">
+      <p><strong style="color:var(--ink)">Persona.</strong> A power / carbon trader on the SA exchange. Decisions in sub-seconds, eyes across 4–6 monitors, hands on the keyboard — mouse is a last resort. Lives inside the order book, live positions, daily VaR &amp; scenarios, position limits and counterparty margin. Away from the desk they need exactly two things: <em style="color:var(--amber);font-style:normal">an alert feed</em> and a <em style="color:var(--amber);font-style:normal">one-thumb kill-switch / close-out</em>. They tolerate density; they do not tolerate latency or a misread number.</p>
+      <div class="rationale">
+        <h4>Why three directions</h4>
+        <p>A trader's screen is a personality choice. Some want maximum signal density (terminal), some want a calm keyboard-driven surface that disappears (command-palette), some manage by risk first and the book second (risk-radar). We bet all three and let the desk choose.</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ════ JOURNEY-AS-PRODUCT ════ -->
+  <div class="section-h"><h2>Hero journeys — packaged &amp; metered</h2><span class="ln"></span><em>3 chains · tier-priced · usage-metered</em></div>
+  <div class="journeys">
+
+    <div class="jcard j3">
+      <div class="jhead">
+        <div><div class="jname">Counterparty margin &amp; default</div><div class="jchain">chain · counterparty_margin · W68 · CPMI-IOSCO PFMI</div></div>
+        <span class="tier l5">REGULATOR-GRADE · L5</span>
+      </div>
+      <div class="jdesc">Credit-waterfall lifecycle: surveil exposure → margin call → declare default → close-out → default-fund draw. Tamper-evident, FSCA-reportable.</div>
+      <div class="jstates">
+        <span class="pill on">monitoring</span><span class="pill">margin_call</span><span class="pill crit">default_declared</span><span class="pill crit">close_out</span><span class="pill crit">default_fund_draw</span>
+      </div>
+      <div class="meter"><span class="lbl">METERED</span><span class="val">R 1 850 <s>/ close-out event</s></span></div>
+    </div>
+
+    <div class="jcard j2">
+      <div class="jhead">
+        <div><div class="jname">Best-execution / RFQ</div><div class="jchain">chain · best_execution · W36 · FSCA Conduct Std 1/2020</div></div>
+        <span class="tier l4">PROFESSIONAL · L4</span>
+      </div>
+      <div class="jdesc">Solicit competing quotes, capture the full decision evidence trail, prove best-ex on every fill. Multi-dealer RFQ with auto best-quote selection.</div>
+      <div class="jstates">
+        <span class="pill">rfq_sent</span><span class="pill on">quotes_received</span><span class="pill">quote_selected</span><span class="pill">executed</span><span class="pill">confirmed</span>
+      </div>
+      <div class="meter"><span class="lbl">METERED</span><span class="val">R 42 <s>/ RFQ sent</s></span></div>
+    </div>
+
+    <div class="jcard">
+      <div class="jhead">
+        <div><div class="jname">Position limits</div><div class="jchain">chain · poslimit_case · W29 · FSCA s41</div></div>
+        <span class="tier l4">PROFESSIONAL · L4</span>
+      </div>
+      <div class="jdesc">Breach state-machine on net open position vs FSCA s41 limits — auto-warning, breach freeze, escalation, forced liquidation if uncured.</div>
+      <div class="jstates">
+        <span class="pill">compliant</span><span class="pill on">warning</span><span class="pill crit">breach</span><span class="pill crit">escalated</span><span class="pill crit">forced_liquidation</span>
+      </div>
+      <div class="meter"><span class="lbl">METERED</span><span class="val">R 0.18 <s>/ MWh under limit watch</s></span></div>
+    </div>
+
+  </div>
+
+  <!-- ════ OPTION TABS ════ -->
+  <div class="tabs" role="tablist" aria-label="Design directions">
+    <button class="tab" role="tab" aria-selected="true" aria-controls="opt1" id="t1" onclick="pick(1)"><b>01 · Terminal</b><small>Dense Bloomberg-style dark blotter + depth ladder</small></button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="opt2" id="t2" onclick="pick(2)"><b>02 · Command</b><small>Keyboard-first ⌘K minimalist, calm dark</small></button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="opt3" id="t3" onclick="pick(3)"><b>03 · Risk-radar</b><small>VaR / limits / margin cockpit, book secondary</small></button>
+  </div>
+
+  <!-- ─────────── OPTION 1 — TERMINAL ─────────── -->
+  <section class="opt" id="opt1" data-active="true" role="tabpanel" aria-labelledby="t1">
+    <div class="opt-head">
+      <div class="ot">01 · Terminal</div>
+      <div class="oc">Everything on one canvas, no scroll. Order book, depth ladder, blotter, positions and a live risk rail — colour-coded buy/sell, monospace numerals, every action has a 2-key shortcut. For the trader who measures a UI in milliseconds saved.</div>
+    </div>
+    <div class="frames">
+
+      <!-- DESKTOP -->
+      <div class="desk">
+        <div class="deskbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="deskurl">oe.vantax.co.za/terminal — ZAR-PWR · DAM</span>
+          <span class="deskmeta">⌘K cmd · F8 kill · 16:42:07 SAST</span></div>
+        <div style="display:grid;grid-template-columns:188px 1fr 250px;background:var(--bg)">
+          <!-- left: instruments -->
+          <div style="border-right:1px solid var(--line);padding:8px 0">
+            <div class="mono" style="font-size:10px;color:var(--ink-faint);padding:4px 12px;letter-spacing:.1em">WATCH</div>
+            <div class="mono" style="font-size:11.5px">
+              <div style="display:flex;justify-content:space-between;padding:5px 12px;background:rgba(255,176,31,.08);border-left:2px solid var(--amber)"><span>ZAR-PWR DAM</span><span class="up">1 482</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 12px"><span>ZAR-PWR IDM</span><span class="up">1 511</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 12px"><span>EC-CARBON</span><span class="dn">  238</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 12px"><span>REC-2026</span><span class="up">  74.2</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 12px"><span>FWD Q3-26</span><span class="dn">1 624</span></div>
+            </div>
+            <div class="mono" style="font-size:10px;color:var(--ink-faint);padding:12px 12px 4px;letter-spacing:.1em">RISK RAIL</div>
+            <div style="padding:0 12px">
+              <div style="font-size:10px;color:var(--ink-faint);font-family:var(--mono)">VaR 1d 99%</div>
+              <div class="mono" style="font-size:18px;font-weight:700;color:var(--warn)">R 4.21m</div>
+              <div style="height:5px;background:var(--line);border-radius:3px;margin:6px 0"><div style="width:71%;height:100%;background:var(--warn);border-radius:3px"></div></div>
+              <div style="font-size:9.5px;color:var(--ink-faint);font-family:var(--mono)">71% of R 5.9m limit</div>
+              <div style="font-size:10px;color:var(--ink-faint);font-family:var(--mono);margin-top:10px">NOP vs s41</div>
+              <div class="mono" style="font-size:14px;font-weight:700;color:var(--warn)">WARNING</div>
+              <div style="font-size:9.5px;color:var(--ink-faint);font-family:var(--mono)">92% · 184 / 200 MW</div>
+            </div>
+          </div>
+          <!-- center: order book + depth + blotter -->
+          <div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)">
+              <!-- depth ladder -->
+              <div style="border-right:1px solid var(--line)">
+                <div class="mono" style="font-size:10px;color:var(--ink-faint);padding:6px 12px;letter-spacing:.1em;display:flex;justify-content:space-between"><span>DEPTH · ZAR-PWR DAM</span><span>R/MWh</span></div>
+                <table style="font-size:11px">
+                  <tr><td style="color:var(--sell);text-align:right">52</td><td class="dn">1 491</td><td style="background:linear-gradient(90deg,transparent 70%,rgba(255,77,94,.12))"></td></tr>
+                  <tr><td style="color:var(--sell);text-align:right">118</td><td class="dn">1 488</td><td style="background:linear-gradient(90deg,transparent 40%,rgba(255,77,94,.16))"></td></tr>
+                  <tr><td style="color:var(--sell);text-align:right">240</td><td class="dn">1 485</td><td style="background:linear-gradient(90deg,transparent 10%,rgba(255,77,94,.2))"></td></tr>
+                  <tr style="background:rgba(255,176,31,.06)"><td colspan="3" class="mono" style="text-align:center;color:var(--amber);font-weight:700;padding:4px">— 1 482 mid · spread 6 —</td></tr>
+                  <tr><td style="color:var(--buy);text-align:right">310</td><td class="up">1 479</td><td style="background:linear-gradient(270deg,transparent 5%,rgba(31,209,122,.2))"></td></tr>
+                  <tr><td style="color:var(--buy);text-align:right">142</td><td class="up">1 476</td><td style="background:linear-gradient(270deg,transparent 45%,rgba(31,209,122,.16))"></td></tr>
+                  <tr><td style="color:var(--buy);text-align:right">66</td><td class="up">1 473</td><td style="background:linear-gradient(270deg,transparent 70%,rgba(31,209,122,.12))"></td></tr>
+                </table>
+              </div>
+              <!-- positions -->
+              <div>
+                <div class="mono" style="font-size:10px;color:var(--ink-faint);padding:6px 12px;letter-spacing:.1em">POSITIONS · LIVE MARK</div>
+                <table style="font-size:11px">
+                  <tr><td>ZAR-PWR DAM</td><td class="up" style="text-align:right">+340</td><td class="up" style="text-align:right">+R88.2k</td></tr>
+                  <tr><td>ZAR-PWR IDM</td><td class="dn" style="text-align:right">−120</td><td class="dn" style="text-align:right">−R12.6k</td></tr>
+                  <tr><td>EC-CARBON</td><td class="up" style="text-align:right">+5 200</td><td class="up" style="text-align:right">+R41.0k</td></tr>
+                  <tr><td>FWD Q3-26</td><td class="dn" style="text-align:right">−80</td><td class="dn" style="text-align:right">−R 9.1k</td></tr>
+                  <tr style="border-top:1px solid var(--line2)"><td class="mono" style="color:var(--ink)">NET P&amp;L (d)</td><td></td><td class="up" style="text-align:right;font-weight:700">+R107.5k</td></tr>
+                </table>
+              </div>
+            </div>
+            <!-- blotter -->
+            <div>
+              <div class="mono" style="font-size:10px;color:var(--ink-faint);padding:6px 12px;letter-spacing:.1em">BLOTTER · today · F2 filter</div>
+              <table>
+                <thead><tr><th>16:4x</th><th>instr</th><th>side</th><th style="text-align:right">qty</th><th style="text-align:right">px</th><th>chain</th></tr></thead>
+                <tbody>
+                  <tr><td>:41:58</td><td>ZAR-PWR DAM</td><td class="up">BUY</td><td style="text-align:right">120</td><td style="text-align:right">1 479</td><td><span class="badge b-ok">best_ex ✓</span></td></tr>
+                  <tr><td>:39:12</td><td>EC-CARBON</td><td class="up">BUY</td><td style="text-align:right">2 000</td><td style="text-align:right">237</td><td><span class="badge b-call">rfq · quotes_received</span></td></tr>
+                  <tr><td>:36:40</td><td>FWD Q3-26</td><td class="dn">SELL</td><td style="text-align:right">80</td><td style="text-align:right">1 624</td><td><span class="badge b-ok">confirmed</span></td></tr>
+                  <tr><td>:31:05</td><td>ZAR-PWR IDM</td><td class="dn">SELL</td><td style="text-align:right">120</td><td style="text-align:right">1 511</td><td><span class="badge b-mon">allocated</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <!-- right: counterparty margin journey -->
+          <div style="border-left:1px solid var(--line);padding:10px 12px">
+            <div class="mono" style="font-size:10px;color:var(--ink-faint);letter-spacing:.1em">COUNTERPARTY MARGIN <span class="tier l5" style="font-size:8px;padding:1px 5px;float:right">L5</span></div>
+            <div style="margin-top:10px;border:1px solid var(--sell);border-radius:8px;padding:10px;background:rgba(255,77,94,.06)">
+              <div style="display:flex;justify-content:space-between"><span class="mono" style="font-size:11px;color:var(--ink)">Nkwe Capital</span><span class="badge b-def">margin_call</span></div>
+              <div class="mono" style="font-size:9.5px;color:var(--ink-faint);margin-top:3px">exposure R 14.8m · IM shortfall R 3.2m</div>
+              <div style="display:flex;gap:4px;margin-top:9px">
+                <span class="pill" style="font-size:8.5px">mon</span><span class="pill on" style="font-size:8.5px">call</span><span class="pill" style="font-size:8.5px">default</span><span class="pill" style="font-size:8.5px">close</span>
+              </div>
+              <div class="mono" style="font-size:9px;color:var(--warn);margin-top:8px">⏱ cure window 02:11:48</div>
+              <button style="width:100%;margin-top:9px;padding:8px;border:0;border-radius:6px;background:var(--amber);color:#1a1205;font-weight:700;font-family:var(--mono);font-size:11px;cursor:pointer">[D] DECLARE DEFAULT →</button>
+            </div>
+            <div class="mono" style="font-size:9px;color:var(--ink-faint);margin-top:9px;line-height:1.5">AI · exposure trending +8%/15min on ZAR-PWR. Suggest pre-emptive VM call R 1.1m. <span style="color:var(--info)">[A] accept</span></div>
+            <div style="margin-top:12px;border:1px solid var(--line);border-radius:8px;padding:8px">
+              <div style="display:flex;justify-content:space-between"><span class="mono" style="font-size:11px;color:var(--ink)">Aurora Energy</span><span class="badge b-ok">monitoring</span></div>
+              <div class="mono" style="font-size:9.5px;color:var(--ink-faint);margin-top:3px">exposure R 6.1m · IM held R 6.8m · 112%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="scr">
+          <div class="statusbar"><span>16:42</span><span>Terminal</span><span>5G ▦ 64%</span></div>
+          <div class="pwa-hint"><span class="live"></span>Live · WS streaming · offline-safe cache</div>
+          <div class="pbody" style="overflow-y:auto">
+            <div style="padding:12px 14px">
+              <div class="mono" style="font-size:10px;color:var(--ink-faint);letter-spacing:.1em">ALERTS · 3 actionable</div>
+            </div>
+            <div style="padding:0 12px 6px">
+              <div style="border:1px solid var(--sell);border-radius:11px;padding:12px;background:rgba(255,77,94,.07);margin-bottom:9px">
+                <div style="display:flex;justify-content:space-between"><span class="badge b-def">MARGIN CALL</span><span class="mono" style="font-size:9px;color:var(--warn)">02:11:48</span></div>
+                <div style="font-weight:700;margin-top:6px">Nkwe Capital — IM shortfall R 3.2m</div>
+                <div class="mono" style="font-size:10.5px;color:var(--ink-dim);margin-top:3px">counterparty_margin · exposure R14.8m</div>
+              </div>
+              <div style="border:1px solid var(--warn);border-radius:11px;padding:12px;background:rgba(255,176,31,.06);margin-bottom:9px">
+                <div style="display:flex;justify-content:space-between"><span class="badge b-call">LIMIT WARNING</span><span class="mono" style="font-size:9px;color:var(--ink-faint)">s41</span></div>
+                <div style="font-weight:700;margin-top:6px">NOP 92% — ZAR-PWR DAM</div>
+                <div class="mono" style="font-size:10.5px;color:var(--ink-dim);margin-top:3px">poslimit_case · 184 / 200 MW</div>
+              </div>
+              <div style="border:1px solid var(--line);border-radius:11px;padding:12px;margin-bottom:9px">
+                <div style="display:flex;justify-content:space-between"><span class="badge b-mon">RFQ</span><span class="mono" style="font-size:9px;color:var(--ink-faint)">4 quotes</span></div>
+                <div style="font-weight:700;margin-top:6px">EC-CARBON 2 000 — best 237.10</div>
+                <div class="mono" style="font-size:10.5px;color:var(--ink-dim);margin-top:3px">best_execution · quotes_received</div>
+              </div>
+            </div>
+            <div style="padding:4px 14px;border-top:1px solid var(--line)">
+              <div class="mono" style="font-size:10px;color:var(--ink-faint);letter-spacing:.1em;margin:8px 0">NET P&amp;L TODAY</div>
+              <div class="mono up" style="font-size:26px;font-weight:700">+R 107.5k</div>
+              <div class="mono" style="font-size:10px;color:var(--ink-faint)">VaR R4.21m · 71% of limit</div>
+            </div>
+          </div>
+          <div class="thumb kill">⏻ KILL-SWITCH — HALT ALL ORDERS<small>hold 2s · cancels working orders, blocks new entry</small></div>
+          <div class="botnav">
+            <a class="on"><span class="ic">▦</span>Alerts</a><a><span class="ic">◈</span>Book</a><a><span class="ic">◩</span>Risk</a><a><span class="ic">◎</span>Blotter</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─────────── OPTION 2 — COMMAND ─────────── -->
+  <section class="opt" id="opt2" role="tabpanel" aria-labelledby="t2">
+    <div class="opt-head">
+      <div class="ot">02 · Command</div>
+      <div class="oc">The interface gets out of the way. One quiet workspace, one command bar — ⌘K does everything: route an RFQ, declare a default, jump a chain, slam a position flat. Generous spacing, low chrome, the trader's muscle memory carries the speed instead of the pixels.</div>
+    </div>
+    <div class="frames">
+
+      <!-- DESKTOP -->
+      <div class="desk" style="background:#080b10">
+        <div class="deskbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="deskurl">oe.vantax.co.za/⌘ — focus mode</span><span class="deskmeta">⌘K · 0 modals</span></div>
+        <div style="padding:30px 36px;min-height:480px;position:relative">
+          <!-- command palette floating -->
+          <div style="max-width:620px;margin:0 auto;border:1px solid var(--line2);border-radius:14px;background:#0d131b;box-shadow:0 40px 90px -30px #000">
+            <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)">
+              <span class="mono" style="color:var(--amber);font-size:16px">⌘K</span>
+              <input disabled value="declare default Nkwe" style="flex:1;background:none;border:0;color:var(--ink);font-family:var(--mono);font-size:15px;outline:none">
+              <span class="mono" style="font-size:10px;color:var(--ink-faint)">↵ run · esc</span>
+            </div>
+            <div style="padding:8px">
+              <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:9px;background:rgba(255,77,94,.08);border:1px solid rgba(255,77,94,.3)">
+                <span class="badge b-def">L5</span>
+                <div style="flex:1"><div style="font-weight:600">Declare default — Nkwe Capital</div><div class="mono" style="font-size:10.5px;color:var(--ink-faint)">counterparty_margin · margin_call → default_declared · R1 850 meter</div></div>
+                <span class="mono" style="font-size:10px;color:var(--ink-faint)">↵</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:9px">
+                <span class="badge b-call">L4</span>
+                <div style="flex:1"><div style="font-weight:600;color:var(--ink-dim)">Send RFQ — EC-CARBON 2 000</div><div class="mono" style="font-size:10.5px;color:var(--ink-faint)">best_execution · rfq_sent · R42 / RFQ</div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:9px">
+                <span class="badge b-mon">⌫</span>
+                <div style="flex:1"><div style="font-weight:600;color:var(--ink-dim)">Flatten position — ZAR-PWR DAM +340</div><div class="mono" style="font-size:10.5px;color:var(--ink-faint)">market close-out · pre-trade guards run</div></div>
+              </div>
+            </div>
+          </div>
+          <!-- quiet stat row behind -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:34px;max-width:760px;margin-left:auto;margin-right:auto">
+            <div style="text-align:center"><div class="mono up" style="font-size:22px;font-weight:700">+R107.5k</div><div class="mono" style="font-size:10px;color:var(--ink-faint)">P&amp;L day</div></div>
+            <div style="text-align:center"><div class="mono" style="font-size:22px;font-weight:700;color:var(--warn)">R4.21m</div><div class="mono" style="font-size:10px;color:var(--ink-faint)">VaR 99%</div></div>
+            <div style="text-align:center"><div class="mono" style="font-size:22px;font-weight:700;color:var(--warn)">92%</div><div class="mono" style="font-size:10px;color:var(--ink-faint)">NOP / s41</div></div>
+            <div style="text-align:center"><div class="mono" style="font-size:22px;font-weight:700;color:var(--ink)">3</div><div class="mono" style="font-size:10px;color:var(--ink-faint)">open RFQs</div></div>
+          </div>
+          <div class="mono" style="text-align:center;font-size:10.5px;color:var(--ink-faint);margin-top:30px">Type to act. <span style="color:var(--ink-dim)">b</span> book · <span style="color:var(--ink-dim)">r</span> risk · <span style="color:var(--ink-dim)">m</span> margin · <span style="color:var(--ink-dim)">/</span> chains · <span style="color:var(--sell)">F8</span> kill-switch</div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="scr">
+          <div class="statusbar"><span>16:42</span><span>⌘ Command</span><span>5G ▦ 64%</span></div>
+          <div class="pwa-hint"><span class="live"></span>Installed PWA · tap input = native keyboard</div>
+          <div class="pbody" style="overflow-y:auto;padding:14px 14px 0">
+            <div style="display:flex;align-items:center;gap:10px;border:1px solid var(--line2);border-radius:12px;padding:13px 14px;background:#0d131b">
+              <span class="mono" style="color:var(--amber)">⌘</span><span class="mono" style="color:var(--ink-faint);font-size:13px">Type a command…</span>
+            </div>
+            <div class="mono" style="font-size:10px;color:var(--ink-faint);letter-spacing:.1em;margin:16px 2px 8px">SUGGESTED — by urgency</div>
+            <div style="border:1px solid rgba(255,77,94,.3);border-radius:11px;padding:12px;background:rgba(255,77,94,.07);margin-bottom:8px">
+              <div style="display:flex;justify-content:space-between"><span style="font-weight:600">Declare default · Nkwe</span><span class="badge b-def">L5</span></div>
+              <div class="mono" style="font-size:10px;color:var(--ink-faint);margin-top:3px">cure 02:11:48 · R3.2m short</div>
+            </div>
+            <div style="border:1px solid var(--line);border-radius:11px;padding:12px;margin-bottom:8px">
+              <div style="display:flex;justify-content:space-between"><span style="font-weight:600;color:var(--ink-dim)">Pick RFQ quote · EC-CARBON</span><span class="badge b-call">L4</span></div>
+              <div class="mono" style="font-size:10px;color:var(--ink-faint);margin-top:3px">best 237.10 · 4 dealers</div>
+            </div>
+            <div style="border:1px solid var(--line);border-radius:11px;padding:12px">
+              <div style="display:flex;justify-content:space-between"><span style="font-weight:600;color:var(--ink-dim)">Review limit · ZAR-PWR DAM</span><span class="badge b-call">L4</span></div>
+              <div class="mono" style="font-size:10px;color:var(--ink-faint);margin-top:3px">NOP 92% · warning</div>
+            </div>
+          </div>
+          <div class="thumb kill">⏻ F8 · KILL-SWITCH<small>hold to halt every working order</small></div>
+          <div class="botnav">
+            <a class="on"><span class="ic">⌘</span>Command</a><a><span class="ic">◈</span>Book</a><a><span class="ic">◩</span>Risk</a><a><span class="ic">⚑</span>Alerts</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─────────── OPTION 3 — RISK-RADAR ─────────── -->
+  <section class="opt" id="opt3" role="tabpanel" aria-labelledby="t3">
+    <div class="opt-head">
+      <div class="ot">03 · Risk-radar</div>
+      <div class="oc">Risk first, book second. A live cockpit where VaR, position-limit headroom and counterparty margin are the primary surfaces — the order book is one panel among the gauges. For desks managed by exposure, not by ticks. The three hero journeys ARE the dashboard.</div>
+    </div>
+    <div class="frames">
+
+      <!-- DESKTOP -->
+      <div class="desk" style="background:#070a0f">
+        <div class="deskbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="deskurl">oe.vantax.co.za/radar — desk risk cockpit</span><span class="deskmeta">auto-refresh 5s · F8 kill</span></div>
+        <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;background:var(--bg)">
+
+          <!-- VaR gauge -->
+          <div style="border:1px solid var(--line);border-radius:11px;padding:16px;background:var(--panel)">
+            <div class="mono" style="font-size:10px;color:var(--ink-faint);letter-spacing:.1em">DAILY VaR · 99% 1d</div>
+            <div style="display:flex;align-items:flex-end;gap:8px;margin-top:8px"><div class="mono" style="font-size:30px;font-weight:700;color:var(--warn)">R4.21m</div><div class="mono dn" style="font-size:12px;padding-bottom:6px">+R0.6m</div></div>
+            <div style="height:8px;background:var(--line);border-radius:4px;margin:12px 0 6px;overflow:hidden"><div style="width:71%;height:100%;background:linear-gradient(90deg,var(--buy),var(--warn))"></div></div>
+            <div class="mono" style="font-size:10px;color:var(--ink-faint)">71% of R5.9m desk limit</div>
+            <div class="mono" style="font-size:10px;color:var(--ink-faint);margin-top:12px;letter-spacing:.1em">SCENARIOS</div>
+            <table style="font-size:10.5px;margin-top:4px">
+              <tr><td>Load-shed st6</td><td class="dn" style="text-align:right">−R3.1m</td></tr>
+              <tr><td>ZAR −8%</td><td class="dn" style="text-align:right">−R1.9m</td></tr>
+              <tr><td>Carbon +20%</td><td class="up" style="text-align:right">+R0.8m</td></tr>
+            </table>
+          </div>
+
+          <!-- Position limits radar -->
+          <div style="border:1px solid var(--line);border-radius:11px;padding:16px;background:var(--panel)">
+            <div class="mono" style="font-size:10px;color:var(--ink-faint);letter-spacing:.1em">POSITION LIMITS · s41 <span class="tier l4" style="font-size:8px;padding:1px 5px;float:right">L4</span></div>
+            <div style="margin-top:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span class="mono" style="font-size:11px">ZAR-PWR DAM</span><span class="badge b-call">warning 92%</span></div>
+              <div style="height:6px;background:var(--line);border-radius:3px;margin:5px 0 12px"><div style="width:92%;height:100%;background:var(--warn);border-radius:3px"></div></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span class="mono" style="font-size:11px">EC-CARBON</span><span class="badge b-ok">compliant 54%</span></div>
+              <div style="height:6px;background:var(--line);border-radius:3px;margin:5px 0 12px"><div style="width:54%;height:100%;background:var(--buy);border-radius:3px"></div></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span class="mono" style="font-size:11px">FWD Q3-26</span><span class="badge b-ok">compliant 38%</span></div>
+              <div style="height:6px;background:var(--line);border-radius:3px;margin:5px 0"><div style="width:38%;height:100%;background:var(--buy);border-radius:3px"></div></div>
+            </div>
+            <div class="mono" style="font-size:9.5px;color:var(--info);margin-top:10px;line-height:1.5">AI · sell 22 MW DAM to reset NOP &lt;85% before close. <span style="color:var(--info)">stage order ↵</span></div>
+          </div>
+
+          <!-- Counterparty margin waterfall -->
+          <div style="border:1px solid var(--sell);border-radius:11px;padding:16px;background:rgba(255,77,94,.05)">
+            <div class="mono" style="font-size:10px;color:var(--ink-faint);letter-spacing:.1em">COUNTERPARTY MARGIN <span class="tier l5" style="font-size:8px;padding:1px 5px;float:right">L5</span></div>
+            <div style="margin-top:10px;display:flex;justify-content:space-between"><span class="mono" style="font-weight:700;color:var(--ink)">Nkwe Capital</span><span class="badge b-def">margin_call</span></div>
+            <div class="mono" style="font-size:10px;color:var(--ink-faint);margin-top:3px">exposure R14.8m · IM short R3.2m</div>
+            <!-- waterfall -->
+            <div style="display:flex;align-items:flex-end;gap:5px;height:54px;margin:12px 0 4px">
+              <div style="flex:1;height:100%;background:var(--info);border-radius:3px 3px 0 0" title="exposure"></div>
+              <div style="flex:1;height:62%;background:var(--buy);border-radius:3px 3px 0 0" title="IM held"></div>
+              <div style="flex:1;height:22%;background:var(--sell);border-radius:3px 3px 0 0" title="shortfall"></div>
+            </div>
+            <div class="mono" style="font-size:9px;color:var(--ink-faint);display:flex;justify-content:space-between"><span>exp</span><span>held</span><span>short</span></div>
+            <div class="mono" style="font-size:9px;color:var(--warn);margin-top:8px">⏱ cure 02:11:48</div>
+            <button style="width:100%;margin-top:9px;padding:9px;border:0;border-radius:7px;background:var(--sell);color:#fff;font-weight:700;font-family:var(--mono);font-size:11px;cursor:pointer">DECLARE DEFAULT →</button>
+          </div>
+
+          <!-- order book secondary -->
+          <div style="border:1px solid var(--line);border-radius:11px;padding:0;background:var(--panel);grid-column:span 2;overflow:hidden">
+            <div class="mono" style="font-size:10px;color:var(--ink-faint);padding:10px 14px;letter-spacing:.1em;border-bottom:1px solid var(--line)">ORDER BOOK · secondary · ZAR-PWR DAM</div>
+            <table>
+              <thead><tr><th>side</th><th style="text-align:right">qty</th><th style="text-align:right">px R/MWh</th><th style="text-align:right">cum</th><th>guard</th></tr></thead>
+              <tbody>
+                <tr><td class="dn">SELL</td><td style="text-align:right">240</td><td style="text-align:right">1 485</td><td style="text-align:right">410</td><td><span class="badge b-ok">ok</span></td></tr>
+                <tr style="background:rgba(255,176,31,.05)"><td colspan="5" class="mono" style="text-align:center;color:var(--amber);padding:4px">mid 1 482 · spread 6</td></tr>
+                <tr><td class="up">BUY</td><td style="text-align:right">310</td><td style="text-align:right">1 479</td><td style="text-align:right">310</td><td><span class="badge b-call">credit ck</span></td></tr>
+                <tr><td class="up">BUY</td><td style="text-align:right">142</td><td style="text-align:right">1 476</td><td style="text-align:right">452</td><td><span class="badge b-ok">ok</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- best-ex / RFQ -->
+          <div style="border:1px solid var(--line);border-radius:11px;padding:16px;background:var(--panel)">
+            <div class="mono" style="font-size:10px;color:var(--ink-faint);letter-spacing:.1em">BEST-EXEC / RFQ <span class="tier l4" style="font-size:8px;padding:1px 5px;float:right">L4</span></div>
+            <div style="margin-top:10px;font-weight:700">EC-CARBON · 2 000</div>
+            <div style="display:flex;gap:4px;margin:8px 0"><span class="pill" style="font-size:8.5px">sent</span><span class="pill on" style="font-size:8.5px">quotes</span><span class="pill" style="font-size:8.5px">select</span><span class="pill" style="font-size:8.5px">exec</span></div>
+            <table style="font-size:10.5px">
+              <tr style="background:rgba(31,209,122,.08)"><td>Aurora ★</td><td style="text-align:right" class="up">237.10</td></tr>
+              <tr><td>Sasol Trad</td><td style="text-align:right">237.40</td></tr>
+              <tr><td>Vitol SA</td><td style="text-align:right">237.85</td></tr>
+              <tr><td>Standard B</td><td style="text-align:right">238.20</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="scr">
+          <div class="statusbar"><span>16:42</span><span>Radar</span><span>5G ▦ 64%</span></div>
+          <div class="pwa-hint"><span class="live"></span>Risk cockpit · 5s refresh · push on breach</div>
+          <div class="pbody" style="overflow-y:auto;padding:14px 14px 0">
+            <!-- big VaR ring -->
+            <div style="text-align:center;padding:6px 0 14px">
+              <div class="mono" style="font-size:10px;color:var(--ink-faint);letter-spacing:.1em">DESK VaR · 99%</div>
+              <div class="mono" style="font-size:38px;font-weight:700;color:var(--warn);line-height:1.1">R4.21m</div>
+              <div style="height:7px;background:var(--line);border-radius:4px;margin:8px 28px"><div style="width:71%;height:100%;background:linear-gradient(90deg,var(--buy),var(--warn));border-radius:4px"></div></div>
+              <div class="mono" style="font-size:10px;color:var(--ink-faint)">71% of limit</div>
+            </div>
+            <div class="mono" style="font-size:10px;color:var(--ink-faint);letter-spacing:.1em;margin-bottom:8px">RISK ALERTS</div>
+            <div style="border:1px solid var(--sell);border-radius:11px;padding:12px;background:rgba(255,77,94,.07);margin-bottom:8px">
+              <div style="display:flex;justify-content:space-between"><span style="font-weight:700">Nkwe — margin call</span><span class="mono" style="font-size:9px;color:var(--warn)">02:11</span></div>
+              <div class="mono" style="font-size:10px;color:var(--ink-faint);margin-top:2px">IM short R3.2m · L5 close-out armed</div>
+            </div>
+            <div style="border:1px solid var(--warn);border-radius:11px;padding:12px;background:rgba(255,176,31,.06)">
+              <div style="display:flex;justify-content:space-between"><span style="font-weight:700">NOP 92% · DAM</span><span class="badge b-call">s41</span></div>
+              <div class="mono" style="font-size:10px;color:var(--ink-faint);margin-top:2px">sell 22 MW to reset · AI staged</div>
+            </div>
+          </div>
+          <div class="thumb kill">⏻ EMERGENCY CLOSE-OUT<small>flatten all positions · kill working orders</small></div>
+          <div class="botnav">
+            <a class="on"><span class="ic">◩</span>Radar</a><a><span class="ic">◈</span>Book</a><a><span class="ic">▦</span>Margin</a><a><span class="ic">⚑</span>Alerts</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="foot">
+    <span>Open Energy Platform · Trader · evaluation mockup — not wired into Meridian</span>
+    <span>Real chains: counterparty_margin (W68) · best_execution (W36) · poslimit_case (W29) · AA contrast · tap ≥24px</span>
+  </div>
+
+</div>
+
+<script>
+  function pick(n){
+    for(var i=1;i<=3;i++){
+      document.getElementById('opt'+i).setAttribute('data-active', i===n?'true':'false');
+      document.getElementById('t'+i).setAttribute('aria-selected', i===n?'true':'false');
+    }
+  }
+  // keyboard: 1/2/3 switch directions (trader is keyboard-first)
+  document.addEventListener('keydown',function(e){
+    if(['1','2','3'].includes(e.key) && !/input|textarea/i.test(document.activeElement.tagName)) pick(+e.key);
+  });
+</script>
+</body>
+</html>

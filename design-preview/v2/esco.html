@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESCO / O&M — Frontend Exploration · CEC Open Energy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0f0d;
+    --bg2:#0f1714;
+    --panel:#121b17;
+    --panel2:#16221c;
+    --line:#23332b;
+    --line2:#2e4438;
+    --ink:#eaf3ee;
+    --ink2:#9fb6ab;
+    --ink3:#6f8a7e;
+    /* O&M signal palette: emerald base, amber action, red LD-exposure */
+    --emerald:#2fd6a0;
+    --emerald-d:#0e6e54;
+    --amber:#ffb547;
+    --amber-d:#7a4f0c;
+    --red:#ff6b6b;
+    --red-d:#7a1f1f;
+    --violet:#9d8bff;   /* predictive / AI */
+    --violet-d:#3a2f7a;
+    --cyan:#46d0e0;
+    --r:14px;
+    --r-s:9px;
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+    --disp:"Space Grotesk",system-ui,sans-serif;
+    --sans:"Inter",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(900px 500px at 15% -5%, #11241c 0%, transparent 60%),
+      radial-gradient(800px 600px at 100% 0%, #161229 0%, transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  a{color:inherit}
+  .wrap{max-width:1360px;margin:0 auto;padding:30px 26px 90px}
+  .mono{font-family:var(--mono)}
+  .disp{font-family:var(--disp)}
+
+  /* ===== HEADER BAND ===== */
+  .band{
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:linear-gradient(160deg,#10201a 0%,#0c1512 70%);
+    padding:26px 28px;
+    position:relative;
+    overflow:hidden;
+  }
+  .band::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(90deg,transparent 0 38px,rgba(47,214,160,.03) 38px 39px);
+  }
+  .band-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:relative;z-index:1}
+  .pill{
+    font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    padding:5px 11px;border-radius:999px;border:1px solid var(--line2);
+    color:var(--emerald);background:rgba(47,214,160,.06);
+  }
+  .pill.dim{color:var(--ink2);border-color:var(--line)}
+  h1.role{
+    font-family:var(--disp);font-weight:700;font-size:30px;letter-spacing:-.01em;margin:14px 0 0;
+    position:relative;z-index:1;
+  }
+  h1.role b{color:var(--emerald)}
+  .band-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:26px;margin-top:14px;position:relative;z-index:1}
+  .persona p{margin:8px 0 0;color:var(--ink2);font-size:14.5px;max-width:62ch}
+  .persona .lbl,.ease-band .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3)}
+  .ease-band{
+    border-left:2px solid var(--emerald);
+    background:linear-gradient(100deg,rgba(47,214,160,.07),transparent);
+    border-radius:10px;padding:14px 16px;
+  }
+  .ease-band h3{font-family:var(--disp);font-size:16px;margin:6px 0 4px;color:var(--ink)}
+  .ease-band p{margin:0;color:var(--ink2);font-size:13.5px}
+  .ease-band .tag{color:var(--emerald);font-weight:600}
+
+  /* ===== JOURNEY-AS-PRODUCT STRIP ===== */
+  .section-h{display:flex;align-items:baseline;gap:12px;margin:34px 2px 14px}
+  .section-h h2{font-family:var(--disp);font-size:19px;margin:0;letter-spacing:-.01em}
+  .section-h .sub{color:var(--ink3);font-size:12.5px;font-family:var(--mono)}
+  .jstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .jcard{
+    border:1px solid var(--line);border-radius:var(--r);background:var(--panel);
+    padding:16px 16px 14px;position:relative;overflow:hidden;
+  }
+  .jcard .spine{position:absolute;left:0;top:0;bottom:0;width:3px}
+  .jcard.pred .spine{background:var(--violet)}
+  .jcard.avail .spine{background:var(--amber)}
+  .jcard.wo .spine{background:var(--emerald)}
+  .jcard h4{font-family:var(--disp);font-size:16px;margin:0 0 2px}
+  .chk{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-bottom:10px}
+  .tier{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;
+    padding:4px 9px;border-radius:7px;text-transform:uppercase;font-weight:600}
+  .tier.f{color:#bfe9d9;background:rgba(47,214,160,.1);border:1px solid var(--emerald-d)}
+  .tier.p{color:#ffd9a0;background:rgba(255,181,71,.1);border:1px solid var(--amber-d)}
+  .tier.r{color:#cfc6ff;background:rgba(157,139,255,.12);border:1px solid var(--violet-d)}
+  .meter{display:flex;justify-content:space-between;align-items:center;margin-top:12px;border-top:1px dashed var(--line2);padding-top:10px}
+  .meter .u{font-family:var(--mono);font-size:12px;color:var(--ink)}
+  .meter .u b{color:var(--emerald)}
+  .meter .price{font-family:var(--mono);font-size:12px;color:var(--ink2)}
+  .meter .price b{color:var(--ink);font-size:14px}
+
+  /* ===== TABS ===== */
+  .tabs{display:flex;gap:8px;margin:38px 2px 18px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:14px}
+  .tab{
+    font-family:var(--disp);font-weight:600;font-size:14px;cursor:pointer;
+    border:1px solid var(--line);background:var(--panel);color:var(--ink2);
+    padding:10px 16px;border-radius:11px;display:flex;gap:10px;align-items:center;transition:.15s;
+  }
+  .tab .n{font-family:var(--mono);font-size:11px;color:var(--ink3);border:1px solid var(--line2);border-radius:6px;padding:1px 6px}
+  .tab[aria-selected="true"]{color:var(--ink);border-color:var(--line2);background:var(--panel2)}
+  .tab.t1[aria-selected="true"]{box-shadow:inset 0 -2px 0 var(--violet)}
+  .tab.t2[aria-selected="true"]{box-shadow:inset 0 -2px 0 var(--amber)}
+  .tab.t3[aria-selected="true"]{box-shadow:inset 0 -2px 0 var(--emerald)}
+  .tab:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .panel-opt{display:none}
+  .panel-opt.on{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .opt-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:6px}
+  .opt-head .badge{font-family:var(--mono);font-size:11px;padding:6px 11px;border-radius:9px;white-space:nowrap}
+  .opt-head h3{font-family:var(--disp);font-size:22px;margin:0;letter-spacing:-.01em}
+  .opt-head p{margin:4px 0 0;color:var(--ink2);font-size:14px;max-width:80ch}
+  .ease-callout{
+    display:inline-flex;align-items:center;gap:9px;margin:14px 0 22px;
+    font-size:13.5px;padding:9px 14px;border-radius:10px;border:1px solid var(--line2);
+    background:rgba(47,214,160,.06);
+  }
+  .ease-callout .k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--emerald);font-weight:600}
+  .ease-callout .v{color:var(--ink)}
+
+  /* ===== FRAMES ===== */
+  .frames{display:grid;grid-template-columns:1fr 392px;gap:24px;align-items:start}
+  @media(max-width:1180px){.frames{grid-template-columns:1fr}}
+  .device-lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin:0 0 8px 4px}
+
+  .desktop{border:1px solid var(--line2);border-radius:var(--r);overflow:hidden;background:var(--bg2)}
+  .chrome{display:flex;align-items:center;gap:8px;padding:9px 13px;background:#0b1310;border-bottom:1px solid var(--line)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .chrome .url{margin-left:10px;font-family:var(--mono);font-size:11px;color:var(--ink3);background:#0a110e;border:1px solid var(--line);border-radius:7px;padding:4px 12px;flex:1}
+  .screen{padding:16px}
+
+  /* generic UI atoms */
+  .row{display:flex;gap:12px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+  .kpi{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:11px 12px}
+  .kpi .l{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+  .kpi .v{font-family:var(--disp);font-size:21px;font-weight:600;margin-top:5px}
+  .kpi .d{font-family:var(--mono);font-size:10.5px;margin-top:2px}
+  .up{color:var(--emerald)} .down{color:var(--red)} .warn{color:var(--amber)} .pv{color:var(--violet)}
+
+  .card{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px}
+  .card h5{font-family:var(--disp);font-size:13px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
+  .card h5 .meta{font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:400}
+
+  table.t{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.t th{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+  table.t td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.t tr:last-child td{border-bottom:none}
+  .chip{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:999px;letter-spacing:.04em}
+  .chip.ok{color:#bfe9d9;background:rgba(47,214,160,.12)}
+  .chip.deg{color:var(--amber);background:rgba(255,181,71,.12)}
+  .chip.bad{color:#ffc2c2;background:rgba(255,107,107,.14)}
+  .chip.pv{color:#d6cdff;background:rgba(157,139,255,.14)}
+  .chip.dim{color:var(--ink2);background:rgba(255,255,255,.04)}
+
+  .btn{font-family:var(--disp);font-weight:600;font-size:12.5px;border-radius:9px;padding:8px 13px;border:1px solid var(--line2);background:var(--panel2);color:var(--ink);cursor:pointer}
+  .btn.pri{background:var(--emerald);color:#04130d;border-color:var(--emerald)}
+  .btn.amber{background:var(--amber);color:#1c1300;border-color:var(--amber)}
+  .btn.violet{background:var(--violet);color:#11091f;border-color:var(--violet)}
+  .btn.sm{font-size:11px;padding:5px 9px}
+
+  /* RUL bar */
+  .rul{height:7px;border-radius:4px;background:#1c2a23;overflow:hidden;position:relative}
+  .rul i{display:block;height:100%;border-radius:4px}
+  .rul.g i{background:linear-gradient(90deg,var(--emerald),#1fa67e)}
+  .rul.a i{background:linear-gradient(90deg,var(--amber),#d98a14)}
+  .rul.r i{background:linear-gradient(90deg,var(--red),#c23a3a)}
+
+  /* pipeline */
+  .pipe{display:flex;gap:4px;margin-top:4px}
+  .pipe span{flex:1;height:5px;border-radius:3px;background:#1c2a23}
+  .pipe span.done{background:var(--emerald)}
+  .pipe span.now{background:var(--amber)}
+  .pipe-lbls{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--ink3);margin-top:5px}
+
+  /* fleet map (option 1) */
+  .fmap{display:grid;grid-template-columns:repeat(8,1fr);gap:7px}
+  .node{aspect-ratio:1;border-radius:9px;position:relative;border:1px solid var(--line);display:flex;align-items:flex-end;justify-content:flex-start;padding:6px;cursor:pointer;overflow:hidden}
+  .node .nm{font-family:var(--mono);font-size:8.5px;color:rgba(255,255,255,.78);line-height:1.05}
+  .node.n-ok{background:radial-gradient(circle at 50% 35%,rgba(47,214,160,.32),rgba(47,214,160,.06))}
+  .node.n-watch{background:radial-gradient(circle at 50% 35%,rgba(255,181,71,.34),rgba(255,181,71,.06))}
+  .node.n-crit{background:radial-gradient(circle at 50% 35%,rgba(255,107,107,.4),rgba(255,107,107,.08));border-color:var(--red-d)}
+  .node.n-pred{background:radial-gradient(circle at 50% 35%,rgba(157,139,255,.4),rgba(157,139,255,.08));border-color:var(--violet-d);box-shadow:0 0 0 1px rgba(157,139,255,.25)}
+  .node .pulse{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%}
+  .node.n-crit .pulse{background:var(--red);box-shadow:0 0 0 0 rgba(255,107,107,.6);animation:pulse 1.6s infinite}
+  .node.n-pred .pulse{background:var(--violet);box-shadow:0 0 0 0 rgba(157,139,255,.6);animation:pulse 2s infinite}
+  @keyframes pulse{70%{box-shadow:0 0 0 9px rgba(255,107,107,0)}100%{box-shadow:0 0 0 0 rgba(255,107,107,0)}}
+
+  /* "act next" ranked rail */
+  .rank{display:flex;flex-direction:column;gap:8px}
+  .rk{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--panel2)}
+  .rk .ord{font-family:var(--disp);font-weight:700;font-size:16px;color:var(--ink3);text-align:center}
+  .rk.r1{border-color:var(--violet-d);background:linear-gradient(100deg,rgba(157,139,255,.09),var(--panel2))}
+  .rk.r1 .ord{color:var(--violet)}
+  .rk .why{font-family:var(--mono);font-size:10.5px;color:var(--ink2);margin-top:2px}
+  .rk .ttl{font-size:12.5px;font-weight:600}
+
+  /* gauge (option 2) */
+  .gauge-wrap{display:flex;gap:16px;align-items:center}
+  .gauge{width:128px;height:128px;border-radius:50%;flex:none;
+    background:conic-gradient(var(--emerald) 0 calc(var(--p)*1%),#1c2a23 calc(var(--p)*1%) 100%);
+    display:flex;align-items:center;justify-content:center;position:relative}
+  .gauge::before{content:"";position:absolute;inset:13px;border-radius:50%;background:var(--panel)}
+  .gauge .gtxt{position:relative;text-align:center}
+  .gauge .gtxt b{font-family:var(--disp);font-size:26px;display:block}
+  .gauge .gtxt span{font-family:var(--mono);font-size:9px;color:var(--ink3);letter-spacing:.1em}
+  .ld-meter{border:1px solid var(--red-d);border-radius:11px;background:linear-gradient(100deg,rgba(255,107,107,.08),var(--panel));padding:13px 14px}
+  .ld-meter .big{font-family:var(--disp);font-size:30px;font-weight:700;color:var(--red)}
+
+  /* WO command (option 3) board */
+  .board{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .col{background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:9px}
+  .col h6{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin:0 0 9px;display:flex;justify-content:space-between}
+  .wo{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:9px;margin-bottom:8px}
+  .wo .wid{font-family:var(--mono);font-size:9.5px;color:var(--ink3)}
+  .wo .wt{font-size:12px;font-weight:600;margin:3px 0 6px;line-height:1.25}
+  .wo .wf{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:9.5px}
+  .sla{font-family:var(--mono);font-size:9.5px;padding:1px 6px;border-radius:5px}
+  .sla.green{color:#bfe9d9;background:rgba(47,214,160,.13)}
+  .sla.amber{color:var(--amber);background:rgba(255,181,71,.13)}
+  .sla.red{color:#ffc2c2;background:rgba(255,107,107,.15)}
+
+  /* ===== PHONE ===== */
+  .phone{width:392px;border:9px solid #05090a;border-radius:46px;background:#05090a;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden}
+  .pscreen{background:var(--bg);border-radius:38px;overflow:hidden;height:760px;display:flex;flex-direction:column;position:relative}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:11px 22px 6px;font-family:var(--mono);font-size:11px;color:var(--ink2)}
+  .notch{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:120px;height:24px;background:#05090a;border-radius:0 0 16px 16px;z-index:5}
+  .offline{font-family:var(--mono);font-size:10px;display:flex;align-items:center;gap:7px;justify-content:center;padding:6px;color:var(--amber);background:rgba(255,181,71,.08);border-bottom:1px solid var(--line)}
+  .pbody{flex:1;overflow:hidden;padding:13px 15px}
+  .ptop{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}
+  .ptop .t{font-family:var(--disp);font-weight:700;font-size:17px}
+  .ptop .av{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--emerald-d),var(--violet-d));display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600}
+  .pnav{display:flex;justify-content:space-around;padding:9px 6px 16px;border-top:1px solid var(--line);background:#08100d}
+  .pnav .it{display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--mono);font-size:8.5px;color:var(--ink3)}
+  .pnav .it.act{color:var(--emerald)}
+  .pnav .ic{font-size:16px}
+  .fab{position:absolute;bottom:74px;right:18px;background:var(--emerald);color:#04130d;border:none;border-radius:16px;padding:13px 18px;font-family:var(--disp);font-weight:700;font-size:13px;box-shadow:0 8px 24px rgba(47,214,160,.35);display:flex;gap:8px;align-items:center;z-index:6}
+  .pcard{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:13px;margin-bottom:11px}
+  .pcard.hot{border-color:var(--violet-d);background:linear-gradient(150deg,rgba(157,139,255,.1),var(--panel))}
+  .pcard.alarm{border-color:var(--red-d);background:linear-gradient(150deg,rgba(255,107,107,.1),var(--panel))}
+  .pcard .ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+  .pcard .ph .nm{font-family:var(--disp);font-weight:600;font-size:14px}
+  .plabel{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:0 0 9px}
+
+  .foot{margin-top:48px;border-top:1px solid var(--line);padding-top:18px;color:var(--ink3);font-family:var(--mono);font-size:11px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===================== HEADER BAND ===================== -->
+  <div class="band">
+    <div class="band-top">
+      <span class="pill">CEC Open Energy · Role Exploration</span>
+      <span class="pill dim">ESCO / O&amp;M · role key <span class="mono">esums_owner</span></span>
+      <span class="pill dim">/esco</span>
+    </div>
+    <h1 class="role">Asset Performance &amp; <b>O&amp;M</b> Command</h1>
+    <div class="band-grid">
+      <div class="persona">
+        <p class="lbl">Persona</p>
+        <p>An asset-performance &amp; O&amp;M manager running a distributed PV + BESS fleet across SA sites. Works <b>desktop in the NOC and tablet on-site</b> — gloves, glare, intermittent signal. Lives under <b>availability-LD exposure</b>: every hour of downtime is a contractual penalty. The one question that never stops: <b>which asset needs me next, and why?</b></p>
+        <p class="lbl" style="margin-top:14px">Design rationale</p>
+        <p>O&amp;M is triage, not browsing. Three different bets on how to collapse a noisy fleet into one ranked "act here next" — a <b>predictive asset-health map</b>, an <b>availability/LD cockpit</b>, and a <b>work-order command board</b>. The predictive RUL layer is the differentiator and is foregrounded in every view.</p>
+      </div>
+      <div class="ease-band">
+        <p class="lbl">Overarching theme</p>
+        <h3>EASE — the fleet tells you who needs you</h3>
+        <p>For an O&amp;M lead, ease isn't fewer clicks — it's <span class="tag">never hunting</span>. The platform ranks the fleet by predicted revenue-at-risk, names the <span class="tag">why</span>, and offers <span class="tag">one tap to act</span>. Noise in, a single decision out.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== JOURNEY-AS-PRODUCT STRIP ===================== -->
+  <div class="section-h">
+    <h2>Journeys as metered products</h2>
+    <span class="sub">3 hero journeys · billed by usage · complexity priced into the tier</span>
+  </div>
+  <div class="jstrip">
+    <div class="jcard pred">
+      <div class="spine"></div>
+      <h4>Asset Prognostics</h4>
+      <div class="chk mono">chain · asset_prognostics</div>
+      <span class="tier r">◈ Regulator-grade · L5</span>
+      <div style="margin-top:9px;font-size:12px;color:var(--ink2)">RUL + anomaly + fault-fingerprint, benchmarked to beat NTT. States: nominal → anomaly_detected → degrading → maintenance_due → failed.</div>
+      <div class="meter">
+        <div class="u">metered <b>per asset / month</b></div>
+        <div class="price">from <b>R 240</b>/asset</div>
+      </div>
+    </div>
+    <div class="jcard avail">
+      <div class="spine"></div>
+      <h4>Availability Guarantee</h4>
+      <div class="chk mono">chain · availability_guarantee</div>
+      <span class="tier p">◆ Professional · L4</span>
+      <div style="margin-top:9px;font-size:12px;color:var(--ink2)">IEC 61724 uptime contract + LD tracking. States: active → under_review → breach → cure → settled → waived.</div>
+      <div class="meter">
+        <div class="u">metered <b>per guarantee / yr</b></div>
+        <div class="price">from <b>R 18k</b>/contract</div>
+      </div>
+    </div>
+    <div class="jcard wo">
+      <div class="spine"></div>
+      <h4>Work-Order Dispatch</h4>
+      <div class="chk mono">chain · om_work_order</div>
+      <span class="tier f">● Foundation · L3</span>
+      <div style="margin-top:9px;font-size:12px;color:var(--ink2)">12-state P6 WO lifecycle, parts, photos, SLA. States: draft → assigned → in_progress → on_hold → completed → cancelled.</div>
+      <div class="meter">
+        <div class="u">metered <b>per work order</b></div>
+        <div class="price">from <b>R 9</b>/WO</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== TABS ===================== -->
+  <div class="tabs" role="tablist" aria-label="Design options">
+    <button class="tab t1" role="tab" aria-selected="true" aria-controls="opt1" id="tab1" onclick="pick(1)"><span class="n">01</span> Prognostic Fleet Map</button>
+    <button class="tab t2" role="tab" aria-selected="false" aria-controls="opt2" id="tab2" onclick="pick(2)"><span class="n">02</span> Availability / LD Cockpit</button>
+    <button class="tab t3" role="tab" aria-selected="false" aria-controls="opt3" id="tab3" onclick="pick(3)"><span class="n">03</span> Work-Order Command</button>
+  </div>
+
+  <!-- ============ OPTION 1 — PROGNOSTIC FLEET MAP ============ -->
+  <section class="panel-opt on" id="opt1" role="tabpanel" aria-labelledby="tab1">
+    <div class="opt-head">
+      <span class="badge" style="background:rgba(157,139,255,.14);color:#d6cdff;border:1px solid var(--violet-d)">BET A · SPATIAL + PREDICTIVE</span>
+      <div>
+        <h3>Prognostic Fleet Map</h3>
+        <p>The fleet drawn as a living grid of assets, colour-coded by <b>predicted</b> health. The violet nodes are RUL signals firing <em>weeks</em> before failure — the differentiator. Click a node, the why and the one-tap action come to you.</p>
+      </div>
+    </div>
+    <div class="ease-callout"><span class="k">Ease</span><span class="v">The fleet ranks itself by revenue-at-risk: which asset, why, what to do — surfaced before it breaks, one tap to raise the WO.</span></div>
+
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div>
+        <p class="device-lbl">Web · Desktop · 1280</p>
+        <div class="desktop">
+          <div class="chrome">
+            <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+            <span class="url mono">oe.vantax.co.za/esco/prognostics</span>
+          </div>
+          <div class="screen">
+            <div class="kpis">
+              <div class="kpi"><div class="l">Fleet RUL at risk</div><div class="v pv">7 assets</div><div class="d pv mono">flagged &lt; 60d horizon</div></div>
+              <div class="kpi"><div class="l">Revenue at risk / 30d</div><div class="v">R 1.84m</div><div class="d warn mono">▲ predicted exposure</div></div>
+              <div class="kpi"><div class="l">Fleet availability</div><div class="v up">97.6%</div><div class="d up mono">+0.3 vs target 97.3</div></div>
+              <div class="kpi"><div class="l">Open / overdue WO</div><div class="v">41 / <span class="warn">6</span></div><div class="d mono">6 breach SLA</div></div>
+            </div>
+
+            <div class="row" style="gap:14px">
+              <div class="card" style="flex:1.55">
+                <h5>Fleet health · predicted <span class="meta">48 sites · 312 inverters · asset_prognostics</span></h5>
+                <div class="fmap">
+                  <div class="node n-ok"><span class="nm">DeAar-A</span></div>
+                  <div class="node n-ok"><span class="nm">DeAar-B</span></div>
+                  <div class="node n-pred"><span class="pulse"></span><span class="nm">Kuru-INV7</span></div>
+                  <div class="node n-ok"><span class="nm">Kuru-INV8</span></div>
+                  <div class="node n-watch"><span class="nm">Upngton</span></div>
+                  <div class="node n-ok"><span class="nm">Prieska</span></div>
+                  <div class="node n-ok"><span class="nm">Loeriesf</span></div>
+                  <div class="node n-crit"><span class="pulse"></span><span class="nm">Vryburg</span></div>
+                  <div class="node n-ok"><span class="nm">Kathu-1</span></div>
+                  <div class="node n-pred"><span class="pulse"></span><span class="nm">Kathu-BESS</span></div>
+                  <div class="node n-ok"><span class="nm">Pofadder</span></div>
+                  <div class="node n-ok"><span class="nm">Springbk</span></div>
+                  <div class="node n-watch"><span class="nm">Postmas</span></div>
+                  <div class="node n-ok"><span class="nm">Aggeneys</span></div>
+                  <div class="node n-ok"><span class="nm">Kakamas</span></div>
+                  <div class="node n-ok"><span class="nm">Keimoes</span></div>
+                  <div class="node n-ok"><span class="nm">Groblrs</span></div>
+                  <div class="node n-pred"><span class="pulse"></span><span class="nm">Lime-INV3</span></div>
+                  <div class="node n-ok"><span class="nm">Britstwn</span></div>
+                  <div class="node n-ok"><span class="nm">Hopetwn</span></div>
+                  <div class="node n-watch"><span class="nm">Strydom</span></div>
+                  <div class="node n-ok"><span class="nm">Marydale</span></div>
+                  <div class="node n-ok"><span class="nm">Niekerk</span></div>
+                  <div class="node n-ok"><span class="nm">Vanwyk</span></div>
+                </div>
+                <div style="display:flex;gap:14px;margin-top:11px;font-family:var(--mono);font-size:10px;color:var(--ink3);flex-wrap:wrap">
+                  <span>● <span style="color:var(--emerald)">nominal</span></span>
+                  <span>● <span style="color:var(--amber)">degrading</span></span>
+                  <span>● <span style="color:var(--red)">failed / maint_due</span></span>
+                  <span>● <span style="color:var(--violet)">RUL anomaly — predicted</span></span>
+                </div>
+              </div>
+
+              <div class="card" style="flex:1">
+                <h5>Act here next <span class="meta">ranked by revenue-at-risk</span></h5>
+                <div class="rank">
+                  <div class="rk r1">
+                    <div class="ord">1</div>
+                    <div>
+                      <div class="ttl">Kuru-INV7 · IGBT thermal drift</div>
+                      <div class="why">RUL 23d ↓ · fingerprint match 0.94 · R 410k at risk</div>
+                    </div>
+                    <button class="btn violet sm">Raise WO</button>
+                  </div>
+                  <div class="rk">
+                    <div class="ord">2</div>
+                    <div>
+                      <div class="ttl">Vryburg · string fault (failed)</div>
+                      <div class="why">availability breach live · LD R 0.6m exposed</div>
+                    </div>
+                    <button class="btn amber sm">Dispatch</button>
+                  </div>
+                  <div class="rk">
+                    <div class="ord">3</div>
+                    <div>
+                      <div class="ttl">Kathu-BESS · SOH knee detected</div>
+                      <div class="why">RUL 41d · augmentation review · bess_soh</div>
+                    </div>
+                    <button class="btn sm">Review</button>
+                  </div>
+                  <div class="rk">
+                    <div class="ord">4</div>
+                    <div>
+                      <div class="ttl">Lime-INV3 · DC arc precursor</div>
+                      <div class="why">RUL 55d · anomaly_detected · safety priority</div>
+                    </div>
+                    <button class="btn sm">Inspect</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top:14px">
+              <h5>Kuru-INV7 · prognostic detail <span class="meta">why this is #1</span></h5>
+              <div class="row" style="gap:18px;align-items:flex-start">
+                <div style="flex:1">
+                  <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ink2)"><span>Remaining useful life</span><span class="pv">23 days</span></div>
+                  <div class="rul a" style="margin-top:6px"><i style="width:24%"></i></div>
+                  <div style="font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:5px">vs NTT model baseline: +6.5d earlier detection · confidence 0.94</div>
+                  <div style="display:flex;gap:8px;margin-top:13px">
+                    <button class="btn violet sm">Accept AI → raise WO</button>
+                    <button class="btn sm">Snooze 7d</button>
+                    <button class="btn sm">Open thread</button>
+                  </div>
+                  <div style="font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:9px">↳ inline AI: "IGBT module B junction-temp rising 0.8°C/wk under matched irradiance — replace before peak-tariff window." <span class="pv">why</span> · 1-tap accept</div>
+                </div>
+                <div style="flex:.85">
+                  <p class="lbl" style="font-family:var(--mono);font-size:10px;color:var(--ink3);letter-spacing:.1em">Anomaly fingerprint</p>
+                  <table class="t" style="margin-top:6px">
+                    <tr><td>Junction temp Δ</td><td style="text-align:right" class="warn mono">+2.1°C</td></tr>
+                    <tr><td>Switching loss</td><td style="text-align:right" class="warn mono">+11%</td></tr>
+                    <tr><td>MPPT efficiency</td><td style="text-align:right" class="down mono">−1.4%</td></tr>
+                    <tr><td>Match to failures DB</td><td style="text-align:right" class="pv mono">0.94</td></tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div>
+        <p class="device-lbl">PWA · Phone · 390×844</p>
+        <div class="phone">
+          <div class="pscreen">
+            <div class="notch"></div>
+            <div class="statusbar"><span>9:41</span><span>ESCO · NOC</span><span>◔ 5G ▮▮▮</span></div>
+            <div class="offline">⚡ Offline-ready · last sync 2 min ago · 3 queued actions</div>
+            <div class="pbody">
+              <div class="ptop"><div class="t">Act next</div><div class="av">OM</div></div>
+              <p class="plabel">Predicted · ranked by R at risk</p>
+              <div class="pcard hot">
+                <div class="ph"><span class="nm">Kuru-INV7</span><span class="chip pv">RUL 23d</span></div>
+                <div style="font-family:var(--mono);font-size:11px;color:var(--ink2)">IGBT thermal drift · R 410k at risk</div>
+                <div class="rul a" style="margin-top:9px"><i style="width:24%"></i></div>
+                <button class="btn violet" style="width:100%;margin-top:11px">Accept AI → raise WO</button>
+              </div>
+              <div class="pcard alarm">
+                <div class="ph"><span class="nm">Vryburg</span><span class="chip bad">failed</span></div>
+                <div style="font-family:var(--mono);font-size:11px;color:var(--ink2)">availability breach live · LD R 0.6m</div>
+                <button class="btn amber" style="width:100%;margin-top:11px">Dispatch tech</button>
+              </div>
+              <div class="pcard">
+                <div class="ph"><span class="nm">Kathu-BESS</span><span class="chip pv">SOH knee</span></div>
+                <div style="font-family:var(--mono);font-size:11px;color:var(--ink2)">RUL 41d · augmentation review</div>
+              </div>
+            </div>
+            <button class="fab">⊕ Raise WO</button>
+            <div class="pnav">
+              <div class="it act"><span class="ic">◈</span>Fleet</div>
+              <div class="it"><span class="ic">⚙</span>WOs</div>
+              <div class="it"><span class="ic">◉</span>Sites</div>
+              <div class="it"><span class="ic">▤</span>Reports</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPTION 2 — AVAILABILITY / LD COCKPIT ============ -->
+  <section class="panel-opt" id="opt2" role="tabpanel" aria-labelledby="tab2">
+    <div class="opt-head">
+      <span class="badge" style="background:rgba(255,181,71,.14);color:#ffd9a0;border:1px solid var(--amber-d)">BET B · CONTRACT-RISK FIRST</span>
+      <div>
+        <h3>Availability / LD Cockpit</h3>
+        <p>Money-first. Every screen anchors on the single number that keeps an O&amp;M lead up at night: <b>live LD exposure</b>. The fleet is reframed as guarantees in flight, each on its <code>availability_guarantee</code> state line, predictive RUL feeding the breach forecast.</p>
+      </div>
+    </div>
+    <div class="ease-callout"><span class="k">Ease</span><span class="v">One LD number, always live — and a ranked list of exactly which guarantees to defend this week before they breach.</span></div>
+
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div>
+        <p class="device-lbl">Web · Desktop · 1280</p>
+        <div class="desktop">
+          <div class="chrome">
+            <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+            <span class="url mono">oe.vantax.co.za/esco/availability</span>
+          </div>
+          <div class="screen">
+            <div class="row" style="gap:14px;margin-bottom:14px">
+              <div class="ld-meter" style="flex:1.1">
+                <div style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)">Live LD exposure · this period</div>
+                <div class="big">R 2.41m</div>
+                <div style="font-family:var(--mono);font-size:11px;color:var(--ink2)">3 guarantees in <span class="bad" style="color:var(--red)">breach</span> · 2 in <span style="color:var(--amber)">cure</span> · forecast +R 0.9m if untreated</div>
+                <div class="pipe" style="margin-top:11px"><span class="done"></span><span class="done"></span><span class="now"></span><span></span><span></span><span></span></div>
+                <div class="pipe-lbls"><span>active</span><span>review</span><span>breach</span><span>cure</span><span>settled</span><span>waived</span></div>
+              </div>
+              <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="kpi"><div class="l">Contracted uptime</div><div class="v">97.3%</div><div class="d mono">IEC 61724-1</div></div>
+                <div class="kpi"><div class="l">Actual MTD</div><div class="v up">97.6%</div><div class="d up mono">+0.3 buffer</div></div>
+                <div class="kpi"><div class="l">LD avoided / 90d</div><div class="v up">R 5.2m</div><div class="d up mono">predictive saves</div></div>
+                <div class="kpi"><div class="l">Cure deadlines &lt; 72h</div><div class="v warn">4</div><div class="d warn mono">timer-driven</div></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h5>Guarantees in flight <span class="meta">availability_guarantee · ranked by LD exposure</span></h5>
+              <table class="t">
+                <thead><tr><th>Guarantee / site</th><th>State</th><th>Uptime</th><th>Threshold</th><th>RUL trigger</th><th>LD exposure</th><th>Cure clock</th><th></th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><b>GTE-2231</b> · Vryburg<br><span class="mono" style="font-size:10px;color:var(--ink3)">12 MW PV</span></td>
+                    <td><span class="chip bad">breach</span></td>
+                    <td class="down mono">94.1%</td><td class="mono">97.3%</td>
+                    <td><span class="chip pv">string fail</span></td>
+                    <td class="down mono"><b>R 0.61m</b></td>
+                    <td class="mono warn">41h left</td>
+                    <td><button class="btn amber sm">Cure plan</button></td>
+                  </tr>
+                  <tr>
+                    <td><b>GTE-2208</b> · Upington<br><span class="mono" style="font-size:10px;color:var(--ink3)">20 MW PV</span></td>
+                    <td><span class="chip bad">breach</span></td>
+                    <td class="down mono">95.8%</td><td class="mono">97.3%</td>
+                    <td><span class="chip pv">RUL 30d</span></td>
+                    <td class="down mono"><b>R 0.54m</b></td>
+                    <td class="mono warn">19h left</td>
+                    <td><button class="btn amber sm">Cure plan</button></td>
+                  </tr>
+                  <tr>
+                    <td><b>GTE-2255</b> · Postmasburg<br><span class="mono" style="font-size:10px;color:var(--ink3)">8 MW + BESS</span></td>
+                    <td><span class="chip deg">under_review</span></td>
+                    <td class="warn mono">96.9%</td><td class="mono">97.3%</td>
+                    <td><span class="chip pv">SOH knee</span></td>
+                    <td class="warn mono">R 0.31m</td>
+                    <td class="mono">3d</td>
+                    <td><button class="btn sm">Defend</button></td>
+                  </tr>
+                  <tr>
+                    <td><b>GTE-2190</b> · Kathu-1<br><span class="mono" style="font-size:10px;color:var(--ink3)">30 MW PV</span></td>
+                    <td><span class="chip dim">cure</span></td>
+                    <td class="up mono">97.4%</td><td class="mono">97.3%</td>
+                    <td><span class="chip ok">nominal</span></td>
+                    <td class="mono">R 0.18m</td>
+                    <td class="mono ok">recovering</td>
+                    <td><button class="btn sm">Track</button></td>
+                  </tr>
+                  <tr>
+                    <td><b>GTE-2177</b> · De Aar-A<br><span class="mono" style="font-size:10px;color:var(--ink3)">45 MW PV</span></td>
+                    <td><span class="chip ok">active</span></td>
+                    <td class="up mono">98.5%</td><td class="mono">97.3%</td>
+                    <td><span class="chip ok">nominal</span></td>
+                    <td class="mono ok">—</td>
+                    <td class="mono ok">—</td>
+                    <td><button class="btn sm">View</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="row" style="gap:14px;margin-top:14px">
+              <div class="card" style="flex:1">
+                <h5>Cure plan · GTE-2231 Vryburg <span class="meta">L4 · timer-driven</span></h5>
+                <div style="font-family:var(--mono);font-size:11px;color:var(--ink2);line-height:1.7">
+                  <div>→ Dispatch WO-4471 (string replace) · <span class="up">assigned</span></div>
+                  <div>→ Permit-to-work PTW-882 · <span class="warn">issued, LOTO pending</span></div>
+                  <div>→ Parts SP-203 fuse string · <span class="ok">in_stock</span></div>
+                  <div>→ Restore-by to halt LD: <span class="down">41h</span></div>
+                </div>
+                <button class="btn amber" style="margin-top:11px">Lock cure plan · stop the clock</button>
+              </div>
+              <div class="card" style="flex:1">
+                <h5>Predicted breaches · 14-day <span class="meta">RUL-fed forecast</span></h5>
+                <table class="t">
+                  <tr><td>Kuru-INV7</td><td class="pv mono">23d</td><td class="warn mono">R 0.41m risk</td></tr>
+                  <tr><td>Lime-INV3</td><td class="pv mono">55d</td><td class="mono">R 0.12m risk</td></tr>
+                  <tr><td>Strydom-A</td><td class="warn mono">soiling</td><td class="mono">R 0.09m risk</td></tr>
+                </table>
+                <div style="font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:9px">↳ inline AI: "Pre-empt Kuru-INV7 now to keep GTE-2240 out of breach." <span class="pv">why</span> · accept</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div>
+        <p class="device-lbl">PWA · Phone · 390×844</p>
+        <div class="phone">
+          <div class="pscreen">
+            <div class="notch"></div>
+            <div class="statusbar"><span>9:41</span><span>ESCO · LD watch</span><span>◔ 5G ▮▮▮</span></div>
+            <div class="offline">⚡ Installed PWA · push: 2 cure clocks &lt; 24h</div>
+            <div class="pbody">
+              <div class="ptop"><div class="t">LD exposure</div><div class="av">OM</div></div>
+              <div class="ld-meter" style="margin-bottom:13px">
+                <div style="font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)">Live · this period</div>
+                <div class="big" style="font-size:34px">R 2.41m</div>
+                <div style="font-family:var(--mono);font-size:10px;color:var(--ink2)">3 breach · 2 cure · 4 clocks &lt; 72h</div>
+              </div>
+              <p class="plabel">Defend next · by exposure</p>
+              <div class="pcard alarm">
+                <div class="ph"><span class="nm">GTE-2231 Vryburg</span><span class="chip bad">41h</span></div>
+                <div style="font-family:var(--mono);font-size:11px;color:var(--ink2)">breach · R 0.61m · string fail</div>
+                <button class="btn amber" style="width:100%;margin-top:10px">Lock cure · stop clock</button>
+              </div>
+              <div class="pcard alarm">
+                <div class="ph"><span class="nm">GTE-2208 Upington</span><span class="chip bad">19h</span></div>
+                <div style="font-family:var(--mono);font-size:11px;color:var(--ink2)">breach · R 0.54m</div>
+              </div>
+            </div>
+            <button class="fab" style="background:var(--amber);color:#1c1300;box-shadow:0 8px 24px rgba(255,181,71,.35)">⏱ Cure</button>
+            <div class="pnav">
+              <div class="it"><span class="ic">◈</span>Fleet</div>
+              <div class="it act"><span class="ic">⏱</span>LD</div>
+              <div class="it"><span class="ic">⚙</span>WOs</div>
+              <div class="it"><span class="ic">▤</span>Reports</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPTION 3 — WORK-ORDER COMMAND ============ -->
+  <section class="panel-opt" id="opt3" role="tabpanel" aria-labelledby="tab3">
+    <div class="opt-head">
+      <span class="badge" style="background:rgba(47,214,160,.14);color:#bfe9d9;border:1px solid var(--emerald-d)">BET C · EXECUTION BOARD</span>
+      <div>
+        <h3>Work-Order Command</h3>
+        <p>For the dispatcher running the field. A WIP board over the <code>om_work_order</code> 12-state lifecycle, with permit-to-work (LOTO), PM-compliance and spare-parts woven in. Prognostics seed the board — predicted WOs land pre-triaged in the leftmost lane.</p>
+      </div>
+    </div>
+    <div class="ease-callout"><span class="k">Ease</span><span class="v">Every WO arrives pre-ranked with its parts, permit and SLA attached — drag to assign, the cascade fires the rest. No re-keying, no chasing.</span></div>
+
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div>
+        <p class="device-lbl">Web · Desktop · 1280</p>
+        <div class="desktop">
+          <div class="chrome">
+            <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+            <span class="url mono">oe.vantax.co.za/esco/work-orders</span>
+          </div>
+          <div class="screen">
+            <div class="kpis">
+              <div class="kpi"><div class="l">In progress</div><div class="v up">17</div><div class="d mono">8 techs deployed</div></div>
+              <div class="kpi"><div class="l">SLA breach risk</div><div class="v warn">6</div><div class="d warn mono">&lt; 4h to breach</div></div>
+              <div class="kpi"><div class="l">PM overdue</div><div class="v down">9</div><div class="d down mono">IEC 62446</div></div>
+              <div class="kpi"><div class="l">PTW active / LOTO</div><div class="v">5</div><div class="d mono">OHSA gate</div></div>
+            </div>
+
+            <div class="board">
+              <div class="col">
+                <h6><span>Predicted / Draft</span><span class="pv">4</span></h6>
+                <div class="wo" style="border-color:var(--violet-d);background:linear-gradient(150deg,rgba(157,139,255,.08),var(--panel))">
+                  <div class="wid">WO-PRED · Kuru-INV7</div>
+                  <div class="wt">IGBT replace — RUL 23d</div>
+                  <div class="wf"><span class="chip pv">prognostic</span><button class="btn violet sm">Assign</button></div>
+                </div>
+                <div class="wo" style="border-color:var(--violet-d)">
+                  <div class="wid">WO-PRED · Lime-INV3</div>
+                  <div class="wt">DC arc precursor inspect</div>
+                  <div class="wf"><span class="chip pv">RUL 55d</span><button class="btn sm">Assign</button></div>
+                </div>
+                <div class="wo">
+                  <div class="wid">WO-4480 · Strydom</div>
+                  <div class="wt">Soiling clean — economics +</div>
+                  <div class="wf"><span class="chip dim">draft</span><button class="btn sm">Assign</button></div>
+                </div>
+              </div>
+              <div class="col">
+                <h6><span>Assigned</span><span>6</span></h6>
+                <div class="wo">
+                  <div class="wid">WO-4471 · Vryburg</div>
+                  <div class="wt">String replace (LD breach)</div>
+                  <div class="wf"><span class="sla red">SLA 41h</span><span class="mono" style="color:var(--ink3)">T.Mokoena</span></div>
+                </div>
+                <div class="wo">
+                  <div class="wid">WO-4468 · Upington</div>
+                  <div class="wt">Inverter fan swap</div>
+                  <div class="wf"><span class="sla amber">SLA 19h</span><span class="mono" style="color:var(--ink3)">S.Naidoo</span></div>
+                </div>
+                <div class="wo">
+                  <div class="wid">WO-4462 · Kathu</div>
+                  <div class="wt">PM quarterly — torque</div>
+                  <div class="wf"><span class="sla green">SLA 3d</span><span class="mono" style="color:var(--ink3)">crew-2</span></div>
+                </div>
+              </div>
+              <div class="col">
+                <h6><span>In progress</span><span class="warn">17</span></h6>
+                <div class="wo" style="border-color:var(--amber-d)">
+                  <div class="wid">WO-4455 · Vryburg</div>
+                  <div class="wt">PTW issued · LOTO live</div>
+                  <div class="wf"><span class="sla amber">on site</span><span class="chip deg">PTW-882</span></div>
+                </div>
+                <div class="wo">
+                  <div class="wid">WO-4451 · Postmas</div>
+                  <div class="wt">Meter recon — rev. assurance</div>
+                  <div class="wf"><span class="sla green">SLA ok</span><span class="mono" style="color:var(--ink3)">remote</span></div>
+                </div>
+                <div class="wo">
+                  <div class="wid">WO-4449 · Kathu-BESS</div>
+                  <div class="wt">SOH module augment</div>
+                  <div class="wf"><span class="sla amber">parts wait</span><span class="chip dim">SP-220</span></div>
+                </div>
+              </div>
+              <div class="col">
+                <h6><span>Completed · 7d</span><span class="up">132</span></h6>
+                <div class="wo" style="opacity:.82">
+                  <div class="wid">WO-4440 · De Aar</div>
+                  <div class="wt">Combiner box reseal</div>
+                  <div class="wf"><span class="sla green">closed</span><span class="mono" style="color:var(--ink3)">+photos</span></div>
+                </div>
+                <div class="wo" style="opacity:.82">
+                  <div class="wid">WO-4438 · Prieska</div>
+                  <div class="wt">Tracker motor swap</div>
+                  <div class="wf"><span class="sla green">closed</span><span class="mono" style="color:var(--ink3)">warranty✓</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row" style="gap:14px;margin-top:14px">
+              <div class="card" style="flex:1.3">
+                <h5>WO-4471 · Vryburg string replace <span class="meta">om_work_order · 12-state</span></h5>
+                <div class="pipe" style="margin-top:2px"><span class="done"></span><span class="done"></span><span class="now"></span><span></span><span></span><span></span></div>
+                <div class="pipe-lbls"><span>draft</span><span>assigned</span><span>in_progress</span><span>on_hold</span><span>completed</span><span>cancelled</span></div>
+                <table class="t" style="margin-top:13px">
+                  <tr><td>Permit-to-work</td><td><span class="chip deg">issued · LOTO</span></td><td class="mono" style="color:var(--ink3)">PTW-882 · OHSA</td></tr>
+                  <tr><td>Parts</td><td><span class="chip ok">in_stock</span></td><td class="mono" style="color:var(--ink3)">SP-203 · VED:Vital</td></tr>
+                  <tr><td>Technician</td><td><span class="chip ok">on site</span></td><td class="mono" style="color:var(--ink3)">T.Mokoena · HV-cert</td></tr>
+                  <tr><td>Linked guarantee</td><td><span class="chip bad">LD breach</span></td><td class="mono" style="color:var(--ink3)">GTE-2231 · 41h</td></tr>
+                </table>
+              </div>
+              <div class="card" style="flex:1">
+                <h5>Field actions <span class="meta">cascade on transition</span></h5>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+                  <button class="btn pri">Advance → completed</button>
+                  <button class="btn">Add photo evidence</button>
+                  <button class="btn">Request part · spare_parts</button>
+                  <button class="btn">Raise warranty claim</button>
+                </div>
+                <div style="font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:11px">↳ on complete: fireCascade → revenue-assurance recon · guarantee cure check · audit chain.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div>
+        <p class="device-lbl">PWA · Phone · 390×844</p>
+        <div class="phone">
+          <div class="pscreen">
+            <div class="notch"></div>
+            <div class="statusbar"><span>9:41</span><span>ESCO · field</span><span>◔ LTE ▮▮▯</span></div>
+            <div class="offline">⚡ Offline mode · photos &amp; sign-off queued · syncs on signal</div>
+            <div class="pbody">
+              <div class="ptop"><div class="t">My work orders</div><div class="av">TM</div></div>
+              <p class="plabel">On site now</p>
+              <div class="pcard" style="border-color:var(--amber-d)">
+                <div class="ph"><span class="nm">WO-4455 Vryburg</span><span class="chip deg">in_progress</span></div>
+                <div style="font-family:var(--mono);font-size:11px;color:var(--ink2)">PTW-882 issued · LOTO live</div>
+                <div class="pipe" style="margin-top:9px"><span class="done"></span><span class="done"></span><span class="now"></span><span></span><span></span><span></span></div>
+                <div style="display:flex;gap:7px;margin-top:11px">
+                  <button class="btn sm" style="flex:1">📷 Photo</button>
+                  <button class="btn pri sm" style="flex:1.4">Complete WO</button>
+                </div>
+              </div>
+              <p class="plabel">Up next · ranked</p>
+              <div class="pcard alarm">
+                <div class="ph"><span class="nm">WO-4471 Vryburg</span><span class="chip bad">SLA 41h</span></div>
+                <div style="font-family:var(--mono);font-size:11px;color:var(--ink2)">String replace · parts in_stock</div>
+              </div>
+              <div class="pcard">
+                <div class="ph"><span class="nm">WO-4462 Kathu</span><span class="chip ok">PM</span></div>
+                <div style="font-family:var(--mono);font-size:11px;color:var(--ink2)">Quarterly torque · SLA 3d</div>
+              </div>
+            </div>
+            <button class="fab">📷 Sign off</button>
+            <div class="pnav">
+              <div class="it"><span class="ic">◈</span>Fleet</div>
+              <div class="it act"><span class="ic">⚙</span>WOs</div>
+              <div class="it"><span class="ic">⬡</span>Parts</div>
+              <div class="it"><span class="ic">⚠</span>PTW</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <span>CEC Open Energy · ESCO/O&amp;M (esums_owner) · evaluation mockup — not wired</span>
+    <span>Real chains: asset_prognostics · availability_guarantee · om_work_order · permit_to_work · bess_soh · soiling_audit · generation_revenue_assurance</span>
+  </div>
+
+</div>
+
+<script>
+  function pick(n){
+    for(var i=1;i<=3;i++){
+      var t=document.getElementById('tab'+i), p=document.getElementById('opt'+i);
+      var on=(i===n);
+      t.setAttribute('aria-selected',on?'true':'false');
+      p.classList.toggle('on',on);
+    }
+  }
+  // keyboard arrow nav across tabs
+  document.querySelectorAll('[role=tab]').forEach(function(t,i,arr){
+    t.addEventListener('keydown',function(e){
+      if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+        e.preventDefault();
+        var d=e.key==='ArrowRight'?1:-1, ni=(i+d+arr.length)%arr.length;
+        pick(ni+1); arr[ni].focus();
+      }
+    });
+  });
+</script>
+</body>
+</html>

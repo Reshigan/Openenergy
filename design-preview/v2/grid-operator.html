@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Grid Operator — CEC Open Energy · Design Exploration v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* Control-room dark instrument palette */
+    --bg:#06080c;
+    --panel:#0d1117;
+    --panel-2:#121a24;
+    --panel-3:#172230;
+    --line:#1e2b3a;
+    --line-bright:#2c4257;
+    --ink:#e8f0f7;
+    --ink-2:#9fb3c6;
+    --ink-3:#62788c;
+    /* Signal colours — high contrast for control-room glance */
+    --ok:#2ee6a6;      /* nominal / energised */
+    --ok-deep:#0c3b2c;
+    --warn:#ffc34d;    /* watch / queue */
+    --warn-deep:#3d2f08;
+    --crit:#ff5a6e;    /* constraint / curtailment */
+    --crit-deep:#3d0f17;
+    --flow:#46b9ff;    /* dispatch flow / telemetry */
+    --flow-deep:#0a2942;
+    --viol:#c792ff;    /* compliance / NCR */
+    --gold:#f4c430;
+    --shadow:0 12px 40px rgba(0,0,0,.55);
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(70,185,255,.06), transparent 60%),
+      radial-gradient(900px 500px at 10% 0%, rgba(46,230,166,.05), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.45;
+  }
+  .wrap{max-width:1360px;margin:0 auto;padding:28px 24px 80px}
+
+  /* ── HEADER BAND ─────────────────────────────────────── */
+  .masthead{
+    border:1px solid var(--line);
+    border-radius:18px;
+    background:linear-gradient(160deg,var(--panel-2),var(--panel));
+    padding:26px 30px;
+    position:relative;
+    overflow:hidden;
+  }
+  .masthead::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      repeating-linear-gradient(90deg,transparent 0 38px,rgba(70,185,255,.025) 38px 39px),
+      repeating-linear-gradient(0deg,transparent 0 38px,rgba(70,185,255,.025) 38px 39px);
+    mask:linear-gradient(180deg,#000,transparent 80%);
+  }
+  .mast-top{display:flex;align-items:center;gap:14px;position:relative;z-index:1;flex-wrap:wrap}
+  .sysop-badge{
+    font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.14em;
+    color:var(--flow);background:var(--flow-deep);border:1px solid #1d4d6e;
+    padding:5px 11px;border-radius:6px;text-transform:uppercase;
+  }
+  .role-title{font-size:30px;font-weight:700;letter-spacing:-.01em;margin:0}
+  .role-title b{color:var(--flow)}
+  .live-clock{
+    margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink-2);
+    display:flex;align-items:center;gap:10px;
+  }
+  .pulse{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(46,230,166,.6);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(46,230,166,.5)}70%{box-shadow:0 0 0 8px rgba(46,230,166,0)}100%{box-shadow:0 0 0 0 rgba(46,230,166,0)}}
+  .persona{
+    position:relative;z-index:1;display:grid;grid-template-columns:1.5fr 1fr;gap:26px;margin-top:18px;
+  }
+  .persona p{margin:0;color:var(--ink-2);font-size:14px;max-width:62ch}
+  .persona p b{color:var(--ink)}
+  .rationale{
+    border-left:3px solid var(--flow);padding:4px 0 4px 16px;font-size:13.5px;color:var(--ink-2);
+  }
+  .rationale b{color:var(--flow);font-weight:600}
+
+  /* ── EASE THEME RIBBON ───────────────────────────────── */
+  .ease-ribbon{
+    margin-top:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    background:linear-gradient(90deg,var(--ok-deep),transparent);
+    border:1px solid #1c5a44;border-radius:12px;padding:12px 18px;position:relative;z-index:1;
+  }
+  .ease-key{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.16em;color:var(--ok);text-transform:uppercase;white-space:nowrap}
+  .ease-ribbon span.txt{font-size:13.5px;color:var(--ink);}
+  .ease-ribbon span.txt b{color:var(--ok)}
+
+  /* ── JOURNEY-AS-PRODUCT STRIP ───────────────────────── */
+  .section-h{display:flex;align-items:baseline;gap:14px;margin:38px 4px 16px}
+  .section-h h2{font-size:13px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2);margin:0}
+  .section-h .sub{font-size:12.5px;color:var(--ink-3);font-family:var(--mono)}
+  .jstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .jcard{
+    border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:18px 18px 16px;position:relative;overflow:hidden;
+  }
+  .jcard::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent,var(--flow))}
+  .jcard.j1{--accent:var(--crit)} .jcard.j2{--accent:var(--warn)} .jcard.j3{--accent:var(--flow)}
+  .jcard .jtop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .jcard h3{margin:0;font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .jcard .wcode{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-top:2px}
+  .tier{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.08em;padding:4px 8px;border-radius:5px;white-space:nowrap;text-transform:uppercase}
+  .tier.found{color:#7fe7c4;background:#0c3b2c;border:1px solid #1c6e51}
+  .tier.pro{color:#ffd980;background:#3d2f08;border:1px solid #7a5e12}
+  .tier.reg{color:#d9b6ff;background:#2a1640;border:1px solid #5b327f}
+  .jcard p.desc{font-size:12.5px;color:var(--ink-2);margin:11px 0 13px}
+  .meter{display:flex;align-items:center;justify-content:space-between;border-top:1px dashed var(--line-bright);padding-top:11px}
+  .meter .unit{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+  .meter .unit b{color:var(--gold)}
+  .meter .price{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink)}
+
+  /* ── OPTION TABS ─────────────────────────────────────── */
+  .tabs{display:flex;gap:8px;margin:42px 0 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tab{
+    appearance:none;border:1px solid var(--line);border-bottom:none;background:var(--panel);
+    color:var(--ink-2);font-family:var(--sans);font-size:13px;font-weight:600;
+    padding:13px 20px;border-radius:11px 11px 0 0;cursor:pointer;display:flex;gap:10px;align-items:center;
+    transition:.15s;min-height:24px;
+  }
+  .tab .num{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+  .tab small{font-weight:400;color:var(--ink-3);font-size:11.5px}
+  .tab:hover{color:var(--ink);background:var(--panel-2)}
+  .tab[aria-selected="true"]{background:var(--panel-2);color:var(--ink);border-color:var(--line-bright);box-shadow:inset 0 3px 0 var(--tabc,var(--flow))}
+  .tab#t1[aria-selected="true"]{--tabc:var(--ok)}
+  .tab#t2[aria-selected="true"]{--tabc:var(--warn)}
+  .tab#t3[aria-selected="true"]{--tabc:var(--crit)}
+  .panel-tab{display:none;animation:fade .25s ease}
+  .panel-tab.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* ── OPTION HEADER ───────────────────────────────────── */
+  .opt-head{border:1px solid var(--line);border-top:none;border-radius:0 0 16px 16px;background:var(--panel-2);padding:20px 24px;margin-bottom:22px}
+  .opt-head h3{margin:0 0 6px;font-size:20px;font-weight:700}
+  .opt-head .concept{color:var(--ink-2);font-size:14px;max-width:80ch}
+  .ease-callout{
+    display:inline-flex;align-items:center;gap:10px;margin-top:14px;
+    background:var(--ok-deep);border:1px solid #1c6e51;border-radius:9px;padding:9px 14px;
+  }
+  .ease-callout .lbl{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--ok);text-transform:uppercase}
+  .ease-callout .what{font-size:13px;color:var(--ink)}
+  .ease-callout .what b{color:var(--ok)}
+
+  /* ── DUAL FRAME LAYOUT ───────────────────────────────── */
+  .frames{display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:26px;align-items:start}
+  @media(max-width:1180px){.frames{grid-template-columns:1fr}}
+  .frame-label{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--ink-3);text-transform:uppercase;margin:0 0 9px 2px}
+
+  /* Desktop chrome */
+  .desktop{border:1px solid var(--line-bright);border-radius:12px;overflow:hidden;background:var(--panel);box-shadow:var(--shadow)}
+  .winbar{display:flex;align-items:center;gap:8px;padding:9px 13px;background:#0a1119;border-bottom:1px solid var(--line)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:#28c840}
+  .winurl{margin-left:10px;font-family:var(--mono);font-size:11px;color:var(--ink-3);background:#060a0f;border:1px solid var(--line);border-radius:6px;padding:4px 11px}
+  .winbar .opbadge{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+
+  /* Phone PWA frame */
+  .phone{width:392px;border-radius:42px;border:1px solid var(--line-bright);background:#000;padding:11px;box-shadow:var(--shadow);position:relative}
+  .phone-screen{border-radius:32px;overflow:hidden;background:var(--panel);height:812px;display:flex;flex-direction:column;position:relative}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:9px 22px 7px;font-family:var(--mono);font-size:12px;color:var(--ink);background:#0a1119}
+  .statusbar .ico{display:flex;gap:6px;align-items:center}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:118px;height:26px;background:#000;border-radius:0 0 16px 16px;z-index:5}
+  .offline-hint{display:flex;align-items:center;gap:8px;background:var(--flow-deep);border-bottom:1px solid #1d4d6e;padding:7px 16px;font-size:11.5px;color:#bfe3ff}
+  .offline-hint .d{width:7px;height:7px;border-radius:50%;background:var(--flow)}
+  .phone-body{flex:1;overflow:hidden;padding:14px 14px 0;display:flex;flex-direction:column;gap:12px}
+  .bottom-nav{display:flex;justify-content:space-around;align-items:center;padding:10px 8px 22px;background:#0a1119;border-top:1px solid var(--line)}
+  .bnav{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--ink-3);min-width:48px}
+  .bnav .gi{font-size:18px;line-height:1}
+  .bnav.on{color:var(--flow)}
+  .fab{
+    position:absolute;left:14px;right:14px;bottom:86px;border-radius:14px;padding:15px;text-align:center;
+    font-weight:700;font-size:15px;border:none;cursor:pointer;min-height:24px;box-shadow:0 8px 24px rgba(0,0,0,.5);
+  }
+
+  /* ── SHARED UI ATOMS ─────────────────────────────────── */
+  .chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:5px;letter-spacing:.04em}
+  .chip.ok{color:var(--ok);background:var(--ok-deep)}
+  .chip.warn{color:var(--warn);background:var(--warn-deep)}
+  .chip.crit{color:var(--crit);background:var(--crit-deep)}
+  .chip.flow{color:var(--flow);background:var(--flow-deep)}
+  .chip.viol{color:var(--viol);background:#2a1640}
+  .chip.dot::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .btn{font-family:var(--sans);font-weight:600;font-size:12.5px;border-radius:8px;padding:8px 13px;cursor:pointer;border:1px solid var(--line-bright);background:var(--panel-3);color:var(--ink);min-height:24px;display:inline-flex;align-items:center;gap:7px}
+  .btn.act{background:var(--crit);color:#1a0307;border-color:var(--crit);font-weight:700}
+  .btn.flowb{background:var(--flow);color:#03161f;border-color:var(--flow);font-weight:700}
+  .btn.okb{background:var(--ok);color:#03241a;border-color:var(--ok);font-weight:700}
+  .mono{font-family:var(--mono)}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  /* ====== OPTION 1 — SPATIAL NETWORK MAP ====== */
+  .map-grid{display:grid;grid-template-columns:1fr 318px;height:560px}
+  .mapview{position:relative;background:radial-gradient(120% 100% at 50% 30%,#0b1622,#070c12);overflow:hidden}
+  .geo-line{position:absolute;height:2px;transform-origin:left;border-radius:2px}
+  .node{position:absolute;transform:translate(-50%,-50%);cursor:pointer}
+  .node .ring{width:18px;height:18px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center}
+  .node .ring i{width:7px;height:7px;border-radius:50%}
+  .node .lbl{position:absolute;left:50%;top:22px;transform:translateX(-50%);white-space:nowrap;font-family:var(--mono);font-size:10px;color:var(--ink-2)}
+  .node.ok .ring{border-color:var(--ok)} .node.ok .ring i{background:var(--ok)}
+  .node.warn .ring{border-color:var(--warn)} .node.warn .ring i{background:var(--warn)}
+  .node.crit .ring{width:24px;height:24px;border-color:var(--crit);box-shadow:0 0 0 0 rgba(255,90,110,.5);animation:pulse-c 1.6s infinite} .node.crit .ring i{background:var(--crit);width:9px;height:9px}
+  @keyframes pulse-c{0%{box-shadow:0 0 0 0 rgba(255,90,110,.55)}70%{box-shadow:0 0 0 12px rgba(255,90,110,0)}100%{box-shadow:0 0 0 0 rgba(255,90,110,0)}}
+  .node.crit .lbl{color:var(--crit);font-weight:700}
+  .map-legend{position:absolute;left:16px;bottom:14px;display:flex;gap:14px;background:rgba(6,10,15,.78);border:1px solid var(--line);border-radius:9px;padding:9px 13px;backdrop-filter:blur(4px)}
+  .map-legend span{font-family:var(--mono);font-size:10.5px;color:var(--ink-2);display:flex;align-items:center;gap:6px}
+  .map-legend i{width:8px;height:8px;border-radius:50%}
+  .map-overlay{position:absolute;top:14px;left:16px;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+  /* in-place constraint card popped on the map */
+  .constraint-pop{position:absolute;border:1px solid var(--crit);background:linear-gradient(160deg,#1a0c10,#120709);border-radius:11px;padding:13px 14px;width:236px;box-shadow:0 14px 40px rgba(0,0,0,.6);z-index:6}
+  .constraint-pop::before{content:"";position:absolute;width:12px;height:12px;background:inherit;border-left:1px solid var(--crit);border-bottom:1px solid var(--crit);transform:rotate(45deg)}
+  .cp-arrow-left::before{left:-7px;top:24px}
+  .cp h4{margin:0 0 2px;font-size:13.5px;color:var(--crit)}
+  .cp .meta{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-bottom:9px}
+  .cp .row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;padding:3px 0;border-bottom:1px solid #2a1014;color:var(--ink-2)}
+  .cp .row b{color:var(--ink)}
+  .cp .acts{display:flex;gap:8px;margin-top:11px}
+  .cp .acts .btn{flex:1;justify-content:center;padding:9px}
+  .map-side{border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column}
+  .ms-h{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  .ms-h h4{margin:0;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+  .qrow{padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+  .qrow:hover{background:var(--panel-2)}
+  .qrow .qt{display:flex;justify-content:space-between;align-items:center}
+  .qrow .qt .name{font-size:13px;font-weight:600}
+  .qrow .qmeta{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-top:3px}
+  .qrow.active{border-left:3px solid var(--crit);background:#140a0c}
+
+  /* ====== OPTION 2 — DISPATCH STACK TIMELINE ====== */
+  .stack-wrap{padding:18px;display:grid;grid-template-rows:auto 1fr auto;gap:14px;height:560px}
+  .mtu-ruler{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#070c12}
+  .mtu-cell{flex:1;text-align:center;font-family:var(--mono);font-size:10px;color:var(--ink-3);padding:6px 0;border-right:1px solid var(--line)}
+  .mtu-cell.now{background:var(--flow-deep);color:var(--flow);font-weight:700}
+  .mtu-cell:last-child{border-right:none}
+  .lanes{display:flex;flex-direction:column;gap:9px;overflow:hidden}
+  .lane{display:grid;grid-template-columns:148px 1fr;align-items:center;gap:12px}
+  .lane .ll{font-size:12px;color:var(--ink-2);display:flex;flex-direction:column}
+  .lane .ll b{color:var(--ink);font-size:12.5px}
+  .lane .ll small{font-family:var(--mono);font-size:9.5px;color:var(--ink-3)}
+  .track{position:relative;height:40px;background:#0a1119;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .nowline{position:absolute;top:0;bottom:0;width:2px;background:var(--flow);left:42%;z-index:3}
+  .nowline::before{content:"NOW";position:absolute;top:-1px;left:4px;font-family:var(--mono);font-size:8px;color:var(--flow);font-weight:700}
+  .block{position:absolute;top:6px;bottom:6px;border-radius:6px;display:flex;align-items:center;padding:0 9px;font-family:var(--mono);font-size:10.5px;font-weight:600;overflow:hidden;white-space:nowrap;cursor:pointer}
+  .block.sched{background:linear-gradient(180deg,#13344a,#0d2435);border:1px solid #1d567a;color:#bfe3ff}
+  .block.act{background:linear-gradient(180deg,#0e4030,#0a2d22);border:1px solid #1c6e51;color:#7fe7c4}
+  .block.curt{background:linear-gradient(180deg,#3d1018,#2a0a10);border:1px solid var(--crit);color:#ffb3bd;animation:flash 2s infinite}
+  @keyframes flash{0%,100%{box-shadow:0 0 0 0 rgba(255,90,110,0)}50%{box-shadow:0 0 14px 1px rgba(255,90,110,.4)}}
+  .block.res{background:linear-gradient(180deg,#3d2f08,#2a210a);border:1px solid #7a5e12;color:#ffd980}
+  .stack-foot{display:flex;gap:12px;align-items:center;border-top:1px solid var(--line);padding-top:13px}
+  .balance{flex:1;display:flex;align-items:center;gap:14px}
+  .gauge{flex:1;height:34px;background:#0a1119;border:1px solid var(--line);border-radius:8px;position:relative;overflow:hidden}
+  .gauge .fillpos{position:absolute;left:50%;top:0;bottom:0;background:linear-gradient(90deg,var(--ok),#1c6e51);width:8%}
+  .gauge .midmark{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--ink-3)}
+  .gauge .lbl{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+  .gauge .val{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ok)}
+  /* inline act drawer for a timeline block */
+  .blk-detail{border:1px solid var(--line-bright);background:var(--panel-2);border-radius:10px;padding:13px 15px;display:flex;align-items:center;gap:16px}
+  .blk-detail .bd-main{flex:1}
+  .blk-detail h5{margin:0 0 3px;font-size:13px}
+  .blk-detail .bd-sub{font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+  .blk-detail .bd-stat{font-family:var(--mono);font-size:11px;color:var(--ink-2);display:flex;flex-direction:column;align-items:flex-end}
+  .blk-detail .bd-stat b{color:var(--crit);font-size:15px}
+
+  /* ====== OPTION 3 — CONSTRAINT ALARM BOARD ====== */
+  .board{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;height:560px}
+  .alarm-col{border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+  .alarm-col:last-child{border-right:none}
+  .ac-head{padding:11px 15px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+  .ac-head .t{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+  .ac-head .count{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px}
+  .col-crit .ac-head{background:linear-gradient(180deg,var(--crit-deep),transparent);border-bottom-color:#3d0f17}
+  .col-crit .t{color:var(--crit)} .col-crit .count{color:#1a0307;background:var(--crit)}
+  .col-warn .ac-head{background:linear-gradient(180deg,var(--warn-deep),transparent)}
+  .col-warn .t{color:var(--warn)} .col-warn .count{color:#1a1403;background:var(--warn)}
+  .col-watch .ac-head{background:linear-gradient(180deg,var(--flow-deep),transparent)}
+  .col-watch .t{color:var(--flow)} .col-watch .count{color:#03161f;background:var(--flow)}
+  .alarm-list{flex:1;overflow:hidden;padding:10px;display:flex;flex-direction:column;gap:9px}
+  .alarm{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:11px 12px;position:relative}
+  .alarm.hot{border-color:var(--crit);background:linear-gradient(160deg,#160a0d,var(--panel))}
+  .alarm .atop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .alarm .aname{font-size:13px;font-weight:600}
+  .alarm .achain{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);margin-top:2px}
+  .alarm .sla{font-family:var(--mono);font-size:11px;font-weight:700}
+  .sla.red{color:var(--crit)} .sla.amber{color:var(--warn)} .sla.blue{color:var(--flow)}
+  .alarm .state-flow{display:flex;align-items:center;gap:5px;margin:9px 0 0;flex-wrap:wrap}
+  .sdot{font-family:var(--mono);font-size:9px;color:var(--ink-3);padding:2px 6px;border:1px solid var(--line);border-radius:4px}
+  .sdot.done{color:var(--ok);border-color:#1c6e51;background:var(--ok-deep)}
+  .sdot.cur{color:#1a0307;background:var(--crit);border-color:var(--crit);font-weight:700}
+  .alarm .ainline{display:flex;gap:7px;margin-top:11px}
+  .alarm .ainline .btn{flex:1;justify-content:center;padding:8px}
+  .telebar{position:absolute;right:11px;top:11px;display:flex;gap:2px;align-items:flex-end;height:18px}
+  .telebar i{width:3px;background:var(--flow);border-radius:1px}
+
+  /* phone shared cards */
+  .pcard{border:1px solid var(--line);border-radius:13px;background:var(--panel);padding:13px}
+  .pcard.hot{border-color:var(--crit);background:linear-gradient(160deg,#160a0d,var(--panel))}
+  .pcard .ph{display:flex;justify-content:space-between;align-items:flex-start}
+  .pcard .pn{font-size:14px;font-weight:600}
+  .pcard .pm{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:2px}
+  .pcard .pbody{margin-top:10px;display:flex;flex-direction:column;gap:7px}
+  .prow{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px;color:var(--ink-2)}
+  .prow b{color:var(--ink)}
+  .pmini-map{height:150px;border-radius:13px;border:1px solid var(--line);background:radial-gradient(120% 100% at 50% 30%,#0b1622,#070c12);position:relative;overflow:hidden}
+  .ph-hdr{display:flex;justify-content:space-between;align-items:center;padding:2px 2px 0}
+  .ph-hdr h3{margin:0;font-size:17px;font-weight:700}
+  .ph-hdr .sub{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+  .seg{display:flex;background:#0a1119;border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+  .seg button{flex:1;border:none;background:transparent;color:var(--ink-3);font-family:var(--mono);font-size:10.5px;font-weight:600;padding:7px 0;border-radius:6px;cursor:pointer;min-height:24px}
+  .seg button.on{background:var(--panel-3);color:var(--ink)}
+
+  .foot{margin-top:54px;text-align:center;color:var(--ink-3);font-family:var(--mono);font-size:11px;border-top:1px solid var(--line);padding-top:22px}
+  a.skip{position:absolute;left:-999px}a.skip:focus{left:8px;top:8px;z-index:99;background:var(--flow);color:#000;padding:8px;border-radius:6px}
+</style>
+</head>
+<body>
+<a href="#opts" class="skip">Skip to options</a>
+<div class="wrap">
+
+  <!-- ════════ HEADER BAND ════════ -->
+  <header class="masthead">
+    <div class="mast-top">
+      <span class="sysop-badge">CEC · System Operator Desk</span>
+      <h1 class="role-title">Grid Operator <b>/ Dispatcher</b></h1>
+      <div class="live-clock"><span class="pulse"></span>SAST 14:37:08 · MTU 59 · f = 49.98 Hz</div>
+    </div>
+    <div class="persona">
+      <p>
+        <b>Who:</b> A real-time system operator at the national control centre — the dispatcher who keeps
+        supply and demand balanced across the transmission network second by second.
+        <b>Environment:</b> a multi-screen control room, wall-board to the left, telemetry never sleeping.
+        <b>Device:</b> wide desktop by default; a hardened phone PWA for the floor-walk and after-hours standby.
+        <b>What they need:</b> to <b>see the network state spatially</b> and <b>act on a constraint the instant
+        it appears</b> — issue a curtailment, accept a dispatch nomination, clear an N-1 violation — without
+        ever leaving the picture in front of them.
+      </p>
+      <div class="rationale">
+        <b>Why these three bets:</b> a dispatcher is a spatial, real-time, constraint-driven thinker.
+        So we explore the three native mental models — the <b>network map</b>, the <b>dispatch-stack timeline</b>,
+        and the <b>constraint-alarm board</b> — and in every one the operator can resolve the constraint
+        <b>in place</b>, where they already see it.
+      </div>
+    </div>
+    <div class="ease-ribbon">
+      <span class="ease-key">Theme · Ease</span>
+      <span class="txt">For a dispatcher, ease means <b>no context-switching</b>: the constraint, its evidence,
+        and the action that clears it all live in <b>one glance and one click</b> — on the surface where it surfaced.</span>
+    </div>
+  </header>
+
+  <!-- ════════ JOURNEY-AS-PRODUCT STRIP ════════ -->
+  <div class="section-h">
+    <h2>Hero Journeys · Metered Products</h2>
+    <span class="sub">priced per use · complexity → tier → price</span>
+  </div>
+  <div class="jstrip">
+    <div class="jcard j1">
+      <div class="jtop">
+        <div>
+          <h3>Load Curtailment · CSC-1</h3>
+          <div class="wcode">chain: load_curtailment · W34 · NERSA §CSC-1</div>
+        </div>
+        <span class="tier pro">Professional · L4</span>
+      </div>
+      <p class="desc">Issue an urgent curtailment instruction, track acknowledgement &amp; implementation,
+        meter the shed MW, and compute compensation — timer-gated, tighter SLA at higher load-shed stage.</p>
+      <div class="meter">
+        <span class="unit">metered: <b>per curtailment event</b></span>
+        <span class="price">R 480 / event</span>
+      </div>
+    </div>
+    <div class="jcard j2">
+      <div class="jtop">
+        <div>
+          <h3>Dispatch Nominations · BRP→SO</h3>
+          <div class="wcode">chain: oe_dispatch_nominations · W13</div>
+        </div>
+        <span class="tier found">Foundation · L3</span>
+      </div>
+      <p class="desc">10-state BRP→SO nomination chain: submitted → SO review → accepted → scheduled →
+        activated → metered → settled, with dispute branch. State machine + validation + audit.</p>
+      <div class="meter">
+        <span class="unit">metered: <b>per nomination</b></span>
+        <span class="price">R 36 / nom</span>
+      </div>
+    </div>
+    <div class="jcard j3">
+      <div class="jtop">
+        <div>
+          <h3>Transmission Outage · N-1</h3>
+          <div class="wcode">chain: transmission_outage · W110</div>
+        </div>
+        <span class="tier reg">Regulator-grade · L5</span>
+      </div>
+      <p class="desc">EHV/HV outage coordination with N-1 security assessment, tamper-evident audit chain
+        and certified NERSA export — reconciled against SCADA telemetry &amp; the connection register.</p>
+      <div class="meter">
+        <span class="unit">metered: <b>per certified outage pack</b></span>
+        <span class="price">R 1 250 / pack</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ OPTION TABS ════════ -->
+  <div class="tabs" id="opts" role="tablist" aria-label="Design options">
+    <button class="tab" id="t1" role="tab" aria-selected="true" aria-controls="p1" onclick="pick(1)">
+      <span class="num">01</span> Network State Map <small>· spatial</small>
+    </button>
+    <button class="tab" id="t2" role="tab" aria-selected="false" aria-controls="p2" onclick="pick(2)">
+      <span class="num">02</span> Dispatch Stack <small>· timeline</small>
+    </button>
+    <button class="tab" id="t3" role="tab" aria-selected="false" aria-controls="p3" onclick="pick(3)">
+      <span class="num">03</span> Constraint Board <small>· alarm triage</small>
+    </button>
+  </div>
+
+  <!-- ───────────── OPTION 1 — SPATIAL MAP ───────────── -->
+  <section class="panel-tab active" id="p1" role="tabpanel" aria-labelledby="t1">
+    <div class="opt-head">
+      <h3>Option 1 — Network State Map</h3>
+      <p class="concept">The transmission network as a living single-line geo-schematic. Substations, lines and
+        IPP connections render as nodes coloured by health; a constraint pulses where it physically is, and the
+        operator clears it from a pop-card anchored to that node — never opening a separate screen.</p>
+      <div class="ease-callout">
+        <span class="lbl">Ease</span>
+        <span class="what">Act on the constraint <b>on the map, where you see it</b> — the curtailment instruction
+          fires from the node that's overloaded.</span>
+      </div>
+    </div>
+    <div class="frames">
+      <!-- desktop -->
+      <div>
+        <p class="frame-label">Desktop · control-room wide</p>
+        <div class="desktop">
+          <div class="winbar">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="winurl">oe.vantax.co.za/grid/network</span>
+            <span class="opbadge">SO DESK · live</span>
+          </div>
+          <div class="map-grid">
+            <div class="mapview">
+              <div class="map-overlay">TRANSMISSION SINGLE-LINE · CAPE CORRIDOR · N-1 secure: <span style="color:var(--crit)">FALSE</span></div>
+              <!-- lines -->
+              <div class="geo-line" style="left:14%;top:30%;width:24%;background:var(--ok)"></div>
+              <div class="geo-line" style="left:38%;top:30%;width:22%;background:var(--crit);transform:rotate(14deg)"></div>
+              <div class="geo-line" style="left:38%;top:30%;width:20%;background:var(--ok);transform:rotate(-22deg)"></div>
+              <div class="geo-line" style="left:58%;top:55%;width:22%;background:var(--warn);transform:rotate(8deg)"></div>
+              <div class="geo-line" style="left:14%;top:30%;width:18%;background:var(--ok);transform:rotate(36deg)"></div>
+              <!-- nodes -->
+              <div class="node ok" style="left:14%;top:30%"><div class="ring"><i></i></div><div class="lbl">Aurora 400kV</div></div>
+              <div class="node crit" style="left:38%;top:30%"><div class="ring"><i></i></div></div>
+              <div class="node ok" style="left:60%;top:24%"><div class="ring"><i></i></div><div class="lbl">Juno 400kV</div></div>
+              <div class="node warn" style="left:80%;top:62%"><div class="ring"><i></i></div><div class="lbl">Komsberg WEF · queue</div></div>
+              <div class="node ok" style="left:32%;top:64%"><div class="ring"><i></i></div><div class="lbl">Helios PV</div></div>
+              <!-- constraint pop anchored to crit node -->
+              <div class="constraint-pop cp-arrow-left cp" style="left:42%;top:18%">
+                <h4>⚠ Droërivier 400kV — thermal limit</h4>
+                <div class="meta">N-1 contingency · line trip → 112% rating</div>
+                <div class="row"><span>Loading</span><b style="color:var(--crit)">112% &nbsp;(+248 MW)</b></div>
+                <div class="row"><span>Relieve by</span><b>curtail Komsberg WEF 60 MW</b></div>
+                <div class="row"><span>SLA to instruct</span><b style="color:var(--crit)">04:51</b></div>
+                <div class="acts">
+                  <button class="btn act">Issue CSC-1</button>
+                  <button class="btn">Evidence</button>
+                </div>
+              </div>
+              <div class="map-legend">
+                <span><i style="background:var(--ok)"></i>nominal</span>
+                <span><i style="background:var(--warn)"></i>watch / queue</span>
+                <span><i style="background:var(--crit)"></i>constraint</span>
+                <span><i style="background:var(--flow)"></i>dispatch flow</span>
+              </div>
+            </div>
+            <aside class="map-side">
+              <div class="ms-h"><h4>Active Constraints</h4><span class="chip crit dot">3 open</span></div>
+              <div class="qrow active">
+                <div class="qt"><span class="name">Droërivier thermal</span><span class="chip crit">SLA 04:51</span></div>
+                <div class="qmeta">load_curtailment · implemented? no · -248 MW relief</div>
+              </div>
+              <div class="qrow">
+                <div class="qt"><span class="name">Komsberg WEF connect</span><span class="chip warn">queue_assessed</span></div>
+                <div class="qmeta">rez_capacity · W58 · 60 MW conditional</div>
+              </div>
+              <div class="qrow">
+                <div class="qt"><span class="name">Juno–Aurora line</span><span class="chip warn">N-1 watch</span></div>
+                <div class="qmeta">transmission_outage · W110 · planned 18:00</div>
+              </div>
+              <div class="qrow">
+                <div class="qt"><span class="name">BRP nom · Helios</span><span class="chip flow">so_review</span></div>
+                <div class="qmeta">oe_dispatch_nominations · W13 · 84 MW</div>
+              </div>
+              <div style="margin-top:auto;padding:14px 16px;border-top:1px solid var(--line);display:flex;gap:8px">
+                <button class="btn flowb" style="flex:1;justify-content:center">Accept nom</button>
+                <button class="btn act" style="flex:1;justify-content:center">Curtail</button>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+      <!-- phone -->
+      <div>
+        <p class="frame-label">Mobile PWA · floor-walk &amp; standby</p>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="phone-screen">
+            <div class="statusbar"><span>14:37</span><span class="ico">SO · 5G ▰▰▰ ◗ 82%</span></div>
+            <div class="offline-hint"><span class="d"></span>Live telemetry · cached map available offline</div>
+            <div class="phone-body">
+              <div class="ph-hdr"><h3>Network</h3><span class="sub">N-1: FALSE</span></div>
+              <div class="pmini-map">
+                <div class="node crit" style="left:46%;top:42%"><div class="ring"><i></i></div></div>
+                <div class="node ok" style="left:22%;top:34%"><div class="ring"><i></i></div></div>
+                <div class="node warn" style="left:74%;top:64%"><div class="ring"><i></i></div></div>
+                <div class="geo-line" style="left:22%;top:34%;width:24%;background:var(--crit);transform:rotate(12deg)"></div>
+                <div class="map-overlay" style="font-size:9px">Cape corridor · tap node to act</div>
+              </div>
+              <div class="pcard hot">
+                <div class="ph">
+                  <div><div class="pn">Droërivier 400kV</div><div class="pm">load_curtailment · CSC-1 · W34</div></div>
+                  <span class="chip crit">112%</span>
+                </div>
+                <div class="pbody">
+                  <div class="prow"><span>Relief</span><b>curtail Komsberg 60 MW</b></div>
+                  <div class="prow"><span>Instruct SLA</span><b style="color:var(--crit)">04:51</b></div>
+                </div>
+              </div>
+              <div class="pcard">
+                <div class="ph"><div><div class="pn">Helios BRP nom</div><div class="pm">oe_dispatch_nominations · 84 MW</div></div><span class="chip flow">so_review</span></div>
+              </div>
+            </div>
+            <button class="fab btn act">⚡ Issue CSC-1 · Droërivier</button>
+            <div class="bottom-nav">
+              <div class="bnav on"><span class="gi">◈</span>Map</div>
+              <div class="bnav"><span class="gi">⬡</span>Queue</div>
+              <div class="bnav"><span class="gi">⚡</span>Dispatch</div>
+              <div class="bnav"><span class="gi">⬓</span>Audit</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────── OPTION 2 — DISPATCH STACK ───────────── -->
+  <section class="panel-tab" id="p2" role="tabpanel" aria-labelledby="t2">
+    <div class="opt-head">
+      <h3>Option 2 — Dispatch Stack Timeline</h3>
+      <p class="concept">Time is the spine. A horizontal MTU ruler with NOW pinned; each resource is a lane,
+        each scheduled/activated/curtailed block sits on the clock. The operator drags or taps a block to
+        re-dispatch, and the balance gauge re-settles live — the whole forward dispatch in one frame.</p>
+      <div class="ease-callout">
+        <span class="lbl">Ease</span>
+        <span class="what">Resolve the imbalance <b>on the timeline, on the block</b> — adjust the curtailment block
+          and the system-balance gauge clears in front of you.</span>
+      </div>
+    </div>
+    <div class="frames">
+      <div>
+        <p class="frame-label">Desktop · dispatch-stack view</p>
+        <div class="desktop">
+          <div class="winbar">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="winurl">oe.vantax.co.za/grid/dispatch-stack</span>
+            <span class="opbadge">MTU 59 · 14:30–15:00</span>
+          </div>
+          <div class="stack-wrap">
+            <div class="mtu-ruler">
+              <div class="mtu-cell">14:00</div><div class="mtu-cell">14:15</div>
+              <div class="mtu-cell now">14:30 · NOW</div><div class="mtu-cell">14:45</div>
+              <div class="mtu-cell">15:00</div><div class="mtu-cell">15:15</div>
+            </div>
+            <div class="lanes">
+              <div class="lane">
+                <div class="ll"><b>Komsberg WEF</b><small>BRP · 220 MW</small></div>
+                <div class="track">
+                  <div class="nowline"></div>
+                  <div class="block sched" style="left:6%;width:32%">scheduled 220</div>
+                  <div class="block curt" style="left:44%;width:30%">CSC-1 curtail 60 ▾</div>
+                </div>
+              </div>
+              <div class="lane">
+                <div class="ll"><b>Helios PV</b><small>BRP · 180 MW</small></div>
+                <div class="track">
+                  <div class="nowline"></div>
+                  <div class="block act" style="left:8%;width:54%">activated 168 · metered</div>
+                </div>
+              </div>
+              <div class="lane">
+                <div class="ll"><b>Reserve · NTCSA</b><small>reserve_activation · W50</small></div>
+                <div class="track">
+                  <div class="nowline"></div>
+                  <div class="block res" style="left:42%;width:20%">activate 90 MW</div>
+                </div>
+              </div>
+              <div class="lane">
+                <div class="ll"><b>Aurora pumped</b><small>dispatch_nom · W13</small></div>
+                <div class="track">
+                  <div class="nowline"></div>
+                  <div class="block sched" style="left:50%;width:26%">nom 130 · so_review</div>
+                </div>
+              </div>
+            </div>
+            <!-- inline detail drawer for selected block -->
+            <div class="blk-detail">
+              <div class="bd-main">
+                <h5>Komsberg WEF · CSC-1 curtailment block</h5>
+                <div class="bd-sub">chain: load_curtailment · state: <span style="color:var(--warn)">instruction_issued → acknowledged?</span></div>
+              </div>
+              <div class="bd-stat"><span>relief needed</span><b>−60 MW</b></div>
+              <button class="btn act">Commit curtail</button>
+              <button class="btn flowb">Tap reserve 90</button>
+            </div>
+            <div class="stack-foot">
+              <div class="balance">
+                <div class="gauge">
+                  <div class="lbl">SYSTEM BALANCE · MTU 59</div>
+                  <div class="midmark"></div>
+                  <div class="fillpos"></div>
+                  <div class="val">+42 MW ▴</div>
+                </div>
+              </div>
+              <span class="chip flow dot">imbalance_settlement live</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="frame-label">Mobile PWA · re-dispatch on thumb</p>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="phone-screen">
+            <div class="statusbar"><span>14:37</span><span class="ico">SO · 5G ▰▰▰ ◗ 82%</span></div>
+            <div class="offline-hint"><span class="d"></span>MTU 59 · queued actions sync when online</div>
+            <div class="phone-body">
+              <div class="ph-hdr"><h3>Dispatch</h3><span class="sub">+42 MW</span></div>
+              <div class="seg"><button class="on">NOW</button><button>+15m</button><button>+30m</button></div>
+              <div class="pcard hot">
+                <div class="ph"><div><div class="pn">Komsberg WEF</div><div class="pm">load_curtailment · CSC-1</div></div><span class="chip crit">curtail</span></div>
+                <div class="pbody">
+                  <div class="prow"><span>Scheduled</span><b>220 MW</b></div>
+                  <div class="prow"><span>Curtail to</span><b style="color:var(--crit)">160 MW (−60)</b></div>
+                  <div class="prow"><span>State</span><b>instruction_issued</b></div>
+                </div>
+              </div>
+              <div class="pcard">
+                <div class="ph"><div><div class="pn">Reserve · NTCSA</div><div class="pm">reserve_activation · W50</div></div><span class="chip warn">armed</span></div>
+                <div class="pbody"><div class="prow"><span>Activate</span><b>90 MW · 02:00 ramp</b></div></div>
+              </div>
+            </div>
+            <button class="fab btn act">Commit curtail −60 MW</button>
+            <div class="bottom-nav">
+              <div class="bnav"><span class="gi">◈</span>Map</div>
+              <div class="bnav on"><span class="gi">⚡</span>Stack</div>
+              <div class="bnav"><span class="gi">⬡</span>Queue</div>
+              <div class="bnav"><span class="gi">⬓</span>Audit</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────── OPTION 3 — CONSTRAINT BOARD ───────────── -->
+  <section class="panel-tab" id="p3" role="tabpanel" aria-labelledby="t3">
+    <div class="opt-head">
+      <h3>Option 3 — Constraint Alarm Board</h3>
+      <p class="concept">A three-column alarm board — Critical · Warning · Watch — where every grid chain
+        becomes a triage card with its live state-flow and SLA timer. The operator works top-down by severity
+        and clears each alarm with an inline action; the card carries its own evidence, never a detour.</p>
+      <div class="ease-callout">
+        <span class="lbl">Ease</span>
+        <span class="what">Clear the alarm <b>on the card itself</b> — the next-state action sits inside the alert,
+          so there is nothing to navigate to.</span>
+      </div>
+    </div>
+    <div class="frames">
+      <div>
+        <p class="frame-label">Desktop · alarm triage board</p>
+        <div class="desktop">
+          <div class="winbar">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="winurl">oe.vantax.co.za/grid/constraints</span>
+            <span class="opbadge">8 alarms · 1 breaching</span>
+          </div>
+          <div class="board">
+            <!-- CRITICAL -->
+            <div class="alarm-col col-crit">
+              <div class="ac-head"><span class="t">Critical · Act now</span><span class="count">2</span></div>
+              <div class="alarm-list">
+                <div class="alarm hot">
+                  <div class="telebar"><i style="height:6px"></i><i style="height:12px"></i><i style="height:9px"></i><i style="height:16px;background:var(--crit)"></i></div>
+                  <div class="atop"><div><div class="aname">Droërivier N-1 overload</div><div class="achain">load_curtailment · W34 · CSC-1</div></div><span class="sla red">04:51</span></div>
+                  <div class="state-flow">
+                    <span class="sdot done">issued</span><span class="sdot cur">acknowledged</span>
+                    <span class="sdot">implemented</span><span class="sdot">metered</span><span class="sdot">compensated</span>
+                  </div>
+                  <div class="ainline"><button class="btn act">Confirm shed 60MW</button><button class="btn">Evidence</button></div>
+                </div>
+                <div class="alarm hot">
+                  <div class="atop"><div><div class="aname">Juno line · imbalance</div><div class="achain">imbalance_settlement · MTU 59</div></div><span class="sla red">01:12</span></div>
+                  <div class="state-flow"><span class="sdot cur">+42 MW long</span><span class="sdot">reserve?</span></div>
+                  <div class="ainline"><button class="btn flowb">Activate reserve 90</button><button class="btn">Re-nom</button></div>
+                </div>
+              </div>
+            </div>
+            <!-- WARNING -->
+            <div class="alarm-col col-warn">
+              <div class="ac-head"><span class="t">Warning · Watch SLA</span><span class="count">3</span></div>
+              <div class="alarm-list">
+                <div class="alarm">
+                  <div class="atop"><div><div class="aname">Komsberg WEF connect</div><div class="achain">rez_capacity · W58</div></div><span class="sla amber">2d 04h</span></div>
+                  <div class="state-flow"><span class="sdot done">applied</span><span class="sdot cur">queue_assessed</span><span class="sdot">cond. alloc</span><span class="sdot">allocated</span></div>
+                  <div class="ainline"><button class="btn">Allocate 60 MW</button><button class="btn">Defer</button></div>
+                </div>
+                <div class="alarm">
+                  <div class="atop"><div><div class="aname">Grid-code NCR · NRS 097</div><div class="achain">grid_code_compliance · W67</div></div><span class="sla amber">11h</span></div>
+                  <div class="state-flow"><span class="sdot done">monitoring</span><span class="sdot cur">non_conformance</span><span class="sdot">investigation</span><span class="sdot">remediation</span></div>
+                  <div class="ainline"><button class="btn">Open investigation</button></div>
+                </div>
+                <div class="alarm">
+                  <div class="atop"><div><div class="aname">Reserve activation</div><div class="achain">reserve_activation · W50</div></div><span class="sla amber">metered</span></div>
+                  <div class="state-flow"><span class="sdot done">activated</span><span class="sdot cur">metered</span><span class="sdot">validated</span><span class="sdot">settled</span></div>
+                  <div class="ainline"><button class="btn">Validate meter</button></div>
+                </div>
+              </div>
+            </div>
+            <!-- WATCH -->
+            <div class="alarm-col col-watch">
+              <div class="ac-head"><span class="t">Watch · In-flow</span><span class="count">3</span></div>
+              <div class="alarm-list">
+                <div class="alarm">
+                  <div class="atop"><div><div class="aname">Helios BRP nomination</div><div class="achain">oe_dispatch_nominations · W13</div></div><span class="sla blue">so_review</span></div>
+                  <div class="state-flow"><span class="sdot done">submitted</span><span class="sdot cur">so_review</span><span class="sdot">accepted</span><span class="sdot">scheduled</span><span class="sdot">activated</span></div>
+                  <div class="ainline"><button class="btn flowb">Accept 84 MW</button><button class="btn">Reject</button></div>
+                </div>
+                <div class="alarm">
+                  <div class="atop"><div><div class="aname">Juno–Aurora outage</div><div class="achain">transmission_outage · W110 · L5</div></div><span class="sla blue">18:00</span></div>
+                  <div class="state-flow"><span class="sdot done">requested</span><span class="sdot cur">N-1 assessed</span><span class="sdot">authorised</span></div>
+                  <div class="ainline"><button class="btn">N-1 study</button><button class="btn">Cert pack</button></div>
+                </div>
+                <div class="alarm">
+                  <div class="atop"><div><div class="aname">Komsberg energization</div><div class="achain">connection_energization · W75</div></div><span class="sla blue">tested</span></div>
+                  <div class="state-flow"><span class="sdot done">ready</span><span class="sdot cur">protection_tested</span><span class="sdot">authorised</span><span class="sdot">energized</span></div>
+                  <div class="ainline"><button class="btn okb">Authorise</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="frame-label">Mobile PWA · severity stack</p>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="phone-screen">
+            <div class="statusbar"><span>14:37</span><span class="ico">SO · 5G ▰▰▰ ◗ 82%</span></div>
+            <div class="offline-hint"><span class="d"></span>8 alarms · 1 breaching SLA</div>
+            <div class="phone-body">
+              <div class="ph-hdr"><h3>Constraints</h3><span class="sub">sorted by SLA</span></div>
+              <div class="seg"><button class="on">Critical 2</button><button>Warn 3</button><button>Watch 3</button></div>
+              <div class="pcard hot">
+                <div class="ph"><div><div class="pn">Droërivier N-1</div><div class="pm">load_curtailment · CSC-1</div></div><span class="sla red">04:51</span></div>
+                <div class="pbody">
+                  <div class="state-flow"><span class="sdot done">issued</span><span class="sdot cur">ack'd</span><span class="sdot">implemented</span></div>
+                </div>
+              </div>
+              <div class="pcard hot">
+                <div class="ph"><div><div class="pn">Juno imbalance</div><div class="pm">imbalance_settlement · MTU 59</div></div><span class="sla red">01:12</span></div>
+                <div class="pbody"><div class="prow"><span>Long</span><b style="color:var(--crit)">+42 MW</b></div></div>
+              </div>
+            </div>
+            <button class="fab btn act">Confirm shed · Droërivier 60 MW</button>
+            <div class="bottom-nav">
+              <div class="bnav"><span class="gi">◈</span>Map</div>
+              <div class="bnav"><span class="gi">⚡</span>Stack</div>
+              <div class="bnav on"><span class="gi">⬓</span>Board</div>
+              <div class="bnav"><span class="gi">⬡</span>Queue</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">CEC Open Energy Platform · Grid Operator design exploration v2 · real chains: load_curtailment · oe_dispatch_nominations · transmission_outage · rez_capacity · reserve_activation · grid_code_compliance · connection_energization</div>
+</div>
+
+<script>
+  function pick(n){
+    for(var i=1;i<=3;i++){
+      var tab=document.getElementById('t'+i);
+      var pan=document.getElementById('p'+i);
+      var on=(i===n);
+      tab.setAttribute('aria-selected',on?'true':'false');
+      pan.classList.toggle('active',on);
+    }
+  }
+  // arrow-key tab nav
+  document.querySelectorAll('[role=tab]').forEach(function(t,i,a){
+    t.addEventListener('keydown',function(e){
+      if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+        var d=e.key==='ArrowRight'?1:-1;var nx=(i+d+a.length)%a.length;
+        a[nx].focus();pick(nx+1);
+      }
+    });
+  });
+</script>
+</body>
+</html>

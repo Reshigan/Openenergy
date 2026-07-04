@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  --color-canvas: #faf9f6;
+  --color-surface: #ffffff;
+  --color-ink: #16150f;
+  --color-muted: #6f6e63;
+  --color-line: #e9e6dd;
+  --color-accent: #0f7a5f;
+  --color-accent-ink: #0a5642;
+  --color-accent-soft: #e7f2ee;
+  --color-amber: #b07d28;
+
+  --font-sans: "Outfit", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --radius-card: 20px;
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Concierge input — calm, large, no harsh focus ring */
+.field {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.field:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 4px var(--color-accent-soft);
+}
+.field input, .field textarea { outline: none; background: transparent; width: 100%; }
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+}

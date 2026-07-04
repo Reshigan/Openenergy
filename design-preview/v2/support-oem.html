@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Support / OEM — Field O&M · Design Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0b1411;
+    --ink2:#16241e;
+    --paper:#f4f6f3;
+    --card:#ffffff;
+    --line:#d6ded7;
+    --safety:#ff6a00;        /* hi-vis orange — gloves/sunlight */
+    --safety-dk:#cc5200;
+    --field:#0f7a4a;         /* O&M green */
+    --field-dk:#0a5c38;
+    --steel:#1f3d33;
+    --p1:#c2161b;            /* P1 critical */
+    --p2:#e8590c;
+    --p3:#0b7285;
+    --offline:#7a5c00;
+    --offline-bg:#fff4cf;
+    --muted:#5a6b62;
+    --good:#0f7a4a;
+    --warn:#b8860b;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Archivo',system-ui,sans-serif;
+    background:
+      radial-gradient(1200px 500px at 88% -10%, rgba(255,106,0,.10), transparent 60%),
+      radial-gradient(900px 480px at 0% 0%, rgba(15,122,74,.10), transparent 55%),
+      var(--paper);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.45;
+  }
+  .wrap{max-width:1340px;margin:0 auto;padding:28px 22px 90px;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- header band ---------- */
+  .band{
+    background:linear-gradient(135deg,#0b1411 0%,#13241c 55%,#1f3d33 100%);
+    color:#eef4ef;border-radius:20px;padding:26px 28px;position:relative;overflow:hidden;
+    border:1px solid #21372c;
+  }
+  .band:before{
+    content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(135deg,rgba(255,106,0,.10) 0 14px,transparent 14px 36px);
+    opacity:.5;pointer-events:none;
+  }
+  .band .role-tag{
+    display:inline-flex;align-items:center;gap:9px;background:var(--safety);color:#160b00;
+    font-weight:900;letter-spacing:.06em;text-transform:uppercase;font-size:12px;
+    padding:7px 13px;border-radius:999px;position:relative;
+  }
+  .band h1{font-size:34px;line-height:1.05;margin:14px 0 6px;font-weight:900;letter-spacing:-.01em;}
+  .band h1 .accent{color:var(--safety);}
+  .band .grid{display:grid;grid-template-columns:1.35fr 1fr;gap:26px;margin-top:14px;position:relative;}
+  @media(max-width:880px){.band .grid{grid-template-columns:1fr;}}
+  .band p{margin:0;color:#cdd9d1;font-size:14.5px;}
+  .band .label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--safety);font-weight:800;margin-bottom:5px;}
+  .band .rationale{border-left:3px solid var(--safety);padding-left:14px;}
+
+  /* ---------- ease theme banner ---------- */
+  .ease-theme{
+    margin-top:14px;background:#101d16;border:1px dashed #2c4a3b;border-radius:14px;
+    padding:13px 16px;display:flex;gap:14px;align-items:center;color:#dcecdf;font-size:13.5px;position:relative;
+  }
+  .ease-theme b{color:var(--safety);}
+  .ease-pill{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:11px;background:var(--safety);color:#160b00;padding:5px 10px;border-radius:7px;letter-spacing:.04em;flex:none;}
+
+  /* ---------- journey-as-product strip ---------- */
+  .section-h{display:flex;align-items:baseline;gap:12px;margin:34px 2px 14px;}
+  .section-h h2{font-size:15px;letter-spacing:.16em;text-transform:uppercase;margin:0;color:var(--steel);font-weight:800;}
+  .section-h span{font-size:12.5px;color:var(--muted);}
+  .jstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  @media(max-width:880px){.jstrip{grid-template-columns:1fr;}}
+  .jcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px;position:relative;overflow:hidden;}
+  .jcard:before{content:"";position:absolute;top:0;left:0;height:5px;width:100%;}
+  .jcard.j1:before{background:var(--p1);}
+  .jcard.j2:before{background:var(--field);}
+  .jcard.j3:before{background:var(--p3);}
+  .jcard .wno{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);font-weight:600;}
+  .jcard h3{margin:7px 0 2px;font-size:17px;font-weight:800;letter-spacing:-.01em;}
+  .jcard .desc{font-size:12.5px;color:var(--muted);min-height:34px;}
+  .tier{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.04em;padding:5px 10px;border-radius:999px;text-transform:uppercase;}
+  .tier.found{background:#e3f0e9;color:#0a5c38;border:1px solid #b6d9c6;}
+  .tier.pro{background:#fff0e0;color:#9a3d00;border:1px solid #f3c79a;}
+  .tier.reg{background:#e7eef7;color:#15406b;border:1px solid #b9cbe2;}
+  .meter{margin-top:11px;display:flex;align-items:center;justify-content:space-between;border-top:1px dashed var(--line);padding-top:10px;}
+  .meter .u{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12.5px;color:var(--ink);}
+  .meter .lab{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+  .jhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+
+  /* ---------- option tabs ---------- */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:36px 0 18px;position:sticky;top:0;z-index:20;
+    background:linear-gradient(var(--paper),var(--paper) 70%,transparent);padding:10px 0;}
+  .tab{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--steel);
+    font-family:'Archivo';font-weight:800;font-size:13.5px;padding:11px 16px;border-radius:12px;cursor:pointer;
+    display:flex;flex-direction:column;gap:2px;min-width:200px;text-align:left;transition:.12s;min-height:48px;}
+  .tab small{font-weight:600;color:var(--muted);font-size:11px;}
+  .tab[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .tab[aria-selected="true"] small{color:#9fc3b1;}
+  .tab:focus-visible{outline:3px solid var(--safety);outline-offset:2px;}
+
+  .panel{display:none;}
+  .panel[data-active="true"]{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .concept{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px;background:var(--card);
+    border:1px solid var(--line);border-left:6px solid var(--safety);border-radius:14px;padding:15px 18px;}
+  .concept .n{font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:13px;color:#fff;background:var(--ink);
+    padding:6px 11px;border-radius:9px;flex:none;}
+  .concept h3{margin:0 0 3px;font-size:19px;font-weight:900;letter-spacing:-.01em;}
+  .concept p{margin:0;font-size:13.5px;color:var(--muted);}
+
+  .ease-call{margin:0 0 20px;background:var(--safety);color:#160b00;border-radius:13px;padding:13px 16px;
+    display:flex;gap:12px;align-items:center;font-weight:700;font-size:14px;box-shadow:0 6px 18px rgba(255,106,0,.22);}
+  .ease-call .k{font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:11px;background:#160b00;color:var(--safety);
+    padding:5px 9px;border-radius:7px;letter-spacing:.06em;flex:none;text-transform:uppercase;}
+
+  /* ---------- frame layout ---------- */
+  .frames{display:grid;grid-template-columns:1fr 430px;gap:26px;align-items:start;}
+  @media(max-width:1120px){.frames{grid-template-columns:1fr;}.phone-wrap{justify-self:center;}}
+  .frame-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:800;margin:0 0 8px 2px;}
+
+  /* desktop chrome — service-desk triage */
+  .desktop{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 18px 40px rgba(11,20,17,.10);}
+  .d-top{display:flex;align-items:center;gap:9px;background:#11201a;padding:11px 14px;}
+  .d-top .dot{width:11px;height:11px;border-radius:50%;}
+  .d-top .url{margin-left:10px;background:#1d3329;color:#bcd6c8;font-size:12px;padding:5px 12px;border-radius:7px;font-family:'IBM Plex Mono',monospace;flex:1;}
+  .d-top .badge{color:#0b1411;background:var(--safety);font-weight:800;font-size:11px;padding:4px 9px;border-radius:6px;}
+  .d-body{padding:16px;}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;}
+  .kpi{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;}
+  .kpi .v{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:700;letter-spacing:-.02em;}
+  .kpi .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-top:2px;}
+  .kpi.crit .v{color:var(--p1);}
+  .kpi.warn .v{color:var(--p2);}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:800;
+    padding:9px 10px;border-bottom:2px solid var(--line);}
+  td{padding:11px 10px;border-bottom:1px solid #eef1ee;vertical-align:middle;}
+  tr:hover td{background:#f8faf8;}
+  .pri{font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:12px;padding:3px 8px;border-radius:6px;color:#fff;}
+  .pri.p1{background:var(--p1);}.pri.p2{background:var(--p2);}.pri.p3{background:var(--p3);}.pri.p4{background:#5a6b62;}
+  .st{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;display:inline-block;}
+  .st.on{background:#fff0e0;color:#9a3d00;}
+  .st.go{background:#e3f0e9;color:#0a5c38;}
+  .st.wait{background:#fff4cf;color:#7a5c00;}
+  .st.new{background:#fde7e7;color:#a31317;}
+  .sla{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12.5px;}
+  .sla.red{color:var(--p1);}.sla.amb{color:var(--warn);}.sla.grn{color:var(--good);}
+  .pipe{display:flex;gap:3px;align-items:center;}
+  .pipe i{height:7px;border-radius:3px;width:18px;background:var(--line);}
+  .pipe i.done{background:var(--field);}
+  .pipe i.now{background:var(--safety);}
+
+  /* phone PWA frame */
+  .phone-wrap{display:flex;flex-direction:column;align-items:center;}
+  .phone{width:390px;height:844px;background:#0b1411;border-radius:46px;padding:11px;box-shadow:0 26px 60px rgba(11,20,17,.30);position:relative;}
+  .screen{width:100%;height:100%;background:var(--paper);border-radius:36px;overflow:hidden;position:relative;display:flex;flex-direction:column;}
+  .statusbar{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--ink);flex:none;}
+  .statusbar .right{display:flex;gap:7px;align-items:center;}
+  .offbar{flex:none;background:var(--offline-bg);color:var(--offline);font-size:11.5px;font-weight:800;text-align:center;
+    padding:6px;display:flex;align-items:center;justify-content:center;gap:7px;border-bottom:1px solid #ecdca0;}
+  .offbar.online{background:#e3f0e9;color:#0a5c38;border-color:#bfe0cd;}
+  .pdot{width:8px;height:8px;border-radius:50%;background:currentColor;}
+  .ptop{flex:none;padding:13px 18px 8px;}
+  .ptop h4{margin:0;font-size:19px;font-weight:900;letter-spacing:-.01em;}
+  .ptop .sub{font-size:12px;color:var(--muted);font-weight:600;}
+  .pscroll{flex:1;overflow:hidden;padding:4px 14px 4px;}
+  .pnav{flex:none;display:flex;background:var(--card);border-top:1px solid var(--line);padding:8px 6px 16px;}
+  .pnav a{flex:1;text-align:center;font-size:10.5px;font-weight:700;color:var(--muted);text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;}
+  .pnav a .ic{font-size:20px;line-height:1;}
+  .pnav a.active{color:var(--safety-dk);}
+  .install{position:absolute;left:14px;right:14px;bottom:78px;background:var(--ink);color:#fff;border-radius:13px;padding:11px 14px;
+    display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600;box-shadow:0 10px 24px rgba(0,0,0,.25);}
+  .install b{color:var(--safety);}
+
+  /* big one-thumb job card */
+  .jobcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:15px;margin-bottom:12px;box-shadow:0 4px 14px rgba(11,20,17,.06);}
+  .jobcard.lead{border:2px solid var(--safety);box-shadow:0 10px 26px rgba(255,106,0,.16);}
+  .jobcard .row1{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .jobcard h5{margin:4px 0 2px;font-size:16px;font-weight:800;letter-spacing:-.01em;}
+  .jobcard .loc{font-size:12.5px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:5px;}
+  .thumb-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border:none;border-radius:15px;
+    background:var(--safety);color:#160b00;font-family:'Archivo';font-weight:900;font-size:17px;letter-spacing:.01em;cursor:pointer;margin-top:11px;}
+  .thumb-btn.green{background:var(--field);color:#fff;}
+  .thumb-btn.ghost{background:#eef1ee;color:var(--steel);min-height:48px;font-size:15px;}
+  .thumb-btn:focus-visible{outline:3px solid var(--ink);outline-offset:2px;}
+  .swipe-hint{text-align:center;font-size:11px;color:var(--muted);font-weight:700;margin:2px 0 10px;letter-spacing:.04em;}
+
+  /* offline checklist steps */
+  .step{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:9px;}
+  .step .box{width:30px;height:30px;border-radius:9px;border:2px solid var(--line);flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;color:transparent;}
+  .step.done{background:#f1f8f4;border-color:#bfe0cd;}
+  .step.done .box{background:var(--field);border-color:var(--field);color:#fff;}
+  .step.now{border:2px solid var(--safety);background:#fff8f1;}
+  .step .t{font-size:14px;font-weight:700;}
+  .step .m{font-size:11.5px;color:var(--muted);font-weight:600;}
+
+  /* map view */
+  .map{position:relative;height:330px;border-radius:18px;overflow:hidden;border:1px solid var(--line);
+    background:linear-gradient(180deg,#dfe9e2,#cdddd2);}
+  .map .grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(31,61,51,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(31,61,51,.10) 1px,transparent 1px);background-size:34px 34px;}
+  .route-line{position:absolute;left:48px;top:60px;}
+  .pin{position:absolute;display:flex;flex-direction:column;align-items:center;}
+  .pin .dot{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.25);}
+  .pin .dot b{transform:rotate(45deg);color:#fff;font-weight:900;font-size:13px;}
+  .pin .tag{margin-top:5px;background:var(--ink);color:#fff;font-size:10px;font-weight:800;padding:3px 7px;border-radius:6px;white-space:nowrap;}
+  .pin.p1 .dot{background:var(--p1);}.pin.p2 .dot{background:var(--p2);}.pin.p3 .dot{background:var(--p3);}.pin.you .dot{background:var(--field);}
+  .routebar{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin:11px 0;}
+  .routebar .leg{flex:1;}
+  .routebar .leg .a{font-size:14px;font-weight:800;}
+  .routebar .leg .b{font-size:11.5px;color:var(--muted);font-weight:600;}
+  .routebar .eta{font-family:'IBM Plex Mono',monospace;font-weight:800;font-size:18px;color:var(--field-dk);}
+
+  .pcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 13px;margin-bottom:10px;}
+  .pcard .ph{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;color:var(--steel);margin-bottom:7px;}
+  .syncline{display:flex;align-items:center;gap:8px;font-size:12px;padding:7px 0;border-bottom:1px dashed var(--line);}
+  .syncline:last-child{border:none;}
+  .syncline .ok{color:var(--good);font-weight:800;}
+  .syncline .pend{color:var(--offline);font-weight:800;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:10px;font-weight:600;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .legend i{width:10px;height:10px;border-radius:50%;display:inline-block;}
+
+  .foot{margin-top:50px;text-align:center;color:var(--muted);font-size:12px;}
+  .a11y-note{margin-top:14px;font-size:11.5px;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 13px;display:inline-block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===================== HEADER BAND ===================== -->
+  <div class="band">
+    <span class="role-tag">⬡ Support / OEM · Field O&amp;M + Service Desk</span>
+    <h1>Built for <span class="accent">gloves, glare &amp; dead zones.</span></h1>
+    <div class="grid">
+      <div>
+        <div class="label">Persona</div>
+        <p>Thabo runs O&amp;M across a cluster of PV plants and BESS sites in the Northern Cape. He works
+        <b style="color:#fff">outdoors in full sun, wearing gloves</b>, climbing combiner racks with a phone in one hand. Signal drops the moment
+        he's inside a transformer kiosk. He has zero patience for typing, login walls, or a desktop UI shrunk onto glass.
+        Back at the desk, a dispatcher triages the P1–P4 queue and routes him.</p>
+      </div>
+      <div class="rationale">
+        <div class="label">Design rationale</div>
+        <p>One mobile-first hero per option, three different <b style="color:#fff">bets on "the next job"</b>: a one-thumb swipe queue,
+        a map-routed drive plan, and an offline-first checklist. All survive no-signal, all use 56px tap targets,
+        none require typing to close a job. Desktop is the dispatcher's triage board.</p>
+      </div>
+    </div>
+    <div class="ease-theme">
+      <span class="ease-pill">THEME · EASE</span>
+      <span>For a gloved field tech, <b>ease = the next job in one thumb, works offline, no typing.</b>
+      Every option below names the one thing it makes effortless.</span>
+    </div>
+  </div>
+
+  <!-- ===================== JOURNEY-AS-PRODUCT ===================== -->
+  <div class="section-h">
+    <h2>Journeys as metered products</h2>
+    <span>Three hero chains from the Support / OEM role — priced per metered unit, tiered by depth.</span>
+  </div>
+  <div class="jstrip">
+    <div class="jcard j1">
+      <div class="jhead">
+        <div>
+          <div class="wno mono">W14 · support_tickets</div>
+          <h3>Priority-Tiered Ticket</h3>
+        </div>
+        <span class="tier pro">L4 · Professional</span>
+      </div>
+      <div class="desc">ITIL incident lifecycle, P1–P4 SLA timers, escalation &amp; evidence chain. <span class="mono">open → in_progress → resolved → closed</span></div>
+      <div class="meter">
+        <span class="u">R / ticket resolved</span>
+        <span class="lab">metered · per case</span>
+      </div>
+    </div>
+    <div class="jcard j2">
+      <div class="jhead">
+        <div>
+          <div class="wno mono">W16 · work_order</div>
+          <h3>Work-Order Dispatch</h3>
+        </div>
+        <span class="tier pro">L4 · Professional</span>
+      </div>
+      <div class="desc">P6 field dispatch, parts-gated, calendar-driven. <span class="mono">planned → assigned → travelling → on_site → completed → verified</span></div>
+      <div class="meter">
+        <span class="u">R / work-order verified</span>
+        <span class="lab">metered · per dispatch</span>
+      </div>
+    </div>
+    <div class="jcard j3">
+      <div class="jhead">
+        <div>
+          <div class="wno mono">W55 · security_remediation</div>
+          <h3>CVSS Vuln Remediation</h3>
+        </div>
+        <span class="tier reg">L5 · Regulator-grade</span>
+      </div>
+      <div class="desc">CVSS-tiered OT patching with tamper-evident audit &amp; certified export. <span class="mono">triage → patch_available → change_raised → testing → deployed → verified</span></div>
+      <div class="meter">
+        <span class="u">R / vuln closed + cert</span>
+        <span class="lab">metered · per CVE pack</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== OPTION TABS ===================== -->
+  <div class="tabs" role="tablist" aria-label="Design options">
+    <button class="tab" role="tab" id="tab-a" aria-controls="panel-a" aria-selected="true" onclick="pick('a')">
+      Option A — One-Thumb Job Queue<small>Swipe stack · single hero action · zero typing</small>
+    </button>
+    <button class="tab" role="tab" id="tab-b" aria-controls="panel-b" aria-selected="false" onclick="pick('b')">
+      Option B — Map-Routed Dispatch<small>Drive-time order · site pins · navigate-to-job</small>
+    </button>
+    <button class="tab" role="tab" id="tab-c" aria-controls="panel-c" aria-selected="false" onclick="pick('c')">
+      Option C — Offline-First Checklist<small>Step cards · local-first · sync ledger</small>
+    </button>
+  </div>
+
+  <!-- ============ OPTION A ============ -->
+  <section class="panel" id="panel-a" data-active="true" role="tabpanel" aria-labelledby="tab-a">
+    <div class="concept">
+      <span class="n mono">A</span>
+      <div>
+        <h3>One-Thumb Job Queue</h3>
+        <p>The whole app is one vertical stack of fat cards ranked by SLA breach. The top card is always "your next job".
+        Close it with a single 56px button — never a form. Everything reachable by the right thumb.</p>
+      </div>
+    </div>
+    <div class="ease-call">
+      <span class="k">Ease ⟶</span>
+      <span>Complete the job one-thumb, offline, no typing — tap "On site" then "Mark complete"; the chain advances itself.</span>
+    </div>
+
+    <div class="frames">
+      <!-- desktop -->
+      <div>
+        <div class="frame-label">Desktop · Dispatcher triage board</div>
+        <div class="desktop">
+          <div class="d-top">
+            <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+            <span class="url mono">oe.vantax.co.za/support/triage</span>
+            <span class="badge">SUPPORT · TRIAGE</span>
+          </div>
+          <div class="d-body">
+            <div class="kpis">
+              <div class="kpi crit"><div class="v">3</div><div class="l">P1 open</div></div>
+              <div class="kpi warn"><div class="v">11</div><div class="l">SLA &lt; 1h</div></div>
+              <div class="kpi"><div class="v">28</div><div class="l">In progress</div></div>
+              <div class="kpi"><div class="v">96.4%</div><div class="l">SLA met (7d)</div></div>
+            </div>
+            <table aria-label="Support ticket triage queue">
+              <thead><tr><th>Pri</th><th>Ticket</th><th>Site / asset</th><th>State</th><th>SLA</th><th>Tech</th><th>Chain</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><span class="pri p1">P1</span></td>
+                  <td><b>Inverter trip — INV-04</b><br><span style="color:var(--muted);font-size:11px;" class="mono">support_tickets · TK-8841</span></td>
+                  <td>Kathu Solar 1</td>
+                  <td><span class="st new">open</span></td>
+                  <td><span class="sla red">−12m ⚠</span></td>
+                  <td>— unassigned</td>
+                  <td><div class="pipe"><i class="now"></i><i></i><i></i><i></i></div></td>
+                </tr>
+                <tr>
+                  <td><span class="pri p1">P1</span></td>
+                  <td><b>BESS string offline</b><br><span style="color:var(--muted);font-size:11px;" class="mono">support_tickets · TK-8839</span></td>
+                  <td>Mookodi BESS</td>
+                  <td><span class="st on">in_progress</span></td>
+                  <td><span class="sla amb">23m</span></td>
+                  <td>Thabo M.</td>
+                  <td><div class="pipe"><i class="done"></i><i class="now"></i><i></i><i></i></div></td>
+                </tr>
+                <tr>
+                  <td><span class="pri p2">P2</span></td>
+                  <td><b>Combiner DC fault</b><br><span style="color:var(--muted);font-size:11px;" class="mono">work_order · WO-2207</span></td>
+                  <td>Adams PV East</td>
+                  <td><span class="st on">on_site</span></td>
+                  <td><span class="sla grn">1h 40m</span></td>
+                  <td>Lerato K.</td>
+                  <td><div class="pipe"><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i></div></td>
+                </tr>
+                <tr>
+                  <td><span class="pri p2">P2</span></td>
+                  <td><b>Tracker stuck — Row 14</b><br><span style="color:var(--muted);font-size:11px;" class="mono">work_order · WO-2210</span></td>
+                  <td>Kathu Solar 1</td>
+                  <td><span class="st wait">parts_requested</span></td>
+                  <td><span class="sla grn">3h 10m</span></td>
+                  <td>Thabo M.</td>
+                  <td><div class="pipe"><i class="done"></i><i class="done"></i><i class="now"></i><i></i></div></td>
+                </tr>
+                <tr>
+                  <td><span class="pri p3">P3</span></td>
+                  <td><b>Comms gateway flap</b><br><span style="color:var(--muted);font-size:11px;" class="mono">security_remediation · SR-119</span></td>
+                  <td>Mookodi BESS</td>
+                  <td><span class="st on">patch_available</span></td>
+                  <td><span class="sla grn">8h</span></td>
+                  <td>Eng. queue</td>
+                  <td><div class="pipe"><i class="done"></i><i class="now"></i><i></i><i></i></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="a11y-note">WCAG AA: P1 badge #c2161b on white = 6.1:1 · safety CTA ink-on-orange = 8.4:1 · all tap targets ≥ 48px.</div>
+      </div>
+
+      <!-- phone -->
+      <div class="phone-wrap">
+        <div class="frame-label">Phone PWA · The hero</div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span class="right">◉ LTE&nbsp; ▮▮▮ &nbsp;38°☀</span></div>
+            <div class="offbar"><span class="pdot"></span> OFFLINE — last sync 4m ago · 2 jobs queued to send</div>
+            <div class="ptop">
+              <h4>Your queue · 4 jobs</h4>
+              <span class="sub">Sorted by SLA · top = do next</span>
+            </div>
+            <div class="pscroll">
+              <div class="swipe-hint">▲ swipe a card away to defer</div>
+              <div class="jobcard lead">
+                <div class="row1"><span class="pri p1">P1</span><span class="st on">in_progress</span><span style="margin-left:auto;" class="sla amb mono">23m ⏱</span></div>
+                <h5>BESS string offline</h5>
+                <div class="loc">⬡ Mookodi BESS · Rack B7</div>
+                <button class="thumb-btn green">✓ Mark complete</button>
+                <button class="thumb-btn ghost">📷 Add photo &amp; voice note</button>
+              </div>
+              <div class="jobcard">
+                <div class="row1"><span class="pri p2">P2</span><span class="st wait">parts</span><span style="margin-left:auto;" class="sla grn mono">3h 10m</span></div>
+                <h5>Tracker stuck — Row 14</h5>
+                <div class="loc">⬡ Kathu Solar 1 · 6 km away</div>
+                <button class="thumb-btn">→ Start travelling</button>
+              </div>
+              <div class="jobcard">
+                <div class="row1"><span class="pri p3">P3</span><span class="st on">scheduled</span><span style="margin-left:auto;" class="sla grn mono">tomorrow</span></div>
+                <h5>PM — quarterly IR scan</h5>
+                <div class="loc">⬡ Adams PV East</div>
+              </div>
+            </div>
+            <div class="install"><span>⬇</span> <span>Install <b>Field O&amp;M</b> · works fully offline, syncs when back in range</span></div>
+            <nav class="pnav">
+              <a href="#" class="active"><span class="ic">⬡</span>Queue</a>
+              <a href="#"><span class="ic">◷</span>SLA</a>
+              <a href="#"><span class="ic">◩</span>Parts</a>
+              <a href="#"><span class="ic">⟳</span>Sync</a>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPTION B ============ -->
+  <section class="panel" id="panel-b" role="tabpanel" aria-labelledby="tab-b">
+    <div class="concept">
+      <span class="n mono">B</span>
+      <div>
+        <h3>Map-Routed Dispatch</h3>
+        <p>Jobs aren't a list — they're stops on a drive. The phone opens to a map of the cluster with the route pre-built
+        by SLA + drive time. One tap navigates; arriving auto-fires <span class="mono">on_site</span>. Built for a tech covering 200 km of sites.</p>
+      </div>
+    </div>
+    <div class="ease-call">
+      <span class="k">Ease ⟶</span>
+      <span>Never plan your day — the route is built for you; tap "Navigate", and arrival auto-advances the work-order chain to on_site.</span>
+    </div>
+
+    <div class="frames">
+      <!-- desktop -->
+      <div>
+        <div class="frame-label">Desktop · Dispatcher routing board</div>
+        <div class="desktop">
+          <div class="d-top">
+            <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+            <span class="url mono">oe.vantax.co.za/support/dispatch</span>
+            <span class="badge">DISPATCH · ROUTING</span>
+          </div>
+          <div class="d-body">
+            <div class="kpis">
+              <div class="kpi"><div class="v">4</div><div class="l">Techs on shift</div></div>
+              <div class="kpi crit"><div class="v">2</div><div class="l">Unrouted P1</div></div>
+              <div class="kpi"><div class="v">37</div><div class="l">Stops planned</div></div>
+              <div class="kpi warn"><div class="v">218<small style="font-size:13px"> km</small></div><div class="l">Fleet drive today</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:14px;">
+              <div class="map" style="height:300px;">
+                <div class="grid-bg"></div>
+                <svg class="route-line" width="300" height="220" style="overflow:visible">
+                  <polyline points="20,180 90,120 170,150 250,60 300,110" fill="none" stroke="#0f7a4a" stroke-width="4" stroke-dasharray="3 7" stroke-linecap="round"/>
+                </svg>
+                <div class="pin you" style="left:30px;bottom:28px;"><div class="dot"><b>◉</b></div><div class="tag">Thabo (here)</div></div>
+                <div class="pin p1" style="left:96px;top:96px;"><div class="dot"><b>1</b></div><div class="tag">Mookodi · P1</div></div>
+                <div class="pin p2" style="left:180px;top:128px;"><div class="dot"><b>2</b></div><div class="tag">Kathu · P2</div></div>
+                <div class="pin p2" style="left:258px;top:36px;"><div class="dot"><b>3</b></div><div class="tag">Adams E · P2</div></div>
+                <div class="legend" style="position:absolute;left:12px;bottom:8px;background:rgba(255,255,255,.85);padding:5px 9px;border-radius:8px;">
+                  <span><i style="background:var(--p1)"></i>P1</span><span><i style="background:var(--p2)"></i>P2</span><span><i style="background:var(--field)"></i>Tech</span>
+                </div>
+              </div>
+              <div>
+                <table aria-label="Routed stops">
+                  <thead><tr><th>#</th><th>Stop</th><th>Pri</th><th>ETA</th></tr></thead>
+                  <tbody>
+                    <tr><td class="mono">1</td><td><b>Mookodi BESS</b><br><span class="mono" style="font-size:11px;color:var(--muted)">work_order · WO-2204</span></td><td><span class="pri p1">P1</span></td><td class="sla red">+0m</td></tr>
+                    <tr><td class="mono">2</td><td><b>Kathu Solar 1</b><br><span class="mono" style="font-size:11px;color:var(--muted)">work_order · WO-2210</span></td><td><span class="pri p2">P2</span></td><td class="sla grn">42m</td></tr>
+                    <tr><td class="mono">3</td><td><b>Adams PV East</b><br><span class="mono" style="font-size:11px;color:var(--muted)">warranty_claim · RMA-77</span></td><td><span class="pri p2">P2</span></td><td class="sla grn">1h 25m</td></tr>
+                  </tbody>
+                </table>
+                <div style="margin-top:10px;font-size:12px;color:var(--muted);">Route auto-rebuilds when a new P1 lands or a stop completes. Drag a stop to reorder manually.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="a11y-note">WCAG AA: pin numerals white-on-color ≥ 4.6:1 · route table SLA states colour + symbol (not colour alone).</div>
+      </div>
+
+      <!-- phone -->
+      <div class="phone-wrap">
+        <div class="frame-label">Phone PWA · The hero</div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span class="right">◉ LTE&nbsp; ▮▮▯ &nbsp;38°☀</span></div>
+            <div class="offbar online"><span class="pdot"></span> ONLINE · route cached · maps tiles saved for cluster</div>
+            <div class="ptop">
+              <h4>Today's route · 3 stops</h4>
+              <span class="sub">82 km · ends 14:10</span>
+            </div>
+            <div class="pscroll">
+              <div class="map">
+                <div class="grid-bg"></div>
+                <svg class="route-line" width="320" height="240" style="overflow:visible">
+                  <polyline points="40,200 130,130 220,160 300,70" fill="none" stroke="#0f7a4a" stroke-width="5" stroke-dasharray="3 8" stroke-linecap="round"/>
+                </svg>
+                <div class="pin you" style="left:26px;bottom:18px;"><div class="dot"><b>◉</b></div><div class="tag">You</div></div>
+                <div class="pin p1" style="left:118px;top:106px;"><div class="dot"><b>1</b></div><div class="tag">Mookodi P1</div></div>
+                <div class="pin p2" style="left:206px;top:138px;"><div class="dot"><b>2</b></div><div class="tag">Kathu P2</div></div>
+                <div class="pin p2" style="left:286px;top:46px;"><div class="dot"><b>3</b></div><div class="tag">Adams P2</div></div>
+              </div>
+              <div class="routebar">
+                <div class="leg"><div class="a">1 · Mookodi BESS</div><div class="b">String offline · WO-2204</div></div>
+                <div class="eta mono">14 min</div>
+              </div>
+              <button class="thumb-btn">🧭 Navigate to stop 1</button>
+              <div class="swipe-hint" style="margin-top:12px;">arrival auto-fires <b>on_site</b> · no check-in tap</div>
+            </div>
+            <div class="install"><span>⬇</span> <span>Install <b>Field O&amp;M</b> · map tiles &amp; route cached for the whole cluster</span></div>
+            <nav class="pnav">
+              <a href="#" class="active"><span class="ic">🗺</span>Route</a>
+              <a href="#"><span class="ic">⬡</span>Jobs</a>
+              <a href="#"><span class="ic">◩</span>Parts</a>
+              <a href="#"><span class="ic">⟳</span>Sync</a>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPTION C ============ -->
+  <section class="panel" id="panel-c" role="tabpanel" aria-labelledby="tab-c">
+    <div class="concept">
+      <span class="n mono">C</span>
+      <div>
+        <h3>Offline-First Checklist</h3>
+        <p>The job is a guided run of big tappable steps that work with zero signal — every tap writes locally first.
+        A visible sync ledger shows exactly what's saved on-device vs sent. Designed so a no-signal kiosk never blocks closing a job.</p>
+      </div>
+    </div>
+    <div class="ease-call">
+      <span class="k">Ease ⟶</span>
+      <span>Closing a work-order never needs a connection — tick the steps offline; the sync ledger sends the evidence chain the instant signal returns.</span>
+    </div>
+
+    <div class="frames">
+      <!-- desktop -->
+      <div>
+        <div class="frame-label">Desktop · Service-desk evidence &amp; sync monitor</div>
+        <div class="desktop">
+          <div class="d-top">
+            <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+            <span class="url mono">oe.vantax.co.za/support/evidence</span>
+            <span class="badge">EVIDENCE · SYNC</span>
+          </div>
+          <div class="d-body">
+            <div class="kpis">
+              <div class="kpi"><div class="v">61</div><div class="l">WOs closed today</div></div>
+              <div class="kpi warn"><div class="v">7</div><div class="l">Pending sync</div></div>
+              <div class="kpi"><div class="v">100%</div><div class="l">Evidence complete</div></div>
+              <div class="kpi"><div class="v">L5</div><div class="l">Audit-chained</div></div>
+            </div>
+            <table aria-label="Work-order completion + sync state">
+              <thead><tr><th>WO</th><th>Site</th><th>State</th><th>Checklist</th><th>Sync</th><th>Audit</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td class="mono">WO-2204</td><td>Mookodi BESS</td>
+                  <td><span class="st go">completed</span></td>
+                  <td><div class="pipe"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i></div></td>
+                  <td><span class="sla grn">✓ synced</span></td>
+                  <td class="mono" style="font-size:11px;color:var(--field-dk)">⛓ #a91f…</td>
+                </tr>
+                <tr>
+                  <td class="mono">WO-2210</td><td>Kathu Solar 1</td>
+                  <td><span class="st on">on_site</span></td>
+                  <td><div class="pipe"><i class="done"></i><i class="done"></i><i class="now"></i><i></i></div></td>
+                  <td><span class="sla amb">⟳ queued (offline)</span></td>
+                  <td class="mono" style="font-size:11px;color:var(--muted)">pending</td>
+                </tr>
+                <tr>
+                  <td class="mono">RMA-77</td><td>Adams PV East</td>
+                  <td><span class="st wait">oem_review</span></td>
+                  <td><div class="pipe"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i></div></td>
+                  <td><span class="sla grn">✓ synced</span></td>
+                  <td class="mono" style="font-size:11px;color:var(--field-dk)">⛓ #c30b…</td>
+                </tr>
+                <tr>
+                  <td class="mono">SR-119</td><td>Mookodi BESS</td>
+                  <td><span class="st on">testing</span></td>
+                  <td><div class="pipe"><i class="done"></i><i class="done"></i><i class="now"></i><i></i></div></td>
+                  <td><span class="sla amb">⟳ 1 photo queued</span></td>
+                  <td class="mono" style="font-size:11px;color:var(--muted)">pending</td>
+                </tr>
+              </tbody>
+            </table>
+            <div style="margin-top:11px;font-size:12px;color:var(--muted);">Every checklist tick is an append to the tamper-evident chain (W118). Offline ticks carry a device timestamp; the server reconciles order on sync — nothing is lost or reordered.</div>
+          </div>
+        </div>
+        <div class="a11y-note">WCAG AA: sync state shown as text + icon (✓ / ⟳), never colour alone · checklist boxes 30px + label tap zone.</div>
+      </div>
+
+      <!-- phone -->
+      <div class="phone-wrap">
+        <div class="frame-label">Phone PWA · The hero</div>
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"><span>9:41</span><span class="right">◌ NO SIG&nbsp; ▯▯▯ &nbsp;39°☀</span></div>
+            <div class="offbar"><span class="pdot"></span> NO SIGNAL — saving locally · 3 items will send on reconnect</div>
+            <div class="ptop">
+              <h4>WO-2210 · Tracker Row 14</h4>
+              <span class="sub">Kathu Solar 1 · on_site · P2</span>
+            </div>
+            <div class="pscroll">
+              <div class="step done"><div class="box">✓</div><div><div class="t">Arrived &amp; isolated string</div><div class="m">LOTO applied · 09:12</div></div></div>
+              <div class="step done"><div class="box">✓</div><div><div class="t">Photo: fault condition</div><div class="m">IMG saved on device</div></div></div>
+              <div class="step now"><div class="box">3</div><div><div class="t">Replace tracker motor</div><div class="m">Part TRK-MOT-12 · from van stock</div></div></div>
+              <div class="step"><div class="box">4</div><div><div class="t">Test &amp; mark complete</div><div class="m">advances → completed</div></div></div>
+              <div class="pcard" style="margin-top:10px;">
+                <div class="ph"><span>⟳ SYNC LEDGER</span><span class="pend">3 pending</span></div>
+                <div class="syncline"><span class="ok">✓</span> LOTO record · saved on device</div>
+                <div class="syncline"><span class="ok">✓</span> Fault photo · saved on device</div>
+                <div class="syncline"><span class="pend">⟳</span> Step 3 part-issue · queued to send</div>
+              </div>
+              <button class="thumb-btn green">✓ Done — step 3</button>
+            </div>
+            <div class="install"><span>⬇</span> <span>Installed · <b>local-first</b> — every tap saved before send, nothing lost in dead zones</span></div>
+            <nav class="pnav">
+              <a href="#"><span class="ic">⬡</span>Jobs</a>
+              <a href="#" class="active"><span class="ic">☑</span>Steps</a>
+              <a href="#"><span class="ic">◩</span>Parts</a>
+              <a href="#"><span class="ic">⟳</span>Sync</a>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    Support / OEM · Field O&amp;M + Service Desk — design exploration · real chains: support_tickets (W14), work_order (W16), security_remediation (W55), warranty_claim (W15), pm_compliance (W59)
+  </div>
+</div>
+
+<script>
+  function pick(id){
+    ['a','b','c'].forEach(function(k){
+      document.getElementById('panel-'+k).setAttribute('data-active', k===id ? 'true':'false');
+      document.getElementById('tab-'+k).setAttribute('aria-selected', k===id ? 'true':'false');
+    });
+  }
+</script>
+</body>
+</html>

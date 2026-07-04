@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ESCO / O&M Operator — Frontend Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* Field-ops identity: deep slate + hi-vis safety amber + telemetry green */
+    --bg:#0c1116;
+    --bg2:#11181f;
+    --panel:#161f28;
+    --panel2:#1b2630;
+    --line:#26323e;
+    --line2:#324252;
+    --ink:#eef4f8;
+    --ink2:#aebccb;
+    --ink3:#7b8a99;
+    --amber:#ffb020;       /* hi-vis / safety / LD economics */
+    --amber-deep:#c97f00;
+    --green:#34d399;       /* nominal / uptime */
+    --green-deep:#0f6b50;
+    --cyan:#3dd6e6;        /* telemetry */
+    --red:#ff5b5b;         /* breach / fault */
+    --violet:#9d8bff;      /* AI / prognostics */
+    --blue:#4ea3ff;
+    --radius:14px;
+    --shadow:0 18px 40px -18px rgba(0,0,0,.7);
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+    --sans:"Inter",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--sans);
+    background:
+      radial-gradient(1200px 600px at 12% -10%, rgba(255,176,32,.06), transparent 60%),
+      radial-gradient(900px 700px at 92% 0%, rgba(61,214,230,.05), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.45;
+  }
+  a{color:inherit}
+  .wrap{max-width:1340px;margin:0 auto;padding:32px 24px 80px}
+
+  /* ── Header band ── */
+  .header{
+    border:1px solid var(--line);
+    background:linear-gradient(135deg,var(--panel),var(--bg2));
+    border-radius:var(--radius);
+    padding:26px 28px;
+    box-shadow:var(--shadow);
+    position:relative;
+    overflow:hidden;
+  }
+  .header::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(90deg,transparent 0 8px,rgba(255,176,32,.5) 8px 9px,transparent 9px) repeat-x;
+    background-size:18px 100%;height:4px;top:0;opacity:.4;
+  }
+  .role-tag{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:#06202a;background:linear-gradient(90deg,var(--cyan),var(--green));
+    padding:5px 11px;border-radius:999px;font-weight:600;
+  }
+  h1{font-size:30px;margin:14px 0 4px;letter-spacing:-.02em;font-weight:800}
+  .persona{color:var(--ink2);max-width:760px;font-size:14.5px;margin:8px 0 0}
+  .rationale{
+    margin-top:14px;padding:12px 14px;border-left:3px solid var(--amber);
+    background:rgba(255,176,32,.06);border-radius:0 10px 10px 0;
+    color:var(--ink);font-size:13.5px;max-width:880px;
+  }
+  .rationale b{color:var(--amber)}
+
+  /* ── Journey-as-product strip ── */
+  .strip-title{
+    font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink3);margin:34px 4px 12px;display:flex;align-items:center;gap:10px;
+  }
+  .strip-title::after{content:"";flex:1;height:1px;background:var(--line)}
+  .jstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .jcard{
+    border:1px solid var(--line);background:var(--panel);border-radius:var(--radius);
+    padding:18px;position:relative;overflow:hidden;
+  }
+  .jcard .rail{position:absolute;left:0;top:0;bottom:0;width:4px}
+  .jcard h3{margin:2px 0 2px;font-size:16px;font-weight:700;letter-spacing:-.01em}
+  .jcard .chain{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+  .tier{
+    display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+    padding:3px 9px;border-radius:999px;letter-spacing:.04em;
+  }
+  .tier.l4{background:rgba(157,139,255,.16);color:#c8bdff;border:1px solid rgba(157,139,255,.4)}
+  .tier.l5{background:rgba(255,176,32,.14);color:var(--amber);border:1px solid rgba(255,176,32,.45)}
+  .tier.l3{background:rgba(61,214,230,.14);color:var(--cyan);border:1px solid rgba(61,214,230,.4)}
+  .meter{
+    margin-top:14px;padding-top:12px;border-top:1px dashed var(--line2);
+    display:flex;justify-content:space-between;align-items:baseline;
+  }
+  .meter .lbl{font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em}
+  .meter .val{font-family:var(--mono);font-weight:600;color:var(--green)}
+  .meter .price{font-family:var(--mono);font-size:12px;color:var(--ink2)}
+
+  /* ── Option tabs ── */
+  .tabs{display:flex;gap:8px;margin:40px 0 18px;flex-wrap:wrap;position:sticky;top:0;z-index:30;
+    padding:10px 0;background:linear-gradient(var(--bg),var(--bg) 70%,transparent)}
+  .tab{
+    border:1px solid var(--line2);background:var(--panel);color:var(--ink2);
+    padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:600;font-size:13.5px;
+    font-family:var(--sans);display:flex;gap:9px;align-items:center;min-height:42px;
+  }
+  .tab small{color:var(--ink3);font-weight:500}
+  .tab[aria-selected="true"]{
+    border-color:var(--amber);color:var(--ink);
+    box-shadow:0 0 0 1px var(--amber),0 8px 24px -12px rgba(255,176,32,.5);
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+  }
+  .tab:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .opt{display:none}
+  .opt.show{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .concept{color:var(--ink2);font-size:14px;margin:0 4px 20px;max-width:820px}
+  .concept b{color:var(--ink)}
+
+  /* ── Device frame layout ── */
+  .frames{display:grid;grid-template-columns:1fr 392px;gap:26px;align-items:start}
+  @media(max-width:1100px){.frames{grid-template-columns:1fr}}
+  .framelabel{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin:0 0 10px}
+
+  /* desktop chrome */
+  .desktop{
+    border:1px solid var(--line2);border-radius:var(--radius);overflow:hidden;
+    background:var(--bg2);box-shadow:var(--shadow);
+  }
+  .chrome{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#0a0f14;border-bottom:1px solid var(--line)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:#28c840}
+  .url{margin-left:10px;flex:1;background:#11181f;border:1px solid var(--line);border-radius:7px;
+    padding:5px 12px;font-family:var(--mono);font-size:12px;color:var(--ink3)}
+  .app{padding:0}
+
+  /* phone chrome */
+  .phone{
+    width:392px;border:10px solid #05080b;border-radius:42px;overflow:hidden;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,.8),0 0 0 1px var(--line2);
+    background:var(--bg);position:relative;
+  }
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:9px 22px 4px;font-family:var(--mono);font-size:12px;color:var(--ink2);background:#05080b}
+  .notch{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:120px;height:22px;background:#05080b;border-radius:0 0 16px 16px;z-index:5}
+  .pwa-hint{display:flex;align-items:center;gap:7px;background:rgba(52,211,153,.1);border-bottom:1px solid var(--green-deep);
+    color:var(--green);font-size:11px;padding:6px 14px;font-family:var(--mono)}
+  .pwa-hint .off{margin-left:auto;color:var(--amber)}
+  .pscreen{height:560px;overflow:hidden;position:relative;background:var(--bg)}
+  .pbody{padding:14px}
+  .bottomnav{
+    position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
+    background:#0a0f14;border-top:1px solid var(--line);padding:8px 6px 14px;
+  }
+  .bnav{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink3);font-size:10px;min-width:48px}
+  .bnav .ic{font-size:18px}
+  .bnav.on{color:var(--amber)}
+  .fab{
+    position:absolute;bottom:74px;right:16px;background:var(--amber);color:#1a1200;
+    border:none;border-radius:16px;padding:14px 18px;font-weight:800;font-size:14px;
+    box-shadow:0 14px 30px -10px rgba(255,176,32,.7);display:flex;align-items:center;gap:8px;
+    font-family:var(--sans);min-height:48px;
+  }
+
+  /* ── shared widgets ── */
+  .topbar{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .brand{font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+  .brand .mk{width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,var(--green),var(--cyan));display:grid;place-items:center;color:#04150f;font-weight:900;font-size:13px}
+  .nav{display:flex;gap:4px;margin-left:8px}
+  .nav span{font-size:12.5px;color:var(--ink3);padding:6px 10px;border-radius:7px}
+  .nav span.on{color:var(--ink);background:var(--panel2)}
+  .spacer{flex:1}
+  .pill{font-family:var(--mono);font-size:11px;padding:4px 9px;border-radius:7px;border:1px solid var(--line2);color:var(--ink2)}
+  .pill.live{color:var(--green);border-color:var(--green-deep)}
+  .pill.live::before{content:"●";margin-right:5px;animation:blink 1.6s infinite}
+  @keyframes blink{50%{opacity:.3}}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:18px}
+  .kpi{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:14px}
+  .kpi .k{font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em}
+  .kpi .v{font-size:24px;font-weight:800;font-family:var(--mono);margin-top:6px;letter-spacing:-.02em}
+  .kpi .d{font-size:11px;margin-top:3px;font-family:var(--mono)}
+  .up{color:var(--green)}.down{color:var(--red)}.warn{color:var(--amber)}
+
+  .grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;padding:0 18px 18px}
+  .card{border:1px solid var(--line);background:var(--panel);border-radius:12px;overflow:hidden}
+  .card h4{margin:0;padding:13px 16px;font-size:13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+  .card h4 .tag{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink3);font-weight:500}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;color:var(--ink3);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:9px 14px;border-bottom:1px solid var(--line)}
+  td{padding:10px 14px;border-bottom:1px solid var(--line);color:var(--ink2)}
+  tr:last-child td{border-bottom:none}
+  td .site{color:var(--ink);font-weight:600}
+  .mono{font-family:var(--mono)}
+
+  .badge{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:6px;font-family:var(--mono);white-space:nowrap}
+  .b-nominal{background:rgba(52,211,153,.14);color:var(--green)}
+  .b-warn{background:rgba(255,176,32,.16);color:var(--amber)}
+  .b-breach{background:rgba(255,91,91,.16);color:var(--red)}
+  .b-ai{background:rgba(157,139,255,.16);color:var(--violet)}
+  .b-info{background:rgba(78,163,255,.16);color:var(--blue)}
+  .b-neutral{background:var(--panel2);color:var(--ink2)}
+
+  /* pipeline */
+  .pipe{display:flex;gap:0;padding:14px 16px;align-items:center;flex-wrap:wrap}
+  .step{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink3);font-family:var(--mono)}
+  .step .node{width:11px;height:11px;border-radius:50%;background:var(--line2);border:2px solid var(--line2)}
+  .step.done .node{background:var(--green);border-color:var(--green)}
+  .step.now .node{background:var(--amber);border-color:var(--amber);box-shadow:0 0 0 4px rgba(255,176,32,.2)}
+  .step.now{color:var(--amber);font-weight:600}
+  .step .arm{width:26px;height:2px;background:var(--line);margin:0 4px}
+  .step.done .arm{background:var(--green-deep)}
+
+  /* map (direction 1) */
+  .map{position:relative;height:380px;background:
+      radial-gradient(circle at 30% 40%,rgba(61,214,230,.07),transparent 40%),
+      linear-gradient(var(--bg2),var(--bg));overflow:hidden}
+  .map svg{position:absolute;inset:0;width:100%;height:100%;opacity:.5}
+  .node-site{position:absolute;transform:translate(-50%,-50%);cursor:pointer}
+  .ring{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;position:relative}
+  .ring .core{width:14px;height:14px;border-radius:50%}
+  .ring.ok{box-shadow:0 0 0 3px rgba(52,211,153,.35),0 0 18px rgba(52,211,153,.4)}
+  .ring.ok .core{background:var(--green)}
+  .ring.warn{box-shadow:0 0 0 3px rgba(255,176,32,.4),0 0 18px rgba(255,176,32,.5)}
+  .ring.warn .core{background:var(--amber)}
+  .ring.bad{box-shadow:0 0 0 3px rgba(255,91,91,.45),0 0 22px rgba(255,91,91,.55);animation:pulse 1.8s infinite}
+  .ring.bad .core{background:var(--red)}
+  @keyframes pulse{50%{box-shadow:0 0 0 6px rgba(255,91,91,.15),0 0 30px rgba(255,91,91,.4)}}
+  .node-site .tip{position:absolute;top:-8px;left:46px;background:var(--panel2);border:1px solid var(--line2);
+    border-radius:9px;padding:8px 11px;width:150px;font-size:11px;color:var(--ink2);box-shadow:var(--shadow)}
+  .node-site .tip b{color:var(--ink);display:block;font-size:12px;margin-bottom:3px}
+  .arc{font-family:var(--mono)}
+
+  /* gauge (direction 2) */
+  .ld-hero{display:flex;gap:24px;align-items:center;padding:22px;background:
+      radial-gradient(500px 300px at 80% 20%,rgba(255,176,32,.08),transparent);border-bottom:1px solid var(--line)}
+  .gauge{width:170px;height:170px;flex-shrink:0;position:relative}
+  .gauge .num{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+  .gauge .num .big{font-size:34px;font-weight:800;font-family:var(--mono)}
+  .gauge .num .sm{font-size:11px;color:var(--ink3)}
+  .ld-econ{flex:1}
+  .ld-econ .row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .ld-econ .row:last-child{border-bottom:none}
+  .ld-econ .row .v{font-family:var(--mono);font-weight:700}
+  .ld-econ .row.tot{margin-top:6px;padding-top:14px;border-top:2px solid var(--line2);font-size:15px}
+  .ld-econ .row.tot .v{color:var(--amber);font-size:20px}
+
+  .barlist{padding:8px 16px}
+  .bar-row{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:12px}
+  .bar-row .nm{width:120px;color:var(--ink2)}
+  .bar-track{flex:1;height:8px;background:var(--panel2);border-radius:5px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:5px}
+  .bar-row .pct{width:54px;text-align:right;font-family:var(--mono);font-weight:600}
+
+  /* worklist (direction 3) */
+  .wo-board{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:18px}
+  .wo-col h5{margin:0 0 10px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);display:flex;gap:8px;align-items:center}
+  .wo-col h5 .cnt{margin-left:auto;font-family:var(--mono);color:var(--ink2)}
+  .wo{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:11px 12px;margin-bottom:9px}
+  .wo .wt{font-size:12.5px;font-weight:600;color:var(--ink);display:flex;align-items:flex-start;gap:7px}
+  .wo .wm{font-size:11px;color:var(--ink3);font-family:var(--mono);margin-top:6px;display:flex;justify-content:space-between}
+  .wo.crit{border-left:3px solid var(--red)}
+  .wo.perm{border-left:3px solid var(--amber)}
+  .wo.pm{border-left:3px solid var(--cyan)}
+
+  .ai-card{margin:0 18px 18px;border:1px solid rgba(157,139,255,.35);background:linear-gradient(135deg,rgba(157,139,255,.08),transparent);
+    border-radius:12px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start}
+  .ai-card .ico{width:30px;height:30px;border-radius:9px;background:rgba(157,139,255,.18);display:grid;place-items:center;color:var(--violet);flex-shrink:0;font-weight:800}
+  .ai-card .why{font-size:11px;color:var(--ink3);margin-top:5px;font-style:italic}
+  .ai-card .act{margin-left:auto;align-self:center}
+  .btn{background:var(--amber);color:#1a1200;border:none;border-radius:9px;padding:9px 14px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--sans);min-height:38px}
+  .btn.ghost{background:transparent;border:1px solid var(--line2);color:var(--ink)}
+  .btn.violet{background:var(--violet);color:#160a2e}
+
+  /* phone-specific */
+  .p-card{border:1px solid var(--line);background:var(--panel);border-radius:13px;padding:13px;margin-bottom:11px}
+  .p-h{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);margin:2px 0 10px;display:flex;align-items:center;gap:8px}
+  .p-site{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .p-site:last-child{border-bottom:none}
+  .p-ring{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;font-family:var(--mono);font-size:10px;font-weight:700}
+  .p-ring.ok{box-shadow:inset 0 0 0 3px var(--green);color:var(--green)}
+  .p-ring.warn{box-shadow:inset 0 0 0 3px var(--amber);color:var(--amber)}
+  .p-ring.bad{box-shadow:inset 0 0 0 3px var(--red);color:var(--red)}
+  .p-site .nm{flex:1}
+  .p-site .nm b{font-size:13px;color:var(--ink);display:block}
+  .p-site .nm small{font-size:11px;color:var(--ink3);font-family:var(--mono)}
+  .checklist label{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink)}
+  .checklist .box{width:22px;height:22px;border-radius:6px;border:2px solid var(--line2);flex-shrink:0;display:grid;place-items:center;color:var(--green)}
+  .checklist .box.on{border-color:var(--green);background:rgba(52,211,153,.15)}
+  .pgauge{text-align:center;padding:8px 0 4px}
+  .pgauge .big{font-size:40px;font-weight:800;font-family:var(--mono)}
+  .pbig-num{font-family:var(--mono);font-weight:800}
+
+  .legend{display:flex;gap:16px;padding:10px 18px;font-size:11px;color:var(--ink3);border-top:1px solid var(--line);flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .foot{color:var(--ink3);font-size:12px;text-align:center;margin-top:50px;font-family:var(--mono)}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header class="header">
+    <span class="role-tag">◎ ESCO / O&amp;M Operator · /esco</span>
+    <h1>The Fleet Floor</h1>
+    <p class="persona">
+      Runs O&amp;M across a fleet of commercial &amp; industrial solar sites (the Goldrush portfolio, live on Solax
+      telemetry). Half the day is in the office watching uptime and guarantee economics; half is in the field with a
+      phone, a permit, and a torque wrench. Lives in work orders, PM compliance, permit-to-work/LOTO, asset
+      prognostics, availability guarantees &amp; liquidated damages, PR underperformance and spare parts.
+    </p>
+    <div class="rationale">
+      Three bets for one split persona: a <b>spatial fleet brain</b> for the dispatcher who thinks in geography, a
+      <b>guarantee/LD cockpit</b> for the contract owner who thinks in money-at-risk, and an <b>O&amp;M work loop</b>
+      for the operator who lives in the daily PM→WO→permit grind. Telemetry-driven, actuals-only — every number
+      traces to a real inverter poll, never a synthetic kWh.
+    </div>
+  </header>
+
+  <!-- JOURNEY-AS-PRODUCT STRIP -->
+  <div class="strip-title">Hero journeys · packaged &amp; metered</div>
+  <div class="jstrip">
+    <div class="jcard">
+      <div class="rail" style="background:linear-gradient(var(--amber),var(--amber-deep))"></div>
+      <span class="tier l5">◆ Regulator-grade · L5</span>
+      <h3 style="margin-top:10px">Availability Guarantee &amp; LD</h3>
+      <div class="chain">chain: availability_guarantee · IEC 61724</div>
+      <p style="font-size:12.5px;color:var(--ink2);margin:10px 0 0">
+        Uptime contract vs measured availability, with liquidated-damages exposure computed live and a tamper-evident
+        evidence chain for the offtaker dispute.
+      </p>
+      <div class="meter">
+        <span class="lbl">Metered per</span>
+        <span class="val">guarantee tracked</span>
+      </div>
+      <div class="meter" style="border-top:none;padding-top:4px">
+        <span class="price">R 4 800 / guarantee / mo</span>
+        <span class="price" style="color:var(--ink3)">+ certified LD export</span>
+      </div>
+    </div>
+
+    <div class="jcard">
+      <div class="rail" style="background:linear-gradient(var(--cyan),var(--green))"></div>
+      <span class="tier l4">● Professional · L4</span>
+      <h3 style="margin-top:10px">PM Compliance</h3>
+      <div class="chain">chain: pm_compliance · IEC 62446</div>
+      <p style="font-size:12.5px;color:var(--ink2);margin:10px 0 0">
+        Calendar-driven preventive maintenance that auto-creates work orders, tracks overdue/deferral with cure
+        windows and escalates against the service contract.
+      </p>
+      <div class="meter">
+        <span class="lbl">Metered per</span>
+        <span class="val">site under O&amp;M</span>
+      </div>
+      <div class="meter" style="border-top:none;padding-top:4px">
+        <span class="price">R 1 200 / site / mo</span>
+        <span class="price" style="color:var(--ink3)">unlimited PM cycles</span>
+      </div>
+    </div>
+
+    <div class="jcard">
+      <div class="rail" style="background:linear-gradient(var(--violet),#5b3fd6)"></div>
+      <span class="tier l4">● Professional · L4</span>
+      <h3 style="margin-top:10px">Asset Prognostics</h3>
+      <div class="chain">chain: asset_prognostics · anomaly · RUL</div>
+      <p style="font-size:12.5px;color:var(--ink2);margin:10px 0 0">
+        Predictive O&amp;M brain — 6-method anomaly ensemble, degradation OLS, remaining-useful-life and fault
+        fingerprinting, surfaced weeks ahead with quantified savings.
+      </p>
+      <div class="meter">
+        <span class="lbl">Metered per</span>
+        <span class="val">asset under prognostics</span>
+      </div>
+      <div class="meter" style="border-top:none;padding-top:4px">
+        <span class="price">R 95 / asset / mo</span>
+        <span class="price" style="color:var(--ink3)">savings-share option</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION TABS -->
+  <div class="tabs" role="tablist" aria-label="Design directions">
+    <button class="tab" role="tab" id="t1" aria-controls="o1" aria-selected="true" onclick="pick(1)">
+      ① Fleet Asset-Health Map <small>spatial</small>
+    </button>
+    <button class="tab" role="tab" id="t2" aria-controls="o2" aria-selected="false" onclick="pick(2)">
+      ② Guarantee / LD Cockpit <small>economics</small>
+    </button>
+    <button class="tab" role="tab" id="t3" aria-controls="o3" aria-selected="false" onclick="pick(3)">
+      ③ O&amp;M Work Cockpit <small>daily loop</small>
+    </button>
+  </div>
+
+  <!-- ════════ OPTION 1 — FLEET MAP ════════ -->
+  <section class="opt show" id="o1" role="tabpanel" aria-labelledby="t1">
+    <p class="concept"><b>Concept:</b> Every site on a live map carrying a PR/availability ring; the dispatcher
+      reads fleet health as geography, then drills a site into its telemetry, faults and open work — for the operator
+      who thinks "which site, where, how bad."</p>
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div>
+        <p class="framelabel">Desktop · 1280</p>
+        <div class="desktop">
+          <div class="chrome"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="url">oe.vantax.co.za/esco/fleet-map</span></div>
+          <div class="app">
+            <div class="topbar">
+              <span class="brand"><span class="mk">◎</span> Fleet Floor</span>
+              <nav class="nav" aria-label="primary"><span class="on">Map</span><span>Sites</span><span>Faults</span><span>Work</span><span>Prognostics</span></nav>
+              <span class="spacer"></span>
+              <span class="pill live">Solax · 14 sites polling</span>
+              <span class="pill">last poll 38s ago</span>
+            </div>
+            <div class="kpis">
+              <div class="kpi"><div class="k">Fleet availability</div><div class="v up">98.4%</div><div class="d up">▲ vs 97.1% guar.</div></div>
+              <div class="kpi"><div class="k">Fleet PR (live)</div><div class="v">81.2%</div><div class="d warn">2 sites &lt; threshold</div></div>
+              <div class="kpi"><div class="k">Sites under O&amp;M</div><div class="v">14</div><div class="d" style="color:var(--ink3)">11.4 MWp total</div></div>
+              <div class="kpi"><div class="k">Open critical WOs</div><div class="v down">3</div><div class="d down">1 breaching SLA</div></div>
+            </div>
+            <div class="grid2">
+              <div class="card">
+                <h4>◉ Fleet map — Gauteng &amp; Free State <span class="tag">live PR rings</span></h4>
+                <div class="map">
+                  <svg viewBox="0 0 600 380" aria-hidden="true">
+                    <path d="M40 300 Q160 220 260 250 T520 180" fill="none" stroke="#26323e" stroke-width="1.5"/>
+                    <path d="M80 90 Q200 140 320 110 T560 160" fill="none" stroke="#26323e" stroke-width="1.5"/>
+                    <line x1="260" y1="250" x2="320" y2="110" stroke="#1b2630" stroke-width="1"/>
+                  </svg>
+                  <div class="node-site" style="left:22%;top:35%">
+                    <div class="ring ok"><span class="core"></span></div>
+                    <div class="tip"><b>Goldrush Roodepoort</b><span class="arc">PR 84% · avail 99.1%</span></div>
+                  </div>
+                  <div class="node-site" style="left:48%;top:58%">
+                    <div class="ring warn"><span class="core"></span></div>
+                    <div class="tip"><b>Goldrush Vereeniging</b><span class="arc">PR 76% · soiling flag</span></div>
+                  </div>
+                  <div class="node-site" style="left:72%;top:42%">
+                    <div class="ring bad"><span class="core"></span></div>
+                    <div class="tip"><b>Goldrush Welkom</b><span class="arc">INV-3 string fault</span></div>
+                  </div>
+                  <div class="node-site" style="left:60%;top:74%"><div class="ring ok"><span class="core"></span></div></div>
+                  <div class="node-site" style="left:34%;top:66%"><div class="ring ok"><span class="core"></span></div></div>
+                  <div class="node-site" style="left:84%;top:62%"><div class="ring warn"><span class="core"></span></div></div>
+                </div>
+                <div class="legend">
+                  <span><i style="background:var(--green)"></i> PR ≥ 80% / avail OK</span>
+                  <span><i style="background:var(--amber)"></i> soiling / PR watch</span>
+                  <span><i style="background:var(--red)"></i> fault · revenue impact</span>
+                </div>
+              </div>
+              <div class="card">
+                <h4>⚠ Drill-in · Goldrush Welkom <span class="tag">asset_prognostics</span></h4>
+                <div class="pipe" aria-label="prognostics state">
+                  <span class="step done"><span class="node"></span>nominal</span><span class="arm"></span>
+                  <span class="step now"><span class="node"></span>anomaly_detected</span><span class="arm"></span>
+                  <span class="step"><span class="node"></span>degrading</span><span class="arm"></span>
+                  <span class="step"><span class="node"></span>maint_due</span>
+                </div>
+                <table>
+                  <tr><td class="site">INV-3 string current</td><td><span class="badge b-breach">−18% vs peers</span></td></tr>
+                  <tr><td class="site">Fault fingerprint</td><td class="mono">PID / string open</td></tr>
+                  <tr><td class="site">RUL estimate</td><td class="mono warn">~ 21 days</td></tr>
+                  <tr><td class="site">Revenue impact</td><td class="mono down">R 1 940 / day</td></tr>
+                </table>
+                <div class="ai-card" style="margin:14px;border-radius:11px">
+                  <span class="ico">✦</span>
+                  <div>
+                    <div style="font-size:12.5px;color:var(--ink)">Dispatch a WO to Welkom + reserve string fuse</div>
+                    <div class="why">Why: INV-3 anomaly ensemble crossed 3/6 detectors; RUL &lt; SLA window.</div>
+                  </div>
+                  <div class="act"><button class="btn violet">Accept</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- PHONE -->
+      <div>
+        <p class="framelabel">Mobile PWA · field</p>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span>◎ Fleet Floor</span><span>▮▮▮ 5G</span></div>
+          <div class="pwa-hint">⤓ Installed · offline map cached<span class="off">⚡ 2 sites offline</span></div>
+          <div class="pscreen">
+            <div class="pbody">
+              <div class="p-card">
+                <div class="p-h">◉ Nearest sites · 24 km radius</div>
+                <div class="p-site">
+                  <div class="p-ring bad">84</div>
+                  <div class="nm"><b>Goldrush Welkom</b><small>INV-3 fault · R1 940/day</small></div>
+                  <span class="badge b-breach">GO</span>
+                </div>
+                <div class="p-site">
+                  <div class="p-ring warn">76</div>
+                  <div class="nm"><b>Vereeniging</b><small>soiling · PR watch</small></div>
+                  <span class="badge b-warn">PM due</span>
+                </div>
+                <div class="p-site">
+                  <div class="p-ring ok">99</div>
+                  <div class="nm"><b>Roodepoort</b><small>nominal · avail 99.1%</small></div>
+                  <span class="badge b-nominal">OK</span>
+                </div>
+              </div>
+              <div class="p-card">
+                <div class="p-h">⚠ Welkom · live telemetry</div>
+                <div class="ld-econ" style="font-size:12px">
+                  <div class="row"><span>String current INV-3</span><span class="v down">−18%</span></div>
+                  <div class="row"><span>RUL estimate</span><span class="v warn">~21 days</span></div>
+                  <div class="row"><span>Last Solax poll</span><span class="v mono">38s ago</span></div>
+                </div>
+              </div>
+            </div>
+            <button class="fab">🧭 Navigate to site</button>
+            <nav class="bottomnav" aria-label="mobile nav">
+              <span class="bnav on"><span class="ic">◉</span>Map</span>
+              <span class="bnav"><span class="ic">⚙</span>Work</span>
+              <span class="bnav"><span class="ic">⚠</span>Faults</span>
+              <span class="bnav"><span class="ic">◈</span>AI</span>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ OPTION 2 — GUARANTEE / LD COCKPIT ════════ -->
+  <section class="opt" id="o2" role="tabpanel" aria-labelledby="t2" hidden>
+    <p class="concept"><b>Concept:</b> The availability guarantee is the product — uptime vs the contracted floor,
+      with liquidated-damages exposure as the hero number and an evidence chain ready for the offtaker dispute. For
+      the contract owner who measures the fleet in money-at-risk, not pins on a map.</p>
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div>
+        <p class="framelabel">Desktop · 1280</p>
+        <div class="desktop">
+          <div class="chrome"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="url">oe.vantax.co.za/esco/guarantees/GR-VRG-01</span></div>
+          <div class="app">
+            <div class="topbar">
+              <span class="brand"><span class="mk">◆</span> Guarantee Cockpit</span>
+              <nav class="nav" aria-label="primary"><span>Portfolio</span><span class="on">Guarantee GR-VRG-01</span><span>LD ledger</span><span>Exports</span></nav>
+              <span class="spacer"></span>
+              <span class="badge b-warn">under_review</span>
+              <span class="pill">IEC 61724</span>
+            </div>
+            <div class="pipe" style="border-bottom:1px solid var(--line)" aria-label="availability_guarantee state">
+              <span class="step done"><span class="node"></span>active</span><span class="arm"></span>
+              <span class="step now"><span class="node"></span>under_review</span><span class="arm"></span>
+              <span class="step"><span class="node"></span>breach</span><span class="arm"></span>
+              <span class="step"><span class="node"></span>cure</span><span class="arm"></span>
+              <span class="step"><span class="node"></span>settled</span><span class="arm"></span>
+              <span class="step"><span class="node"></span>waived</span>
+            </div>
+            <div class="ld-hero">
+              <div class="gauge" role="img" aria-label="Measured availability 96.3 percent against 97.1 percent guarantee">
+                <svg viewBox="0 0 180 180">
+                  <circle cx="90" cy="90" r="74" fill="none" stroke="#26323e" stroke-width="14"/>
+                  <circle cx="90" cy="90" r="74" fill="none" stroke="url(#g2)" stroke-width="14" stroke-linecap="round"
+                          stroke-dasharray="465" stroke-dashoffset="48" transform="rotate(-90 90 90)"/>
+                  <line x1="90" y1="16" x2="90" y2="30" stroke="var(--green)" stroke-width="3" transform="rotate(7 90 90)"/>
+                  <defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#ffb020"/><stop offset="1" stop-color="#ff5b5b"/></linearGradient></defs>
+                </svg>
+                <div class="num"><div><div class="big warn">96.3%</div><div class="sm">measured avail</div></div></div>
+              </div>
+              <div class="ld-econ">
+                <div class="row"><span>Contracted floor (guarantee)</span><span class="v">97.10%</span></div>
+                <div class="row"><span>Measured this period (Solax)</span><span class="v warn">96.30%</span></div>
+                <div class="row"><span>Shortfall</span><span class="v down">−0.80 pp</span></div>
+                <div class="row"><span>LD rate · per pp / mo</span><span class="v">R 12 500</span></div>
+                <div class="row tot"><span>Live LD exposure</span><span class="v">R 10 000</span></div>
+              </div>
+            </div>
+            <div class="grid2">
+              <div class="card">
+                <h4>▤ Availability by month <span class="tag">actuals only</span></h4>
+                <div class="barlist">
+                  <div class="bar-row"><span class="nm">Feb</span><div class="bar-track"><div class="bar-fill" style="width:99%;background:var(--green)"></div></div><span class="pct up">98.9%</span></div>
+                  <div class="bar-row"><span class="nm">Mar</span><div class="bar-track"><div class="bar-fill" style="width:98%;background:var(--green)"></div></div><span class="pct up">98.2%</span></div>
+                  <div class="bar-row"><span class="nm">Apr</span><div class="bar-track"><div class="bar-fill" style="width:97%;background:var(--green)"></div></div><span class="pct up">97.4%</span></div>
+                  <div class="bar-row"><span class="nm">May</span><div class="bar-track"><div class="bar-fill" style="width:96.3%;background:var(--amber)"></div></div><span class="pct warn">96.3%</span></div>
+                  <div class="bar-row"><span class="nm">Floor</span><div class="bar-track"><div class="bar-fill" style="width:97.1%;background:var(--line2)"></div></div><span class="pct" style="color:var(--ink3)">97.1%</span></div>
+                </div>
+              </div>
+              <div class="card">
+                <h4>◆ Evidence chain <span class="tag">tamper-evident · L5</span></h4>
+                <table>
+                  <tr><td class="site">Downtime events</td><td class="mono">7 · 41.2 h</td></tr>
+                  <tr><td class="site">Excused (force majeure)</td><td class="mono">2 · 6.0 h</td></tr>
+                  <tr><td class="site">Net countable</td><td class="mono warn">35.2 h</td></tr>
+                  <tr><td class="site">Audit hash</td><td class="mono" style="color:var(--cyan)">0x9af3…c21</td></tr>
+                </table>
+                <div style="padding:14px;display:flex;gap:9px">
+                  <button class="btn">Certify &amp; export LD pack</button>
+                  <button class="btn ghost">Dispute downtime</button>
+                </div>
+              </div>
+            </div>
+            <div class="ai-card">
+              <span class="ico">✦</span>
+              <div>
+                <div style="font-size:13px;color:var(--ink)">Cure path: clear INV-3 fault by 28 May to recover 0.5pp and avoid breach state</div>
+                <div class="why">Why: 35.2h of the shortfall traces to one Welkom string fault; fixing it pre-period-close keeps you in under_review, not breach.</div>
+              </div>
+              <div class="act"><button class="btn violet">Open cure WO</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- PHONE -->
+      <div>
+        <p class="framelabel">Mobile PWA · contract owner</p>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span>◆ Guarantee</span><span>▮▮▮ 5G</span></div>
+          <div class="pwa-hint">⤓ Installed · synced 2m ago<span class="off">live LD</span></div>
+          <div class="pscreen">
+            <div class="pbody">
+              <div class="p-card" style="text-align:center">
+                <div class="p-h" style="justify-content:center">⚠ Live LD exposure · this period</div>
+                <div class="pgauge"><div class="big warn">R10 000</div></div>
+                <div style="font-size:12px;color:var(--ink3)">96.3% measured vs 97.1% floor · −0.8pp</div>
+              </div>
+              <div class="p-card">
+                <div class="p-h">Portfolio guarantees</div>
+                <div class="p-site"><div class="p-ring warn">VRG</div><div class="nm"><b>Vereeniging</b><small>−0.8pp · R10k LD</small></div><span class="badge b-warn">review</span></div>
+                <div class="p-site"><div class="p-ring ok">WLK</div><div class="nm"><b>Welkom</b><small>+0.4pp buffer</small></div><span class="badge b-nominal">active</span></div>
+                <div class="p-site"><div class="p-ring ok">RDP</div><div class="nm"><b>Roodepoort</b><small>+1.9pp buffer</small></div><span class="badge b-nominal">active</span></div>
+              </div>
+              <div class="ai-card" style="margin:0;border-radius:13px">
+                <span class="ico">✦</span>
+                <div><div style="font-size:12px;color:var(--ink)">Open cure WO — recover 0.5pp</div>
+                  <div class="why">avoid breach before close</div></div>
+              </div>
+            </div>
+            <button class="fab">◆ Certify LD pack</button>
+            <nav class="bottomnav" aria-label="mobile nav">
+              <span class="bnav on"><span class="ic">◆</span>Guar.</span>
+              <span class="bnav"><span class="ic">▤</span>Ledger</span>
+              <span class="bnav"><span class="ic">⤓</span>Export</span>
+              <span class="bnav"><span class="ic">◈</span>AI</span>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ OPTION 3 — O&M WORK COCKPIT ════════ -->
+  <section class="opt" id="o3" role="tabpanel" aria-labelledby="t3" hidden>
+    <p class="concept"><b>Concept:</b> The operator's daily loop made one screen — PM schedule feeding work orders,
+      gated by permit-to-work/LOTO, with spare-parts reservation inline. A swim-lane board for the office; a thumb-first
+      field checklist for the site. The grind, not the dashboard.</p>
+    <div class="frames">
+      <!-- DESKTOP -->
+      <div>
+        <p class="framelabel">Desktop · 1280</p>
+        <div class="desktop">
+          <div class="chrome"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="url">oe.vantax.co.za/esco/work</span></div>
+          <div class="app">
+            <div class="topbar">
+              <span class="brand"><span class="mk">⚙</span> Work Cockpit</span>
+              <nav class="nav" aria-label="primary"><span class="on">Board</span><span>PM calendar</span><span>Permits</span><span>Parts</span><span>Team</span></nav>
+              <span class="spacer"></span>
+              <span class="pill live">4 techs on shift</span>
+              <span class="pill">SLA · 1 breaching</span>
+            </div>
+            <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+              <div class="kpi"><div class="k">PM due (7d)</div><div class="v warn">6</div><div class="d warn">2 overdue</div></div>
+              <div class="kpi"><div class="k">Open work orders</div><div class="v">11</div><div class="d down">1 SLA breach</div></div>
+              <div class="kpi"><div class="k">Active permits</div><div class="v">2</div><div class="d" style="color:var(--ink3)">1 live-electrical</div></div>
+              <div class="kpi"><div class="k">Parts reserved</div><div class="v">5</div><div class="d warn">1 backorder</div></div>
+            </div>
+            <div class="wo-board">
+              <div class="wo-col">
+                <h5>⚙ Assigned <span class="cnt">4</span></h5>
+                <div class="wo pm"><div class="wt"><span class="badge b-info">PM</span> Quarterly inverter PM — Roodepoort</div><div class="wm"><span>pm_compliance</span><span>due 26 May</span></div></div>
+                <div class="wo crit"><div class="wt"><span class="badge b-breach">CRIT</span> INV-3 string fault — Welkom</div><div class="wm"><span>SLA −3h</span><span class="down">breaching</span></div></div>
+                <div class="wo"><div class="wt"><span class="badge b-warn">SOIL</span> Module clean — Vereeniging</div><div class="wm"><span>soiling_audit</span><span>P3</span></div></div>
+              </div>
+              <div class="wo-col">
+                <h5>🔒 Permit gated <span class="cnt">2</span></h5>
+                <div class="wo perm"><div class="wt"><span class="badge b-warn">PTW</span> DC isolation — Welkom INV-3</div><div class="wm"><span>live-electrical</span><span class="warn">issued · active</span></div></div>
+                <div class="wo perm"><div class="wt"><span class="badge b-neutral">PTW</span> Combiner box — Vereeniging</div><div class="wm"><span>under_review</span><span>awaiting</span></div></div>
+              </div>
+              <div class="wo-col">
+                <h5>✓ In progress <span class="cnt">3</span></h5>
+                <div class="wo"><div class="wt"><span class="badge b-nominal">WO</span> AC breaker swap — Welkom</div><div class="wm"><span>part: 250A · reserved</span><span>T. Nkosi</span></div></div>
+                <div class="wo"><div class="wt"><span class="badge b-ai">PRED</span> Bearing replace — tracker row 4</div><div class="wm"><span>from RUL alert</span><span>S. Pillay</span></div></div>
+              </div>
+            </div>
+            <div class="ai-card">
+              <span class="ico">✦</span>
+              <div>
+                <div style="font-size:13px;color:var(--ink)">Bundle the Welkom string fault + AC breaker swap into one visit — both need the same DC-isolation permit</div>
+                <div class="why">Why: permit_to_work PTW-0192 already covers INV-3 isolation; combining avoids a second LOTO cycle and one extra trip to Welkom.</div>
+              </div>
+              <div class="act"><button class="btn violet">Bundle visit</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- PHONE -->
+      <div>
+        <p class="framelabel">Mobile PWA · field close-out</p>
+        <div class="phone">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span>⚙ WO-4471</span><span>▮▮ LTE</span></div>
+          <div class="pwa-hint">⤓ Offline-ready<span class="off">⚡ queued · syncs on signal</span></div>
+          <div class="pscreen">
+            <div class="pbody">
+              <div class="p-card">
+                <div class="p-h">🔒 Permit-to-work · PTW-0192</div>
+                <div class="checklist">
+                  <label><span class="box on">✓</span> DC isolator locked &amp; tagged (LOTO)</label>
+                  <label><span class="box on">✓</span> Voltage verified absent</label>
+                  <label><span class="box on">✓</span> Earth applied</label>
+                  <label><span class="box">&nbsp;</span> Permit holder sign-on</label>
+                </div>
+              </div>
+              <div class="p-card">
+                <div class="p-h">⚙ WO-4471 · INV-3 string fault</div>
+                <div class="ld-econ" style="font-size:12px">
+                  <div class="row"><span>Site</span><span class="v">Goldrush Welkom</span></div>
+                  <div class="row"><span>Part reserved</span><span class="v">String fuse 16A ✓</span></div>
+                  <div class="row"><span>Photos</span><span class="v warn">0 / 2 req</span></div>
+                </div>
+              </div>
+            </div>
+            <button class="fab">✓ Close out WO</button>
+            <nav class="bottomnav" aria-label="mobile nav">
+              <span class="bnav on"><span class="ic">⚙</span>WO</span>
+              <span class="bnav"><span class="ic">🔒</span>Permit</span>
+              <span class="bnav"><span class="ic">📷</span>Photos</span>
+              <span class="bnav"><span class="ic">⬡</span>Parts</span>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">ESCO / O&amp;M · /esco · evaluation mockup — actuals-only · Solax telemetry · not wired to app</p>
+</div>
+
+<script>
+  function pick(n){
+    for(var i=1;i<=3;i++){
+      var tab=document.getElementById('t'+i),pan=document.getElementById('o'+i);
+      var on=(i===n);
+      tab.setAttribute('aria-selected',on?'true':'false');
+      pan.classList.toggle('show',on);
+      if(on){pan.removeAttribute('hidden')}else{pan.setAttribute('hidden','')}
+    }
+  }
+  // keyboard arrow nav for tablist
+  document.querySelectorAll('[role=tab]').forEach(function(t,i,a){
+    t.addEventListener('keydown',function(e){
+      var n=i;
+      if(e.key==='ArrowRight')n=(i+1)%3;
+      else if(e.key==='ArrowLeft')n=(i+2)%3;
+      else return;
+      e.preventDefault();a[n].focus();pick(n+1);
+    });
+  });
+</script>
+</body>
+</html>
