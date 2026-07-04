@@ -29,40 +29,6 @@ const T = {
   errorBd:  'oklch(0.75 0.120 30)',
 } as const;
 
-// ─── Persona data (compact, 11 roles + IPP variant) ──────────────────────────
-interface Persona {
-  email: string;
-  label: string;
-  short: string;  // 2-letter initials
-  accent: string;
-  group: string;
-}
-
-const PERSONAS: Persona[] = [
-  { email: 'ipp@openenergy.co.za',       label: 'Solar IPP',      short: 'SI', accent: 'oklch(0.46 0.16 55)',  group: 'Producers' },
-  { email: 'wind@openenergy.co.za',      label: 'Wind IPP',       short: 'WI', accent: 'oklch(0.46 0.16 55)',  group: 'Producers' },
-  { email: 'esco@openenergy.co.za',      label: 'ESCO / O&M',     short: 'OM', accent: 'oklch(0.46 0.14 160)', group: 'Producers' },
-  { email: 'epc@openenergy.co.za',       label: 'EPC Contractor', short: 'EP', accent: 'oklch(0.48 0.14 40)',  group: 'Producers' },
-  { email: 'trader@openenergy.co.za',    label: 'Trader',         short: 'TR', accent: 'oklch(0.46 0.16 250)', group: 'Markets' },
-  { email: 'carbon@openenergy.co.za',    label: 'Carbon',         short: 'CF', accent: 'oklch(0.46 0.16 145)', group: 'Markets' },
-  { email: 'offtaker@openenergy.co.za',  label: 'Offtaker',       short: 'OT', accent: 'oklch(0.46 0.14 200)', group: 'Markets' },
-  { email: 'lender@openenergy.co.za',    label: 'Lender',         short: 'LN', accent: 'oklch(0.46 0.16 280)', group: 'Capital' },
-  { email: 'grid@openenergy.co.za',      label: 'Grid Operator',  short: 'GO', accent: 'oklch(0.46 0.14 220)', group: 'Grid' },
-  { email: 'regulator@openenergy.co.za', label: 'Regulator',      short: 'RG', accent: 'oklch(0.40 0.12 5)',   group: 'Oversight' },
-  { email: 'admin@openenergy.co.za',     label: 'Admin',          short: 'AD', accent: 'oklch(0.30 0.015 250)', group: 'Oversight' },
-];
-
-// Live ecosystem profiles (cec.vantax.co.za) — the real Goldrush deployment.
-// Shown on the live host so the demo can swap between the actual participants.
-const LIVE_PERSONAS: Persona[] = [
-  { email: 'reshigan+gonxt@vantax.co.za',    label: 'GoNXT (IPP)',        short: 'GN', accent: 'oklch(0.46 0.16 55)',  group: 'Goldrush ecosystem' },
-  { email: 'reshigan+goldrush@vantax.co.za', label: 'Goldrush (Offtaker)', short: 'GR', accent: 'oklch(0.46 0.14 200)', group: 'Goldrush ecosystem' },
-  { email: 'reshigan+envera@vantax.co.za',   label: 'Envera (Carbon)',    short: 'EN', accent: 'oklch(0.46 0.16 145)', group: 'Goldrush ecosystem' },
-  { email: 'reshigan+growvest@vantax.co.za', label: 'Growvest (Lender)',  short: 'GV', accent: 'oklch(0.46 0.16 280)', group: 'Goldrush ecosystem' },
-  { email: 'reshigan@vantax.co.za',          label: 'Admin',              short: 'AD', accent: 'oklch(0.30 0.015 250)', group: 'Goldrush ecosystem' },
-];
-const isLiveHost = typeof window !== 'undefined' && /(^|\.)cec\./.test(window.location.hostname);
-
 // ─── Animated energy node (pure CSS — no JS animation) ────────────────────────
 function EnergyNode({ cx, cy, r, delay, color }: { cx: number; cy: number; r: number; delay: number; color: string }) {
   return (
@@ -233,55 +199,6 @@ function BrandPanel() {
   );
 }
 
-// ─── Persona chip ─────────────────────────────────────────────────────────────
-function PersonaChip({ persona, onPick }: { persona: Persona; onPick: (email: string) => void }) {
-  const [hov, setHov] = React.useState(false);
-  return (
-    <button
-      type="button"
-      onClick={() => onPick(persona.email)}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      aria-label={`Sign in as ${persona.label} demo`}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '10px 12px',
-        borderRadius: 10,
-        border: `1px solid ${hov ? persona.accent : T.border}`,
-        background: hov ? `${persona.accent}12` : T.panelBg,
-        cursor: 'pointer',
-        transition: 'border-color 130ms, background 130ms',
-        flex: '1 1 150px',
-        minWidth: 0,
-      }}
-    >
-      <span
-        style={{
-          width: 38,
-          height: 38,
-          borderRadius: 9,
-          background: `${persona.accent}22`,
-          color: persona.accent,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 13,
-          fontWeight: 700,
-          fontFamily: 'ui-monospace, monospace',
-          flexShrink: 0,
-        }}
-      >
-        {persona.short}
-      </span>
-      <span style={{ fontSize: 12.5, fontWeight: 600, color: T.text1, textAlign: 'left', lineHeight: 1.25 }}>
-        {persona.label}
-      </span>
-    </button>
-  );
-}
-
 // ─── Main login page ─────────────────────────────────────────────────────────
 export default function LoginPage() {
   const { login } = useAuth();
@@ -297,9 +214,6 @@ export default function LoginPage() {
   const [loading, setLoading]       = useState(false);
   const [ssoEnabled, setSsoEnabled] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);
-  // Demo personas + one-click password are hidden on live (DEMO_MODE=off).
-  // Default true so demo env shows them even before /config resolves.
-  const [demoMode, setDemoMode]     = useState(true);
   const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -309,7 +223,6 @@ export default function LoginPage() {
   useEffect(() => {
     api.get('/auth/sso/config').then((r) => {
       if (r.data?.success && r.data?.data?.enabled) setSsoEnabled(true);
-      if (r.data?.data?.demo_mode === 'off') setDemoMode(false);
     }).catch(() => {});
   }, []);
 
@@ -375,22 +288,6 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
-
-  const fillDemo = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('Demo@2024!');
-    setMfaRequired(false);
-    setError('');
-  };
-
-  // Group personas
-  const groups = [
-    { label: 'Producers', items: PERSONAS.filter((p) => p.group === 'Producers') },
-    { label: 'Markets',   items: PERSONAS.filter((p) => p.group === 'Markets')   },
-    { label: 'Capital',   items: PERSONAS.filter((p) => p.group === 'Capital')   },
-    { label: 'Grid',      items: PERSONAS.filter((p) => p.group === 'Grid')      },
-    { label: 'Oversight', items: PERSONAS.filter((p) => p.group === 'Oversight') },
-  ].filter((g) => g.items.length > 0);
 
   return (
     <div
@@ -718,34 +615,6 @@ export default function LoginPage() {
                   {ssoLoading ? 'Opening Microsoft…' : 'Sign in with Microsoft'}
                 </button>
               </>
-            )}
-
-            {/* Demo personas — hidden on live (DEMO_MODE=off) */}
-            {demoMode && (
-            <div style={{ margin: '22px 0 0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                <div style={{ flex: 1, height: 1, background: T.border }} />
-                <span style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'ui-monospace, monospace', whiteSpace: 'nowrap' }}>
-                  demo personas
-                </span>
-                <div style={{ flex: 1, height: 1, background: T.border }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {groups.map((g) => (
-                  <div key={g.label}>
-                    <div style={{ fontSize: 9.5, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>{g.label}</div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {g.items.map((p) => (
-                        <PersonaChip key={p.email} persona={p} onPick={fillDemo} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p style={{ marginTop: 10, fontSize: 11, color: T.text3, textAlign: 'center', fontFamily: 'ui-monospace, monospace' }}>
-                All demo accounts · <span style={{ color: T.accent }}>Demo@2024!</span>
-              </p>
-            </div>
             )}
 
             {/* Register link */}
