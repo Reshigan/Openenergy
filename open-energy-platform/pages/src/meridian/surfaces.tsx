@@ -325,6 +325,21 @@ const EsumsMeterScan: React.LazyExoticComponent<SurfaceComponent> = React.lazy(a
   const Adapter: SurfaceComponent = () => <EsumsMeterScan />;
   return { default: Adapter };
 });
+// Procurement / Marketplace were journey TILES (roleData features with a `route`)
+// that navigated OUT to a standalone /procurement or /marketplace page, dropping
+// the journey context. Both are body-only pages, so register them as surfaces —
+// the cockpit then opens them in the in-journey panel (tab bar stays), like every
+// other role tool. The standalone routes remain for deep-links / detail back-nav.
+const ProcurementSurface: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { ProcurementHub } = await import('../components/pages/ProcurementHub');
+  const Adapter: SurfaceComponent = () => <ProcurementHub />;
+  return { default: Adapter };
+});
+const MarketplaceSurface: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
+  const { Marketplace } = await import('../components/pages/Marketplace');
+  const Adapter: SurfaceComponent = () => <Marketplace />;
+  return { default: Adapter };
+});
 const EsumsIntegrations: React.LazyExoticComponent<SurfaceComponent> = React.lazy(async () => {
   const { InverterIntegrationsTab } = await import('../components/esums/InverterIntegrationsTab');
   const Adapter: SurfaceComponent = () => <InverterIntegrationsTab />;
@@ -743,6 +758,8 @@ export const SURFACE_REGISTRY: Record<
   'esco:cockpit': EsumsCockpit,
   'esco:opportunities': EsumsOpportunities,
   'esco:meter-scan': EsumsMeterScan,
+  'offtaker:procurement_options': ProcurementSurface,
+  'admin:marketplace': MarketplaceSurface,
   'esco:accruals': EsumsAccruals,
   'esco:settlement-invoices': EsumsSettlementInvoices,
   'esco:carbon-credits': EsumsCarbonCredits,
