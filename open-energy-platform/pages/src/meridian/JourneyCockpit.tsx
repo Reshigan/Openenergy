@@ -47,6 +47,22 @@ import { GettingStarted } from './GettingStarted';
 import { HorizonKpis } from './HorizonKpis';
 import { PlatformPulse } from './PlatformPulse';
 
+// Cross-cutting journeys (journeys.ts CROSS_CUTTING) carried a `route` and used to
+// navigate OUT to a standalone <Layout> page — dropping the journey tab bar. These
+// four are body-only pages (Layout supplied their chrome), so they render straight
+// inside the cockpit stage: the tab bar stays, the journey is present "at this level".
+// (/deals keeps navigating — it's a full Meridian page with its own chrome.)
+const CrossEsg = React.lazy(() => import('../components/pages/ESG'));
+const CrossReports = React.lazy(() => import('../components/pages/Reports'));
+const CrossIntelligence = React.lazy(() => import('../components/pages/Intelligence'));
+const CrossDashboard = React.lazy(() => import('../components/pages/NationalDashboard'));
+const CROSS_STAGE: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
+  '/esg': CrossEsg,
+  '/reports': CrossReports,
+  '/intelligence': CrossIntelligence,
+  '/dashboard': CrossDashboard,
+};
+
 type Gov = Record<string, { status: 'required' | 'optional' | 'unavailable'; charge_zar: number | null; charge_event: string | null }>;
 interface ThreadLite {
   case: { id: string; ref: string; title: string; status: string; raw?: Record<string, unknown> };
@@ -294,7 +310,12 @@ export default function JourneyCockpit() {
         </button>
         {visibleJourneys.map(j => (
           <button key={j.key} type="button" className={active === j.key ? 'jc-tab on' : 'jc-tab'}
-            onClick={() => { if (j.route) { navigate(j.route); return; } setActive(j.key); setOpenId(null); }}>
+            onClick={() => {
+              // A cross-cutting route we can host in-stage → stay in the cockpit
+              // (tab bar persists). Any other route (e.g. /deals) navigates out.
+              if (j.route && !CROSS_STAGE[j.route]) { navigate(j.route); return; }
+              setActive(j.key); setOpenId(null);
+            }}>
             <Icon name={j.icon} size={16} /> {cleanLabel(j.label)}
           </button>
         ))}
@@ -336,6 +357,19 @@ export default function JourneyCockpit() {
                 </div>
               </section>
             )}
+          </>
+        ) : activeJourney?.route && CROSS_STAGE[activeJourney.route] ? (
+          // Cross-cutting journey hosted in-stage — the page body renders under the
+          // journey tab bar (its own <Layout> chrome is not used here).
+          <>
+            <header className="jc-head">
+              <h1 className="hd-serif">{cleanLabel(activeJourney.label)}</h1>
+            </header>
+            <SurfaceBoundary>
+              <React.Suspense fallback={<EaseLoading rows={4} />}>
+                {React.createElement(CROSS_STAGE[activeJourney.route])}
+              </React.Suspense>
+            </SurfaceBoundary>
           </>
         ) : activeJourney ? (
           <>
