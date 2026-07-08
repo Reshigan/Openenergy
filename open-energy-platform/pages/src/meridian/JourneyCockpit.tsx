@@ -196,6 +196,10 @@ export default function JourneyCockpit() {
       }).filter(h => h.live > 0 && h.breached === 0)
     : [];
 
+  // The single continuous stream, filtered by the active chip — 'today' shows
+  // the full duty queue, any journey chip narrows to that journey's cases.
+  const streamCases = active === 'today' ? (data?.duty ?? []) : casesForJourney(active);
+
   // ── an item card: glance (title/money/status + inline primary action) → tap.
   // Expanding fetches the full state track + remaining actions (folds the Thread).
   // Urgency is tiered, not uniform: breached bites (oxide), due-today warms
@@ -304,24 +308,30 @@ export default function JourneyCockpit() {
         </nav>
       )}
 
-      {/* journey tabs */}
-      <nav className="jc-tabs" aria-label="Journeys">
-        <button type="button" className={active === 'today' ? 'jc-tab on' : 'jc-tab'} onClick={() => { setActive('today'); setOpenId(null); }}>
-          <Icon name="today" size={16} /> Today
-          {data && data.counts.breached > 0 && <span className="jc-alert" aria-label={`${data.counts.breached} overdue`} />}
-        </button>
-        {visibleJourneys.map(j => (
-          <button key={j.key} type="button" className={active === j.key ? 'jc-tab on' : 'jc-tab'}
+      {/* journey filter chips — demoted from tabs; they filter the one
+         continuous stream in place instead of switching to a separate body. */}
+      <div className="jc-chips" role="tablist">
+        <button
+          type="button"
+          className={`jc-chip${active === 'today' ? ' on' : ''}`}
+          onClick={() => setActive('today')}
+        >All</button>
+        {visibleJourneys.map((j) => (
+          <button
+            type="button"
+            key={j.key}
+            className={`jc-chip${active === j.key ? ' on' : ''}`}
             onClick={() => {
               // A cross-cutting route we can host in-stage → stay in the cockpit
-              // (tab bar persists). Any other route (e.g. /deals) navigates out.
+              // (chip row persists). Any other route (e.g. /deals) navigates out.
               if (j.route && !CROSS_STAGE[j.route]) { navigate(j.route); return; }
               setActive(j.key); setOpenId(null);
-            }}>
+            }}
+          >
             <Icon name={j.icon} size={16} /> {cleanLabel(j.label)}
           </button>
         ))}
-      </nav>
+      </div>
 
       {actErr && <div className="act-error mer" role="alert"><span>{actErr}</span><button type="button" className="btn ghost" onClick={() => setActErr(null)}>Dismiss</button></div>}
 
@@ -341,9 +351,9 @@ export default function JourneyCockpit() {
                 ? 'Priority across every journey — ranked by what costs the most while it waits.'
                 : 'Nothing is overdue or due right now. Pick a journey to work ahead.'}</p>
             </header>
-            {today.length > 0 && (
+            {streamCases.length > 0 && (
               <div className="jc-items">
-                {today.map((c, i) => <ItemCard key={c.id} c={c} rank={i} tag={journeyTagFor(c, journeys, domByKey)} />)}
+                {streamCases.map((c, i) => <ItemCard key={c.id} c={c} rank={i} tag={journeyTagFor(c, journeys, domByKey)} />)}
               </div>
             )}
             {onTrack.length > 0 && (
@@ -469,8 +479,8 @@ export default function JourneyCockpit() {
               );
             })()}
             <div className="jc-items">
-              {casesForJourney(activeJourney.key).map((c, i) => <ItemCard key={c.id} c={c} rank={i} />)}
-              {casesForJourney(activeJourney.key).length === 0 && (
+              {streamCases.map((c, i) => <ItemCard key={c.id} c={c} rank={i} />)}
+              {streamCases.length === 0 && (
                 <div className="jc-empty">No live items in this journey. Use “Start” above to begin one, or open a tool from the list.</div>
               )}
             </div>

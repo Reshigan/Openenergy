@@ -2181,6 +2181,9 @@
 .mer .jc-tab.on { background:var(--petrol); color:#fff; }
 .mer .jc-tab:focus-visible { outline:2px solid var(--petrol); outline-offset:2px; }
 .mer .jc-alert { width:7px; height:7px; border-radius:50%; background:var(--oxide); position:absolute; top:5px; right:6px; }
+.mer .jc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.mer .jc-chip { padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line, #33333322); font-size: 13px; cursor: pointer; background: transparent; }
+.mer .jc-chip.on { background: var(--accent, #2563eb); color: #fff; border-color: transparent; }
 /* Canvas = work queue + context rail. The stage keeps its reading measure; the
    rail reclaims the dead right third with the ambient layer (checklist, KPIs,
    pulse). Rail hides below 1200px so the queue never gets squeezed. */
