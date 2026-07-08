@@ -18,20 +18,20 @@
 | admin | platform_audit | L2–L3 | thin-card |
 | admin | cron | L2–L3 | thin-card |
 | admin | monitoring | L2–L3 | thin-card |
-| admin | revenue | L2 | thin-card |
+| admin | revenue | L? | routed |
 | admin | reports | L2–L3 | thin-card |
-| admin | trading | L2 | thin-card |
-| admin | settlement_admin | L2 | thin-card |
+| admin | trading | L? | routed |
+| admin | settlement_admin | L? | routed |
 | admin | market_halt | L2–L3 | thin-card |
 | admin | audit_chain | L3 | journey-ready |
 | admin | regulator_exports_admin | L3 | journey-ready |
 | admin | reconciliation_attestation | L2–L3 | thin-card |
 | admin | control_environment | L3 | journey-ready |
-| admin | esg_admin | L2 | thin-card |
+| admin | esg_admin | L? | routed |
 | admin | contracts_admin | L2–L3 | thin-card |
-| admin | dashboard | L2 | thin-card |
-| admin | intelligence | L2 | thin-card |
-| admin | briefing | L2 | thin-card |
+| admin | dashboard | L? | routed |
+| admin | intelligence | L? | routed |
+| admin | briefing | L? | routed |
 | admin | anomaly_admin | L2–L3 | thin-card |
 | admin | rul_prediction_admin | L2–L3 | thin-card |
 | admin | fault_fingerprint_admin | L2–L3 | thin-card |
@@ -271,9 +271,9 @@
 | lender | loan_default | L3 | journey-ready |
 | lender | loan_restructure | L3 | journey-ready |
 | lender | dunning | L2–L3 | thin-card |
-| lender | covenant_workout | L2 | thin-card |
+| lender | covenant_workout | L? | routed |
 | lender | sll_kpi | L3 | journey-ready |
-| lender | esg_lender | L2 | thin-card |
+| lender | esg_lender | L? | routed |
 | lender | benchmark_lender | L2–L3 | thin-card |
 | lender | concentrations | L2–L3 | thin-card |
 | lender | ie_certifications | L2–L3 | thin-card |
@@ -282,7 +282,7 @@
 | lender | carbon_lender | L2–L3 | thin-card |
 | lender | reports | L2–L3 | thin-card |
 | lender | doc_studio | L2–L3 | thin-card |
-| lender | facility_audit_log | L2 | thin-card |
+| lender | facility_audit_log | L? | routed |
 | lender | strate-swift | L2–L3 | thin-card |
 | lender | sap-oracle-erp | L2–L3 | thin-card |
 | lender | government-filing | L2–L3 | thin-card |
@@ -320,7 +320,7 @@
 | offtaker | rec_retirement | L2–L3 | thin-card |
 | offtaker | green_tariff | L3 | journey-ready |
 | offtaker | scope2 | L2–L3 | thin-card |
-| offtaker | popia_data | L2 | thin-card |
+| offtaker | popia_data | L? | routed |
 | offtaker | annual_reports | L2–L3 | thin-card |
 | offtaker | strate-swift | L2–L3 | thin-card |
 | offtaker | sap-oracle-erp | L2–L3 | thin-card |
@@ -397,7 +397,7 @@
 | trader | market_abuse_case | L3 | journey-ready |
 | trader | oe_mm_obligations | L2–L3 | thin-card |
 | trader | algo_certification | L3 | journey-ready |
-| trader | esg_reports | L2 | thin-card |
+| trader | esg_reports | L? | routed |
 | trader | article6 | L3 | journey-ready |
 | trader | black_start_chain | L3 | journey-ready |
 | trader | strate-swift | L2–L3 | thin-card |
@@ -408,17 +408,17 @@
 
 ## Summary
 
-| Role | journey-ready | thin-card | dead-tile |
-|---|---|---|---|
-| admin | 4 | 29 | 0 |
-| carbon_fund | 20 | 6 | 0 |
-| epc_contractor | 8 | 3 | 0 |
-| esco | 15 | 23 | 0 |
-| esums_owner | 15 | 23 | 0 |
-| grid_operator | 20 | 10 | 0 |
-| ipp_developer | 56 | 20 | 0 |
-| lender | 10 | 19 | 0 |
-| offtaker | 19 | 23 | 0 |
-| regulator | 15 | 9 | 0 |
-| support | 15 | 9 | 0 |
-| trader | 14 | 14 | 0 |
+| Role | journey-ready | thin-card | routed | dead-tile |
+|---|---|---|---|---|
+| admin | 4 | 22 | 7 | 0 |
+| carbon_fund | 20 | 6 | 0 | 0 |
+| epc_contractor | 8 | 3 | 0 | 0 |
+| esco | 15 | 23 | 0 | 0 |
+| esums_owner | 15 | 23 | 0 | 0 |
+| grid_operator | 20 | 10 | 0 | 0 |
+| ipp_developer | 56 | 20 | 0 | 0 |
+| lender | 10 | 16 | 3 | 0 |
+| offtaker | 19 | 22 | 1 | 0 |
+| regulator | 15 | 9 | 0 | 0 |
+| support | 15 | 9 | 0 | 0 |
+| trader | 14 | 13 | 1 | 0 |

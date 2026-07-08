@@ -30,7 +30,8 @@
 // - Some features carry a `route: '...'` instead of (or in addition to) a chainKey —
 //   standalone routed pages (e.g. `/esg`, `/dashboard`, `/admin/revenue`). These
 //   resolve to a real page, so they are not dead-tile, but no chain/state-machine
-//   signal is derivable for them here — they land as thin-card.
+//   signal is derivable for them here — they land as 'routed' (L?), not thin-card,
+//   since thin-card asserts an L2-L3 depth this audit did not measure.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
@@ -82,7 +83,7 @@ function classify(role, featKey, chainKey, route) {
   const asSurface = surfaceKeys.has(`${laneRoleFor(role)}:${featKey}`);
   if (chained) return { L: 'L3', verdict: 'journey-ready' };
   if (asSurface) return { L: 'L2–L3', verdict: 'thin-card' };
-  if (route) return { L: 'L2', verdict: 'thin-card' };
+  if (route) return { L: 'L?', verdict: 'routed' }; // route-only: unmeasured depth, not asserted L2
   return { L: 'L1', verdict: 'dead-tile' };
 }
 
@@ -107,10 +108,10 @@ md += `| Role | Feature | Current-L | Verdict |\n|---|---|---|---|\n`;
 for (const role of Object.keys(byRole).sort()) {
   for (const r of byRole[role]) md += `| ${r.role} | ${r.feature} | ${r.L} | ${r.verdict} |\n`;
 }
-md += `\n## Summary\n\n| Role | journey-ready | thin-card | dead-tile |\n|---|---|---|---|\n`;
+md += `\n## Summary\n\n| Role | journey-ready | thin-card | routed | dead-tile |\n|---|---|---|---|---|\n`;
 for (const role of Object.keys(byRole).sort()) {
   const c = (v) => byRole[role].filter((r) => r.verdict === v).length;
-  md += `| ${role} | ${c('journey-ready')} | ${c('thin-card')} | ${c('dead-tile')} |\n`;
+  md += `| ${role} | ${c('journey-ready')} | ${c('thin-card')} | ${c('routed')} | ${c('dead-tile')} |\n`;
 }
 
 writeFileSync(R('../docs/operations/ROLE_DEPTH_MATRIX.md'), md);

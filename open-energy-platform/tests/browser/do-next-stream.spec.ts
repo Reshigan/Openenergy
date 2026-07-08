@@ -39,14 +39,25 @@ test.describe('do-next stream', () => {
   // PrimaryAction, which has NO modal. A fielded action (label ends '…') navigates
   // to the Thread form (/thread/:chain/:id?act=); a non-fielded one inline-POSTs and
   // stays on /cockpit. Assert that real "fires" behavior, not a nonexistent modal.
+  //
+  // The non-fielded branch inline-POSTs a REAL state transition — destructive against
+  // live data. Only click it on a local BASE; against prod, just assert it's present
+  // and enabled so we don't mutate live carbon_fund records on the nightly smoke run.
+  const local = /localhost|127\.0\.0\.1/.test(BASE);
   test('primary action fires', async ({ page }) => {
     await page.goto(`${BASE}/cockpit`);
     const action = page.locator('.jc-item .btn.pri').first();
     if (await action.count()) {
       const fielded = (await action.textContent())?.trim().endsWith('…');
-      await action.click();
-      if (fielded) await expect(page).toHaveURL(/\/thread\//); // fielded → Thread form
-      else await expect(page).toHaveURL(/\/cockpit/);          // inline POST, stays put
+      if (fielded) {
+        await action.click();
+        await expect(page).toHaveURL(/\/thread\//); // fielded → Thread form, safe everywhere
+      } else if (local) {
+        await action.click();
+        await expect(page).toHaveURL(/\/cockpit/); // inline POST, stays put — local only
+      } else {
+        await expect(action).toBeEnabled(); // prod: don't POST, just assert it's live
+      }
     }
   });
 });

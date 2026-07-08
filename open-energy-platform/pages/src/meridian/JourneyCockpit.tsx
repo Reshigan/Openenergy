@@ -318,11 +318,11 @@ export default function JourneyCockpit() {
 
       {/* journey filter chips — demoted from tabs; they filter the one
          continuous stream in place instead of switching to a separate body. */}
-      <div className="jc-chips" role="tablist">
+      <div className="jc-chips" role="group" aria-label="Filter journeys">
         <button
           type="button"
           className={`jc-chip${active === 'today' ? ' on' : ''}`}
-          onClick={() => setActive('today')}
+          onClick={() => { setActive('today'); setOpenId(null); }}
         >All</button>
         {visibleJourneys.map((j) => (
           <button
