@@ -16,6 +16,7 @@ import { getJourneys } from './journeys';
 import { Icon } from './icons';
 import { fetchHorizon, fetchLedger, fetchInitiable, fmtZar, humanizeKey, type HorizonData, type MerCase, type LedgerActionField, type InitiableChain } from './lib';
 import { FieldForm } from './FieldForm';
+import StreamInsight from './StreamInsight';
 
 // Format a raw case-record value for the in-cockpit detail (folds the Thread record).
 // Conservative on money (ZAR only on a clear `zar` key, so no field is wrongly stamped),
@@ -225,6 +226,7 @@ export default function JourneyCockpit() {
           </button>
           {c.quantum_zar != null && <span className="jc-zar mono">{fmtZar(c.quantum_zar)}</span>}
           <span className={`jc-pill ${STATUS_TONE_CLASS[sl.tone]}`}>{sl.text}</span>
+          <StreamInsight c={c} />
           {inline.length > 0 && (
             <span className="jc-inline-acts">
               {inline.map(a => (

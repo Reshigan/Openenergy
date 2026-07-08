@@ -2312,6 +2312,9 @@
 .mer .jc-item-ttl { font-family:'Archivo',sans-serif; font-weight:600; font-size:14.5px; flex:1; }
 .mer .jc-zar { font-size:13px; font-weight:600; }
 .mer .jc-pill { font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 8px; border-radius:999px; white-space:nowrap; }
+.mer .jc-insight { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0 8px; font-size: 12px; opacity: 0.75; }
+.mer .jc-insight-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mer .jc-spark { flex: 0 0 auto; opacity: 0.6; }
 .mer .jc-detail { padding:13px 16px 16px 38px; border-top:1px solid var(--line); background:#fbfcfe; }
 .mer .jc-detail-load { color:var(--ink3); font-size:12px; }
 .mer .jc-arr { color:var(--ink3); font-size:12px; margin:0 -1px; }
