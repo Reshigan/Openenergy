@@ -1,4 +1,4 @@
-// open-energy-platform/pages/tests/browser/do-next-stream.spec.ts
+// open-energy-platform/tests/browser/do-next-stream.spec.ts
 import { test, expect } from '@playwright/test';
 
 const BASE = process.env.BASE || 'https://oe.vantax.co.za';
