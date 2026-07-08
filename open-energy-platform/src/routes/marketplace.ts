@@ -150,10 +150,14 @@ marketplace.put('/listings/:id', async (c) => {
 marketplace.post('/listings/:id/withdraw', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
-  const listing = await c.env.DB.prepare('SELECT seller_id FROM marketplace_listings WHERE id = ?').bind(id).first() as { seller_id: string } | null;
+  const listing = await c.env.DB.prepare('SELECT seller_id, status FROM marketplace_listings WHERE id = ?').bind(id).first() as { seller_id: string; status: string } | null;
   if (!listing) return c.json({ success: false, error: 'listing_not_found' }, 404);
   if (listing.seller_id !== user.id && user.role !== 'admin') {
     return c.json({ success: false, error: 'forbidden' }, 403);
+  }
+  // sold/withdrawn are terminal — a completed sale record must survive.
+  if (!['active', 'pending'].includes(listing.status)) {
+    return c.json({ success: false, error: `cannot withdraw listing in status '${listing.status}'`, reason_code: 'LISTING_INVALID_TRANSITION' }, 409);
   }
   await c.env.DB.prepare("UPDATE marketplace_listings SET status = 'withdrawn', updated_at = ? WHERE id = ?").bind(new Date().toISOString(), id).run();
   return c.json({ success: true });

@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { canAssignSar, canRespondSar, type SarStatus } from '../utils/sar-spec';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -113,6 +114,10 @@ r.post('/sar/:id/assign', async (c) => {
   if (!adminOnly(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
   const b = await c.req.json().catch(() => ({} as any));
+  const row = await c.env.DB.prepare(`SELECT status FROM oe_popia_sar_requests WHERE id = ?`).bind(id).first<{ status: SarStatus }>();
+  if (!row) return c.json({ success: false, error: 'SAR not found' }, 404);
+  const guard = canAssignSar(row.status);
+  if (!guard.ok) return c.json({ success: false, error: `cannot assign SAR in status '${row.status}'`, reason_code: guard.reason_code }, 409);
   await c.env.DB.prepare(`
     UPDATE oe_popia_sar_requests SET assigned_to = ?, status = 'in_progress', acknowledged_at = COALESCE(acknowledged_at, datetime('now')) WHERE id = ?
   `).bind(b.assigned_to || user.id, id).run();
@@ -134,6 +139,10 @@ r.post('/sar/:id/respond', async (c) => {
   const b = await c.req.json().catch(() => ({} as any));
   const outcome = String(b.outcome || '');
   if (!['fulfilled', 'rejected'].includes(outcome)) return c.json({ success: false, error: 'outcome must be fulfilled|rejected' }, 400);
+  const row = await c.env.DB.prepare(`SELECT status FROM oe_popia_sar_requests WHERE id = ?`).bind(id).first<{ status: SarStatus }>();
+  if (!row) return c.json({ success: false, error: 'SAR not found' }, 404);
+  const guard = canRespondSar(row.status);
+  if (!guard.ok) return c.json({ success: false, error: `cannot respond to SAR in status '${row.status}'`, reason_code: guard.reason_code }, 409);
   await c.env.DB.prepare(`
     UPDATE oe_popia_sar_requests
     SET status = ?, responded_at = datetime('now'),
