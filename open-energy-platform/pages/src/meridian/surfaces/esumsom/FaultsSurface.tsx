@@ -7,6 +7,7 @@
 // in surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `faults`.
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../../../components/SuitePage';
+import { faultsViz } from './viz';
 
 export default function FaultsSurface(_props: { role: string }) {
   const tabs: TabSpec[] = [
@@ -15,6 +16,7 @@ export default function FaultsSurface(_props: { role: string }) {
       label: 'Faults',
       endpoint: '/esums/faults',
       description: 'Live fault register with Revenue Impact Engine. Hourly bleed + total loss accumulate in real time.',
+      viz: faultsViz,
       columns: [
         { key: 'site_id',     label: 'Site' },
         { key: 'category',    label: 'Category' },
@@ -36,7 +38,7 @@ export default function FaultsSurface(_props: { role: string }) {
   ];
   return (
     <SuitePage
-      eyebrow="Esums · Operations"
+      eyebrow="O&M · Operations"
       title="Faults"
       subtitle="Live fault register with Revenue Impact Engine."
       tabs={tabs}

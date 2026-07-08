@@ -7,6 +7,7 @@
 // in surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `workorders`.
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../../../components/SuitePage';
+import { workOrdersViz } from './viz';
 
 export default function WorkOrdersSurface(_props: { role: string }) {
   const tabs: TabSpec[] = [
@@ -15,6 +16,7 @@ export default function WorkOrdersSurface(_props: { role: string }) {
       label: 'Work orders',
       endpoint: '/esums/work-orders',
       description: '12-state WO lifecycle. Tap a row to drill into the timeline, parts, photos and SLA tracking.',
+      viz: workOrdersViz,
       columns: [
         { key: 'wo_number',     label: 'WO #' },
         { key: 'site_id',       label: 'Site' },
@@ -49,7 +51,7 @@ export default function WorkOrdersSurface(_props: { role: string }) {
   ];
   return (
     <SuitePage
-      eyebrow="Esums · Operations"
+      eyebrow="O&M · Operations"
       title="Work orders"
       subtitle="12-state work-order lifecycle with SLA tracking."
       tabs={tabs}

@@ -100,7 +100,7 @@ export function ProjectOperationsPage() {
       </div>
 
       <Section title={`Work orders (${workOrders.length})`}>
-        {workOrders.length === 0 ? <Empty label="No work orders. Schedule preventive + corrective via the Esums page." /> : (
+        {workOrders.length === 0 ? <Empty label="No work orders. Schedule preventive + corrective via the O&M page." /> : (
           <Table headers={['When', 'Type', 'Status', 'Asset', 'Notes']}>
             {workOrders.slice(0, 50).map(w => (
               <tr key={w.id} className="border-t border-[#e5ebf2]">

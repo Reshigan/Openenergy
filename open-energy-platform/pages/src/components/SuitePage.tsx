@@ -120,6 +120,9 @@ export interface TabSpec {
   /** Render arbitrary content instead of the row table. Used for
    *  insights tabs that show charts/calculators rather than a list. */
   customContent?: React.ReactNode;
+  /** Optional dataviz rendered ABOVE the table, driven by the already-fetched
+   *  rows. Keeps the list intact while adding charts. No extra fetch. */
+  viz?: (rows: Record<string, unknown>[]) => React.ReactNode;
 }
 
 // ─── Main component ────────────────────────────────────────────────────────
@@ -403,6 +406,8 @@ function SuiteTable({ tab }: { tab: TabSpec }) {
           {success}
         </div>
       )}
+
+      {tab.viz && !loading && rows.length > 0 && <div>{tab.viz(rows)}</div>}
 
       <div
         className="rounded-xl overflow-hidden"

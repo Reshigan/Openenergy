@@ -7,6 +7,7 @@
 // in surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `technicians`.
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../../../components/SuitePage';
+import { techniciansViz } from './viz';
 
 export default function TechniciansSurface(_props: { role: string }) {
   const tabs: TabSpec[] = [
@@ -15,6 +16,7 @@ export default function TechniciansSurface(_props: { role: string }) {
       label: 'Team',
       endpoint: '/esums/technicians',
       description: 'Field technicians: skills, certifications, current location, availability.',
+      viz: techniciansViz,
       columns: [
         { key: 'name', label: 'Name' },
         { key: 'phone', label: 'Phone' },
@@ -26,7 +28,7 @@ export default function TechniciansSurface(_props: { role: string }) {
   ];
   return (
     <SuitePage
-      eyebrow="Esums · Operations"
+      eyebrow="O&M · Operations"
       title="Team"
       subtitle="Field technicians: skills, certifications, availability."
       tabs={tabs}

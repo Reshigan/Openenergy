@@ -64,7 +64,7 @@ export function EsumsOmPortalView() {
       <header className="border-b px-6 py-4" style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}>
         <div className="w-full max-w-[1760px] mx-auto flex items-center justify-between gap-3">
           <div>
-            <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>Esums O&amp;M · stakeholder portal</div>
+            <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>O&amp;M · stakeholder portal</div>
             <h1 className="font-display text-[20px] font-bold mt-0.5" style={{ color: 'oklch(0.15 0.025 250)' }}>{meta.title}</h1>
             <p className="text-[12px] mt-0.5" style={{ color: 'oklch(0.45 0.015 250)' }}>{meta.subtitle}</p>
           </div>
@@ -84,7 +84,7 @@ export function EsumsOmPortalView() {
       </main>
 
       <footer className="w-full max-w-[1760px] mx-auto px-6 py-4 text-[11px] text-[#6b7685] text-center">
-        <Sparkles size={11} className="inline" /> Powered by Consolidated Energy Cockpit · Esums Ops. Token expires per your invite.
+        <Sparkles size={11} className="inline" /> Powered by Consolidated Energy Cockpit · O&M Ops. Token expires per your invite.
       </footer>
     </div>
   );

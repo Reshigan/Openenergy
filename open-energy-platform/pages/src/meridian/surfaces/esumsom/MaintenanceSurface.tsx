@@ -7,6 +7,7 @@
 // in surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `maintenance`.
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../../../components/SuitePage';
+import { maintenanceViz } from './viz';
 
 export default function MaintenanceSurface(_props: { role: string }) {
   const tabs: TabSpec[] = [
@@ -15,6 +16,7 @@ export default function MaintenanceSurface(_props: { role: string }) {
       label: 'Maintenance',
       endpoint: '/esums/maintenance',
       description: 'Scheduled preventive maintenance. Auto-creates work orders 7 days before due date.',
+      viz: maintenanceViz,
       columns: [
         { key: 'site_id', label: 'Site' },
         { key: 'task_type', label: 'Task' },
@@ -28,7 +30,7 @@ export default function MaintenanceSurface(_props: { role: string }) {
   ];
   return (
     <SuitePage
-      eyebrow="Esums · Operations"
+      eyebrow="O&M · Operations"
       title="Maintenance"
       subtitle="Scheduled preventive maintenance with auto-generated work orders."
       tabs={tabs}

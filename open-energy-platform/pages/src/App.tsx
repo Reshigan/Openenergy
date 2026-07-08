@@ -268,7 +268,7 @@ const ROLE_LABELS: Record<string, string> = {
   carbon_fund: 'Carbon Fund Manager',
   offtaker: 'Offtaker / Corporate Buyer',
   lender: 'Lender / Investor',
-  esums_owner: 'Asset Owner (Esums O&M)',
+  esums_owner: 'Asset Owner (O&M)',
   esco: 'O&M Operator (ESCO)',
   epc_contractor: 'EPC Contractor',
 };
@@ -504,7 +504,7 @@ function RegisterPage() {
                       <option value="carbon_fund">Carbon Fund Manager</option>
                       <option value="offtaker">Offtaker / Corporate Buyer</option>
                       <option value="lender">Lender / Investor</option>
-                      <option value="esums_owner">Asset Owner (Esums O&amp;M)</option>
+                      <option value="esums_owner">Asset Owner (O&amp;M)</option>
                       <option value="esco">O&amp;M Operator (ESCO)</option>
                       <option value="epc_contractor">EPC Contractor</option>
                     </select>

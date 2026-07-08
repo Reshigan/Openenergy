@@ -694,7 +694,7 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
           <h2 className="text-base font-semibold text-[#0c2a4d]">NTT comparison battery</h2>
           <p className="text-[11px] text-[#4a5568]">
             12-state forward + 4 branch AGGREGATOR stitching anomaly LSTM-AE + RUL Cox PH survival + fault-fingerprint multi-class against an emulated NTT IoT/O&M baseline.
-            Each cycle (nightly default) produces continuously-updated, revenue-weighted, significance-gated, tamper-evident "savings-vs-NTT-30%" KPI streaming into the Esums dashboard hero.
+            Each cycle (nightly default) produces continuously-updated, revenue-weighted, significance-gated, tamper-evident "savings-vs-NTT-30%" KPI streaming into the O&M dashboard hero.
             INVERTED SLA HOURS (single 12 / small 48 / large 120 / multi-juris. 240 / systemic 480 - TIGHTER than the underlying ML chains because cycles run nightly).
             FLOOR-AT-LARGE-FLEET {'≥'}1 flag / FLOOR-AT-FLEET-SYSTEMIC {'≥'}3 flags. Audit bridge MANDATORY at publish_audit (422 reject otherwise).
             SIGNATURE: recall_certification crosses EVERY tier (withdrawal of a published savings certification is ALWAYS reportable - SARB MA s38 + IFRS restatement + ISO 42001 incident).

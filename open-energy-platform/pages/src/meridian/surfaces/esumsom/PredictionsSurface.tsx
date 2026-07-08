@@ -7,6 +7,7 @@
 // in surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `predictions`.
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../../../components/SuitePage';
+import { predictionsViz } from './viz';
 
 export default function PredictionsSurface(_props: { role: string }) {
   const tabs: TabSpec[] = [
@@ -16,6 +17,7 @@ export default function PredictionsSurface(_props: { role: string }) {
       endpoint: '/esums/predictions',
       description: 'AI-derived predictive maintenance signals — surfaces likely failures weeks before they happen.',
       params: { status: 'open' },
+      viz: predictionsViz,
       columns: [
         { key: 'site_id', label: 'Site' },
         { key: 'prediction_type', label: 'Prediction' },
@@ -29,7 +31,7 @@ export default function PredictionsSurface(_props: { role: string }) {
   ];
   return (
     <SuitePage
-      eyebrow="Esums · Operations"
+      eyebrow="O&M · Operations"
       title="Predictive"
       subtitle="AI-derived predictive maintenance signals."
       tabs={tabs}

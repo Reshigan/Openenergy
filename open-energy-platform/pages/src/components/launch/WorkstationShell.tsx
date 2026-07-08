@@ -741,6 +741,7 @@ export function ListingTable({
   rowHref,
   rowOnClick,
   pageSize = 25,
+  viz,
 }: {
   endpoint: string;
   columns: Column[];
@@ -749,6 +750,8 @@ export function ListingTable({
   rowHref?: (row: any) => string;
   rowOnClick?: (row: any) => void;
   pageSize?: number;
+  // optional dataviz rendered ABOVE the table from the already-fetched rows (no extra fetch)
+  viz?: (rows: any[]) => ReactNode;
 }) {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -792,6 +795,7 @@ export function ListingTable({
 
   return (
     <div className="space-y-2">
+      {viz ? viz(rows) : null}
       <div
         className="rounded border overflow-x-auto"
         style={{ background: BG1, borderColor: BORDER }}

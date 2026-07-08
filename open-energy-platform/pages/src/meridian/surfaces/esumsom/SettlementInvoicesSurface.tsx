@@ -7,6 +7,7 @@
 // in surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `settlement_invoices`.
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../../../components/SuitePage';
+import { settlementInvoicesViz } from './viz';
 
 export default function SettlementInvoicesSurface(_props: { role: string }) {
   const tabs: TabSpec[] = [
@@ -15,6 +16,7 @@ export default function SettlementInvoicesSurface(_props: { role: string }) {
       label: 'Invoices',
       endpoint: '/esums/settlement-invoices',
       description: 'Monthly settlement invoices derived from the accruals ledger. Each invoice covers one station for one calendar month. Actions: issue → acknowledge → pay / dispute / void.',
+      viz: settlementInvoicesViz,
       columns: [
         { key: 'invoice_number', label: 'Invoice #' },
         { key: 'station_name',   label: 'Station' },
@@ -46,7 +48,7 @@ export default function SettlementInvoicesSurface(_props: { role: string }) {
   ];
   return (
     <SuitePage
-      eyebrow="Esums · Operations"
+      eyebrow="O&M · Operations"
       title="Invoices"
       subtitle="Monthly settlement invoices derived from the accruals ledger."
       tabs={tabs}

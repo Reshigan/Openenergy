@@ -7,6 +7,7 @@
 // Registered as `esco:parts` in surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `parts`.
 import React from 'react';
 import { SuitePage, TabSpec } from '../../../components/SuitePage';
+import { partsViz } from './viz';
 
 export default function PartsSurface(_props: { role: string }) {
   const tabs: TabSpec[] = [
@@ -15,6 +16,7 @@ export default function PartsSurface(_props: { role: string }) {
       label: 'Parts',
       endpoint: '/esums/parts',
       description: 'Parts catalogue and stock. Low-stock items highlighted for reorder.',
+      viz: partsViz,
       columns: [
         { key: 'part_number', label: 'Part #' },
         { key: 'name', label: 'Name' },
@@ -28,7 +30,7 @@ export default function PartsSurface(_props: { role: string }) {
   ];
   return (
     <SuitePage
-      eyebrow="Esums · Operations"
+      eyebrow="O&M · Operations"
       title="Parts"
       subtitle="Parts catalogue and stock with low-stock reorder flags."
       tabs={tabs}
