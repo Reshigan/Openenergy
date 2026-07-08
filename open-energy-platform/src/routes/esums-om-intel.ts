@@ -22,6 +22,7 @@ import { cached, shouldBypass } from '../utils/kv-cache';
 import { pollConnection } from '../utils/oem-adapters';
 import { fireCascade } from '../utils/cascade';
 import { assertSafeWebhookUrl } from '../utils/url-safety';
+import { canMutate, assertSiteOwnership } from './esums-om';
 
 const intel = new Hono<HonoEnv>();
 intel.use('*', authMiddleware);
@@ -125,35 +126,37 @@ intel.get('/predictions', async (c) => {
 
 intel.post('/predictions/:id/action', async (c) => {
   const user = getCurrentUser(c);
+  if (!canMutate(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
   const b = await c.req.json().catch(() => ({} as any));
   const action = String(b.action || '');
   if (!['acted_on', 'dismissed', 'confirmed_true', 'confirmed_false'].includes(action)) {
     return c.json({ success: false, error: 'invalid action' }, 400);
   }
+  const pred = await c.env.DB.prepare(`SELECT * FROM om_predictions WHERE id = ?`).bind(id).first<any>();
+  if (!pred) return c.json({ success: false, error: 'not found' }, 404);
+  const denied = await assertSiteOwnership(c, user, pred.site_id);
+  if (denied) return denied;
   await c.env.DB.prepare(`
     UPDATE om_predictions SET status = ?, closed_at = datetime('now') WHERE id = ?
   `).bind(action, id).run();
   let chainedWo: { id: string; number: string } | null = null;
   // If acted_on and notes asked for a WO, optionally chain one
   if (action === 'acted_on' && b.create_wo) {
-    const pred = await c.env.DB.prepare(`SELECT * FROM om_predictions WHERE id = ?`).bind(id).first<any>();
-    if (pred) {
-      const woId = genId('omwo');
-      const woNumber = `WO-${new Date().getFullYear()}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
-      await c.env.DB.prepare(`
-        INSERT INTO om_work_orders
-          (id, wo_number, site_id, category, priority, status, title, description,
-           sla_response_minutes, sla_resolve_hours, sla_deadline)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)
-      `).bind(
-        woId, woNumber, pred.site_id, 'preventive', 'medium', 'created',
-        `Predictive: ${pred.prediction_type.replace(/_/g, ' ')}`,
-        pred.recommended_action || null,
-        240, 72, new Date(Date.now() + 72 * 3_600_000).toISOString(),
-      ).run();
-      chainedWo = { id: woId, number: woNumber };
-    }
+    const woId = genId('omwo');
+    const woNumber = `WO-${new Date().getFullYear()}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
+    await c.env.DB.prepare(`
+      INSERT INTO om_work_orders
+        (id, wo_number, site_id, category, priority, status, title, description,
+         sla_response_minutes, sla_resolve_hours, sla_deadline)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?)
+    `).bind(
+      woId, woNumber, pred.site_id, 'preventive', 'medium', 'created',
+      `Predictive: ${pred.prediction_type.replace(/_/g, ' ')}`,
+      pred.recommended_action || null,
+      240, 72, new Date(Date.now() + 72 * 3_600_000).toISOString(),
+    ).run();
+    chainedWo = { id: woId, number: woNumber };
   }
   await fireCascade({
     event: 'esums.prediction_actioned',
@@ -391,6 +394,8 @@ intel.post('/ingestion', async (c) => {
   if (!['admin', 'support', 'asset_owner', 'ipp', 'ipp_developer'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.site_id || !b.adapter) return c.json({ success: false, error: 'site_id + adapter required' }, 400);
+  const denied = await assertSiteOwnership(c, user, b.site_id);
+  if (denied) return denied;
   if (typeof b.endpoint_url === 'string' && b.endpoint_url.length > 0) {
     try { assertSafeWebhookUrl(b.endpoint_url); } catch (e: any) {
       return c.json({ success: false, error: e?.message || 'invalid endpoint_url' }, 400);

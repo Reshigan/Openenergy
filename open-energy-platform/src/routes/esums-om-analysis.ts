@@ -36,6 +36,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { cached, shouldBypass } from '../utils/kv-cache';
 import { fireCascade } from '../utils/cascade';
+import { canMutate, assertSiteOwnership } from './esums-om';
 import { scanOpportunities, freeScanSummary, type MeterReading, type AnalysisContext } from '../utils/meter-analysis';
 import { METER_UNIT, type MeterMedium } from '../utils/om-devices';
 
@@ -940,6 +941,7 @@ ana.get('/opportunities/summary', async (c) => {
 // ─── Action endpoint — execute the recommended action ───────────────────
 ana.post('/opportunities/act', async (c) => {
   const user = getCurrentUser(c);
+  if (!canMutate(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const b = await c.req.json().catch(() => ({} as any));
   if (!b.category || !b.action) return c.json({ success: false, error: 'category + action required' }, 400);
 
@@ -948,6 +950,8 @@ ana.post('/opportunities/act', async (c) => {
       const id = genId('omwo');
       const woNumber = `WO-${new Date().getFullYear()}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
       const p = b.action.payload || {};
+      const denied = await assertSiteOwnership(c, user, p.site_id);
+      if (denied) return denied;
       const slaResolveH = p.priority === 'critical' ? 4 : p.priority === 'high' ? 24 : p.priority === 'medium' ? 72 : 168;
       await c.env.DB.prepare(`
         INSERT INTO om_work_orders
@@ -962,6 +966,8 @@ ana.post('/opportunities/act', async (c) => {
       return c.json({ success: true, data: { kind: 'created_wo', wo_id: id, wo_number: woNumber } });
     }
     case 'reorder_parts': {
+      // ponytail: om_parts has no tenancy column — role gate above is the scope;
+      // add per-site parts ownership when parts get a site/owner column.
       const p = b.action.payload || {};
       await c.env.DB.prepare(
         `UPDATE om_parts SET current_stock = current_stock + ? WHERE id = ?`,

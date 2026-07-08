@@ -237,6 +237,12 @@ async function applyAdvance(
   const row = await loadSite(c.env, id);
   if (!row) return { kind: 'not_found' as const };
 
+  // Participant callers may only advance their own sites. 404, not 403 —
+  // don't confirm foreign site IDs exist (anti-enumeration).
+  if (!['admin', 'support'].includes(user.role) && row.participant_id !== user.id) {
+    return { kind: 'not_found' as const };
+  }
+
   const r = advance({ current: row.commissioning_status, action });
   if (!r.ok) return { kind: 'invalid' as const, error: r.error ?? 'Invalid transition' };
 

@@ -47,6 +47,7 @@ import { fireCascade } from '../utils/cascade';
 import { cached, invalidatePrefix, shouldBypass } from '../utils/kv-cache';
 import { hashToken, randomIngestToken } from '../utils/esums-ingest-auth';
 import { runFaultEngine } from '../utils/esums-fault-engine';
+import { canTransitionFault } from '../utils/om-fault-spec';
 import { writeTelemetry, readTelemetry, type TelemetryReading } from '../utils/esums-telemetry-router';
 
 const om = new Hono<HonoEnv>();
@@ -57,7 +58,7 @@ function genId(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 }
 
-function canMutate(role: string) {
+export function canMutate(role: string) {
   // 'ipp_developer' is the *suffixed* JWT role this platform issues to the
   // asset-owning IPP personas (ipp → ipp_developer). 'ipp' is kept for any
   // legacy/unsuffixed tokens. Both must be allowed or the wind asset-owner
@@ -75,7 +76,7 @@ const OM_OFFICER_ROLES = ['admin', 'support'];
 // or services it (om_contractor_id) — the same scope the GET routes enforce.
 // Returns null when allowed, or a ready-to-return JSON error Response (404 if the
 // site is missing, 403 if it exists but the caller isn't its owner/contractor).
-async function assertSiteOwnership(
+export async function assertSiteOwnership(
   c: { env: HonoEnv['Bindings']; json: (b: any, s?: any) => Response },
   user: { id: string; role: string },
   siteId: string | null | undefined,
@@ -126,8 +127,16 @@ om.get('/sites', async (c) => {
 
 om.get('/sites/:id', async (c) => {
   const id = c.req.param('id');
+  const user = getCurrentUser(c);
   const site = await c.env.DB.prepare('SELECT * FROM om_sites WHERE id = ?').bind(id).first();
   if (!site) return c.json({ success: false, error: 'not found' }, 404);
+  // Same officer set as the list route; everyone else must own or service the site.
+  const isOfficer = ['admin', 'support', 'regulator'].includes(user.role);
+  if (!isOfficer
+    && (site as any).participant_id !== user.id
+    && (site as any).om_contractor_id !== user.id) {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
   const devices = await c.env.DB.prepare('SELECT * FROM om_devices WHERE site_id = ? ORDER BY device_type, location_in_plant').bind(id).all();
   const recentFaults = await c.env.DB.prepare(
     `SELECT * FROM om_faults WHERE site_id = ? ORDER BY detected_at DESC LIMIT 20`,
@@ -496,6 +505,10 @@ om.post('/faults/:id/resolve', async (c) => {
   if (!row) return c.json({ success: false, error: 'not found' }, 404);
   const denied = await assertSiteOwnership(c, user, row.site_id);
   if (denied) return denied;
+  const guard = canTransitionFault(row.status, 'resolved');
+  if (!guard.ok) {
+    return c.json({ success: false, error: `cannot resolve fault in status '${row.status}'`, reason_code: guard.reason_code }, 409);
+  }
   const elapsedH = (Date.now() - new Date(row.detected_at).getTime()) / 3_600_000;
   const computedTotal = Math.round(Math.max(Number(row.total_loss_zar || 0), Number(row.hourly_loss_zar || 0) * elapsedH));
   await c.env.DB.prepare(`
@@ -633,9 +646,10 @@ om.post('/work-orders/:id/transition', async (c) => {
   await c.env.DB.prepare(
     `INSERT INTO om_wo_events (id, wo_id, event_type, actor_id, payload) VALUES (?,?,?,?,?)`,
   ).bind(genId('omev'), id, to, user.id, JSON.stringify(b)).run();
-  // If completed and there's a fault, auto-resolve it
+  // If completed and there's a fault, auto-resolve it — but only from a live
+  // status (FAULT_RESOLVABLE_STATUSES); never reopen closed/false_positive.
   if (to === 'completed' && row.fault_id) {
-    await c.env.DB.prepare(`UPDATE om_faults SET status = 'resolved', resolved_at = datetime('now') WHERE id = ?`)
+    await c.env.DB.prepare(`UPDATE om_faults SET status = 'resolved', resolved_at = datetime('now') WHERE id = ? AND status IN ('open','acknowledged','in_progress')`)
       .bind(row.fault_id).run();
   }
   await fireCascade({
