@@ -14,6 +14,7 @@ import {
   deriveGtSla, GT_HARD_TERMINALS,
   GT_VALID_TRANSITIONS, GT_STATE_TRANSITIONS,
   gtCrossesIntoRegulator, gtSlaBreachCrossesIntoRegulator,
+  GT_CLASSES,
 } from '../utils/green-tariff-spec';
 import { resolveNextStatus } from '../utils/chain-sla';
 
@@ -127,6 +128,9 @@ app.post('/', async (c) => {
   const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;
   const cls = body.green_tariff_class ?? 'voluntary';
+  if (!GT_CLASSES.includes(cls)) {
+    return c.json({ success: false, error: `green_tariff_class must be one of: ${GT_CLASSES.join(', ')}` }, 422);
+  }
 
   const now = new Date().toISOString();
   const slaDays = deriveGtSla(cls);

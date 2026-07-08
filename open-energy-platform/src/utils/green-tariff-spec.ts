@@ -33,6 +33,10 @@ export type GreenTariffClass =
   | 'utility_green_tariff'   // utility-offered green tariff product
   | 'sbti_aligned';          // SBTi-required RE100 or similar target
 
+// Runtime mirror of the union — must match migration 456 CHECK(green_tariff_class IN (...)).
+export const GT_CLASSES: readonly GreenTariffClass[] =
+  ['voluntary', 'corporate_ppa', 'utility_green_tariff', 'sbti_aligned'];
+
 // INVERTED SLA: sbti_aligned requires most rigor (more time for review)
 export function deriveGtSla(cls: GreenTariffClass): number {
   const DAYS: Record<GreenTariffClass, number> = {
