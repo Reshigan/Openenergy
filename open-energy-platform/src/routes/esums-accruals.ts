@@ -1316,6 +1316,17 @@ creditApp.patch('/:id', async (c) => {
     .first<Record<string, unknown>>();
   if (!row) return c.json({ success: false, error: 'Not found' }, 404);
 
+  // Same scope as the GET list: credit's own participant_id or its station's.
+  if (!isAdmin && row.participant_id !== user.id) {
+    const viaStation = row.station_id
+      ? await c.env.DB
+          .prepare(`SELECT 1 AS ok FROM solax_stations WHERE id = ? AND participant_id = ?`)
+          .bind(row.station_id, user.id)
+          .first()
+      : null;
+    if (!viaStation) return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+
   const current = row.status as string;
   const TRANSITIONS: Record<string, string[]> = { verify: ['provisional'], retire: ['verified'] };
   const NEXT: Record<string, string> = { verify: 'verified', retire: 'retired' };
