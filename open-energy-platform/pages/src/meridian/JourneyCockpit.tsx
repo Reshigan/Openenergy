@@ -226,7 +226,6 @@ export default function JourneyCockpit() {
           </button>
           {c.quantum_zar != null && <span className="jc-zar mono">{fmtZar(c.quantum_zar)}</span>}
           <span className={`jc-pill ${STATUS_TONE_CLASS[sl.tone]}`}>{sl.text}</span>
-          <StreamInsight c={c} />
           {inline.length > 0 && (
             <span className="jc-inline-acts">
               {inline.map(a => (
@@ -237,6 +236,7 @@ export default function JourneyCockpit() {
             </span>
           )}
         </div>
+        <StreamInsight c={c} />
         {open && (
           <div className="jc-detail">
             {!detail ? <div className="jc-detail-load"><span className="skel skel-line" style={{ width: '55%' }} /></div> : (

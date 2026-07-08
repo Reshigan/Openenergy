@@ -23,7 +23,7 @@ export function sparklinePoints(score: number): number[] {
   return Array.from({ length: 8 }, (_, i) => Math.round(s * (0.4 + (0.6 * i) / 7)));
 }
 
-export default function StreamInsight({ c }: { c: StreamCase }): JSX.Element {
+export default function StreamInsight({ c }: { c: StreamCase }): React.JSX.Element {
   const pts = sparklinePoints(c.score ?? 0);
   const max = Math.max(1, ...pts);
   const d = pts.map((p, i) => `${(i / 7) * 60},${16 - (p / max) * 14}`).join(' ');
