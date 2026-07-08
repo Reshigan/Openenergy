@@ -45,6 +45,19 @@ off.post('/groups/:id/members', async (c) => {
   const groupId = c.req.param('id');
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   if (!b.delivery_point_id) return c.json({ success: false, error: 'delivery_point_id required' }, 400);
+  // 404 (not 403) for missing/foreign — anti-enumeration, matches GET /groups scoping.
+  const group = await c.env.DB.prepare(
+    'SELECT participant_id FROM offtaker_site_groups WHERE id = ?',
+  ).bind(groupId).first<{ participant_id: string }>();
+  if (!group || (user.role !== 'admin' && group.participant_id !== user.id)) {
+    return c.json({ success: false, error: 'Group not found' }, 404);
+  }
+  const dp = await c.env.DB.prepare(
+    'SELECT participant_id FROM offtaker_delivery_points WHERE id = ?',
+  ).bind(b.delivery_point_id).first<{ participant_id: string }>();
+  if (!dp || (user.role !== 'admin' && dp.participant_id !== user.id)) {
+    return c.json({ success: false, error: 'Delivery point not found' }, 404);
+  }
   await c.env.DB.prepare(
     `INSERT OR IGNORE INTO offtaker_site_group_members
        (id, group_id, delivery_point_id, allocation_percentage)
@@ -157,6 +170,12 @@ off.post('/profiles', async (c) => {
   }
   const arr = b.half_hour_kwh as number[];
   if (arr.length !== 48) return c.json({ success: false, error: 'half_hour_kwh must have 48 elements' }, 400);
+  const dp = await c.env.DB.prepare(
+    'SELECT participant_id FROM offtaker_delivery_points WHERE id = ?',
+  ).bind(b.delivery_point_id).first<{ participant_id: string }>();
+  if (!dp || (user.role !== 'admin' && dp.participant_id !== user.id)) {
+    return c.json({ success: false, error: 'Delivery point not found' }, 404);
+  }
   const total = arr.reduce((s, v) => s + Number(v), 0);
   const peakKw = Math.max(...arr.map((v) => Number(v) * 2)); // kWh / 0.5h = kW
   const peakIdx = arr.indexOf(Math.max(...arr));
@@ -189,7 +208,14 @@ off.get('/consumption', async (c) => {
 });
 
 off.get('/profiles/:delivery_point_id', async (c) => {
+  const user = getCurrentUser(c);
   const dpid = c.req.param('delivery_point_id');
+  const dp = await c.env.DB.prepare(
+    'SELECT participant_id FROM offtaker_delivery_points WHERE id = ?',
+  ).bind(dpid).first<{ participant_id: string }>();
+  if (!dp || (user.role !== 'admin' && dp.participant_id !== user.id)) {
+    return c.json({ success: false, error: 'Delivery point not found' }, 404);
+  }
   const rs = await c.env.DB.prepare(
     `SELECT * FROM consumption_profiles WHERE delivery_point_id = ?
       ORDER BY profile_date DESC LIMIT 90`,
@@ -340,6 +366,11 @@ off.post('/recs/certificates/:id/retire', async (c) => {
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   for (const k of ['retirement_purpose', 'retirement_certificate_number']) {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
+  }
+  // Mirrors migration 025 CHECK on rec_retirements.retirement_purpose — 400 here, not 500 from D1.
+  const PURPOSES = ['scope_2', 'voluntary', 'compliance', 'customer_claim', 'greenhouse_trade'];
+  if (!PURPOSES.includes(String(b.retirement_purpose))) {
+    return c.json({ success: false, error: `retirement_purpose must be one of: ${PURPOSES.join(', ')}` }, 400);
   }
   const cert = await c.env.DB.prepare(
     'SELECT owner_participant_id, status FROM rec_certificates WHERE id = ?',
@@ -560,15 +591,27 @@ off.post('/audit/export', async (c) => {
   const from = body.from || new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const to = body.to || new Date().toISOString().slice(0, 10);
 
-  const rows = await c.env.DB.prepare(
-    `SELECT id, reporting_year, total_consumption_mwh,
-            location_based_emissions_tco2e, market_based_emissions_tco2e,
-            renewable_mwh_claimed, renewable_percentage, grid_factor_tco2e_per_mwh,
-            audit_reference, status, created_at
-       FROM scope2_disclosures
-      WHERE substr(created_at, 1, 10) BETWEEN ? AND ?
-      ORDER BY reporting_year DESC, created_at DESC`,
-  ).bind(from, to).all<any>().catch(() => ({ results: [] } as any));
+  // Offtakers export only their own disclosures; admin/regulator keep the full register.
+  const rows = await (user.role === 'offtaker'
+    ? c.env.DB.prepare(
+        `SELECT id, reporting_year, total_consumption_mwh,
+                location_based_emissions_tco2e, market_based_emissions_tco2e,
+                renewable_mwh_claimed, renewable_percentage, grid_factor_tco2e_per_mwh,
+                audit_reference, status, created_at
+           FROM scope2_disclosures
+          WHERE substr(created_at, 1, 10) BETWEEN ? AND ? AND participant_id = ?
+          ORDER BY reporting_year DESC, created_at DESC`,
+      ).bind(from, to, user.id)
+    : c.env.DB.prepare(
+        `SELECT id, reporting_year, total_consumption_mwh,
+                location_based_emissions_tco2e, market_based_emissions_tco2e,
+                renewable_mwh_claimed, renewable_percentage, grid_factor_tco2e_per_mwh,
+                audit_reference, status, created_at
+           FROM scope2_disclosures
+          WHERE substr(created_at, 1, 10) BETWEEN ? AND ?
+          ORDER BY reporting_year DESC, created_at DESC`,
+      ).bind(from, to)
+  ).all<any>().catch(() => ({ results: [] } as any));
   const data = (rows.results || []) as Array<Record<string, any>>;
 
   const header = ['disclosure_id','reporting_year','total_consumption_mwh',
@@ -720,9 +763,16 @@ off.post('/audit/recon', async (c) => {
     httpMetadata: { contentType: 'text/csv' },
   }).catch(() => null);
 
-  const ours = await c.env.DB.prepare(
-    `SELECT id, certificate_serial, mwh_represented, status, registry
-       FROM rec_certificates`,
+  // Offtakers reconcile only certificates they own; admin/regulator see the full ledger.
+  const ours = await (user.role === 'offtaker'
+    ? c.env.DB.prepare(
+        `SELECT id, certificate_serial, mwh_represented, status, registry
+           FROM rec_certificates WHERE owner_participant_id = ?`,
+      ).bind(user.id)
+    : c.env.DB.prepare(
+        `SELECT id, certificate_serial, mwh_represented, status, registry
+           FROM rec_certificates`,
+      )
   ).all<{ id: string; certificate_serial: string; mwh_represented: number; status: string; registry: string }>();
   const ourBySerial = new Map<string, any>();
   for (const r of (ours.results || []) as any[]) ourBySerial.set(r.certificate_serial, r);
