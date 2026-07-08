@@ -869,7 +869,8 @@ export type EventType =
   | 'regulator.audit_exported' | 'regulator.recon_completed'
   // ─── Carbon registry extensions (serials, certificates, audit) ─────────
   | 'carbon.serial_transferred' | 'carbon.serial_retired'
-  | 'carbon.retirement_certificate_issued'
+  | 'carbon.retirement_certificate_issued' | 'carbon.retirement_certificate_revoked'
+  | 'carbon.vintage_advanced'
   | 'carbon.audit_exported' | 'carbon.recon_completed'
   // ─── Participants admin lifecycle ──────────────────────────────────────
   | 'participant.kyc_verified' | 'participant.status_changed'

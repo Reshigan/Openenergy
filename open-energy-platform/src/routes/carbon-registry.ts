@@ -11,6 +11,10 @@ import { applyOffsetAllowance, rangeOverlaps } from '../utils/carbon-tax';
 import { fireCascade } from '../utils/cascade';
 import { cachedAll } from '../utils/reference-cache';
 import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
+import {
+  canTransitionMrv, canAdvanceVintage, certIssueGuard, certRevokeGuard,
+  type MrvStatus, type VintageStage, type CertStatus,
+} from '../utils/carbon-fund-depth-spec';
 
 const cr = new Hono<HonoEnv>();
 cr.use('*', authMiddleware);
@@ -591,13 +595,44 @@ cr.get('/vintage-workflow', async (c) => {
 });
 
 cr.post('/vintage-workflow/:id/advance', async (c) => {
+  const user = getCurrentUser(c);
+  if (!canWrite(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const body = await c.req.json().catch(() => ({} as any));
-  const nextStage = String(body.to_stage || '').trim();
+  const nextStage = String(body.to_stage || '').trim() as VintageStage;
   if (!nextStage) return c.json({ success: false, error: 'to_stage required' }, 400);
+
+  const row = await c.env.DB.prepare(
+    `SELECT current_stage FROM carbon_vintage_workflow
+      WHERE id = ? AND (participant_id = ? OR ? IN ('admin','regulator'))`,
+  ).bind(id, user.id, user.role).first<{ current_stage: VintageStage }>().catch(() => null);
+  if (!row) return c.json({ success: false, error: 'Vintage not found' }, 404);
+
+  const guard = canAdvanceVintage(row.current_stage, nextStage);
+  if (!guard.ok) {
+    return c.json({ success: false, error: 'invalid stage advance', reason_code: guard.reason_code }, 422);
+  }
+
   await c.env.DB.prepare(
     `UPDATE carbon_vintage_workflow SET current_stage = ?, updated_at = datetime('now') WHERE id = ?`,
-  ).bind(nextStage, id).run().catch(() => {});
+  ).bind(nextStage, id).run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'carbon', entity_id: id,
+    event_type: 'vintage.advanced', actor_id: user.id,
+    payload: { vintage_id: id, from_stage: row.current_stage, to_stage: nextStage },
+  }).catch((e) => console.warn('audit_vintage_advance_failed', (e as Error).message));
+
+  await fireCascade({
+    event: 'carbon.vintage_advanced',
+    actor_id: user.id,
+    entity_type: 'carbon_vintage_workflow',
+    entity_id: id,
+    data: { vintage_id: id, from_stage: row.current_stage, to_stage: nextStage },
+    env: c.env,
+    skipAudit: true,
+  });
+
   return c.json({ success: true });
 });
 
@@ -630,11 +665,23 @@ cr.post('/mrv-submissions', async (c) => {
 
 cr.post('/mrv-submissions/:id/transition', async (c) => {
   const user = getCurrentUser(c);
+  if (!canWrite(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const body = (await c.req.json().catch(() => ({}))) as any;
-  const to = String(body.to || '').trim();
+  const to = String(body.to || '').trim() as MrvStatus;
   if (!['submitted', 'under_verification', 'verified', 'rejected', 'published'].includes(to)) {
     return c.json({ success: false, error: 'invalid transition' }, 400);
+  }
+
+  const row = await c.env.DB.prepare(
+    `SELECT status FROM carbon_mrv_workflow
+      WHERE id = ? AND (participant_id = ? OR ? IN ('admin','regulator'))`,
+  ).bind(id, user.id, user.role).first<{ status: MrvStatus }>().catch(() => null);
+  if (!row) return c.json({ success: false, error: 'MRV submission not found' }, 404);
+
+  const guard = canTransitionMrv(row.status, to, { rejection_reason: body.rejection_reason });
+  if (!guard.ok) {
+    return c.json({ success: false, error: 'invalid transition', reason_code: guard.reason_code }, 422);
   }
   const now = new Date().toISOString();
   await c.env.DB.prepare(
@@ -668,6 +715,18 @@ cr.post('/mrv-submissions/:id/transition', async (c) => {
     },
   }).catch((e) => console.warn('audit_mrv_transition_failed', (e as Error).message));
 
+  if (to === 'submitted' || to === 'verified') {
+    await fireCascade({
+      event: to === 'submitted' ? 'carbon.mrv_submitted' : 'carbon.mrv_verified',
+      actor_id: user.id,
+      entity_type: 'carbon_mrv_workflow',
+      entity_id: id,
+      data: { mrv_id: id, from_status: row.status, to_status: to, reduction_tco2e: body.reduction_tco2e ?? null },
+      env: c.env,
+      skipAudit: true,
+    });
+  }
+
   return c.json({ success: true });
 });
 
@@ -683,10 +742,33 @@ cr.get('/retirement-certificates', async (c) => {
 
 cr.post('/retirement-certificates/issue', async (c) => {
   const user = getCurrentUser(c);
+  if (!canWrite(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const body = (await c.req.json().catch(() => ({}))) as any;
   if (!body.retirement_id || !body.retired_volume_tco2e) {
     return c.json({ success: false, error: 'retirement_id + retired_volume_tco2e required' }, 400);
   }
+
+  const retirement = await c.env.DB.prepare(
+    `SELECT id, quantity FROM carbon_retirements
+      WHERE id = ? AND (participant_id = ? OR ? IN ('admin','regulator'))`,
+  ).bind(body.retirement_id, user.id, user.role).first<{ id: string; quantity: number }>().catch(() => null);
+
+  const issued = await c.env.DB.prepare(
+    `SELECT COALESCE(SUM(retired_volume_tco2e), 0) AS total
+       FROM carbon_retirement_certificates
+      WHERE retirement_id = ? AND status != 'revoked'`,
+  ).bind(body.retirement_id).first<{ total: number }>().catch(() => ({ total: 0 }));
+
+  const guard = certIssueGuard({
+    retirement,
+    alreadyIssuedTco2e: Number(issued?.total || 0),
+    requestedTco2e: Number(body.retired_volume_tco2e),
+  });
+  if (!guard.ok) {
+    const status = guard.reason_code === 'CERT_RETIREMENT_NOT_FOUND' ? 404 : 422;
+    return c.json({ success: false, error: 'certificate issuance blocked', reason_code: guard.reason_code }, status);
+  }
+
   const id = crypto.randomUUID();
   const certNumber = `OE-CERT-${new Date().getUTCFullYear()}-${id.slice(0, 8).toUpperCase()}`;
   await c.env.DB.prepare(
@@ -728,6 +810,54 @@ cr.post('/retirement-certificates/issue', async (c) => {
   });
 
   return c.json({ success: true, data: { id, certificate_number: certNumber } });
+});
+
+cr.post('/retirement-certificates/:id/revoke', async (c) => {
+  const user = getCurrentUser(c);
+  if (!canWrite(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
+  const id = c.req.param('id');
+  const body = (await c.req.json().catch(() => ({}))) as any;
+  const reason = String(body.reason || '').trim();
+  if (!reason) return c.json({ success: false, error: 'reason required', reason_code: 'CERT_REVOKE_REASON_REQUIRED' }, 400);
+
+  const cert = await c.env.DB.prepare(
+    `SELECT status, certificate_number, retirement_id FROM carbon_retirement_certificates
+      WHERE id = ? AND (participant_id = ? OR ? IN ('admin','regulator'))`,
+  ).bind(id, user.id, user.role)
+    .first<{ status: CertStatus; certificate_number: string; retirement_id: string }>().catch(() => null);
+  if (!cert) return c.json({ success: false, error: 'Certificate not found' }, 404);
+
+  const guard = certRevokeGuard(cert.status);
+  if (!guard.ok) {
+    return c.json({ success: false, error: 'certificate not revocable', reason_code: guard.reason_code }, 422);
+  }
+
+  await c.env.DB.prepare(
+    `UPDATE carbon_retirement_certificates
+        SET status = 'revoked', notes = COALESCE(notes || char(10), '') || ?
+      WHERE id = ?`,
+  ).bind(`revoked: ${reason}`, id).run();
+
+  await appendAudit({
+    env: c.env, entity_type: 'carbon', entity_id: id,
+    event_type: 'retirement_certificate.revoked', actor_id: user.id,
+    payload: {
+      certificate_id: id, certificate_number: cert.certificate_number,
+      retirement_id: cert.retirement_id, reason,
+    },
+  }).catch((e) => console.warn('audit_cert_revoked_failed', (e as Error).message));
+
+  await fireCascade({
+    event: 'carbon.retirement_certificate_revoked',
+    actor_id: user.id,
+    entity_type: 'carbon_retirement_certificates',
+    entity_id: id,
+    data: { certificate_id: id, certificate_number: cert.certificate_number, reason },
+    env: c.env,
+    skipAudit: true,
+  });
+
+  return c.json({ success: true });
 });
 
 // ════════════════════════════════════════════════════════════════════════
