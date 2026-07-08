@@ -114,6 +114,11 @@ export default function JourneyCockpit() {
   // handful and fold the rest behind one expander. Reset when the journey changes.
   const [allTools, setAllTools] = React.useState(false);
   React.useEffect(() => { setAllTools(false); }, [active]);
+  // Stage-rail filter: clicking a populated stage node narrows the stream to that
+  // lane's cases at that status. null = no stage filter (whole-journey stream).
+  const [stageSel, setStageSel] = React.useState<{ chain: string; status: string } | null>(null);
+  // Switching journeys (or back to 'today') drops any stage filter from the prior journey.
+  React.useEffect(() => { setStageSel(null); }, [active]);
 
   const reload = React.useCallback(() => {
     if (!role) return;
@@ -198,7 +203,10 @@ export default function JourneyCockpit() {
 
   // The single continuous stream, filtered by the active chip — 'today' shows
   // the full duty queue, any journey chip narrows to that journey's cases.
-  const streamCases = active === 'today' ? (data?.duty ?? []) : casesForJourney(active);
+  const streamBase = active === 'today' ? (data?.duty ?? []) : casesForJourney(active);
+  const streamCases = stageSel
+    ? streamBase.filter((c) => c.chain === stageSel.chain && c.status === stageSel.status)
+    : streamBase;
 
   // ── an item card: glance (title/money/status + inline primary action) → tap.
   // Expanding fetches the full state track + remaining actions (folds the Thread).
@@ -462,9 +470,17 @@ export default function JourneyCockpit() {
                           {base.map(s => {
                             const at = mine.filter(c => c.status === s);
                             const hot = at.some(c => c.bucket === 'breached');
-                            const cls = hot ? 'jc-lstage hot' : at.length ? 'jc-lstage pass' : 'jc-lstage empty';
+                            const sel = stageSel?.chain === f.chainKey && stageSel?.status === s;
+                            const live = at.length > 0;
+                            const cls = `${hot ? 'jc-lstage hot' : live ? 'jc-lstage pass' : 'jc-lstage empty'}${sel ? ' sel' : ''}`;
+                            // Only populated stages navigate — an empty stage has nothing to show.
+                            const pick = () => setStageSel(sel ? null : { chain: f.chainKey!, status: s });
                             return (
-                              <div className={cls} key={s}>
+                              <div className={cls} key={s}
+                                role={live ? 'button' : undefined}
+                                tabIndex={live ? 0 : undefined}
+                                onClick={live ? pick : undefined}
+                                onKeyDown={live ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } } : undefined}>
                                 <span className="jc-lnode" />
                                 <span className="jc-lsnm">{cleanLabel(s)}</span>
                                 <span className="jc-lcc mono">{at.length}</span>

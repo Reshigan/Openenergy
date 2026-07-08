@@ -2267,6 +2267,9 @@
 .mer .jc-lcc { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; margin-top:5px; border-radius:9px; font-size:10.5px; font-weight:600; background:var(--petrol-tint); color:var(--petrol-deep); }
 .mer .jc-lstage.hot .jc-lcc { background:var(--oxide); color:#fff; }
 .mer .jc-lstage.empty .jc-lcc { background:var(--line2, #eef1f7); color:var(--ink3); }
+.mer .jc-lstage.pass, .mer .jc-lstage.hot { cursor: pointer; }
+.mer .jc-lstage.pass:hover, .mer .jc-lstage.hot:hover { background: var(--hover, #00000008); }
+.mer .jc-lstage.sel { outline: 1px solid var(--accent, #2563eb); border-radius: 6px; }
 @media (max-width:760px){ .mer .jc-lsnm { font-size:9px; } .mer .jc-lane { overflow-x:auto; } }
 
 /* In-cockpit case record (folds the Thread's raw record into the item expansion). */
