@@ -79,6 +79,11 @@ pa.post('/tenants/:id/suspend', async (c) => {
   const user = getCurrentUser(c);
   if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const id = c.req.param('id');
+  const tenant = await c.env.DB.prepare(`SELECT status FROM tenants WHERE id = ?`).bind(id).first<{ status: string }>();
+  if (!tenant) return c.json({ success: false, error: 'Tenant not found' }, 404);
+  if (tenant.status !== 'active') {
+    return c.json({ success: false, error: `cannot suspend tenant in status '${tenant.status}'`, reason_code: 'TENANT_INVALID_TRANSITION' }, 409);
+  }
   await c.env.DB.prepare(
     `UPDATE tenants SET status = 'suspended', suspended_at = datetime('now') WHERE id = ?`,
   ).bind(id).run();
@@ -97,6 +102,11 @@ pa.post('/tenants/:id/reactivate', async (c) => {
   const user = getCurrentUser(c);
   if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const id = c.req.param('id');
+  const tenant = await c.env.DB.prepare(`SELECT status FROM tenants WHERE id = ?`).bind(id).first<{ status: string }>();
+  if (!tenant) return c.json({ success: false, error: 'Tenant not found' }, 404);
+  if (tenant.status !== 'suspended') {
+    return c.json({ success: false, error: `cannot reactivate tenant in status '${tenant.status}'`, reason_code: 'TENANT_INVALID_TRANSITION' }, 409);
+  }
   await c.env.DB.prepare(
     `UPDATE tenants SET status = 'active', suspended_at = NULL WHERE id = ?`,
   ).bind(id).run();

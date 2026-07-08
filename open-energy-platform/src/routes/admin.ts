@@ -114,6 +114,8 @@ admin.put('/users/:id', requireStepUp('admin.role_change'), async (c) => {
   if (subscription_tier && ['free', 'starter', 'professional', 'enterprise'].includes(subscription_tier)) { updates.push('subscription_tier = ?'); bindings.push(subscription_tier); }
   if (bbbee_level != null && Number(bbbee_level) >= 1 && Number(bbbee_level) <= 8) { updates.push('bbbee_level = ?'); bindings.push(Number(bbbee_level)); }
   if (!updates.length) return c.json({ success: false, error: 'No valid fields to update' }, 400);
+  const exists = await c.env.DB.prepare(`SELECT 1 AS ok FROM participants WHERE id = ?`).bind(id).first();
+  if (!exists) return c.json({ success: false, error: 'User not found' }, 404);
   updates.push("updated_at = datetime('now')");
   bindings.push(id);
   await c.env.DB.prepare(`UPDATE participants SET ${updates.join(', ')} WHERE id = ?`).bind(...bindings).run();
