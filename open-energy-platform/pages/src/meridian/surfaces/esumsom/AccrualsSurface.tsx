@@ -7,6 +7,7 @@
 // surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `accruals`.
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../../../components/SuitePage';
+import { accrualsViz } from './viz';
 
 export default function AccrualsSurface(_props: { role: string }) {
   const tabs: TabSpec[] = [
@@ -15,6 +16,7 @@ export default function AccrualsSurface(_props: { role: string }) {
       label: 'Accruals',
       endpoint: '/esums/accruals/rows',
       description: 'Real-time generation accrual ledger from Solax inverter data. Every row is a metered kWh-period with the corresponding revenue, carbon offset and savings value. This is the source-of-truth for settlement invoices and carbon credit minting — no synthetic or estimated data.',
+      viz: accrualsViz,
       columns: [
         { key: 'station_name', label: 'Station' },
         { key: 'period_hour',  label: 'Period',  date: true },
@@ -29,7 +31,7 @@ export default function AccrualsSurface(_props: { role: string }) {
   ];
   return (
     <SuitePage
-      eyebrow="Esums · Operations"
+      eyebrow="O&M · Operations"
       title="Accruals"
       subtitle="Real-time generation accrual ledger."
       tabs={tabs}

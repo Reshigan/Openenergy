@@ -112,7 +112,7 @@ export function EsumsSiteDetailPage() {
   return (
     <StitchPage
       eyebrowIcon={Zap}
-      eyebrowLabel={`Esums · site detail · ${id}`}
+      eyebrowLabel={`O&M · site detail · ${id}`}
       title={site.name}
       subtitle={subtitle}
     >

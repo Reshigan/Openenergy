@@ -9,6 +9,7 @@
 import React, { useState } from 'react';
 import { ListingTable, Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
 import { api } from '../../../lib/api';
+import { certificatesViz } from './viz';
 
 function Header({ onCreate, label }: { onCreate: () => void; label: string }) {
   return (
@@ -30,6 +31,7 @@ export default function CertificatesSurface(_props: { role: string }) {
         key={`certificates-${bump}`}
         endpoint="/carbon-registry/retirement-certificates"
         rowKey={(r) => r.id}
+        viz={certificatesViz}
         empty={{ title: 'No retirement certificates', description: 'Certificates issued for retired tCO₂e on behalf of buyers will appear here.' }}
         columns={[
           { key: 'certificate_number', label: 'Certificate', render: (r) => <span className="font-mono text-[11px]">{r.certificate_number}</span> },

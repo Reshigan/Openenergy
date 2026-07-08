@@ -7,6 +7,7 @@
 // in surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `devices`.
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../../../components/SuitePage';
+import { devicesViz } from './viz';
 
 export default function DevicesSurface(_props: { role: string }) {
   const tabs: TabSpec[] = [
@@ -15,6 +16,7 @@ export default function DevicesSurface(_props: { role: string }) {
       label: 'Devices',
       endpoint: '/esums/devices',
       description: 'Inverters, meters, batteries and sensors across all sites. Filter by site_id.',
+      viz: devicesViz,
       columns: [
         { key: 'site_id', label: 'Site' },
         { key: 'device_type', label: 'Type' },
@@ -29,7 +31,7 @@ export default function DevicesSurface(_props: { role: string }) {
   ];
   return (
     <SuitePage
-      eyebrow="Esums · Operations"
+      eyebrow="O&M · Operations"
       title="Devices"
       subtitle="Inverters, meters, batteries and sensors across all sites."
       tabs={tabs}

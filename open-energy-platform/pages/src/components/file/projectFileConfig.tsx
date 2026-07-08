@@ -615,11 +615,11 @@ export const projectFileTabs: EntityFileTab<ProjectFileData>[] = [
     render: (data) => (
       <>
         <FileSection
-          title="Linked Esums sites"
+          title="Linked O&M sites"
           subtitle="The asset cockpit drives 24/7 telemetry, fault detection, work orders, spares and AI predictions."
           action={data.operations.om_sites.length > 0 ? (
             <a href={`/esums/sites/${(data.operations.om_sites[0] as any).id}`} className="text-[12px] font-semibold text-[#1a5d97] hover:underline">
-              Open in Esums →
+              Open in O&M →
             </a>
           ) : null}
         >

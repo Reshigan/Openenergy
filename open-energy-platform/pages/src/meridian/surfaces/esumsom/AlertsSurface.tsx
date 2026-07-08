@@ -7,6 +7,7 @@
 // in surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `alerts`.
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../../../components/SuitePage';
+import { alertsViz } from './viz';
 
 export default function AlertsSurface(_props: { role: string }) {
   const tabs: TabSpec[] = [
@@ -15,6 +16,7 @@ export default function AlertsSurface(_props: { role: string }) {
       label: 'Alerts',
       endpoint: '/esums/alerts',
       description: 'All alerts fired across the fleet in the last 7 days.',
+      viz: alertsViz,
       columns: [
         { key: 'severity', label: 'Severity', render: (r) => <StatusPill status={String(r.severity)} /> },
         { key: 'category', label: 'Category' },
@@ -27,7 +29,7 @@ export default function AlertsSurface(_props: { role: string }) {
   ];
   return (
     <SuitePage
-      eyebrow="Esums · Operations"
+      eyebrow="O&M · Operations"
       title="Alerts"
       subtitle="All alerts fired across the fleet in the last 7 days."
       tabs={tabs}

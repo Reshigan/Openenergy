@@ -58,6 +58,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
+import { faultMlViz } from '../mlGovViz';
 
 // OKLCH tokens
 const BG     = 'oklch(0.96 0.003 250)';
@@ -1041,6 +1042,7 @@ export function FaultFingerprintMlTab({ regulatorView }: Props = {}) {
         <div style={{ marginBottom: 12, background: 'oklch(0.97 0.01 20)', border: `1px solid oklch(0.80 0.05 20)`, borderRadius: 6, padding: '8px 12px', fontSize: 12, color: BAD }}>{err}</div>
       )}
 
+      {!loading && faultMlViz(filtered)}
       {loading ? (
         <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 6, padding: '24px 16px', textAlign: 'center', color: TX2 }}>Loading...</div>
       ) : filtered.length === 0 ? (

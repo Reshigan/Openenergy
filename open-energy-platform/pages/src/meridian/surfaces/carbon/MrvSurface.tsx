@@ -11,6 +11,7 @@ import React, { useState } from 'react';
 import { ListingTable, Pill, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
 import { api } from '../../../lib/api';
 import { statusLabel } from '../../ease/statusLabel';
+import { mrvViz } from './viz';
 
 const MRV_TRANSITIONS = [
   { value: 'submitted', label: 'Submit' },
@@ -42,6 +43,7 @@ export default function MrvSurface(_props: { role: string }) {
         key={`mrv-${bump}`}
         endpoint="/carbon-registry/mrv-submissions"
         rowKey={(r) => r.id}
+        viz={mrvViz}
         empty={{ title: 'No MRV submissions', description: 'Measurement-Reporting-Verification cycles will land here as they are drafted, submitted, verified, and published.' }}
         columns={[
           { key: 'project_id', label: 'Project', render: (r) => <span className="font-mono text-[11px]">{(r.project_id || '').slice(0, 12)}…</span> },

@@ -187,7 +187,7 @@ export function EsumsOmFieldWosPage() {
         <button type="button" onClick={() => navigate('/esums')} className="p-1.5 -ml-1.5"><ArrowLeft size={20} /></button>
         <div className="text-center flex-1">
           <div className="text-[10px] uppercase tracking-wider opacity-80 inline-flex items-center gap-1">
-            {offline ? <>OFFLINE · {pendingCount} queued</> : <>Esums O&amp;M · Field{pendingCount > 0 ? ` · ${pendingCount} syncing` : ''}</>}
+            {offline ? <>OFFLINE · {pendingCount} queued</> : <>O&amp;M · Field{pendingCount > 0 ? ` · ${pendingCount} syncing` : ''}</>}
           </div>
           <div className="text-[15px] font-semibold">My work orders</div>
         </div>

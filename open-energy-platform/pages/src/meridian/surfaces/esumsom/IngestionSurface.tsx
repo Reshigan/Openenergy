@@ -7,6 +7,7 @@
 // in surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `ingestion`.
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../../../components/SuitePage';
+import { ingestionViz } from './viz';
 
 export default function IngestionSurface(_props: { role: string }) {
   const tabs: TabSpec[] = [
@@ -15,6 +16,7 @@ export default function IngestionSurface(_props: { role: string }) {
       label: 'Ingestion',
       endpoint: '/esums/ingestion',
       description: 'OEM connections (Huawei FusionSolar, SolarEdge, SMA, Sungrow, Modbus TCP, Eskom AMR, ...) with last-poll status.',
+      viz: ingestionViz,
       columns: [
         { key: 'site_id', label: 'Site' },
         { key: 'adapter', label: 'Adapter' },
@@ -27,7 +29,7 @@ export default function IngestionSurface(_props: { role: string }) {
   ];
   return (
     <SuitePage
-      eyebrow="Esums · Operations"
+      eyebrow="O&M · Operations"
       title="Ingestion"
       subtitle="OEM connections with last-poll status."
       tabs={tabs}

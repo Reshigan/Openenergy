@@ -57,6 +57,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { rulMlViz } from '../mlGovViz';
 
 type RpmStatus =
   | 'model_proposed' | 'survival_dataset_bound' | 'features_engineered'
@@ -816,6 +817,7 @@ export function RulPredictionMlTab({ regulatorView }: Props = {}) {
       {err && (
         <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
       )}
+      {!loading && rulMlViz(filtered)}
       {loading ? (
         <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
       ) : (

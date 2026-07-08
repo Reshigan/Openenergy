@@ -159,7 +159,7 @@ function HeroStrip({ kpis }: { kpis: FleetKpis | null }) {
     <div className="rounded-xl border p-5" style={{ background: 'oklch(0.99 0.002 80)', borderColor: 'oklch(0.88 0.006 250)' }}>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>Esums O&amp;M · Fleet Overview</div>
+          <div className="text-[10px] uppercase tracking-[0.12em] font-mono font-semibold" style={{ color: 'oklch(0.55 0.008 250)' }}>O&amp;M · Fleet Overview</div>
           <h1 className="font-display text-[22px] font-bold tracking-tight mt-0.5" style={{ color: 'oklch(0.15 0.025 250)' }}>
             {kpis.total_sites} sites · {kpis.total_mw.toFixed(1)} MW · ZA portfolio
           </h1>

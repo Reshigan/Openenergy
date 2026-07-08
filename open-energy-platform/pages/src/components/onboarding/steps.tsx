@@ -425,7 +425,7 @@ export function EsumsDataSourcesStep({ data, onChange, accentColor = '#16a34a' }
       </button>
 
       <p className="text-[11px] text-[#9ca3af]">
-        You can skip this and add data sources later from the Esums dashboard.
+        You can skip this and add data sources later from the O&M dashboard.
       </p>
     </div>
   );

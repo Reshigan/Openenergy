@@ -7,6 +7,7 @@
 // in surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `sites`.
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../../../components/SuitePage';
+import { sitesViz } from './viz';
 
 export default function SitesSurface(_props: { role: string }) {
   const tabs: TabSpec[] = [
@@ -15,6 +16,7 @@ export default function SitesSurface(_props: { role: string }) {
       label: 'Sites',
       endpoint: '/esums/sites',
       description: 'Generation sites with live KPIs. Click into a site for the asset-level dashboard.',
+      viz: sitesViz,
       columns: [
         { key: 'name', label: 'Site' },
         { key: 'technology', label: 'Tech' },
@@ -30,7 +32,7 @@ export default function SitesSurface(_props: { role: string }) {
   ];
   return (
     <SuitePage
-      eyebrow="Esums · Operations"
+      eyebrow="O&M · Operations"
       title="Sites"
       subtitle="Generation sites with live KPIs."
       tabs={tabs}

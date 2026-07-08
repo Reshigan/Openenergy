@@ -11,6 +11,7 @@ import React, { useState } from 'react';
 import { ListingTable, ActionModal, FieldSpec } from '../../../components/launch/WorkstationShell';
 import { StatusPill } from '../../components';
 import { api } from '../../../lib/api';
+import { vintagesViz } from './viz';
 
 const STAGE_OPTIONS = [
   { value: 'validated', label: 'Validated' },
@@ -30,6 +31,7 @@ export default function VintagesSurface(_props: { role: string }) {
         key={`vintages-${bump}`}
         endpoint="/carbon-registry/vintage-workflow"
         rowKey={(r) => r.id}
+        viz={vintagesViz}
         rowHref={(r) => `/carbon-registry/vintages/${r.id}`}
         empty={{ title: 'No vintages in workflow', description: 'Vintage cohorts will appear here as they progress through issued → validated → listed → traded → retired.' }}
         columns={[

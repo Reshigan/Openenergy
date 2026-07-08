@@ -7,6 +7,7 @@
 // in surfaces.tsx and reached from Atlas (⌘K) via the roleData feature key `projects`.
 import React from 'react';
 import { SuitePage, StatusPill, TabSpec } from '../../../components/SuitePage';
+import { projectsViz } from './viz';
 
 export default function ProjectsSurface(_props: { role: string }) {
   const tabs: TabSpec[] = [
@@ -15,6 +16,7 @@ export default function ProjectsSurface(_props: { role: string }) {
       label: 'Projects',
       endpoint: '/esums/projects',
       description: 'Portfolio-level project grouping. A project is either linked to an existing IPP project (operational O&M layer on top of a tracked development) or standalone (asset-owner / behind-the-meter / community solar with no IPP lifecycle). If you have no projects yet, a standalone default is created automatically on first open.',
+      viz: projectsViz,
       columns: [
         { key: 'name',             label: 'Project' },
         { key: 'project_type',     label: 'Type', render: (r) => (
@@ -65,7 +67,7 @@ export default function ProjectsSurface(_props: { role: string }) {
   ];
   return (
     <SuitePage
-      eyebrow="Esums · Operations"
+      eyebrow="O&M · Operations"
       title="Projects"
       subtitle="Portfolio-level project grouping."
       tabs={tabs}

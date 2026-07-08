@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { ListingTable, Pill, ActionModal } from '../../../components/launch/WorkstationShell';
 import { StatusPill } from '../../components';
+import { gtiaViz } from './viz';
 
 const GTIA_TIER_TONE: Record<string, 'neutral' | 'info' | 'warn' | 'bad'> = {
   small: 'neutral', medium: 'info', large: 'warn', bulk: 'bad',
@@ -41,6 +42,7 @@ export default function GtiaSurface(_props: { role: string }) {
         key={refreshKey}
         endpoint="/gtia"
         rowKey={(r) => r.id}
+        viz={gtiaViz}
         empty={{ title: 'No GTIAs', description: 'Initiate a Grid Technical Interface Agreement to document protection and SCADA settings with the network operator.' }}
         columns={[
           { key: 'network_operator_name', label: 'Network operator', render: (r) => String(r.network_operator_name ?? '—').slice(0, 24) },
