@@ -63,6 +63,7 @@ import { Hono, Context } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   nextStatus,
   isTerminal,
@@ -589,14 +590,22 @@ app.post('/:id/assess-impact', async (c) => transition(c, 'assess_impact', (_row
   return applyCommon(b, out);
 }));
 
-app.post('/:id/classify-fallback', async (c) => transition(c, 'classify_fallback', (_row, body) => {
-  const b = body as Partial<ClassifyFallbackBody>;
-  const out: Partial<BxtRow> = {};
-  if (typeof b.replacement_rate === 'string') out.replacement_rate = b.replacement_rate;
-  if (typeof b.fallback_class === 'string')   out.fallback_class = b.fallback_class;
-  if (b.protocol_adherence_flag === 0 || b.protocol_adherence_flag === 1) out.protocol_adherence_flag = b.protocol_adherence_flag;
-  return applyCommon(b, out);
-}));
+app.post('/:id/classify-fallback', async (c) => {
+  const pre = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const enumErr = badEnum('replacement_rate', pre.replacement_rate,
+      ['zaronia_overnight', 'compounded_zaronia_1m', 'compounded_zaronia_3m', 'compounded_zaronia_6m', 'term_zaronia_1m', 'term_zaronia_3m', 'term_zaronia_6m'])
+    || badEnum('fallback_class', pre.fallback_class,
+      ['isda_protocol', 'bilateral_amendment', 'tough_legacy', 'pre_cessation']);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 400);
+  return transition(c, 'classify_fallback', (_row, body) => {
+    const b = body as Partial<ClassifyFallbackBody>;
+    const out: Partial<BxtRow> = {};
+    if (typeof b.replacement_rate === 'string') out.replacement_rate = b.replacement_rate;
+    if (typeof b.fallback_class === 'string')   out.fallback_class = b.fallback_class;
+    if (b.protocol_adherence_flag === 0 || b.protocol_adherence_flag === 1) out.protocol_adherence_flag = b.protocol_adherence_flag;
+    return applyCommon(b, out);
+  });
+});
 
 app.post('/:id/notify-counterparty', async (c) => transition(c, 'notify_counterparty', (_row, body) =>
   applyCommon(body as Partial<NotifyCounterpartyBody>, {}),

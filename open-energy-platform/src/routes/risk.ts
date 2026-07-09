@@ -180,6 +180,11 @@ risk.get('/portfolios/:id/var', async (c) => {
   const user = getCurrentUser(c);
   if (!canRead(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
+  const portfolio = await c.env.DB.prepare(`SELECT is_system, owner_id FROM risk_portfolios WHERE id = ?`).bind(id).first<any>();
+  if (!portfolio) return c.json({ success: false, error: 'not found' }, 404);
+  if (!portfolio.is_system && portfolio.owner_id !== user.id && !ADMIN_ROLES.has(user.role)) {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
   const asOf = c.req.query('as_of');
   const confidence = Number(c.req.query('confidence') || 0.95);
   const horizon = Number(c.req.query('horizon_days') || 1);
@@ -200,6 +205,11 @@ risk.get('/portfolios/:id/var/history', async (c) => {
   const user = getCurrentUser(c);
   if (!canRead(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
+  const portfolio = await c.env.DB.prepare(`SELECT is_system, owner_id FROM risk_portfolios WHERE id = ?`).bind(id).first<any>();
+  if (!portfolio) return c.json({ success: false, error: 'not found' }, 404);
+  if (!portfolio.is_system && portfolio.owner_id !== user.id && !ADMIN_ROLES.has(user.role)) {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
   const days = Math.min(Number(c.req.query('days') || 30), 365);
   const confidence = Number(c.req.query('confidence') || 0.95);
   const res = await c.env.DB.prepare(`
@@ -219,6 +229,9 @@ risk.post('/portfolios/:id/var/recompute', async (c) => {
   const id = c.req.param('id');
   const portfolio = await c.env.DB.prepare(`SELECT * FROM risk_portfolios WHERE id = ?`).bind(id).first<any>();
   if (!portfolio) return c.json({ success: false, error: 'not found' }, 404);
+  if (!portfolio.is_system && portfolio.owner_id !== user.id && !ADMIN_ROLES.has(user.role)) {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
 
   const positions = await fetchPositions(c.env, portfolio.basis_filter_json);
   const factorIds = Array.from(new Set(positions.map(p => p.factor_id)));
@@ -256,6 +269,9 @@ risk.get('/portfolios/:id/exposure', async (c) => {
   const id = c.req.param('id');
   const portfolio = await c.env.DB.prepare(`SELECT * FROM risk_portfolios WHERE id = ?`).bind(id).first<any>();
   if (!portfolio) return c.json({ success: false, error: 'not found' }, 404);
+  if (!portfolio.is_system && portfolio.owner_id !== user.id && !ADMIN_ROLES.has(user.role)) {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
   const positions = await fetchPositions(c.env, portfolio.basis_filter_json);
   // Group by energy_type as the de-facto counterparty proxy until trader_positions
   // grows a counterparty_id column (planned for Wave 3 clearing).
@@ -358,6 +374,11 @@ risk.get('/scenarios/:id/results', async (c) => {
   const user = getCurrentUser(c);
   if (!canRead(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
+  const scenario = await c.env.DB.prepare(`SELECT is_system, owner_id FROM risk_scenarios WHERE id = ?`).bind(id).first<any>();
+  if (!scenario) return c.json({ success: false, error: 'not found' }, 404);
+  if (!scenario.is_system && scenario.owner_id !== user.id && !ADMIN_ROLES.has(user.role)) {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
   const portfolioId = c.req.query('portfolio_id');
   let sql = `
     SELECT * FROM risk_scenario_results
@@ -380,6 +401,10 @@ risk.post('/scenarios/:id/run', async (c) => {
   const scenario = await c.env.DB.prepare(`SELECT * FROM risk_scenarios WHERE id = ?`).bind(id).first<any>();
   const portfolio = await c.env.DB.prepare(`SELECT * FROM risk_portfolios WHERE id = ?`).bind(portfolioId).first<any>();
   if (!scenario || !portfolio) return c.json({ success: false, error: 'not found' }, 404);
+  const runForbidden =
+    (!scenario.is_system && scenario.owner_id !== user.id && !ADMIN_ROLES.has(user.role)) ||
+    (!portfolio.is_system && portfolio.owner_id !== user.id && !ADMIN_ROLES.has(user.role));
+  if (runForbidden) return c.json({ success: false, error: 'forbidden' }, 403);
 
   let shocks: FactorShock[] = [];
   try { shocks = JSON.parse(scenario.factor_shocks_json || '[]'); } catch {}
