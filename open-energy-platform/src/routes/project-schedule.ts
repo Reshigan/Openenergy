@@ -230,6 +230,9 @@ projectSchedule.delete('/activities/:id', async (c) => {
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const user = getCurrentUser(c);
 
+  const act = await c.env.DB.prepare(`SELECT id FROM project_activities WHERE id = ? AND project_id = ?`).bind(id, projectId).first();
+  if (!act) return c.json({ success: false, error: 'Activity not found' }, 404);
+
   // Cascade delete: deps mentioning this activity + assignments + the activity row.
   await c.env.DB.batch([
     c.env.DB.prepare(`DELETE FROM activity_dependencies WHERE predecessor_id = ? OR successor_id = ?`).bind(id, id),
@@ -376,6 +379,8 @@ projectSchedule.post('/calendars/:calendarId/exceptions', async (c) => {
   if (!body?.exception_date || body?.hours === undefined) {
     return c.json({ success: false, error: 'exception_date, hours required' }, 400);
   }
+  const cal = await c.env.DB.prepare(`SELECT id FROM project_calendars WHERE id = ? AND project_id = ?`).bind(calendarId, projectId).first();
+  if (!cal) return c.json({ success: false, error: 'Calendar not found' }, 404);
   const id = newId();
   await c.env.DB.prepare(`
     INSERT OR REPLACE INTO calendar_exceptions (id, calendar_id, exception_date, hours, reason)
@@ -438,6 +443,8 @@ projectSchedule.post('/assignments', async (c) => {
   if (!body?.activity_id || !body?.resource_id) {
     return c.json({ success: false, error: 'activity_id, resource_id required' }, 400);
   }
+  const act = await c.env.DB.prepare(`SELECT id FROM project_activities WHERE id = ? AND project_id = ?`).bind(body.activity_id, projectId).first();
+  if (!act) return c.json({ success: false, error: 'Activity not found' }, 404);
   const id = newId();
   await c.env.DB.prepare(`
     INSERT OR REPLACE INTO resource_assignments (id, activity_id, resource_id, units)
@@ -457,7 +464,7 @@ projectSchedule.delete('/assignments/:id', async (c) => {
   const id = (c.req.param('id') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
-  await c.env.DB.prepare(`DELETE FROM resource_assignments WHERE id = ?`).bind(id).run();
+  await c.env.DB.prepare(`DELETE FROM resource_assignments WHERE id = ? AND activity_id IN (SELECT id FROM project_activities WHERE project_id = ?)`).bind(id, projectId).run();
   await invalidate(c.env, cacheKey(projectId));
   return c.json({ success: true });
 });

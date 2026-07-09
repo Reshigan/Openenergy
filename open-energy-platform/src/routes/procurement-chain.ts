@@ -235,6 +235,9 @@ async function transition(
 
   const row = await c.env.DB.prepare('SELECT * FROM oe_procurement_rfps WHERE id = ?').bind(id).first<RfpRow>();
   if (!row) return c.json({ success: false, error: 'Not found' }, 404);
+  if (user.role !== 'admin' && user.role !== 'support' && row.participant_id !== user.id) {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
 
   const tier: ProcurementTier = isTier(row.capex_tier)
     ? row.capex_tier

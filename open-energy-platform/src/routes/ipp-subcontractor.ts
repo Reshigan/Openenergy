@@ -374,6 +374,9 @@ app.post('/:id/:action', async (c) => {
   ).bind(id).first<SubcontractorRow>();
 
   if (!row) return c.json({ error: 'Not found' }, 404);
+  if (user.role !== 'admin' && user.role !== 'support' && row.created_by !== user.id) {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
   if (isHardTerminal(row.chain_status)) {
     return c.json({ error: `Subcontractor is in terminal state: ${row.chain_status}` }, 409);
   }
