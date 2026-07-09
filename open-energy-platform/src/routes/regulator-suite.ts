@@ -24,6 +24,7 @@ import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { cachedAll, invalidateReference } from '../utils/reference-cache';
 import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
+import { badEnum } from '../utils/validation';
 
 const suite = new Hono<HonoEnv>();
 suite.use('*', authMiddleware);
@@ -1105,10 +1106,16 @@ function safeParseJson(s: string | null): Record<string, unknown> {
 
 suite.post('/surveillance/triage', async (c) => {
   const user = getCurrentUser(c);
+  if (!canRegulate(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const body = (await c.req.json().catch(() => ({}))) as any;
   if (!body.alert_id || !body.decision) {
     return c.json({ success: false, error: 'alert_id, decision required' }, 400);
   }
+  const decErr = badEnum('decision', body.decision,
+    ['false_positive', 'monitor', 'escalate_to_enforcement', 'contact_party', 'close_no_action']);
+  if (decErr) return c.json({ success: false, error: decErr }, 400);
+  const alert = await c.env.DB.prepare('SELECT id FROM regulator_surveillance_alerts WHERE id = ?').bind(body.alert_id).first();
+  if (!alert) return c.json({ success: false, error: 'Alert not found' }, 404);
   const id = crypto.randomUUID();
   await c.env.DB.prepare(
     `INSERT INTO regulator_surveillance_triage
@@ -1133,10 +1140,14 @@ suite.get('/surveillance/triage', async (c) => {
 
 suite.post('/licence-actions', async (c) => {
   const user = getCurrentUser(c);
+  if (!canRegulate(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const body = (await c.req.json().catch(() => ({}))) as any;
   if (!body.action_type) {
     return c.json({ success: false, error: 'action_type required' }, 400);
   }
+  const atErr = badEnum('action_type', body.action_type,
+    ['grant', 'vary', 'suspend', 'revoke', 'reinstate', 'renew']);
+  if (atErr) return c.json({ success: false, error: atErr }, 400);
   const id = crypto.randomUUID();
   await c.env.DB.prepare(
     `INSERT INTO regulator_licence_action_workflow
@@ -1149,6 +1160,7 @@ suite.post('/licence-actions', async (c) => {
 
 suite.post('/licence-actions/:id/transition', async (c) => {
   const user = getCurrentUser(c);
+  if (!canRegulate(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const id = c.req.param('id');
   const body = (await c.req.json().catch(() => ({}))) as any;
   const to = String(body.to || '').trim();
@@ -1156,7 +1168,7 @@ suite.post('/licence-actions/:id/transition', async (c) => {
     return c.json({ success: false, error: 'invalid transition' }, 400);
   }
   const now = new Date().toISOString();
-  await c.env.DB.prepare(
+  const res = await c.env.DB.prepare(
     `UPDATE regulator_licence_action_workflow
        SET status = ?,
            decided_at = CASE WHEN ? = 'decided' AND decided_at IS NULL THEN ? ELSE decided_at END,
@@ -1164,7 +1176,10 @@ suite.post('/licence-actions/:id/transition', async (c) => {
            decision_rationale = COALESCE(?, decision_rationale),
            updated_at = ?
      WHERE id = ?`,
-  ).bind(to, to, now, to, user.id, body.rationale || null, now, id).run().catch(() => {});
+  ).bind(to, to, now, to, user.id, body.rationale || null, now, id).run();
+  if (Number(res.meta?.changes ?? 0) === 0) {
+    return c.json({ success: false, error: 'Licence action not found' }, 404);
+  }
   return c.json({ success: true });
 });
 
@@ -1182,10 +1197,16 @@ suite.get('/licence-actions', async (c) => {
 
 suite.post('/enforcement-events', async (c) => {
   const user = getCurrentUser(c);
+  if (!canRegulate(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const body = (await c.req.json().catch(() => ({}))) as any;
   if (!body.case_id || !body.event_type) {
     return c.json({ success: false, error: 'case_id, event_type required' }, 400);
   }
+  const evErr = badEnum('event_type', body.event_type,
+    ['opened', 'evidence_filed', 'hearing_scheduled', 'hearing_held', 'finding_issued', 'appeal_lodged', 'appeal_decided', 'closed']);
+  if (evErr) return c.json({ success: false, error: evErr }, 400);
+  const encase = await c.env.DB.prepare('SELECT id FROM regulator_enforcement_cases WHERE id = ?').bind(body.case_id).first();
+  if (!encase) return c.json({ success: false, error: 'Case not found' }, 404);
   const id = crypto.randomUUID();
   await c.env.DB.prepare(
     `INSERT INTO regulator_enforcement_case_events
