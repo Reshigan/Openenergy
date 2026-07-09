@@ -9,6 +9,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import { resolveNextStatus } from '../utils/chain-sla';
 import {
   WheelStatus, WheelAction, WheelTier,
@@ -124,6 +125,8 @@ app.post('/', async (c) => {
 
   const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;
+  const tierErr = badEnum('wheel_tier', body.wheel_tier, ['small_embedded','medium_distributed','large_industrial','bulk_transmission']);
+  if (tierErr) return c.json({ success: false, error: tierErr }, 400);
   const tier = body.wheel_tier ?? 'medium_distributed';
 
   const now = new Date().toISOString();
