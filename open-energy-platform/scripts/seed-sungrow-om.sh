@@ -30,6 +30,11 @@ source "$(dirname "$0")/_login.sh"
 OM_EMAIL="${OM_EMAIL:-om@openenergy.co.za}"
 OM_NAME="${OM_NAME:-Open Energy O&M}"
 OM_COMPANY="${OM_COMPANY:-Open Energy O&M}"
+# esums_owner is app-level only — the participants.role CHECK admits 'esco'
+# (the "O&M Operator (ESCO)" role). The O&M code paths alias esums_owner→esco
+# (horizon lanes, onboarding provisioning), and the data pipeline scopes by
+# participant_id, so esco is the correct persisted role. See migrations 494/519.
+OM_ROLE="${OM_ROLE:-esco}"
 
 ADMIN_TOKEN="$(login_or_cached "admin@openenergy.co.za")"
 [ -n "$ADMIN_TOKEN" ] || { echo "admin login failed" >&2; exit 1; }
@@ -54,7 +59,7 @@ try:
 except Exception: print('')")"
 
 if [ -z "$OM_ID" ]; then
-  BODY="$(python3 -c "import json;print(json.dumps({'email':'$OM_EMAIL','name':'$OM_NAME','company_name':'$OM_COMPANY','role':'esums_owner'}))")"
+  BODY="$(python3 -c "import json;print(json.dumps({'email':'$OM_EMAIL','name':'$OM_NAME','company_name':'$OM_COMPANY','role':'$OM_ROLE'}))")"
   RESP="$(api POST "/api/admin/users" "$BODY")"
   OM_ID="$(echo "$RESP" | jget "['data']['id']")"
   RESET_URL="$(echo "$RESP" | jget "['data']['reset_url']")"
@@ -72,7 +77,7 @@ cat <<EOF
 ═══════════════════════════════════════════════════════════════════════════
   O&M USER SEEDED — Sungrow cloud-pull runbook
 ═══════════════════════════════════════════════════════════════════════════
-  O&M user   : $OM_ID  ($OM_EMAIL, role esums_owner)
+  O&M user   : $OM_ID  ($OM_EMAIL, role $OM_ROLE — O&M Operator)
   Set password (one-shot link, expires):
     $RESET_URL
 
