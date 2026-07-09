@@ -144,6 +144,9 @@ lender.post('/covenants/:id/test', async (c) => {
     lender_participant_id: string | null; material_adverse_effect: number;
   }>();
   if (!def) return c.json({ success: false, error: 'Covenant not found' }, 404);
+  if (def.lender_participant_id && def.lender_participant_id !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
 
   const measured = b.measured_value == null ? null : Number(b.measured_value);
   const result = evaluateCovenant(
@@ -189,7 +192,13 @@ lender.post('/covenants/:id/test', async (c) => {
 });
 
 lender.get('/covenants/:id/tests', async (c) => {
+  const user = getCurrentUser(c);
   const id = c.req.param('id');
+  const cov = await c.env.DB.prepare('SELECT lender_participant_id FROM covenants WHERE id = ?').bind(id).first<{ lender_participant_id: string | null }>();
+  if (!cov) return c.json({ success: false, error: 'Covenant not found' }, 404);
+  if (cov.lender_participant_id && cov.lender_participant_id !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
   const rs = await c.env.DB.prepare(
     `SELECT * FROM covenant_tests WHERE covenant_id = ? ORDER BY test_date DESC LIMIT 100`,
   ).bind(id).all();
@@ -203,6 +212,8 @@ lender.post('/covenants/:id/waive', async (c) => {
   if (!b.reason || !b.requested_until) {
     return c.json({ success: false, error: 'reason and requested_until are required' }, 400);
   }
+  const cov = await c.env.DB.prepare('SELECT id FROM covenants WHERE id = ?').bind(covenantId).first();
+  if (!cov) return c.json({ success: false, error: 'Covenant not found' }, 404);
   const id = genId('wv');
   await c.env.DB.prepare(
     `INSERT INTO covenant_waivers (id, covenant_id, requested_by, reason, requested_until, status)
@@ -227,6 +238,15 @@ lender.post('/waivers/:id/decide', async (c) => {
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   const status = b.status === 'granted' || b.status === 'rejected' ? b.status : null;
   if (!status) return c.json({ success: false, error: 'status must be granted|rejected' }, 400);
+  const waiver = await c.env.DB.prepare(
+    `SELECT w.covenant_id, c.lender_participant_id
+       FROM covenant_waivers w LEFT JOIN covenants c ON c.id = w.covenant_id
+      WHERE w.id = ?`,
+  ).bind(id).first<{ covenant_id: string; lender_participant_id: string | null }>();
+  if (!waiver) return c.json({ success: false, error: 'Waiver not found' }, 404);
+  if (waiver.lender_participant_id && waiver.lender_participant_id !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
   await c.env.DB.prepare(
     `UPDATE covenant_waivers
         SET status = ?, granted_by = ?, granted_at = datetime('now'), conditions = ?
@@ -257,6 +277,7 @@ lender.post('/ie-certifications', async (c) => {
   }
   const certErr = badEnum('cert_type', b.cert_type, ['monthly_progress', 'milestone_completion', 'drawdown', 'commissioning', 'performance_test', 'taking_over', 'final']);
   if (certErr) return c.json({ success: false, error: certErr }, 400);
+  const ieParticipantId = user.role === 'admin' ? (b.ie_participant_id || user.id) : user.id;
   const id = genId('ie');
   const createdAt = new Date().toISOString();
   await c.env.DB.prepare(
@@ -266,7 +287,7 @@ lender.post('/ie-certifications', async (c) => {
         qualifications, site_visit_date, cert_issue_date, status, document_r2_key, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', ?, ?)`,
   ).bind(
-    id, b.disbursement_id || null, b.project_id, b.ie_participant_id || user.id,
+    id, b.disbursement_id || null, b.project_id, ieParticipantId,
     b.cert_number, b.cert_type, b.period || null,
     b.physical_progress_pct == null ? null : Number(b.physical_progress_pct),
     b.financial_progress_pct == null ? null : Number(b.financial_progress_pct),
@@ -279,7 +300,7 @@ lender.post('/ie-certifications', async (c) => {
     id,
     disbursement_id: b.disbursement_id || null,
     project_id: b.project_id,
-    ie_participant_id: b.ie_participant_id || user.id,
+    ie_participant_id: ieParticipantId,
     cert_number: b.cert_number,
     cert_type: b.cert_type,
     period: b.period || null,
@@ -555,6 +576,8 @@ lender.post('/reserves/:id/movement', async (c) => {
   }
   const mvErr = badEnum('movement_type', b.movement_type, ['top_up', 'release', 'draw', 'interest', 'transfer_in', 'transfer_out']);
   if (mvErr) return c.json({ success: false, error: mvErr }, 400);
+  const acct = await c.env.DB.prepare('SELECT id FROM reserve_accounts WHERE id = ?').bind(reserveId).first();
+  if (!acct) return c.json({ success: false, error: 'Reserve account not found' }, 404);
   await c.env.DB.prepare(
     `INSERT INTO reserve_movements (id, reserve_id, movement_type, amount_zar, waterfall_run_id, reason, created_by)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
