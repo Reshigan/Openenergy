@@ -363,6 +363,8 @@ support.post('/tickets', async (c) => {
   }
   const enumErr = badEnum('category', body.category, ['access', 'billing', 'feature_question', 'bug', 'data_issue', 'compliance', 'other']);
   if (enumErr) return c.json({ success: false, error: enumErr }, 400);
+  const prioErr = badEnum('priority', body.priority, ['low', 'normal', 'high', 'urgent']);
+  if (prioErr) return c.json({ success: false, error: prioErr }, 400);
   const id = crypto.randomUUID();
   const ticketNumber = `OE-${new Date().getUTCFullYear()}-${id.slice(0, 8).toUpperCase()}`;
   await c.env.DB.prepare(
@@ -442,7 +444,7 @@ support.post('/tickets/:id/transition', async (c) => {
     return c.json({ success: false, error: 'invalid transition' }, 400);
   }
   const now = new Date().toISOString();
-  await c.env.DB.prepare(
+  const res = await c.env.DB.prepare(
     `UPDATE support_tickets
        SET status = ?, resolution = COALESCE(?, resolution),
            resolved_at = CASE WHEN ? IN ('resolved','closed') THEN ? ELSE resolved_at END,
@@ -451,6 +453,9 @@ support.post('/tickets/:id/transition', async (c) => {
            updated_at = ?
      WHERE id = ?`,
   ).bind(to, body.resolution || null, to, now, to, user.id, body.assignee_id || null, now, id).run();
+  if (Number(res.meta?.changes ?? 0) === 0) {
+    return c.json({ success: false, error: 'Ticket not found' }, 404);
+  }
   await fireCascade({
     event: 'support.ticket_transitioned',
     actor_id: user.id,
@@ -471,6 +476,8 @@ support.post('/tickets/:id/comments', async (c) => {
   const id = c.req.param('id');
   const body = (await c.req.json().catch(() => ({}))) as any;
   if (!body.body) return c.json({ success: false, error: 'body required' }, 400);
+  const visErr = badEnum('visibility', body.visibility, ['public', 'internal']);
+  if (visErr) return c.json({ success: false, error: visErr }, 400);
   const cid = crypto.randomUUID();
   await c.env.DB.prepare(
     `INSERT INTO support_ticket_comments (id, ticket_id, author_id, body, visibility)

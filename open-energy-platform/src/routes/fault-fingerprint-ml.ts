@@ -32,6 +32,7 @@
 
 import { Hono, Context } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
+import { badEnum } from '../utils/validation';
 import { requireTier } from '../middleware/entitlement';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
@@ -759,6 +760,8 @@ app.post('/', async (c) => {
     return c.json({ success: false, error: 'Forbidden' }, 403);
   }
   const body = (await c.req.json().catch(() => ({}))) as Partial<CreateBody>;
+  const cardErr = badEnum('model_card_status', body.model_card_status, ['draft', 'approved', 'published', 'expired']);
+  if (cardErr) return c.json({ success: false, error: cardErr }, 400);
 
   // W71 bridge MANDATORY (NOT NULL on DB) - reject early with friendly error.
   if (!body.w71_asset_prognostics_ref || typeof body.w71_asset_prognostics_ref !== 'string') {
@@ -939,6 +942,8 @@ async function transition(
   }
   const id = c.req.param('id')!;
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const cardErr = badEnum('model_card_status', body.model_card_status, ['draft', 'approved', 'published', 'expired']);
+  if (cardErr) return c.json({ success: false, error: cardErr }, 400);
   const notes = typeof body.notes === 'string' ? body.notes : null;
 
   const row = await c.env.DB.prepare('SELECT * FROM oe_fault_fingerprint_ml WHERE id = ?').bind(id).first<FfmlRow>();
