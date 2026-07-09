@@ -16,6 +16,7 @@ import {
   dscrCrossesIntoRegulator, dscrSlaBreachCrossesIntoRegulator,
 } from '../utils/dscr-report-spec';
 import { resolveNextStatus } from '../utils/chain-sla';
+import { badEnum } from '../utils/validation';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -123,6 +124,8 @@ app.post('/', async (c) => {
 
   const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;
+  const dscrTierErr = badEnum('dscr_tier', body.dscr_tier, ['emerging', 'standard', 'large', 'systemically_important']);
+  if (dscrTierErr) return c.json({ success: false, error: dscrTierErr }, 422);
   const tier = body.dscr_tier ?? 'standard';
 
   const now = new Date().toISOString();
@@ -199,6 +202,9 @@ app.post('/:id/action', async (c) => {
   if (!allowed.includes(action)) {
     return c.json({ success: false, error: `Action '${action}' not valid from '${currentStatus}'` }, 422);
   }
+
+  const breachTypeErr = badEnum('breach_type', body.breach_type, ['historical', 'projected', 'both']);
+  if (breachTypeErr) return c.json({ success: false, error: breachTypeErr }, 422);
 
   const nextStatus = resolveNextStatus(action, currentStatus, DSCR_STATE_TRANSITIONS);
   const now = new Date().toISOString();

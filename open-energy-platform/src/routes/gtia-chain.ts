@@ -16,6 +16,7 @@ import {
   gtiaCrossesIntoRegulator, gtiaSlaBreachCrossesIntoRegulator,
 } from '../utils/gtia-spec';
 import { resolveNextStatus } from '../utils/chain-sla';
+import { badEnum } from '../utils/validation';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -125,6 +126,12 @@ app.post('/', async (c) => {
 
   const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;
+  const gtiaTierErr = badEnum('gtia_tier', body.gtia_tier, ['small', 'medium', 'large', 'bulk']);
+  if (gtiaTierErr) return c.json({ success: false, error: gtiaTierErr }, 422);
+  const connectionTypeErr = badEnum('connection_type', body.connection_type, ['transmission', 'sub_transmission', 'distribution', 'embedded']);
+  if (connectionTypeErr) return c.json({ success: false, error: connectionTypeErr }, 422);
+  const scadaProtocolErr = badEnum('scada_protocol', body.scada_protocol, ['iec61850', 'dnp3', 'modbus', 'iec104', 'proprietary']);
+  if (scadaProtocolErr) return c.json({ success: false, error: scadaProtocolErr }, 422);
   const tier = body.gtia_tier ?? 'medium';
 
   const now = new Date().toISOString();
@@ -200,6 +207,9 @@ app.post('/:id/action', async (c) => {
   if (!allowed.includes(action)) {
     return c.json({ success: false, error: `Action '${action}' not valid from '${currentStatus}'` }, 422);
   }
+
+  const scadaProtocolErr = badEnum('scada_protocol', body.scada_protocol, ['iec61850', 'dnp3', 'modbus', 'iec104', 'proprietary']);
+  if (scadaProtocolErr) return c.json({ success: false, error: scadaProtocolErr }, 422);
 
   const nextStatus = resolveNextStatus(action, currentStatus, GTIA_STATE_TRANSITIONS);
   const now = new Date().toISOString();

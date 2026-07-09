@@ -18,6 +18,7 @@ import { Hono } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -312,6 +313,11 @@ app.post('/', async (c) => {
       400,
     );
   }
+
+  const triggerCategoryErr = badEnum('trigger_category', body.trigger_category, ['new_development', 'scope_change', 'layout_modification', 'access_road', 'substation_addition', 'transmission_line']);
+  if (triggerCategoryErr) return c.json({ success: false, error: triggerCategoryErr }, 400);
+  const hraCategoryErr = badEnum('hra_category', body.hra_category, ['phase_1_desktop', 'phase_2_field', 'phase_3_excavation', 'heritage_impact', 'mitigation_plan']);
+  if (hraCategoryErr) return c.json({ success: false, error: hraCategoryErr }, 400);
 
   const tier = deriveHraCapacityTier(body.capacity_mw);
   const now = new Date();

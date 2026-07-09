@@ -21,6 +21,7 @@ import {
   slaBreachCrossesIntoRegulator,
 } from '../utils/ipp-reipppp-report-spec';
 import type { RprStatus, RprAction, RprProjectTier } from '../utils/ipp-reipppp-report-spec';
+import { badEnum } from '../utils/validation';
 
 const router = new Hono<HonoEnv>();
 router.use('*', authMiddleware);
@@ -184,6 +185,9 @@ router.post('/', async (c) => {
       400,
     );
   }
+
+  const reportTypeErr = badEnum('report_type', body.report_type, ['annual_operational', 'annual_construction', 'final_construction', 'remediation_report']);
+  if (reportTypeErr) return c.json({ success: false, error: reportTypeErr }, 400);
 
   const tier = deriveRprProjectTier(body.project_mw);
   const now = new Date();

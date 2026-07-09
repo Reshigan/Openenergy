@@ -7,6 +7,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { buildFundingOptions } from '../utils/funding-options';
+import { badEnum } from '../utils/validation';
 
 const projects = new Hono<HonoEnv>();
 
@@ -681,6 +682,9 @@ projects.post('/', async (c) => {
     return c.json({ success: false, error: 'Missing required fields: project_name, structure_type, technology, capacity_mw, location' }, 400);
   }
 
+  const badStructure = badEnum('structure_type', structure_type, ['build_operate_transfer', 'build_own_operate', 'private_wire', 'direct_agreement']);
+  if (badStructure) return c.json({ success: false, error: badStructure }, 400);
+
   const projectId = 'ip_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
 
   await c.env.DB.prepare(`
@@ -827,6 +831,9 @@ projects.post('/:id/milestones', async (c) => {
   if (project.developer_id !== user.id) return c.json({ success: false, error: 'Not authorized' }, 403);
   if (!milestone_name || !milestone_type || !target_date) return c.json({ success: false, error: 'milestone_name, milestone_type, target_date are required' }, 400);
 
+  const badMilestone = badEnum('milestone_type', milestone_type, ['financial_close', 'construction_start', 'construction_complete', 'commissioning', 'cod', 'operational', 'termination']);
+  if (badMilestone) return c.json({ success: false, error: badMilestone }, 400);
+
   const mid = 'ms_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
   await c.env.DB.prepare(`
     INSERT INTO project_milestones (id, project_id, milestone_name, milestone_type, order_index, target_date, status, notes, created_at)
@@ -888,6 +895,13 @@ projects.put('/:id', async (c) => {
   }
 
   const { project_name, structure_type, technology, capacity_mw, status, location } = body;
+
+  // Guard the two CHECK-constrained columns only when supplied (COALESCE keeps
+  // the existing value otherwise) so a bad value returns 400, not a DB 500.
+  const badStructure = badEnum('structure_type', structure_type, ['build_operate_transfer', 'build_own_operate', 'private_wire', 'direct_agreement']);
+  if (badStructure) return c.json({ success: false, error: badStructure }, 400);
+  const badStatus = badEnum('status', status, ['development', 'construction', 'commissioning', 'commercial_operations', 'decommissioned']);
+  if (badStatus) return c.json({ success: false, error: badStatus }, 400);
 
   await c.env.DB.prepare(`
     UPDATE ipp_projects SET

@@ -18,6 +18,7 @@ import { Hono } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -311,6 +312,11 @@ app.post('/', async (c) => {
       400,
     );
   }
+
+  const triggerCategoryErr = badEnum('trigger_category', body.trigger_category, ['new_application', 'renewal', 'amendment', 'transfer', 'rectification']);
+  if (triggerCategoryErr) return c.json({ success: false, error: triggerCategoryErr }, 400);
+  const section21CategoryErr = badEnum('section21_category', body.section21_category, ['s21_a_diversion', 's21_b_storage', 's21_c_impeding_flow', 's21_g_discharge', 's21_h_disposal']);
+  if (section21CategoryErr) return c.json({ success: false, error: section21CategoryErr }, 400);
 
   const tier = deriveWulCapacityTier(body.capacity_mw);
   const now = new Date();

@@ -21,6 +21,7 @@ import {
   type LessonAction,
   type ImpactTier,
 } from '../utils/ipp-lessons-learned-spec';
+import { badEnum } from '../utils/validation';
 
 const READ_ROLES = new Set([
   'admin', 'trader', 'ipp_developer', 'offtaker', 'grid_operator',
@@ -187,6 +188,8 @@ app.post('/', async (c) => {
   if (!body.lesson_title || !body.project_id || !body.lesson_type || !body.impact_tier) {
     return c.json({ error: 'lesson_title, project_id, lesson_type, and impact_tier required' }, 400);
   }
+  const impactTierErr = badEnum('impact_tier', body.impact_tier, ['critical_impact', 'high_impact', 'medium_impact', 'low_impact']);
+  if (impactTierErr) return c.json({ error: impactTierErr }, 400);
 
   const tier = body.impact_tier as ImpactTier;
   const now = new Date();

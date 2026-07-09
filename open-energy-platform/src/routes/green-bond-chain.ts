@@ -16,6 +16,7 @@ import {
   gbrCrossesIntoRegulator, gbrSlaBreachCrossesIntoRegulator,
 } from '../utils/green-bond-spec';
 import { resolveNextStatus } from '../utils/chain-sla';
+import { badEnum } from '../utils/validation';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -122,6 +123,8 @@ app.post('/', async (c) => {
 
   const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;
+  const bondClassErr = badEnum('bond_class', body.bond_class, ['project', 'corporate', 'sovereign', 'securitised']);
+  if (bondClassErr) return c.json({ success: false, error: bondClassErr }, 422);
   const bondClass = body.bond_class ?? 'project';
   const issuanceSize = body.issuance_size_zar ?? 0;
   const reportYear = body.report_year ?? new Date().getFullYear();
@@ -198,6 +201,9 @@ app.post('/:id/action', async (c) => {
   if (!allowed.includes(action)) {
     return c.json({ success: false, error: `Action '${action}' not valid from '${currentStatus}'` }, 422);
   }
+
+  const reviewTypeErr = badEnum('review_type', body.review_type, ['second_party', 'certification', 'verification', 'rating']);
+  if (reviewTypeErr) return c.json({ success: false, error: reviewTypeErr }, 422);
 
   const nextStatus = resolveNextStatus(action, currentStatus, GBR_STATE_TRANSITIONS);
   const now = new Date().toISOString();

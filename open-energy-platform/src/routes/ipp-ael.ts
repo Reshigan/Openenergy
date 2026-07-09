@@ -18,6 +18,7 @@ import { Hono } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -312,6 +313,11 @@ app.post('/', async (c) => {
       400,
     );
   }
+
+  const triggerCategoryErr = badEnum('trigger_category', body.trigger_category, ['new_installation', 'capacity_increase', 'fuel_change', 'technology_substitution', 'renewal', 'amendment']);
+  if (triggerCategoryErr) return c.json({ success: false, error: triggerCategoryErr }, 400);
+  const aelCategoryErr = badEnum('ael_category', body.ael_category, ['category_1_major', 'category_2_minor', 's21_listed_activity', 'point_source', 'fugitive_emission']);
+  if (aelCategoryErr) return c.json({ success: false, error: aelCategoryErr }, 400);
 
   const tier = deriveAelCapacityTier(body.capacity_mw);
   const now = new Date();

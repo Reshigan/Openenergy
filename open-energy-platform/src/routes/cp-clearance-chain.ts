@@ -16,6 +16,7 @@ import {
   cpCrossesIntoRegulator, cpSlaBreachCrossesIntoRegulator,
 } from '../utils/cp-clearance-spec';
 import { resolveNextStatus } from '../utils/chain-sla';
+import { badEnum } from '../utils/validation';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -122,6 +123,8 @@ app.post('/', async (c) => {
 
   const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;
+  const cpTierErr = badEnum('cp_tier', body.cp_tier, ['minor', 'standard', 'major', 'systemic']);
+  if (cpTierErr) return c.json({ success: false, error: cpTierErr }, 422);
   const tier = body.cp_tier ?? 'standard';
 
   const now = new Date().toISOString();

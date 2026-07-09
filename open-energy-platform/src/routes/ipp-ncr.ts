@@ -21,6 +21,7 @@ import {
   type NcrAction,
   type NcrSeverity,
 } from '../utils/ipp-ncr-spec';
+import { badEnum } from '../utils/validation';
 
 const READ_ROLES = new Set([
   'admin', 'trader', 'ipp_developer', 'offtaker', 'grid_operator',
@@ -212,6 +213,8 @@ app.post('/', async (c) => {
   if (!body.description || !body.project_id || !body.ncr_category || !body.ncr_severity) {
     return c.json({ error: 'description, project_id, ncr_category, and ncr_severity are required' }, 400);
   }
+  const ncrSeverityErr = badEnum('ncr_severity', body.ncr_severity, ['safety_critical', 'structural', 'functional', 'minor', 'cosmetic']);
+  if (ncrSeverityErr) return c.json({ error: ncrSeverityErr }, 400);
 
   const severity = body.ncr_severity as NcrSeverity;
   const now = new Date();

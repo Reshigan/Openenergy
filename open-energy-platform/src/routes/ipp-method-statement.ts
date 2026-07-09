@@ -22,6 +22,7 @@ import {
   type MsAction,
   type RiskTier,
 } from '../utils/ipp-method-statement-spec';
+import { badEnum } from '../utils/validation';
 
 const READ_ROLES = new Set([
   'admin', 'trader', 'ipp_developer', 'offtaker', 'grid_operator',
@@ -215,6 +216,8 @@ app.post('/', async (c) => {
   if (!body.ms_title || !body.project_id || !body.work_type || !body.risk_tier || !body.scope_of_work) {
     return c.json({ error: 'ms_title, project_id, work_type, risk_tier, and scope_of_work are required' }, 400);
   }
+  const riskTierErr = badEnum('risk_tier', body.risk_tier, ['high_risk', 'medium_risk', 'low_risk', 'routine']);
+  if (riskTierErr) return c.json({ error: riskTierErr }, 400);
 
   const tier = body.risk_tier as RiskTier;
   const now = new Date();

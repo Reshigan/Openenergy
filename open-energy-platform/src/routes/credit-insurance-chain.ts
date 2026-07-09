@@ -16,6 +16,7 @@ import {
   ciCrossesIntoRegulator, ciSlaBreachCrossesIntoRegulator,
 } from '../utils/credit-insurance-spec';
 import { resolveNextStatus } from '../utils/chain-sla';
+import { badEnum } from '../utils/validation';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -124,6 +125,10 @@ app.post('/', async (c) => {
 
   const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;
+  const insuranceTierErr = badEnum('insurance_tier', body.insurance_tier, ['short_term', 'medium_term', 'long_term', 'project_finance']);
+  if (insuranceTierErr) return c.json({ success: false, error: insuranceTierErr }, 422);
+  const insuranceTypeErr = badEnum('insurance_type', body.insurance_type, ['political_risk', 'credit_risk', 'comprehensive', 'miga_guarantee', 'ecic_cover', 'atidi_cover', 'lloyds_syndicate']);
+  if (insuranceTypeErr) return c.json({ success: false, error: insuranceTypeErr }, 422);
   const tier = body.insurance_tier ?? 'long_term';
 
   const now = new Date().toISOString();

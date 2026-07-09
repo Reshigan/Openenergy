@@ -22,6 +22,7 @@ import {
   type EnvMonitoringAction,
   type MonitoringTier,
 } from '../utils/ipp-env-monitoring-spec';
+import { badEnum } from '../utils/validation';
 
 const READ_ROLES = new Set([
   'admin', 'trader', 'ipp_developer', 'offtaker', 'grid_operator',
@@ -215,6 +216,8 @@ app.post('/', async (c) => {
   if (!body.monitoring_title || !body.project_id || !body.monitoring_category || !body.monitoring_tier) {
     return c.json({ error: 'monitoring_title, project_id, monitoring_category, and monitoring_tier are required' }, 400);
   }
+  const monitoringTierErr = badEnum('monitoring_tier', body.monitoring_tier, ['critical', 'regular', 'routine', 'baseline']);
+  if (monitoringTierErr) return c.json({ error: monitoringTierErr }, 400);
 
   const tier = body.monitoring_tier as MonitoringTier;
   const now = new Date();
