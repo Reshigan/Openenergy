@@ -3,6 +3,7 @@ import { Hono, type Context } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import { ask } from '../utils/ai';
 import { withLock, LockBusyError } from '../utils/locks';
 import { deriveShardKey, MatchingOrder } from '../utils/matching';
@@ -338,6 +339,9 @@ trading.post('/orders', async (c) => {
       externalRef: typeof external_ref === 'string' ? external_ref : null,
     });
   }
+
+  const mtErr = badEnum('market_type', market_type, ['bilateral', 'exchange', 'spot', 'derivatives']);
+  if (mtErr) return c.json({ success: false, error: mtErr }, 400);
 
   // ── Pre-trade gating ────────────────────────────────────────────────────
   const snapshot = await loadRiskSnapshot(c.env, user.id, energyType, deliveryDate);
@@ -1901,6 +1905,10 @@ trading.post('/exceptions', async (c) => {
   if (!body.match_id || !body.exception_type || !body.reason || body.reason.length < 3) {
     return c.json({ success: false, error: 'match_id, exception_type, reason (≥3 chars) required' }, 400);
   }
+  const exErr = badEnum('exception_type', body.exception_type,
+      ['bad_price', 'off_market', 'wrong_counterparty', 'wrong_volume', 'duplicate_fill', 'market_halt_override', 'other'])
+    || badEnum('severity', body.severity, ['low', 'medium', 'high', 'critical']);
+  if (exErr) return c.json({ success: false, error: exErr }, 400);
 
   // Caller must be a party to the fill.
   const fill = await c.env.DB.prepare(
@@ -1985,6 +1993,9 @@ trading.post('/exceptions/:id/transition', async (c) => {
   if (!['investigating', 'resolved', 'rejected'].includes(to)) {
     return c.json({ success: false, error: 'Invalid transition target' }, 400);
   }
+  const outErr = badEnum('outcome', body.outcome,
+    ['cancelled', 'rebooked', 'adjusted', 'waived', 'escalated', 'no_action']);
+  if (outErr) return c.json({ success: false, error: outErr }, 400);
 
   const ex = await c.env.DB.prepare(
     `SELECT e.id, e.status, e.match_id,
