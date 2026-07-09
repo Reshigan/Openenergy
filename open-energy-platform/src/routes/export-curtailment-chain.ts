@@ -9,6 +9,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   EcStatus, EcAction, EcTier,
   deriveEcSla, EC_HARD_TERMINALS,
@@ -129,6 +130,10 @@ app.post('/', async (c) => {
 
   const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;
+  const tierErr = badEnum('curtailment_tier', body.curtailment_tier, ['minor','moderate','significant','systemic']);
+  if (tierErr) return c.json({ success: false, error: tierErr }, 400);
+  const typeErr = badEnum('curtailment_type', body.curtailment_type, ['network_congestion','load_management','emergency_curtailment','planned_maintenance','frequency_deviation','voltage_violation']);
+  if (typeErr) return c.json({ success: false, error: typeErr }, 400);
   const tier = body.curtailment_tier ?? 'moderate';
 
   const now = new Date().toISOString();
