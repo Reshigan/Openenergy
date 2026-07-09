@@ -215,6 +215,9 @@ app.post('/', async (c) => {
     );
   }
 
+  if (!['safety_critical', 'construction_blocking', 'standard', 'information_only'].includes(String(body.query_urgency))) {
+    return c.json({ error: 'invalid query_urgency' }, 400);
+  }
   const urgency = body.query_urgency as QueryUrgency;
   const now = new Date();
   const slaHrs = SLA_HOURS[urgency];
