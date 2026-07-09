@@ -857,7 +857,10 @@ om.post('/maintenance/:id/complete', async (c) => {
 // Public consumer of these tokens lives in src/routes/esums-ingest.ts.
 
 om.get('/sites/:id/ingest-keys', async (c) => {
+  const user = getCurrentUser(c);
   const siteId = c.req.param('id');
+  const denied = await assertSiteOwnership(c, user, siteId);
+  if (denied) return denied;
   const rows = await c.env.DB.prepare(`
     SELECT id, site_id, label, token_prefix, scope, created_at, last_used_at,
            use_count, expires_at, revoked
@@ -928,7 +931,10 @@ om.post('/ingest-keys/:id/revoke', async (c) => {
 
 // ─── Connector runs (Live tab — ingestion history per site) ──────────────
 om.get('/sites/:id/connector-runs', async (c) => {
+  const user = getCurrentUser(c);
   const siteId = c.req.param('id');
+  const denied = await assertSiteOwnership(c, user, siteId);
+  if (denied) return denied;
   const limit = Math.min(Number(c.req.query('limit') || 50), 200);
   const rows = await c.env.DB.prepare(`
     SELECT id, site_id, source, ingest_key_id, started_at, finished_at, status,
@@ -944,7 +950,10 @@ om.get('/sites/:id/connector-runs', async (c) => {
 // Single round-trip the SPA can poll every 30s: open faults, recent
 // connector runs, last-hour telemetry summary, device health.
 om.get('/sites/:id/live', async (c) => {
+  const user = getCurrentUser(c);
   const siteId = c.req.param('id');
+  const denied = await assertSiteOwnership(c, user, siteId);
+  if (denied) return denied;
   const [site, devices, openFaults, runs, lastHour] = await Promise.all([
     c.env.DB.prepare(`SELECT * FROM om_sites WHERE id = ?`).bind(siteId).first<any>(),
     c.env.DB.prepare(`SELECT id, device_type, manufacturer, model, status, rated_kw, last_seen_at
