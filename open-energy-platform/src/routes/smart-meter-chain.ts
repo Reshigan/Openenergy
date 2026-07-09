@@ -206,6 +206,15 @@ router.post('/', async (c) => {
     return c.json({ success: false, error: 'meter_serial and site_id are required' }, 400);
   }
 
+  if (body.meter_class !== undefined
+    && !['hv_bulk', 'bulk', 'prepaid', 'post_paid'].includes(body.meter_class)) {
+    return c.json({ success: false, error: 'Invalid meter_class' }, 400);
+  }
+  if (body.communication_tech != null
+    && !['gprs', 'plc', 'rf_mesh', 'fibre', 'nb_iot'].includes(body.communication_tech)) {
+    return c.json({ success: false, error: 'Invalid communication_tech' }, 400);
+  }
+
   const meterClass = (body.meter_class ?? 'post_paid') as MeterClass;
   const now        = new Date();
   const nowIso     = now.toISOString();

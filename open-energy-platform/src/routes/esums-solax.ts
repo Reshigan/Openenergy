@@ -260,6 +260,10 @@ sr.put('/stations/:id', async (c) => {
     if (!site) throw new AppError(ErrorCode.NOT_FOUND, 'Site not found', 404);
   }
 
+  if (b.status !== undefined && !['active', 'inactive', 'error'].includes(b.status as string)) {
+    throw new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid status', 400);
+  }
+
   const now = new Date().toISOString();
   await c.env.DB.prepare(`
     UPDATE solax_stations

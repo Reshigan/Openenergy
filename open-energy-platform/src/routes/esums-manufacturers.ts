@@ -234,6 +234,10 @@ mr.put('/credentials/:id', async (c) => {
     }
   }
 
+  if (b.status !== undefined && !['active', 'inactive', 'error'].includes(b.status as string)) {
+    throw new AppError(ErrorCode.VALIDATION_ERROR, 'Invalid status', 400);
+  }
+
   const now = nowIso();
   const toRatePut = (v: unknown, fallback: number | null) =>
     v !== undefined ? ((v != null && v !== '') ? Number(v) : null) : fallback;

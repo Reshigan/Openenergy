@@ -58,8 +58,13 @@ portalAdmin.get('/tokens', async (c) => {
 });
 
 portalAdmin.post('/tokens/:id/revoke', async (c) => {
+  const user = getCurrentUser(c);
+  const isOfficer = ['admin', 'support'].includes(user.role);
   const id = c.req.param('id');
-  await c.env.DB.prepare(`UPDATE om_portal_tokens SET revoked = 1 WHERE id = ?`).bind(id).run();
+  const res = isOfficer
+    ? await c.env.DB.prepare(`UPDATE om_portal_tokens SET revoked = 1 WHERE id = ?`).bind(id).run()
+    : await c.env.DB.prepare(`UPDATE om_portal_tokens SET revoked = 1 WHERE id = ? AND created_by = ?`).bind(id, user.id).run();
+  if (res.meta.changes === 0) return c.json({ success: false, error: 'token not found' }, 404);
   return c.json({ success: true });
 });
 

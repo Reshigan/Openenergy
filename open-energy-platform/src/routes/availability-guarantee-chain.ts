@@ -523,15 +523,24 @@ app.post('/:id/confirm-meets-guarantee', async (c) => transition(c, 'confirm_mee
   return out;
 }));
 
-app.post('/:id/flag-shortfall', async (c) => transition(c, 'flag_shortfall', (_row, body) => {
+const SHORTFALL_TIERS = ['minor_shortfall', 'moderate_shortfall', 'material_shortfall', 'severe_shortfall', 'critical_shortfall'];
+
+app.post('/:id/flag-shortfall', async (c) => {
+  const pre = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  if (pre.shortfall_tier !== undefined
+    && !(typeof pre.shortfall_tier === 'string' && SHORTFALL_TIERS.includes(pre.shortfall_tier))) {
+    return c.json({ success: false, error: 'Invalid shortfall_tier' }, 400);
+  }
+  return transition(c, 'flag_shortfall', (_row, body) => {
   const b = body as Partial<ShortfallBody>;
   const out: Partial<GuaranteeRow> = {};
   if (typeof b.shortfall_pp === 'number')    out.shortfall_pp = b.shortfall_pp;
-  if (typeof b.shortfall_tier === 'string')  out.shortfall_tier = b.shortfall_tier;
+  if (typeof b.shortfall_tier === 'string' && SHORTFALL_TIERS.includes(b.shortfall_tier)) out.shortfall_tier = b.shortfall_tier;
   if (typeof b.shortfall_basis === 'string') out.shortfall_basis = b.shortfall_basis;
   if (typeof b.reason_code === 'string')     out.reason_code = b.reason_code;
   return out;
-}));
+  });
+});
 
 app.post('/:id/assess-ld', async (c) => transition(c, 'assess_ld', (_row, body) => {
   const b = body as Partial<AssessLdBody>;

@@ -476,6 +476,8 @@ intel.post('/ingestion/:id/poll', async (c) => {
 });
 
 intel.post('/ingestion/:id/test', async (c) => {
+  const user = getCurrentUser(c);
+  if (!['admin', 'support'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   const id = c.req.param('id');
   const conn = await c.env.DB.prepare(`SELECT * FROM om_connections WHERE id = ?`).bind(id).first<any>();
   if (!conn) return c.json({ success: false, error: 'not found' }, 404);

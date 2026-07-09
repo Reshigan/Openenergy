@@ -524,12 +524,20 @@ app.post('/:id/begin-assessment', async (c) => transition(c, 'begin_assessment',
   return out;
 }));
 
-app.post('/:id/complete-assessment', async (c) => transition(c, 'complete_assessment', (_row, body) => {
+const DEFECT_CLASSES = ['isolated', 'batch', 'serial', 'safety', 'wear_out'];
+
+app.post('/:id/complete-assessment', async (c) => {
+  const pre = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  if (pre.defect_class !== undefined
+    && !(typeof pre.defect_class === 'string' && DEFECT_CLASSES.includes(pre.defect_class))) {
+    return c.json({ success: false, error: 'Invalid defect_class' }, 400);
+  }
+  return transition(c, 'complete_assessment', (_row, body) => {
   const b = body as Partial<CompleteAssessmentBody>;
   const out: Partial<RecoveryRow> = { assessment_complete_flag: 1 };
   if (typeof b.assessment_basis === 'string')    out.assessment_basis = b.assessment_basis;
   if (typeof b.assessment_ref === 'string')      out.assessment_ref = b.assessment_ref;
-  if (typeof b.defect_class === 'string')        out.defect_class = b.defect_class;
+  if (typeof b.defect_class === 'string' && DEFECT_CLASSES.includes(b.defect_class)) out.defect_class = b.defect_class;
   if (typeof b.defect_description === 'string')  out.defect_description = b.defect_description;
   if (typeof b.failure_mode === 'string')        out.failure_mode = b.failure_mode;
   if (typeof b.units_affected === 'number')      out.units_affected = b.units_affected;
@@ -540,7 +548,8 @@ app.post('/:id/complete-assessment', async (c) => transition(c, 'complete_assess
     out.recovery_tier = tierForRecoveryZarM(b.recovery_zar_m);
   }
   return out;
-}));
+  });
+});
 
 app.post('/:id/approve-recovery', async (c) => transition(c, 'approve_recovery', (_row, body) => {
   const b = body as Partial<ApproveBody>;
