@@ -14,6 +14,12 @@ import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { evaluateCovenant, runWaterfall, dscr, llcr } from '../utils/covenants';
 import { fireCascade } from '../utils/cascade';
 import { cachedAll, invalidateReference } from '../utils/reference-cache';
+import { badEnum } from '../utils/validation';
+
+const TRANCHE_TYPES = ['opex', 'tax', 'senior_interest', 'senior_principal', 'dsra', 'mra', 'mezzanine', 'subordinated', 'equity_distribution', 'other'] as const;
+const ACTION_TYPES = ['cure_plan', 'waiver_request', 'amendment_request', 'acceleration_notice', 'workout', 'no_action'] as const;
+const SEVERITIES = ['low', 'medium', 'high', 'critical'] as const;
+const RESOLUTION_OUTCOMES = ['cured', 'waived', 'amended_terms', 'accelerated', 'written_off', 'no_action'] as const;
 
 const lender = new Hono<HonoEnv>();
 lender.use('*', authMiddleware);
@@ -34,6 +40,10 @@ lender.post('/covenants', async (c) => {
   for (const k of ['covenant_code', 'covenant_name', 'covenant_type', 'operator', 'measurement_frequency']) {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
   }
+  const covErr = badEnum('covenant_type', b.covenant_type, ['financial', 'operational', 'insurance', 'reporting', 'legal', 'environmental', 'governance'])
+    || badEnum('operator', b.operator, ['gte', 'lte', 'eq', 'gt', 'lt', 'between'])
+    || badEnum('measurement_frequency', b.measurement_frequency, ['monthly', 'quarterly', 'semi_annual', 'annual', 'on_event']);
+  if (covErr) return c.json({ success: false, error: covErr }, 400);
   const id = genId('cov');
   const createdAt = new Date().toISOString();
   await c.env.DB.prepare(
@@ -245,6 +255,8 @@ lender.post('/ie-certifications', async (c) => {
   for (const k of ['cert_number', 'project_id', 'cert_type', 'cert_issue_date']) {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
   }
+  const certErr = badEnum('cert_type', b.cert_type, ['monthly_progress', 'milestone_completion', 'drawdown', 'commissioning', 'performance_test', 'taking_over', 'final']);
+  if (certErr) return c.json({ success: false, error: certErr }, 400);
   const id = genId('ie');
   const createdAt = new Date().toISOString();
   await c.env.DB.prepare(
@@ -348,6 +360,13 @@ lender.post('/waterfalls', async (c) => {
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   for (const k of ['project_id', 'waterfall_name', 'effective_from']) {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
+  }
+  if (Array.isArray(b.tranches)) {
+    for (const t of b.tranches as Array<Record<string, unknown>>) {
+      if (!t.priority || !t.tranche_name || !t.tranche_type) continue;
+      const teErr = badEnum('tranche_type', t.tranche_type, TRANCHE_TYPES);
+      if (teErr) return c.json({ success: false, error: teErr }, 400);
+    }
   }
   const id = genId('wf');
   await c.env.DB.prepare(
@@ -484,6 +503,8 @@ lender.post('/reserves', async (c) => {
   for (const k of ['project_id', 'reserve_type', 'target_amount_zar']) {
     if (!b[k] && b[k] !== 0) return c.json({ success: false, error: `${k} is required` }, 400);
   }
+  const rsvErr = badEnum('reserve_type', b.reserve_type, ['dsra', 'mra', 'om_reserve', 'tax_reserve', 'insurance', 'other']);
+  if (rsvErr) return c.json({ success: false, error: rsvErr }, 400);
   const id = genId('rsv');
   const createdAt = new Date().toISOString();
   const balance = b.current_balance_zar == null ? 0 : Number(b.current_balance_zar);
@@ -532,6 +553,8 @@ lender.post('/reserves/:id/movement', async (c) => {
   if (!b.movement_type || b.amount_zar == null) {
     return c.json({ success: false, error: 'movement_type and amount_zar are required' }, 400);
   }
+  const mvErr = badEnum('movement_type', b.movement_type, ['top_up', 'release', 'draw', 'interest', 'transfer_in', 'transfer_out']);
+  if (mvErr) return c.json({ success: false, error: mvErr }, 400);
   await c.env.DB.prepare(
     `INSERT INTO reserve_movements (id, reserve_id, movement_type, amount_zar, waterfall_run_id, reason, created_by)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -753,6 +776,9 @@ lender.post('/covenant-tests/:id/actions', async (c) => {
   if (!action) {
     return c.json({ success: false, error: 'action_type required' }, 400);
   }
+  const actErr = badEnum('action_type', action, ACTION_TYPES)
+    || badEnum('severity', body.severity, SEVERITIES);
+  if (actErr) return c.json({ success: false, error: actErr }, 400);
   if (!body.notes || body.notes.length < 3) {
     return c.json({ success: false, error: 'notes ≥3 chars required' }, 400);
   }
@@ -805,6 +831,8 @@ lender.post('/covenant-actions/:id/transition', async (c) => {
   if (!['investigating', 'resolved', 'rejected'].includes(to)) {
     return c.json({ success: false, error: 'Invalid transition target' }, 400);
   }
+  const outErr = badEnum('outcome', body.outcome, RESOLUTION_OUTCOMES);
+  if (outErr) return c.json({ success: false, error: outErr }, 400);
   const action = await c.env.DB.prepare(
     `SELECT id, status, lender_participant_id FROM lender_covenant_actions WHERE id = ?`,
   ).bind(actionId).first<{ id: string; status: string; lender_participant_id: string | null }>();
