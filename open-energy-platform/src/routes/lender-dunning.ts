@@ -103,7 +103,13 @@ dunning.get('/watchlist', async (c) => {
 
 dunning.get('/watchlist/:id/events', async (c) => {
   if (requireRead(c)) return requireRead(c)!;
+  const u = getCurrentUser(c);
   const id = c.req.param('id');
+  const wl = await c.env.DB.prepare('SELECT participant_id FROM oe_lender_watchlist WHERE id = ?').bind(id).first<{ participant_id: string | null }>();
+  if (!wl) return c.json({ success: false, error: 'not_found' }, 404);
+  if (BORROWER_ROLES.has(u.role) && wl.participant_id !== u.id) {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
   const rows = await c.env.DB.prepare(`
     SELECT * FROM oe_lender_watchlist_events
     WHERE watchlist_id = ?
@@ -288,6 +294,9 @@ dunning.post('/:id/withdraw', async (c) => {
   if (!body.reason) return c.json({ success: false, error: 'reason required' }, 400);
   const row = await c.env.DB.prepare(`SELECT * FROM oe_lender_dunning_notices WHERE id = ?`).bind(id).first<any>();
   if (!row) return c.json({ success: false, error: 'not_found' }, 404);
+  if (!['issued', 'acknowledged', 'overdue'].includes(row.status)) {
+    return c.json({ success: false, error: `cannot withdraw a ${row.status} notice` }, 409);
+  }
   await c.env.DB.prepare(`
     UPDATE oe_lender_dunning_notices
        SET status = 'withdrawn', withdrawn_at = datetime('now'), withdrawn_by = ?,
