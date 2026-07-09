@@ -17,6 +17,7 @@ import { Hono } from 'hono';
 import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { getHistoricalData, getRealtimeReading } from '../utils/inverter-adapters';
+import type { ManufacturerCredentials, Manufacturer } from '../utils/inverter-adapters';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
 
@@ -223,6 +224,115 @@ export async function computeStationAccruals(
   }).catch(() => { /* non-fatal */ });
 
   return { kwh_delta: kwhDelta, rows_written: 1 };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Forward hourly recorder — manufacturer-agnostic realtime → time series.
+//
+// Non-SolaX inverters (Sungrow iSolarCloud, etc.) have no history adapter
+// (getHistoricalData throws), so we can't backfill "from the start" — the
+// vendor cloud only exposes a realtime reading. Instead we RECORD forward:
+// once an hour, pull the realtime reading and append ONE hourly point to both
+// planes, building the ML-readable series hour-by-hour from the moment the
+// station connects. Genuine pre-connection history stays unavailable until the
+// vendor's history API is wired.
+//
+//   financial plane → site_accruals   (via computeStationAccruals — reused)
+//   ML/O&M plane    → om_sites/om_devices/om_telemetry (mirrors backfill's write)
+//
+// Idempotent: snapshot upsert on station_id, accrual on (station_id, hour),
+// om_telemetry on deterministic id omt_fwd_<station>_<hour>. Safe to re-run
+// within the same hour (delta self-corrects against prior accruals).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function recordStationHourly(
+  stationId: string,
+  env: HonoEnv['Bindings'],
+): Promise<{ kwh_delta: number; recorded: boolean; skipped?: string }> {
+  const station = await env.DB
+    .prepare(`SELECT ss.*, mc.auth_type, mc.client_id, mc.client_secret, mc.api_key, mc.token,
+        mc.username, mc.password, mc.base_url, mc.site_id AS cred_site_id, mc.extra_config
+      FROM solax_stations ss
+      LEFT JOIN manufacturer_credentials mc ON mc.participant_id = ss.participant_id AND mc.manufacturer = ss.manufacturer
+      WHERE ss.id = ?`)
+    .bind(stationId)
+    .first<Record<string, unknown>>();
+  if (!station) return { kwh_delta: 0, recorded: false, skipped: 'no_station' };
+  if (!station.auth_type) return { kwh_delta: 0, recorded: false, skipped: 'no_credentials' };
+
+  const creds: ManufacturerCredentials = {
+    manufacturer: station.manufacturer as Manufacturer,
+    auth_type: station.auth_type as ManufacturerCredentials['auth_type'],
+    client_id: (station.client_id as string | null) ?? null,
+    client_secret: (station.client_secret as string | null) ?? null,
+    api_key: (station.api_key as string | null) ?? null,
+    token: (station.token as string | null) ?? null,
+    username: (station.username as string | null) ?? null,
+    password: (station.password as string | null) ?? null,
+    base_url: (station.base_url as string | null) ?? null,
+    site_id: (station.cred_site_id as string | null) ?? null,
+    extra_config: (station.extra_config as string | null) ?? null,
+  };
+
+  // Realtime pull — the only reading non-SolaX adapters expose.
+  let reading;
+  try {
+    reading = await getRealtimeReading(creds, station.device_sn as string);
+  } catch (e) {
+    return { kwh_delta: 0, recorded: false, skipped: `read_error:${(e as Error).message.slice(0, 60)}` };
+  }
+
+  // Latest-only snapshot — computeStationAccruals reads daily_kwh from here.
+  const now = new Date().toISOString();
+  await env.DB
+    .prepare(`INSERT INTO station_telemetry_snapshot
+        (station_id, ts, ac_kw, dc_kw, daily_kwh, total_kwh,
+         battery_soc, temperature_c, online, raw_json, updated_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?)
+      ON CONFLICT(station_id) DO UPDATE SET
+        ts=excluded.ts, ac_kw=excluded.ac_kw, dc_kw=excluded.dc_kw,
+        daily_kwh=excluded.daily_kwh, total_kwh=excluded.total_kwh,
+        battery_soc=excluded.battery_soc, temperature_c=excluded.temperature_c,
+        online=excluded.online, raw_json=excluded.raw_json, updated_at=excluded.updated_at`)
+    .bind(stationId, now, reading.ac_kw ?? 0, reading.dc_kw ?? 0,
+      reading.daily_kwh ?? 0, reading.total_kwh ?? 0,
+      reading.battery_soc ?? null, reading.temperature_c ?? null,
+      reading.online ? 1 : 0, JSON.stringify(reading), now)
+    .run();
+
+  // Financial plane — reuse the shared accrual computer (site_accruals + bridges + cascade).
+  const { kwh_delta } = await computeStationAccruals(stationId, env);
+
+  // ML/O&M plane — one hourly om_telemetry point, mirroring backfill's plane write
+  // so esums-om-analysis / ona read the same shape regardless of manufacturer.
+  const omSiteId = (station.site_id as string | null) || `site_bf_${stationId}`;
+  const omDeviceId = `omdev_${stationId}`;
+  const deviceSn = station.device_sn as string;
+  const hourKey = now.slice(0, 13); // "2026-07-09T14"
+  const periodHour = hourKey + ':00:00Z';
+  await env.DB.batch([
+    env.DB.prepare(`INSERT INTO om_sites (id, name, participant_id, technology, status, capacity_kwp, capacity_mw, created_at, updated_at)
+        VALUES (?, ?, ?, 'solar', 'operational', ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          capacity_kwp = COALESCE(om_sites.capacity_kwp, excluded.capacity_kwp),
+          capacity_mw  = COALESCE(NULLIF(om_sites.capacity_mw, 0), excluded.capacity_mw)`)
+      .bind(omSiteId, (station.plant_name as string | null) ?? deviceSn, station.participant_id,
+        (station.rated_power_kw as number | null) ?? null,
+        station.rated_power_kw != null ? (station.rated_power_kw as number) / 1000 : null, now, now),
+    env.DB.prepare(`INSERT INTO om_devices (id, site_id, device_type, manufacturer, serial_number, rated_kw, status, last_seen_at, created_at)
+        VALUES (?, ?, 'inverter', ?, ?, ?, 'online', ?, ?)
+        ON CONFLICT(id) DO UPDATE SET last_seen_at = excluded.last_seen_at, rated_kw = excluded.rated_kw, status = 'online'`)
+      .bind(omDeviceId, omSiteId, station.manufacturer, deviceSn,
+        (station.rated_power_kw as number | null) ?? null, now, now),
+    // ac_kw ≈ interval kWh over the 1-hour interval; yield_kwh carries the lifetime meter.
+    env.DB.prepare(`INSERT INTO om_telemetry (id, device_id, site_id, ts, ac_kw, yield_kwh, interval_kwh, quality)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'valid')
+        ON CONFLICT(id) DO UPDATE SET ac_kw = excluded.ac_kw, yield_kwh = excluded.yield_kwh, interval_kwh = excluded.interval_kwh`)
+      .bind(`omt_fwd_${stationId}_${hourKey}`, omDeviceId, omSiteId, periodHour,
+        kwh_delta, reading.total_kwh ?? 0, kwh_delta),
+  ]);
+
+  return { kwh_delta, recorded: true };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

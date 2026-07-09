@@ -18,7 +18,7 @@ import { runSurveillanceScan } from './routes/regulator-suite';
 import { executeSettlementRun } from './routes/settlement-automation';
 import { executeSettlementRun as executeImbalanceRun } from './routes/imbalance';
 import { dispatchAllForwarders } from './routes/siem';
-import { computeStationAccruals, backfillStationHistory, materializeFinancials } from './routes/esums-accruals';
+import { computeStationAccruals, backfillStationHistory, recordStationHourly, materializeFinancials } from './routes/esums-accruals';
 import { computeLatePaymentFees } from './routes/business-depth';
 import { runFaultEngine } from './utils/esums-fault-engine';
 import { verifyChain } from './utils/audit-chain';
@@ -273,10 +273,21 @@ async function runCron(env: HonoEnv['Bindings'], pattern: string): Promise<void>
       await safe('solax_hourly_ingest', async () => {
         const sinceMs = Date.now() - 2 * 24 * 60 * 60 * 1000;
         const stations = await env.DB.prepare(
-          "SELECT id FROM solax_stations WHERE status = 'active' LIMIT 500",
+          "SELECT id FROM solax_stations WHERE status = 'active' AND manufacturer = 'solax' LIMIT 500",
         ).all<{ id: string }>();
         for (const st of (stations.results || []) as { id: string }[]) {
           try { await backfillStationHistory(st.id, env as never, sinceMs); } catch { /* per-station non-fatal */ }
+        }
+      });
+      // Non-SolaX inverters (Sungrow iSolarCloud, etc.) have no history adapter —
+      // record forward from realtime, one hourly point per station, building the
+      // ML/O&M + financial series hour-by-hour from the moment they connect.
+      await safe('inverter_hourly_record', async () => {
+        const stations = await env.DB.prepare(
+          "SELECT id FROM solax_stations WHERE status = 'active' AND manufacturer != 'solax' LIMIT 500",
+        ).all<{ id: string }>();
+        for (const st of (stations.results || []) as { id: string }[]) {
+          try { await recordStationHourly(st.id, env as never); } catch { /* per-station non-fatal */ }
         }
       });
       // VWAP mark publish — without this the mark-price plane goes stale ~30 min
