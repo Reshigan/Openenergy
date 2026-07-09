@@ -347,6 +347,9 @@ cr.post('/mrv/submissions/:id/verify', async (c) => {
   if (!b.opinion || !b.verification_date) {
     return c.json({ success: false, error: 'opinion and verification_date are required' }, 400);
   }
+  if (!['positive', 'qualified', 'adverse', 'disclaimer'].includes(String(b.opinion))) {
+    return c.json({ success: false, error: 'invalid opinion' }, 400);
+  }
   const id = genId('mrvv');
   await c.env.DB.prepare(
     `INSERT INTO mrv_verifications
