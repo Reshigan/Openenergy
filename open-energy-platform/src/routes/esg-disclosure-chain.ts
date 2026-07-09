@@ -54,6 +54,7 @@ import { Hono, Context } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   nextStatus,
   isTerminal,
@@ -559,6 +560,14 @@ async function transition(
   }
 
   const overrides = bodyHandler ? bodyHandler(row, body) : {};
+
+  // Enum columns mirror migration 296 CHECKs — 422 here instead of a D1 CHECK 500.
+  const enumErr =
+    badEnum('disclosure_scope', overrides.disclosure_scope, ['entity_only', 'entity_plus_subsidiaries', 'group_consolidated'])
+    ?? badEnum('climate_risk_exposure', overrides.climate_risk_exposure, ['low', 'medium', 'high'])
+    ?? badEnum('assurance_level', overrides.assurance_level, ['none', 'limited', 'reasonable'])
+    ?? badEnum('assurance_opinion', overrides.assurance_opinion, ['unqualified', 'limited', 'qualified', 'adverse', 'disclaimer']);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 422);
 
   // Re-derive tier from freshest scope x exposure x assurance + 5 floor flags.
   const scope = (overrides.disclosure_scope as string | undefined) ?? row.disclosure_scope;

@@ -8,6 +8,7 @@ import {
   type PpaVariationStatus, type PpaVariationAction, type VariationTier,
   deriveVariationTier, crossesIntoRegulator, HARD_TERMINALS, VALID_TRANSITIONS, SLA_DAYS,
 } from '../utils/ipp-ppa-variation-spec';
+import { badEnum } from '../utils/validation';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -123,6 +124,8 @@ app.post('/', async (c) => {
   if (!body.project_id || body.capacity_mw == null || !body.variation_type || !body.description) {
     return c.json({ error: 'project_id, capacity_mw, variation_type, description required' }, 400);
   }
+  const vtErr = badEnum('variation_type', body.variation_type, ['capacity_adjustment', 'tariff_revision', 'term_extension', 'offtaker_substitution', 'technical_parameters']);
+  if (vtErr) return c.json({ error: vtErr }, 400);
 
   const tier = deriveVariationTier(body.capacity_mw);
   const now = new Date().toISOString();

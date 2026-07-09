@@ -16,6 +16,7 @@ import {
   s3CrossesIntoRegulator, s3SlaBreachCrossesIntoRegulator,
 } from '../utils/scope3-disclosure-spec';
 import { resolveNextStatus } from '../utils/chain-sla';
+import { badEnum } from '../utils/validation';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -123,6 +124,10 @@ app.post('/', async (c) => {
   const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;
   const tier = body.s3_tier ?? 'standard';
+  const s3EnumErr =
+    badEnum('s3_tier', body.s3_tier, ['micro', 'standard', 'comprehensive', 'full_chain'])
+    ?? badEnum('reporting_framework', body.reporting_framework, ['ghg_protocol', 'issb_ifrs_s2', 'cdp', 'tcfd', 'king_iv', 'integrated']);
+  if (s3EnumErr) return c.json({ success: false, error: s3EnumErr }, 422);
 
   const now = new Date().toISOString();
   const slaDays = deriveS3Sla(tier);

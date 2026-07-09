@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 
 const popia = new Hono<HonoEnv>();
 popia.use('*', authMiddleware);
@@ -479,6 +480,10 @@ popia.put('/breach/:id', async (c) => {
   const existing = await c.env.DB.prepare('SELECT id FROM popia_breaches WHERE id = ?').bind(id).first();
   if (!existing) return c.json({ success: false, error: 'Breach not found' }, 404);
   const body = await c.req.json().catch(() => ({} as Record<string, unknown>));
+  const breachEnumErr =
+    badEnum('severity', (body as Record<string, unknown>).severity, ['low', 'medium', 'high', 'critical'])
+    ?? badEnum('status', (body as Record<string, unknown>).status, ['open', 'contained', 'closed']);
+  if (breachEnumErr) return c.json({ success: false, error: breachEnumErr }, 400);
   const editable = ['severity', 'status', 'containment_actions', 'regulator_notified_at', 'subjects_notified_at', 'root_cause', 'lessons_learned', 'affected_subjects_count'] as const;
   const sets: string[] = [];
   const binds: (string | number | null)[] = [];

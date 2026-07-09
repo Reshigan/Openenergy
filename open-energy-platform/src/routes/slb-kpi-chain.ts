@@ -16,6 +16,7 @@ import {
   SLB_VALID_TRANSITIONS, SLB_STATE_TRANSITIONS,
   slbCrossesIntoRegulator, slbSlaBreachCrossesIntoRegulator,
 } from '../utils/slb-kpi-spec';
+import { badEnum } from '../utils/validation';
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -125,6 +126,8 @@ app.post('/', async (c) => {
   const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;
   const tier = body.slb_tier ?? 'green_finance';
+  const tierErr = badEnum('slb_tier', body.slb_tier, ['voluntary', 'green_finance', 'listed', 'regulatory']);
+  if (tierErr) return c.json({ success: false, error: tierErr }, 422);
 
   const now = new Date().toISOString();
   const slaDeadline = new Date(Date.now() + deriveSlbSla(tier) * 86400000).toISOString();
@@ -198,6 +201,9 @@ app.post('/:id/action', async (c) => {
   if (!allowed.includes(action)) {
     return c.json({ success: false, error: `Action '${action}' not valid from '${currentStatus}'` }, 422);
   }
+
+  const rdErr = badEnum('ratchet_direction', body.ratchet_direction, ['step_up', 'step_down', 'neutral']);
+  if (rdErr) return c.json({ success: false, error: rdErr }, 422);
 
   // sla_breach holds position (flag event), never rewinds to the mapped state.
   const nextStatus = resolveNextStatus(action, currentStatus, SLB_STATE_TRANSITIONS);

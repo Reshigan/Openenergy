@@ -10,6 +10,7 @@ import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { dayCost, rankTariffs, scope2, SimpleTariff } from '../utils/tariff-compare';
 import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 
 const off = new Hono<HonoEnv>();
 off.use('*', authMiddleware);
@@ -25,6 +26,8 @@ off.post('/groups', async (c) => {
   if (!canWrite(user.role)) return c.json({ success: false, error: 'Not authorised' }, 403);
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   if (!b.group_name) return c.json({ success: false, error: 'group_name required' }, 400);
+  const gtErr = badEnum('group_type', b.group_type, ['company', 'division', 'brand', 'region', 'other']);
+  if (gtErr) return c.json({ success: false, error: gtErr }, 400);
   const id = genId('osg');
   await c.env.DB.prepare(
     `INSERT INTO offtaker_site_groups
@@ -104,6 +107,9 @@ off.post('/tariffs', async (c) => {
   for (const k of ['tariff_code', 'tariff_name', 'utility', 'category', 'structure_type', 'effective_from']) {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
   }
+  const enumErr = badEnum('category', b.category, ['commercial', 'industrial', 'residential', 'agricultural', 'public_sector', 'wheeling'])
+    ?? badEnum('structure_type', b.structure_type, ['flat', 'tou', 'stepped_block', 'demand_based', 'fixed_plus_energy', 'hybrid']);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 400);
   const id = genId('tar');
   await c.env.DB.prepare(
     `INSERT INTO tariff_products

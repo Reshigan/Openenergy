@@ -43,6 +43,7 @@ import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
 import { resolveNextStatus } from '../utils/chain-sla';
+import { badEnum } from '../utils/validation';
 import {
   computeDifferential,
   deriveSettlementTier,
@@ -197,6 +198,8 @@ app.post('/open', async (c) => {
     || !body.reference_index || !body.notional_mwh || !body.strike_price_zar_per_mwh) {
     return c.json({ success: false, error: 'contract_ref, generator_id, offtaker_id, settlement_period, reference_index, notional_mwh, strike_price_zar_per_mwh required' }, 400);
   }
+  const riErr = badEnum('reference_index', body.reference_index, ['day_ahead_market', 'eskom_megaflex', 'ifrt_reference', 'wholesale_pool']);
+  if (riErr) return c.json({ success: false, error: riErr }, 400);
 
   const existing = await c.env.DB.prepare(
     `SELECT id FROM oe_virtual_ppa_settlements WHERE contract_ref = ? AND settlement_period = ? AND chain_status NOT IN ('cancelled')`,
@@ -271,6 +274,9 @@ app.post('/:id/action', async (c) => {
   if (action === 'publish_reference_price' && !body.reference_price_zar_per_mwh) {
     return c.json({ success: false, error: 'reference_price_zar_per_mwh required to publish the reference index' }, 400);
   }
+
+  const pmErr = badEnum('payment_method', body.payment_method, ['eft', 'bank_wire', 'clearing_house', 'netting']);
+  if (pmErr) return c.json({ success: false, error: pmErr }, 400);
 
   const to = resolveNextStatus(action, row.chain_status as SettlementStatus, SETTLEMENT_STATE_TRANSITIONS);
   const nowIso = new Date().toISOString();
