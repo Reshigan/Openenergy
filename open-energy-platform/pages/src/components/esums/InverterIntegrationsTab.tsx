@@ -811,8 +811,8 @@ function AccrualsPanel() {
                 contentStyle={{ fontSize: 11, borderRadius: 6 }}
               />
               <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 10 }} />
-              <Bar dataKey="Revenue (ZAR)" fill="#059669" radius={[2, 2, 0, 0]} />
-              <Bar dataKey="Savings (ZAR)" fill="#3b82f6" radius={[2, 2, 0, 0]} />
+              <Bar isAnimationActive={false} dataKey="Revenue (ZAR)" fill="#059669" radius={[2, 2, 0, 0]} />
+              <Bar isAnimationActive={false} dataKey="Savings (ZAR)" fill="#3b82f6" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -79,7 +79,7 @@ function HealthBandPanel({ rows }: { rows: Row[] }) {
         <XAxis dataKey="name" tick={TICK} />
         <YAxis tick={TICK} allowDecimals={false} width={28} />
         <Tooltip />
-        <Bar dataKey="value" radius={[3, 3, 0, 0]}>
+        <Bar isAnimationActive={false} dataKey="value" radius={[3, 3, 0, 0]}>
           {data.map((d, i) => <Cell key={i} fill={bandColor(d.name)} />)}
         </Bar>
       </BarChart>
@@ -123,7 +123,7 @@ function ScatterPanel({
             );
           }}
         />
-        <Scatter data={data}>
+        <Scatter isAnimationActive={false} data={data}>
           {data.map((d, i) => <Cell key={i} fill={bandColor(d.b)} fillOpacity={0.75} />)}
         </Scatter>
       </ScatterChart>
@@ -143,7 +143,7 @@ function AvgBarPanel({ rows, groupKey, metric, title, subtitle, isPct }: {
         <XAxis type="number" tick={TICK} tickFormatter={isPct ? (v) => pct.format(v) : undefined} />
         <YAxis type="category" dataKey="name" tick={TICK} width={110} />
         <Tooltip formatter={(v: number) => (isPct ? pct.format(v) : v.toFixed(3))} />
-        <Bar dataKey="value" radius={[0, 3, 3, 0]} fill={ACC} />
+        <Bar isAnimationActive={false} dataKey="value" radius={[0, 3, 3, 0]} fill={ACC} />
       </BarChart>
     </Panel>
   );
@@ -173,8 +173,8 @@ function LatencyPanel({ rows }: { rows: Row[] }) {
         <YAxis tick={TICK} width={38} unit="ms" />
         <Tooltip formatter={(v: number) => `${v.toFixed(0)} ms`} />
         <Legend wrapperStyle={{ fontSize: 11 }} />
-        <Bar dataKey="p50" name="p50" fill={ACC} radius={[3, 3, 0, 0]} />
-        <Bar dataKey="p99" name="p99" fill="#9b1f1f" radius={[3, 3, 0, 0]} />
+        <Bar isAnimationActive={false} dataKey="p50" name="p50" fill={ACC} radius={[3, 3, 0, 0]} />
+        <Bar isAnimationActive={false} dataKey="p99" name="p99" fill="#9b1f1f" radius={[3, 3, 0, 0]} />
       </BarChart>
     </Panel>
   );

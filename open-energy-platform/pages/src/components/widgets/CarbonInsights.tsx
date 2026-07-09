@@ -54,9 +54,9 @@ function VintageRetirementSchedule({ vintages }: { vintages: Vintage[] }) {
             <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `${(v / 1_000).toFixed(0)}k`} />
             <Tooltip formatter={(v: any) => `${Number(v).toLocaleString()} tCO₂e`} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="issued"  name="Issued"      stackId="x" fill="oklch(0.46 0.16 55)" />
-            <Bar dataKey="retired" name="Retired"     stackId="x" fill="#1a8a5b" />
-            <Line type="monotone" dataKey="outstanding" name="Outstanding" stroke="#b04e0f" strokeWidth={2} dot={false} />
+            <Bar isAnimationActive={false} dataKey="issued"  name="Issued"      stackId="x" fill="oklch(0.46 0.16 55)" />
+            <Bar isAnimationActive={false} dataKey="retired" name="Retired"     stackId="x" fill="#1a8a5b" />
+            <Line isAnimationActive={false} type="monotone" dataKey="outstanding" name="Outstanding" stroke="#b04e0f" strokeWidth={2} dot={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

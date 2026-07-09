@@ -86,8 +86,8 @@ function TariffOptimizer({ annualMwh, peakPct, stdPct, offPeakPct }:
             <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(1)}m`} />
             <Tooltip formatter={(v: any) => formatZAR(Number(v))} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="energy" name="Energy" stackId="x" fill="oklch(0.46 0.16 55)" />
-            <Bar dataKey="demand" name="Demand" stackId="x" fill="#b04e0f" />
+            <Bar isAnimationActive={false} dataKey="energy" name="Energy" stackId="x" fill="oklch(0.46 0.16 55)" />
+            <Bar isAnimationActive={false} dataKey="demand" name="Demand" stackId="x" fill="#b04e0f" />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -149,7 +149,7 @@ function LoadShapeClassifier({ profile }: { profile: ConsumptionProfile[] }) {
         <div style={{ height: 160 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={data} dataKey="pct" nameKey="tier" outerRadius={60} innerRadius={32} label={(d: any) => `${d.tier} ${Number(d.pct || 0).toFixed(0)}%`}>
+              <Pie isAnimationActive={false} data={data} dataKey="pct" nameKey="tier" outerRadius={60} innerRadius={32} label={(d: any) => `${d.tier} ${Number(d.pct || 0).toFixed(0)}%`}>
                 {data.map((d, i) => <Cell key={i} fill={d.fill} />)}
               </Pie>
               <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} />
@@ -163,7 +163,7 @@ function LoadShapeClassifier({ profile }: { profile: ConsumptionProfile[] }) {
                 <XAxis dataKey="hour" tick={{ fontSize: 9, fill: '#6b7685' }} />
                 <YAxis tick={{ fontSize: 9, fill: '#6b7685' }} />
                 <Tooltip />
-                <Area type="monotone" dataKey="kwh" stroke="oklch(0.46 0.16 55)" fill="#d4e7f6" />
+                <Area isAnimationActive={false} type="monotone" dataKey="kwh" stroke="oklch(0.46 0.16 55)" fill="#d4e7f6" />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -255,7 +255,7 @@ function RevenueRequirementCalc() {
             <XAxis type="number" tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${v.toLocaleString()}m`} />
             <YAxis type="category" dataKey="component" tick={{ fontSize: 10, fill: '#6b7685' }} />
             <Tooltip formatter={(v: any) => `R${Number(v).toLocaleString()}m`} />
-            <Bar dataKey="value">
+            <Bar isAnimationActive={false} dataKey="value">
               {data.map((d, i) => <Cell key={i} fill={d.fill} />)}
             </Bar>
           </BarChart>

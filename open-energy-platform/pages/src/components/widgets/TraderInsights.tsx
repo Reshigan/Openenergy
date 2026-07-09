@@ -85,8 +85,8 @@ function PnlWaterfall({ positions }: { positions: Position[] }) {
             <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#6b7685' }} />
             <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => formatZARm(Number(v))} />
             <Tooltip formatter={(v: any, _n: any, p: any) => [formatZAR(Math.abs(Number(v))), p?.payload?.label]} labelFormatter={() => ''} />
-            <Bar dataKey="base" stackId="a" fill="transparent" />
-            <Bar dataKey="bar" stackId="a">
+            <Bar isAnimationActive={false} dataKey="base" stackId="a" fill="transparent" />
+            <Bar isAnimationActive={false} dataKey="bar" stackId="a">
               {steps.map((s, i) => (
                 <Cell key={i} fill={s.kind === 'total' ? (net >= 0 ? '#1a8a5b' : '#c0392b') : s.kind === 'add' ? '#1a8a5b' : '#c0392b'} />
               ))}
@@ -135,7 +135,7 @@ function MarkTermStructure({ marks }: { marks: Mark[] }) {
             <Tooltip formatter={(v: any) => `R${Number(v).toFixed(0)}/MWh`} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             {data.energies.map((e) => (
-              <Line key={e} type="monotone" dataKey={e} stroke={ENERGY_COLOUR[e] || 'oklch(0.46 0.16 55)'} strokeWidth={2} dot={false} name={e} />
+              <Line isAnimationActive={false} key={e} type="monotone" dataKey={e} stroke={ENERGY_COLOUR[e] || 'oklch(0.46 0.16 55)'} strokeWidth={2} dot={false} name={e} />
             ))}
           </LineChart>
         </ResponsiveContainer>
@@ -226,8 +226,8 @@ function OrderBookDepth() {
               <YAxis type="category" dataKey="price" tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${v}`} />
               <Tooltip formatter={(v: any) => `${Math.abs(Number(v)).toFixed(1)} MWh`} />
               <ReferenceLine x={0} stroke="oklch(0.46 0.16 55)" />
-              <Bar dataKey="bid" name="Bid" stackId="x" fill="#1a8a5b" />
-              <Bar dataKey="ask" name="Ask" stackId="x" fill="#c0392b" />
+              <Bar isAnimationActive={false} dataKey="bid" name="Bid" stackId="x" fill="#1a8a5b" />
+              <Bar isAnimationActive={false} dataKey="ask" name="Ask" stackId="x" fill="#c0392b" />
             </BarChart>
           </ResponsiveContainer>
         )}

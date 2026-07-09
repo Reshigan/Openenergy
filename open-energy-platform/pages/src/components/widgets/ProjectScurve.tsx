@@ -125,9 +125,9 @@ export function ProjectScurve({ milestones, capexZar, startDate, codDate }: Prop
             <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} unit="%" domain={[0, 100]} />
             <Tooltip formatter={(v: any) => `${Number(v).toFixed(1)}%`} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Area  type="monotone" dataKey="planned" name="Planned %"  stroke="oklch(0.46 0.16 55)" fill="#d4e7f6" />
-            <Line  type="monotone" dataKey="earned"  name="Earned %"   stroke="#1a8a5b" strokeWidth={2} dot={false} />
-            <Line  type="monotone" dataKey="burn"    name="Capex burn %" stroke="#b04e0f" strokeDasharray="4 4" dot={false} />
+            <Area isAnimationActive={false}  type="monotone" dataKey="planned" name="Planned %"  stroke="oklch(0.46 0.16 55)" fill="#d4e7f6" />
+            <Line isAnimationActive={false}  type="monotone" dataKey="earned"  name="Earned %"   stroke="#1a8a5b" strokeWidth={2} dot={false} />
+            <Line isAnimationActive={false}  type="monotone" dataKey="burn"    name="Capex burn %" stroke="#b04e0f" strokeDasharray="4 4" dot={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

@@ -106,7 +106,7 @@ function ReceivablesAgingChart({ invoices }: { invoices: Invoice[] }) {
             <XAxis dataKey="bucket" tick={{ fontSize: 10, fill: '#6b7685' }} />
             <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(1)}m`} />
             <Tooltip formatter={(v: any) => formatZAR(Number(v))} />
-            <Bar dataKey="value">
+            <Bar isAnimationActive={false} dataKey="value">
               {buckets.map((b, i) => (
                 <Cell key={i} fill={b.bucket === 'Current' ? '#1a8a5b' : b.bucket === '>90' ? '#c0392b' : '#b04e0f'} />
               ))}
@@ -160,8 +160,8 @@ function CashflowLadder({ invoices, userId }: { invoices: Invoice[]; userId?: st
             <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(1)}m`} />
             <Tooltip formatter={(v: any) => formatZAR(Math.abs(Number(v)))} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="inflow"  name="Inflow"  stackId="x" fill="#1a8a5b" />
-            <Bar dataKey="outflow" name="Outflow" stackId="x" fill="#c0392b" />
+            <Bar isAnimationActive={false} dataKey="inflow"  name="Inflow"  stackId="x" fill="#1a8a5b" />
+            <Bar isAnimationActive={false} dataKey="outflow" name="Outflow" stackId="x" fill="#c0392b" />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -285,7 +285,7 @@ function FeeAccrualTrend({ fees }: { fees: Fee[] }) {
             <Tooltip formatter={(v: any) => formatZAR(Number(v))} />
             <Legend wrapperStyle={{ fontSize: 10 }} />
             {types.map((t) => (
-              <Area key={t} type="monotone" dataKey={t} stackId="x" name={t.replace(/_/g, ' ')}
+              <Area isAnimationActive={false} key={t} type="monotone" dataKey={t} stackId="x" name={t.replace(/_/g, ' ')}
                     stroke={TYPE_COLOUR[t] || '#6b7685'} fill={TYPE_COLOUR[t] || '#6b7685'} fillOpacity={0.4} />
             ))}
           </AreaChart>

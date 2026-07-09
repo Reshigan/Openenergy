@@ -146,10 +146,10 @@ export function PpaRevenueModel({
             <YAxis yAxisId="dscr" orientation="right" domain={[0, 'auto']} tick={{ fontSize: 10, fill: '#6b7685' }} />
             <Tooltip formatter={(v: any, name: string) => name === 'DSCR' ? Number(v).toFixed(2) : formatZAR(Number(v))} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar yAxisId="zar" dataKey="revenue"  name="Revenue"      stackId="x" fill="oklch(0.46 0.16 55)" />
-            <Bar yAxisId="zar" dataKey="opex"     name="Opex"         stackId="x" fill="#b04e0f" />
-            <Bar yAxisId="zar" dataKey="debtSvc"  name="Debt service" stackId="x" fill="#6b3a82" />
-            <Line yAxisId="dscr" type="monotone" dataKey="dscr" name="DSCR" stroke="#1a8a5b" strokeWidth={2} dot={false} />
+            <Bar isAnimationActive={false} yAxisId="zar" dataKey="revenue"  name="Revenue"      stackId="x" fill="oklch(0.46 0.16 55)" />
+            <Bar isAnimationActive={false} yAxisId="zar" dataKey="opex"     name="Opex"         stackId="x" fill="#b04e0f" />
+            <Bar isAnimationActive={false} yAxisId="zar" dataKey="debtSvc"  name="Debt service" stackId="x" fill="#6b3a82" />
+            <Line isAnimationActive={false} yAxisId="dscr" type="monotone" dataKey="dscr" name="DSCR" stroke="#1a8a5b" strokeWidth={2} dot={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

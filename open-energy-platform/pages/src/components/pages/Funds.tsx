@@ -282,7 +282,7 @@ function PortfolioTab() {
               <XAxis dataKey="date" fontSize={10} stroke={TX3} />
               <YAxis fontSize={10} stroke={TX3} tickFormatter={(v) => `R${num(v, 3)}`} />
               <Tooltip formatter={(v: number) => [`R${num(v, 4)}`, 'NAV']} />
-              <Area type="monotone" dataKey="nav" stroke={ACC} strokeWidth={2} fill="url(#navGrad)" />
+              <Area isAnimationActive={false} type="monotone" dataKey="nav" stroke={ACC} strokeWidth={2} fill="url(#navGrad)" />
             </AreaChart>
           </ResponsiveContainer>
         )}
@@ -385,10 +385,10 @@ function WaterfallTab() {
             <XAxis dataKey="period" fontSize={10} stroke={TX3} />
             <YAxis fontSize={10} stroke={TX3} tickFormatter={(v) => `R${num(v / 1e6, 1)}M`} />
             <Tooltip formatter={(v: number) => formatZAR(v)} />
-            <Bar dataKey="senior"   stackId="a" fill={TX1} />
-            <Bar dataKey="mezz"     stackId="a" fill={ACC} />
-            <Bar dataKey="equity"   stackId="a" fill={GOOD} />
-            <Bar dataKey="reserves" stackId="a" fill={TX3} />
+            <Bar isAnimationActive={false} dataKey="senior"   stackId="a" fill={TX1} />
+            <Bar isAnimationActive={false} dataKey="mezz"     stackId="a" fill={ACC} />
+            <Bar isAnimationActive={false} dataKey="equity"   stackId="a" fill={GOOD} />
+            <Bar isAnimationActive={false} dataKey="reserves" stackId="a" fill={TX3} />
           </BarChart>
         </ResponsiveContainer>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 12 }}>

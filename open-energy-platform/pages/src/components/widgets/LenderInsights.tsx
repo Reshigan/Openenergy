@@ -140,8 +140,8 @@ function DebtServiceWaterfall({ waterfall }: { waterfall: Waterfall | null }) {
             <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#6b7685' }} angle={-25} textAnchor="end" height={50} />
             <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(0)}m`} />
             <Tooltip formatter={(v: any, _n: any, p: any) => [formatZAR(Math.abs(Number(v))), p?.payload?.label]} labelFormatter={() => ''} />
-            <Bar dataKey="base" stackId="a" fill="transparent" />
-            <Bar dataKey="bar" stackId="a">
+            <Bar isAnimationActive={false} dataKey="base" stackId="a" fill="transparent" />
+            <Bar isAnimationActive={false} dataKey="bar" stackId="a">
               {data.map((s, i) => <Cell key={i} fill={s.kind === 'add' ? '#1a8a5b' : 'oklch(0.46 0.16 55)'} />)}
             </Bar>
           </BarChart>
@@ -344,7 +344,7 @@ function PortfolioWaterfall() {
         <div style={{ height: 180 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={data} dataKey="value" nameKey="name" innerRadius={40} outerRadius={70} label={(d: any) => `${d.name}`}>
+              <Pie isAnimationActive={false} data={data} dataKey="value" nameKey="name" innerRadius={40} outerRadius={70} label={(d: any) => `${d.name}`}>
                 {data.map((d, i) => <Cell key={i} fill={d.fill} />)}
               </Pie>
               <Tooltip formatter={(v: any) => formatZAR(Number(v))} />

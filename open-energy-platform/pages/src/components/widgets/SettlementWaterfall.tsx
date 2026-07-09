@@ -112,8 +112,8 @@ export function SettlementWaterfall({ totalAmount, breaks, fees, payments }: Pro
               formatter={(v: any, _name: any, p: any) => [formatZAR(Math.abs(Number(v))), p?.payload?.label]}
               labelFormatter={() => ''}
             />
-            <Bar dataKey="base" stackId="a" fill="transparent" />
-            <Bar dataKey="bar" stackId="a">
+            <Bar isAnimationActive={false} dataKey="base" stackId="a" fill="transparent" />
+            <Bar isAnimationActive={false} dataKey="bar" stackId="a">
               {steps.map((s, i) => (
                 <Cell
                   key={i}

@@ -604,10 +604,13 @@ async function findOmCostOutliers(env: HonoEnv['Bindings'], siteIds: string[],
 }
 
 // ─── 12. Module degradation predictor ──────────────────────────────────
-// Tracks the rolling 90-day average kWh/kWp (specific yield) and compares
-// it to the prior 90-day window. A drop > 2% is flagged as accelerated
-// degradation — PV modules typically lose 0.5%/year, so > 8% YoY (≈ 2%
-// per 90 days) is well above warranty curves and warrants investigation.
+// Compares the trailing 90-day specific yield to the SAME 90-day window one
+// year earlier (year-over-year), not the immediately-prior quarter — that
+// de-seasonalises the signal. A prior-quarter baseline conflates southern-
+// hemisphere winter (June/July generation is ~30-40% below autumn) with real
+// degradation and fires giant false positives. A YoY drop > 2% is above the
+// ~0.5%/yr warranty curve and warrants investigation. Sites with < 1yr of
+// history have an empty prior window and are correctly skipped.
 async function findModuleDegradation(env: HonoEnv['Bindings'], siteIds: string[],
                                      sitesByID: Map<string, any>): Promise<Opportunity[]> {
   if (!siteIds.length) return [];
@@ -615,10 +618,12 @@ async function findModuleDegradation(env: HonoEnv['Bindings'], siteIds: string[]
   const rows = await env.DB.prepare(`
     SELECT site_id,
       SUM(CASE WHEN ts >= datetime('now','-90 days') THEN interval_kwh ELSE 0 END) AS recent_kwh,
-      SUM(CASE WHEN ts < datetime('now','-90 days')
-              AND ts >= datetime('now','-180 days') THEN interval_kwh ELSE 0 END) AS prior_kwh
+      SUM(CASE WHEN ts <  datetime('now','-365 days')
+              AND ts >= datetime('now','-455 days') THEN interval_kwh ELSE 0 END) AS prior_kwh
     FROM om_telemetry
-    WHERE site_id IN (${ph}) AND ts >= datetime('now','-180 days')
+    WHERE site_id IN (${ph})
+      AND (ts >= datetime('now','-90 days')
+           OR (ts < datetime('now','-365 days') AND ts >= datetime('now','-455 days')))
     GROUP BY site_id HAVING recent_kwh > 0 AND prior_kwh > 0
   `).bind(...siteIds).all<any>().catch(() => ({ results: [] as any[] }));
   const opps: Opportunity[] = [];
@@ -639,16 +644,16 @@ async function findModuleDegradation(env: HonoEnv['Bindings'], siteIds: string[]
       category: 'module_degradation',
       site_id: r.site_id,
       site_name: site.name,
-      title: `${site.name} specific yield down ${dropPct.toFixed(1)}% in last 90 days`,
-      detail: `Recent 90-day yield is ${dropPct.toFixed(1)}% below the prior window — outside the typical ` +
-              `0.5%/yr PV degradation curve. Possible PID (potential-induced degradation), hotspot or shading.`,
+      title: `${site.name} specific yield down ${dropPct.toFixed(1)}% year-over-year`,
+      detail: `Trailing 90-day yield is ${dropPct.toFixed(1)}% below the same window last year — outside the ` +
+              `typical 0.5%/yr PV degradation curve. Possible PID (potential-induced degradation), hotspot or shading.`,
       annual_upside_zar: Math.round(lostMwh * 1_200_000),            // R1.2/kWh × kWh/MWh
       effort: 'medium',
       confidence: 0.7,
       evidence: [
         `Recent 90d kWh: ${Math.round(recent).toLocaleString()}`,
-        `Prior 90d kWh: ${Math.round(prior).toLocaleString()}`,
-        `Drop: ${dropPct.toFixed(1)}%`,
+        `Same 90d last year: ${Math.round(prior).toLocaleString()}`,
+        `YoY drop: ${dropPct.toFixed(1)}%`,
       ],
       action: { kind: 'thermal_imaging', payload: { site_id: r.site_id } },
     });

@@ -79,7 +79,7 @@ function CostOfServiceBreakout() {
         <div style={{ height: 200 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={data} dataKey="amount" nameKey="component" innerRadius={35} outerRadius={75} label={(d: any) => `${Number(d.share * 100 || 0).toFixed(0)}%`}>
+              <Pie isAnimationActive={false} data={data} dataKey="amount" nameKey="component" innerRadius={35} outerRadius={75} label={(d: any) => `${Number(d.share * 100 || 0).toFixed(0)}%`}>
                 {data.map((d, i) => <Cell key={i} fill={d.fill} />)}
               </Pie>
               <Tooltip formatter={(v: any) => `R${Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}m`} />
@@ -133,7 +133,7 @@ function AffordabilityGauge() {
             <Tooltip formatter={(v: any) => `${Number(v).toFixed(2)}%`} labelFormatter={(l: any) => `Decile ${l}`} />
             <ReferenceLine y={10} stroke="#c0392b" strokeDasharray="4 4" label={{ value: 'Energy poverty (>10%)', fontSize: 10, fill: '#c0392b' }} />
             <ReferenceLine y={5}  stroke="#b04e0f" strokeDasharray="4 4" label={{ value: 'Affordability concern (>5%)', fontSize: 10, fill: '#b04e0f' }} />
-            <Bar dataKey="share">
+            <Bar isAnimationActive={false} dataKey="share">
               {data.map((d, i) => <Cell key={i} fill={d.tone === 'bad' ? '#c0392b' : d.tone === 'warn' ? '#b04e0f' : '#1a8a5b'} />)}
             </Bar>
           </BarChart>

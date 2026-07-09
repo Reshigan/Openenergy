@@ -150,7 +150,7 @@ function MilestoneCriticalPath({ milestones }: { milestones: Milestone[] }) {
             <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#6b7685' }} width={140} />
             <Tooltip formatter={(v: any) => `${Number(v)}d`} />
             <ReferenceLine x={0} stroke="oklch(0.46 0.16 55)" />
-            <Bar dataKey="slipDays" name="Slip days">
+            <Bar isAnimationActive={false} dataKey="slipDays" name="Slip days">
               {data.map((d, i) => (
                 <Cell key={i} fill={d.slipDays > 14 ? '#c0392b' : d.slipDays > 0 ? '#b04e0f' : '#1a8a5b'} />
               ))}

@@ -79,7 +79,7 @@ function GenerationProfile({ schedules }: { schedules: DispatchSchedule[] }) {
               <Tooltip />
               <Legend wrapperStyle={{ fontSize: 10 }} />
               {types.map((t) => (
-                <Area key={t} type="monotone" dataKey={t} name={t} stackId="x" stroke={COLOUR[t] || '#6b7685'} fill={COLOUR[t] || '#6b7685'} fillOpacity={0.5} />
+                <Area isAnimationActive={false} key={t} type="monotone" dataKey={t} name={t} stackId="x" stroke={COLOUR[t] || '#6b7685'} fill={COLOUR[t] || '#6b7685'} fillOpacity={0.5} />
               ))}
             </AreaChart>
           </ResponsiveContainer>
@@ -91,7 +91,7 @@ function GenerationProfile({ schedules }: { schedules: DispatchSchedule[] }) {
               <XAxis dataKey="pctTime" tick={{ fontSize: 9, fill: '#6b7685' }} tickFormatter={(v) => `${Number(v).toFixed(0)}%`} unit="" />
               <YAxis tick={{ fontSize: 9, fill: '#6b7685' }} unit=" MW" />
               <Tooltip formatter={(v: any) => `${Number(v).toFixed(0)} MW`} labelFormatter={(l) => `${Number(l).toFixed(0)}% of hours`} />
-              <Area type="monotone" dataKey="mw" stroke="oklch(0.46 0.16 55)" fill="#d4e7f6" />
+              <Area isAnimationActive={false} type="monotone" dataKey="mw" stroke="oklch(0.46 0.16 55)" fill="#d4e7f6" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -136,9 +136,9 @@ function OutageMttrTrend({ outages }: { outages: Outage[] }) {
             <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} unit="h" />
             <Tooltip formatter={(v: any, n: any) => n === 'count' ? Number(v) : `${Number(v).toFixed(1)} h`} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="max"   name="Worst (h)" fill="#fde0db" />
-            <Line type="monotone" dataKey="mean" name="MTTR (h)" stroke="#c0392b" strokeWidth={2} dot={true} />
-            <Line type="monotone" dataKey="count" name="# outages" stroke="oklch(0.46 0.16 55)" strokeWidth={1} dot={false} yAxisId={0} />
+            <Bar isAnimationActive={false} dataKey="max"   name="Worst (h)" fill="#fde0db" />
+            <Line isAnimationActive={false} type="monotone" dataKey="mean" name="MTTR (h)" stroke="#c0392b" strokeWidth={2} dot={true} />
+            <Line isAnimationActive={false} type="monotone" dataKey="count" name="# outages" stroke="oklch(0.46 0.16 55)" strokeWidth={1} dot={false} yAxisId={0} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

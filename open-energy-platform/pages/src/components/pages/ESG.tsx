@@ -383,7 +383,7 @@ function OverviewTab() {
               <XAxis dataKey="name" fontSize={11} stroke="#3d4756" />
               <YAxis fontSize={11} stroke="#3d4756" tickFormatter={(v) => fmtN(v)} />
               <Tooltip formatter={(v: number) => [`${fmtN(v, 1)} tCO₂e`]} />
-              <Bar dataKey="tco2e" radius={[4, 4, 0, 0]}>
+              <Bar isAnimationActive={false} dataKey="tco2e" radius={[4, 4, 0, 0]}>
                 {scopeData.map((d, i) => <Cell key={i} fill={d.color} />)}
               </Bar>
             </BarChart>
@@ -784,7 +784,7 @@ function InitiativesTab() {
               <XAxis dataKey="name" fontSize={10} stroke="#3d4756" angle={-20} height={50} />
               <YAxis fontSize={11} stroke="#3d4756" tickFormatter={(v) => `R${fmtN(v)}/t`} />
               <Tooltip formatter={(v: number) => fmtZ(v)} />
-              <Bar dataKey="mac">
+              <Bar isAnimationActive={false} dataKey="mac">
                 {macc.map((d, i) => <Cell key={i} fill={d.mac < 0 ? '#1a8a5b' : d.mac < 500 ? 'oklch(0.46 0.16 55)' : '#c97a14'} />)}
               </Bar>
             </BarChart>
@@ -1965,7 +1965,7 @@ function MaturityTab() {
             <ResponsiveContainer width="100%" height={240}>
               <RadarChart data={pillarData}>
                 <PolarGrid /><PolarAngleAxis dataKey="pillar" />
-                <Radar name="Score" dataKey="score" stroke="#0f1c2e" fill="#0f1c2e" fillOpacity={0.3} />
+                <Radar isAnimationActive={false} name="Score" dataKey="score" stroke="#0f1c2e" fill="#0f1c2e" fillOpacity={0.3} />
                 <Tooltip />
               </RadarChart>
             </ResponsiveContainer>
@@ -2295,7 +2295,7 @@ function MACCTab() {
               <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" height={70} />
               <YAxis label={{ value: 'ZAR / tCO₂e', angle: -90, position: 'insideLeft' }} />
               <Tooltip />
-              <Bar dataKey="cost" name="MACC (ZAR/tCO₂e)">
+              <Bar isAnimationActive={false} dataKey="cost" name="MACC (ZAR/tCO₂e)">
                 {(rows.data || []).map((r: any, i: number) => (
                   <Cell key={i} fill={(r.computed_macc_zar_per_tco2e || 0) < 0 ? '#1a8a5b' : (r.computed_macc_zar_per_tco2e || 0) < 500 ? 'oklch(0.46 0.16 55)' : '#c97a14'} />
                 ))}
@@ -2347,7 +2347,7 @@ function PathwaysTab() {
               <XAxis dataKey="year" />
               <YAxis label={{ value: sectorData[0]?.unit || '', angle: -90, position: 'insideLeft' }} />
               <Tooltip />
-              <Bar dataKey="intensity_value" fill="#0f1c2e" name="Intensity" />
+              <Bar isAnimationActive={false} dataKey="intensity_value" fill="#0f1c2e" name="Intensity" />
             </BarChart>
           </ResponsiveContainer>
         )}

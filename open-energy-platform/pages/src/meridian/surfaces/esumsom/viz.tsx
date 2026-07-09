@@ -123,7 +123,7 @@ function PredictionsCharts({ rows }: { rows: Record<string, unknown>[] }) {
               );
             }}
           />
-          <Scatter data={scatter}>
+          <Scatter isAnimationActive={false} data={scatter}>
             {scatter.map((d, i) => <Cell key={i} fill={d.fill} fillOpacity={0.72} />)}
           </Scatter>
         </ScatterChart>
@@ -134,7 +134,7 @@ function PredictionsCharts({ rows }: { rows: Record<string, unknown>[] }) {
           <XAxis type="number" tick={TICK} tickFormatter={(v) => zar.format(v)} />
           <YAxis type="category" dataKey="name" tick={TICK} width={110} />
           <Tooltip formatter={(v: number) => zarTip(v)} />
-          <Bar dataKey="value" radius={[0, 3, 3, 0]}>
+          <Bar isAnimationActive={false} dataKey="value" radius={[0, 3, 3, 0]}>
             {byType.map((d, i) => <Cell key={i} fill={i === 0 ? BAD : i < 3 ? WARN : GOOD} />)}
           </Bar>
         </BarChart>
@@ -158,7 +158,7 @@ function FaultsCharts({ rows }: { rows: Record<string, unknown>[] }) {
           <XAxis dataKey="name" tick={TICK} interval={0} angle={-25} textAnchor="end" height={44} />
           <YAxis tick={TICK} tickFormatter={(v) => zar.format(v)} width={54} />
           <Tooltip formatter={(v: number) => zarTip(v)} />
-          <Bar dataKey="value" radius={[3, 3, 0, 0]}>
+          <Bar isAnimationActive={false} dataKey="value" radius={[3, 3, 0, 0]}>
             {byCat.map((d, i) => <Cell key={i} fill={i === 0 ? BAD : i < 3 ? WARN : GOOD} />)}
           </Bar>
         </BarChart>
@@ -169,7 +169,7 @@ function FaultsCharts({ rows }: { rows: Record<string, unknown>[] }) {
           <XAxis dataKey="name" tick={TICK} />
           <YAxis tick={TICK} allowDecimals={false} width={30} />
           <Tooltip />
-          <Bar dataKey="value" radius={[3, 3, 0, 0]}>
+          <Bar isAnimationActive={false} dataKey="value" radius={[3, 3, 0, 0]}>
             {bySev.map((d, i) => <Cell key={i} fill={sevColor(d.name)} />)}
           </Bar>
         </BarChart>
@@ -193,7 +193,7 @@ function SettlementInvoicesCharts({ rows }: { rows: Record<string, unknown>[] })
           <XAxis type="number" tick={TICK} tickFormatter={(v) => zar.format(v)} />
           <YAxis type="category" dataKey="name" tick={TICK} width={110} />
           <Tooltip formatter={(v: number) => zarTip(v)} />
-          <Bar dataKey="value" radius={[0, 3, 3, 0]} fill={GOOD} />
+          <Bar isAnimationActive={false} dataKey="value" radius={[0, 3, 3, 0]} fill={GOOD} />
         </BarChart>
       </Panel>
       <Panel title="Invoices by status" subtitle="Where each invoice sits in the issue → pay lifecycle">
@@ -202,7 +202,7 @@ function SettlementInvoicesCharts({ rows }: { rows: Record<string, unknown>[] })
           <XAxis dataKey="name" tick={TICK} />
           <YAxis tick={TICK} allowDecimals={false} width={30} />
           <Tooltip />
-          <Bar dataKey="value" radius={[3, 3, 0, 0]}>
+          <Bar isAnimationActive={false} dataKey="value" radius={[3, 3, 0, 0]}>
             {byStatus.map((d, i) => <Cell key={i} fill={sevColor(d.name)} />)}
           </Bar>
         </BarChart>
@@ -226,7 +226,7 @@ function WorkOrdersCharts({ rows }: { rows: Record<string, unknown>[] }) {
           <XAxis dataKey="name" tick={TICK} interval={0} angle={-25} textAnchor="end" height={44} />
           <YAxis tick={TICK} allowDecimals={false} width={30} />
           <Tooltip />
-          <Bar dataKey="value" radius={[3, 3, 0, 0]}>
+          <Bar isAnimationActive={false} dataKey="value" radius={[3, 3, 0, 0]}>
             {byStatus.map((d, i) => <Cell key={i} fill={sevColor(d.name)} />)}
           </Bar>
         </BarChart>
@@ -237,7 +237,7 @@ function WorkOrdersCharts({ rows }: { rows: Record<string, unknown>[] }) {
           <XAxis dataKey="name" tick={TICK} />
           <YAxis tick={TICK} allowDecimals={false} width={30} />
           <Tooltip />
-          <Bar dataKey="value" radius={[3, 3, 0, 0]}>
+          <Bar isAnimationActive={false} dataKey="value" radius={[3, 3, 0, 0]}>
             {byPriority.map((d, i) => <Cell key={i} fill={sevColor(d.name)} />)}
           </Bar>
         </BarChart>
@@ -261,7 +261,7 @@ function AlertsCharts({ rows }: { rows: Record<string, unknown>[] }) {
           <XAxis dataKey="name" tick={TICK} />
           <YAxis tick={TICK} allowDecimals={false} width={30} />
           <Tooltip />
-          <Bar dataKey="value" radius={[3, 3, 0, 0]}>
+          <Bar isAnimationActive={false} dataKey="value" radius={[3, 3, 0, 0]}>
             {bySev.map((d, i) => <Cell key={i} fill={sevColor(d.name)} />)}
           </Bar>
         </BarChart>
@@ -272,7 +272,7 @@ function AlertsCharts({ rows }: { rows: Record<string, unknown>[] }) {
           <XAxis type="number" tick={TICK} allowDecimals={false} />
           <YAxis type="category" dataKey="name" tick={TICK} width={110} />
           <Tooltip />
-          <Bar dataKey="value" radius={[0, 3, 3, 0]} fill="oklch(0.46 0.16 55)" />
+          <Bar isAnimationActive={false} dataKey="value" radius={[0, 3, 3, 0]} fill="oklch(0.46 0.16 55)" />
         </BarChart>
       </Panel>
     </Grid2>
@@ -289,7 +289,7 @@ export function ZarBars({ rows, groupKey, metric }: { rows: Record<string, unkno
       <XAxis type="number" tick={TICK} tickFormatter={(v) => zar.format(v)} />
       <YAxis type="category" dataKey="name" tick={TICK} width={110} />
       <Tooltip formatter={(v: number) => zarTip(v)} />
-      <Bar dataKey="value" radius={[0, 3, 3, 0]} fill={GOOD} />
+      <Bar isAnimationActive={false} dataKey="value" radius={[0, 3, 3, 0]} fill={GOOD} />
     </BarChart>
   );
 }
@@ -302,7 +302,7 @@ export function NumBars({ rows, groupKey, metric, fill = INK }: { rows: Record<s
       <XAxis type="number" tick={TICK} allowDecimals={false} />
       <YAxis type="category" dataKey="name" tick={TICK} width={110} />
       <Tooltip />
-      <Bar dataKey="value" radius={[0, 3, 3, 0]} fill={fill} />
+      <Bar isAnimationActive={false} dataKey="value" radius={[0, 3, 3, 0]} fill={fill} />
     </BarChart>
   );
 }
@@ -315,7 +315,7 @@ export function CountBars({ rows, groupKey, colorByStatus }: { rows: Record<stri
       <XAxis dataKey="name" tick={TICK} interval={0} angle={-25} textAnchor="end" height={44} />
       <YAxis tick={TICK} allowDecimals={false} width={30} />
       <Tooltip />
-      <Bar dataKey="value" radius={[3, 3, 0, 0]} fill={GOOD}>
+      <Bar isAnimationActive={false} dataKey="value" radius={[3, 3, 0, 0]} fill={GOOD}>
         {colorByStatus && data.map((d, i) => <Cell key={i} fill={sevColor(d.name)} />)}
       </Bar>
     </BarChart>
@@ -409,7 +409,7 @@ function PartsCharts({ rows }: { rows: Record<string, unknown>[] }) {
           <XAxis dataKey="name" tick={TICK} />
           <YAxis tick={TICK} allowDecimals={false} width={30} />
           <Tooltip />
-          <Bar dataKey="value" radius={[3, 3, 0, 0]}>
+          <Bar isAnimationActive={false} dataKey="value" radius={[3, 3, 0, 0]}>
             {reorder.map((d, i) => <Cell key={i} fill={i === 0 ? BAD : i === 1 ? WARN : GOOD} />)}
           </Bar>
         </BarChart>
