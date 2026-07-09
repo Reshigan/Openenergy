@@ -40,6 +40,7 @@ import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
 import { assertSafeWebhookUrl } from '../utils/url-safety';
+import { badEnum } from '../utils/validation';
 import {
   nextStatus,
   isTerminal,
@@ -627,6 +628,11 @@ app.post('/', async (c) => {
       return c.json({ success: false, error: e?.message || 'invalid endpoint_url' }, 400);
     }
   }
+
+  const statusErr =
+       badEnum('excon_authorization_status', body.excon_authorization_status, ['none', 'pending', 'authorized', 'expired'])
+    || badEnum('fic_act_kyc_status', body.fic_act_kyc_status, ['clean', 'refresh_due', 'flagged']);
+  if (statusErr) return c.json({ success: false, error: statusErr }, 400);
 
   const id = `ssc-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
 

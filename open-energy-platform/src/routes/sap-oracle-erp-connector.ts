@@ -42,6 +42,7 @@ import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
 import { assertSafeWebhookUrl } from '../utils/url-safety';
+import { badEnum } from '../utils/validation';
 import {
   nextStatus,
   isTerminal,
@@ -650,6 +651,11 @@ app.post('/', async (c) => {
       return c.json({ success: false, error: e?.message || 'invalid endpoint_url' }, 400);
     }
   }
+
+  const statusErr =
+       badEnum('sars_efiling_status', body.sars_efiling_status, ['current', 'pending', 'overdue'])
+    || badEnum('cipc_annual_filing_status', body.cipc_annual_filing_status, ['current', 'pending', 'overdue']);
+  if (statusErr) return c.json({ success: false, error: statusErr }, 400);
 
   const id = `soec-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
 

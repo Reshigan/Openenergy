@@ -47,6 +47,7 @@ import { requireTier } from '../middleware/entitlement';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
 import { assertSafeWebhookUrl } from '../utils/url-safety';
+import { badEnum } from '../utils/validation';
 import {
   nextStatus,
   isTerminal,
@@ -679,6 +680,13 @@ app.post('/', async (c) => {
       return c.json({ success: false, error: e?.message || 'invalid endpoint_url' }, 400);
     }
   }
+
+  const statusErr =
+       badEnum('companies_act_filing_status', body.companies_act_filing_status, ['current', 'pending', 'overdue'])
+    || badEnum('sars_tax_clearance_status', body.sars_tax_clearance_status, ['active', 'pending', 'revoked'])
+    || badEnum('nersa_levy_status', body.nersa_levy_status, ['current', 'arrears'])
+    || badEnum('dffe_ghg_threshold_status', body.dffe_ghg_threshold_status, ['under', 'over']);
+  if (statusErr) return c.json({ success: false, error: statusErr }, 400);
 
   const id = `gfc-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
 
