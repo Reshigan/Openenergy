@@ -24,6 +24,11 @@ import {
   type IssuePriority,
   type IssueCrossArgs,
 } from '../utils/ipp-issues-spec';
+import { badEnum } from '../utils/validation';
+
+// Migration 354 CHECKs — reject before D1 500s.
+const ISSUE_CATEGORIES = ['safety', 'regulatory', 'technical', 'commercial', 'environmental', 'stakeholder', 'legal', 'financial', 'general'];
+const ISSUE_PRIORITIES = ['p1_critical', 'p2_high', 'p3_medium', 'p4_low', 'p5_informational'];
 
 const READ_ROLES = new Set([
   'admin', 'trader', 'ipp_developer', 'offtaker', 'grid_operator',
@@ -178,6 +183,11 @@ app.post('/', async (c) => {
   if (!body.project_id || !body.title) {
     return c.json({ error: 'project_id and title required' }, 400);
   }
+
+  const enumErr =
+    badEnum('category', body.category, ISSUE_CATEGORIES) ??
+    badEnum('priority', body.priority, ISSUE_PRIORITIES);
+  if (enumErr) return c.json({ error: enumErr }, 400);
 
   const priority = (body.priority as IssuePriority) ?? 'p3_medium';
   const now = new Date();

@@ -19,6 +19,10 @@ import {
   VALID_TRANSITIONS,
   SLA_DAYS,
 } from '../utils/ipp-payment-cert-spec';
+import { badEnum } from '../utils/validation';
+
+// Migration 390 CHECK(claim_type IN (...)) — reject before D1 500s.
+const PC_CLAIM_TYPES = ['progress', 'retention_release', 'final_account', 'variation', 'dayworks', 'loss_and_expense', 'advance_payment'];
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -145,6 +149,9 @@ app.post('/', async (c) => {
   if (!body.project_id || !body.claim_type || body.claimed_value_zar == null) {
     return c.json({ error: 'project_id, claim_type, claimed_value_zar required' }, 400);
   }
+
+  const typeErr = badEnum('claim_type', body.claim_type, PC_CLAIM_TYPES);
+  if (typeErr) return c.json({ error: typeErr }, 400);
 
   const tier = deriveCertTier(body.claimed_value_zar);
   const slaAt = new Date(Date.now() + SLA_DAYS[tier] * 24 * 3_600_000).toISOString();

@@ -42,6 +42,12 @@ import {
   type SgTier,
   type SgFloorFlags,
 } from '../utils/stage-gate-spec';
+import { badEnum } from '../utils/validation';
+
+// Migration 352 CHECKs — reject before D1 500s.
+const SG_CAPEX_BANDS = ['low', 'medium', 'high', 'mega'];
+const SG_EQUATOR_CATEGORIES = ['cat_a', 'cat_b', 'cat_c'];
+const SG_DECISIONS = ['approved', 'conditional_approved', 'deferred', 'rejected', 'withdrawn'];
 
 const READ_ROLES = new Set([
   'admin',
@@ -269,6 +275,11 @@ app.post('/', async (c: Context<HonoEnv>) => {
     return c.json({ error: 'gate_index must be 0-4' }, 400);
   }
 
+  const enumErr =
+    badEnum('capex_band', body.capex_band, SG_CAPEX_BANDS) ??
+    badEnum('equator_category', body.equator_category, SG_EQUATOR_CATEGORIES);
+  if (enumErr) return c.json({ error: enumErr }, 400);
+
   const flags: SgFloorFlags = {
     floor_equator_cat_a: body.equator_category === 'cat_a' ? 1 : 0,
     floor_fid_committed: Number(body.fid_committed ?? 0),
@@ -394,6 +405,9 @@ app.post('/:id/:action', async (c: Context<HonoEnv>) => {
   // Compute SLA for new status
   const newSlaHrs = slaWindowHours(toStatus, tier);
   const newSlaDeadline = slaDeadlineFor(toStatus, tier, now);
+
+  const decisionErr = badEnum('decision', body.decision, SG_DECISIONS);
+  if (decisionErr) return c.json({ error: decisionErr }, 400);
 
   // Build update fields
   const tsCol = statusTsCol(toStatus);

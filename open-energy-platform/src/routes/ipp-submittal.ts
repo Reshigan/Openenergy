@@ -76,6 +76,10 @@ import {
   type IpsTier,
   type IpsStampCode,
 } from '../utils/ipp-submittal-spec';
+import { badEnum } from '../utils/validation';
+
+// Migration 320 CHECK(stamp_code IN (...)) — reject before D1 500s.
+const IPS_STAMP_CODES = ['A', 'B', 'C', 'D', 'E'];
 
 const READ_ROLES = new Set([
   'admin', 'ipp_developer',
@@ -801,6 +805,8 @@ async function transition(
   }
   if (action === 'stamp_return' || action === 'approve_with_comments') {
     const bodyStamp = (body as Partial<StampReturnBody>).stamp_code;
+    const stampErr = badEnum('stamp_code', bodyStamp, IPS_STAMP_CODES);
+    if (stampErr) return c.json({ success: false, error: stampErr }, 422);
     const stamp = stampForAction(action, bodyStamp ?? null);
     if (stamp) overrides.stamp_code = stamp;
   }

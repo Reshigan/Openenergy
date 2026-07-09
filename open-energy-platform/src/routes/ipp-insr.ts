@@ -29,6 +29,10 @@ import {
   slaBreachCrossesIntoRegulator,
 } from '../utils/ipp-insr-spec';
 import type { InsrStatus, InsrAction, InsrPremiumTier } from '../utils/ipp-insr-spec';
+import { badEnum } from '../utils/validation';
+
+// Migration 421 CHECK(line_type IN (...)) — reject before D1 500s.
+const INSR_LINE_TYPES = ['contractors_all_risk', 'operational_all_risk', 'third_party_liability', 'business_interruption', 'directors_officers', 'environmental_impairment', 'comprehensive_package'];
 
 const router = new Hono<HonoEnv>();
 router.use('*', authMiddleware);
@@ -191,6 +195,9 @@ router.post('/', async (c) => {
 
   const slaDays = SLA_DAYS[tier];
   const slaDueDate = new Date(now.getTime() + slaDays * 24 * 3_600_000).toISOString();
+
+  const lineErr = badEnum('line_type', body.line_type, INSR_LINE_TYPES);
+  if (lineErr) return c.json({ success: false, error: lineErr }, 400);
 
   const lineType = body.line_type ?? 'comprehensive_package';
 

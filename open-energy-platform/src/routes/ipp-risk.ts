@@ -26,6 +26,11 @@ import {
   type RiskTier,
   type RiskCrossArgs,
 } from '../utils/ipp-risk-spec';
+import { badEnum } from '../utils/validation';
+
+// Migration 356 CHECKs — reject before D1 500s.
+const RISK_CATEGORIES = ['construction', 'technical', 'financial', 'regulatory', 'environmental', 'safety', 'geopolitical', 'commercial', 'force_majeure', 'legal'];
+const RISK_TIERS = ['low_impact', 'medium_impact', 'high_impact', 'critical_impact', 'catastrophic'];
 
 const READ_ROLES = new Set([
   'admin', 'trader', 'ipp_developer', 'offtaker', 'grid_operator',
@@ -199,6 +204,11 @@ app.post('/', async (c) => {
   if (!body.project_id || !body.title) {
     return c.json({ error: 'project_id and title required' }, 400);
   }
+
+  const enumErr =
+    badEnum('risk_category', body.risk_category, RISK_CATEGORIES) ??
+    badEnum('risk_tier', body.risk_tier, RISK_TIERS);
+  if (enumErr) return c.json({ error: enumErr }, 400);
 
   const probScore = body.probability_score ?? null;
   const impScore = body.impact_score ?? null;

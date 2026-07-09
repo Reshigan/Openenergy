@@ -23,6 +23,12 @@ import {
 } from '../utils/calendars';
 import { runCpm, CpmActivity, CpmDep, LinkType, ConstraintType, ActivityType } from '../utils/cpm';
 import { runLeveling, LevelingActivity, LevelingAssignment, LevelingResource } from '../utils/leveling';
+import { badEnum } from '../utils/validation';
+
+// Migration 092 CHECKs — reject before D1 500s.
+const PS_ACTIVITY_TYPES = ['summary', 'task', 'milestone'];
+const PS_CONSTRAINT_TYPES = ['ASAP', 'SNET', 'FNLT', 'MSO', 'MFO'];
+const PS_RESOURCE_TYPES = ['labor', 'equipment', 'material'];
 
 const projectSchedule = new Hono<HonoEnv>();
 projectSchedule.use('*', authMiddleware);
@@ -127,9 +133,11 @@ projectSchedule.post('/activities', async (c) => {
   if (!body?.wbs_code || !body?.name || !body?.type) {
     return c.json({ success: false, error: 'wbs_code, name, type required' }, 400);
   }
-  if (!['summary', 'task', 'milestone'].includes(body.type)) {
+  if (!PS_ACTIVITY_TYPES.includes(body.type)) {
     return c.json({ success: false, error: 'invalid type' }, 400);
   }
+  const ctErr = badEnum('constraint_type', body.constraint_type, PS_CONSTRAINT_TYPES);
+  if (ctErr) return c.json({ success: false, error: ctErr }, 400);
   const id = body.id || newId();
   const t = now();
   await c.env.DB.prepare(`
@@ -176,6 +184,11 @@ projectSchedule.put('/activities/:id', async (c) => {
   if (body.version !== undefined && Number(body.version) !== Number(existing.version)) {
     return c.json({ success: false, error: 'version conflict', current_version: existing.version }, 409);
   }
+
+  const putEnumErr =
+    badEnum('type', body.type, PS_ACTIVITY_TYPES) ??
+    badEnum('constraint_type', body.constraint_type, PS_CONSTRAINT_TYPES);
+  if (putEnumErr) return c.json({ success: false, error: putEnumErr }, 400);
 
   const fields: string[] = [];
   const params: any[] = [];
@@ -396,6 +409,8 @@ projectSchedule.post('/resources', async (c) => {
   if (!body?.name || !body?.resource_type) {
     return c.json({ success: false, error: 'name, resource_type required' }, 400);
   }
+  const rtErr = badEnum('resource_type', body.resource_type, PS_RESOURCE_TYPES);
+  if (rtErr) return c.json({ success: false, error: rtErr }, 400);
   const id = body.id || newId();
   await c.env.DB.prepare(`
     INSERT INTO project_resources (id, project_id, name, resource_type, unit, max_units, rate_per_unit, calendar_id, created_at)

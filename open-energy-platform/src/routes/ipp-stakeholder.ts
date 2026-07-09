@@ -26,6 +26,10 @@ import {
   type StakeholderTier,
   type StakeholderCrossArgs,
 } from '../utils/ipp-stakeholder-spec';
+import { badEnum } from '../utils/validation';
+
+// Migration 358 CHECK(stakeholder_type IN (...)) — reject before D1 500s.
+const STAKEHOLDER_TYPES = ['community_leader', 'municipality', 'traditional_authority', 'regulator', 'funder', 'offtaker', 'contractor', 'consultant', 'ngo', 'government_dept', 'media', 'internal'];
 
 const READ_ROLES = new Set([
   'admin', 'trader', 'ipp_developer', 'offtaker', 'grid_operator',
@@ -200,6 +204,9 @@ app.post('/', async (c) => {
   if (!body.project_id || !body.stakeholder_name || !body.stakeholder_type) {
     return c.json({ error: 'project_id, stakeholder_name, and stakeholder_type required' }, 400);
   }
+
+  const typeErr = badEnum('stakeholder_type', body.stakeholder_type, STAKEHOLDER_TYPES);
+  if (typeErr) return c.json({ error: typeErr }, 400);
 
   const powerScore = body.power_score ?? 3;
   const interestScore = body.interest_score ?? 3;

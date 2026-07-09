@@ -16,6 +16,10 @@ import {
   mvsCrossesIntoRegulator, mvsSlaBreachCrossesIntoRegulator,
 } from '../utils/milestone-variance-spec';
 import { resolveNextStatus } from '../utils/chain-sla';
+import { badEnum } from '../utils/validation';
+
+// Migration 453 CHECK(risk_tier IN (...)) — reject before D1 500s.
+const MVS_RISK_TIERS = ['minor', 'moderate', 'significant', 'critical'];
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -122,6 +126,8 @@ app.post('/', async (c) => {
 
   const isAdmin = ['admin', 'support'].includes(user.role);
   const participantId = isAdmin && body.participant_id ? body.participant_id : user.id;
+  const tierErr = badEnum('risk_tier', body.risk_tier, MVS_RISK_TIERS);
+  if (tierErr) return c.json({ success: false, error: tierErr }, 400);
   const riskTier = body.risk_tier ?? 'minor';
 
   // Duplicate check

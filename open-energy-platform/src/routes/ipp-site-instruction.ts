@@ -18,6 +18,10 @@ import {
   type InstructionType,
   type SiCrossArgs,
 } from '../utils/ipp-site-instruction-spec';
+import { badEnum } from '../utils/validation';
+
+// Migration 387 CHECK(instruction_type IN (...)) — reject before D1 500s (SLA_HOURS `?? 48` masks bad values).
+const SI_INSTRUCTION_TYPES = ['safety_directive', 'variation_instruction', 'defect_rectification', 'design_clarification', 'testing_instruction', 'administrative'];
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -101,6 +105,9 @@ app.post('/', async (c) => {
 
   if (!project_id || !instruction_type || !issued_date || !description)
     return c.json({ error: 'project_id, instruction_type, issued_date, description required' }, 400);
+
+  const typeErr = badEnum('instruction_type', instruction_type, SI_INSTRUCTION_TYPES);
+  if (typeErr) return c.json({ error: typeErr }, 400);
 
   const id = crypto.randomUUID();
   const now = new Date().toISOString();

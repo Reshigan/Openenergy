@@ -22,6 +22,11 @@ import {
   slaBreachCrossesIntoRegulator,
 } from '../utils/ipp-milestone-cert-spec';
 import type { McStatus, McAction, McProjectTier } from '../utils/ipp-milestone-cert-spec';
+import { badEnum } from '../utils/validation';
+
+// Migration 418 CHECKs — reject before D1 500s.
+const MC_MILESTONE_TYPES = ['financial_close', 'construction_start', 'test_cod', 'cod', 'grid_connection', 'commissioning_complete', 'performance_test_complete'];
+const MC_ENERGY_TYPES = ['solar_pv', 'wind_onshore', 'wind_offshore', 'biomass', 'small_hydro', 'csp', 'battery_storage'];
 
 const router = new Hono<HonoEnv>();
 router.use('*', authMiddleware);
@@ -173,6 +178,11 @@ router.post('/', async (c) => {
       400,
     );
   }
+
+  const enumErr =
+    badEnum('milestone_type', body.milestone_type, MC_MILESTONE_TYPES) ??
+    badEnum('energy_type', body.energy_type, MC_ENERGY_TYPES);
+  if (enumErr) return c.json({ success: false, error: enumErr }, 400);
 
   const tier = deriveMcProjectTier(body.project_mw);
   const now = new Date();
