@@ -100,6 +100,16 @@ export interface HonoBindings {
   APP_BASE_URL?: string;
   BACKUP_TOKEN?: string;
 
+  // ── Sungrow iSolarCloud OAuth 2.0 authorized-app flow ─────────────────────
+  // App credentials for the browser consent → code → access_token exchange.
+  // Set as Worker secrets (wrangler secret put); code falls back to the
+  // registered app defaults in esums-sungrow-oauth.ts if unset. See that file.
+  SUNGROW_APPKEY?: string;         // client_id / appkey
+  SUNGROW_ACCESS_KEY?: string;     // x-access-key (sensitive — prefer secret)
+  SUNGROW_AUTHORIZE_URL?: string;  // default web3.isolarcloud.com.hk/#/authorized-app
+  SUNGROW_TOKEN_URL?: string;      // default gateway.isolarcloud.com.hk token endpoint
+  SUNGROW_GATEWAY_URL?: string;    // default https://gateway.isolarcloud.com.hk
+
   // ── Deployment environment ────────────────────────────────────────────────
   // Set in wrangler.toml [vars] (currently "production"). Read by gates that
   // must stay dark outside prod (e.g. live email delivery in src/utils/email.ts).

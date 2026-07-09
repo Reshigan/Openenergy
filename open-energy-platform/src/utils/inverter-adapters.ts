@@ -112,7 +112,7 @@ const BASE_URL_ALLOWLIST: Record<Manufacturer, string[]> = {
   solaredge:     ['solaredge.com'],
   huawei:        ['fusionsolar.huawei.com', 'huawei.com'],
   fronius:       ['solarweb.com', 'fronius.com'],
-  sungrow:       ['isolarcloud.eu', 'isolarcloud.com.au', 'isolarcloud.com'],
+  sungrow:       ['isolarcloud.eu', 'isolarcloud.com.au', 'isolarcloud.com', 'isolarcloud.com.hk'],
   victron:       ['victronenergy.com'],
   growatt:       ['growatt.com'],
   sma:           ['sunnyportal.com', 'sma.de'],
@@ -462,6 +462,12 @@ async function froniusRealtime(creds: ManufacturerCredentials, deviceSn: string)
 const SG_BASE = 'https://gateway.isolarcloud.eu';
 
 async function sungrowToken(creds: ManufacturerCredentials): Promise<string> {
+  // OAuth authorized-app flow: access_token was minted via the browser consent
+  // callback and stored in the `token` column (auth_type='token'). Use it
+  // directly — no /openapi/login, no user_account/user_password. iSolarCloud
+  // access tokens are long-lived; refresh is handled by re-authorizing.
+  if (creds.auth_type === 'token' && creds.token) return creds.token;
+
   const cacheKey = `sungrow:${creds.username}`;
   const cached = getCachedToken(cacheKey);
   if (cached) return cached;

@@ -277,6 +277,7 @@ import esumsDataSourcesRoutes from './esums-data-sources';
 import esumsProjectsRoutes from './esums-projects';
 import esumsOmSolaxRoutes from './esums-solax';
 import esumsManufacturersRoutes from './esums-manufacturers';
+import esumsSungrowOauthRoutes from './esums-sungrow-oauth';
 import esumsAccrualsRoutes, { esumsInvoiceRoutes, esumsCreditRoutes } from './esums-accruals';
 import omRoutes from './om';
 import platformFeaturesRoutes from './platform-features';
@@ -737,6 +738,10 @@ export function mountRoutes(app: Hono<HonoEnv>): void {
   mount('/api/esums/data-sources', esumsDataSourcesRoutes);
   mount('/api/esums/projects', esumsProjectsRoutes);
   mount('/api/esums/solax', esumsOmSolaxRoutes);
+  // Public OAuth callback must be mounted before the authed manufacturers
+  // router so the /sungrow/oauth/callback redirect isn't caught by its
+  // global authMiddleware.
+  mount('/api/esums/manufacturers/sungrow/oauth', esumsSungrowOauthRoutes);
   mount('/api/esums/manufacturers', esumsManufacturersRoutes);
   mount('/api/esums/accruals', esumsAccrualsRoutes);
   mount('/api/esums/settlement-invoices', esumsInvoiceRoutes);
