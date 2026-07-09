@@ -24,6 +24,7 @@ import { appendAudit } from '../utils/audit-chain';
 import { fireCascade } from '../utils/cascade';
 import { withLock } from '../utils/locks';
 import { assertSafeWebhookUrl } from '../utils/url-safety';
+import { badEnum } from '../utils/validation';
 
 const sa = new Hono<HonoEnv>();
 
@@ -50,6 +51,8 @@ sa.post('/runs', async (c) => {
   for (const k of ['run_type', 'period_start', 'period_end']) {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
   }
+  const runTypeErr = badEnum('run_type', b.run_type, ['ppa_energy','wheeling','imbalance','ancillary','adhoc']);
+  if (runTypeErr) return c.json({ success: false, error: runTypeErr }, 400);
   const idempotencyKey = (b.idempotency_key as string) ||
     `${b.run_type}:${b.period_start}:${b.period_end}`;
 
@@ -244,6 +247,8 @@ sa.post('/ingest/channels', async (c) => {
   for (const k of ['connection_id', 'channel_type']) {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
   }
+  const channelTypeErr = badEnum('channel_type', b.channel_type, ['scada_mqtt','scada_opc_ua','https_push','sftp','manual','modbus']);
+  if (channelTypeErr) return c.json({ success: false, error: channelTypeErr }, 400);
   if (typeof b.endpoint_url === 'string' && b.endpoint_url.length > 0) {
     try { assertSafeWebhookUrl(b.endpoint_url as string); } catch (e: any) {
       return c.json({ success: false, error: e?.message || 'invalid endpoint_url' }, 400);

@@ -5,6 +5,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { assertSameTenantParticipant, getTenantId } from '../utils/tenant';
+import { badEnum } from '../utils/validation';
 
 const invoices = new Hono<HonoEnv>();
 
@@ -55,6 +56,10 @@ invoices.post('/', async (c) => {
   }
   if (!invoice_type) {
     return c.json({ success: false, error: 'invoice_type is required' }, 400);
+  }
+  {
+    const e = badEnum('invoice_type', invoice_type, ['energy','capacity','carbon','ancillary','balancing','disbursement','management']);
+    if (e) return c.json({ success: false, error: e }, 400);
   }
   if (!period_start) {
     return c.json({ success: false, error: 'period_start is required' }, 400);
@@ -198,6 +203,9 @@ invoices.put('/:id', async (c) => {
   }
 
   const { status, total_amount, due_date } = body;
+
+  const statusErr = badEnum('status', status, ['draft','issued','viewed','paid','partial','overdue','cancelled','disputed']);
+  if (statusErr) return c.json({ success: false, error: statusErr }, 400);
 
   await c.env.DB.prepare('UPDATE invoices SET status = COALESCE(?, status), total_amount = COALESCE(?, total_amount), due_date = COALESCE(?, due_date), updated_at = ? WHERE id = ?').bind(status, total_amount, due_date, new Date().toISOString(), id).run();
 

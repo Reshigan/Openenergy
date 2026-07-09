@@ -31,6 +31,7 @@ import { Hono, Context } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   nextStatus,
   isTerminal,
@@ -725,6 +726,8 @@ app.post('/', async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as Partial<CreateBody>;
   const id = `rep-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
 
+  const ce = badEnum('pack_cadence', body.pack_cadence, ['ad_hoc', 'monthly_return', 'quarterly_attestation', 'half_year', 'annual_audit']);
+  if (ce) return c.json({ success: false, error: ce }, 400);
   const cadence: RepCadence = (body.pack_cadence as RepCadence | undefined) ?? 'ad_hoc';
   const target: RegulatorTarget = isKnownRegulatorTarget(body.regulator_target as string | undefined)
     ? body.regulator_target as RegulatorTarget

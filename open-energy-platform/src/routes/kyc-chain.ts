@@ -8,6 +8,7 @@ import type { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   KycStatus, KycAction, RiskLevel,
   deriveKycSla, KYC_HARD_TERMINALS,
@@ -199,6 +200,11 @@ router.post('/', async (c) => {
   if (!body.participant_id) {
     return c.json({ success: false, error: 'participant_id is required' }, 400);
   }
+
+  const eEntity = badEnum('entity_type', body.entity_type, ['individual', 'company', 'trust', 'fund', 'foreign_entity']);
+  if (eEntity) return c.json({ success: false, error: eEntity }, 400);
+  const eRisk = badEnum('risk_level', body.risk_level, ['standard', 'medium', 'high_risk', 'pep']);
+  if (eRisk) return c.json({ success: false, error: eRisk }, 400);
 
   const existing = await c.env.DB
     .prepare('SELECT id FROM oe_kyc_verifications WHERE participant_id = ?')

@@ -10,6 +10,7 @@ import { computeFees, type InvoiceShape } from '../utils/settlement-fees';
 import { explainSettlementRunFailure } from '../utils/run-failure-explainer';
 import { adjustModifiedFollowing, buildD1Deps } from '../utils/business-day';
 import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
+import { badEnum } from '../utils/validation';
 
 const settlement = new Hono<HonoEnv>();
 settlement.use('*', authMiddleware);
@@ -529,6 +530,10 @@ settlement.post('/invoices/:id/breaks', async (c) => {
   if (!breakType || !reason || reason.length < 3) {
     return c.json({ success: false, error: 'break_type and reason (≥3 chars) are required' }, 400);
   }
+  const breakErr = badEnum('break_type', breakType, ['quantity','price','timing','metering','tariff','fx','other']);
+  if (breakErr) return c.json({ success: false, error: breakErr }, 400);
+  const sevErr = badEnum('severity', body.severity != null ? String(body.severity).trim() : undefined, ['low','medium','high','critical']);
+  if (sevErr) return c.json({ success: false, error: sevErr }, 400);
 
   // Authz — caller must be either party to the invoice OR an admin.
   const inv = await c.env.DB.prepare(
@@ -611,6 +616,8 @@ settlement.post('/breaks/:id/transition', async (c) => {
   if (!['investigating', 'resolved', 'rejected'].includes(to)) {
     return c.json({ success: false, error: 'Invalid transition target' }, 400);
   }
+  const outcomeErr = badEnum('outcome', body.outcome, ['corrected','rebooked','waived','escalated','no_action']);
+  if (outcomeErr) return c.json({ success: false, error: outcomeErr }, 400);
 
   const brk = await c.env.DB.prepare(
     `SELECT b.id, b.status, b.invoice_id, i.from_participant_id, i.to_participant_id

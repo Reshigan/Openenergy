@@ -32,6 +32,7 @@ import { Hono, Context } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   nextStatus,
   isTerminal,
@@ -750,6 +751,8 @@ app.post('/', async (c) => {
   ).first<{ max_h: number | null }>();
   const nextHeight = (maxRs?.max_h ?? 0) + 1;
   const blockNum = `ACB-${new Date().getUTCFullYear()}-${String(nextHeight).padStart(4, '0')}`;
+  const ce = badEnum('block_cadence', body.block_cadence, ['hourly', 'daily', 'weekly', 'monthly', 'quarterly']);
+  if (ce) return c.json({ success: false, error: ce }, 400);
   const cadence: AcbCadence = (body.block_cadence as AcbCadence | undefined) ?? 'daily';
 
   const flags = {

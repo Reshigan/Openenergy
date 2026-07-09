@@ -11,6 +11,7 @@ import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import type { EventType } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 
 const r = new Hono<HonoEnv>();
 r.use('*', authMiddleware);
@@ -70,6 +71,11 @@ r.patch('/schedule/:id', async (c) => {
   if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const id = c.req.param('id');
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+
+  const eFeeType = badEnum('fee_type', b.fee_type, ['bps', 'flat_zar', 'pct']);
+  if (eFeeType) return c.json({ success: false, error: eFeeType }, 400);
+  const ePayer = badEnum('payer_resolution', b.payer_resolution, ['initiator', 'beneficiary', 'split', 'platform']);
+  if (ePayer) return c.json({ success: false, error: ePayer }, 400);
 
   const existing = await c.env.DB.prepare(`SELECT * FROM oe_fee_schedule WHERE id = ?`).bind(id).first<any>();
   if (!existing) return c.json({ success: false, error: 'not found' }, 404);

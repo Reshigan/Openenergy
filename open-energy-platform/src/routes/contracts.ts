@@ -8,6 +8,7 @@ import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
 import { assertSameTenantParticipant, getTenantId } from '../utils/tenant';
 import { withLock, LockBusyError } from '../utils/locks';
+import { badEnum } from '../utils/validation';
 
 const contracts = new Hono<HonoEnv>();
 
@@ -735,6 +736,8 @@ contracts.post('/:id/phase', async (c) => {
   if (!existing) return c.json({ success: false, error: 'Contract not found' }, 404);
   if (existing.creator_id !== user.id && existing.counterparty_id !== user.id) return c.json({ success: false, error: 'Not authorized' }, 403);
   if (!phase) return c.json({ success: false, error: 'phase is required' }, 400);
+  const ePhase = badEnum('phase', phase, ['draft','loi','term_sheet','hoa','draft_agreement','legal_review','statutory_check','execution','active','amended','terminated','expired']);
+  if (ePhase) return c.json({ success: false, error: ePhase }, 400);
 
   const previous_phase = existing.phase;
   await c.env.DB.prepare('UPDATE contract_documents SET phase = ?, updated_at = ? WHERE id = ?')
@@ -854,6 +857,14 @@ contracts.put('/:id', async (c) => {
   }
 
   const { title, phase, contract_type, commercial_terms } = body;
+
+  // Guard enums only when supplied (partial PATCH-style update); bad value would
+  // otherwise hit the CHECK constraint on contract_documents and 500.
+  const ePhase = badEnum('phase', phase, ['draft','loi','term_sheet','hoa','draft_agreement','legal_review','statutory_check','execution','active','amended','terminated','expired']);
+  if (ePhase) return c.json({ success: false, error: ePhase }, 400);
+  const eType = badEnum('document_type', contract_type, ['loi','term_sheet','hoa','ppa_wheeling','ppa_btm','carbon_purchase','carbon_option_isda','forward','epc','wheeling_agreement','offtake_agreement','nda']);
+  if (eType) return c.json({ success: false, error: eType }, 400);
+
   const termsJson = commercial_terms ? JSON.stringify(commercial_terms) : null;
 
   // D1 rejects `undefined` bindings — partial PATCH-style updates leave

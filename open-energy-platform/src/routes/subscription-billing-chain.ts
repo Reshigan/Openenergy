@@ -35,6 +35,7 @@ import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
 import { resolveNextStatus } from '../utils/chain-sla';
+import { badEnum } from '../utils/validation';
 import {
   computeInvoiceAmounts,
   slaDeadlineFor,
@@ -176,6 +177,8 @@ app.post('/generate', async (c) => {
   if (!body.participant_id || !body.billing_period || !body.subscription_tier) {
     return c.json({ success: false, error: 'participant_id, billing_period, subscription_tier required' }, 400);
   }
+  const tierErr = badEnum('subscription_tier', body.subscription_tier, ['starter','professional','enterprise']);
+  if (tierErr) return c.json({ success: false, error: tierErr }, 400);
 
   // Prevent duplicate invoice for same participant + period
   const existing = await c.env.DB.prepare(

@@ -68,6 +68,7 @@ import { Hono, Context } from 'hono';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { HonoEnv } from '../utils/types';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 import {
   nextStatus,
   isTerminal,
@@ -806,6 +807,8 @@ app.post('/', async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as Partial<CreateBody>;
   const id = `ratt-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
 
+  const ce = badEnum('cadence', body.cadence, ['daily_tactical', 'weekly_management', 'monthly_management', 'quarterly_attestation', 'annual_audit']);
+  if (ce) return c.json({ success: false, error: ce }, 400);
   const cadence: RattCadence = (body.cadence as RattCadence | undefined) ?? 'monthly_management';
   const periodLabel = typeof body.period_label === 'string' ? body.period_label : '';
   if (!periodLabel) {

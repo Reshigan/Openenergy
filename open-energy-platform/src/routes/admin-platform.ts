@@ -11,6 +11,7 @@ import { evaluateFlag, coerceFlagValue, FlagDef, FlagOverride } from '../utils/f
 import { fireCascade } from '../utils/cascade';
 import { cachedAll } from '../utils/reference-cache';
 import { appendAudit, getChainHead, verifyChain } from '../utils/audit-chain';
+import { badEnum } from '../utils/validation';
 // popia-access imports retained for future use in per-subject reads.
 // import { logPiiAccess, inferAccessType } from '../utils/popia-access';
 
@@ -263,6 +264,8 @@ pa.post('/subscriptions', async (c) => {
   for (const k of ['tenant_id', 'plan_id', 'period_start', 'period_end', 'billing_frequency', 'amount_zar']) {
     if (b[k] == null) return c.json({ success: false, error: `${k} is required` }, 400);
   }
+  const bfErr = badEnum('billing_frequency', b.billing_frequency, ['monthly','quarterly','annual']);
+  if (bfErr) return c.json({ success: false, error: bfErr }, 400);
   const id = genId('sub');
   await c.env.DB.prepare(
     `INSERT INTO tenant_subscriptions
@@ -377,6 +380,8 @@ pa.post('/flags', async (c) => {
   if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   if (!b.flag_key) return c.json({ success: false, error: 'flag_key required' }, 400);
+  const rsErr = badEnum('rollout_strategy', b.rollout_strategy, ['off','all','percentage','by_tier','by_tenant','by_role']);
+  if (rsErr) return c.json({ success: false, error: rsErr }, 400);
   const id = genId('ff');
   await c.env.DB.prepare(
     `INSERT INTO feature_flags
@@ -406,6 +411,8 @@ pa.put('/flags/:id', async (c) => {
   if (!requireAdmin(user.role)) return c.json({ success: false, error: 'Admin only' }, 403);
   const id = c.req.param('id');
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const rsErr = badEnum('rollout_strategy', b.rollout_strategy, ['off','all','percentage','by_tier','by_tenant','by_role']);
+  if (rsErr) return c.json({ success: false, error: rsErr }, 400);
   const sets: string[] = ['updated_at = datetime(\'now\')'];
   const binds: unknown[] = [];
   for (const k of ['description', 'default_value', 'rollout_strategy'] as const) {
@@ -581,6 +588,8 @@ pa.post('/tenants/:id/sso', async (c) => {
   for (const k of ['provider_type', 'client_id']) {
     if (!b[k]) return c.json({ success: false, error: `${k} is required` }, 400);
   }
+  const ptErr = badEnum('provider_type', b.provider_type, ['entra_id','okta','google_workspace','keycloak','auth0','saml','generic_oidc']);
+  if (ptErr) return c.json({ success: false, error: ptErr }, 400);
   const id = genId('tsso');
   await c.env.DB.prepare(
     `INSERT INTO tenant_sso_providers
@@ -746,6 +755,8 @@ pa.post('/flag-overrides', async (c) => {
   if (!body.flag_key || !body.scope_type || body.new_value === undefined) {
     return c.json({ success: false, error: 'flag_key, scope_type, new_value required' }, 400);
   }
+  const stErr = badEnum('scope_type', body.scope_type, ['global','tenant','user']);
+  if (stErr) return c.json({ success: false, error: stErr }, 400);
   const id = crypto.randomUUID();
   await c.env.DB.prepare(
     `INSERT INTO admin_feature_flag_overrides

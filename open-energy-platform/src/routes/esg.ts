@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { HonoEnv } from '../utils/types';
 import { authMiddleware, getCurrentUser } from '../middleware/auth';
 import { fireCascade } from '../utils/cascade';
+import { badEnum } from '../utils/validation';
 
 const esg = new Hono<HonoEnv>();
 esg.use('*', authMiddleware);
@@ -196,6 +197,10 @@ esg.post('/transactions', async (c) => {
   if (body.scope === 3 && !body.scope3_category) {
     return c.json({ success: false, error: 'scope3_category required when scope=3' }, 400);
   }
+  const eMethod = badEnum('scope2_method', body.scope2_method, ['location','market','both']);
+  if (eMethod) return c.json({ success: false, error: eMethod }, 400);
+  const eQuality = badEnum('data_quality', body.data_quality, ['measured','calculated','estimated','industry_average']);
+  if (eQuality) return c.json({ success: false, error: eQuality }, 400);
 
   // Resolve the factor (caller can override, otherwise we look it up)
   let factorId = body.factor_id || null;
@@ -251,6 +256,11 @@ esg.put('/transactions/:id', async (c) => {
   if (!old) return c.json({ success: false, error: 'not_found' }, 404);
 
   const patch = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  // Guard user-supplied enums before they merge into the raw bind (CHECK → 500).
+  const eMethod = badEnum('scope2_method', patch.scope2_method, ['location','market','both']);
+  if (eMethod) return c.json({ success: false, error: eMethod }, 400);
+  const eQuality = badEnum('data_quality', patch.data_quality, ['measured','calculated','estimated','industry_average']);
+  if (eQuality) return c.json({ success: false, error: eQuality }, 400);
   const merged: Record<string, unknown> = { ...old, ...patch, id: undefined, restated_from_id: oldId };
   // Re-compute emissions if quantity or factor changed
   const q = Number(merged.quantity);
@@ -413,6 +423,10 @@ esg.post('/targets', async (c) => {
   if (!b.target_type || !b.base_year || !b.target_year || b.base_value === undefined || b.target_value === undefined) {
     return c.json({ success: false, error: 'target_type, base_year, target_year, base_value, target_value required' }, 400);
   }
+  const eType = badEnum('target_type', b.target_type, ['absolute','intensity','net_zero','renewable_mix','sbti_15c','sbti_2c']);
+  if (eType) return c.json({ success: false, error: eType }, 400);
+  const eStatus = badEnum('status', b.status, ['committed','approved','progressing','achieved','revised','retired']);
+  if (eStatus) return c.json({ success: false, error: eStatus }, 400);
   const id = uid('esgt');
   const pct = Number(b.base_value) > 0 ? ((Number(b.base_value) - Number(b.target_value)) / Number(b.base_value)) * 100 : null;
   await c.env.DB.prepare(`
@@ -440,6 +454,8 @@ esg.post('/initiatives', async (c) => {
   const user = getCurrentUser(c);
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   if (!b.name) return c.json({ success: false, error: 'name required' }, 400);
+  const eStatus = badEnum('status', b.status, ['planned','approved','in_progress','delivered','cancelled']);
+  if (eStatus) return c.json({ success: false, error: eStatus }, 400);
   const id = uid('esgini');
   // MACC = capex / (lifetime * annual_abatement)
   const macc = (b.capex_zar && b.abatement_tco2e_yr && b.lifetime_years)
@@ -775,6 +791,8 @@ esg.post('/risks', async (c) => {
   const user = getCurrentUser(c);
   const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   if (!b.risk_type || !b.title) return c.json({ success: false, error: 'risk_type + title required' }, 400);
+  const eType = badEnum('risk_type', b.risk_type, ['physical_acute','physical_chronic','transition_policy','transition_market','transition_technology','transition_reputation']);
+  if (eType) return c.json({ success: false, error: eType }, 400);
   const id = uid('esgr');
   await c.env.DB.prepare(`
     INSERT INTO esg_risks (id, participant_id, risk_type, title, description, time_horizon,
