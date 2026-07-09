@@ -178,15 +178,17 @@ admin.put('/kyc/:id', async (c) => {
       : kyc_status === 'rejected' ? 'read_only'
         : null;
 
+  let kycRes;
   if (marketAccess) {
-    await c.env.DB.prepare(
+    kycRes = await c.env.DB.prepare(
       'UPDATE participants SET kyc_status = ?, participant_market_access = ?, updated_at = datetime(\'now\') WHERE id = ?',
     ).bind(kyc_status, marketAccess, id).run();
   } else {
-    await c.env.DB.prepare(
+    kycRes = await c.env.DB.prepare(
       'UPDATE participants SET kyc_status = ?, updated_at = datetime(\'now\') WHERE id = ?',
     ).bind(kyc_status, id).run();
   }
+  if (!kycRes.meta?.changes) return c.json({ success: false, error: 'Participant not found' }, 404);
   if (kyc_status === 'approved') {
     await c.env.DB.prepare('UPDATE participants SET status = \'active\' WHERE id = ? AND status = \'pending\'').bind(id).run();
   }

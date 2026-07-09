@@ -94,9 +94,15 @@ r.post('/rfqs/:id/publish', async (c) => {
 });
 
 r.get('/rfqs/:id', async (c) => {
+  const user = getCurrentUser(c);
   const id = c.req.param('id');
   const rfq = await c.env.DB.prepare(`SELECT * FROM oe_rfqs WHERE id = ?`).bind(id).first<any>();
   if (!rfq) return c.json({ success: false, error: 'not found' }, 404);
+  const visible = ['admin', 'support'].includes(user.role)
+    || rfq.buyer_id === user.id
+    || rfq.status === 'published'
+    || (rfq.invitations_json || '').includes(user.id);
+  if (!visible) return c.json({ success: false, error: 'forbidden' }, 403);
   const quotes = await c.env.DB.prepare(`SELECT * FROM oe_rfq_quotes WHERE rfq_id = ? ORDER BY price_zar ASC`).bind(id).all();
   const rounds = await c.env.DB.prepare(`SELECT * FROM oe_negotiation_rounds WHERE rfq_id = ? ORDER BY round_number ASC, created_at ASC`).bind(id).all();
   return c.json({ success: true, data: { rfq, quotes: quotes.results || [], negotiation: rounds.results || [] } });
@@ -251,6 +257,13 @@ r.post('/negotiation/:id/decide', async (c) => {
   const id = c.req.param('id');
   const b = await c.req.json().catch(() => ({} as any));
   if (!['accepted', 'counter', 'rejected'].includes(b.decision)) return c.json({ success: false, error: 'invalid decision' }, 400);
+  const round = await c.env.DB.prepare(`SELECT rfq_id, quote_id FROM oe_negotiation_rounds WHERE id = ?`).bind(id).first<any>();
+  if (!round) return c.json({ success: false, error: 'not found' }, 404);
+  const rfq = await c.env.DB.prepare(`SELECT buyer_id FROM oe_rfqs WHERE id = ?`).bind(round.rfq_id).first<any>();
+  const q = await c.env.DB.prepare(`SELECT seller_id FROM oe_rfq_quotes WHERE id = ?`).bind(round.quote_id).first<any>();
+  const isBuyer = user.id === rfq?.buyer_id;
+  const isSeller = user.id === q?.seller_id;
+  if (!isBuyer && !isSeller && !['admin', 'support'].includes(user.role)) return c.json({ success: false, error: 'forbidden' }, 403);
   await c.env.DB.prepare(`UPDATE oe_negotiation_rounds SET decision = ?, decided_at = datetime('now') WHERE id = ?`).bind(b.decision, id).run();
   await fireCascade({
     event: 'marketplace.rfq_negotiation_decided',

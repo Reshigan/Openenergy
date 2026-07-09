@@ -95,9 +95,13 @@ r.post('/algos', async (c) => {
 });
 
 r.get('/algos/:id', async (c) => {
+  const user = getCurrentUser(c);
   const id = c.req.param('id');
   const algo = await c.env.DB.prepare(`SELECT * FROM oe_algo_executions WHERE id = ?`).bind(id).first<any>();
   if (!algo) return c.json({ success: false, error: 'not found' }, 404);
+  if (algo.participant_id !== user.id && !['admin', 'support'].includes(user.role)) {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
   const slices = await c.env.DB.prepare(`SELECT * FROM oe_algo_slices WHERE algo_id = ? ORDER BY slice_index ASC`).bind(id).all();
   return c.json({ success: true, data: { algo, slices: slices.results || [] } });
 });
@@ -105,6 +109,11 @@ r.get('/algos/:id', async (c) => {
 r.post('/algos/:id/pause', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
+  const owner = await c.env.DB.prepare(`SELECT participant_id FROM oe_algo_executions WHERE id = ?`).bind(id).first<{ participant_id: string }>();
+  if (!owner) return c.json({ success: false, error: 'not found' }, 404);
+  if (owner.participant_id !== user.id && !['admin', 'support'].includes(user.role)) {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
   await c.env.DB.prepare(`UPDATE oe_algo_executions SET status = 'paused', updated_at = datetime('now') WHERE id = ? AND status IN ('pending','running')`).bind(id).run();
   await fireCascade({
     event: 'trader.algo_paused',
@@ -120,6 +129,11 @@ r.post('/algos/:id/pause', async (c) => {
 r.post('/algos/:id/resume', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
+  const owner = await c.env.DB.prepare(`SELECT participant_id FROM oe_algo_executions WHERE id = ?`).bind(id).first<{ participant_id: string }>();
+  if (!owner) return c.json({ success: false, error: 'not found' }, 404);
+  if (owner.participant_id !== user.id && !['admin', 'support'].includes(user.role)) {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
   await c.env.DB.prepare(`UPDATE oe_algo_executions SET status = 'running', updated_at = datetime('now') WHERE id = ? AND status = 'paused'`).bind(id).run();
   await fireCascade({
     event: 'trader.algo_resumed',
@@ -135,6 +149,11 @@ r.post('/algos/:id/resume', async (c) => {
 r.post('/algos/:id/cancel', async (c) => {
   const user = getCurrentUser(c);
   const id = c.req.param('id');
+  const owner = await c.env.DB.prepare(`SELECT participant_id FROM oe_algo_executions WHERE id = ?`).bind(id).first<{ participant_id: string }>();
+  if (!owner) return c.json({ success: false, error: 'not found' }, 404);
+  if (owner.participant_id !== user.id && !['admin', 'support'].includes(user.role)) {
+    return c.json({ success: false, error: 'forbidden' }, 403);
+  }
   await c.env.DB.prepare(`UPDATE oe_algo_executions SET status = 'cancelled', updated_at = datetime('now') WHERE id = ? AND status NOT IN ('completed','cancelled')`).bind(id).run();
   await c.env.DB.prepare(`UPDATE oe_algo_slices SET status = 'skipped' WHERE algo_id = ? AND status = 'queued'`).bind(id).run();
   await fireCascade({

@@ -1574,6 +1574,8 @@ trading.post('/algo-rules', async (c) => {
   if (!body.name || !body.side || !body.size_mwh) {
     return c.json({ success: false, error: 'name, side and size_mwh are required' }, 400);
   }
+  const sideErr = badEnum('side', body.side, ['buy', 'sell']);
+  if (sideErr) return c.json({ success: false, error: sideErr }, 400);
   if (!body.trigger_below && !body.trigger_above) {
     return c.json({ success: false, error: 'at_least_one_trigger_required' }, 400);
   }
@@ -1607,6 +1609,8 @@ trading.put('/algo-rules/:id', async (c) => {
     name: string; side: 'buy' | 'sell'; energy_type: string;
     trigger_below: number | null; trigger_above: number | null; size_mwh: number; enabled: boolean;
   }>;
+  const sideErr = badEnum('side', body.side, ['buy', 'sell']);
+  if (sideErr) return c.json({ success: false, error: sideErr }, 400);
   await c.env.DB.prepare(
     `UPDATE trader_algo_rules
         SET name = COALESCE(?, name),
@@ -1721,7 +1725,19 @@ trading.post('/matches/:id/fees/recompute', async (c) => {
 
 // GET /trading/matches/:id/fees
 trading.get('/matches/:id/fees', async (c) => {
+  const user = getCurrentUser(c);
   const matchId = c.req.param('id');
+  const match = await c.env.DB.prepare(
+    `SELECT bo.participant_id AS buy_pid, so.participant_id AS sell_pid
+       FROM trade_matches m
+       INNER JOIN trade_orders bo ON bo.id = m.buy_order_id
+       INNER JOIN trade_orders so ON so.id = m.sell_order_id
+      WHERE m.id = ?`,
+  ).bind(matchId).first<{ buy_pid: string; sell_pid: string }>();
+  if (!match) return c.json({ success: false, error: 'Match not found' }, 404);
+  if (match.buy_pid !== user.id && match.sell_pid !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
   const rows = await c.env.DB.prepare(
     `SELECT id, participant_id, fee_type, basis, amount_zar, reason, calc_rule_version, calculated_at
        FROM trade_fees WHERE match_id = ? ORDER BY calculated_at DESC`,
@@ -1804,7 +1820,19 @@ trading.post('/matches/:id/allocations', async (c) => {
 
 // GET /trading/matches/:id/allocations
 trading.get('/matches/:id/allocations', async (c) => {
+  const user = getCurrentUser(c);
   const matchId = c.req.param('id');
+  const match = await c.env.DB.prepare(
+    `SELECT bo.participant_id AS buy_pid, so.participant_id AS sell_pid
+       FROM trade_matches m
+       INNER JOIN trade_orders bo ON bo.id = m.buy_order_id
+       INNER JOIN trade_orders so ON so.id = m.sell_order_id
+      WHERE m.id = ?`,
+  ).bind(matchId).first<{ buy_pid: string; sell_pid: string }>();
+  if (!match) return c.json({ success: false, error: 'Match not found' }, 404);
+  if (match.buy_pid !== user.id && match.sell_pid !== user.id && user.role !== 'admin') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
   const rows = await c.env.DB.prepare(
     `SELECT id, order_id, participant_id, allocated_volume_mwh,
             allocated_price_zar, sub_account, lot_id, reason, status, created_at
