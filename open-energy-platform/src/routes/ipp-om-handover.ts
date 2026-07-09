@@ -19,6 +19,10 @@ import {
   VALID_TRANSITIONS,
   SLA_DAYS,
 } from '../utils/ipp-om-handover-spec';
+import { badEnum } from '../utils/validation';
+
+// Migration 392 CHECK(category IN (...)) — reject before D1 500s.
+const OMH_CATEGORIES = ['hs_file', 'om_manual', 'as_built', 'equipment_data', 'warranties', 'commissioning', 'training', 'full_pack'];
 
 const app = new Hono<HonoEnv>();
 app.use('*', authMiddleware);
@@ -121,6 +125,9 @@ app.post('/', async (c) => {
   if (!body.project_id || body.capacity_mw == null || !body.category || !body.title) {
     return c.json({ error: 'project_id, capacity_mw, category, title required' }, 400);
   }
+
+  const catErr = badEnum('category', body.category, OMH_CATEGORIES);
+  if (catErr) return c.json({ error: catErr }, 400);
 
   const tier = deriveCapacityTier(body.capacity_mw);
   const slaAt = new Date(Date.now() + SLA_DAYS[tier] * 24 * 3_600_000).toISOString();

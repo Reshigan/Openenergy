@@ -23,6 +23,12 @@ import {
 } from '../utils/calendars';
 import { runCpm, CpmActivity, CpmDep, LinkType, ConstraintType, ActivityType } from '../utils/cpm';
 import { runLeveling, LevelingActivity, LevelingAssignment, LevelingResource } from '../utils/leveling';
+import { badEnum } from '../utils/validation';
+
+// Migration 092 CHECKs — reject before D1 500s.
+const PS_ACTIVITY_TYPES = ['summary', 'task', 'milestone'];
+const PS_CONSTRAINT_TYPES = ['ASAP', 'SNET', 'FNLT', 'MSO', 'MFO'];
+const PS_RESOURCE_TYPES = ['labor', 'equipment', 'material'];
 
 const projectSchedule = new Hono<HonoEnv>();
 projectSchedule.use('*', authMiddleware);
@@ -127,9 +133,11 @@ projectSchedule.post('/activities', async (c) => {
   if (!body?.wbs_code || !body?.name || !body?.type) {
     return c.json({ success: false, error: 'wbs_code, name, type required' }, 400);
   }
-  if (!['summary', 'task', 'milestone'].includes(body.type)) {
+  if (!PS_ACTIVITY_TYPES.includes(body.type)) {
     return c.json({ success: false, error: 'invalid type' }, 400);
   }
+  const ctErr = badEnum('constraint_type', body.constraint_type, PS_CONSTRAINT_TYPES);
+  if (ctErr) return c.json({ success: false, error: ctErr }, 400);
   const id = body.id || newId();
   const t = now();
   await c.env.DB.prepare(`
@@ -177,6 +185,11 @@ projectSchedule.put('/activities/:id', async (c) => {
     return c.json({ success: false, error: 'version conflict', current_version: existing.version }, 409);
   }
 
+  const putEnumErr =
+    badEnum('type', body.type, PS_ACTIVITY_TYPES) ??
+    badEnum('constraint_type', body.constraint_type, PS_CONSTRAINT_TYPES);
+  if (putEnumErr) return c.json({ success: false, error: putEnumErr }, 400);
+
   const fields: string[] = [];
   const params: any[] = [];
   const allowed = [
@@ -216,6 +229,9 @@ projectSchedule.delete('/activities/:id', async (c) => {
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
   const user = getCurrentUser(c);
+
+  const act = await c.env.DB.prepare(`SELECT id FROM project_activities WHERE id = ? AND project_id = ?`).bind(id, projectId).first();
+  if (!act) return c.json({ success: false, error: 'Activity not found' }, 404);
 
   // Cascade delete: deps mentioning this activity + assignments + the activity row.
   await c.env.DB.batch([
@@ -363,6 +379,8 @@ projectSchedule.post('/calendars/:calendarId/exceptions', async (c) => {
   if (!body?.exception_date || body?.hours === undefined) {
     return c.json({ success: false, error: 'exception_date, hours required' }, 400);
   }
+  const cal = await c.env.DB.prepare(`SELECT id FROM project_calendars WHERE id = ? AND project_id = ?`).bind(calendarId, projectId).first();
+  if (!cal) return c.json({ success: false, error: 'Calendar not found' }, 404);
   const id = newId();
   await c.env.DB.prepare(`
     INSERT OR REPLACE INTO calendar_exceptions (id, calendar_id, exception_date, hours, reason)
@@ -396,6 +414,8 @@ projectSchedule.post('/resources', async (c) => {
   if (!body?.name || !body?.resource_type) {
     return c.json({ success: false, error: 'name, resource_type required' }, 400);
   }
+  const rtErr = badEnum('resource_type', body.resource_type, PS_RESOURCE_TYPES);
+  if (rtErr) return c.json({ success: false, error: rtErr }, 400);
   const id = body.id || newId();
   await c.env.DB.prepare(`
     INSERT INTO project_resources (id, project_id, name, resource_type, unit, max_units, rate_per_unit, calendar_id, created_at)
@@ -423,6 +443,8 @@ projectSchedule.post('/assignments', async (c) => {
   if (!body?.activity_id || !body?.resource_id) {
     return c.json({ success: false, error: 'activity_id, resource_id required' }, 400);
   }
+  const act = await c.env.DB.prepare(`SELECT id FROM project_activities WHERE id = ? AND project_id = ?`).bind(body.activity_id, projectId).first();
+  if (!act) return c.json({ success: false, error: 'Activity not found' }, 404);
   const id = newId();
   await c.env.DB.prepare(`
     INSERT OR REPLACE INTO resource_assignments (id, activity_id, resource_id, units)
@@ -442,7 +464,7 @@ projectSchedule.delete('/assignments/:id', async (c) => {
   const id = (c.req.param('id') as string);
   const access = await ensureProjectAccess(c, projectId);
   if (!access.ok) return c.json({ success: false, error: 'Project not found' }, 404);
-  await c.env.DB.prepare(`DELETE FROM resource_assignments WHERE id = ?`).bind(id).run();
+  await c.env.DB.prepare(`DELETE FROM resource_assignments WHERE id = ? AND activity_id IN (SELECT id FROM project_activities WHERE project_id = ?)`).bind(id, projectId).run();
   await invalidate(c.env, cacheKey(projectId));
   return c.json({ success: true });
 });
