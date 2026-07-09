@@ -206,6 +206,13 @@ sr.post('/stations', async (c) => {
   if (!b.plant_id || !b.device_sn) {
     throw new AppError(ErrorCode.VALIDATION_ERROR, 'plant_id and device_sn are required', 400);
   }
+  // Optional manufacturer slug — defaults to 'solax' (the column default). Lets a
+  // non-solax device (e.g. sungrow) be registered so the forward hourly recorder
+  // picks it up. Same slug rule as manufacturer_credentials; identifier is bound.
+  const manufacturer = String(b.manufacturer ?? 'solax').toLowerCase().trim();
+  if (!/^[a-z0-9_-]{1,64}$/.test(manufacturer)) {
+    throw new AppError(ErrorCode.VALIDATION_ERROR, 'manufacturer must be a lowercase slug (a-z 0-9 _ -)', 400);
+  }
 
   const id  = randomId('ssx_');
   const now = new Date().toISOString();
@@ -213,8 +220,8 @@ sr.post('/stations', async (c) => {
     await c.env.DB.prepare(`
       INSERT INTO solax_stations
         (id, participant_id, site_id, plant_id, plant_name, device_sn,
-         device_type, business_type, rated_power_kw, status, created_at, updated_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+         device_type, business_type, manufacturer, rated_power_kw, status, created_at, updated_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
     `).bind(
       id, user.id,
       (b.site_id as string) || null,
@@ -223,6 +230,7 @@ sr.post('/stations', async (c) => {
       b.device_sn as string,
       Number(b.device_type ?? 1),
       BTYPE,
+      manufacturer,
       (b.rated_power_kw as number) || null,
       'active', now, now,
     ).run();

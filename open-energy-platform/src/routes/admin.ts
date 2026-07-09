@@ -407,7 +407,7 @@ admin.post('/users', async (c) => {
   // 'support' is valid as of migration 012 which extended the DB CHECK
   // constraint on participants.role. Admins can now create support-role
   // accounts from /admin; the /support console handles their day-2 work.
-  const allowedRoles = ['admin', 'ipp_developer', 'trader', 'carbon_fund', 'offtaker', 'lender', 'grid_operator', 'regulator', 'support'];
+  const allowedRoles = ['admin', 'ipp_developer', 'trader', 'carbon_fund', 'offtaker', 'lender', 'grid_operator', 'regulator', 'support', 'esums_owner'];
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return c.json({ success: false, error: 'Valid email is required' }, 400);
   if (!name) return c.json({ success: false, error: 'Name is required' }, 400);
   if (!allowedRoles.includes(role)) return c.json({ success: false, error: 'Invalid role' }, 400);
