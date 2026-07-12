@@ -182,7 +182,7 @@ function LazyWorkbench({ children }: { children: ReactNode }) {
 function RootLanding() {
   const { user, loading } = useAuth();
   if (loading) return null;
-  return <Navigate to={user ? '/cockpit' : '/welcome'} replace />;
+  return <Navigate to={user ? '/v2' : '/welcome'} replace />;
 }
 
 function ProtectedRoute({ children }: { children?: ReactNode }) {
@@ -589,11 +589,11 @@ function LaunchRedirect() {
         if (!completed) {
           navigate('/onboard', { replace: true });
         } else {
-          navigate('/cockpit', { replace: true });
+          navigate('/v2', { replace: true });
         }
       })
       .catch(() => {
-        navigate('/cockpit', { replace: true });
+        navigate('/v2', { replace: true });
       });
   }, [user, navigate, logout]);
 
@@ -637,7 +637,7 @@ function AppRoutes() {
       {/* Meridian Horizon board — supplies its own chrome, so no Layout/AppShell wrapper. */}
       {/* /horizon retired (journeys-only UI): the per-role boards folded into the
           journey cockpit; admin's cross-role deep-view lives there as the role switch. */}
-      <Route path="/horizon" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/horizon" element={<Navigate to="/v2" replace />} />
       {/* v2 generative surfaces */}
       <Route path="/v2" element={<ProtectedRoute><V2Home /></ProtectedRoute>} />
       <Route path="/v2/find" element={<ProtectedRoute><V2Find /></ProtectedRoute>} />
@@ -646,8 +646,8 @@ function AppRoutes() {
       <Route path="/thread/:chainKey/:id" element={<ProtectedRoute><ThreadPage /></ProtectedRoute>} />
       {/* Retired browse planes — create is in-journey, search is the ⌘K palette.
          Redirect into the cockpit so old links/bookmarks land on the single plane. */}
-      <Route path="/atlas" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/new" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/atlas" element={<Navigate to="/v2" replace />} />
+      <Route path="/new" element={<Navigate to="/v2" replace />} />
       <Route path="/ledger/:chainKey" element={<ProtectedRoute><LedgerPage /></ProtectedRoute>} />
       {/* One parametric route for every non-chain Meridian surface (master-data CRUD,
           settings, analytics/ML panels, connectors). Resolves SURFACE_REGISTRY by
@@ -658,28 +658,28 @@ function AppRoutes() {
           launchpad components stay routable at /launch-legacy/:role for
           reference, but their internal nav still targets /launch/* and so
           exits to Horizon on first click; workstation routes are untouched. */}
-      <Route path="/launch/:role" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/launch/:role/:domain" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/launch/:role" element={<Navigate to="/v2" replace />} />
+      <Route path="/launch/:role/:domain" element={<Navigate to="/v2" replace />} />
       <Route path="/launch-legacy/:role" element={<ProtectedRoute><AppShellLayout><LaunchpadHomePage /></AppShellLayout></ProtectedRoute>} />
       <Route path="/launch-legacy/:role/:domain" element={<ProtectedRoute><AppShellLayout><SubCockpitPage /></AppShellLayout></ProtectedRoute>} />
       {/* TODO: DELETE legacy listing pages — redirected to workstation equivalents */}
-      <Route path="/contracts" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/contracts" element={<Navigate to="/v2" replace />} />
       <Route path="/contracts/:id" element={<ProtectedRoute><Layout><ContractDetail /></Layout></ProtectedRoute>} />
-      <Route path="/trading" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/settlement" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/carbon" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/projects" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/trading" element={<Navigate to="/v2" replace />} />
+      <Route path="/settlement" element={<Navigate to="/v2" replace />} />
+      <Route path="/carbon" element={<Navigate to="/v2" replace />} />
+      <Route path="/projects" element={<Navigate to="/v2" replace />} />
       <Route path="/projects/:id" element={<ProtectedRoute><Layout><ProjectDetail /></Layout></ProtectedRoute>} />
       <Route path="/projects/:id/lifecycle" element={<ProtectedRoute><Layout><ProjectLifecycle /></Layout></ProtectedRoute>} />
       <Route path="/esg" element={<ProtectedRoute><Layout><ESG /></Layout></ProtectedRoute>} />
-      <Route path="/grid" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/grid" element={<Navigate to="/v2" replace />} />
       <Route path="/funds" element={<ProtectedRoute><Layout><Funds /></Layout></ProtectedRoute>} />
       <Route path="/funds/:id" element={<ProtectedRoute><Layout><FundDetail /></Layout></ProtectedRoute>} />
       <Route path="/pipeline" element={<ProtectedRoute><Layout><Pipeline /></Layout></ProtectedRoute>} />
       <Route path="/procurement" element={<ProtectedRoute><Layout><ProcurementHub /></Layout></ProtectedRoute>} />
       <Route path="/marketplace" element={<ProtectedRoute><Layout><Marketplace /></Layout></ProtectedRoute>} />
       <Route path="/modules" element={<ProtectedRoute><Layout><ModulesPage /></Layout></ProtectedRoute>} />
-      <Route path="/admin" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/admin" element={<Navigate to="/v2" replace />} />
       <Route path="/dashboard" element={<ProtectedRoute><Layout><NationalDashboard /></Layout></ProtectedRoute>} />
       <Route path="/support" element={<ProtectedRoute><Layout><Support /></Layout></ProtectedRoute>} />
       <Route path="/admin/monitoring" element={<ProtectedRoute><Layout><Monitoring /></Layout></ProtectedRoute>} />
@@ -695,15 +695,15 @@ function AppRoutes() {
       <Route path="/notifications" element={<ProtectedRoute><Layout><NotificationsPage /></Layout></ProtectedRoute>} />
       <Route path="/schedule" element={<ProtectedRoute><Layout><SchedulePage /></Layout></ProtectedRoute>} />
       {/* Legacy suite pages retired → Meridian Horizon. Sub-paths (workout/audit) kept below. */}
-      <Route path="/regulator-suite" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/grid-operator" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/trader-risk" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/lender-suite" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/regulator-suite" element={<Navigate to="/v2" replace />} />
+      <Route path="/grid-operator" element={<Navigate to="/v2" replace />} />
+      <Route path="/trader-risk" element={<Navigate to="/v2" replace />} />
+      <Route path="/lender-suite" element={<Navigate to="/v2" replace />} />
       <Route path="/lender-suite/workout" element={<ProtectedRoute><Layout><LenderWorkoutPage /></Layout></ProtectedRoute>} />
       <Route path="/lender-suite/audit" element={<ProtectedRoute><Layout><LenderAuditPage /></Layout></ProtectedRoute>} />
-      <Route path="/carbon-registry/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/grid-operator/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/esums" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/carbon-registry/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/grid-operator/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/esums" element={<Navigate to="/v2" replace />} />
       <Route path="/settings/platform" element={<ProtectedRoute><Layout><LazyWorkbench><PlatformSettingsPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       {/* Field-tech mobile WO flow — no app chrome by design (fullscreen PWA) */}
       <Route path="/esums/field/wos" element={<ProtectedRoute><LazyWorkbench><EsumsOmFieldWosPage /></LazyWorkbench></ProtectedRoute>} />
@@ -723,21 +723,21 @@ function AppRoutes() {
       <Route path="/status" element={<LazyWorkbench><PublicStatusPage /></LazyWorkbench>} />
       <Route path="/legal" element={<LazyWorkbench><PublicLegalPage /></LazyWorkbench>} />
       <Route path="/audit" element={<LazyWorkbench><PublicAuditPage /></LazyWorkbench>} />
-      <Route path="/esums/faults" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/esums/faults/:id" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/esums/workorders" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/esums/workorders/:id" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/esums/predictions/:id" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/esums/faults" element={<Navigate to="/v2" replace />} />
+      <Route path="/esums/faults/:id" element={<Navigate to="/v2" replace />} />
+      <Route path="/esums/workorders" element={<Navigate to="/v2" replace />} />
+      <Route path="/esums/workorders/:id" element={<Navigate to="/v2" replace />} />
+      <Route path="/esums/predictions/:id" element={<Navigate to="/v2" replace />} />
       <Route path="/esums/sites/:id" element={<ProtectedRoute><Layout><LazyWorkbench><EsumsSiteDetailPage /></LazyWorkbench></Layout></ProtectedRoute>} />
-      <Route path="/regulator-suite/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/admin-platform/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/support/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/trader-risk/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/ipp-lifecycle/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/offtaker-suite/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/lender-suite/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/esco/workstation" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/epc/workstation" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/regulator-suite/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/admin-platform/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/support/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/trader-risk/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/ipp-lifecycle/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/offtaker-suite/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/lender-suite/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/esco/workstation" element={<Navigate to="/v2" replace />} />
+      <Route path="/epc/workstation" element={<Navigate to="/v2" replace />} />
       <Route path="/trading/orders/:id" element={<ProtectedRoute><Layout><OrderDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/settlement/invoices/:id" element={<ProtectedRoute><Layout><InvoiceDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/projects/:id/operations" element={<ProtectedRoute><Layout><ProjectOperationsPage /></Layout></ProtectedRoute>} />
@@ -748,9 +748,9 @@ function AppRoutes() {
       <Route path="/regulator/licence-actions/:id" element={<ProtectedRoute><Layout><LicenceActionDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/grid-operator/outages/:id" element={<ProtectedRoute><Layout><GridOutageDetailPage /></Layout></ProtectedRoute>} />
       <Route path="/admin-platform/billing-runs/:id" element={<ProtectedRoute><Layout><BillingRunDetailPage /></Layout></ProtectedRoute>} />
-      <Route path="/ipp-lifecycle" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/offtaker-suite" element={<Navigate to="/cockpit" replace />} />
-      <Route path="/carbon-registry" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/ipp-lifecycle" element={<Navigate to="/v2" replace />} />
+      <Route path="/offtaker-suite" element={<Navigate to="/v2" replace />} />
+      <Route path="/carbon-registry" element={<Navigate to="/v2" replace />} />
       <Route path="/admin-platform" element={<ProtectedRoute><Layout><LazyWorkbench><AdminPlatformPage /></LazyWorkbench></Layout></ProtectedRoute>} />
       {import.meta.env.DEV ? (
         <Route path="/dev/signature" element={<SignaturePreview />} />
