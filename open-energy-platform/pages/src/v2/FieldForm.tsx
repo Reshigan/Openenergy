@@ -13,6 +13,10 @@ interface Props {
   t: TransitionDecl;
   busy?: boolean;
   error?: string; // a rejection code/message surfaced in place
+  // Counterparties already on THIS txn — typeahead for `party` fields.
+  // ponytail: still no global participant directory endpoint; this only surfaces
+  // parties already on the current txn. Add a real /v2 lookup for full search.
+  knownParties?: { id: string; label: string }[];
   onSubmit: (input: Record<string, Json>, reason?: { code: string; text?: string }) => void;
   onCancel?: () => void;
 }
@@ -38,7 +42,7 @@ function validate(fields: [string, FieldDecl][], vals: Record<string, string | b
   return null;
 }
 
-export function TransitionForm({ t, busy, error, onSubmit, onCancel }: Props) {
+export function TransitionForm({ t, busy, error, knownParties, onSubmit, onCancel }: Props) {
   const fields = useMemo(() => Object.entries(t.input ?? {}), [t]);
   const needsReason = (t.requiresReason?.length ?? 0) > 0;
 
@@ -67,7 +71,7 @@ export function TransitionForm({ t, busy, error, onSubmit, onCancel }: Props) {
   return (
     <form className="v2-form" onSubmit={submit}>
       {fields.map(([name, f]) => (
-        <Field key={name} name={name} f={f} value={vals[name]} onChange={(v) => set(name, v)} />
+        <Field key={name} name={name} f={f} value={vals[name]} knownParties={knownParties} onChange={(v) => set(name, v)} />
       ))}
 
       {needsReason && (
@@ -94,7 +98,7 @@ export function TransitionForm({ t, busy, error, onSubmit, onCancel }: Props) {
       )}
 
       {(localErr || error) && (
-        <p className="v2-err">{localErr || <>Rejected: <code>{error}</code></>}</p>
+        <p className="v2-err">{localErr || error}</p>
       )}
 
       <div className="v2-actions">
@@ -109,7 +113,7 @@ export function TransitionForm({ t, busy, error, onSubmit, onCancel }: Props) {
   );
 }
 
-function Field({ name, f, value, onChange }: { name: string; f: FieldDecl; value: string | boolean; onChange: (v: string | boolean) => void }) {
+function Field({ name, f, value, knownParties, onChange }: { name: string; f: FieldDecl; value: string | boolean; knownParties?: { id: string; label: string }[]; onChange: (v: string | boolean) => void }) {
   const label = fieldLabel(name, f);
   const id = `v2-f-${name}`;
 
@@ -125,19 +129,29 @@ function Field({ name, f, value, onChange }: { name: string; f: FieldDecl; value
   }
 
   if (f.type === 'party') {
-    // No participant directory endpoint in v2 → identify the counterparty by id.
-    // ponytail: free-text participant id; swap for a typeahead when /v2 exposes a
-    // participant lookup.
+    // Identify the counterparty by participant id (still free text — any id is
+    // valid). The datalist just offers a typeahead of parties already on this txn.
+    // ponytail: no global participant directory endpoint in /v2 — this only
+    // surfaces parties already on THIS txn. Swap for a real lookup when exposed.
+    const listId = knownParties && knownParties.length ? `${id}-parties` : undefined;
     return (
       <div className="v2-field">
         <label htmlFor={id}>{label} {f.required && <span className="req">*</span>}</label>
         <input
           id={id}
           className="v2-input mono"
+          list={listId}
           placeholder={`${f.role || 'counterparty'} participant id`}
           value={String(value ?? '')}
           onChange={(e) => onChange(e.target.value)}
         />
+        {listId && (
+          <datalist id={listId}>
+            {knownParties!.map((p) => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </datalist>
+        )}
       </div>
     );
   }

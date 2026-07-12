@@ -200,3 +200,52 @@ export function fmtDuration(d?: { days?: number; hours?: number; minutes?: numbe
 export function fieldLabel(name: string, f: FieldDecl): string {
   return f.label || name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+// ── result codes → what a person should read + do ───────────────────────────
+// The engine's CmdResult codes (src/v2/domain/engine.ts). Kept 1:1 with that
+// enum — do not invent codes the server never returns.
+export interface RejectInfo {
+  title: string;
+  detail: string;
+  retriable: boolean; // STALE/CONTENTION: reload seq and re-submit unchanged
+}
+export function explainReject(code: string | undefined, message?: string): RejectInfo {
+  switch (code) {
+    case 'STALE':
+    case 'CONTENTION':
+      return { title: 'Someone moved first', detail: 'This transaction changed while you were deciding. Reloading the latest, then you can act again.', retriable: true };
+    case 'CONFLICT':
+      return { title: 'Already recorded', detail: message || 'This action was already applied — nothing further to do.', retriable: false };
+    case 'FORBIDDEN':
+      return { title: 'Not your move', detail: message || 'Your role can’t take this action on this transaction.', retriable: false };
+    case 'BLOCKED':
+      return { title: 'Blocked by a rule', detail: message || 'A pre-condition isn’t met yet (credit, KYC, exposure, halt or mark-age). Resolve it, then retry.', retriable: false };
+    case 'REJECTED':
+      return { title: 'Rejected', detail: message || 'The action was valid but declined by a guard.', retriable: false };
+    case 'ILLEGAL_TRANSITION':
+      return { title: 'No longer available', detail: message || 'The transaction isn’t in a state this action can be taken from anymore.', retriable: false };
+    case 'UNKNOWN_EDGE':
+      return { title: 'Unknown action', detail: message || 'That action doesn’t exist on this chain.', retriable: false };
+    case 'BAD_INPUT':
+      return { title: 'Check the form', detail: message || 'Something in the input didn’t validate.', retriable: false };
+    case 'NOT_FOUND':
+      return { title: 'Not found', detail: message || 'The transaction no longer exists.', retriable: false };
+    case 'INTERNAL':
+      return { title: 'Something broke', detail: message || 'An unexpected error occurred. Try again shortly.', retriable: true };
+    default:
+      return { title: 'Could not complete', detail: message || 'The action didn’t go through.', retriable: false };
+  }
+}
+
+// ── SAST display (UTC+2, no DST — RSA never observes it) ─────────────────────
+// Stored timestamps are UTC ISO. The platform's audit/legal domain is SAST, so
+// every human-facing time renders +02:00. ponytail: fixed offset, correct for
+// ZA in perpetuity; revisit only if a non-SAST tenant is ever onboarded.
+export function tsToSAST(ts: string | null | undefined): string {
+  if (!ts) return '';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return String(ts);
+  const sast = new Date(d.getTime() + 2 * 60 * 60 * 1000);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${sast.getUTCFullYear()}-${p(sast.getUTCMonth() + 1)}-${p(sast.getUTCDate())} ${p(sast.getUTCHours())}:${p(sast.getUTCMinutes())} SAST`;
+}

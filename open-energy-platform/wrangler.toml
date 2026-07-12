@@ -309,3 +309,109 @@ crons = [
   "0 6 1 * *",
   "0 18 * * *"
 ]
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DEV ENVIRONMENT — dev.open.vantax.co.za (isolated dev/test server)
+# ──────────────────────────────────────────────────────────────────────────────
+# Separate Worker (open-energy-dev), own D1/KV/queue seeded from a verified local
+# snapshot (schema + demo personas). Break it freely — zero risk to oe.vantax.co.za.
+# DEMO_MODE=on so persona login + Demo@2024! work. R2 reused (tenant-prefixed keys).
+# Deploy: `wrangler deploy --env dev`.  Named envs inherit nothing — all redeclared.
+# ══════════════════════════════════════════════════════════════════════════════
+[env.dev]
+name = "open-energy-dev"
+workers_dev = true
+
+[[env.dev.routes]]
+pattern = "dev.open.vantax.co.za"
+custom_domain = true
+
+[env.dev.assets]
+directory = "pages/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[env.dev.vars]
+ENVIRONMENT = "development"
+PLATFORM_NAME = "Open Energy (dev)"
+DOMAIN = "dev.open.vantax.co.za"
+APP_BASE_URL = "https://dev.open.vantax.co.za"
+DEMO_MODE = "on"
+ACCESS_TOKEN_TTL_SECONDS = "21600"
+AZURE_AD_CLIENT_ID = "0a0bcbd9-afcb-44b9-b0ad-16e1da612f98"
+AZURE_AD_TENANT_ID = "998b123c-e559-479d-bbb9-cf3330469a73"
+AZURE_AD_REDIRECT_URI = "https://dev.open.vantax.co.za/api/auth/sso/microsoft/callback"
+SOLAX_BASE_URL = "https://openapi.solaxcloud.com"
+SOLAX_CLIENT_ID = "3299754f484a4bde8bfe810e1bd166d6"
+PLATFORM_TZ = "Africa/Johannesburg"
+
+[[env.dev.r2_buckets]]
+binding = "R2"
+bucket_name = "open-energy-vault"
+
+[[env.dev.kv_namespaces]]
+binding = "KV"
+id = "efa9738ef8b04d5fa29c4572e04f4ad1"
+
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "open-energy-dev-db"
+database_id = "5e5f6367-9218-45c6-8728-2b92a5d1df7f"
+migrations_dir = "migrations"
+
+[env.dev.ai]
+binding = "AI"
+
+[[env.dev.durable_objects.bindings]]
+name = "ORDER_BOOK"
+class_name = "OrderBook"
+
+[[env.dev.migrations]]
+tag = "v1"
+new_sqlite_classes = ["OrderBook"]
+
+[[env.dev.queues.producers]]
+binding = "QUEUE"
+queue = "open-energy-dev-cascade"
+
+[[env.dev.queues.consumers]]
+queue = "open-energy-dev-cascade"
+max_batch_size = 50
+max_batch_timeout = 5
+
+[env.dev.triggers]
+crons = [
+  "*/15 * * * *",
+  "0 * * * *",
+  "15 0 * * *",
+  "20 0 * * *",
+  "25 0 * * *",
+  "5 0 * * *",
+  "10 0 * * *",
+  "30 0 * * *",
+  "35 0 * * *",
+  "40 0 * * *",
+  "45 0 * * *",
+  "50 0 * * *",
+  "55 0 * * *",
+  "58 0 * * *",
+  "5 * * * *",
+  "0 3 1 1,4,7,10 *",
+  "0 2 1 * *",
+  "0 4 1 * *",
+  "0 5 1 * *",
+  "0 6 1 1 *",
+  "0 6 * * 1",
+  "0 7 * * 1",
+  "30 1 * * *",
+  "45 1 * * *",
+  "0 2 * * *",
+  "30 2 * * *",
+  "0 3 * * *",
+  "30 3 * * *",
+  "15 4 * * *",
+  "0 1 1 * *",
+  "0 15 * * 5",
+  "0 6 1 * *",
+  "0 18 * * *"
+]

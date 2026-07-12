@@ -11,12 +11,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth';
 import { Shell } from './Shell';
 import { getChains, listTxns } from './api';
-import { newEdges, moneyValue, homeSort, stateKind, type ChainMap, type TxnRow, type TransitionDecl } from './decl';
-
-// ponytail: trading family by key/noun match — no `family` tag on ChainDecl.
-// Add a real family field to ChainDecl when a second surface needs to group by it.
-const TRADE_RE = /trade|order|bid|offer|auction|ppa|power|energy|swap|hedge|rec\b|carbon|allocation|position|match/i;
-const isTrade = (c: { key: string; noun: string }) => TRADE_RE.test(c.key) || TRADE_RE.test(c.noun);
+import { tradeStarts } from './starts';
+import { moneyValue, homeSort, stateKind, type ChainMap, type TxnRow } from './decl';
 
 function money(n: number): string {
   if (!n) return '—';
@@ -34,9 +30,13 @@ export default function Trade() {
   useEffect(() => { getChains().then(setChains); }, []);
   useEffect(() => { listTxns({ open: true, limit: 300 }).then(setRows); }, []);
 
+  // The role's trading-shaped journey domains (Active Trading, Risk & Margin,
+  // Post-trade & Settlement, Contracts). Openers + position filter both derive
+  // from this — no chain-key regex.
+  const domains = useMemo(() => tradeStarts(chains, role), [chains, role]);
   const tradeKeys = useMemo(
-    () => new Set(Object.values(chains).filter(isTrade).map((c) => c.key)),
-    [chains],
+    () => new Set(domains.flatMap((d) => d.starts.map((s) => s.chainKey))),
+    [domains],
   );
 
   const positions = useMemo(
@@ -44,14 +44,14 @@ export default function Trade() {
     [rows, tradeKeys],
   );
 
-  const openers = useMemo(() => {
-    const out: { chainKey: string; noun: string; t: TransitionDecl; enabled: boolean }[] = [];
-    for (const c of Object.values(chains)) {
-      if (!isTrade(c)) continue;
-      for (const t of newEdges(c)) out.push({ chainKey: c.key, noun: c.noun, t, enabled: t.by.includes(role) });
-    }
-    return out.sort((a, b) => Number(b.enabled) - Number(a.enabled));
-  }, [chains, role]);
+  // Role doesn't trade: nothing to show on either side.
+  if (chains && Object.keys(chains).length > 0 && domains.length === 0) {
+    return (
+      <Shell>
+        <div className="v2-empty">Trading isn’t part of your workspace.</div>
+      </Shell>
+    );
+  }
 
   return (
     <Shell>
@@ -65,7 +65,7 @@ export default function Trade() {
           ) : (
             <table className="v2-table">
               <thead>
-                <tr><th>Ref</th><th>Position</th><th>State</th><th style={{ textAlign: 'right' }}>Notional</th></tr>
+                <tr><th>Ref</th><th>Position</th><th>State</th><th style={{ textAlign: 'right' }}>Value</th></tr>
               </thead>
               <tbody>
                 {positions.map((r) => {
@@ -87,22 +87,27 @@ export default function Trade() {
 
         <div className="v2-col">
           <h4>Open a position</h4>
-          <div className="v2-starts">
-            {openers.length === 0 && <div className="v2-empty">No trading actions available.</div>}
-            {openers.map((s) => (
-              <button
-                key={`${s.chainKey}:${s.t.id}`}
-                className={`v2-start ${s.enabled ? '' : 'blocked'}`}
-                disabled={!s.enabled}
-                onClick={() => nav(`/v2/find?start=${s.chainKey}:${s.t.id}`)}
-                title={s.enabled ? '' : 'Not available to your role'}
-              >
-                <span className="plus">＋</span>
-                <span className="grow">{s.t.label}<span className="noun">{s.noun}</span></span>
-                {!s.enabled && <span className="lock">not your role</span>}
-              </button>
-            ))}
-          </div>
+          {domains.map((d) => (
+            <div key={d.key} className="v2-journey">
+              <div className="v2-journey-hd">
+                <span className="dot" style={{ ['--dc' as any]: d.color }} />
+                <h3>{d.label}</h3>
+                <span className="n">{d.starts.length}</span>
+              </div>
+              <div className="v2-starts">
+                {d.starts.map((s) => (
+                  <button
+                    key={s.chainKey}
+                    className="v2-start"
+                    onClick={() => nav(`/v2/find?start=${s.chainKey}:${s.edge.id}`)}
+                  >
+                    <span className="plus">＋</span>
+                    <span className="grow">{s.label}<span className="noun">{s.chain.noun}</span></span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </Shell>

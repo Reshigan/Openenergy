@@ -78,3 +78,45 @@ export async function actTxn(id: string, b: ActBody): Promise<CmdResult> {
   const { data } = await api.post(`/v2/txn/${id}/act`, b, { validateStatus: () => true });
   return data as CmdResult;
 }
+
+// ── notifications (shared /api/notifications, not a v2 endpoint) ─────────────
+// Rows carry an arbitrary `data` blob; when it names a v2 txn we deep-link to it.
+export interface NotifRow {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  data: Record<string, Json> | null;
+  read: boolean;
+  created_at: string;
+}
+
+export async function unreadCount(): Promise<number> {
+  try {
+    const { data } = await api.get('/notifications/unread-count');
+    return Number(data?.data?.unread_count ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+export async function listNotifications(limit = 20): Promise<NotifRow[]> {
+  try {
+    const { data } = await api.get('/notifications', { params: { status: 'unread', limit } });
+    return (data?.data?.notifications ?? []) as NotifRow[];
+  } catch {
+    return [];
+  }
+}
+
+export async function markNotifRead(id: string): Promise<void> {
+  try { await api.post(`/notifications/${id}/read`); } catch { /* best-effort */ }
+}
+
+/** A notification's target v2 transaction id, if it points at one. */
+export function notifTxnId(n: NotifRow): string | null {
+  const d = n.data;
+  if (!d) return null;
+  const v = d.txn_id ?? d.transaction_id ?? d.id;
+  return typeof v === 'string' ? v : null;
+}

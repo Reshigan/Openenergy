@@ -13,6 +13,7 @@ import { getChains, getTxn, actTxn } from './api';
 import { TransitionForm } from './FieldForm';
 import {
   candidatesFor, stateKind, fromStates, fieldLabel, fmtDuration,
+  explainReject, tsToSAST,
   RECORD_ONLY_NOTICE,
   type ChainDecl, type TxnBundle, type Candidate, type Json,
 } from './decl';
@@ -24,6 +25,7 @@ export default function Transaction() {
   const [bundle, setBundle] = useState<TxnBundle | null | 'missing'>(null);
   const [active, setActive] = useState<Candidate | null>(null);
   const [busy, setBusy] = useState(false);
+  // The last rejection, as a human-friendly sentence (built via explainReject).
   const [err, setErr] = useState<string | undefined>();
   const cmdRef = useRef<HTMLInputElement>(null);
 
@@ -68,8 +70,17 @@ export default function Transaction() {
       reason_text: reason?.text,
     });
     setBusy(false);
-    if (res.ok) { setActive(null); await load(); }
-    else setErr(res.constraint ? `${res.code} (${res.constraint})` : res.code || res.message || 'rejected');
+    if (res.ok) { setActive(null); await load(); return; }
+    // Translate the raw engine code into an honest sentence a person can act on.
+    const info = explainReject(res.code, res.message);
+    if (info.retriable) {
+      // STALE/CONTENTION/INTERNAL: the world moved (or a transient blip) — reload
+      // so expected_seq refreshes, then invite a fresh attempt instead of a dead code.
+      await load();
+      setErr('Someone moved first — reloaded, try again.');
+    } else {
+      setErr(`${info.title} — ${info.detail}`);
+    }
   };
 
   if (bundle === null) return <Shell><div className="v2-skeleton" style={{ height: 300 }} /></Shell>;
@@ -79,6 +90,22 @@ export default function Transaction() {
   const live = parties.filter((p) => p.until_event_id === null);
   const kind = chain ? stateKind(chain, txn.state) : 'open';
   const stateLabel = chain?.states[txn.state]?.label ?? txn.state;
+
+  // Who holds the ball: the state's holder role → the live party in that role.
+  const holderRole = chain?.states[txn.state]?.holder;
+  const holderParty = holderRole && holderRole !== 'none'
+    ? live.find((p) => p.role_on_txn === holderRole)
+    : undefined;
+
+  // Counterparties already on this txn — feeds the `party` field typeahead.
+  // De-dup by id, drop the current user.
+  const knownParties = Array.from(
+    new Map(
+      live
+        .filter((p) => p.participant_id !== user?.id)
+        .map((p) => [p.participant_id, { id: p.participant_id, label: p.role_on_txn }]),
+    ).values(),
+  );
 
   return (
     <Shell>
@@ -90,8 +117,8 @@ export default function Transaction() {
         <div className="v2-txn-meta">
           <span className="ref" style={{ fontFamily: 'var(--font-mono)' }}>{txn.human_ref}</span>
           <span>·</span><span>{chain?.noun ?? txn.chain_key}</span>
-          <span>·</span><span>opened {txn.opened_at.slice(0, 10)}</span>
-          {txn.closed_at && <><span>·</span><span>closed {txn.closed_at.slice(0, 10)}</span></>}
+          <span>·</span><span>opened {tsToSAST(txn.opened_at)}</span>
+          {txn.closed_at && <><span>·</span><span>closed {tsToSAST(txn.closed_at)}</span></>}
         </div>
         {live.length > 0 && (
           <div className="v2-parties">
@@ -100,6 +127,15 @@ export default function Transaction() {
                 {i > 0 && ' · '}<b>{p.role_on_txn}</b> {p.participant_id === user?.id ? '(you)' : p.participant_id.slice(0, 8)}
               </span>
             ))}
+          </div>
+        )}
+        {!txn.closed_at && chain && (
+          <div className="v2-next-actor">
+            {holderRole === 'none' || !holderRole
+              ? 'Progressing — no action needed.'
+              : holderParty?.participant_id === user?.id
+                ? `Waiting on you (${holderRole}).`
+                : `Waiting on ${holderRole}${holderParty ? ` · ${holderParty.participant_id.slice(0, 8)}` : ''}.`}
           </div>
         )}
       </div>
@@ -138,6 +174,7 @@ export default function Transaction() {
             t={active.t}
             busy={busy}
             error={err}
+            knownParties={knownParties}
             onSubmit={(input, reason) => fire(active, input, reason)}
             onCancel={() => { setActive(null); setErr(undefined); }}
           />
@@ -178,16 +215,21 @@ const CommandBar = forwardRef<HTMLInputElement, { candidates: Candidate[]; onPic
 
 function Timeline({ chain, events, currentState }: { chain: ChainDecl | null; events: TxnBundle['events']; currentState: string }) {
   // Project the immediate next states (edges out of the current state) as ghost
-  // rows — the event log's future, not yet written.
+  // rows — the event log's future, not yet written. Only advancing moves; don't
+  // advertise Cancel/Reject as an expected next step. Dedup identical labels.
   const nexts = chain
-    ? chain.transitions.filter((t) => t.from !== '@new' && fromStates(t).includes(currentState)).map((t) => t.label)
+    ? Array.from(new Set(
+        chain.transitions
+          .filter((t) => t.from !== '@new' && t.intent !== 'destructive' && fromStates(t).includes(currentState))
+          .map((t) => t.label),
+      ))
     : [];
   return (
     <ul className="v2-tl">
       {events.map((e) => (
         <li key={e.seq}>
           <span className="dot" />
-          <div className="when">{e.occurred_at.replace('T', ' ').slice(0, 16)} UTC</div>
+          <div className="when">{tsToSAST(e.occurred_at)}</div>
           <div className="what">{chain?.states[e.to_state]?.label ?? e.to_state} <span className="who">· {e.type}</span></div>
           <div className="who">{e.actor_kind === 'user' ? e.actor_id.slice(0, 8) : e.actor_kind}</div>
           {e.reason_code && <div className="cause">reason: {e.reason_code}{e.reason_text ? ` — ${e.reason_text}` : ''}</div>}

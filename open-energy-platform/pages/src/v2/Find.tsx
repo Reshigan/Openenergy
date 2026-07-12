@@ -1,8 +1,10 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // Find (/v2/find) — search objects, not functions. Type to filter open/closed
-// transactions across every chain; the "Start something" rail lists every @new
-// edge (blocked ones shown disabled). ?start=<chainKey>:<edgeId> deep-links
-// straight into the compose form for that opener.
+// transactions across every chain; the "Start something" rail is now journey-
+// grouped: the role's domains, each with its startable chains + management
+// screens (no flat 142-chain dump, no "not your role" rows). Typing folds the
+// rail to matching domains/starts/links too. ?start=<chainKey>:<edgeId> still
+// deep-links straight into the compose form for that opener.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useState } from 'react';
@@ -11,6 +13,7 @@ import { useAuth } from '../lib/useAuth';
 import { Shell } from './Shell';
 import { getChains, listTxns, openTxn } from './api';
 import { TransitionForm } from './FieldForm';
+import { groupedStarts } from './starts';
 import { newEdges, idemKey, stateKind, type ChainMap, type TxnRow, type TransitionDecl, type Json } from './decl';
 
 export default function Find() {
@@ -38,19 +41,25 @@ export default function Find() {
     return chain && t ? { chainKey, chain, t } : null;
   }, [start, chains]);
 
-  // Every opener across every chain, this-role-first.
-  const starts = useMemo(() => {
-    const out: { chainKey: string; noun: string; t: TransitionDecl; enabled: boolean }[] = [];
-    for (const [key, chain] of Object.entries(chains)) {
-      for (const t of newEdges(chain)) {
-        const enabled = t.by.includes(role);
-        if (!q || `${chain.noun} ${t.label}`.toLowerCase().includes(q.toLowerCase())) {
-          out.push({ chainKey: key, noun: chain.noun, t, enabled });
-        }
-      }
-    }
-    return out.sort((a, b) => Number(b.enabled) - Number(a.enabled));
-  }, [chains, q, role]);
+  // The role's journey home: domains, each with its startable chains + manage
+  // links. groupedStarts already gates on the curated role taxonomy — do NOT
+  // re-gate on the chain's abstract party-roles here.
+  const domains = useMemo(() => groupedStarts(chains, role), [chains, role]);
+
+  // Search folding: empty q → all domains; otherwise a domain shows if its
+  // label matches (keeping all its children) or any child matches (keeping the
+  // matching children only).
+  const shownDomains = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return domains;
+    const hit = (s: string) => s.toLowerCase().includes(needle);
+    return domains.flatMap((d) => {
+      if (hit(d.label)) return [d];
+      const starts = d.starts.filter((s) => hit(s.label));
+      const links = d.links.filter((l) => hit(l.label));
+      return starts.length || links.length ? [{ ...d, starts, links }] : [];
+    });
+  }, [domains, q]);
 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | undefined>();
@@ -119,19 +128,38 @@ export default function Find() {
 
         <div className="v2-col">
           <h4>Start something</h4>
-          <div className="v2-starts">
-            {starts.map((s) => (
-              <button
-                key={`${s.chainKey}:${s.t.id}`}
-                className={`v2-start ${s.enabled ? '' : 'blocked'}`}
-                disabled={!s.enabled}
-                onClick={() => setParams({ start: `${s.chainKey}:${s.t.id}` }, { replace: true })}
-                title={s.enabled ? '' : 'Not available to your role'}
-              >
-                <span className="plus">＋</span>
-                <span className="grow">{s.t.label}<span className="noun">{s.noun}</span></span>
-                {!s.enabled && <span className="lock">not your role</span>}
-              </button>
+          <div className="v2-journeys">
+            {shownDomains.map((domain) => (
+              <div key={domain.key} className="v2-journey">
+                <div className="v2-journey-hd">
+                  <span className="dot" style={{ ['--dc' as any]: domain.color }} />
+                  <h3>{domain.label}</h3>
+                  <span className="n">{domain.starts.length}</span>
+                </div>
+                <div className="v2-starts">
+                  {domain.starts.map((s) => (
+                    <button
+                      key={s.chainKey}
+                      className="v2-start"
+                      onClick={() => setParams({ start: `${s.chainKey}:${s.edge.id}` }, { replace: true })}
+                    >
+                      <span className="plus">＋</span>
+                      <span className="grow">{s.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {domain.links.length > 0 && (
+                  <>
+                    <div className="v2-jsub">Manage</div>
+                    {domain.links.map((link) => (
+                      <button key={link.key} className="v2-jlink" onClick={() => nav(link.to)}>
+                        <span className="grow">{link.label}</span>
+                        <span className="arw">→</span>
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
             ))}
           </div>
         </div>
