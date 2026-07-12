@@ -9,7 +9,7 @@
 // ════════════════════════════════════════════════════════════════════════
 
 import React, { useEffect, useState } from 'react';
-import { Scale, FileText, ShieldCheck, Send, Gavel, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Scale, FileText, ShieldCheck, Send, Gavel, AlertCircle, CheckCircle2, Lock, BookOpen } from 'lucide-react';
 
 const BG      = 'oklch(0.96 0.003 250)';
 const BG1     = 'oklch(0.99 0.002 80)';
@@ -35,7 +35,7 @@ export function PublicLegalPage() {
   const [manual, setManual] = useState<Manual | null>(null);
   const [apps, setApps] = useState<App[]>([]);
   const [decisions, setDecisions] = useState<Decision[]>([]);
-  const [tab, setTab] = useState<'overview' | 'paia' | 'applications' | 'decisions' | 'submit'>('overview');
+  const [tab, setTab] = useState<'overview' | 'privacy' | 'terms' | 'paia' | 'applications' | 'decisions' | 'submit'>('overview');
 
   useEffect(() => {
     void fetch('/api/public/legal/paia-manual').then((r) => r.json()).then((j) => j.success && setManual(j.data)).catch(() => undefined);
@@ -63,6 +63,8 @@ export function PublicLegalPage() {
         <div className="max-w-5xl mx-auto px-6 lg:px-10 flex flex-wrap gap-1 py-2">
           {([
             ['overview', 'Overview', FileText],
+            ['privacy', 'Privacy policy', Lock],
+            ['terms', 'Terms of service', BookOpen],
             ['paia', 'PAIA manual', ShieldCheck],
             ['applications', 'Tariff applications', Gavel],
             ['decisions', 'Decisions', CheckCircle2],
@@ -82,6 +84,8 @@ export function PublicLegalPage() {
 
       <main className="max-w-5xl mx-auto p-6 lg:p-10 space-y-4">
         {tab === 'overview' && <Overview manual={manual} appCount={apps.length} decisionCount={decisions.length} />}
+        {tab === 'privacy' && <PrivacyPolicy officer={manual?.information_officer} />}
+        {tab === 'terms' && <TermsOfService />}
         {tab === 'paia' && <PaiaManual manual={manual} />}
         {tab === 'applications' && <Applications apps={apps} />}
         {tab === 'decisions' && <Decisions decisions={decisions} />}
@@ -228,6 +232,254 @@ function Decisions({ decisions }: { decisions: Decision[] }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+// ── Long-form legal documents ──────────────────────────────────────────────
+// A single readable reading column. Sections are numbered because these ARE
+// numbered legal instruments (a real sequence, not decorative scaffolding).
+
+const EFFECTIVE = '12 July 2026';
+
+function LegalDoc({ title, subtitle, updated, children }: { title: string; subtitle: string; updated: string; children: React.ReactNode }) {
+  return (
+    <article className="widget-card p-6 lg:p-8">
+      <div className="max-w-[70ch] mx-auto">
+        <h2 className="font-display text-[22px] font-bold tracking-tight" style={{ color: TX1 }}>{title}</h2>
+        <p className="text-[12px] mt-1" style={{ color: TX2 }}>{subtitle}</p>
+        <p className="text-[11px] mt-0.5" style={{ color: TX3 }}>Effective {updated}</p>
+        <div className="mt-5 space-y-5">{children}</div>
+      </div>
+    </article>
+  );
+}
+
+function Sec({ n, heading, children }: { n: number; heading: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h3 className="text-[13px] font-bold mb-1.5" style={{ color: TX1 }}>{n}. {heading}</h3>
+      <div className="text-[12.5px] leading-relaxed space-y-2" style={{ color: TX2 }}>{children}</div>
+    </section>
+  );
+}
+
+function PrivacyPolicy({ officer }: { officer?: Manual['information_officer'] }) {
+  return (
+    <LegalDoc
+      title="Privacy Policy"
+      subtitle="How Open Energy processes personal information under the Protection of Personal Information Act 4 of 2013 (POPIA)."
+      updated={EFFECTIVE}
+    >
+      <Sec n={1} heading="Who we are (Responsible Party)">
+        <p>
+          Open Energy is a product operated by GONXT Technology (Pty) Ltd ("we", "us", the "Responsible Party"),
+          which runs the energy-exchange platform at <span className="font-mono">oe.vantax.co.za</span>. We are the
+          Responsible Party for personal information processed on the platform, as defined in section 1 of POPIA.
+        </p>
+        {officer && (
+          <p>
+            Our Information Officer is <span className="font-semibold" style={{ color: TX1 }}>{officer.name}</span>,
+            reachable at <span className="font-mono">{officer.email}</span> ({officer.postal_address}). The
+            Information Officer is registered with the Information Regulator (South Africa) and handles all access,
+            correction, and objection requests.
+          </p>
+        )}
+      </Sec>
+
+      <Sec n={2} heading="What we collect">
+        <p>We process the minimum personal information needed to operate a regulated energy exchange:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li><span className="font-semibold" style={{ color: TX1 }}>Identity &amp; account</span> — name, work email, role, employer/participant entity, and authentication credentials.</li>
+          <li><span className="font-semibold" style={{ color: TX1 }}>KYC / onboarding</span> — company registration, director details, and regulatory licences supplied to admit a participant.</li>
+          <li><span className="font-semibold" style={{ color: TX1 }}>Transaction records</span> — orders, trades, contracts, settlement and audit-chain entries you author on the platform.</li>
+          <li><span className="font-semibold" style={{ color: TX1 }}>Technical</span> — IP address, device/browser metadata, and access logs used for security and abuse prevention.</li>
+        </ul>
+        <p>We do not collect special personal information (POPIA s26) or children's information; the platform is a business-to-business venue for admitted participants only.</p>
+      </Sec>
+
+      <Sec n={3} heading="Lawful basis &amp; purpose (POPIA s11)">
+        <p>Each processing purpose rests on a lawful basis:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li><span className="font-semibold" style={{ color: TX1 }}>Performance of the participation agreement</span> — operating your account, matching, clearing and settlement.</li>
+          <li><span className="font-semibold" style={{ color: TX1 }}>Legal obligation</span> — trade reporting, tax and regulatory filings (NERSA, FSCA, SARS, SARB) required of a licensed venue.</li>
+          <li><span className="font-semibold" style={{ color: TX1 }}>Legitimate interest</span> — surveillance, fraud/abuse prevention, and platform security, balanced against your rights.</li>
+          <li><span className="font-semibold" style={{ color: TX1 }}>Consent</span> — where none of the above applies, we process only with your consent, which you may withdraw.</li>
+        </ul>
+      </Sec>
+
+      <Sec n={4} heading="Who we share it with">
+        <p>
+          We share personal information only where necessary: with counterparties to a transaction you enter (limited to
+          what the transaction requires), with regulators and market infrastructure (STRATE, SWIFT, the Information
+          Regulator, NERSA, FSCA, SARB) where the law compels disclosure, and with vetted operators (Operator
+          personnel) acting under a written mandate. We do not sell personal information.
+        </p>
+      </Sec>
+
+      <Sec n={5} heading="Cross-border transfers (POPIA s72)">
+        <p>
+          Platform data is hosted on the Cloudflare edge network, which may process data outside South Africa. Where
+          personal information leaves the Republic, we rely on the s72 grounds — the recipient is bound by law,
+          binding corporate rules, or a contract providing adequate protection substantially similar to POPIA — or on
+          your consent.
+        </p>
+      </Sec>
+
+      <Sec n={6} heading="Retention">
+        <p>
+          We keep personal information only as long as the purpose or the law requires — see the retention register on
+          the "PAIA manual" tab for per-record-type periods. Regulated trade, settlement, and audit records are
+          retained for the statutory minimum (typically five years) and then de-identified or destroyed.
+        </p>
+      </Sec>
+
+      <Sec n={7} heading="Your rights (POPIA ss23–25)">
+        <p>You may, free of charge, request confirmation of whether we hold your information, request access to it, and
+          request that we correct or delete information that is inaccurate, irrelevant, excessive, or unlawfully held.
+          You may object to processing and, where processing was based on consent, withdraw that consent. Use the
+          "Submit request" tab or email the Information Officer. We respond within 30 days.</p>
+      </Sec>
+
+      <Sec n={8} heading="Security safeguards (POPIA s19)">
+        <p>
+          We protect personal information with technical and organisational measures appropriate to the risk:
+          transport encryption, scoped role-based access, tenant isolation, an append-only tamper-evident audit chain,
+          and continuous surveillance. If a security compromise affects your personal information, we notify you and the
+          Information Regulator as required by POPIA s22 (see the <span className="font-mono">data_breach_notification</span> workflow).
+        </p>
+      </Sec>
+
+      <Sec n={9} heading="Cookies">
+        <p>
+          We use a single first-party token in your browser's local storage to keep you signed in. We do not use
+          third-party advertising or cross-site tracking cookies.
+        </p>
+      </Sec>
+
+      <Sec n={10} heading="Complaints">
+        <p>
+          If you are unhappy with how we handle your information, contact the Information Officer first. You may also
+          complain to the Information Regulator (South Africa), JD House, 27 Stiemens Street, Braamfontein,
+          Johannesburg 2001 — <span className="font-mono">complaints.IR@justice.gov.za</span>.
+        </p>
+      </Sec>
+
+      <Sec n={11} heading="Changes">
+        <p>We may update this policy; the effective date above marks the current version. Material changes are notified in-platform.</p>
+      </Sec>
+    </LegalDoc>
+  );
+}
+
+function TermsOfService() {
+  return (
+    <LegalDoc
+      title="Terms of Service (Participation Terms)"
+      subtitle="The agreement governing access to and use of the Open Energy platform by admitted participants."
+      updated={EFFECTIVE}
+    >
+      <Sec n={1} heading="Acceptance &amp; eligibility">
+        <p>
+          These Participation Terms form a binding agreement between you (and the participant entity you represent) and
+          GONXT Technology (Pty) Ltd, operator of Open Energy. Access is limited to entities admitted through onboarding
+          and KYC. By accessing the platform you warrant that you are authorised to bind your entity and that its
+          regulatory licences are valid and current.
+        </p>
+      </Sec>
+
+      <Sec n={2} heading="Accounts &amp; security">
+        <p>
+          You are responsible for all activity under your credentials. Keep them confidential, use the roles assigned to
+          you, and notify us immediately of any suspected compromise. We may suspend access on reasonable suspicion of
+          unauthorised use or a compliance breach.
+        </p>
+      </Sec>
+
+      <Sec n={3} heading="On-venue exclusivity — all covered transactions clear on the platform">
+        <p className="font-semibold" style={{ color: TX1 }}>
+          This clause is the core bargain of participation. Read it carefully.
+        </p>
+        <p>
+          For every product, instrument, or asset class you are admitted to trade on the platform (each a "Covered
+          Product"), you agree to originate, execute, clear, and settle <span className="font-semibold" style={{ color: TX1 }}>all</span> transactions
+          in that Covered Product exclusively on the platform. You will not enter, or cause a related party to enter,
+          any off-platform, bilateral, or "side" transaction in a Covered Product with another participant that has the
+          purpose or effect of moving that trade off the venue.
+        </p>
+        <p>
+          This exclusivity rides your executed master agreements (<span className="font-mono">contract_execution</span>,
+          <span className="font-mono"> isda_agreement</span>, <span className="font-mono">ppa_contract</span>) as a term
+          of each, and is a condition of continued access. Trading a Covered Product off-venue is a material breach of
+          these Terms and of that master agreement, independently actionable, and resolved through the platform's
+          <span className="font-mono"> dispute_resolution</span> process under the Arbitration Act 15 of 2017.
+        </p>
+        <p>
+          We enforce this economically (netting, certification, and certified regulatory exports are available only
+          on-platform), through regulatory reconciliation (nightly STRATE/SWIFT, ERP, and government-filing sweeps
+          surface off-venue activity as a reconciliation break), and contractually through this clause. Nothing here
+          requires you to trade a product you are not admitted to, or prevents you from trading products outside the
+          Covered Product set.
+        </p>
+      </Sec>
+
+      <Sec n={4} heading="Trading conduct">
+        <p>
+          You will comply with the ERA 2006, the NERSA Grid Code, the Financial Markets Act, and all applicable market-
+          conduct rules. Market abuse — manipulation, spoofing, wash trading, or trading on material non-public
+          information — is prohibited and monitored by continuous surveillance. Orders are subject to pre-trade gating
+          (credit, exposure, mark age, halt, and KYC checks); a rejected order is not a platform fault.
+        </p>
+      </Sec>
+
+      <Sec n={5} heading="Settlement, custody &amp; fees">
+        <p>
+          Value and certificates settle against platform-held custody and the settlement primitives described in the
+          platform documentation. Platform, subscription, and per-transaction charges are billed as published in your
+          participation schedule. Late payment attracts the fees and dunning steps set out there.
+        </p>
+      </Sec>
+
+      <Sec n={6} heading="Intellectual property">
+        <p>
+          The platform, its software, chain models, and content are owned by GONXT Technology (Pty) Ltd or its
+          licensors. You receive a non-exclusive, non-transferable right to use the platform for its intended purpose
+          while admitted. You retain ownership of the data you submit and grant us the licence needed to operate the
+          venue and meet our legal obligations.
+        </p>
+      </Sec>
+
+      <Sec n={7} heading="Disclaimers &amp; limitation of liability">
+        <p>
+          The platform is provided on a commercially reasonable, "as available" basis. We do not warrant uninterrupted
+          operation and are not liable for market losses, the acts of counterparties, or events beyond our reasonable
+          control. To the extent permitted by law, our aggregate liability is limited to the platform fees you paid in
+          the three months before the event giving rise to the claim. Nothing limits liability that cannot lawfully be
+          limited.
+        </p>
+      </Sec>
+
+      <Sec n={8} heading="Suspension &amp; termination">
+        <p>
+          We may suspend or terminate access for breach of these Terms (including the on-venue exclusivity clause), loss
+          of regulatory standing, or non-payment. On termination your open positions are closed out and settled per the
+          platform's close-out and netting rules; obligations that by their nature survive (confidentiality, accrued
+          fees, dispute resolution) continue.
+        </p>
+      </Sec>
+
+      <Sec n={9} heading="Governing law &amp; dispute resolution">
+        <p>
+          These Terms are governed by the law of the Republic of South Africa. Disputes are referred to arbitration
+          under the Arbitration Act 15 of 2017, administered through the platform's <span className="font-mono">dispute_resolution</span> chain,
+          seated in Johannesburg, in English. This does not prevent either party from seeking urgent interim relief from
+          a competent court.
+        </p>
+      </Sec>
+
+      <Sec n={10} heading="Changes">
+        <p>We may amend these Terms; the effective date marks the current version and continued use constitutes acceptance. Material changes are notified in-platform before they take effect.</p>
+      </Sec>
+    </LegalDoc>
   );
 }
 
