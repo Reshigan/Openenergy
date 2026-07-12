@@ -152,41 +152,41 @@ interface PnaEvent {
 }
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  day_open:               { bg: '#e3e7ec', fg: '#445',    label: 'Day open' },
-  mtm_run:                { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'MTM run' },
-  realised_computed:      { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Realised computed' },
-  unrealised_computed:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Unrealised computed' },
-  attribution_decomposed: { bg: '#fff4d6', fg: '#a06200', label: 'Attribution decomposed' },
-  risk_decomposed:        { bg: '#fff4d6', fg: '#a06200', label: 'Risk decomposed' },
-  benchmark_compared:     { bg: '#fff4d6', fg: '#a06200', label: 'Benchmark compared' },
-  reviewed:               { bg: '#daf5e2', fg: '#1f6b3a', label: 'Reviewed' },
-  approved:               { bg: '#daf5e2', fg: '#1f6b3a', label: 'Approved' },
-  published:              { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Published' },
-  reconciled:             { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Reconciled' },
-  archived:               { bg: '#d8dde6', fg: '#445',    label: 'Archived' },
-  held_for_review:        { bg: '#fcc3c3', fg: '#7a0e0e', label: 'Held for review' },
-  variance_investigation: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Variance investigation' },
-  restated:               { bg: '#7a0e0e', fg: '#fff',    label: 'Restated' },
+  day_open:               { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Day open' },
+  mtm_run:                { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'MTM run' },
+  realised_computed:      { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Realised computed' },
+  unrealised_computed:    { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Unrealised computed' },
+  attribution_decomposed: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Attribution decomposed' },
+  risk_decomposed:        { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Risk decomposed' },
+  benchmark_compared:     { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Benchmark compared' },
+  reviewed:               { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Reviewed' },
+  approved:               { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Approved' },
+  published:              { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f5b3a)', label: 'Published' },
+  reconciled:             { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f5b3a)', label: 'Reconciled' },
+  archived:               { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Archived' },
+  held_for_review:        { bg: '#fcc3c3', fg: 'var(--bad, #7a0e0e)', label: 'Held for review' },
+  variance_investigation: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Variance investigation' },
+  restated:               { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Restated' },
 };
 
 const TIER_TONE: Record<PnaTier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-  standard: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Standard' },
-  material: { bg: '#fff4d6', fg: '#a06200', label: 'Material' },
-  systemic: { bg: '#7a0e0e', fg: '#fff',    label: 'Systemic' },
+  minor:    { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Minor' },
+  standard: { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Standard' },
+  material: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Material' },
+  systemic: { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Systemic' },
 };
 
 const URGENCY_TONE: Record<PnaUrgency, { bg: string; fg: string; label: string }> = {
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-  medium:   { bg: '#daf5e2', fg: '#1f6b3a', label: 'Medium' },
-  high:     { bg: '#fff4d6', fg: '#a06200', label: 'High' },
-  critical: { bg: '#7a0e0e', fg: '#fff',    label: 'Critical' },
+  low:      { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Low' },
+  medium:   { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Medium' },
+  high:     { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'High' },
+  critical: { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Critical' },
 };
 
 const IFRS9_TONE: Record<Ifrs9Stage, { bg: string; fg: string; label: string }> = {
-  stage_1: { bg: '#daf5e2', fg: '#1f6b3a', label: 'IFRS9 1' },
-  stage_2: { bg: '#fff4d6', fg: '#a06200', label: 'IFRS9 2' },
-  stage_3: { bg: '#7a0e0e', fg: '#fff',    label: 'IFRS9 3' },
+  stage_1: { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'IFRS9 1' },
+  stage_2: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'IFRS9 2' },
+  stage_3: { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'IFRS9 3' },
 };
 
 const FILTERS: Array<{ key: string; label: string }> = [
@@ -464,10 +464,10 @@ export function PnlAttributionChainTab() {
     <div className="p-5">
       <header className="mb-4 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">
+          <h2 className="text-lg font-semibold text-[var(--ink, #0c2a4d)]">
             Daily P&amp;L Attribution &amp; Risk-Adjusted Returns — FMA Ch.X + FSCA Conduct Standard 1/2020 + IFRS 9 + IFRS 13 + Basel III FRTB + GIPS 2020 + MAR
           </h2>
-          <p className="text-xs text-[#4a5568]">
+          <p className="text-xs text-[var(--ink-2, #4a5568)]">
             12-state P6 EOD attribution lifecycle:
             day open {'→'} MTM run {'→'} realised {'→'} unrealised {'→'} attribution decomposed {'→'} risk decomposed {'→'} benchmark compared {'→'}
             reviewed {'→'} approved {'→'} published {'→'} reconciled {'→'} archived, with hold-for-review / variance-investigation / restated branches.
@@ -493,14 +493,14 @@ export function PnlAttributionChainTab() {
         <Kpi label="Stage 3"          value={kpis.stage3_count} tone={kpis.stage3_count > 0 ? 'bad' : 'ok'} />
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-4 text-[11px] text-[#4a5568]">
-        <span>Reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
+      <div className="mb-3 flex flex-wrap items-center gap-4 text-[11px] text-[var(--ink-2, #4a5568)]">
+        <span>Reportable: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.reportable_total}</span></span>
         <span>Variance imminent: <span className="font-semibold text-[#a06200]">{kpis.variance_imminent_count}</span></span>
-        <span>Restate risk: <span className="font-semibold text-[#9b1f1f]">{kpis.restate_risk_count}</span></span>
+        <span>Restate risk: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.restate_risk_count}</span></span>
         <span>Bridges to risk: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.trading_risk_bridged_count}</span></span>
         <span>Bridges to pretrade: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.pretrade_bridged_count}</span></span>
         <span>Bridges to reporting: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.trade_reporting_bridged_count}</span></span>
-        <span>Total daily P&amp;L: <span className={`font-semibold ${kpis.total_daily_pnl_zar_sum >= 0 ? 'text-[#1f5b3a]' : 'text-[#9b1f1f]'}`}>{fmtZar(kpis.total_daily_pnl_zar_sum)}</span></span>
+        <span>Total daily P&amp;L: <span className={`font-semibold ${kpis.total_daily_pnl_zar_sum >= 0 ? 'text-[var(--good, #1f5b3a)]' : 'text-[var(--bad, #9b1f1f)]'}`}>{fmtZar(kpis.total_daily_pnl_zar_sum)}</span></span>
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -511,7 +511,7 @@ export function PnlAttributionChainTab() {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #4a5568)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -523,11 +523,11 @@ export function PnlAttributionChainTab() {
         <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
       )}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-4 py-6 text-center text-sm text-[var(--ink-2, #4a5568)]">Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
+        <div className="overflow-hidden rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
           <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
+            <thead className="bg-[var(--s2, #f3f5f9)]">
               <tr className="text-left">
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>P&amp;L #</th>
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Book / Date</th>
@@ -553,17 +553,17 @@ export function PnlAttributionChainTab() {
                   <tr
                     key={r.id}
                     onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
+                    className="cursor-pointer border-t border-[var(--border-subtle, #e3e7ec)] hover:bg-[var(--s1, #f8fafc)]"
                   >
-                    <td className="px-3 py-2 font-mono text-[#0c2a4d]">
+                    <td className="px-3 py-2 font-mono text-[var(--ink, #0c2a4d)]">
                       {r.pnl_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">REG</span>}
+                      {r.is_reportable_flag && <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #9b1f1f)]">REG</span>}
                     </td>
                     <td className="px-3 py-2" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       <div className="text-[11px] font-medium">{r.book_label ?? r.book_id}</div>
-                      <div className="text-[10px] text-[#6b7685]">
+                      <div className="text-[10px] text-[var(--ink-2, #6b7685)]">
                         {r.business_date}
-                        {r.regulatory_book_FRTB_IMA ? <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">FRTB</span> : null}
+                        {r.regulatory_book_FRTB_IMA ? <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #9b1f1f)]">FRTB</span> : null}
                         {r.cross_border_consolidation ? <span className="ml-1 text-[9px] font-semibold text-[#7a4500]">XB</span> : null}
                         {r.stress_period_active ? <span className="ml-1 text-[9px] font-semibold text-[#a06200]">STRESS</span> : null}
                       </div>
@@ -573,9 +573,9 @@ export function PnlAttributionChainTab() {
                         {tier.label}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#4a5568]">{fmtZar(r.gross_notional_zar)}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums font-semibold ${pnl >= 0 ? 'text-[#1f5b3a]' : 'text-[#9b1f1f]'}`}>{fmtZar(pnl)}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${gap >= 10 ? 'text-[#9b1f1f] font-semibold' : gap >= 5 ? 'text-[#a06200]' : 'text-[#4a5568]'}`}>{fmtPct(gap)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[var(--ink-2, #4a5568)]">{fmtZar(r.gross_notional_zar)}</td>
+                    <td className={`px-3 py-2 text-right tabular-nums font-semibold ${pnl >= 0 ? 'text-[var(--good, #1f5b3a)]' : 'text-[var(--bad, #9b1f1f)]'}`}>{fmtZar(pnl)}</td>
+                    <td className={`px-3 py-2 text-right tabular-nums ${gap >= 10 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : gap >= 5 ? 'text-[#a06200]' : 'text-[var(--ink-2, #4a5568)]'}`}>{fmtPct(gap)}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: ifrs9.bg, color: ifrs9.fg }}>
                         {ifrs9.label}
@@ -591,14 +591,14 @@ export function PnlAttributionChainTab() {
                         {urgency.label}
                       </span>
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {r.sla_breached_live ? 'BREACHED' : fmtHoursSla(r.sla_hours_remaining_live)}
                     </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={10} className="px-3 py-6 text-center text-[#4a5568]">No P&amp;L rows match.</td></tr>
+                <tr><td colSpan={10} className="px-3 py-6 text-center text-[var(--ink-2, #4a5568)]">No P&amp;L rows match.</td></tr>
               )}
             </tbody>
           </table>
@@ -613,10 +613,10 @@ export function PnlAttributionChainTab() {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : 'var(--ink, #0c2a4d)';
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
+    <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
     </div>
   );
@@ -645,21 +645,21 @@ function Drawer({
   return (
     <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
       <div
-        className="absolute right-0 top-0 h-full w-full md:w-[820px] overflow-y-auto bg-white shadow-2xl"
+        className="absolute right-0 top-0 h-full w-full md:w-[820px] overflow-y-auto bg-surface-v2 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
+        <header className="border-b border-[var(--border-subtle, #d8dde6)] bg-[var(--s2, #f3f5f9)] px-5 py-3">
           <div className="flex items-start justify-between">
             <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.pnl_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.book_label ?? row.book_id} — {row.business_date}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
-                {TIER_TONE[row.current_tier].label} {'•'} {fmtZar(row.gross_notional_zar)} notional {'•'} Daily P&amp;L <span className={pnl >= 0 ? 'text-[#1f5b3a]' : 'text-[#9b1f1f]'}>{fmtZar(pnl)}</span>
+              <div className="font-mono text-[12px] text-[var(--ink-2, #4a5568)]">{row.pnl_number}</div>
+              <div className="text-base font-semibold text-[var(--ink, #0c2a4d)]">{row.book_label ?? row.book_id} — {row.business_date}</div>
+              <div className="mt-1 text-[12px] text-[var(--ink-2, #4a5568)]">
+                {TIER_TONE[row.current_tier].label} {'•'} {fmtZar(row.gross_notional_zar)} notional {'•'} Daily P&amp;L <span className={pnl >= 0 ? 'text-[var(--good, #1f5b3a)]' : 'text-[var(--bad, #9b1f1f)]'}>{fmtZar(pnl)}</span>
               </div>
             </div>
             <button type="button"
               onClick={onClose}
-              className="rounded border border-[#d8dde6] bg-white px-2 py-1 text-[12px] text-[#445] hover:bg-[#f3f5f9]"
+              className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-2 py-1 text-[12px] text-[#445] hover:bg-[var(--s2, #f3f5f9)]"
             >
               Close
             </button>
@@ -680,15 +680,15 @@ function Drawer({
               </span>
             )}
             {row.authority_required_live && (
-              <span className="inline-block rounded border border-[#d8dde6] bg-white px-2 py-0.5 text-[#445]">
+              <span className="inline-block rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-2 py-0.5 text-[#445]">
                 Authority: {row.authority_required_live.replace(/_/g, ' ')}
               </span>
             )}
             {row.is_reportable_flag && (
-              <span className="inline-block rounded bg-[#fde0e0] px-2 py-0.5 font-semibold text-[#9b1f1f]">Reportable</span>
+              <span className="inline-block rounded bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] px-2 py-0.5 font-semibold text-[var(--bad, #9b1f1f)]">Reportable</span>
             )}
             {row.regulator_crossed_at && (
-              <span className="inline-block rounded bg-[#7a0e0e] px-2 py-0.5 font-semibold text-white">Regulator crossed</span>
+              <span className="inline-block rounded bg-[var(--bad, #7a0e0e)] px-2 py-0.5 font-semibold text-white">Regulator crossed</span>
             )}
           </div>
         </header>
@@ -798,17 +798,17 @@ function Drawer({
           <Section title={`Timeline (${events.length} events)`}>
             <div className="space-y-1">
               {events.map((e) => (
-                <div key={e.id} className="flex items-baseline gap-3 border-b border-[#e3e7ec] py-1 text-[11px]">
-                  <span className="font-mono text-[#6b7685]">{fmtDate(e.created_at)}</span>
+                <div key={e.id} className="flex items-baseline gap-3 border-b border-[var(--border-subtle, #e3e7ec)] py-1 text-[11px]">
+                  <span className="font-mono text-[var(--ink-2, #6b7685)]">{fmtDate(e.created_at)}</span>
                   <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.event_type}</span>
                   {e.from_status && e.to_status && (
-                    <span className="text-[#4a5568]">{e.from_status} {'→'} {e.to_status}</span>
+                    <span className="text-[var(--ink-2, #4a5568)]">{e.from_status} {'→'} {e.to_status}</span>
                   )}
-                  {e.actor_party && <span className="text-[#6b7685]">[{e.actor_party}]</span>}
-                  {e.notes && <span className="text-[#4a5568] truncate">{e.notes}</span>}
+                  {e.actor_party && <span className="text-[var(--ink-2, #6b7685)]">[{e.actor_party}]</span>}
+                  {e.notes && <span className="text-[var(--ink-2, #4a5568)] truncate">{e.notes}</span>}
                 </div>
               ))}
-              {events.length === 0 && <div className="text-[12px] text-[#6b7685]">No events yet.</div>}
+              {events.length === 0 && <div className="text-[12px] text-[var(--ink-2, #6b7685)]">No events yet.</div>}
             </div>
           </Section>
         </div>
@@ -821,7 +821,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div>
       <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-wider" style={{ color: 'oklch(0.46 0.16 55)' }}>{title}</h3>
-      <div className="rounded border border-[#d8dde6] bg-[#fafbfd] p-3">{children}</div>
+      <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-[var(--s1, #fafbfd)] p-3">{children}</div>
     </div>
   );
 }
@@ -831,10 +831,10 @@ function Grid({ children }: { children: React.ReactNode }) {
 }
 
 function Field({ label, value, tone }: { label: string; value: string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'ok' ? '#1f5b3a' : 'oklch(0.46 0.16 55)';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : tone === 'ok' ? 'var(--good, #1f5b3a)' : 'oklch(0.46 0.16 55)';
   return (
-    <div className="rounded border border-[#e3e7ec] bg-white px-2 py-1.5">
-      <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">{label}</div>
+    <div className="rounded border border-[var(--border-subtle, #e3e7ec)] bg-surface-v2 px-2 py-1.5">
+      <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className="text-[12px] font-semibold tabular-nums" style={{ color }}>{value}</div>
     </div>
   );
@@ -842,7 +842,7 @@ function Field({ label, value, tone }: { label: string; value: string; tone?: 'o
 
 function FlagPill({ label, on }: { label: string; on: boolean }) {
   return (
-    <span className={`inline-block rounded px-2 py-0.5 font-medium ${on ? 'bg-[#fde0e0] text-[#9b1f1f]' : 'bg-[#e3e7ec] text-[#6b7685]'}`}>
+    <span className={`inline-block rounded px-2 py-0.5 font-medium ${on ? 'bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[var(--bad, #9b1f1f)]' : 'bg-[var(--border-subtle, #e3e7ec)] text-[var(--ink-2, #6b7685)]'}`}>
       {label}{on ? ' ✓' : ''}
     </span>
   );
@@ -855,7 +855,7 @@ function ActionButton({
   onClick: () => void;
   tone: 'primary' | 'warn' | 'danger';
 }) {
-  const bg = tone === 'danger' ? '#7a0e0e' : tone === 'warn' ? '#a06200' : 'oklch(0.46 0.16 55)';
+  const bg = tone === 'danger' ? 'var(--bad, #7a0e0e)' : tone === 'warn' ? '#a06200' : 'oklch(0.46 0.16 55)';
   return (
     <button type="button"
       onClick={onClick}

@@ -60,7 +60,7 @@ const formatZAR = (v: number) =>
 
 const SEVERITIES: Array<Break['severity']> = ['low', 'medium', 'high', 'critical'];
 const SEV_COLOUR: Record<string, string> = {
-  low: '#eef2f7', medium: '#d4e7f6', high: '#fef3e6', critical: '#fde0db',
+  low: 'var(--s2, #eef2f7)', medium: '#d4e7f6', high: '#fef3e6', critical: 'color-mix(in oklab, var(--bad) 15%, var(--s1))',
 };
 
 // ─── 1 ─── Receivables aging ──────────────────────────────────────────
@@ -88,27 +88,27 @@ function ReceivablesAgingChart({ invoices }: { invoices: Invoice[] }) {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between">
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)] flex items-center justify-between">
         <div>
-          <div className="text-[13px] font-semibold text-[#0f1c2e]">Receivables aging</div>
-          <div className="text-[11px] text-[#6b7685]">Outstanding receivables by overdue bucket</div>
+          <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Receivables aging</div>
+          <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Outstanding receivables by overdue bucket</div>
         </div>
         <div className="text-[11px] text-right">
-          <div className="text-[#6b7685]">Total outstanding</div>
-          <div className="font-mono font-semibold text-[#0f1c2e]">{formatZAR(total)}</div>
-          <div className="text-[#c0392b]">{formatZAR(overdueValue)} overdue</div>
+          <div className="text-[var(--ink-2, #6b7685)]">Total outstanding</div>
+          <div className="font-mono font-semibold text-[var(--ink, #0f1c2e)]">{formatZAR(total)}</div>
+          <div className="text-[var(--bad, #c0392b)]">{formatZAR(overdueValue)} overdue</div>
         </div>
       </header>
       <div style={{ height: 180 }} className="px-2 pt-3">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={buckets} margin={{ top: 8, right: 12, bottom: 12, left: 0 }}>
-            <CartesianGrid stroke="#eef2f7" />
-            <XAxis dataKey="bucket" tick={{ fontSize: 10, fill: '#6b7685' }} />
-            <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(1)}m`} />
+            <CartesianGrid stroke="var(--s2, #eef2f7)" />
+            <XAxis dataKey="bucket" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} />
+            <YAxis tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(1)}m`} />
             <Tooltip formatter={(v: any) => formatZAR(Number(v))} />
             <Bar isAnimationActive={false} dataKey="value">
               {buckets.map((b, i) => (
-                <Cell key={i} fill={b.bucket === 'Current' ? '#1a8a5b' : b.bucket === '>90' ? '#c0392b' : '#b04e0f'} />
+                <Cell key={i} fill={b.bucket === 'Current' ? 'var(--good, #1a8a5b)' : b.bucket === '>90' ? 'var(--bad, #c0392b)' : '#b04e0f'} />
               ))}
             </Bar>
           </BarChart>
@@ -148,20 +148,20 @@ function CashflowLadder({ invoices, userId }: { invoices: Invoice[]; userId?: st
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Forward cashflow ladder (13 weeks)</div>
-        <div className="text-[11px] text-[#6b7685]">Inflow (receivables due) vs outflow (payables due)</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Forward cashflow ladder (13 weeks)</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Inflow (receivables due) vs outflow (payables due)</div>
       </header>
       <div style={{ height: 200 }} className="px-2 pt-3">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={series} margin={{ top: 8, right: 12, bottom: 12, left: 0 }} stackOffset="sign">
-            <CartesianGrid stroke="#eef2f7" />
-            <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#6b7685' }} />
-            <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(1)}m`} />
+            <CartesianGrid stroke="var(--s2, #eef2f7)" />
+            <XAxis dataKey="week" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} />
+            <YAxis tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(1)}m`} />
             <Tooltip formatter={(v: any) => formatZAR(Math.abs(Number(v)))} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar isAnimationActive={false} dataKey="inflow"  name="Inflow"  stackId="x" fill="#1a8a5b" />
-            <Bar isAnimationActive={false} dataKey="outflow" name="Outflow" stackId="x" fill="#c0392b" />
+            <Bar isAnimationActive={false} dataKey="inflow"  name="Inflow"  stackId="x" fill="var(--good, #1a8a5b)" />
+            <Bar isAnimationActive={false} dataKey="outflow" name="Outflow" stackId="x" fill="var(--bad, #c0392b)" />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -191,14 +191,14 @@ function BreakSeverityHeatmap({ breaks }: { breaks: Break[] }) {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Break severity heatmap</div>
-        <div className="text-[11px] text-[#6b7685]">Where the problems live — break type × severity</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Break severity heatmap</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Where the problems live — break type × severity</div>
       </header>
       <div className="p-3 overflow-x-auto">
         <table className="text-[11px] w-full">
           <thead>
-            <tr className="text-[#6b7685]">
+            <tr className="text-[var(--ink-2, #6b7685)]">
               <th className="text-left py-1">Type</th>
               {SEVERITIES.map((s) => <th key={s} className="text-center py-1 capitalize">{s}</th>)}
               <th className="text-right py-1">Total</th>
@@ -208,15 +208,15 @@ function BreakSeverityHeatmap({ breaks }: { breaks: Break[] }) {
             {grid.map((row) => {
               const total = SEVERITIES.reduce((s, sev) => s + ((row as any)[sev] || 0), 0);
               return (
-                <tr key={row.type} className="border-t border-[#eef2f7]">
-                  <td className="py-1 capitalize text-[#0f1c2e]">{row.type.replace(/_/g, ' ')}</td>
+                <tr key={row.type} className="border-t border-[var(--s2, #eef2f7)]">
+                  <td className="py-1 capitalize text-[var(--ink, #0f1c2e)]">{row.type.replace(/_/g, ' ')}</td>
                   {SEVERITIES.map((sev) => {
                     const v = (row as any)[sev] || 0;
                     const opacity = total > 0 ? Math.min(1, 0.2 + (v / total) * 0.8) : 0;
                     return (
                       <td key={sev} className="text-center py-1">
                         <span
-                          className="inline-block w-12 h-6 rounded text-[#0f1c2e] font-mono font-semibold leading-6"
+                          className="inline-block w-12 h-6 rounded text-[var(--ink, #0f1c2e)] font-mono font-semibold leading-6"
                           style={{ background: SEV_COLOUR[sev], opacity: v === 0 ? 0.3 : opacity }}
                         >{v}</span>
                       </td>
@@ -266,27 +266,27 @@ function FeeAccrualTrend({ fees }: { fees: Fee[] }) {
   }
 
   const TYPE_COLOUR: Record<string, string> = {
-    dunning: '#c0392b', late_payment: '#b04e0f', rebooking: 'oklch(0.46 0.16 55)',
-    admin: '#6b7685', wheeling_uplift: '#6b3a82', imbalance_uplift: '#e63946',
+    dunning: 'var(--bad, #c0392b)', late_payment: '#b04e0f', rebooking: 'oklch(0.46 0.16 55)',
+    admin: 'var(--ink-2, #6b7685)', wheeling_uplift: '#6b3a82', imbalance_uplift: '#e63946',
   };
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Fee accrual trend</div>
-        <div className="text-[11px] text-[#6b7685]">Weekly fees by type — leading indicator of breakdown</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Fee accrual trend</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Weekly fees by type — leading indicator of breakdown</div>
       </header>
       <div style={{ height: 200 }} className="px-2 pt-3">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={series} margin={{ top: 8, right: 12, bottom: 12, left: 0 }}>
-            <CartesianGrid stroke="#eef2f7" />
-            <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#6b7685' }} />
-            <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${(v / 1_000).toFixed(0)}k`} />
+            <CartesianGrid stroke="var(--s2, #eef2f7)" />
+            <XAxis dataKey="week" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} />
+            <YAxis tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => `R${(v / 1_000).toFixed(0)}k`} />
             <Tooltip formatter={(v: any) => formatZAR(Number(v))} />
             <Legend wrapperStyle={{ fontSize: 10 }} />
             {types.map((t) => (
               <Area isAnimationActive={false} key={t} type="monotone" dataKey={t} stackId="x" name={t.replace(/_/g, ' ')}
-                    stroke={TYPE_COLOUR[t] || '#6b7685'} fill={TYPE_COLOUR[t] || '#6b7685'} fillOpacity={0.4} />
+                    stroke={TYPE_COLOUR[t] || 'var(--ink-2, #6b7685)'} fill={TYPE_COLOUR[t] || 'var(--ink-2, #6b7685)'} fillOpacity={0.4} />
             ))}
           </AreaChart>
         </ResponsiveContainer>
@@ -350,13 +350,13 @@ function Tile({ label, value, tone, hint }: { label: string; value: string; tone
   const map: Record<string, string> = {
     good: 'border-[#e7f4ea] bg-[#f4faf6]',
     warn: 'border-[#fef3e6] bg-[#fefaf2]',
-    bad:  'border-[#fde0db] bg-[#fdf3f1]',
-    info: 'border-[#eef2f7] bg-white',
+    bad:  'border-[color-mix(in oklab, var(--bad) 15%, var(--s1))] bg-[#fdf3f1]',
+    info: 'border-[var(--s2, #eef2f7)] bg-surface-v2',
   };
   return (
     <div className={`rounded-xl border p-3 ${map[tone] || map.info}`} title={hint}>
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
-      <div className="mt-1 text-[18px] font-mono font-semibold text-[#0f1c2e]">{value}</div>
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{label}</div>
+      <div className="mt-1 text-[18px] font-mono font-semibold text-[var(--ink, #0f1c2e)]">{value}</div>
     </div>
   );
 }

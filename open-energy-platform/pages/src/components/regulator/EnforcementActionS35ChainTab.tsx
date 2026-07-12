@@ -186,44 +186,44 @@ interface KpiData {
 }
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  triggered:                { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Triggered' },
-  notice_drafted:           { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Notice drafted' },
-  notice_issued:            { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Notice issued' },
-  respondent_acknowledged:  { bg: '#fff4d6', fg: '#a06200', label: 'Acknowledged' },
-  response_received:        { bg: '#fff4d6', fg: '#a06200', label: 'Response in' },
-  adjudication_in_progress: { bg: '#fff4d6', fg: '#a06200', label: 'Adjudicating' },
-  adjudicated:              { bg: '#fff4d6', fg: '#a06200', label: 'Adjudicated' },
-  sanction_imposed:         { bg: '#fde0e0', fg: '#9b1f1f', label: 'Sanction imposed' },
-  appeal_window_open:       { bg: '#fde0e0', fg: '#9b1f1f', label: 'Appeal window' },
-  appealed:                 { bg: '#fbd0d0', fg: '#7a1414', label: 'Appealed' },
-  re_adjudicated:           { bg: '#fff4d6', fg: '#a06200', label: 'Re-adjudicated' },
-  enforcement_in_progress:  { bg: '#fde0e0', fg: '#9b1f1f', label: 'Enforcing' },
-  settled:                  { bg: '#daf5e2', fg: '#1f6b3a', label: 'Settled' },
-  archived:                 { bg: '#e3e7ec', fg: '#557',    label: 'Archived' },
-  withdrawn:                { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
-  cancelled:                { bg: '#e3e7ec', fg: '#557',    label: 'Cancelled' },
+  triggered:                { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Triggered' },
+  notice_drafted:           { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Notice drafted' },
+  notice_issued:            { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Notice issued' },
+  respondent_acknowledged:  { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Acknowledged' },
+  response_received:        { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Response in' },
+  adjudication_in_progress: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Adjudicating' },
+  adjudicated:              { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Adjudicated' },
+  sanction_imposed:         { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Sanction imposed' },
+  appeal_window_open:       { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Appeal window' },
+  appealed:                 { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad)', label: 'Appealed' },
+  re_adjudicated:           { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Re-adjudicated' },
+  enforcement_in_progress:  { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Enforcing' },
+  settled:                  { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Settled' },
+  archived:                 { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Archived' },
+  withdrawn:                { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Withdrawn' },
+  cancelled:                { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Cancelled' },
 };
 
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:     { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-  standard:  { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Standard' },
-  material:  { bg: '#fff4d6', fg: '#a06200', label: 'Material' },
-  strategic: { bg: '#fbd0d0', fg: '#7a1414', label: 'Strategic' },
+  minor:     { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Minor' },
+  standard:  { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Standard' },
+  material:  { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Material' },
+  strategic: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad)', label: 'Strategic' },
 };
 
 const URGENCY_TONE: Record<UrgencyBand, { bg: string; fg: string; label: string }> = {
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-  medium:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Medium' },
-  high:     { bg: '#fff4d6', fg: '#a06200', label: 'High' },
-  critical: { bg: '#fbd0d0', fg: '#7a1414', label: 'Critical' },
+  low:      { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Low' },
+  medium:   { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Medium' },
+  high:     { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'High' },
+  critical: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad)', label: 'Critical' },
 };
 
 const APPEAL_TONE: Record<AppealBand, { bg: string; fg: string; label: string }> = {
-  none:        { bg: '#e3e7ec', fg: '#557',    label: 'No appeal' },
-  window_open: { bg: '#fff4d6', fg: '#a06200', label: 'Window open' },
-  appealed:    { bg: '#fbd0d0', fg: '#7a1414', label: 'Appealed' },
-  decided:     { bg: '#daf5e2', fg: '#1f6b3a', label: 'Decided' },
-  past_window: { bg: '#e3e7ec', fg: '#557',    label: 'Past window' },
+  none:        { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'No appeal' },
+  window_open: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Window open' },
+  appealed:    { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad)', label: 'Appealed' },
+  decided:     { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Decided' },
+  past_window: { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Past window' },
 };
 
 const AUTH_LABEL: Record<Authority, string> = {
@@ -235,11 +235,11 @@ const AUTH_LABEL: Record<Authority, string> = {
 
 const PARTY_TONE: Record<string, { bg: string; fg: string }> = {
   nersa:      { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)' },
-  respondent: { bg: '#fff4d6', fg: '#a06200' },
+  respondent: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: '#a06200' },
   panel:      { bg: '#e8defc', fg: '#5320a3' },
-  council:    { bg: '#fde0e0', fg: '#9b1f1f' },
-  archiver:   { bg: '#e3e7ec', fg: '#557' },
-  system:     { bg: '#e3e7ec', fg: '#557' },
+  council:    { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)' },
+  archiver:   { bg: 'var(--border-subtle, #e3e7ec)', fg: '#557' },
+  system:     { bg: 'var(--border-subtle, #e3e7ec)', fg: '#557' },
 };
 
 // UX revisit 2026-05-30 - pills grouped action-first then state. The
@@ -396,7 +396,7 @@ export function EnforcementActionS35ChainTab() {
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]'
-                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
+                : 'bg-surface-v2 text-[var(--ink-2, #4a5568)] border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--s2, #eef2f7)]'
             }`}>
             {f.label}
           </button>
@@ -411,7 +411,7 @@ export function EnforcementActionS35ChainTab() {
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]'
-                : 'bg-white text-[#6b7685] border-[#eef2f6] hover:bg-[#eef2f7]'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border-[#eef2f6] hover:bg-[var(--s2, #eef2f7)]'
             }`}>
             {f.label}
           </button>
@@ -420,9 +420,9 @@ export function EnforcementActionS35ChainTab() {
 
       {err && <div className="px-3 py-2 bg-red-50 text-red-700 text-[12px] rounded-md">{err}</div>}
 
-      <div className="bg-white border border-[#e5ebf2] rounded-xl overflow-hidden">
+      <div className="bg-surface-v2 border border-[var(--border-subtle, #e5ebf2)] rounded-xl overflow-hidden">
         <table className="w-full">
-          <thead className="bg-[#f7f9fb] text-[11px] uppercase tracking-wide text-[#6b7685]">
+          <thead className="bg-[var(--s1, #f7f9fb)] text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">
             <tr>
               <th className="px-3 py-2 text-left">Case #</th>
               <th className="px-3 py-2 text-left">Respondent / licence</th>
@@ -436,9 +436,9 @@ export function EnforcementActionS35ChainTab() {
           </thead>
           <tbody className="text-[13px]">
             {loading ? (
-              <tr><td colSpan={8} className="p-6 text-center text-[#6b7685]">Loading...</td></tr>
+              <tr><td colSpan={8} className="p-6 text-center text-[var(--ink-2, #6b7685)]">Loading...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={8} className="p-6 text-center text-[#6b7685]">No enforcement actions match the current filter.</td></tr>
+              <tr><td colSpan={8} className="p-6 text-center text-[var(--ink-2, #6b7685)]">No enforcement actions match the current filter.</td></tr>
             ) : filtered.map((r) => {
               const stateTone = STATE_TONE[r.chain_status];
               const tierTone  = TIER_TONE[r.current_tier];
@@ -453,24 +453,24 @@ export function EnforcementActionS35ChainTab() {
                 <tr
                   key={r.id}
                   onClick={() => loadEvents(r.id)}
-                  className={`cursor-pointer hover:bg-[#f7f9fb] border-t border-[#eef2f6] ${selected?.id === r.id ? 'bg-[#fffae6]' : ''}`}>
+                  className={`cursor-pointer hover:bg-[var(--s1, #f7f9fb)] border-t border-[#eef2f6] ${selected?.id === r.id ? 'bg-[#fffae6]' : ''}`}>
                   <td className="px-3 py-2 font-mono text-[11px]">{r.enforcement_case_number}</td>
                   <td className="px-3 py-2 max-w-xs truncate" title={`${r.respondent_party_label ?? r.respondent_party_id} - ${r.respondent_licence_class ?? '-'}`}>
                     {r.respondent_party_label ?? r.respondent_party_id}
-                    <span className="text-[#6b7685]"> - {r.respondent_licence_class ?? '-'}</span>
-                    {floored && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fff4d6] text-[#a06200]">FLOOR</span>}
+                    <span className="text-[var(--ink-2, #6b7685)]"> - {r.respondent_licence_class ?? '-'}</span>
+                    {floored && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[color-mix(in oklab, var(--warn) 15%, var(--s1))] text-[#a06200]">FLOOR</span>}
                     {r.bridges_to_inspection_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)]">INSP</span>}
                     {r.bridges_to_complaint_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#e8defc] text-[#5320a3]">CMPL</span>}
-                    {r.gazette_publication_required_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fde0e0] text-[#9b1f1f]">GAZETTE</span>}
-                    {r.paja_fairness_at_risk_flag_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fbd0d0] text-[#7a1414]">PAJA</span>}
+                    {r.gazette_publication_required_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[var(--bad, #9b1f1f)]">GAZETTE</span>}
+                    {r.paja_fairness_at_risk_flag_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[#7a1414]">PAJA</span>}
                   </td>
                   <td className="px-3 py-2 text-right text-[12px] tabular-nums">
                     {fmtZar(r.sanction_quantum_zar_live ?? r.sanction_quantum_zar)}
-                    <div className="text-[10px] text-[#6b7685] uppercase">{r.sanction_type ?? '-'}</div>
+                    <div className="text-[10px] text-[var(--ink-2, #6b7685)] uppercase">{r.sanction_type ?? '-'}</div>
                   </td>
                   <td className="px-3 py-2 text-right text-[12px] tabular-nums">
                     {(r.adjudication_progress_pct_live ?? 0).toFixed(0)}%
-                    <div className="text-[10px] text-[#6b7685]">CCI {(r.enforcement_compliance_index_live ?? 0).toFixed(0)}/130</div>
+                    <div className="text-[10px] text-[var(--ink-2, #6b7685)]">CCI {(r.enforcement_compliance_index_live ?? 0).toFixed(0)}/130</div>
                   </td>
                   <td className="px-3 py-2">
                     <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold" style={{ background: tierTone.bg, color: tierTone.fg }}>
@@ -487,7 +487,7 @@ export function EnforcementActionS35ChainTab() {
                       {appealTone.label}
                     </span>
                   </td>
-                  <td className={`px-3 py-2 text-right text-[12px] tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
+                  <td className={`px-3 py-2 text-right text-[12px] tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>
                     {r.is_terminal ? '-' : fmtMin(r.minutes_until_sla)}
                   </td>
                 </tr>
@@ -510,10 +510,10 @@ export function EnforcementActionS35ChainTab() {
 }
 
 function Kpi({ label, value, tone = 'ok' }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const fg = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0f1c2e';
+  const fg = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : 'var(--ink, #0f1c2e)';
   return (
-    <div className="bg-white border border-[#e5ebf2] rounded-lg p-3">
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
+    <div className="bg-surface-v2 border border-[var(--border-subtle, #e5ebf2)] rounded-lg p-3">
+      <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className="text-[20px] font-semibold tabular-nums mt-0.5" style={{ color: fg }}>{value}</div>
     </div>
   );
@@ -553,26 +553,26 @@ function ActionModal({ spec, onSubmit, onClose }: { spec: ActionSpec; onSubmit: 
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
-        <div className="text-[14px] font-semibold text-[#0f1c2e] mb-4">{spec.label}</div>
+      <div className="bg-surface-v2 rounded-xl shadow-2xl w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="text-[14px] font-semibold text-[var(--ink, #0f1c2e)] mb-4">{spec.label}</div>
         <form onSubmit={handleSubmit} className="space-y-3">
           {fields.map((f) => (
             <div key={f.key}>
-              <label className="block text-[11px] uppercase tracking-wide text-[#6b7685] mb-1">{f.label}{f.required && ' *'}</label>
+              <label className="block text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)] mb-1">{f.label}{f.required && ' *'}</label>
               {f.type === 'textarea' ? (
-                <textarea className="w-full border border-[#dde4ec] rounded-md px-2.5 py-1.5 text-[13px] text-[#0f1c2e] focus:outline-none focus:border-[#c2873a] resize-none" rows={3} placeholder={f.placeholder} value={(vals[f.key] as string) ?? ''} onChange={(e) => setVals((p) => ({ ...p, [f.key]: e.target.value }))} />
+                <textarea className="w-full border border-[var(--border-subtle, #dde4ec)] rounded-md px-2.5 py-1.5 text-[13px] text-[var(--ink, #0f1c2e)] focus:outline-none focus:border-[#c2873a] resize-none" rows={3} placeholder={f.placeholder} value={(vals[f.key] as string) ?? ''} onChange={(e) => setVals((p) => ({ ...p, [f.key]: e.target.value }))} />
               ) : f.type === 'checkbox' ? (
-                <label className="flex items-center gap-2 text-[13px] text-[#0f1c2e]">
+                <label className="flex items-center gap-2 text-[13px] text-[var(--ink, #0f1c2e)]">
                   <input type="checkbox" checked={!!(vals[f.key])} onChange={(e) => setVals((p) => ({ ...p, [f.key]: e.target.checked }))} className="w-4 h-4" />
                   {f.placeholder}
                 </label>
               ) : (
-                <input type={f.type ?? 'text'} className="w-full border border-[#dde4ec] rounded-md px-2.5 py-1.5 text-[13px] text-[#0f1c2e] focus:outline-none focus:border-[#c2873a]" placeholder={f.placeholder} value={(vals[f.key] as string) ?? ''} onChange={(e) => setVals((p) => ({ ...p, [f.key]: e.target.value }))} />
+                <input type={f.type ?? 'text'} className="w-full border border-[var(--border-subtle, #dde4ec)] rounded-md px-2.5 py-1.5 text-[13px] text-[var(--ink, #0f1c2e)] focus:outline-none focus:border-[#c2873a]" placeholder={f.placeholder} value={(vals[f.key] as string) ?? ''} onChange={(e) => setVals((p) => ({ ...p, [f.key]: e.target.value }))} />
               )}
             </div>
           ))}
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-3 py-1.5 text-[12px] text-[#6b7685] hover:text-[#0f1c2e]">Cancel</button>
+            <button type="button" onClick={onClose} className="px-3 py-1.5 text-[12px] text-[var(--ink-2, #6b7685)] hover:text-[var(--ink, #0f1c2e)]">Cancel</button>
             <button type="submit" className="px-3 py-1.5 bg-[#c2873a] text-white text-[12px] rounded-md hover:opacity-90">Confirm</button>
           </div>
         </form>
@@ -623,11 +623,11 @@ function EnfDrawer({
       <ActionModal spec={activeAction} onSubmit={handleActionSubmit} onClose={() => setActiveAction(null)} />
     )}
     <div className="fixed inset-0 z-50 bg-black/30 flex items-stretch justify-end oe-overlay-in" onClick={onClose}>
-      <div className="bg-white w-full max-w-2xl shadow-xl overflow-y-auto oe-drawer-in" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-start justify-between sticky top-0 bg-white z-10">
+      <div className="bg-surface-v2 w-full max-w-2xl shadow-xl overflow-y-auto oe-drawer-in" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[var(--border-subtle, #e5ebf2)] flex items-start justify-between sticky top-0 bg-surface-v2 z-10">
           <div>
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">Enforcement case {row.enforcement_case_number}</div>
-            <h3 className="text-[16px] font-semibold text-[#0f1c2e] mt-0.5">
+            <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">Enforcement case {row.enforcement_case_number}</div>
+            <h3 className="text-[16px] font-semibold text-[var(--ink, #0f1c2e)] mt-0.5">
               {row.respondent_party_label ?? row.respondent_party_id} - {row.respondent_licence_class ?? '-'} {' · '} {row.triggering_event_type ?? '-'}
             </h3>
             <div className="flex flex-wrap gap-2 mt-2 text-[12px]">
@@ -646,16 +646,16 @@ function EnfDrawer({
                 </span>
               )}
               {floored && (
-                <span className="px-2 py-0.5 rounded-full font-bold bg-[#fff4d6] text-[#a06200]">FLOOR</span>
+                <span className="px-2 py-0.5 rounded-full font-bold bg-[color-mix(in oklab, var(--warn) 15%, var(--s1))] text-[#a06200]">FLOOR</span>
               )}
               {row.is_reportable_flag && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">Regulator reportable</span>
+                <span className="px-2 py-0.5 rounded-full bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[var(--bad, #9b1f1f)] font-medium">Regulator reportable</span>
               )}
               {row.gazette_publication_required_live && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fbd0d0] text-[#7a1414] font-medium">Gazette s38</span>
+                <span className="px-2 py-0.5 rounded-full bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[#7a1414] font-medium">Gazette s38</span>
               )}
               {row.paja_fairness_at_risk_flag_live && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">PAJA fairness at risk</span>
+                <span className="px-2 py-0.5 rounded-full bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[var(--bad, #9b1f1f)] font-medium">PAJA fairness at risk</span>
               )}
               {authorityNow && (
                 <span className="px-2 py-0.5 rounded-full bg-[oklch(0.94_0.02_250)] text-[oklch(0.46_0.16_55)] font-medium">Auth: {AUTH_LABEL[authorityNow]}</span>
@@ -668,44 +668,44 @@ function EnfDrawer({
               )}
             </div>
           </div>
-          <button type="button" onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">X</button>
+          <button type="button" onClick={onClose} className="text-[var(--ink-2, #6b7685)] hover:text-[var(--ink, #0f1c2e)]">X</button>
         </div>
 
         <div className="p-5 space-y-4 text-[13px]">
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Sanction position</div>
+          <div className="bg-[var(--s1, #f7f9fb)] border border-[var(--border-subtle, #e5ebf2)] rounded-lg p-3">
+            <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)] mb-2">Sanction position</div>
             <div className="grid grid-cols-3 gap-3">
               <Pair label="Sanction quantum" value={fmtZar(row.sanction_quantum_zar_live ?? row.sanction_quantum_zar)} />
               <Pair label="Quantum floor" value={fmtZar(row.sanction_quantum_zar_floor)} />
               <Pair label="Collected" value={fmtZar(row.amount_collected_zar)} />
             </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
+            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[var(--border-subtle, #e5ebf2)]">
               <Pair label="Sanction type" value={row.sanction_type ?? '-'} />
               <Pair label="Effective" value={row.sanction_effective_at ? new Date(row.sanction_effective_at).toLocaleDateString() : '-'} />
               <Pair label="Sanction end" value={row.sanction_end_at ? new Date(row.sanction_end_at).toLocaleDateString() : '-'} />
             </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
+            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[var(--border-subtle, #e5ebf2)]">
               <Pair label="Repeat offences 36mo" value={`${row.repeat_offence_count_live ?? row.repeat_offender_count_36mo}`} />
               <Pair label="Cumulative sanctions" value={fmtZar(row.cumulative_sanctions_history_zar_live ?? row.cumulative_sanctions_history_zar)} />
               <Pair label="Enforcement method" value={row.enforcement_method ?? '-'} />
             </div>
           </div>
 
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">s35 battery</div>
+          <div className="bg-[var(--s1, #f7f9fb)] border border-[var(--border-subtle, #e5ebf2)] rounded-lg p-3">
+            <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)] mb-2">s35 battery</div>
             <div className="grid grid-cols-4 gap-3">
               <Pair label="Adjudication" value={`${(row.adjudication_progress_pct_live ?? 0).toFixed(0)}%`} />
               <Pair label="Compliance idx" value={`${(row.enforcement_compliance_index_live ?? 0).toFixed(0)} / 130`} />
               <Pair label="SLA days left" value={row.sla_days_remaining_live != null ? fmtDays(row.sla_days_remaining_live) : '-'} />
               <Pair label="Appeal close" value={row.days_to_appeal_window_close_live != null ? fmtDays(row.days_to_appeal_window_close_live) : '-'} />
             </div>
-            <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
+            <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-[var(--border-subtle, #e5ebf2)]">
               <Pair label="Notice issued" value={row.notice_issued_at ? new Date(row.notice_issued_at).toLocaleDateString() : '-'} />
               <Pair label="Response due" value={row.respondent_response_due_at ? new Date(row.respondent_response_due_at).toLocaleDateString() : '-'} />
               <Pair label="Adjudicated" value={row.adjudication_completed_at ? new Date(row.adjudication_completed_at).toLocaleDateString() : '-'} />
               <Pair label="Sanction imposed" value={row.sanction_imposed_at ? new Date(row.sanction_imposed_at).toLocaleDateString() : '-'} />
             </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
+            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[var(--border-subtle, #e5ebf2)]">
               <Pair label="Appeal window" value={row.appeal_window_close_at ? new Date(row.appeal_window_close_at).toLocaleDateString() : '-'} />
               <Pair label="Escalations" value={`${row.escalation_level}`} />
               <Pair label="Notice reference" value={row.notice_reference ?? '-'} />
@@ -745,7 +745,7 @@ function EnfDrawer({
 
           {transitionable && (
             <div className="border-t border-[#eef2f6] pt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Actions</div>
+              <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)] mb-2">Actions</div>
               <div className="flex flex-wrap gap-2">
                 {cs === 'triggered' && (
                   <ActionBtn label="Draft notice (NERSA)" onClick={() => setActiveAction({
@@ -899,26 +899,26 @@ function EnfDrawer({
           )}
 
           <div className="border-t border-[#eef2f6] pt-4">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Timeline</div>
+            <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)] mb-2">Timeline</div>
             <div className="space-y-2">
               {events.length === 0 ? (
-                <div className="text-[12px] text-[#6b7685]">No events yet.</div>
+                <div className="text-[12px] text-[var(--ink-2, #6b7685)]">No events yet.</div>
               ) : events.map((e) => {
                 const partyTone = PARTY_TONE[e.actor_party ?? 'system'] ?? PARTY_TONE.system;
                 return (
-                  <div key={e.id} className="flex gap-3 text-[12px] border-l-2 border-[#e5ebf2] pl-3 py-1">
-                    <span className="font-mono text-[11px] text-[#6b7685] whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
+                  <div key={e.id} className="flex gap-3 text-[12px] border-l-2 border-[var(--border-subtle, #e5ebf2)] pl-3 py-1">
+                    <span className="font-mono text-[11px] text-[var(--ink-2, #6b7685)] whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
                     <div>
-                      <span className="font-semibold text-[#0f1c2e]">{e.event_type}</span>
+                      <span className="font-semibold text-[var(--ink, #0f1c2e)]">{e.event_type}</span>
                       {e.actor_party && (
                         <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-medium uppercase" style={{ background: partyTone.bg, color: partyTone.fg }}>
                           {e.actor_party}
                         </span>
                       )}
                       {e.from_status && e.to_status && e.from_status !== e.to_status && (
-                        <span className="text-[#6b7685]"> {'· '}{e.from_status} {'→'} {e.to_status}</span>
+                        <span className="text-[var(--ink-2, #6b7685)]"> {'· '}{e.from_status} {'→'} {e.to_status}</span>
                       )}
-                      {e.notes && <div className="text-[#4a5568] mt-0.5">{e.notes}</div>}
+                      {e.notes && <div className="text-[var(--ink-2, #4a5568)] mt-0.5">{e.notes}</div>}
                     </div>
                   </div>
                 );
@@ -935,15 +935,15 @@ function EnfDrawer({
 function Pair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[#0f1c2e] mt-0.5">{value}</div>
+      <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">{label}</div>
+      <div className="text-[var(--ink, #0f1c2e)] mt-0.5">{value}</div>
     </div>
   );
 }
 
 function FlagPill({ on, label }: { on: boolean; label: string }) {
   return (
-    <div className={`flex items-center gap-2 px-2 py-1 rounded-md text-[12px] ${on ? 'bg-[#fff4d6] text-[#a06200] border border-[#f4d68f]' : 'bg-[#f7f9fb] text-[#6b7685] border border-[#e5ebf2]'}`}>
+    <div className={`flex items-center gap-2 px-2 py-1 rounded-md text-[12px] ${on ? 'bg-[color-mix(in oklab, var(--warn) 15%, var(--s1))] text-[#a06200] border border-[#f4d68f]' : 'bg-[var(--s1, #f7f9fb)] text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #e5ebf2)]'}`}>
       <span className={`inline-block w-2 h-2 rounded-full ${on ? 'bg-[#a06200]' : 'bg-[#cbd5e0]'}`} />
       <span>{label}</span>
     </div>

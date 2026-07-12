@@ -30,18 +30,18 @@ interface EmpKpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  report_period_opened:            'bg-[#eef2f7] text-[#3d4756]',
-  eco_data_collection:             'bg-[#eef2f7] text-[#3d4756]',
+  report_period_opened:            'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
+  eco_data_collection:             'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   monitoring_results_compilation:  'bg-cyan-100 text-cyan-700',
   incident_review:                 'bg-amber-100 text-amber-700',
   draft_report_preparation:        'bg-purple-100 text-purple-700',
-  internal_review:                 'bg-[#e8ecf0] text-[#3d4756]',
+  internal_review:                 'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink-2, #3d4756)]',
   eco_sign_off:                    'bg-teal-100 text-teal-700',
   competent_authority_submission:  'bg-orange-100 text-orange-700',
   ca_review_in_progress:           'bg-yellow-100 text-yellow-800',
   report_accepted:                 'bg-green-100 text-green-700',
   report_rejected:                 'bg-red-100 text-red-700',
-  report_lapsed:                   'bg-[#eef2f7] text-[#9aa5b4]',
+  report_lapsed:                   'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -62,7 +62,7 @@ const STATUS_LABELS: Record<string, string> = {
 const MITIGATION_COLORS: Record<string, string> = {
   on_track:   'bg-green-100 text-green-700',
   delayed:    'bg-amber-100 text-amber-700',
-  remediated: 'bg-[#eef2f7] text-[#3d4756]',
+  remediated: 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   escalated:  'bg-red-100 text-red-700',
 };
 
@@ -81,9 +81,9 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 const TIER_COLORS: Record<string, string> = {
-  small:    'bg-[#eef2f7] text-[#3d4756]',
-  medium:   'bg-[#eef2f7] text-[#3d4756]',
-  large:    'bg-[#e8ecf0] text-[#3d4756]',
+  small:    'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
+  medium:   'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
+  large:    'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink-2, #3d4756)]',
   major:    'bg-purple-100 text-purple-700',
   flagship: 'bg-amber-100 text-amber-700',
 };
@@ -99,7 +99,7 @@ const TIERS = ['small', 'medium', 'large', 'major', 'flagship'] as const;
 
 const PAGE_SIZE = 20;
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 function fmtDate(dateStr: string | null | undefined): { text: string; isPast: boolean } {
   if (!dateStr) return { text: '—', isPast: false };
@@ -116,15 +116,15 @@ function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-[#dde4ec] bg-white';
+    'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-[#0f1c2e]';
+    'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -385,7 +385,7 @@ export function IppEmpComplianceReportTab() {
             <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-xs text-[#2d3748] cursor-pointer select-none">
+        <label className="flex items-center gap-1.5 text-xs text-[var(--ink, #2d3748)] cursor-pointer select-none">
           <input
             type="checkbox"
             checked={filterSlaBreached}
@@ -396,7 +396,7 @@ export function IppEmpComplianceReportTab() {
         </label>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
+          className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]"
         >
           Refresh
         </button>
@@ -418,7 +418,7 @@ export function IppEmpComplianceReportTab() {
           <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New EMP Annual Compliance Report</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Project Name *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Project Name *</label>
               <input
                 type="text"
                 value={formProjectName}
@@ -429,7 +429,7 @@ export function IppEmpComplianceReportTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Report Year *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Report Year *</label>
               <input
                 type="number"
                 value={formReportYear}
@@ -441,7 +441,7 @@ export function IppEmpComplianceReportTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Plant Capacity (MW)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Plant Capacity (MW)</label>
               <input
                 type="number"
                 value={formPlantMw}
@@ -453,7 +453,7 @@ export function IppEmpComplianceReportTab() {
               />
             </div>
             <div className="col-span-2 md:col-span-2">
-              <label className="block text-xs text-[#3d4756] mb-1">ECO Name</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">ECO Name</label>
               <input
                 type="text"
                 value={formEcoName}
@@ -463,7 +463,7 @@ export function IppEmpComplianceReportTab() {
               />
             </div>
             <div className="col-span-2 md:col-span-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Notes (optional)</label>
               <textarea
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
@@ -489,7 +489,7 @@ export function IppEmpComplianceReportTab() {
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
+              className="px-3 py-1.5 bg-surface-v2 border rounded text-xs text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
             >
               Cancel
             </button>
@@ -506,12 +506,12 @@ export function IppEmpComplianceReportTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-3">Project Name</th>
                 <th className="pb-2 pr-3">Year</th>
                 <th className="pb-2 pr-3">Plant MW</th>
@@ -532,47 +532,47 @@ export function IppEmpComplianceReportTab() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b hover:bg-[#eef2f7] cursor-pointer"
+                    className="border-b hover:bg-[var(--s2, #eef2f7)] cursor-pointer"
                     onClick={() => setDetailItem(item)}
                   >
-                    <td className="py-2 pr-3 text-xs font-medium text-[#1e2a38] max-w-[160px] truncate" title={item.project_name ?? ''}>
+                    <td className="py-2 pr-3 text-xs font-medium text-[var(--ink, #1e2a38)] max-w-[160px] truncate" title={item.project_name ?? ''}>
                       {item.project_name ?? '—'}
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748]">{item.report_year}</td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748]">
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[var(--ink, #2d3748)]">{item.report_year}</td>
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[var(--ink, #2d3748)]">
                       {item.plant_mw != null ? `${item.plant_mw} MW` : '—'}
                     </td>
-                    <td className="py-2 pr-3 text-xs text-[#2d3748] max-w-[120px] truncate" title={item.eco_name ?? ''}>
+                    <td className="py-2 pr-3 text-xs text-[var(--ink, #2d3748)] max-w-[120px] truncate" title={item.eco_name ?? ''}>
                       {item.eco_name ?? '—'}
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748]">
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[var(--ink, #2d3748)]">
                       {item.incident_count > 0 ? (
                         <span className="font-semibold text-amber-700">{item.incident_count}</span>
                       ) : (
-                        <span className="text-[#9aa5b4]">0</span>
+                        <span className="text-[var(--ink-2, #9aa5b4)]">0</span>
                       )}
                     </td>
                     <td className="py-2 pr-3">
                       {item.mitigation_status ? (
-                        <span className={`px-2 py-0.5 rounded text-xs ${MITIGATION_COLORS[item.mitigation_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                        <span className={`px-2 py-0.5 rounded text-xs ${MITIGATION_COLORS[item.mitigation_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                           {item.mitigation_status.replace(/_/g, ' ')}
                         </span>
                       ) : (
-                        <span className="text-[#9aa5b4] text-xs">—</span>
+                        <span className="text-[var(--ink-2, #9aa5b4)] text-xs">—</span>
                       )}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {item.tier.charAt(0).toUpperCase() + item.tier.slice(1)}
                       </span>
                     </td>
                     <td className="py-2 pr-3 text-xs tabular-nums">
-                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
+                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[var(--ink-2, #3d4756)]'}>
                         {due.text}
                       </span>
                     </td>
@@ -580,7 +580,7 @@ export function IppEmpComplianceReportTab() {
                       {item.regulator_notified === 1 ? (
                         <span title="Regulator notified" className="text-orange-500 text-base leading-none">&#9873;</span>
                       ) : (
-                        <span className="text-[#9aa5b4] text-base leading-none">&#9873;</span>
+                        <span className="text-[var(--ink-2, #9aa5b4)] text-base leading-none">&#9873;</span>
                       )}
                     </td>
                     <td
@@ -602,7 +602,7 @@ export function IppEmpComplianceReportTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="py-10 text-center text-[#9aa5b4] text-sm">
+                  <td colSpan={11} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">
                     No EMP compliance report records found
                   </td>
                 </tr>
@@ -618,17 +618,17 @@ export function IppEmpComplianceReportTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-[#6b7685]">
+          <span className="text-xs text-[var(--ink-2, #6b7685)]">
             Page {page} of {totalPages}
           </span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             Next &rarr;
           </button>
@@ -638,19 +638,19 @@ export function IppEmpComplianceReportTab() {
       {/* Detail drawer */}
       {detailItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setDetailItem(null); }} className="fixed inset-0 z-50 flex items-center justify-end bg-black/30">
-          <div className="bg-white h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
+          <div className="bg-surface-v2 h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <div>
-                <div className="text-sm font-semibold text-[#1e2a38]">
+                <div className="text-sm font-semibold text-[var(--ink, #1e2a38)]">
                   EMP Compliance Report — {detailItem.project_name ?? 'Unnamed Project'}
                 </div>
-                <div className="text-xs text-[#6b7685] mt-0.5">
+                <div className="text-xs text-[var(--ink-2, #6b7685)] mt-0.5">
                   {detailItem.report_year} &nbsp;&middot;&nbsp; ECO: {detailItem.eco_name ?? 'TBC'}
                 </div>
               </div>
               <button type="button"
                 onClick={() => setDetailItem(null)}
-                className="text-[#9aa5b4] hover:text-[#2d3748] text-lg leading-none"
+                className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink, #2d3748)] text-lg leading-none"
               >
                 &times;
               </button>
@@ -659,10 +659,10 @@ export function IppEmpComplianceReportTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badges */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                   {STATUS_LABELS[detailItem.chain_status] ?? statusLabel(detailItem.chain_status).text}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                   {detailItem.tier.charAt(0).toUpperCase() + detailItem.tier.slice(1)}
                 </span>
                 {detailItem.sla_breached === 1 && (
@@ -676,68 +676,68 @@ export function IppEmpComplianceReportTab() {
               {/* Core details */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Project Name</div>
-                  <div className="font-medium text-[#1e2a38]">{detailItem.project_name ?? '—'}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Project Name</div>
+                  <div className="font-medium text-[var(--ink, #1e2a38)]">{detailItem.project_name ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Report Year</div>
-                  <div className="tabular-nums text-[#1e2a38]">{detailItem.report_year}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Report Year</div>
+                  <div className="tabular-nums text-[var(--ink, #1e2a38)]">{detailItem.report_year}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Plant Capacity</div>
-                  <div className="tabular-nums text-[#1e2a38]">
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Plant Capacity</div>
+                  <div className="tabular-nums text-[var(--ink, #1e2a38)]">
                     {detailItem.plant_mw != null ? `${detailItem.plant_mw} MW` : '—'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">ECO Name</div>
-                  <div className="text-[#1e2a38]">{detailItem.eco_name ?? '—'}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">ECO Name</div>
+                  <div className="text-[var(--ink, #1e2a38)]">{detailItem.eco_name ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Incident Count</div>
-                  <div className={`tabular-nums font-semibold ${detailItem.incident_count > 0 ? 'text-amber-700' : 'text-[#1e2a38]'}`}>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Incident Count</div>
+                  <div className={`tabular-nums font-semibold ${detailItem.incident_count > 0 ? 'text-amber-700' : 'text-[var(--ink, #1e2a38)]'}`}>
                     {detailItem.incident_count}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Mitigation Status</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Mitigation Status</div>
                   <div>
                     {detailItem.mitigation_status ? (
-                      <span className={`px-2 py-0.5 rounded text-xs ${MITIGATION_COLORS[detailItem.mitigation_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${MITIGATION_COLORS[detailItem.mitigation_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {detailItem.mitigation_status.replace(/_/g, ' ')}
                       </span>
                     ) : (
-                      <span className="text-[#9aa5b4]">—</span>
+                      <span className="text-[var(--ink-2, #9aa5b4)]">—</span>
                     )}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">SLA Deadline</div>
-                  <div className={`tabular-nums ${fmtDate(detailItem.sla_due_date).isPast ? 'text-red-600 font-medium' : 'text-[#1e2a38]'}`}>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">SLA Deadline</div>
+                  <div className={`tabular-nums ${fmtDate(detailItem.sla_due_date).isPast ? 'text-red-600 font-medium' : 'text-[var(--ink, #1e2a38)]'}`}>
                     {fmtDate(detailItem.sla_due_date).text}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Regulator Notified</div>
-                  <div className={detailItem.regulator_notified === 1 ? 'text-orange-600 font-medium' : 'text-[#9aa5b4]'}>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Regulator Notified</div>
+                  <div className={detailItem.regulator_notified === 1 ? 'text-orange-600 font-medium' : 'text-[var(--ink-2, #9aa5b4)]'}>
                     {detailItem.regulator_notified === 1 ? 'Yes' : 'No'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Created</div>
-                  <div className="text-[#3d4756]">{fmtDate(detailItem.created_at).text}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Created</div>
+                  <div className="text-[var(--ink-2, #3d4756)]">{fmtDate(detailItem.created_at).text}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Updated</div>
-                  <div className="text-[#3d4756]">{fmtDate(detailItem.updated_at).text}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Updated</div>
+                  <div className="text-[var(--ink-2, #3d4756)]">{fmtDate(detailItem.updated_at).text}</div>
                 </div>
               </div>
 
               {/* Notes */}
               {detailItem.notes && (
                 <div>
-                  <div className="text-xs text-[#9aa5b4] mb-1">Notes</div>
-                  <div className="text-xs text-[#2d3748] bg-[#f8fafc] rounded p-2 border whitespace-pre-wrap">
+                  <div className="text-xs text-[var(--ink-2, #9aa5b4)] mb-1">Notes</div>
+                  <div className="text-xs text-[var(--ink, #2d3748)] bg-[var(--s1, #f8fafc)] rounded p-2 border whitespace-pre-wrap">
                     {detailItem.notes}
                   </div>
                 </div>
@@ -746,7 +746,7 @@ export function IppEmpComplianceReportTab() {
               {/* Actions section */}
               {!HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs font-semibold text-[#2d3748] mb-2">Advance State Machine</div>
+                  <div className="text-xs font-semibold text-[var(--ink, #2d3748)] mb-2">Advance State Machine</div>
                   <button type="button"
                     onClick={() => {
                       setDetailItem(null);
@@ -761,7 +761,7 @@ export function IppEmpComplianceReportTab() {
 
               {HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs text-[#9aa5b4] italic">
+                  <div className="text-xs text-[var(--ink-2, #9aa5b4)] italic">
                     This compliance report is in a terminal state — no further actions are available.
                   </div>
                 </div>
@@ -774,19 +774,19 @@ export function IppEmpComplianceReportTab() {
       {/* Action modal */}
       {actionItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setActionItem(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-[#1e2a38] mb-1">EMP Compliance Report Action</div>
-            <div className="text-xs text-[#6b7685] mb-4">
+          <div className="bg-surface-v2 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="text-sm font-semibold text-[var(--ink, #1e2a38)] mb-1">EMP Compliance Report Action</div>
+            <div className="text-xs text-[var(--ink-2, #6b7685)] mb-4">
               {actionItem.project_name ?? 'Unnamed'} &mdash; {actionItem.report_year} &mdash;{' '}
               {STATUS_LABELS[actionItem.chain_status] ?? actionItem.chain_status}
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Action *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Action *</label>
               <select
                 value={selectedAction}
                 onChange={e => setSelectedAction(e.target.value)}
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {modalActions.map(a => (
                   <option key={a.name} value={a.name}>{a.label}</option>
@@ -797,7 +797,7 @@ export function IppEmpComplianceReportTab() {
             {/* Incident count input — only for conduct_incident_review */}
             {selectedAction === 'conduct_incident_review' && (
               <div className="mb-3">
-                <label className="block text-xs text-[#3d4756] mb-1">Incident Count</label>
+                <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Incident Count</label>
                 <input
                   type="number"
                   value={actionIncidentCount}
@@ -812,7 +812,7 @@ export function IppEmpComplianceReportTab() {
             {/* ECO name input — only for obtain_eco_sign_off */}
             {selectedAction === 'obtain_eco_sign_off' && (
               <div className="mb-3">
-                <label className="block text-xs text-[#3d4756] mb-1">ECO Name</label>
+                <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">ECO Name</label>
                 <input
                   type="text"
                   value={actionEcoName}
@@ -824,7 +824,7 @@ export function IppEmpComplianceReportTab() {
             )}
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Reason (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Reason (optional)</label>
               <input
                 type="text"
                 value={actionReason}
@@ -835,7 +835,7 @@ export function IppEmpComplianceReportTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Notes (optional)</label>
               <textarea
                 value={actionNotes}
                 onChange={e => setActionNotes(e.target.value)}
@@ -854,7 +854,7 @@ export function IppEmpComplianceReportTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
+                className="px-3 py-1.5 text-xs border rounded bg-surface-v2 text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
               >
                 Cancel
               </button>

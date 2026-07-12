@@ -33,7 +33,7 @@ interface RelayKpis {
 // ─── Status meta ─────────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, string> = {
-  test_scheduled:         'bg-[#eef2f7] text-[#3d4756]',
+  test_scheduled:         'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   pre_test_inspection:    'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   site_ready:             'bg-cyan-100 text-cyan-700',
   test_executing:         'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
@@ -69,7 +69,7 @@ const CLASS_COLORS: Record<string, string> = {
   transmission:    'bg-orange-100 text-orange-700',
   distribution:    'bg-amber-100 text-amber-700',
   embedded:        'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
-  routine:         'bg-[#eef2f7] text-[#3d4756]',
+  routine:         'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
 };
 
 const CLASS_LABELS: Record<string, string> = {
@@ -170,7 +170,7 @@ function truncate(s: string, n = 24): string {
   return s.length > n ? s.slice(0, n) + '…' : s;
 }
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 const PAGE_SIZE = 20;
 
 // ─── KPI chip ─────────────────────────────────────────────────────────────────
@@ -181,15 +181,15 @@ function KpiChip({ label, value, mode = 'neutral' }: { label: string; value: str
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-[#dde4ec] bg-white';
+    'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-[#0f1c2e]';
+    'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -449,7 +449,7 @@ export function ProtectionRelayTestTab() {
             <option key={c} value={c}>{CLASS_LABELS[c] ?? c}</option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-xs text-[#2d3748] cursor-pointer select-none">
+        <label className="flex items-center gap-1.5 text-xs text-[var(--ink, #2d3748)] cursor-pointer select-none">
           <input
             type="checkbox"
             checked={filterSlaBreached}
@@ -460,7 +460,7 @@ export function ProtectionRelayTestTab() {
         </label>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
+          className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]"
         >
           Refresh
         </button>
@@ -481,7 +481,7 @@ export function ProtectionRelayTestTab() {
           <div className="text-sm font-semibold text-[oklch(0.40_0.009_250)]">Schedule Protection Relay Test</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Site ID *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Site ID *</label>
               <input
                 type="text"
                 value={formSiteId}
@@ -492,7 +492,7 @@ export function ProtectionRelayTestTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Device Serial No. *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Device Serial No. *</label>
               <input
                 type="text"
                 value={formDeviceSn}
@@ -503,7 +503,7 @@ export function ProtectionRelayTestTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Relay Type *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Relay Type *</label>
               <input
                 type="text"
                 value={formRelayType}
@@ -514,7 +514,7 @@ export function ProtectionRelayTestTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Test Standard *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Test Standard *</label>
               <input
                 type="text"
                 value={formTestStandard}
@@ -525,12 +525,12 @@ export function ProtectionRelayTestTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Protection Class *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Protection Class *</label>
               <select
                 value={formClass}
                 onChange={e => setFormClass(e.target.value)}
                 required
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {PROTECTION_CLASSES.map(c => (
                   <option key={c} value={c}>{CLASS_LABELS[c]}</option>
@@ -538,7 +538,7 @@ export function ProtectionRelayTestTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Test Engineer ID</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Test Engineer ID</label>
               <input
                 type="text"
                 value={formEngineerId}
@@ -548,7 +548,7 @@ export function ProtectionRelayTestTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Grid Witness ID</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Grid Witness ID</label>
               <input
                 type="text"
                 value={formWitnessId}
@@ -574,7 +574,7 @@ export function ProtectionRelayTestTab() {
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
+              className="px-3 py-1.5 bg-surface-v2 border rounded text-xs text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
             >
               Cancel
             </button>
@@ -591,12 +591,12 @@ export function ProtectionRelayTestTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-3">Device SN</th>
                 <th className="pb-2 pr-3">Relay Type</th>
                 <th className="pb-2 pr-3">Protection Class</th>
@@ -615,28 +615,28 @@ export function ProtectionRelayTestTab() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b hover:bg-[#eef2f7] cursor-pointer"
+                    className="border-b hover:bg-[var(--s2, #eef2f7)] cursor-pointer"
                     onClick={() => loadDetail(item)}
                   >
-                    <td className="py-2 pr-3 text-xs font-mono text-[#2d3748]">
+                    <td className="py-2 pr-3 text-xs font-mono text-[var(--ink, #2d3748)]">
                       {item.device_sn}
                     </td>
                     <td
-                      className="py-2 pr-3 text-xs text-[#2d3748] max-w-[180px] truncate"
+                      className="py-2 pr-3 text-xs text-[var(--ink, #2d3748)] max-w-[180px] truncate"
                       title={item.relay_type}
                     >
                       {truncate(item.relay_type, 28)}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[item.protection_class] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[item.protection_class] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {CLASS_LABELS[item.protection_class] ?? item.protection_class}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-xs text-[#3d4756]">
+                    <td className="py-2 pr-3 text-xs text-[var(--ink-2, #3d4756)]">
                       {truncate(item.site_id, 22)}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                       {item.sla_breached === 1 && (
@@ -644,20 +644,20 @@ export function ProtectionRelayTestTab() {
                       )}
                     </td>
                     <td className="py-2 pr-3 text-xs tabular-nums">
-                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
+                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[var(--ink-2, #3d4756)]'}>
                         {due.text}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-xs text-[#3d4756]">
+                    <td className="py-2 pr-3 text-xs text-[var(--ink-2, #3d4756)]">
                       {item.certificate_number
                         ? <span className="font-mono">{item.certificate_number}</span>
-                        : <span className="text-[#9aa5b4]">—</span>}
+                        : <span className="text-[var(--ink-2, #9aa5b4)]">—</span>}
                     </td>
                     <td className="py-2 pr-3 text-center">
                       {item.regulator_notified === 1 ? (
                         <span title="Regulator notified" className="text-orange-500 text-base leading-none">&#9873;</span>
                       ) : (
-                        <span className="text-[#e8ecf0] text-base leading-none">&#9873;</span>
+                        <span className="text-[var(--border-subtle, #e8ecf0)] text-base leading-none">&#9873;</span>
                       )}
                     </td>
                     <td
@@ -678,7 +678,7 @@ export function ProtectionRelayTestTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="py-10 text-center text-[#9aa5b4] text-sm">
+                  <td colSpan={9} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">
                     No protection relay tests found
                   </td>
                 </tr>
@@ -694,15 +694,15 @@ export function ProtectionRelayTestTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-[#6b7685]">Page {page} of {totalPages}</span>
+          <span className="text-xs text-[var(--ink-2, #6b7685)]">Page {page} of {totalPages}</span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             Next &rarr;
           </button>
@@ -712,20 +712,20 @@ export function ProtectionRelayTestTab() {
       {/* ─── Detail drawer ─────────────────────────────────────────────────── */}
       {detailItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setDetailItem(null); }} className="fixed inset-0 z-50 flex items-center justify-end bg-black/30">
-          <div className="bg-white h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
+          <div className="bg-surface-v2 h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <div>
-                <div className="text-sm font-semibold text-[#1e2a38]">
+                <div className="text-sm font-semibold text-[var(--ink, #1e2a38)]">
                   Protection Relay Test
                 </div>
-                <div className="text-xs text-[#6b7685] mt-0.5">
+                <div className="text-xs text-[var(--ink-2, #6b7685)] mt-0.5">
                   {detailItem.device_sn}
                   {detailItem.certificate_number && <> &nbsp;&middot;&nbsp; {detailItem.certificate_number}</>}
                 </div>
               </div>
               <button type="button"
                 onClick={() => setDetailItem(null)}
-                className="text-[#9aa5b4] hover:text-[#2d3748] text-lg leading-none"
+                className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink, #2d3748)] text-lg leading-none"
               >
                 &times;
               </button>
@@ -734,10 +734,10 @@ export function ProtectionRelayTestTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badges */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                   {STATUS_LABELS[detailItem.chain_status] ?? statusLabel(detailItem.chain_status).text}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[detailItem.protection_class] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${CLASS_COLORS[detailItem.protection_class] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                   {CLASS_LABELS[detailItem.protection_class] ?? detailItem.protection_class}
                 </span>
                 {detailItem.sla_breached === 1 && (
@@ -754,64 +754,64 @@ export function ProtectionRelayTestTab() {
               {/* Core fields */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Site ID</div>
-                  <div className="font-mono text-[#2d3748]">{detailItem.site_id}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Site ID</div>
+                  <div className="font-mono text-[var(--ink, #2d3748)]">{detailItem.site_id}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Device SN</div>
-                  <div className="font-mono text-[#2d3748]">{detailItem.device_sn}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Device SN</div>
+                  <div className="font-mono text-[var(--ink, #2d3748)]">{detailItem.device_sn}</div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-[#9aa5b4] mb-0.5">Relay Type</div>
-                  <div className="text-[#1e2a38]">{detailItem.relay_type}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Relay Type</div>
+                  <div className="text-[var(--ink, #1e2a38)]">{detailItem.relay_type}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Test Standard</div>
-                  <div className="text-[#1e2a38]">{detailItem.test_standard}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Test Standard</div>
+                  <div className="text-[var(--ink, #1e2a38)]">{detailItem.test_standard}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Protection Class</div>
-                  <div className="text-[#1e2a38]">{CLASS_LABELS[detailItem.protection_class] ?? detailItem.protection_class}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Protection Class</div>
+                  <div className="text-[var(--ink, #1e2a38)]">{CLASS_LABELS[detailItem.protection_class] ?? detailItem.protection_class}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Test Engineer</div>
-                  <div className="text-[#2d3748]">{detailItem.test_engineer_id ?? '—'}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Test Engineer</div>
+                  <div className="text-[var(--ink, #2d3748)]">{detailItem.test_engineer_id ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Grid Witness</div>
-                  <div className="text-[#2d3748]">{detailItem.grid_witness_id ?? '—'}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Grid Witness</div>
+                  <div className="text-[var(--ink, #2d3748)]">{detailItem.grid_witness_id ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Certificate No.</div>
-                  <div className="font-mono text-[#2d3748]">{detailItem.certificate_number ?? '—'}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Certificate No.</div>
+                  <div className="font-mono text-[var(--ink, #2d3748)]">{detailItem.certificate_number ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Next Test Due</div>
-                  <div className={`tabular-nums ${fmtDate(detailItem.next_test_due).isPast ? 'text-red-600 font-medium' : 'text-[#2d3748]'}`}>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Next Test Due</div>
+                  <div className={`tabular-nums ${fmtDate(detailItem.next_test_due).isPast ? 'text-red-600 font-medium' : 'text-[var(--ink, #2d3748)]'}`}>
                     {fmtDate(detailItem.next_test_due).text}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">SLA Deadline</div>
-                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast ? 'text-red-600 font-medium' : 'text-[#1e2a38]'}`}>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">SLA Deadline</div>
+                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast ? 'text-red-600 font-medium' : 'text-[var(--ink, #1e2a38)]'}`}>
                     {fmtDate(detailItem.sla_deadline).text}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Created</div>
-                  <div className="text-[#3d4756]">{fmtDate(detailItem.created_at).text}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Created</div>
+                  <div className="text-[var(--ink-2, #3d4756)]">{fmtDate(detailItem.created_at).text}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Updated</div>
-                  <div className="text-[#3d4756]">{fmtDate(detailItem.updated_at).text}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Updated</div>
+                  <div className="text-[var(--ink-2, #3d4756)]">{fmtDate(detailItem.updated_at).text}</div>
                 </div>
               </div>
 
               {/* Reason */}
               {detailItem.reason && (
                 <div>
-                  <div className="text-xs text-[#9aa5b4] mb-1">Reason / Notes</div>
-                  <div className="text-xs text-[#2d3748] bg-[#f8fafc] rounded p-2 border whitespace-pre-wrap">
+                  <div className="text-xs text-[var(--ink-2, #9aa5b4)] mb-1">Reason / Notes</div>
+                  <div className="text-xs text-[var(--ink, #2d3748)] bg-[var(--s1, #f8fafc)] rounded p-2 border whitespace-pre-wrap">
                     {detailItem.reason}
                   </div>
                 </div>
@@ -819,21 +819,21 @@ export function ProtectionRelayTestTab() {
 
               {/* Timeline */}
               <div>
-                <div className="text-xs font-semibold text-[#2d3748] mb-2">Event Timeline</div>
+                <div className="text-xs font-semibold text-[var(--ink, #2d3748)] mb-2">Event Timeline</div>
                 {timelineLoading ? (
-                  <div className="text-xs text-[#9aa5b4]">Loading timeline&hellip;</div>
+                  <div className="text-xs text-[var(--ink-2, #9aa5b4)]">Loading timeline&hellip;</div>
                 ) : timeline.length === 0 ? (
-                  <div className="text-xs text-[#9aa5b4] italic">No events recorded yet.</div>
+                  <div className="text-xs text-[var(--ink-2, #9aa5b4)] italic">No events recorded yet.</div>
                 ) : (
                   <ol className="space-y-2">
                     {timeline.map((evt, i) => (
                       <li key={i} className="flex gap-2 text-xs">
-                        <span className="text-[#9aa5b4] mt-0.5 select-none">&#9679;</span>
+                        <span className="text-[var(--ink-2, #9aa5b4)] mt-0.5 select-none">&#9679;</span>
                         <div>
-                          <div className="text-[#2d3748] font-medium">
+                          <div className="text-[var(--ink, #2d3748)] font-medium">
                             {String(evt.event_type ?? evt.event ?? '').replace(/^prt_evt_/, '').replace(/_/g, ' ')}
                           </div>
-                          <div className="text-[#9aa5b4]">
+                          <div className="text-[var(--ink-2, #9aa5b4)]">
                             {fmtDate(String(evt.created_at ?? '')).text}
                             {evt.actor_id && <> &middot; {String(evt.actor_id)}</>}
                           </div>
@@ -847,7 +847,7 @@ export function ProtectionRelayTestTab() {
               {/* Actions section */}
               {!HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs font-semibold text-[#2d3748] mb-2">Advance State Machine</div>
+                  <div className="text-xs font-semibold text-[var(--ink, #2d3748)] mb-2">Advance State Machine</div>
                   <button type="button"
                     onClick={() => {
                       setDetailItem(null);
@@ -862,7 +862,7 @@ export function ProtectionRelayTestTab() {
 
               {HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs text-[#9aa5b4] italic">
+                  <div className="text-xs text-[var(--ink-2, #9aa5b4)] italic">
                     {detailItem.chain_status === 'certified_pass'
                       ? 'This test has been certified as a PASS. No further actions available.'
                       : 'This test has reached FAILED FINAL. Mandatory safety disconnect required per NRS 097-2-3.'}
@@ -877,9 +877,9 @@ export function ProtectionRelayTestTab() {
       {/* ─── Action modal ──────────────────────────────────────────────────── */}
       {actionItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setActionItem(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-[#1e2a38] mb-1">Protection Relay Test Action</div>
-            <div className="text-xs text-[#6b7685] mb-4">
+          <div className="bg-surface-v2 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="text-sm font-semibold text-[var(--ink, #1e2a38)] mb-1">Protection Relay Test Action</div>
+            <div className="text-xs text-[var(--ink-2, #6b7685)] mb-4">
               {actionItem.device_sn}
               {' — '}
               {CLASS_LABELS[actionItem.protection_class] ?? actionItem.protection_class}
@@ -888,11 +888,11 @@ export function ProtectionRelayTestTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Action *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Action *</label>
               <select
                 value={selectedAction}
                 onChange={e => setSelectedAction(e.target.value)}
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {modalActions.map(a => (
                   <option key={a.name} value={a.name}>{a.label}</option>
@@ -904,7 +904,7 @@ export function ProtectionRelayTestTab() {
             {selectedAction === 'certify_pass' && (
               <>
                 <div className="mb-3">
-                  <label className="block text-xs text-[#3d4756] mb-1">Certificate Number</label>
+                  <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Certificate Number</label>
                   <input
                     type="text"
                     value={actionCertNum}
@@ -914,7 +914,7 @@ export function ProtectionRelayTestTab() {
                   />
                 </div>
                 <div className="mb-3">
-                  <label className="block text-xs text-[#3d4756] mb-1">Next Test Due</label>
+                  <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Next Test Due</label>
                   <input
                     type="date"
                     value={actionNextDue}
@@ -926,7 +926,7 @@ export function ProtectionRelayTestTab() {
             )}
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Reason / Notes</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Reason / Notes</label>
               <textarea
                 value={actionReason}
                 onChange={e => setActionReason(e.target.value)}
@@ -945,7 +945,7 @@ export function ProtectionRelayTestTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
+                className="px-3 py-1.5 text-xs border rounded bg-surface-v2 text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
               >
                 Cancel
               </button>

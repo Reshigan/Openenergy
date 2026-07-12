@@ -117,7 +117,7 @@ export default function CascadeDlqSurface(_props: { role: string }) {
       </div>
 
       {loading ? (
-        <div className="rounded-lg border border-[var(--line)] bg-white p-6 text-[12px] text-[var(--ink3)]">Loading DLQ…</div>
+        <div className="rounded-lg border border-[var(--line)] bg-surface-v2 p-6 text-[12px] text-[var(--ink3)]">Loading DLQ…</div>
       ) : err ? (
         <div className="rounded-lg border border-[var(--oxide)] bg-[var(--oxide-tint)] p-4 text-[12px] text-[var(--oxide-deep)]">{err}</div>
       ) : rows.length === 0 ? (
@@ -126,7 +126,7 @@ export default function CascadeDlqSurface(_props: { role: string }) {
           <div className="text-[12px] text-[var(--ink3)] mt-1">No failed cascade stages pending. Nothing to drain.</div>
         </div>
       ) : (
-        <div className="rounded-lg border border-[var(--line)] bg-white overflow-x-auto text-[var(--ink)]">
+        <div className="rounded-lg border border-[var(--line)] bg-surface-v2 overflow-x-auto text-[var(--ink)]">
           <table className="w-full text-[13px] min-w-[760px]">
             <thead className="bg-[var(--raised)] text-left text-[10px] uppercase tracking-wide text-[var(--ink3)]">
               <tr>
@@ -205,7 +205,7 @@ export default function CascadeDlqSurface(_props: { role: string }) {
                               value={resolveNote}
                               onChange={(e) => setResolveNote(e.target.value)}
                               placeholder="Optional note for the audit trail"
-                              className="flex-1 min-w-[200px] h-8 px-2 rounded-md border border-[var(--line)] bg-white text-[12px] text-[var(--ink)] placeholder:text-[var(--ink3)]"
+                              className="flex-1 min-w-[200px] h-8 px-2 rounded-md border border-[var(--line)] bg-surface-v2 text-[12px] text-[var(--ink)] placeholder:text-[var(--ink3)]"
                             />
                             <button type="button"
                               onClick={() => void submitResolve(r.id)}

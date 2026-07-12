@@ -23,19 +23,19 @@ function ByEventTab() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="p-4 text-[12px] text-[#6b7685]">Loading…</div>;
+  if (loading) return <div className="p-4 text-[12px] text-[var(--ink-2, #6b7685)]">Loading…</div>;
   if (err) return <div className="p-4 text-[12px] text-red-600">{err}</div>;
   if (!rows.length) return (
-    <div className="rounded-xl border border-[#dde4ec] bg-[#f8fafc] p-6 text-center">
-      <div className="text-[13px] font-semibold text-[#0f1c2e]">No revenue events this period</div>
-      <div className="text-[12px] text-[#6b7685] mt-1">Fee events will appear here as chains fire billable triggers.</div>
+    <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-[var(--s1, #f8fafc)] p-6 text-center">
+      <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">No revenue events this period</div>
+      <div className="text-[12px] text-[var(--ink-2, #6b7685)] mt-1">Fee events will appear here as chains fire billable triggers.</div>
     </div>
   );
 
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto">
+    <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 overflow-x-auto">
       <table className="w-full text-[13px] min-w-[540px]">
-        <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+        <thead className="bg-[var(--s1, #f8fafc)] text-left text-[10px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">
           <tr>
             <th className="px-4 py-2">Trigger event</th>
             <th className="px-4 py-2 text-right">Events</th>
@@ -45,11 +45,11 @@ function ByEventTab() {
         </thead>
         <tbody>
           {rows.map(r => (
-            <tr key={r.trigger_event} className="border-t border-[#e5ebf2]">
+            <tr key={r.trigger_event} className="border-t border-[var(--border-subtle, #e5ebf2)]">
               <td className="px-4 py-2 font-mono text-[11px]">{r.trigger_event}</td>
               <td className="px-4 py-2 text-right tabular-nums">{r.events}</td>
               <td className="px-4 py-2 text-right tabular-nums font-medium">{formatZAR(r.fee_zar)}</td>
-              <td className="px-4 py-2 text-right tabular-nums text-[#6b7685]">{formatZAR(r.value_zar)}</td>
+              <td className="px-4 py-2 text-right tabular-nums text-[var(--ink-2, #6b7685)]">{formatZAR(r.value_zar)}</td>
             </tr>
           ))}
         </tbody>
@@ -76,18 +76,18 @@ function ByRoleTab() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="p-4 text-[12px] text-[#6b7685]">Loading…</div>;
+  if (loading) return <div className="p-4 text-[12px] text-[var(--ink-2, #6b7685)]">Loading…</div>;
   if (err) return <div className="p-4 text-[12px] text-red-600">{err}</div>;
   if (!rows.length) return (
-    <div className="rounded-xl border border-[#dde4ec] bg-[#f8fafc] p-6 text-center">
-      <div className="text-[13px] font-semibold text-[#0f1c2e]">No data</div>
+    <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-[var(--s1, #f8fafc)] p-6 text-center">
+      <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">No data</div>
     </div>
   );
 
   return (
-    <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto">
+    <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 overflow-x-auto">
       <table className="w-full text-[13px] min-w-[360px]">
-        <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+        <thead className="bg-[var(--s1, #f8fafc)] text-left text-[10px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">
           <tr>
             <th className="px-4 py-2">Payer role</th>
             <th className="px-4 py-2 text-right">Events</th>
@@ -96,7 +96,7 @@ function ByRoleTab() {
         </thead>
         <tbody>
           {rows.map(r => (
-            <tr key={r.payer_role} className="border-t border-[#e5ebf2]">
+            <tr key={r.payer_role} className="border-t border-[var(--border-subtle, #e5ebf2)]">
               <td className="px-4 py-2"><Pill tone="info">{r.payer_role}</Pill></td>
               <td className="px-4 py-2 text-right tabular-nums">{r.events}</td>
               <td className="px-4 py-2 text-right tabular-nums font-medium">{formatZAR(r.fee_zar)}</td>
@@ -125,24 +125,24 @@ function LeakageTab() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="p-4 text-[12px] text-[#6b7685]">Loading…</div>;
+  if (loading) return <div className="p-4 text-[12px] text-[var(--ink-2, #6b7685)]">Loading…</div>;
 
   return (
     <div className="space-y-3">
-      <div className="rounded-xl border border-[#dde4ec] bg-white p-4 text-[12px] text-[#3d4756] leading-relaxed">
+      <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4 text-[12px] text-[var(--ink-2, #3d4756)] leading-relaxed">
         Leakage = billable events that fired with a R0 fee against a non-zero notional. These are
         events where a fee schedule row exists but <code className="font-mono bg-[#f0f4f8] px-1 rounded">is_enabled = 0</code>.
         Use the Fee Schedule tab to flip them live.
       </div>
       {!rows.length ? (
-        <div className="rounded-xl border border-[#dde4ec] bg-[#f8fafc] p-6 text-center">
-          <div className="text-[13px] font-semibold text-[#0f1c2e]">No leakage detected</div>
-          <div className="text-[12px] text-[#6b7685] mt-1">All billable events are either fee-enabled or carry zero value.</div>
+        <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-[var(--s1, #f8fafc)] p-6 text-center">
+          <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">No leakage detected</div>
+          <div className="text-[12px] text-[var(--ink-2, #6b7685)] mt-1">All billable events are either fee-enabled or carry zero value.</div>
         </div>
       ) : (
-        <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto">
+        <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 overflow-x-auto">
           <table className="w-full text-[13px] min-w-[480px]">
-            <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+            <thead className="bg-[var(--s1, #f8fafc)] text-left text-[10px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">
               <tr>
                 <th className="px-4 py-2">Trigger event</th>
                 <th className="px-4 py-2 text-right">R0 events</th>
@@ -151,7 +151,7 @@ function LeakageTab() {
             </thead>
             <tbody>
               {rows.map(r => (
-                <tr key={r.trigger_event} className="border-t border-[#e5ebf2]">
+                <tr key={r.trigger_event} className="border-t border-[var(--border-subtle, #e5ebf2)]">
                   <td className="px-4 py-2 font-mono text-[11px]">{r.trigger_event}</td>
                   <td className="px-4 py-2 text-right tabular-nums">{r.r0_events}</td>
                   <td className="px-4 py-2 text-right tabular-nums text-[#b4453a] font-medium">{formatZAR(r.forgone_value_zar)}</td>
@@ -213,23 +213,23 @@ function ScheduleTab() {
     }
   }
 
-  if (loading) return <div className="p-4 text-[12px] text-[#6b7685]">Loading schedule…</div>;
+  if (loading) return <div className="p-4 text-[12px] text-[var(--ink-2, #6b7685)]">Loading schedule…</div>;
 
   return (
     <div className="space-y-3">
-      <div className="rounded-xl border border-[#dde4ec] bg-white p-3 text-[12px] text-[#3d4756] leading-relaxed">
+      <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-3 text-[12px] text-[var(--ink-2, #3d4756)] leading-relaxed">
         Toggle a fee live with the switch. All changes are cascade-audited under{' '}
         <code className="font-mono bg-[#f0f4f8] px-1 rounded">fee_schedule.updated</code>.
         No deploy required — rates take effect immediately for new events.
       </div>
       {!rows.length ? (
-        <div className="rounded-xl border border-[#dde4ec] bg-[#f8fafc] p-6 text-center">
-          <div className="text-[13px] font-semibold text-[#0f1c2e]">No fee schedule rows</div>
+        <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-[var(--s1, #f8fafc)] p-6 text-center">
+          <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">No fee schedule rows</div>
         </div>
       ) : (
-        <div className="rounded-xl border border-[#dde4ec] bg-white overflow-x-auto">
+        <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 overflow-x-auto">
           <table className="w-full text-[13px] min-w-[700px]">
-            <thead className="bg-[#f8fafc] text-left text-[10px] uppercase tracking-wide text-[#6b7685]">
+            <thead className="bg-[var(--s1, #f8fafc)] text-left text-[10px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">
               <tr>
                 <th className="px-4 py-2">Trigger event</th>
                 <th className="px-4 py-2">Type</th>
@@ -242,10 +242,10 @@ function ScheduleTab() {
             </thead>
             <tbody>
               {rows.map(r => (
-                <tr key={r.id} className="border-t border-[#e5ebf2]">
+                <tr key={r.id} className="border-t border-[var(--border-subtle, #e5ebf2)]">
                   <td className="px-4 py-2 font-mono text-[11px]">{r.trigger_event}</td>
                   <td className="px-4 py-2"><Pill tone="info">{r.fee_type || '—'}</Pill></td>
-                  <td className="px-4 py-2 text-[12px] text-[#3d4756]">{r.payer_role || 'unattributed'}</td>
+                  <td className="px-4 py-2 text-[12px] text-[var(--ink-2, #3d4756)]">{r.payer_role || 'unattributed'}</td>
                   <td className="px-4 py-2 text-right tabular-nums text-[12px]">{r.rate != null ? `${(r.rate * 100).toFixed(2)}%` : '—'}</td>
                   <td className="px-4 py-2 text-right tabular-nums text-[12px]">{r.min_fee_zar != null ? formatZAR(r.min_fee_zar) : '—'}</td>
                   <td className="px-4 py-2 text-right tabular-nums text-[12px]">{r.max_fee_zar != null ? formatZAR(r.max_fee_zar) : '—'}</td>
@@ -255,7 +255,7 @@ function ScheduleTab() {
                       onClick={() => void toggleEnabled(r)}
                       disabled={toggling === r.id}
                       title={r.is_enabled ? 'Click to disable' : 'Click to enable'}
-                      className={`inline-flex items-center justify-center w-10 h-6 rounded-full transition-colors disabled:opacity-40 ${r.is_enabled ? 'bg-[#2a7a3b]' : 'bg-[#dde4ec]'}`}
+                      className={`inline-flex items-center justify-center w-10 h-6 rounded-full transition-colors disabled:opacity-40 ${r.is_enabled ? 'bg-[#2a7a3b]' : 'bg-[var(--border-subtle, #dde4ec)]'}`}
                     >
                       <span className={`block w-4 h-4 rounded-full bg-white shadow transition-transform ${r.is_enabled ? 'translate-x-2' : '-translate-x-2'}`} />
                     </button>

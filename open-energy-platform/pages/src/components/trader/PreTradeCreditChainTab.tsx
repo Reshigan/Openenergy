@@ -143,33 +143,33 @@ interface PtcEvent {
 }
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  order_submitted:           { bg: '#e3e7ec', fg: '#445',    label: 'Order submitted' },
-  kyc_verified:              { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'KYC verified' },
-  credit_line_checked:       { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Credit line checked' },
-  settlement_risk_assessed:  { bg: '#fff4d6', fg: '#a06200', label: 'Settlement risk assessed' },
-  concentration_checked:     { bg: '#fff4d6', fg: '#a06200', label: 'Concentration checked' },
-  halt_status_verified:      { bg: '#fff4d6', fg: '#a06200', label: 'Halt status verified' },
-  mark_age_validated:        { bg: '#fff4d6', fg: '#a06200', label: 'Mark age validated' },
-  cleared:                   { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Cleared' },
-  archived:                  { bg: '#d8dde6', fg: '#445',    label: 'Archived' },
-  rejected:                  { bg: '#fcc3c3', fg: '#7a0e0e', label: 'Rejected' },
-  held_for_review:           { bg: '#7a0e0e', fg: '#fff',    label: 'Held for review' },
-  manually_cleared:          { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Manually cleared' },
-  manually_rejected:         { bg: '#fcc3c3', fg: '#7a0e0e', label: 'Manually rejected' },
+  order_submitted:           { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Order submitted' },
+  kyc_verified:              { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'KYC verified' },
+  credit_line_checked:       { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Credit line checked' },
+  settlement_risk_assessed:  { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Settlement risk assessed' },
+  concentration_checked:     { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Concentration checked' },
+  halt_status_verified:      { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Halt status verified' },
+  mark_age_validated:        { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Mark age validated' },
+  cleared:                   { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f5b3a)', label: 'Cleared' },
+  archived:                  { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Archived' },
+  rejected:                  { bg: '#fcc3c3', fg: 'var(--bad, #7a0e0e)', label: 'Rejected' },
+  held_for_review:           { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Held for review' },
+  manually_cleared:          { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f5b3a)', label: 'Manually cleared' },
+  manually_rejected:         { bg: '#fcc3c3', fg: 'var(--bad, #7a0e0e)', label: 'Manually rejected' },
 };
 
 const TIER_TONE: Record<PtcTier, { bg: string; fg: string; label: string }> = {
-  micro:    { bg: '#e3e7ec', fg: '#557',    label: 'Micro' },
-  standard: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Standard' },
-  material: { bg: '#fff4d6', fg: '#a06200', label: 'Material' },
-  systemic: { bg: '#7a0e0e', fg: '#fff',    label: 'Systemic' },
+  micro:    { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Micro' },
+  standard: { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Standard' },
+  material: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Material' },
+  systemic: { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Systemic' },
 };
 
 const URGENCY_TONE: Record<PtcUrgency, { bg: string; fg: string; label: string }> = {
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-  medium:   { bg: '#daf5e2', fg: '#1f6b3a', label: 'Medium' },
-  high:     { bg: '#fff4d6', fg: '#a06200', label: 'High' },
-  critical: { bg: '#7a0e0e', fg: '#fff',    label: 'Critical' },
+  low:      { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Low' },
+  medium:   { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Medium' },
+  high:     { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'High' },
+  critical: { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Critical' },
 };
 
 const FILTERS: Array<{ key: string; label: string }> = [
@@ -424,10 +424,10 @@ export function PreTradeCreditChainTab() {
     <div className="p-5">
       <header className="mb-4 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">
+          <h2 className="text-lg font-semibold text-[var(--ink, #0c2a4d)]">
             Pre-Trade Credit Check &amp; Settlement-Risk Exposure — FMA Ch.X s50 + FSCA + BIS PFMI + CFTC Reg 1.73 + MiFID II Art 17
           </h2>
-          <p className="text-xs text-[#4a5568]">
+          <p className="text-xs text-[var(--ink-2, #4a5568)]">
             12-state P6 pre-trade gate upstream of every other Trader chain:
             order submitted {'->'} KYC verified {'->'} credit line checked {'->'} settlement risk assessed {'->'} concentration checked {'->'}
             halt status verified {'->'} mark age validated {'->'} cleared {'->'} archived, with hold-for-review / manually-clear /
@@ -451,14 +451,14 @@ export function PreTradeCreditChainTab() {
         <Kpi label="B-grade"          value={kpis.below_b_count} tone={kpis.below_b_count > 0 ? 'bad' : 'ok'} />
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-4 text-[11px] text-[#4a5568]">
-        <span>Reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
+      <div className="mb-3 flex flex-wrap items-center gap-4 text-[11px] text-[var(--ink-2, #4a5568)]">
+        <span>Reportable: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.reportable_total}</span></span>
         <span>Cross-border: <span className="font-semibold text-[#7a4500]">{kpis.cross_border_count}</span></span>
-        <span>Overridden: <span className="font-semibold text-[#9b1f1f]">{kpis.overridden_count}</span></span>
+        <span>Overridden: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.overridden_count}</span></span>
         <span>Bridges to trading risk: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.trading_risk_bridged_count}</span></span>
         <span>Bridges to position limit: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.position_limit_bridged_count}</span></span>
         <span>Bridges to counterparty margin: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.counterparty_margin_bridged_count}</span></span>
-        <span>Total notional: <span className="font-semibold text-[#1f5b3a]">{fmtZar(kpis.total_notional_zar)}</span></span>
+        <span>Total notional: <span className="font-semibold text-[var(--good, #1f5b3a)]">{fmtZar(kpis.total_notional_zar)}</span></span>
       </div>
 
       <div className="mb-3 flex flex-wrap gap-1.5">
@@ -469,7 +469,7 @@ export function PreTradeCreditChainTab() {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #4a5568)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -481,11 +481,11 @@ export function PreTradeCreditChainTab() {
         <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
       )}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-4 py-6 text-center text-sm text-[var(--ink-2, #4a5568)]">Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
+        <div className="overflow-hidden rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
           <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
+            <thead className="bg-[var(--s2, #f3f5f9)]">
               <tr className="text-left">
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Check #</th>
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Order / Counterparty</th>
@@ -507,17 +507,17 @@ export function PreTradeCreditChainTab() {
                   <tr
                     key={r.id}
                     onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
+                    className="cursor-pointer border-t border-[var(--border-subtle, #e3e7ec)] hover:bg-[var(--s1, #f8fafc)]"
                   >
-                    <td className="px-3 py-2 font-mono text-[#0c2a4d]">
+                    <td className="px-3 py-2 font-mono text-[var(--ink, #0c2a4d)]">
                       {r.check_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">REG</span>}
+                      {r.is_reportable_flag && <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #9b1f1f)]">REG</span>}
                     </td>
                     <td className="px-3 py-2" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       <div className="text-[11px] font-medium">{r.order_ref}</div>
-                      <div className="text-[10px] text-[#6b7685]">
+                      <div className="text-[10px] text-[var(--ink-2, #6b7685)]">
                         {r.counterparty_name ?? r.counterparty_id}
-                        {r.counterparty_credit_grade_below_B ? <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">B-GRADE</span> : null}
+                        {r.counterparty_credit_grade_below_B ? <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #9b1f1f)]">B-GRADE</span> : null}
                         {r.cross_border_settlement ? <span className="ml-1 text-[9px] font-semibold text-[#7a4500]">XB</span> : null}
                       </div>
                     </td>
@@ -526,9 +526,9 @@ export function PreTradeCreditChainTab() {
                         {tier.label}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#4a5568]">{fmtZar(r.notional_exposure_zar)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#4a5568]">{fmtPct(r.credit_line_utilization_pct_live ?? r.credit_line_utilization_pct)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#4a5568]">{(r.settlement_risk_score_live ?? r.settlement_risk_score)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[var(--ink-2, #4a5568)]">{fmtZar(r.notional_exposure_zar)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[var(--ink-2, #4a5568)]">{fmtPct(r.credit_line_utilization_pct_live ?? r.credit_line_utilization_pct)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[var(--ink-2, #4a5568)]">{(r.settlement_risk_score_live ?? r.settlement_risk_score)}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
                         {cs.label}
@@ -539,14 +539,14 @@ export function PreTradeCreditChainTab() {
                         {urgency.label}
                       </span>
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {r.sla_breached_live ? 'BREACHED' : fmtMsSla(r.ms_until_sla)}
                     </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-3 py-6 text-center text-[#4a5568]">No checks match.</td></tr>
+                <tr><td colSpan={9} className="px-3 py-6 text-center text-[var(--ink-2, #4a5568)]">No checks match.</td></tr>
               )}
             </tbody>
           </table>
@@ -561,10 +561,10 @@ export function PreTradeCreditChainTab() {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : 'var(--ink, #0c2a4d)';
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
+    <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
     </div>
   );
@@ -653,21 +653,21 @@ function Drawer({
   return (
     <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
       <div
-        className="absolute right-0 top-0 h-full w-full md:w-[760px] overflow-y-auto bg-white shadow-2xl"
+        className="absolute right-0 top-0 h-full w-full md:w-[760px] overflow-y-auto bg-surface-v2 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
+        <header className="border-b border-[var(--border-subtle, #d8dde6)] bg-[var(--s2, #f3f5f9)] px-5 py-3">
           <div className="flex items-start justify-between">
             <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.check_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.order_ref}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
+              <div className="font-mono text-[12px] text-[var(--ink-2, #4a5568)]">{row.check_number}</div>
+              <div className="text-base font-semibold text-[var(--ink, #0c2a4d)]">{row.order_ref}</div>
+              <div className="mt-1 text-[12px] text-[var(--ink-2, #4a5568)]">
                 {TIER_TONE[row.current_tier].label} - {row.counterparty_name ?? row.counterparty_id} - {fmtZar(row.notional_exposure_zar)}
               </div>
             </div>
             <button type="button"
               onClick={onClose}
-              className="rounded border border-[#d8dde6] bg-white px-2 py-1 text-[12px] text-[#445] hover:bg-[#f3f5f9]"
+              className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-2 py-1 text-[12px] text-[#445] hover:bg-[var(--s2, #f3f5f9)]"
             >
               Close
             </button>
@@ -683,15 +683,15 @@ function Drawer({
               </span>
             )}
             {row.authority_required_live && (
-              <span className="inline-block rounded border border-[#d8dde6] bg-white px-2 py-0.5 text-[#445]">
+              <span className="inline-block rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-2 py-0.5 text-[#445]">
                 Authority: {row.authority_required_live.replace(/_/g, ' ')}
               </span>
             )}
             {row.is_reportable_flag && (
-              <span className="inline-block rounded bg-[#fde0e0] px-2 py-0.5 font-semibold text-[#9b1f1f]">Reportable</span>
+              <span className="inline-block rounded bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] px-2 py-0.5 font-semibold text-[var(--bad, #9b1f1f)]">Reportable</span>
             )}
             {row.regulator_crossed_at && (
-              <span className="inline-block rounded bg-[#7a0e0e] px-2 py-0.5 font-semibold text-white">Regulator crossed</span>
+              <span className="inline-block rounded bg-[var(--bad, #7a0e0e)] px-2 py-0.5 font-semibold text-white">Regulator crossed</span>
             )}
           </div>
         </header>
@@ -806,19 +806,19 @@ function Drawer({
 
           {pendingAction && ACTION_FIELDS[pendingAction] && (
             <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-              <div className="w-full max-w-md rounded-lg border border-[#d8dde6] bg-white p-5 shadow-2xl">
-                <h3 className="mb-4 text-[13px] font-semibold text-[#0c2a4d]">{ACTION_LABEL[pendingAction]}</h3>
+              <div className="w-full max-w-md rounded-lg border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-5 shadow-2xl">
+                <h3 className="mb-4 text-[13px] font-semibold text-[var(--ink, #0c2a4d)]">{ACTION_LABEL[pendingAction]}</h3>
                 <div className="space-y-3">
                   {(ACTION_FIELDS[pendingAction] ?? []).map((f) => (
                     <div key={f.key}>
-                      <label className="mb-1 block text-[11px] font-medium text-[#4a5568]">
+                      <label className="mb-1 block text-[11px] font-medium text-[var(--ink-2, #4a5568)]">
                         {f.label}{f.required && <span className="ml-1 text-red-600">*</span>}
                       </label>
                       <input
                         type="text"
                         value={fieldValues[f.key] ?? ''}
                         onChange={(e) => setFieldValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                        className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[12px] text-[#0c2a4d] outline-none focus:border-[#c2873a]"
+                        className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1.5 text-[12px] text-[var(--ink, #0c2a4d)] outline-none focus:border-[#c2873a]"
                       />
                     </div>
                   ))}
@@ -838,19 +838,19 @@ function Drawer({
           <Section title="Timeline">
             <div className="space-y-2">
               {events.map((e) => (
-                <div key={e.id} className="rounded border border-[#d8dde6] bg-white px-3 py-2 text-[11px]">
+                <div key={e.id} className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2 text-[11px]">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[10px] text-[#6b7685]">{fmtDate(e.created_at)}</span>
+                    <span className="font-mono text-[var(--ink, #0c2a4d)]">{e.event_type}</span>
+                    <span className="text-[10px] text-[var(--ink-2, #6b7685)]">{fmtDate(e.created_at)}</span>
                   </div>
-                  <div className="mt-0.5 text-[10px] text-[#4a5568]">
+                  <div className="mt-0.5 text-[10px] text-[var(--ink-2, #4a5568)]">
                     {e.from_status ?? '-'} {'->'} {e.to_status ?? '-'} - actor {e.actor_party ?? e.actor_id ?? '-'}
                   </div>
                   {e.notes && <div className="mt-1 text-[11px] text-[#445]">{e.notes}</div>}
                 </div>
               ))}
               {events.length === 0 && (
-                <div className="rounded border border-dashed border-[#d8dde6] px-3 py-3 text-center text-[11px] text-[#6b7685]">
+                <div className="rounded border border-dashed border-[var(--border-subtle, #d8dde6)] px-3 py-3 text-center text-[11px] text-[var(--ink-2, #6b7685)]">
                   No events yet.
                 </div>
               )}
@@ -865,7 +865,7 @@ function Drawer({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[#4a5568]">{title}</h3>
+      <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{title}</h3>
       {children}
     </div>
   );
@@ -877,9 +877,9 @@ function Grid({ children }: { children: React.ReactNode }) {
 
 function Field({ k, v }: { k: string; v: string }) {
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-2 py-1.5">
-      <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">{k}</div>
-      <div className="text-[11px] font-medium text-[#0c2a4d]">{v}</div>
+    <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-2 py-1.5">
+      <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{k}</div>
+      <div className="text-[11px] font-medium text-[var(--ink, #0c2a4d)]">{v}</div>
     </div>
   );
 }
@@ -893,10 +893,10 @@ function ActionButton({
 }) {
   const bg =
     tone === 'primary' ? 'bg-[#c2873a] text-white' :
-    tone === 'ok'      ? 'bg-[#1f6b3a] text-white' :
+    tone === 'ok'      ? 'bg-[var(--good, #1f6b3a)] text-white' :
     tone === 'warn'    ? 'bg-[#a06200] text-white' :
-    tone === 'bad'     ? 'bg-[#7a0e0e] text-white' :
-                         'bg-white text-[#445] border border-[#d8dde6]';
+    tone === 'bad'     ? 'bg-[var(--bad, #7a0e0e)] text-white' :
+                         'bg-surface-v2 text-[#445] border border-[var(--border-subtle, #d8dde6)]';
   return (
     <button type="button"
       onClick={onClick}

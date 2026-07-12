@@ -2,7 +2,7 @@
 // WidgetPrimitives — shared chrome for all decision-support widgets.
 //
 // Aligned with the Stitch "Consolidated Energy Cockpit" design system:
-//   • Card surface = #ffffff with 1px outline #e2e8f0 and 8px radius
+//   • Card surface = #ffffff with 1px outline var(--border-subtle, #e2e8f0) and 8px radius
 //   • Card header  = Metropolis 14/600 title + IBM Plex 11/400 subtitle,
 //     low-contrast bottom separator
 //   • Control band = #f1f5f9 fill to demarcate slider inputs from data
@@ -96,9 +96,9 @@ export function WidgetSlider({
   return (
     <label className="block text-[11px]">
       <div className="flex justify-between items-baseline">
-        <span className="font-medium" style={{ color: '#3d4756' }}>{label}</span>
+        <span className="font-medium" style={{ color: 'var(--ink-2, #3d4756)' }}>{label}</span>
         <span className="font-mono font-semibold" style={{
-          color: '#0f1c2e', fontVariantNumeric: 'tabular-nums', fontSize: 11,
+          color: 'var(--ink, #0f1c2e)', fontVariantNumeric: 'tabular-nums', fontSize: 11,
         }}>{format(value)}</span>
       </div>
       <input

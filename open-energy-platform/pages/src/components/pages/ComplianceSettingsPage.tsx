@@ -121,8 +121,8 @@ function MfaTab() {
 
         {otpauth && secret && (
           <div className="mt-4 grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4 items-start">
-            <div className="p-2 rounded inline-block" style={{ background: '#fff', border: '1px solid oklch(0.87 0.006 250)' }}>
-              <QRCodeSVG value={otpauth} size={180} bgColor="#ffffff" fgColor="#0f1c2e" />
+            <div className="p-2 rounded inline-block" style={{ background: 'var(--s1, #fff)', border: '1px solid oklch(0.87 0.006 250)' }}>
+              <QRCodeSVG value={otpauth} size={180} bgColor="#ffffff" fgColor="var(--ink, #0f1c2e)" />
             </div>
             <div className="space-y-2 text-[12px]">
               <div>
@@ -158,7 +158,7 @@ function MfaTab() {
             <div className="mt-2 grid grid-cols-2 sm:grid-cols-5 gap-1 font-mono text-[11px]">
               {recoveryCodes.map((c) => (
                 <code key={c} className="block px-2 py-1 rounded text-center"
-                      style={{ background: '#fff', border: '1px solid oklch(0.87 0.006 250)' }}>{c}</code>
+                      style={{ background: 'var(--s1, #fff)', border: '1px solid oklch(0.87 0.006 250)' }}>{c}</code>
               ))}
             </div>
             <button type="button" onClick={() => setRecoveryCodes(null)}

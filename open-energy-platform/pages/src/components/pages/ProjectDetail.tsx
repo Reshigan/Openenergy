@@ -46,7 +46,7 @@ export function ProjectDetail() {
               type="button"
               onClick={() => navigate(`/projects/${id}/lifecycle`)}
               className="h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-1"
-              style={{ background: '#fff', color: 'oklch(0.46 0.16 55)' }}
+              style={{ background: 'var(--s1, #fff)', color: 'oklch(0.46 0.16 55)' }}
             >
               <OEIcon name="flow" size={14} /> Lifecycle timeline
             </button>

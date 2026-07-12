@@ -35,27 +35,27 @@ interface InboxRow {
 }
 
 const STATUS_TONE: Record<AckStatus, { bg: string; fg: string; label: string }> = {
-  pending: { bg: '#fff4d6', fg: '#a06200', label: 'Pending' },
-  acknowledged: { bg: '#daf5e2', fg: '#1f6b3a', label: 'Acknowledged' },
-  escalated: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Escalated' },
-  dismissed: { bg: '#f0f3f7', fg: '#445566', label: 'Dismissed' },
+  pending: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Pending' },
+  acknowledged: { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Acknowledged' },
+  escalated: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Escalated' },
+  dismissed: { bg: 'var(--s2, #f0f3f7)', fg: 'var(--ink-2, #445566)', label: 'Dismissed' },
 };
 
 const SEVERITY_TONE: Record<Severity, { bg: string; fg: string }> = {
-  critical: { bg: '#fde0e0', fg: '#9b1f1f' },
+  critical: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)' },
   high: { bg: '#ffe5cc', fg: '#a04200' },
-  medium: { bg: '#fff4d6', fg: '#a06200' },
+  medium: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: '#a06200' },
   low: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)' },
-  info: { bg: '#f0f3f7', fg: '#445566' },
+  info: { bg: 'var(--s2, #f0f3f7)', fg: 'var(--ink-2, #445566)' },
 };
 
 function slaTone(due: string | null, status: AckStatus): { bg: string; fg: string; label: string } {
-  if (!due) return { bg: '#f0f3f7', fg: '#445566', label: '—' };
-  if (status !== 'pending') return { bg: '#f0f3f7', fg: '#445566', label: new Date(due).toLocaleString() };
+  if (!due) return { bg: 'var(--s2, #f0f3f7)', fg: 'var(--ink-2, #445566)', label: '—' };
+  if (status !== 'pending') return { bg: 'var(--s2, #f0f3f7)', fg: 'var(--ink-2, #445566)', label: new Date(due).toLocaleString() };
   const dueMs = new Date(due).getTime();
   const now = Date.now();
-  if (dueMs < now) return { bg: '#fde0e0', fg: '#9b1f1f', label: `Overdue ${msAgo(now - dueMs)}` };
-  return { bg: '#daf5e2', fg: '#1f6b3a', label: `In ${msAgo(dueMs - now)}` };
+  if (dueMs < now) return { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: `Overdue ${msAgo(now - dueMs)}` };
+  return { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: `In ${msAgo(dueMs - now)}` };
 }
 
 function msAgo(ms: number): string {
@@ -136,22 +136,22 @@ export function InboxTab() {
             key={s}
             data-testid={`regulator-inbox-filter-${s}`}
             onClick={() => setFilter(s)}
-            className={`h-7 px-3 rounded-full text-[11px] font-semibold border ${filter === s ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]' : 'bg-white text-[#445566] border-[#d8dee6]'}`}
+            className={`h-7 px-3 rounded-full text-[11px] font-semibold border ${filter === s ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]' : 'bg-surface-v2 text-[var(--ink-2, #445566)] border-[var(--border-subtle, #d8dee6)]'}`}
           >
             {s === 'all' ? 'All' : STATUS_TONE[s].label}
           </button>
         ))}
-        <button type="button" onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[#d8dee6] bg-white text-[oklch(0.46_0.16_55)] ml-auto">
+        <button type="button" onClick={load} className="h-7 px-3 rounded-full text-[11px] font-semibold border border-[var(--border-subtle, #d8dee6)] bg-surface-v2 text-[oklch(0.46_0.16_55)] ml-auto">
           Refresh
         </button>
       </div>
 
-      {error && <div className="rounded-md border border-[#f0c2c0] bg-[#fcebea] text-[#9b1f1f] text-[12px] px-3 py-2">{error}</div>}
-      {loading && <div className="text-[12px] text-[#6b7685]">Loading…</div>}
+      {error && <div className="rounded-md border border-[#f0c2c0] bg-[#fcebea] text-[var(--bad, #9b1f1f)] text-[12px] px-3 py-2">{error}</div>}
+      {loading && <div className="text-[12px] text-[var(--ink-2, #6b7685)]">Loading…</div>}
 
       {/* Table */}
-      <div data-testid="regulator-inbox-table" className="border border-[#e5e9ee] rounded-md overflow-hidden">
-        <div className="grid grid-cols-[110px_1fr_140px_170px_140px] gap-2 px-3 py-2 bg-[#f7f9fb] text-[11px] uppercase font-bold text-[#6b7685]">
+      <div data-testid="regulator-inbox-table" className="border border-[var(--border-subtle, #e5e9ee)] rounded-md overflow-hidden">
+        <div className="grid grid-cols-[110px_1fr_140px_170px_140px] gap-2 px-3 py-2 bg-[var(--s1, #f7f9fb)] text-[11px] uppercase font-bold text-[var(--ink-2, #6b7685)]">
           <div>Severity</div>
           <div>Title</div>
           <div>Status</div>
@@ -159,7 +159,7 @@ export function InboxTab() {
           <div>Received</div>
         </div>
         {filtered.length === 0 && !loading && (
-          <div className="px-3 py-6 text-center text-[12px] text-[#6b7685]">
+          <div className="px-3 py-6 text-center text-[12px] text-[var(--ink-2, #6b7685)]">
             No inbox events match this filter.
           </div>
         )}
@@ -172,7 +172,7 @@ export function InboxTab() {
               key={r.id}
               data-testid={`regulator-inbox-row-${r.id}`}
               onClick={() => setDrillId(r.id)}
-              className="w-full grid grid-cols-[110px_1fr_140px_170px_140px] gap-2 px-3 py-2 border-t border-[#e5e9ee] text-left text-[12px] hover:bg-[#f7f9fb]"
+              className="w-full grid grid-cols-[110px_1fr_140px_170px_140px] gap-2 px-3 py-2 border-t border-[var(--border-subtle, #e5e9ee)] text-left text-[12px] hover:bg-[var(--s1, #f7f9fb)]"
             >
               <div>
                 <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold" style={{ background: sv.bg, color: sv.fg }}>
@@ -190,7 +190,7 @@ export function InboxTab() {
                   {sla.label}
                 </span>
               </div>
-              <div className="font-mono text-[10px] text-[#6b7685]">
+              <div className="font-mono text-[10px] text-[var(--ink-2, #6b7685)]">
                 {new Date(r.created_at).toLocaleString()}
               </div>
             </button>
@@ -200,15 +200,15 @@ export function InboxTab() {
 
       {/* Drill-down */}
       {drillRow && (
-        <div data-testid="regulator-inbox-drill" className="border border-[oklch(0.46_0.16_55)] rounded-md p-4 bg-[#f7f9fb] space-y-3">
+        <div data-testid="regulator-inbox-drill" className="border border-[oklch(0.46_0.16_55)] rounded-md p-4 bg-[var(--s1, #f7f9fb)] space-y-3">
           <div className="flex justify-between items-start">
             <div>
-              <div className="text-[11px] uppercase font-bold text-[#6b7685]">
+              <div className="text-[11px] uppercase font-bold text-[var(--ink-2, #6b7685)]">
                 {drillRow.source_event} · {drillRow.source_entity_type}/{drillRow.source_entity_id.slice(0, 12)}…
               </div>
               <div className="text-[14px] font-bold text-[oklch(0.46_0.16_55)]">{drillRow.title}</div>
             </div>
-            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685] hover:text-[oklch(0.46_0.16_55)]">Close ×</button>
+            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[var(--ink-2, #6b7685)] hover:text-[oklch(0.46_0.16_55)]">Close ×</button>
           </div>
           <div className="grid grid-cols-2 gap-3 text-[12px]">
             <Field label="Status" value={STATUS_TONE[drillRow.ack_status].label} />
@@ -225,7 +225,7 @@ export function InboxTab() {
           {drillRow.body_json && (
             <details className="text-[11px]">
               <summary className="cursor-pointer text-[oklch(0.46_0.16_55)] font-semibold">Event payload</summary>
-              <pre className="mt-2 p-2 bg-white border border-[#e5e9ee] rounded font-mono text-[10px] overflow-auto whitespace-pre-wrap">
+              <pre className="mt-2 p-2 bg-surface-v2 border border-[var(--border-subtle, #e5e9ee)] rounded font-mono text-[10px] overflow-auto whitespace-pre-wrap">
                 {(() => {
                   try { return JSON.stringify(JSON.parse(drillRow.body_json!), null, 2); }
                   catch { return drillRow.body_json; }
@@ -235,19 +235,19 @@ export function InboxTab() {
           )}
 
           {drillRow.ack_status === 'pending' && (
-            <div data-testid="regulator-inbox-actions" className="border-t border-[#d8dee6] pt-3 space-y-2">
+            <div data-testid="regulator-inbox-actions" className="border-t border-[var(--border-subtle, #d8dee6)] pt-3 space-y-2">
               <input
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Add a triage note (optional)"
-                className="w-full h-9 px-3 rounded border border-[#d8dee6] text-[12px]"
+                className="w-full h-9 px-3 rounded border border-[var(--border-subtle, #d8dee6)] text-[12px]"
               />
               <div className="flex gap-2 flex-wrap">
                 <button type="button"
                   data-testid="regulator-inbox-ack"
                   disabled={busy}
                   onClick={() => run('ack', { note })}
-                  className="h-8 px-3 rounded bg-[#1f6b3a] text-white text-[11px] font-semibold disabled:opacity-50"
+                  className="h-8 px-3 rounded bg-[var(--good, #1f6b3a)] text-white text-[11px] font-semibold disabled:opacity-50"
                 >
                   Acknowledge
                 </button>
@@ -255,7 +255,7 @@ export function InboxTab() {
                   data-testid="regulator-inbox-escalate"
                   disabled={busy}
                   onClick={() => run('escalate', { reason: note, open_case: true })}
-                  className="h-8 px-3 rounded bg-[#9b1f1f] text-white text-[11px] font-semibold disabled:opacity-50"
+                  className="h-8 px-3 rounded bg-[var(--bad, #9b1f1f)] text-white text-[11px] font-semibold disabled:opacity-50"
                 >
                   Escalate &amp; open case
                 </button>
@@ -263,7 +263,7 @@ export function InboxTab() {
                   data-testid="regulator-inbox-dismiss"
                   disabled={busy}
                   onClick={() => run('dismiss', { note })}
-                  className="h-8 px-3 rounded border border-[#d8dee6] bg-white text-[#445566] text-[11px] font-semibold disabled:opacity-50"
+                  className="h-8 px-3 rounded border border-[var(--border-subtle, #d8dee6)] bg-surface-v2 text-[var(--ink-2, #445566)] text-[11px] font-semibold disabled:opacity-50"
                 >
                   Dismiss
                 </button>
@@ -277,10 +277,10 @@ export function InboxTab() {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'good' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'good' ? '#1f6b3a' : 'oklch(0.46 0.16 55)';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : tone === 'good' ? 'var(--good, #1f6b3a)' : 'oklch(0.46 0.16 55)';
   return (
-    <div className="bg-white border border-[#e5e9ee] rounded-md p-3">
-      <div className="text-[10px] uppercase font-bold text-[#6b7685]">{label}</div>
+    <div className="bg-surface-v2 border border-[var(--border-subtle, #e5e9ee)] rounded-md p-3">
+      <div className="text-[10px] uppercase font-bold text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className="text-[20px] font-bold" style={{ color }}>{value}</div>
     </div>
   );
@@ -289,7 +289,7 @@ function Kpi({ label, value, tone }: { label: string; value: number | string; to
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[10px] uppercase font-bold text-[#6b7685]">{label}</div>
+      <div className="text-[10px] uppercase font-bold text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className="text-[12px] text-[oklch(0.46_0.16_55)]">{value}</div>
     </div>
   );

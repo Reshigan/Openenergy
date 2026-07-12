@@ -42,20 +42,20 @@ function VintageRetirementSchedule({ vintages }: { vintages: Vintage[] }) {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Vintage retirement schedule</div>
-        <div className="text-[11px] text-[#6b7685]">Issued vs retired tCO₂e by vintage year</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Vintage retirement schedule</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Issued vs retired tCO₂e by vintage year</div>
       </header>
       <div style={{ height: 220 }} className="px-2 pt-3">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 12, bottom: 12, left: 0 }}>
-            <CartesianGrid stroke="#eef2f7" />
-            <XAxis dataKey="year" tick={{ fontSize: 10, fill: '#6b7685' }} />
-            <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `${(v / 1_000).toFixed(0)}k`} />
+            <CartesianGrid stroke="var(--s2, #eef2f7)" />
+            <XAxis dataKey="year" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} />
+            <YAxis tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => `${(v / 1_000).toFixed(0)}k`} />
             <Tooltip formatter={(v: any) => `${Number(v).toLocaleString()} tCO₂e`} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Bar isAnimationActive={false} dataKey="issued"  name="Issued"      stackId="x" fill="oklch(0.46 0.16 55)" />
-            <Bar isAnimationActive={false} dataKey="retired" name="Retired"     stackId="x" fill="#1a8a5b" />
+            <Bar isAnimationActive={false} dataKey="retired" name="Retired"     stackId="x" fill="var(--good, #1a8a5b)" />
             <Line isAnimationActive={false} type="monotone" dataKey="outstanding" name="Outstanding" stroke="#b04e0f" strokeWidth={2} dot={false} />
           </ComposedChart>
         </ResponsiveContainer>
@@ -90,13 +90,13 @@ function MethodologyComparison({ vintages }: { vintages: Vintage[] }) {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Methodology comparison</div>
-        <div className="text-[11px] text-[#6b7685]">Volume / avg price / retirement velocity by methodology</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Methodology comparison</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Volume / avg price / retirement velocity by methodology</div>
       </header>
       <div className="p-3 overflow-x-auto">
         <table className="w-full text-[12px]">
-          <thead className="text-[10px] text-[#6b7685] uppercase">
+          <thead className="text-[10px] text-[var(--ink-2, #6b7685)] uppercase">
             <tr><th className="text-left py-1">Methodology</th>
                 <th className="text-right py-1">Volume (tCO₂e)</th>
                 <th className="text-right py-1">Avg R/t</th>
@@ -104,7 +104,7 @@ function MethodologyComparison({ vintages }: { vintages: Vintage[] }) {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.methodology} className="border-t border-[#eef2f7]">
+              <tr key={r.methodology} className="border-t border-[var(--s2, #eef2f7)]">
                 <td className="py-1.5 capitalize">{r.methodology.replace(/_/g, ' ')}</td>
                 <td className="py-1.5 text-right font-mono">{r.tonnes.toLocaleString()}</td>
                 <td className="py-1.5 text-right font-mono">{r.avgPrice == null ? '—' : `R${r.avgPrice.toFixed(0)}`}</td>

@@ -72,7 +72,7 @@ type OfftakerOptions = {
 function Card({ label, value, unit }: { label: string; value: number | null | undefined; unit?: string }) {
   const formatted = value != null ? `${Number(value).toLocaleString()}${unit ? ' ' + unit : ''}` : '—';
   return (
-    <div className="rounded-lg border border-[var(--line)] bg-white p-4">
+    <div className="rounded-lg border border-[var(--line)] bg-surface-v2 p-4">
       <div className="text-[10px] uppercase tracking-wider text-[var(--ink3)]">{label}</div>
       <div className="text-[20px] font-semibold text-[var(--ink)] mt-1">{formatted}</div>
     </div>
@@ -91,7 +91,7 @@ function OptionGroup({
   return (
     <div>
       <div className="text-[12px] font-semibold text-[var(--ink3)] mb-2">{title}</div>
-      <div className="rounded-lg border border-[var(--line)] bg-white overflow-x-auto text-[var(--ink)]">
+      <div className="rounded-lg border border-[var(--line)] bg-surface-v2 overflow-x-auto text-[var(--ink)]">
         <table className="w-full text-[12px]">
           <thead className="bg-[var(--raised)] text-[var(--ink3)]">
             <tr>
@@ -168,7 +168,7 @@ function RiskCard({ risk }: { risk: string | undefined }) {
 function BarRow({ label, value, tone }: { label: string; value: number; tone: 'good' | 'warn' | 'bad' }) {
   const color = tone === 'bad' ? 'var(--oxide-deep)' : tone === 'warn' ? 'var(--amber-deep)' : 'var(--moss-deep)';
   return (
-    <div className="rounded-lg border border-[var(--line)] bg-white p-3">
+    <div className="rounded-lg border border-[var(--line)] bg-surface-v2 p-3">
       <div className="flex justify-between items-baseline">
         <span className="text-[11px] uppercase tracking-wider text-[var(--ink3)]">{label}</span>
         <span className="text-[13px] font-semibold text-[var(--ink)]">{value.toFixed(1)}%</span>
@@ -356,11 +356,11 @@ export default function BillsSurface(_props: { role: string }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <label className="block text-[13px]">
           <span className="text-[var(--ink3)]">Site</span>
-          <input value={siteName} onChange={(e) => setSiteName(e.target.value)} className="mt-1 h-9 w-full px-3 border border-[var(--line)] rounded-md text-[13px] bg-white" />
+          <input value={siteName} onChange={(e) => setSiteName(e.target.value)} className="mt-1 h-9 w-full px-3 border border-[var(--line)] rounded-md text-[13px] bg-surface-v2" />
         </label>
         <label className="block text-[13px]">
           <span className="text-[var(--ink3)]">Billing period (YYYY-MM)</span>
-          <input value={period} onChange={(e) => setPeriod(e.target.value)} className="mt-1 h-9 w-full px-3 border border-[var(--line)] rounded-md text-[13px] bg-white" />
+          <input value={period} onChange={(e) => setPeriod(e.target.value)} className="mt-1 h-9 w-full px-3 border border-[var(--line)] rounded-md text-[13px] bg-surface-v2" />
         </label>
         <label className="block text-[13px]">
           <span className="text-[var(--ink3)]">Upload .txt / .csv extract</span>
@@ -371,7 +371,7 @@ export default function BillsSurface(_props: { role: string }) {
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder={`Paste extracted bill text here, e.g.:\n\nESKOM MEGAFLEX — period ${period}\nDemand charge       2,500 kVA   R 535,500\nEnergy (peak)     180,000 kWh   R 1,140,300\nEnergy (standard) 540,000 kWh   R 1,118,400\nEnergy (off-peak) 280,000 kWh   R   316,400\nTotal energy    1,000,000 kWh\n\nOr leave blank to use the sample profile for ${siteName}.`}
-        className="w-full h-32 px-3 py-2 border border-[var(--line)] rounded-md text-[12px] font-mono bg-white text-[var(--ink)]"
+        className="w-full h-32 px-3 py-2 border border-[var(--line)] rounded-md text-[12px] font-mono bg-surface-v2 text-[var(--ink)]"
       />
       <div className="flex justify-end gap-2">
         <button type="button"
@@ -412,7 +412,7 @@ export default function BillsSurface(_props: { role: string }) {
       {mix && mix.mix && mix.mix.length > 0 && (
         <div>
           <h3 className="text-[13px] font-semibold text-[var(--ink2)] mb-2">Recommended PPA mix · 15 yr horizon</h3>
-          <div className="rounded-lg border border-[var(--line)] bg-white overflow-x-auto text-[var(--ink)]">
+          <div className="rounded-lg border border-[var(--line)] bg-surface-v2 overflow-x-auto text-[var(--ink)]">
             <table className="w-full text-[12px]">
               <thead className="bg-[var(--raised)] text-[var(--ink3)]">
                 <tr>
@@ -439,7 +439,7 @@ export default function BillsSurface(_props: { role: string }) {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
             <Card label="Estimated savings" value={mix.savings_pct} unit="%" />
             <Card label="Annual CO₂ avoided" value={mix.carbon_tco2e} unit="tCO₂e" />
-            <div className="rounded-lg border border-[var(--line)] bg-white p-4 flex flex-col justify-between">
+            <div className="rounded-lg border border-[var(--line)] bg-surface-v2 p-4 flex flex-col justify-between">
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-[var(--ink3)]">Next step</div>
                 <div className="text-[13px] mt-1 text-[var(--ink)]">Draft an LOI to every developer in this mix. Each one lands in the developer's action queue.</div>
@@ -484,7 +484,7 @@ export default function BillsSurface(_props: { role: string }) {
             No bills analysed yet — paste one above to start.
           </div>
         ) : (
-          <div className="rounded-lg border border-[var(--line)] bg-white overflow-x-auto text-[var(--ink)]">
+          <div className="rounded-lg border border-[var(--line)] bg-surface-v2 overflow-x-auto text-[var(--ink)]">
             <table className="w-full text-[12px]">
               <thead className="bg-[var(--raised)] text-[var(--ink3)]">
                 <tr>

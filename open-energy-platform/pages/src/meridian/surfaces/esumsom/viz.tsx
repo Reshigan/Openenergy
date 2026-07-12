@@ -36,7 +36,7 @@ const urgencyColor = (days: number): string =>
 // ─── chrome ─────────────────────────────────────────────────────────────────
 export function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <section className="widget-card" style={{ border: `1px solid ${GRID}`, borderRadius: 12, background: '#fff', overflow: 'hidden' }}>
+    <section className="widget-card" style={{ border: `1px solid ${GRID}`, borderRadius: 12, background: 'var(--s1, #fff)', overflow: 'hidden' }}>
       <header className="px-4 py-3" style={{ borderBottom: `1px solid ${GRID}` }}>
         <h3 className="text-[13px] font-semibold" style={{ color: INK }}>{title}</h3>
         {subtitle && <p className="text-[11px] mt-0.5" style={{ color: MUTED }}>{subtitle}</p>}
@@ -115,7 +115,7 @@ function PredictionsCharts({ rows }: { rows: Record<string, unknown>[] }) {
               const p = payload?.[0]?.payload as (typeof scatter)[number] | undefined;
               if (!p) return null;
               return (
-                <div style={{ background: '#fff', border: `1px solid ${GRID}`, borderRadius: 8, padding: '6px 8px', fontSize: 11 }}>
+                <div style={{ background: 'var(--s1, #fff)', border: `1px solid ${GRID}`, borderRadius: 8, padding: '6px 8px', fontSize: 11 }}>
                   <div style={{ fontWeight: 600, color: INK }}>{p.site} · {p.type}</div>
                   <div style={{ color: MUTED }}>{p.y}% confidence · ~{p.x}d out</div>
                   <div style={{ color: BAD }}>{zar.format(p.z)} at risk</div>

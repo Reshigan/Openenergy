@@ -46,8 +46,8 @@ interface SummaryData {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  identified:                  'bg-[#eef2f7] text-[#2d3748]',
-  notified:                    'bg-[#eef2f7] text-[#3d4756]',
+  identified:                  'bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)]',
+  notified:                    'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   acknowledged:                'bg-cyan-100 text-cyan-700',
   in_rectification:            'bg-yellow-100 text-yellow-800',
   rectified_pending_inspection:'bg-orange-100 text-orange-700',
@@ -55,15 +55,15 @@ const STATUS_COLORS: Record<string, string> = {
   closed:                      'bg-green-100 text-green-700',
   disputed:                    'bg-red-100 text-red-700',
   escalated_to_ncr:            'bg-red-200 text-red-800',
-  waived:                      'bg-[#eef2f7] text-[#6b7685]',
-  cancelled:                   'bg-[#eef2f7] text-[#9aa5b4]',
+  waived:                      'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
+  cancelled:                   'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]',
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
   critical: 'bg-red-100 text-red-800',
   major:    'bg-orange-100 text-orange-800',
   minor:    'bg-yellow-100 text-yellow-800',
-  cosmetic: 'bg-[#eef2f7] text-[#3d4756]',
+  cosmetic: 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
 };
 
 const ACTION_MAP: Record<string, { label: string; next_states: string[] }> = {
@@ -105,7 +105,7 @@ function slaLabel(d: DlpDefect) {
   const hrs = Math.round((new Date(d.sla_deadline).getTime() - Date.now()) / 3_600_000);
   if (hrs < 0) return <span className="text-red-600 text-xs">Overdue</span>;
   if (hrs < 24) return <span className="text-orange-600 text-xs">{hrs}h left</span>;
-  return <span className="text-[#6b7685] text-xs">{Math.round(hrs / 24)}d left</span>;
+  return <span className="text-[var(--ink-2, #6b7685)] text-xs">{Math.round(hrs / 24)}d left</span>;
 }
 
 export function IppDlpDefectTab() {
@@ -179,14 +179,14 @@ export function IppDlpDefectTab() {
     ? Object.entries(ACTION_MAP).filter(([, v]) => v.next_states.includes(selected.status)).map(([k]) => k)
     : [];
 
-  if (loading) return <div className="p-6 text-[#9aa5b4]">Loading DLP defects…</div>;
+  if (loading) return <div className="p-6 text-[var(--ink-2, #9aa5b4)]">Loading DLP defects…</div>;
 
   return (
     <div className="space-y-4">
       {/* KPI Bar */}
       <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
         {[
-          { label: 'Total', value: summary?.total ?? 0, color: 'text-[#1e2a38]' },
+          { label: 'Total', value: summary?.total ?? 0, color: 'text-[var(--ink, #1e2a38)]' },
           { label: 'Open', value: summary?.open_count ?? 0, color: 'text-[oklch(0.46_0.16_55)]' },
           { label: 'Critical', value: summary?.critical_count ?? 0, color: 'text-red-700' },
           { label: 'Escalated', value: summary?.escalated_count ?? 0, color: 'text-red-800' },
@@ -195,9 +195,9 @@ export function IppDlpDefectTab() {
           { label: 'Reportable', value: summary?.reportable_total ?? 0, color: 'text-purple-700' },
           { label: 'Closed', value: summary?.closed_count ?? 0, color: 'text-green-700' },
         ].map(k => (
-          <div key={k.label} className="bg-white border border-[#dde4ec] rounded-lg p-3 text-center">
+          <div key={k.label} className="bg-surface-v2 border border-[var(--border-subtle, #dde4ec)] rounded-lg p-3 text-center">
             <div className={`text-2xl font-bold ${k.color}`}>{k.value}</div>
-            <div className="text-xs text-[#6b7685] mt-0.5">{k.label}</div>
+            <div className="text-xs text-[var(--ink-2, #6b7685)] mt-0.5">{k.label}</div>
           </div>
         ))}
       </div>
@@ -209,14 +209,14 @@ export function IppDlpDefectTab() {
             <button type="button" key={f.key}
               onClick={() => setFilter(f.key)}
               className={`px-3 py-1 rounded text-xs font-medium border transition-colors ${
-                filter === f.key ? 'bg-[#c2873a] text-white border-[#c2873a]' : 'bg-white text-[#2d3748] border-[#dde4ec] hover:border-[#c2873a]'
+                filter === f.key ? 'bg-[#c2873a] text-white border-[#c2873a]' : 'bg-surface-v2 text-[var(--ink, #2d3748)] border-[var(--border-subtle, #dde4ec)] hover:border-[#c2873a]'
               }`}
             >{f.label}</button>
           ))}
         </div>
         <div className="flex gap-2 items-center">
           <select value={period} onChange={e => setPeriod(e.target.value)}
-            className="text-xs border border-[#dde4ec] rounded px-2 py-1">
+            className="text-xs border border-[var(--border-subtle, #dde4ec)] rounded px-2 py-1">
             <option value="month">This month</option>
             <option value="ytd">YTD</option>
             <option value="1y">12 months</option>
@@ -233,7 +233,7 @@ export function IppDlpDefectTab() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#dde4ec] text-left text-xs text-[#6b7685] uppercase tracking-wide">
+            <tr className="border-b border-[var(--border-subtle, #dde4ec)] text-left text-xs text-[var(--ink-2, #6b7685)] uppercase tracking-wide">
               <th className="pb-2 pr-4">Ref / Date</th>
               <th className="pb-2 pr-4">Project</th>
               <th className="pb-2 pr-4">Severity</th>
@@ -243,23 +243,23 @@ export function IppDlpDefectTab() {
               <th className="pb-2">Flags</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#eef2f7]">
+          <tbody className="divide-y divide-[var(--s2, #eef2f7)]">
             {filtered.map(d => (
               <tr key={d.id} onClick={() => setSelected(d)}
-                className="cursor-pointer hover:bg-[#eef2f7] transition-colors">
+                className="cursor-pointer hover:bg-[var(--s2, #eef2f7)] transition-colors">
                 <td className="py-2 pr-4">
-                  <div className="font-medium text-[#0f1c2e]">{d.defect_ref ?? d.id.slice(-6)}</div>
-                  <div className="text-xs text-[#9aa5b4]">{fmt(d.identified_at)}</div>
+                  <div className="font-medium text-[var(--ink, #0f1c2e)]">{d.defect_ref ?? d.id.slice(-6)}</div>
+                  <div className="text-xs text-[var(--ink-2, #9aa5b4)]">{fmt(d.identified_at)}</div>
                 </td>
-                <td className="py-2 pr-4 text-[#3d4756] text-xs max-w-[120px] truncate">{d.project_name ?? d.project_id}</td>
+                <td className="py-2 pr-4 text-[var(--ink-2, #3d4756)] text-xs max-w-[120px] truncate">{d.project_name ?? d.project_id}</td>
                 <td className="py-2 pr-4">
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${SEVERITY_COLORS[d.severity_class] ?? 'bg-[#eef2f7] text-[#2d3748]'}`}>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${SEVERITY_COLORS[d.severity_class] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)]'}`}>
                     {d.severity_class}
                   </span>
                 </td>
-                <td className="py-2 pr-4 text-[#2d3748] max-w-[200px] truncate">{d.description}</td>
+                <td className="py-2 pr-4 text-[var(--ink, #2d3748)] max-w-[200px] truncate">{d.description}</td>
                 <td className="py-2 pr-4">
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[d.status] ?? 'bg-[#eef2f7] text-[#2d3748]'}`}>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[d.status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)]'}`}>
                     {statusLabel(d.status).text}
                   </span>
                 </td>
@@ -275,7 +275,7 @@ export function IppDlpDefectTab() {
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} className="py-8 text-center text-[#9aa5b4]">No defects match this filter</td></tr>
+              <tr><td colSpan={7} className="py-8 text-center text-[var(--ink-2, #9aa5b4)]">No defects match this filter</td></tr>
             )}
           </tbody>
         </table>
@@ -284,15 +284,15 @@ export function IppDlpDefectTab() {
       {/* Detail Drawer */}
       {selected && (
         <div className="fixed inset-0 z-50 flex" onClick={() => setSelected(null)}>
-          <div className="ml-auto w-full max-w-lg bg-white shadow-xl border-l border-[#dde4ec] overflow-y-auto"
+          <div className="ml-auto w-full max-w-lg bg-surface-v2 shadow-xl border-l border-[var(--border-subtle, #dde4ec)] overflow-y-auto"
             onClick={e => e.stopPropagation()}>
             <div className="p-6 space-y-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-lg font-semibold text-[#0f1c2e]">{selected.defect_ref ?? 'DFR'}</h3>
-                  <p className="text-sm text-[#6b7685]">{selected.project_name ?? selected.project_id}</p>
+                  <h3 className="text-lg font-semibold text-[var(--ink, #0f1c2e)]">{selected.defect_ref ?? 'DFR'}</h3>
+                  <p className="text-sm text-[var(--ink-2, #6b7685)]">{selected.project_name ?? selected.project_id}</p>
                 </div>
-                <button type="button" onClick={() => setSelected(null)} className="text-[#9aa5b4] hover:text-[#3d4756]">✕</button>
+                <button type="button" onClick={() => setSelected(null)} className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink-2, #3d4756)]">✕</button>
               </div>
 
               <div className="flex gap-2 flex-wrap">
@@ -309,30 +309,30 @@ export function IppDlpDefectTab() {
               </div>
 
               <div>
-                <div className="text-xs text-[#6b7685] mb-1">Description</div>
-                <p className="text-sm text-[#1e2a38]">{selected.description}</p>
+                <div className="text-xs text-[var(--ink-2, #6b7685)] mb-1">Description</div>
+                <p className="text-sm text-[var(--ink, #1e2a38)]">{selected.description}</p>
               </div>
 
               {selected.location_description && (
                 <div>
-                  <div className="text-xs text-[#6b7685] mb-1">Location</div>
-                  <p className="text-sm text-[#2d3748]">{selected.location_description}</p>
+                  <div className="text-xs text-[var(--ink-2, #6b7685)] mb-1">Location</div>
+                  <p className="text-sm text-[var(--ink, #2d3748)]">{selected.location_description}</p>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><span className="text-xs text-[#6b7685]">Type</span><br />{selected.defect_type ?? '—'}</div>
-                <div><span className="text-xs text-[#6b7685]">Contractor</span><br />{selected.responsible_contractor ?? '—'}</div>
-                <div><span className="text-xs text-[#6b7685]">SLA ({selected.sla_hours}h)</span><br />{slaLabel(selected)}</div>
-                <div><span className="text-xs text-[#6b7685]">DLP Expires</span><br />{fmt(selected.dlp_end_date)}</div>
-                {selected.ncr_ref && <div><span className="text-xs text-[#6b7685]">NCR Ref</span><br />{selected.ncr_ref}</div>}
-                {selected.ei_ref && <div><span className="text-xs text-[#6b7685]">EI Ref</span><br />{selected.ei_ref}</div>}
-                {selected.si_ref && <div><span className="text-xs text-[#6b7685]">SI Ref</span><br />{selected.si_ref}</div>}
+                <div><span className="text-xs text-[var(--ink-2, #6b7685)]">Type</span><br />{selected.defect_type ?? '—'}</div>
+                <div><span className="text-xs text-[var(--ink-2, #6b7685)]">Contractor</span><br />{selected.responsible_contractor ?? '—'}</div>
+                <div><span className="text-xs text-[var(--ink-2, #6b7685)]">SLA ({selected.sla_hours}h)</span><br />{slaLabel(selected)}</div>
+                <div><span className="text-xs text-[var(--ink-2, #6b7685)]">DLP Expires</span><br />{fmt(selected.dlp_end_date)}</div>
+                {selected.ncr_ref && <div><span className="text-xs text-[var(--ink-2, #6b7685)]">NCR Ref</span><br />{selected.ncr_ref}</div>}
+                {selected.ei_ref && <div><span className="text-xs text-[var(--ink-2, #6b7685)]">EI Ref</span><br />{selected.ei_ref}</div>}
+                {selected.si_ref && <div><span className="text-xs text-[var(--ink-2, #6b7685)]">SI Ref</span><br />{selected.si_ref}</div>}
               </div>
 
               {!HARD_TERMINALS.includes(selected.status) && availableActions.length > 0 && (
                 <div>
-                  <div className="text-xs text-[#6b7685] mb-2">Actions</div>
+                  <div className="text-xs text-[var(--ink-2, #6b7685)] mb-2">Actions</div>
                   <div className="flex flex-wrap gap-2">
                     {availableActions.map(action => (
                       <button type="button" key={action}
@@ -351,7 +351,7 @@ export function IppDlpDefectTab() {
                         className={`px-3 py-1 rounded text-xs font-medium border transition-colors ${
                           action === 'ie_reject' || action === 'cancel_defect'
                             ? 'border-red-300 text-red-700 hover:bg-red-50'
-                            : 'border-[#dde4ec] hover:bg-[#eef2f7]'
+                            : 'border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--s2, #eef2f7)]'
                         } disabled:opacity-50`}
                       >
                         {ACTION_MAP[action]?.label ?? action}
@@ -368,29 +368,29 @@ export function IppDlpDefectTab() {
       {/* Create Modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center" onClick={() => setShowCreate(false)}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-[#0f1c2e]">Log Defect</h3>
+          <div className="bg-surface-v2 rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-[var(--ink, #0f1c2e)]">Log Defect</h3>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <label className="text-xs text-[#3d4756] block mb-1">Description *</label>
+                <label className="text-xs text-[var(--ink-2, #3d4756)] block mb-1">Description *</label>
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  className="w-full border border-[#dde4ec] rounded px-3 py-1.5 text-sm" rows={2} />
+                  className="w-full border border-[var(--border-subtle, #dde4ec)] rounded px-3 py-1.5 text-sm" rows={2} />
               </div>
               <div>
-                <label className="text-xs text-[#3d4756] block mb-1">Project ID *</label>
+                <label className="text-xs text-[var(--ink-2, #3d4756)] block mb-1">Project ID *</label>
                 <input value={form.project_id} onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))}
-                  className="w-full border border-[#dde4ec] rounded px-3 py-1.5 text-sm" />
+                  className="w-full border border-[var(--border-subtle, #dde4ec)] rounded px-3 py-1.5 text-sm" />
               </div>
               <div>
-                <label className="text-xs text-[#3d4756] block mb-1">Project name</label>
+                <label className="text-xs text-[var(--ink-2, #3d4756)] block mb-1">Project name</label>
                 <input value={form.project_name} onChange={e => setForm(f => ({ ...f, project_name: e.target.value }))}
-                  className="w-full border border-[#dde4ec] rounded px-3 py-1.5 text-sm" />
+                  className="w-full border border-[var(--border-subtle, #dde4ec)] rounded px-3 py-1.5 text-sm" />
               </div>
               <div>
-                <label className="text-xs text-[#3d4756] block mb-1">Severity *</label>
+                <label className="text-xs text-[var(--ink-2, #3d4756)] block mb-1">Severity *</label>
                 <select value={form.severity_class} onChange={e => setForm(f => ({ ...f, severity_class: e.target.value }))}
-                  className="w-full border border-[#dde4ec] rounded px-3 py-1.5 text-sm">
+                  className="w-full border border-[var(--border-subtle, #dde4ec)] rounded px-3 py-1.5 text-sm">
                   <option value="critical">Critical (24h)</option>
                   <option value="major">Major (72h)</option>
                   <option value="minor">Minor (168h)</option>
@@ -398,22 +398,22 @@ export function IppDlpDefectTab() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-[#3d4756] block mb-1">Type</label>
+                <label className="text-xs text-[var(--ink-2, #3d4756)] block mb-1">Type</label>
                 <select value={form.defect_type} onChange={e => setForm(f => ({ ...f, defect_type: e.target.value }))}
-                  className="w-full border border-[#dde4ec] rounded px-3 py-1.5 text-sm">
+                  className="w-full border border-[var(--border-subtle, #dde4ec)] rounded px-3 py-1.5 text-sm">
                   {['structural','mechanical','electrical','civil','architectural','other'].map(t =>
                     <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs text-[#3d4756] block mb-1">Location</label>
+                <label className="text-xs text-[var(--ink-2, #3d4756)] block mb-1">Location</label>
                 <input value={form.location_description} onChange={e => setForm(f => ({ ...f, location_description: e.target.value }))}
-                  className="w-full border border-[#dde4ec] rounded px-3 py-1.5 text-sm" />
+                  className="w-full border border-[var(--border-subtle, #dde4ec)] rounded px-3 py-1.5 text-sm" />
               </div>
               <div>
-                <label className="text-xs text-[#3d4756] block mb-1">Responsible contractor</label>
+                <label className="text-xs text-[var(--ink-2, #3d4756)] block mb-1">Responsible contractor</label>
                 <input value={form.responsible_contractor} onChange={e => setForm(f => ({ ...f, responsible_contractor: e.target.value }))}
-                  className="w-full border border-[#dde4ec] rounded px-3 py-1.5 text-sm" />
+                  className="w-full border border-[var(--border-subtle, #dde4ec)] rounded px-3 py-1.5 text-sm" />
               </div>
             </div>
 
@@ -432,7 +432,7 @@ export function IppDlpDefectTab() {
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
-              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-1.5 text-sm text-[#3d4756] hover:text-[#0f1c2e]">Cancel</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-1.5 text-sm text-[var(--ink-2, #3d4756)] hover:text-[var(--ink, #0f1c2e)]">Cancel</button>
               <button type="button" onClick={createDefect} disabled={!form.project_id || !form.description}
                 className="px-4 py-1.5 text-sm bg-[#c2873a] text-white rounded hover:bg-[#a3702f] disabled:opacity-50">
                 Log Defect

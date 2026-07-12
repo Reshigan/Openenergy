@@ -32,17 +32,17 @@ interface CpKpis {
 // ─── Status meta ─────────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, string> = {
-  identified:          'bg-[#eef2f7] text-[#3d4756]',
-  documented:          'bg-[#eef2f7] text-[#3d4756]',
+  identified:          'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
+  documented:          'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   submitted:           'bg-cyan-100 text-cyan-700',
-  under_verification:  'bg-[#e8ecf0] text-[#3d4756]',
+  under_verification:  'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink-2, #3d4756)]',
   conditional_pass:    'bg-teal-100 text-teal-700',
   outstanding:         'bg-amber-100 text-amber-700',
   notice_served:       'bg-orange-100 text-orange-700',
   cure_underway:       'bg-purple-100 text-purple-700',
   satisfied:           'bg-green-100 text-green-700',
-  waived:              'bg-[#eef2f7] text-[#6b7685]',
-  lapsed:              'bg-[#eef2f7] text-[#9aa5b4]',
+  waived:              'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
+  lapsed:              'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]',
   rejected:            'bg-red-100 text-red-700',
 };
 
@@ -64,7 +64,7 @@ const STATUS_LABELS: Record<string, string> = {
 // ─── Tier badges ─────────────────────────────────────────────────────────────
 
 const TIER_COLORS: Record<string, string> = {
-  operational: 'bg-[#eef2f7] text-[#3d4756]',
+  operational: 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   commercial:  'bg-amber-100 text-amber-700',
   financial:   'bg-purple-100 text-purple-700',
   regulatory:  'bg-orange-100 text-orange-700',
@@ -184,7 +184,7 @@ function truncate(s: string, n = 24): string {
   return s.length > n ? s.slice(0, n) + '…' : s;
 }
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 const PAGE_SIZE = 20;
 
@@ -196,15 +196,15 @@ function KpiChip({ label, value, mode = 'neutral' }: { label: string; value: str
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-[#dde4ec] bg-white';
+    'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-[#0f1c2e]';
+    'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -418,7 +418,7 @@ export function IppCpTrackerTab() {
             <option key={t} value={t}>{TIER_LABELS[t]} — {TIER_SLA[t]}</option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-xs text-[#2d3748] cursor-pointer select-none">
+        <label className="flex items-center gap-1.5 text-xs text-[var(--ink, #2d3748)] cursor-pointer select-none">
           <input
             type="checkbox"
             checked={filterSlaBreached}
@@ -429,7 +429,7 @@ export function IppCpTrackerTab() {
         </label>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
+          className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]"
         >
           Refresh
         </button>
@@ -451,7 +451,7 @@ export function IppCpTrackerTab() {
           <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New Condition Precedent</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="md:col-span-2">
-              <label className="block text-xs text-[#3d4756] mb-1">CP Title *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">CP Title *</label>
               <input
                 type="text"
                 value={formTitle}
@@ -462,12 +462,12 @@ export function IppCpTrackerTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">CP Tier *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">CP Tier *</label>
               <select
                 value={formTier}
                 onChange={e => setFormTier(e.target.value)}
                 required
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {CP_TIERS.map(t => (
                   <option key={t} value={t}>{TIER_LABELS[t]} — {TIER_SLA[t]}</option>
@@ -475,7 +475,7 @@ export function IppCpTrackerTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Project Reference</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Project Reference</label>
               <input
                 type="text"
                 value={formProjectRef}
@@ -485,7 +485,7 @@ export function IppCpTrackerTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Lender Reference</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Lender Reference</label>
               <input
                 type="text"
                 value={formLenderRef}
@@ -495,7 +495,7 @@ export function IppCpTrackerTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Gate Reference</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Gate Reference</label>
               <input
                 type="text"
                 value={formGateRef}
@@ -505,7 +505,7 @@ export function IppCpTrackerTab() {
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs text-[#3d4756] mb-1">Description</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Description</label>
               <textarea
                 value={formDescription}
                 onChange={e => setFormDescription(e.target.value)}
@@ -531,7 +531,7 @@ export function IppCpTrackerTab() {
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
+              className="px-3 py-1.5 bg-surface-v2 border rounded text-xs text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
             >
               Cancel
             </button>
@@ -548,12 +548,12 @@ export function IppCpTrackerTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-3">CP Title</th>
                 <th className="pb-2 pr-3">Tier</th>
                 <th className="pb-2 pr-3">Project Ref</th>
@@ -571,31 +571,31 @@ export function IppCpTrackerTab() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b hover:bg-[#eef2f7] cursor-pointer"
+                    className="border-b hover:bg-[var(--s2, #eef2f7)] cursor-pointer"
                     onClick={() => setDetailItem(item)}
                   >
                     <td
-                      className="py-2 pr-3 text-xs text-[#1e2a38] max-w-[200px] truncate font-medium"
+                      className="py-2 pr-3 text-xs text-[var(--ink, #1e2a38)] max-w-[200px] truncate font-medium"
                       title={item.cp_title}
                     >
                       {truncate(item.cp_title, 32)}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.cp_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.cp_tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {TIER_LABELS[item.cp_tier] ?? item.cp_tier}
                       </span>
                     </td>
                     <td
-                      className="py-2 pr-3 text-xs text-[#3d4756] max-w-[140px] truncate"
+                      className="py-2 pr-3 text-xs text-[var(--ink-2, #3d4756)] max-w-[140px] truncate"
                       title={item.project_ref ?? undefined}
                     >
-                      {item.project_ref ?? <span className="text-[#9aa5b4]">—</span>}
+                      {item.project_ref ?? <span className="text-[var(--ink-2, #9aa5b4)]">—</span>}
                     </td>
-                    <td className="py-2 pr-3 text-xs text-[#3d4756]">
-                      {item.gate_ref ?? <span className="text-[#9aa5b4]">—</span>}
+                    <td className="py-2 pr-3 text-xs text-[var(--ink-2, #3d4756)]">
+                      {item.gate_ref ?? <span className="text-[var(--ink-2, #9aa5b4)]">—</span>}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                       {item.sla_breached === 1 && (
@@ -603,7 +603,7 @@ export function IppCpTrackerTab() {
                       )}
                     </td>
                     <td className="py-2 pr-3 text-xs tabular-nums">
-                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
+                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[var(--ink-2, #3d4756)]'}>
                         {due.text}
                       </span>
                     </td>
@@ -611,7 +611,7 @@ export function IppCpTrackerTab() {
                       {item.regulator_notified === 1 ? (
                         <span title="Regulator notified" className="text-orange-500 text-base leading-none">&#9873;</span>
                       ) : (
-                        <span className="text-[#e8ecf0] text-base leading-none">&#9873;</span>
+                        <span className="text-[var(--border-subtle, #e8ecf0)] text-base leading-none">&#9873;</span>
                       )}
                     </td>
                     <td
@@ -633,7 +633,7 @@ export function IppCpTrackerTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-10 text-center text-[#9aa5b4] text-sm">
+                  <td colSpan={8} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">
                     No conditions precedent found
                   </td>
                 </tr>
@@ -649,15 +649,15 @@ export function IppCpTrackerTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-[#6b7685]">Page {page} of {totalPages}</span>
+          <span className="text-xs text-[var(--ink-2, #6b7685)]">Page {page} of {totalPages}</span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             Next &rarr;
           </button>
@@ -667,20 +667,20 @@ export function IppCpTrackerTab() {
       {/* ─── Detail drawer ─────────────────────────────────────────────────── */}
       {detailItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setDetailItem(null); }} className="fixed inset-0 z-50 flex items-center justify-end bg-black/30">
-          <div className="bg-white h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
+          <div className="bg-surface-v2 h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <div>
-                <div className="text-sm font-semibold text-[#1e2a38]">
+                <div className="text-sm font-semibold text-[var(--ink, #1e2a38)]">
                   Condition Precedent
                 </div>
-                <div className="text-xs text-[#6b7685] mt-0.5">
+                <div className="text-xs text-[var(--ink-2, #6b7685)] mt-0.5">
                   {TIER_LABELS[detailItem.cp_tier] ?? detailItem.cp_tier}
                   {detailItem.gate_ref && <> &nbsp;&middot;&nbsp; {detailItem.gate_ref}</>}
                 </div>
               </div>
               <button type="button"
                 onClick={() => setDetailItem(null)}
-                className="text-[#9aa5b4] hover:text-[#2d3748] text-lg leading-none"
+                className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink, #2d3748)] text-lg leading-none"
               >
                 &times;
               </button>
@@ -689,10 +689,10 @@ export function IppCpTrackerTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badges */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                   {STATUS_LABELS[detailItem.chain_status] ?? statusLabel(detailItem.chain_status).text}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.cp_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.cp_tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                   {TIER_LABELS[detailItem.cp_tier] ?? detailItem.cp_tier} — {TIER_SLA[detailItem.cp_tier] ?? ''}
                 </span>
                 {detailItem.sla_breached === 1 && (
@@ -706,58 +706,58 @@ export function IppCpTrackerTab() {
               {/* Core fields */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
                 <div className="col-span-2">
-                  <div className="text-[#9aa5b4] mb-0.5">CP Title</div>
-                  <div className="font-medium text-[#1e2a38]">{detailItem.cp_title}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">CP Title</div>
+                  <div className="font-medium text-[var(--ink, #1e2a38)]">{detailItem.cp_title}</div>
                 </div>
                 {detailItem.description && (
                   <div className="col-span-2">
-                    <div className="text-[#9aa5b4] mb-0.5">Description</div>
-                    <div className="text-[#2d3748] text-xs leading-relaxed">{detailItem.description}</div>
+                    <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Description</div>
+                    <div className="text-[var(--ink, #2d3748)] text-xs leading-relaxed">{detailItem.description}</div>
                   </div>
                 )}
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Project Reference</div>
-                  <div className="text-[#1e2a38]">{detailItem.project_ref ?? '—'}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Project Reference</div>
+                  <div className="text-[var(--ink, #1e2a38)]">{detailItem.project_ref ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Lender Reference</div>
-                  <div className="text-[#1e2a38]">{detailItem.lender_ref ?? '—'}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Lender Reference</div>
+                  <div className="text-[var(--ink, #1e2a38)]">{detailItem.lender_ref ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Gate Reference</div>
-                  <div className="text-[#1e2a38]">{detailItem.gate_ref ?? '—'}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Gate Reference</div>
+                  <div className="text-[var(--ink, #1e2a38)]">{detailItem.gate_ref ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">SLA Deadline</div>
-                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast ? 'text-red-600 font-medium' : 'text-[#1e2a38]'}`}>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">SLA Deadline</div>
+                  <div className={`tabular-nums ${fmtDate(detailItem.sla_deadline).isPast ? 'text-red-600 font-medium' : 'text-[var(--ink, #1e2a38)]'}`}>
                     {fmtDate(detailItem.sla_deadline).text}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Regulator Notified</div>
-                  <div className={detailItem.regulator_notified === 1 ? 'text-orange-600 font-medium' : 'text-[#9aa5b4]'}>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Regulator Notified</div>
+                  <div className={detailItem.regulator_notified === 1 ? 'text-orange-600 font-medium' : 'text-[var(--ink-2, #9aa5b4)]'}>
                     {detailItem.regulator_notified === 1 ? 'Yes' : 'No'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Actor</div>
-                  <div className="text-[#2d3748] break-all">{detailItem.actor_id ?? '—'}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Actor</div>
+                  <div className="text-[var(--ink, #2d3748)] break-all">{detailItem.actor_id ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Created</div>
-                  <div className="text-[#3d4756]">{fmtDate(detailItem.created_at).text}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Created</div>
+                  <div className="text-[var(--ink-2, #3d4756)]">{fmtDate(detailItem.created_at).text}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Updated</div>
-                  <div className="text-[#3d4756]">{fmtDate(detailItem.updated_at).text}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Updated</div>
+                  <div className="text-[var(--ink-2, #3d4756)]">{fmtDate(detailItem.updated_at).text}</div>
                 </div>
               </div>
 
               {/* Reason */}
               {detailItem.reason && (
                 <div>
-                  <div className="text-xs text-[#9aa5b4] mb-1">Reason / Notes</div>
-                  <div className="text-xs text-[#2d3748] bg-[#f8fafc] rounded p-2 border whitespace-pre-wrap">
+                  <div className="text-xs text-[var(--ink-2, #9aa5b4)] mb-1">Reason / Notes</div>
+                  <div className="text-xs text-[var(--ink, #2d3748)] bg-[var(--s1, #f8fafc)] rounded p-2 border whitespace-pre-wrap">
                     {detailItem.reason}
                   </div>
                 </div>
@@ -766,7 +766,7 @@ export function IppCpTrackerTab() {
               {/* Actions section */}
               {!HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs font-semibold text-[#2d3748] mb-2">Advance State Machine</div>
+                  <div className="text-xs font-semibold text-[var(--ink, #2d3748)] mb-2">Advance State Machine</div>
                   <button type="button"
                     onClick={() => {
                       setDetailItem(null);
@@ -781,7 +781,7 @@ export function IppCpTrackerTab() {
 
               {HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs text-[#9aa5b4] italic">
+                  <div className="text-xs text-[var(--ink-2, #9aa5b4)] italic">
                     This CP is in a terminal state — no further actions are available.
                   </div>
                 </div>
@@ -794,9 +794,9 @@ export function IppCpTrackerTab() {
       {/* ─── Action modal ──────────────────────────────────────────────────── */}
       {actionItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setActionItem(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-[#1e2a38] mb-1">CP Tracker Action</div>
-            <div className="text-xs text-[#6b7685] mb-4">
+          <div className="bg-surface-v2 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="text-sm font-semibold text-[var(--ink, #1e2a38)] mb-1">CP Tracker Action</div>
+            <div className="text-xs text-[var(--ink-2, #6b7685)] mb-4">
               {TIER_LABELS[actionItem.cp_tier] ?? actionItem.cp_tier}
               {actionItem.gate_ref && <> &mdash; {actionItem.gate_ref}</>}
               {' '}—{' '}
@@ -804,11 +804,11 @@ export function IppCpTrackerTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Action *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Action *</label>
               <select
                 value={selectedAction}
                 onChange={e => setSelectedAction(e.target.value)}
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {modalActions.map(a => (
                   <option key={a.name} value={a.name}>{a.label}</option>
@@ -817,7 +817,7 @@ export function IppCpTrackerTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Reason (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Reason (optional)</label>
               <input
                 type="text"
                 value={actionReason}
@@ -836,7 +836,7 @@ export function IppCpTrackerTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
+                className="px-3 py-1.5 text-xs border rounded bg-surface-v2 text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
               >
                 Cancel
               </button>

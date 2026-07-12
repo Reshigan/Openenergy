@@ -141,7 +141,7 @@ export function platformTabs(domain: string): TabSpec[] {
         { key: 'output_label', label: 'Suggested label' },
         { key: 'confidence', label: 'Confidence', align: 'right', number: true },
         { key: 'reasoning', label: 'Reasoning' },
-        { key: 'user_accepted', label: 'Accepted', render: (r) => r.user_accepted ? <StatusPill label="Accepted" tone="good" /> : <span className="text-[#6b7685] text-[12px]">pending</span> },
+        { key: 'user_accepted', label: 'Accepted', render: (r) => r.user_accepted ? <StatusPill label="Accepted" tone="good" /> : <span className="text-[var(--ink-2, #6b7685)] text-[12px]">pending</span> },
       ],
       create: {
         title: 'Classify',
@@ -162,7 +162,7 @@ export function platformTabs(domain: string): TabSpec[] {
         { key: 'entity_table', label: 'Table' },
         { key: 'entity_id', label: 'Record' },
         { key: 'operation', label: 'Op' },
-        { key: 'this_hash', label: 'Hash', render: (r) => <span className="font-mono text-[10px] text-[#6b7685]">{String(r.this_hash || '').slice(0, 12)}…</span> },
+        { key: 'this_hash', label: 'Hash', render: (r) => <span className="font-mono text-[10px] text-[var(--ink-2, #6b7685)]">{String(r.this_hash || '').slice(0, 12)}…</span> },
         { key: 'created_at', label: 'When', date: true },
       ],
     },

@@ -29,8 +29,8 @@ interface Kpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  audit_due:                      'bg-[#eef2f7] text-[#6b7685]',
-  eco_appointed:                  'bg-[#eef2f7] text-[#3d4756]',
+  audit_due:                      'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
+  eco_appointed:                  'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   site_inspection_in_progress:    'bg-yellow-100 text-yellow-800',
   report_drafting:                'bg-yellow-100 text-yellow-800',
   submitted_to_dffe:              'bg-amber-100 text-amber-700',
@@ -44,9 +44,9 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const TIER_COLORS: Record<string, string> = {
-  small:     'bg-[#eef2f7] text-[#3d4756]',
-  medium:    'bg-[#eef2f7] text-[#3d4756]',
-  large:     'bg-[#e8ecf0] text-[#3d4756]',
+  small:     'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
+  medium:    'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
+  large:     'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink-2, #3d4756)]',
   utility:   'bg-orange-100 text-orange-800',
   strategic: 'bg-red-100 text-red-700',
 };
@@ -65,7 +65,7 @@ const VIOLATION_LABELS: Record<string, string> = {
 const STATUSES = Object.keys(STATUS_COLORS);
 const TIERS = ['small', 'medium', 'large', 'utility', 'strategic'] as const;
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 function fmtDate(d?: string | null): string {
   if (!d) return '—';
@@ -78,11 +78,11 @@ function hasRegulatorFlag(row: EcoReport): boolean {
 
 type KpiChipProps = { label: string; value: string | number; mode?: 'alert' | 'good' | 'danger' | 'neutral' };
 function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
-  const border = mode === 'danger' ? 'border-red-200 bg-red-50' : mode === 'alert' ? 'border-orange-200 bg-orange-50' : mode === 'good' ? 'border-green-200 bg-green-50' : 'border-[#dde4ec] bg-white';
-  const text   = mode === 'danger' ? 'text-red-700' : mode === 'alert' ? 'text-orange-700' : mode === 'good' ? 'text-green-700' : 'text-[#0f1c2e]';
+  const border = mode === 'danger' ? 'border-red-200 bg-red-50' : mode === 'alert' ? 'border-orange-200 bg-orange-50' : mode === 'good' ? 'border-green-200 bg-green-50' : 'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
+  const text   = mode === 'danger' ? 'text-red-700' : mode === 'alert' ? 'text-orange-700' : mode === 'good' ? 'text-green-700' : 'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -172,19 +172,19 @@ export function IppEcoReportTab() {
         <button type="button" onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]">
           + New ECO Report
         </button>
-        <button type="button" onClick={() => load()} className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]">
+        <button type="button" onClick={() => load()} className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]">
           Refresh
         </button>
       </div>
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-4">ID</th>
                 <th className="pb-2 pr-4">Year</th>
                 <th className="pb-2 pr-4">Capacity</th>
@@ -207,25 +207,25 @@ export function IppEcoReportTab() {
                   ? { label: '⚠ Enforcement', cls: 'text-red-700' }
                   : item.non_compliance_at
                   ? { label: '✗ Non-Compliant', cls: 'text-orange-700' }
-                  : { label: '—', cls: 'text-[#9aa5b4]' };
+                  : { label: '—', cls: 'text-[var(--ink-2, #9aa5b4)]' };
                 const eaRef = item.ea_reference ? item.ea_reference.slice(0, 20) : '—';
                 const violation = item.violation_category ? (VIOLATION_LABELS[item.violation_category] ?? item.violation_category) : '—';
                 return (
-                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
-                    <td className="py-2 pr-4 text-xs font-mono text-[#3d4756]">{item.id.slice(0, 12)}</td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.reporting_year}</td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">{item.capacity_mw} MW</td>
+                  <tr key={item.id} className="border-b hover:bg-[var(--s2, #eef2f7)]">
+                    <td className="py-2 pr-4 text-xs font-mono text-[var(--ink-2, #3d4756)]">{item.id.slice(0, 12)}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{item.reporting_year}</td>
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[var(--ink, #2d3748)]">{item.capacity_mw} MW</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.capacity_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>{item.capacity_tier}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.capacity_tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>{item.capacity_tier}</span>
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.eco_name ?? '—'}</td>
-                    <td className="py-2 pr-4 text-xs text-[#6b7685] font-mono">{eaRef}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{item.eco_name ?? '—'}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #6b7685)] font-mono">{eaRef}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>{statusLabel(item.chain_status).text}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>{statusLabel(item.chain_status).text}</span>
                       {regulator && <span className="ml-1 px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">REGULATOR</span>}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#3d4756]">{violation}</td>
-                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #3d4756)]">{violation}</td>
+                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[var(--ink-2, #6b7685)]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}
                     </td>
                     <td className={`py-2 pr-4 text-xs font-medium ${outcome.cls}`}>{outcome.label}</td>
@@ -233,7 +233,7 @@ export function IppEcoReportTab() {
                 );
               })}
               {items.length === 0 && (
-                <tr><td colSpan={10} className="py-10 text-center text-[#9aa5b4] text-sm">No ECO audit reports found</td></tr>
+                <tr><td colSpan={10} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">No ECO audit reports found</td></tr>
               )}
             </tbody>
           </table>
@@ -243,9 +243,9 @@ export function IppEcoReportTab() {
       {/* New ECO Report modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowCreate(false)}>
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-surface-v2 rounded-xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold mb-1">New ECO Annual Report</h3>
-            <p className="text-xs text-[#6b7685] mb-4">NEMA / EA condition — records an annual Environmental Compliance Officer audit report. Tier and SLA are derived from capacity.</p>
+            <p className="text-xs text-[var(--ink-2, #6b7685)] mb-4">NEMA / EA condition — records an annual Environmental Compliance Officer audit report. Tier and SLA are derived from capacity.</p>
             <div className="space-y-3">
               <input placeholder="Project ID *" value={form.project_id} onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm" />
               <input placeholder="Reporting Year *" type="number" min={2000} max={2100} value={form.reporting_year} onChange={e => setForm(f => ({ ...f, reporting_year: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm" />
@@ -257,7 +257,7 @@ export function IppEcoReportTab() {
               <button type="button" onClick={createReport} disabled={createPending || !form.project_id || !form.capacity_mw} className="px-4 py-2 bg-[#c2873a] text-white rounded text-sm hover:bg-[#a3702f] disabled:opacity-50">
                 {createPending ? 'Submitting…' : 'Create report'}
               </button>
-              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 bg-[#eef2f7] text-[#2d3748] rounded text-sm hover:bg-[#e8ecf0]">Cancel</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-sm hover:bg-[var(--border-subtle, #e8ecf0)]">Cancel</button>
             </div>
           </div>
         </div>

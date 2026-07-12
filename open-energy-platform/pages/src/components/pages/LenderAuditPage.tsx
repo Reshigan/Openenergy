@@ -10,13 +10,13 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { AuditPanel } from '../launch/AuditPanel';
 
-const BG     = 'oklch(0.96 0.003 250)';
-const BG1    = 'oklch(0.99 0.002 80)';
-const BORDER = 'oklch(0.87 0.006 250)';
-const TX1    = 'oklch(0.17 0.010 250)';
-const TX2    = 'oklch(0.40 0.009 250)';
-const TX3    = 'oklch(0.60 0.007 250)';
-const ACC    = 'oklch(0.46 0.16 280)';
+const BG     = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1    = 'var(--s1, oklch(0.99 0.002 80))';
+const BORDER = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1    = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2    = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3    = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC    = 'var(--accent, oklch(0.46 0.16 280))';
 
 export function LenderAuditPage() {
   const navigate = useNavigate();

@@ -50,17 +50,17 @@ interface CountryRouting {
 }
 
 const STATUS_TONE: Record<CaStatus, { bg: string; fg: string; label: string }> = {
-  draft: { bg: '#f0f3f7', fg: '#445566', label: 'Draft' },
-  dffe_pending: { bg: '#fff4d6', fg: '#a06200', label: 'DFFE pending' },
-  dffe_cleared: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'DFFE cleared' },
-  unfccc_ledger: { bg: '#daf5e2', fg: '#1f6b3a', label: 'UNFCCC ledger' },
-  blocked: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Blocked' },
+  draft: { bg: 'var(--s2, #f0f3f7)', fg: 'var(--ink-2, #445566)', label: 'Draft' },
+  dffe_pending: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'DFFE pending' },
+  dffe_cleared: { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'DFFE cleared' },
+  unfccc_ledger: { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'UNFCCC ledger' },
+  blocked: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Blocked' },
 };
 
 const RISK_TONE: Record<RiskAssessment['risk'], { bg: string; fg: string }> = {
-  low: { bg: '#daf5e2', fg: '#1f6b3a' },
-  medium: { bg: '#fff4d6', fg: '#a06200' },
-  high: { bg: '#fde0e0', fg: '#9b1f1f' },
+  low: { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)' },
+  medium: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: '#a06200' },
+  high: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)' },
 };
 
 export function Article6Tab() {
@@ -163,14 +163,14 @@ export function Article6Tab() {
       </div>
 
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-[11px] text-[#6b7685] uppercase tracking-wide">Filter</span>
+        <span className="text-[11px] text-[var(--ink-2, #6b7685)] uppercase tracking-wide">Filter</span>
         {(['all', 'draft', 'dffe_pending', 'dffe_cleared', 'unfccc_ledger', 'blocked'] as const).map((s) => (
           <button type="button"
             key={s}
             onClick={() => setFilter(s)}
             data-testid={`article6-filter-${s}`}
             className={`px-2 py-1 rounded text-[11px] font-semibold border ${
-              filter === s ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]' : 'bg-white text-[#445566] border-[#dde4ed]'
+              filter === s ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]' : 'bg-surface-v2 text-[var(--ink-2, #445566)] border-[#dde4ed]'
             }`}
           >
             {s === 'all' ? 'All' : STATUS_TONE[s].label}
@@ -178,20 +178,20 @@ export function Article6Tab() {
         ))}
         <button type="button"
           onClick={load}
-          className="ml-auto px-2 py-1 text-[11px] rounded border border-[#dde4ed] text-[#445566]"
+          className="ml-auto px-2 py-1 text-[11px] rounded border border-[#dde4ed] text-[var(--ink-2, #445566)]"
           data-testid="article6-refresh"
         >
           Refresh
         </button>
       </div>
 
-      {error && <div className="text-[12px] text-[#9b1f1f] mb-3">{error}</div>}
+      {error && <div className="text-[12px] text-[var(--bad, #9b1f1f)] mb-3">{error}</div>}
       {loading ? (
-        <div className="text-[12px] text-[#6b7685]">Loading…</div>
+        <div className="text-[12px] text-[var(--ink-2, #6b7685)]">Loading…</div>
       ) : (
         <table className="w-full text-[12px]" data-testid="article6-table">
           <thead>
-            <tr className="text-left text-[10px] uppercase text-[#6b7685]">
+            <tr className="text-left text-[10px] uppercase text-[var(--ink-2, #6b7685)]">
               <th className="py-1 pr-3">Status</th>
               <th className="py-1 pr-3">Host → Beneficiary</th>
               <th className="py-1 pr-3">Track</th>
@@ -203,7 +203,7 @@ export function Article6Tab() {
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={7} className="py-4 text-center text-[#6b7685]">No adjustments match this filter.</td></tr>
+              <tr><td colSpan={7} className="py-4 text-center text-[var(--ink-2, #6b7685)]">No adjustments match this filter.</td></tr>
             )}
             {filtered.map((a) => {
               const t = STATUS_TONE[a.ca_status];
@@ -211,7 +211,7 @@ export function Article6Tab() {
                 <tr
                   key={a.id}
                   onClick={() => setDrillId(a.id)}
-                  className={`border-t border-[#eef1f5] cursor-pointer hover:bg-[#f7f9fc] ${drillId === a.id ? 'bg-[#f0f5fb]' : ''}`}
+                  className={`border-t border-[var(--border-subtle, #eef1f5)] cursor-pointer hover:bg-[#f7f9fc] ${drillId === a.id ? 'bg-[#f0f5fb]' : ''}`}
                   data-testid={`article6-row-${a.id}`}
                 >
                   <td className="py-2 pr-3">
@@ -239,7 +239,7 @@ export function Article6Tab() {
             <div className="text-[13px] font-semibold">
               {drill.host_country_iso} → {drill.beneficiary_country_iso} · {fmtTco(drill.tco2e)} tCO₂e
             </div>
-            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[#6b7685]">close</button>
+            <button type="button" onClick={() => setDrillId(null)} className="text-[11px] text-[var(--ink-2, #6b7685)]">close</button>
           </div>
 
           {drillRisk && (
@@ -248,17 +248,17 @@ export function Article6Tab() {
                     style={{ backgroundColor: RISK_TONE[drillRisk.risk].bg, color: RISK_TONE[drillRisk.risk].fg }}>
                 Risk: {drillRisk.risk}
               </span>
-              <span className="text-[12px] text-[#445566]">{drillRisk.reasons.join(' ')}</span>
+              <span className="text-[12px] text-[var(--ink-2, #445566)]">{drillRisk.reasons.join(' ')}</span>
             </div>
           )}
 
           {drill.registry_uri && (
-            <div className="text-[11px] text-[#6b7685] mb-2 break-all">
+            <div className="text-[11px] text-[var(--ink-2, #6b7685)] mb-2 break-all">
               Registry anchor: <a href={drill.registry_uri} target="_blank" rel="noreferrer" className="underline font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>{drill.registry_uri}</a>
             </div>
           )}
           {drill.blocked_reason && (
-            <div className="text-[12px] text-[#9b1f1f] mb-2">Blocked reason: {drill.blocked_reason}</div>
+            <div className="text-[12px] text-[var(--bad, #9b1f1f)] mb-2">Blocked reason: {drill.blocked_reason}</div>
           )}
 
           <div className="flex flex-wrap items-center gap-2 mt-2" data-testid="article6-actions">
@@ -288,7 +288,7 @@ export function Article6Tab() {
                   const ref = prompt('UNFCCC ledger reference:');
                   if (ref) transition(drill.id, 'post-unfccc', { ledger_ref: ref });
                 }}
-                className="px-2 py-1 text-[11px] rounded bg-[#1f6b3a] text-white"
+                className="px-2 py-1 text-[11px] rounded bg-[var(--good, #1f6b3a)] text-white"
                 data-testid="article6-post-unfccc"
               >Post to UNFCCC ledger</button>
             )}
@@ -299,7 +299,7 @@ export function Article6Tab() {
                   const reason = prompt('Block reason (≥3 chars):');
                   if (reason && reason.length >= 3) transition(drill.id, 'block', { reason });
                 }}
-                className="px-2 py-1 text-[11px] rounded bg-white border border-[#9b1f1f] text-[#9b1f1f]"
+                className="px-2 py-1 text-[11px] rounded bg-surface-v2 border border-[var(--bad, #9b1f1f)] text-[var(--bad, #9b1f1f)]"
                 data-testid="article6-block"
               >Block</button>
             )}
@@ -307,7 +307,7 @@ export function Article6Tab() {
               <button type="button"
                 disabled={actionBusy}
                 onClick={() => transition(drill.id, 'unblock')}
-                className="px-2 py-1 text-[11px] rounded bg-white border border-[oklch(0.46_0.16_55)]" style={{ color: 'oklch(0.46 0.16 55)' }}
+                className="px-2 py-1 text-[11px] rounded bg-surface-v2 border border-[oklch(0.46_0.16_55)]" style={{ color: 'oklch(0.46 0.16 55)' }}
                 data-testid="article6-unblock"
               >Unblock</button>
             )}
@@ -331,12 +331,12 @@ export function Article6Tab() {
         <div className="text-[12px] font-semibold mb-2" style={{ color: 'oklch(0.46 0.16 55)' }}>Country routing</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2" data-testid="article6-routing">
           {routing.map((r) => (
-            <div key={r.country_iso} className="p-2 rounded border border-[#dde4ed] bg-white">
+            <div key={r.country_iso} className="p-2 rounded border border-[#dde4ed] bg-surface-v2">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-[12px]">{r.country_name}</span>
-                <span className="font-mono text-[10px] text-[#6b7685]">{r.country_iso}</span>
+                <span className="font-mono text-[10px] text-[var(--ink-2, #6b7685)]">{r.country_iso}</span>
               </div>
-              <div className="text-[11px] text-[#445566]">
+              <div className="text-[11px] text-[var(--ink-2, #445566)]">
                 Track: <span className="font-mono">{r.article_6_track}</span>
                 {r.ndc_authority && <> · NDC: {r.ndc_authority}</>}
               </div>
@@ -349,10 +349,10 @@ export function Article6Tab() {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: string; tone?: 'good' | 'warn' | 'bad' }) {
-  const palette = tone === 'good' ? '#1f6b3a' : tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : 'oklch(0.46 0.16 55)';
+  const palette = tone === 'good' ? 'var(--good, #1f6b3a)' : tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : 'oklch(0.46 0.16 55)';
   return (
-    <div className="p-2 rounded-md bg-white border border-[#dde4ed]">
-      <div className="text-[10px] uppercase text-[#6b7685]">{label}</div>
+    <div className="p-2 rounded-md bg-surface-v2 border border-[#dde4ed]">
+      <div className="text-[10px] uppercase text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className="text-[16px] font-bold" style={{ color: palette }}>{value}</div>
     </div>
   );

@@ -26,7 +26,7 @@ interface LicenceReturnKpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  return_triggered:         'bg-[#eef2f7] text-[#6b7685]',
+  return_triggered:         'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
   data_assembly:            'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   internal_review:          'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   board_approval:           'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
@@ -37,7 +37,7 @@ const STATUS_COLORS: Record<string, string> = {
   clarification_submitted:  'bg-orange-100 text-orange-700',
   return_accepted:          'bg-green-100 text-green-700',
   return_rejected:          'bg-red-100 text-red-700',
-  return_lapsed:            'bg-[#eef2f7] text-[#6b7685]',
+  return_lapsed:            'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -56,7 +56,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const CAPACITY_TIER_COLORS: Record<string, string> = {
-  small:    'bg-[#eef2f7] text-[#2d3748]',
+  small:    'bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)]',
   medium:   'bg-[oklch(0.94_0.006_250)] text-[oklch(0.17_0.010_250)]',
   large:    'bg-yellow-100 text-yellow-800',
   major:    'bg-orange-100 text-orange-800',
@@ -82,7 +82,7 @@ const CAPACITY_TIERS = ['small', 'medium', 'large', 'major', 'flagship'] as cons
 
 const PAGE_SIZE = 20;
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 function fmtDate(dateStr: string | null | undefined): { text: string; isPast: boolean } {
   if (!dateStr) return { text: '—', isPast: false };
@@ -104,15 +104,15 @@ function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-[#dde4ec] bg-white';
+    'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-[#0f1c2e]';
+    'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -381,7 +381,7 @@ export function IppLicenceReturnsTab() {
         </select>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
+          className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]"
         >
           Refresh
         </button>
@@ -403,7 +403,7 @@ export function IppLicenceReturnsTab() {
           <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New Annual NERSA Licence Return</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Project Ref *</label>
               <input
                 type="text"
                 value={formProjectRef}
@@ -414,7 +414,7 @@ export function IppLicenceReturnsTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Licence Number (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Licence Number (optional)</label>
               <input
                 type="text"
                 value={formLicenceNumber}
@@ -424,7 +424,7 @@ export function IppLicenceReturnsTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Financial Year End *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Financial Year End *</label>
               <input
                 type="date"
                 value={formFinancialYearEnd}
@@ -434,7 +434,7 @@ export function IppLicenceReturnsTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Licensed MW *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Licensed MW *</label>
               <input
                 type="number"
                 value={formLicensedMw}
@@ -447,12 +447,12 @@ export function IppLicenceReturnsTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Return Type *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Return Type *</label>
               <select
                 value={formReturnType}
                 onChange={e => setFormReturnType(e.target.value)}
                 required
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {RETURN_TYPES.map(rt => (
                   <option key={rt} value={rt}>{RETURN_TYPE_LABELS[rt]}</option>
@@ -460,7 +460,7 @@ export function IppLicenceReturnsTab() {
               </select>
             </div>
             <div className="col-span-2 md:col-span-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Notes (optional)</label>
               <textarea
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
@@ -486,7 +486,7 @@ export function IppLicenceReturnsTab() {
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
+              className="px-3 py-1.5 bg-surface-v2 border rounded text-xs text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
             >
               Cancel
             </button>
@@ -503,12 +503,12 @@ export function IppLicenceReturnsTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-3">ID</th>
                 <th className="pb-2 pr-3">Project Ref</th>
                 <th className="pb-2 pr-3">Licence No.</th>
@@ -528,31 +528,31 @@ export function IppLicenceReturnsTab() {
                 const due      = fmtDate(item.sla_due_date);
                 const fye      = fmtDate(item.financial_year_end);
                 return (
-                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
-                    <td className="py-2 pr-3 text-xs font-mono text-[#9aa5b4]">{item.id.slice(0, 8)}</td>
-                    <td className="py-2 pr-3 text-xs font-mono text-[#2d3748]">{item.project_ref}</td>
-                    <td className="py-2 pr-3 text-xs text-[#6b7685] max-w-[130px] truncate" title={item.licence_number ?? ''}>
+                  <tr key={item.id} className="border-b hover:bg-[var(--s2, #eef2f7)]">
+                    <td className="py-2 pr-3 text-xs font-mono text-[var(--ink-2, #9aa5b4)]">{item.id.slice(0, 8)}</td>
+                    <td className="py-2 pr-3 text-xs font-mono text-[var(--ink, #2d3748)]">{item.project_ref}</td>
+                    <td className="py-2 pr-3 text-xs text-[var(--ink-2, #6b7685)] max-w-[130px] truncate" title={item.licence_number ?? ''}>
                       {item.licence_number ?? '—'}
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-[#3d4756]">{fye.text}</td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748] font-medium">
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[var(--ink-2, #3d4756)]">{fye.text}</td>
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[var(--ink, #2d3748)] font-medium">
                       {fmtMw(item.licensed_mw)}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${CAPACITY_TIER_COLORS[item.capacity_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${CAPACITY_TIER_COLORS[item.capacity_tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {item.capacity_tier.charAt(0).toUpperCase() + item.capacity_tier.slice(1)}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-xs text-[#3d4756]">
+                    <td className="py-2 pr-3 text-xs text-[var(--ink-2, #3d4756)]">
                       {RETURN_TYPE_LABELS[item.return_type] ?? item.return_type.replace(/_/g, ' ')}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                     </td>
                     <td className="py-2 pr-3 text-xs tabular-nums">
-                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
+                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[var(--ink-2, #3d4756)]'}>
                         {due.text}
                       </span>
                     </td>
@@ -560,7 +560,7 @@ export function IppLicenceReturnsTab() {
                       {item.sla_breached === 1 ? (
                         <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">Yes</span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-[#eef2f7] text-[#9aa5b4]">No</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]">No</span>
                       )}
                     </td>
                     <td className="py-2 pr-3">
@@ -578,7 +578,7 @@ export function IppLicenceReturnsTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="py-10 text-center text-[#9aa5b4] text-sm">
+                  <td colSpan={11} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">
                     No licence returns found
                   </td>
                 </tr>
@@ -594,17 +594,17 @@ export function IppLicenceReturnsTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-[#6b7685]">
+          <span className="text-xs text-[var(--ink-2, #6b7685)]">
             Page {page} of {totalPages}
           </span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             Next &rarr;
           </button>
@@ -614,19 +614,19 @@ export function IppLicenceReturnsTab() {
       {/* Action modal */}
       {actionItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setActionItem(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-[#1e2a38] mb-1">Annual NERSA Licence Return Action</div>
-            <div className="text-xs text-[#6b7685] mb-4">
+          <div className="bg-surface-v2 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="text-sm font-semibold text-[var(--ink, #1e2a38)] mb-1">Annual NERSA Licence Return Action</div>
+            <div className="text-xs text-[var(--ink-2, #6b7685)] mb-4">
               {actionItem.project_ref} &mdash; {STATUS_LABELS[actionItem.chain_status] ?? actionItem.chain_status}
             </div>
 
             {/* Action selector */}
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Action *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Action *</label>
               <select
                 value={selectedAction}
                 onChange={e => handleActionChange(e.target.value)}
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {modalActions.map(a => (
                   <option key={a.name} value={a.name}>{a.label}</option>
@@ -635,7 +635,7 @@ export function IppLicenceReturnsTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Reason (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Reason (optional)</label>
               <input
                 type="text"
                 value={actionReason}
@@ -646,7 +646,7 @@ export function IppLicenceReturnsTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Notes (optional)</label>
               <textarea
                 value={actionNotes}
                 onChange={e => setActionNotes(e.target.value)}
@@ -665,7 +665,7 @@ export function IppLicenceReturnsTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
+                className="px-3 py-1.5 text-xs border rounded bg-surface-v2 text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
               >
                 Cancel
               </button>

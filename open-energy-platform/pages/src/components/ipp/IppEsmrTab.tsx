@@ -28,11 +28,11 @@ interface EsmrKpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  reporting_period_open:    'bg-[#eef2f7] text-[#6b7685]',
-  data_collection:          'bg-[#eef2f7] text-[#3d4756]',
+  reporting_period_open:    'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
+  data_collection:          'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   monitoring_compilation:   'bg-cyan-100 text-cyan-700',
   lender_ta_review:         'bg-sky-100 text-sky-700',
-  ta_report_preparation:    'bg-[#e8ecf0] text-[#3d4756]',
+  ta_report_preparation:    'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink-2, #3d4756)]',
   report_submitted:         'bg-violet-100 text-violet-700',
   lender_review:            'bg-purple-100 text-purple-700',
   clarification_requested:  'bg-yellow-100 text-yellow-800',
@@ -59,8 +59,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 // INVERTED SLA — larger loan = more scrutiny = deeper colour
 const TIER_BADGE_COLORS: Record<string, string> = {
-  small:    'bg-[#eef2f7] text-[#3d4756]',
-  medium:   'bg-[#e8ecf0] text-[#3d4756]',
+  small:    'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
+  medium:   'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink-2, #3d4756)]',
   large:    'bg-purple-100 text-purple-800',
   major:    'bg-orange-100 text-orange-800',
   flagship: 'bg-red-100 text-red-800',
@@ -88,7 +88,7 @@ const TIERS    = ['small', 'medium', 'large', 'major', 'flagship'] as const;
 
 const PAGE_SIZE = 20;
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 function fmtDate(d?: string | null): string {
   if (!d) return '—';
@@ -109,15 +109,15 @@ function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-[#dde4ec] bg-white';
+    'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-[#0f1c2e]';
+    'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -352,7 +352,7 @@ export function IppEsmrTab() {
         </select>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
+          className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]"
         >
           Refresh
         </button>
@@ -374,7 +374,7 @@ export function IppEsmrTab() {
           <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New E&amp;S Monitoring Report</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Project Ref *</label>
               <input
                 type="text"
                 value={formProjectRef}
@@ -385,7 +385,7 @@ export function IppEsmrTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Reporting Period *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Reporting Period *</label>
               <input
                 type="text"
                 value={formPeriod}
@@ -396,7 +396,7 @@ export function IppEsmrTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Loan Size (ZAR) *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Loan Size (ZAR) *</label>
               <input
                 type="number"
                 value={formLoanSize}
@@ -409,12 +409,12 @@ export function IppEsmrTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Loan Tier *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Loan Tier *</label>
               <select
                 value={formTier}
                 onChange={e => setFormTier(e.target.value as typeof formTier)}
                 required
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {TIERS.map(t => (
                   <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
@@ -422,7 +422,7 @@ export function IppEsmrTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">DFI Names</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">DFI Names</label>
               <input
                 type="text"
                 value={formDfiNames}
@@ -432,7 +432,7 @@ export function IppEsmrTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Lender TA Ref</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Lender TA Ref</label>
               <input
                 type="text"
                 value={formLenderTaRef}
@@ -442,7 +442,7 @@ export function IppEsmrTab() {
               />
             </div>
             <div className="col-span-2 md:col-span-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Notes</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Notes</label>
               <textarea
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
@@ -468,7 +468,7 @@ export function IppEsmrTab() {
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
+              className="px-3 py-1.5 bg-surface-v2 border rounded text-xs text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
             >
               Cancel
             </button>
@@ -485,12 +485,12 @@ export function IppEsmrTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-4">Project Ref</th>
                 <th className="pb-2 pr-4">Period</th>
                 <th className="pb-2 pr-4">Loan Tier</th>
@@ -508,38 +508,38 @@ export function IppEsmrTab() {
                 const overdue = !!(item.sla_breached || (item.sla_due_date && new Date(item.sla_due_date) < new Date()));
                 const actions = getActions(item);
                 return (
-                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
-                    <td className="py-2 pr-4 text-xs font-mono text-[#2d3748]">{item.project_ref}</td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.reporting_period}</td>
+                  <tr key={item.id} className="border-b hover:bg-[var(--s2, #eef2f7)]">
+                    <td className="py-2 pr-4 text-xs font-mono text-[var(--ink, #2d3748)]">{item.project_ref}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{item.reporting_period}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_BADGE_COLORS[item.loan_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_BADGE_COLORS[item.loan_tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {item.loan_tier.charAt(0).toUpperCase() + item.loan_tier.slice(1)}
                       </span>
                     </td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[var(--ink, #2d3748)]">
                       {fmtLoanSize(item.loan_size_zar)}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#6b7685] max-w-[120px] truncate" title={item.dfi_names ?? ''}>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #6b7685)] max-w-[120px] truncate" title={item.dfi_names ?? ''}>
                       {item.dfi_names ?? '—'}
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#6b7685]">
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #6b7685)]">
                       {item.breach_category
                         ? (BREACH_CATEGORY_LABELS[item.breach_category] ?? item.breach_category)
                         : '—'}
                     </td>
-                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
+                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[var(--ink-2, #6b7685)]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_date)}
                     </td>
                     <td className="py-2 pr-4">
                       {item.sla_breached === 1 ? (
                         <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">Yes</span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-[#eef2f7] text-[#9aa5b4]">No</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]">No</span>
                       )}
                     </td>
                     <td className="py-2 pr-4">
@@ -555,7 +555,7 @@ export function IppEsmrTab() {
                                 ? 'px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border border-yellow-200'
                                 : a.variant === 'success'
                                 ? 'px-2 py-0.5 text-xs rounded bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
-                                : 'px-2 py-0.5 text-xs rounded border border-[#dde4ec]'
+                                : 'px-2 py-0.5 text-xs rounded border border-[var(--border-subtle, #dde4ec)]'
                             }
                             style={!a.variant ? { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.87 0.010 250)' } : undefined}
                           >
@@ -569,7 +569,7 @@ export function IppEsmrTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="py-10 text-center text-[#9aa5b4] text-sm">
+                  <td colSpan={10} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">
                     No E&amp;S monitoring report records found
                   </td>
                 </tr>
@@ -585,17 +585,17 @@ export function IppEsmrTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-[#6b7685]">
+          <span className="text-xs text-[var(--ink-2, #6b7685)]">
             Page {page} of {totalPages}
           </span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             Next &rarr;
           </button>
@@ -605,13 +605,13 @@ export function IppEsmrTab() {
       {/* Action modal */}
       {actionItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setActionItem(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-[#1e2a38] mb-1">{actionLabel}</div>
-            <div className="text-xs text-[#6b7685] mb-4">
+          <div className="bg-surface-v2 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="text-sm font-semibold text-[var(--ink, #1e2a38)] mb-1">{actionLabel}</div>
+            <div className="text-xs text-[var(--ink-2, #6b7685)] mb-4">
               E&amp;S Monitoring Report — {actionItem.project_ref} / {actionItem.reporting_period}
             </div>
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Notes (optional)</label>
               <textarea
                 value={actionNotes}
                 onChange={e => setActionNotes(e.target.value)}
@@ -628,7 +628,7 @@ export function IppEsmrTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
+                className="px-3 py-1.5 text-xs border rounded bg-surface-v2 text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
               >
                 Cancel
               </button>

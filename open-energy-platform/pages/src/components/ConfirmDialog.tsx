@@ -46,18 +46,18 @@ export function ConfirmDialog({
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
+      <div className="bg-surface-v2 rounded-xl shadow-xl w-full max-w-md mx-4">
         <div className={`p-4 rounded-t-xl border-b ${variantStyles[variant]}`}>
           <div className="flex items-center gap-3">
             <AlertTriangle style={{ color: variant === 'danger' ? 'oklch(0.48 0.20 20)' : variant === 'warning' ? 'oklch(0.50 0.16 70)' : 'oklch(0.46 0.16 55)' }} className="w-5 h-5" />
             <h3 className="text-lg font-semibold">{title}</h3>
-            <button type="button" aria-label="Close" onClick={onCancel} className="ml-auto p-1 hover:bg-[#f8fafc]/50 rounded">
+            <button type="button" aria-label="Close" onClick={onCancel} className="ml-auto p-1 hover:bg-[var(--s1, #f8fafc)]/50 rounded">
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
         <div className="p-6">
-          <p style={{ color: '#3d4756' }}>{message}</p>
+          <p style={{ color: 'var(--ink-2, #3d4756)' }}>{message}</p>
         </div>
         <div className="flex justify-end gap-3 p-4 rounded-b-xl" style={{ background: 'oklch(0.96 0.003 250)' }}>
           <button
@@ -65,7 +65,7 @@ export function ConfirmDialog({
             onClick={onCancel}
             disabled={loading}
             className="px-4 py-2 text-sm rounded-lg disabled:opacity-50"
-            style={{ border: '1px solid #dde4ec', color: '#3d4756' }}
+            style={{ border: '1px solid var(--border-subtle, #dde4ec)', color: 'var(--ink-2, #3d4756)' }}
           >
             {cancelText}
           </button>

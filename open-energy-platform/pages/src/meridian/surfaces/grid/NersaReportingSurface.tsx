@@ -31,7 +31,7 @@ function pickSection(sections: any, name: string): any[] {
 
 function Kpi({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-[var(--line)] bg-white px-3 py-2">
+    <div className="rounded-lg border border-[var(--line)] bg-surface-v2 px-3 py-2">
       <div className="text-[10px] uppercase tracking-wide text-[var(--ink3)]">{label}</div>
       <div className="text-[15px] font-semibold text-[var(--ink)]">{value}</div>
     </div>
@@ -40,7 +40,7 @@ function Kpi({ label, value }: { label: string; value: React.ReactNode }) {
 
 function MiniTable({ title, rows, cols }: { title: string; rows: any[]; cols: { key: string; label: string; render?: (r: any) => React.ReactNode }[] }) {
   return (
-    <div className="rounded-lg border border-[var(--line)] bg-white overflow-hidden">
+    <div className="rounded-lg border border-[var(--line)] bg-surface-v2 overflow-hidden">
       <div className="px-3 py-2 bg-[var(--raised)] text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)]">{title}</div>
       {rows.length === 0 ? (
         <div className="px-3 py-6 text-center text-[12px] text-[var(--ink3)]">No rows for this period.</div>

@@ -32,8 +32,8 @@ function StepIndicator({ steps, current }: { steps: WizardStep[]; current: numbe
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold border-2 transition-all"
               style={{
-                background: i < current ? '#1a8a5b' : i === current ? 'oklch(0.46 0.16 55)' : '#f1f4f8',
-                borderColor: i < current ? '#1a8a5b' : i === current ? 'oklch(0.46 0.16 55)' : '#dde4ec',
+                background: i < current ? 'var(--good, #1a8a5b)' : i === current ? 'oklch(0.46 0.16 55)' : '#f1f4f8',
+                borderColor: i < current ? 'var(--good, #1a8a5b)' : i === current ? 'oklch(0.46 0.16 55)' : 'var(--border-subtle, #dde4ec)',
                 color: i <= current ? '#fff' : '#9aa6b4',
               }}
             >
@@ -41,7 +41,7 @@ function StepIndicator({ steps, current }: { steps: WizardStep[]; current: numbe
             </div>
             <div
               className="text-[9px] mt-0.5 text-center leading-tight px-1"
-              style={{ color: i === current ? '#0f1c2e' : '#9aa6b4', maxWidth: 56 }}
+              style={{ color: i === current ? 'var(--ink, #0f1c2e)' : '#9aa6b4', maxWidth: 56 }}
             >
               {s.title}
             </div>
@@ -49,7 +49,7 @@ function StepIndicator({ steps, current }: { steps: WizardStep[]; current: numbe
           {i < steps.length - 1 && (
             <div
               className="flex-1 h-[2px] mt-3.5 mx-0.5 rounded"
-              style={{ background: i < current ? '#1a8a5b' : '#dde4ec', minWidth: 12 }}
+              style={{ background: i < current ? 'var(--good, #1a8a5b)' : 'var(--border-subtle, #dde4ec)', minWidth: 12 }}
             />
           )}
         </React.Fragment>
@@ -201,7 +201,7 @@ export function WizardModal({
     }
   };
 
-  const btnBg = spec.cta === 'danger' ? '#c0392b' : '#0f1c2e';
+  const btnBg = spec.cta === 'danger' ? 'var(--bad, #c0392b)' : 'var(--ink, #0f1c2e)';
 
   return (
     <AnimatePresence>
@@ -224,7 +224,7 @@ export function WizardModal({
           role="dialog"
           aria-modal="true"
           className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl"
-          style={{ background: '#fff', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+          style={{ background: 'var(--s1, #fff)', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
         >
           {/* Header */}
           <div
@@ -243,7 +243,7 @@ export function WizardModal({
             <button
               type="button"
               onClick={onClose}
-              className="mt-0.5 p-1.5 rounded-md hover:bg-[#eef2f7] transition-colors"
+              className="mt-0.5 p-1.5 rounded-md hover:bg-[var(--s2, #eef2f7)] transition-colors"
               style={{ color: 'oklch(0.55 0.008 250)' }}
               aria-label="Close wizard"
             >
@@ -258,11 +258,11 @@ export function WizardModal({
 
             {/* Step header */}
             <div className="mb-4">
-              <h3 className="text-[15px] font-bold" style={{ color: '#0f1c2e' }}>
+              <h3 className="text-[15px] font-bold" style={{ color: 'var(--ink, #0f1c2e)' }}>
                 {currentStep.title}
               </h3>
               {currentStep.description && (
-                <p className="mt-1 text-[12px] leading-relaxed" style={{ color: '#6b7685' }}>
+                <p className="mt-1 text-[12px] leading-relaxed" style={{ color: 'var(--ink-2, #6b7685)' }}>
                   {currentStep.description}
                 </p>
               )}
@@ -313,7 +313,7 @@ export function WizardModal({
           {/* Footer */}
           <div
             className="px-6 py-4 border-t flex items-center justify-between gap-3"
-            style={{ borderColor: '#e5ebf2', background: '#fafbfc' }}
+            style={{ borderColor: 'var(--border-subtle, #e5ebf2)', background: '#fafbfc' }}
           >
             {/* Back / step counter */}
             <div className="flex items-center gap-3">
@@ -321,8 +321,8 @@ export function WizardModal({
                 <button
                   type="button"
                   onClick={() => { setStepIndex(i => i - 1); setErr(null); }}
-                  className="flex items-center gap-1 text-[12px] font-semibold h-9 px-3 rounded-lg border transition-colors hover:bg-[#eef2f7]"
-                  style={{ borderColor: '#dde4ec', color: '#0f1c2e' }}
+                  className="flex items-center gap-1 text-[12px] font-semibold h-9 px-3 rounded-lg border transition-colors hover:bg-[var(--s2, #eef2f7)]"
+                  style={{ borderColor: 'var(--border-subtle, #dde4ec)', color: 'var(--ink, #0f1c2e)' }}
                 >
                   <ChevronLeft size={13} /> Back
                 </button>
@@ -330,8 +330,8 @@ export function WizardModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="text-[12px] h-9 px-3 rounded-lg border hover:bg-[#eef2f7] transition-colors"
-                  style={{ borderColor: '#dde4ec', color: '#6b7685' }}
+                  className="text-[12px] h-9 px-3 rounded-lg border hover:bg-[var(--s2, #eef2f7)] transition-colors"
+                  style={{ borderColor: 'var(--border-subtle, #dde4ec)', color: 'var(--ink-2, #6b7685)' }}
                 >
                   Cancel
                 </button>
@@ -347,7 +347,7 @@ export function WizardModal({
               onClick={advance}
               disabled={saving || saved}
               className="flex items-center gap-1.5 h-9 px-5 rounded-lg text-[13px] font-semibold text-white transition-all disabled:opacity-50"
-              style={{ background: saved ? '#1a8a5b' : btnBg }}
+              style={{ background: saved ? 'var(--good, #1a8a5b)' : btnBg }}
             >
               {saved ? (
                 <><Check size={14} /> Done</>
@@ -394,18 +394,18 @@ export function WizardPicker({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
           className="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
-          style={{ background: '#fff' }}
+          style={{ background: 'var(--s1, #fff)' }}
         >
           <div
             className="px-5 py-4 border-b flex items-center justify-between"
-            style={{ borderColor: '#e5ebf2' }}
+            style={{ borderColor: 'var(--border-subtle, #e5ebf2)' }}
           >
             <div>
-              <div className="text-[15px] font-bold" style={{ color: '#0f1c2e' }}>Quick start</div>
-              <div className="text-[11px]" style={{ color: '#6b7685' }}>Guided step-by-step workflows</div>
+              <div className="text-[15px] font-bold" style={{ color: 'var(--ink, #0f1c2e)' }}>Quick start</div>
+              <div className="text-[11px]" style={{ color: 'var(--ink-2, #6b7685)' }}>Guided step-by-step workflows</div>
             </div>
-            <button type="button" onClick={onClose} className="p-1.5 rounded-md hover:bg-[#eef2f7]" aria-label="Close">
-              <X size={15} style={{ color: '#6b7685' }} />
+            <button type="button" onClick={onClose} className="p-1.5 rounded-md hover:bg-[var(--s2, #eef2f7)]" aria-label="Close">
+              <X size={15} style={{ color: 'var(--ink-2, #6b7685)' }} />
             </button>
           </div>
           <div className="p-3 space-y-2 max-h-80 overflow-y-auto">
@@ -415,11 +415,11 @@ export function WizardPicker({
                 type="button"
                 onClick={() => onSelect(w)}
                 className="w-full text-left rounded-xl border p-3.5 transition-all hover:border-[oklch(0.46_0.16_55)] hover:shadow-sm"
-                style={{ borderColor: '#e5ebf2', background: '#fafbfc' }}
+                style={{ borderColor: 'var(--border-subtle, #e5ebf2)', background: '#fafbfc' }}
               >
-                <div className="text-[13px] font-semibold" style={{ color: '#0f1c2e' }}>{w.title}</div>
+                <div className="text-[13px] font-semibold" style={{ color: 'var(--ink, #0f1c2e)' }}>{w.title}</div>
                 {w.subtitle && (
-                  <div className="mt-0.5 text-[11px]" style={{ color: '#6b7685' }}>{w.subtitle}</div>
+                  <div className="mt-0.5 text-[11px]" style={{ color: 'var(--ink-2, #6b7685)' }}>{w.subtitle}</div>
                 )}
                 <div className="mt-1.5 text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'oklch(0.46 0.16 55)' }}>
                   {w.steps.length} steps

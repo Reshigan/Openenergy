@@ -56,7 +56,7 @@ export default function MilestonesSurface(_props: { role: string }) {
       ) : items.length === 0 ? (
         <div className="text-[13px] text-[var(--ink3)]">No milestones for this project.</div>
       ) : (
-        <div className="rounded-lg border border-[var(--line)] bg-white overflow-hidden">
+        <div className="rounded-lg border border-[var(--line)] bg-surface-v2 overflow-hidden">
           <table className="w-full text-[13px]">
             <thead className="bg-[var(--raised)] text-left text-[10px] uppercase tracking-wide text-[var(--ink3)]">
               <tr><th className="px-4 py-2">Milestone</th><th className="px-4 py-2">Due</th><th className="px-4 py-2">Status</th><th className="px-4 py-2" /></tr>

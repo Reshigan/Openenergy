@@ -21,18 +21,18 @@ interface MeterRow {
 interface TimelineEvent { id: string; event_type: string; created_at: string; actor_id?: string; }
 
 const TONE: Record<SmaStatus, { bg: string; fg: string; label: string }> = {
-  ordered:              { bg: '#f0f3f7', fg: '#445566', label: 'Ordered' },
-  factory_acceptance:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Factory acceptance' },
-  site_delivery:        { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Delivered' },
-  installation_pending: { bg: '#fff4d6', fg: '#a06200', label: 'Install pending' },
-  installed:            { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Installed' },
-  commissioning:        { bg: '#fff4d6', fg: '#a06200', label: 'Commissioning' },
-  communication_test:   { bg: '#fff4d6', fg: '#a06200', label: 'Comms test' },
-  data_quality_pass:    { bg: '#daf5e2', fg: '#1f6b3a', label: 'Data quality OK' },
-  operational:          { bg: '#daf5e2', fg: '#1f6b3a', label: 'Operational' },
-  fault_detected:       { bg: '#fde0e0', fg: '#9b1f1f', label: 'Fault' },
-  replacement_pending:  { bg: '#fff4d6', fg: '#a06200', label: 'Replacement pending' },
-  decommissioned:       { bg: '#e3e7ec', fg: '#557', label: 'Decommissioned' },
+  ordered:              { bg: 'var(--s2, #f0f3f7)', fg: 'var(--ink-2, #445566)', label: 'Ordered' },
+  factory_acceptance:   { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Factory acceptance' },
+  site_delivery:        { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Delivered' },
+  installation_pending: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Install pending' },
+  installed:            { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Installed' },
+  commissioning:        { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Commissioning' },
+  communication_test:   { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Comms test' },
+  data_quality_pass:    { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Data quality OK' },
+  operational:          { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Operational' },
+  fault_detected:       { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Fault' },
+  replacement_pending:  { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Replacement pending' },
+  decommissioned:       { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)', label: 'Decommissioned' },
 };
 
 const ACTIONS: Array<{ action: string; label: string; from: SmaStatus[]; danger?: boolean }> = [
@@ -59,10 +59,10 @@ const TERMINAL = new Set<SmaStatus>(['operational', 'decommissioned']);
 
 function Kpi({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
+    <div style={{ background: 'var(--s1, #fff)', border: '1px solid var(--border-subtle, #e3e7ec)', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
       <div style={{ fontSize: 11, color: '#557', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#0f1c2e', marginTop: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: '#7a8a9a', marginTop: 2 }}>{sub}</div>}
+      <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink, #0f1c2e)', marginTop: 4 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--ink-2, #7a8a9a)', marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
@@ -139,7 +139,7 @@ export function SmartMeterChainTab() {
     <div data-testid="esums-smart-meter-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1c2e', marginTop: 0 }}>Smart-meter commissioning</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink, #0f1c2e)', marginTop: 0 }}>Smart-meter commissioning</h2>
           <p style={{ fontSize: 13, color: '#557', marginTop: 4, maxWidth: 720 }}>
             Every meter from purchase order through FAT, delivery, installation, commissioning, comms test
             and data-quality validation to operational service. URGENT SLA by class (HV bulk 7d &rarr; post-paid 30d).
@@ -164,7 +164,7 @@ export function SmartMeterChainTab() {
       />
 
       {creating && (
-        <div style={{ marginTop: 12, padding: 14, background: '#f6f8fb', border: '1px solid #e3e7ec', borderRadius: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div style={{ marginTop: 12, padding: 14, background: 'var(--s1, #f6f8fb)', border: '1px solid var(--border-subtle, #e3e7ec)', borderRadius: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <label style={{ fontSize: 12, color: '#557' }}>Meter serial<br />
             <input value={form.meter_serial} onChange={(e) => setForm((f) => ({ ...f, meter_serial: e.target.value }))}
               style={{ marginTop: 4, padding: '6px 8px', border: '1px solid #cfd8e3', borderRadius: 6, fontSize: 13 }} />
@@ -183,7 +183,7 @@ export function SmartMeterChainTab() {
             </select>
           </label>
           <button type="button" onClick={() => void create()}
-            style={{ padding: '8px 14px', background: '#1f6b3a', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Create</button>
+            style={{ padding: '8px 14px', background: 'var(--good, #1f6b3a)', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Create</button>
         </div>
       )}
 
@@ -197,18 +197,18 @@ export function SmartMeterChainTab() {
       <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
         {FILTERS.map((f) => (
           <button type="button" key={f.key} onClick={() => setFilter(f.key)}
-            style={{ padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
-              background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff', color: filter === f.key ? '#fff' : '#0f1c2e',
+            style={{ padding: '6px 12px', borderRadius: 999, border: '1px solid var(--border-subtle, #e3e7ec)',
+              background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff', color: filter === f.key ? '#fff' : 'var(--ink, #0f1c2e)',
               fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{f.label}</button>
         ))}
       </div>
 
-      {error && <div style={{ marginTop: 12, padding: '8px 12px', background: '#fde0e0', color: '#9b1f1f', borderRadius: 6, fontSize: 13 }}>{error}</div>}
+      {error && <div style={{ marginTop: 12, padding: '8px 12px', background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', color: 'var(--bad, #9b1f1f)', borderRadius: 6, fontSize: 13 }}>{error}</div>}
 
-      <div style={{ marginTop: 14, background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, overflow: 'hidden' }}>
+      <div style={{ marginTop: 14, background: 'var(--s1, #fff)', border: '1px solid var(--border-subtle, #e3e7ec)', borderRadius: 8, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
-            <tr style={{ background: '#f6f8fb', textAlign: 'left', color: '#557' }}>
+            <tr style={{ background: 'var(--s1, #f6f8fb)', textAlign: 'left', color: '#557' }}>
               <th style={{ padding: '8px 12px' }}>Serial</th>
               <th style={{ padding: '8px 12px' }}>Class</th>
               <th style={{ padding: '8px 12px' }}>Site</th>
@@ -218,21 +218,21 @@ export function SmartMeterChainTab() {
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: '#7a8a9a' }}>
+              <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: 'var(--ink-2, #7a8a9a)' }}>
                 {loading ? 'Loading...' : 'No meters in this view. Use "Add meter" to register one.'}
               </td></tr>
             )}
             {filtered.map((r) => {
               const tone = TONE[r.chain_status] ?? { bg: '#eee', fg: '#333', label: r.chain_status };
               return (
-                <tr key={r.id} onClick={() => void openDrill(r)} style={{ borderTop: '1px solid #eef1f5', cursor: 'pointer' }}>
+                <tr key={r.id} onClick={() => void openDrill(r)} style={{ borderTop: '1px solid var(--border-subtle, #eef1f5)', cursor: 'pointer' }}>
                   <td style={{ padding: '8px 12px', fontWeight: 600 }}>{r.meter_serial}</td>
                   <td style={{ padding: '8px 12px' }}>{r.meter_class}</td>
                   <td style={{ padding: '8px 12px' }}>{r.site_id}</td>
                   <td style={{ padding: '8px 12px' }}>
                     <span style={{ background: tone.bg, color: tone.fg, padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{tone.label}</span>
                   </td>
-                  <td style={{ padding: '8px 12px', fontSize: 12, color: r.sla_breached ? '#9b1f1f' : '#557' }}>{slaText(r.sla_deadline, r.sla_breached)}</td>
+                  <td style={{ padding: '8px 12px', fontSize: 12, color: r.sla_breached ? 'var(--bad, #9b1f1f)' : '#557' }}>{slaText(r.sla_deadline, r.sla_breached)}</td>
                 </tr>
               );
             })}
@@ -241,7 +241,7 @@ export function SmartMeterChainTab() {
       </div>
 
       {drill && (
-        <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 560, background: '#fff', borderLeft: '1px solid #e3e7ec', boxShadow: '-4px 0 16px rgba(0,0,0,0.08)', zIndex: 50, padding: 20, overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 560, background: 'var(--s1, #fff)', borderLeft: '1px solid var(--border-subtle, #e3e7ec)', boxShadow: '-4px 0 16px rgba(0,0,0,0.08)', zIndex: 50, padding: 20, overflowY: 'auto' }}>
           <button type="button" onClick={() => setDrill(null)} style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', fontSize: 18, cursor: 'pointer' }}>&times;</button>
           <h3 style={{ marginTop: 0, fontSize: 17 }}>{drill.meter_serial}</h3>
           <div style={{ fontSize: 12, color: '#557' }}>{drill.id} &middot; {drill.meter_class} &middot; site {drill.site_id}</div>
@@ -252,12 +252,12 @@ export function SmartMeterChainTab() {
 
           <h4 style={{ marginTop: 18, fontSize: 13, color: '#557' }}>Timeline</h4>
           <div style={{ marginTop: 6, maxHeight: 280, overflowY: 'auto' }}>
-            {timeline.length === 0 && <div style={{ fontSize: 12, color: '#7a8a9a' }}>No events recorded.</div>}
+            {timeline.length === 0 && <div style={{ fontSize: 12, color: 'var(--ink-2, #7a8a9a)' }}>No events recorded.</div>}
             {timeline.map((ev) => (
-              <div key={ev.id} style={{ padding: '8px 10px', borderBottom: '1px solid #eef1f5' }}>
+              <div key={ev.id} style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-subtle, #eef1f5)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontWeight: 600, fontSize: 12 }}>{ev.event_type}</span>
-                  <span style={{ fontSize: 10, color: '#7a8a9a' }}>{ev.created_at.slice(0, 16).replace('T', ' ')}</span>
+                  <span style={{ fontSize: 10, color: 'var(--ink-2, #7a8a9a)' }}>{ev.created_at.slice(0, 16).replace('T', ' ')}</span>
                 </div>
               </div>
             ))}
@@ -266,7 +266,7 @@ export function SmartMeterChainTab() {
           <div style={{ marginTop: 18, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {ACTIONS.filter((a) => a.from.includes(drill.chain_status)).map((a) => (
               <button type="button" key={a.action} onClick={() => void act(a.action, drill.id)}
-                style={{ padding: '6px 12px', background: a.danger ? '#9b1f1f' : 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}>{a.label}</button>
+                style={{ padding: '6px 12px', background: a.danger ? 'var(--bad, #9b1f1f)' : 'oklch(0.46 0.16 55)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}>{a.label}</button>
             ))}
           </div>
         </div>

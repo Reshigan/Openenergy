@@ -61,9 +61,9 @@ const TONES: Record<string, string> = {
   teal: '#1f9b95',
   sky: '#5fa8e8',
   amber: '#c97a14',
-  red: '#c0392b',
-  green: '#1a8a5b',
-  muted: '#6b7685',
+  red: 'var(--bad, #c0392b)',
+  green: 'var(--good, #1a8a5b)',
+  muted: 'var(--ink-2, #6b7685)',
 };
 
 export function OEIcon({ name, size = 20, className = '', tone, filled, ariaLabel }: OEIconProps) {

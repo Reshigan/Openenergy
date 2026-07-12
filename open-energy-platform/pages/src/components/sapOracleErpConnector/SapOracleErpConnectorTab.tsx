@@ -197,36 +197,36 @@ interface SoecEvent {
 }
 
 const STATE_TONE: Record<SoecStatus, { bg: string; fg: string; label: string }> = {
-  connector_proposed:           { bg: '#e3e7ec', fg: '#445',    label: 'Proposed' },
-  erp_endpoint_validated:       { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Endpoint OK' },
-  company_code_mapped:          { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Company code' },
-  chart_of_accounts_bound:      { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'CoA bound' },
-  schemas_loaded:               { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Schemas' },
-  idoc_session_established:     { bg: '#fff4d6', fg: '#a06200', label: 'IDoc session' },
-  test_postings_validated:      { bg: '#fff4d6', fg: '#a06200', label: 'Test postings' },
-  reconciliation_period_bound:  { bg: '#fff4d6', fg: '#a06200', label: 'Recon bound' },
-  live_posting_active:          { bg: '#daf5e2', fg: '#1f6b3a', label: 'Live posting' },
-  period_close_reconciled:      { bg: '#daf5e2', fg: '#1f6b3a', label: 'Period closed' },
-  archived:                     { bg: '#1f5b3a', fg: '#fff',    label: 'Archived' },
-  disconnected:                 { bg: '#7a0e0e', fg: '#fff',    label: 'Disconnected' },
-  credential_revoked:           { bg: '#7a0e0e', fg: '#fff',    label: 'Cred revoked' },
-  suspended:                    { bg: '#e3e7ec', fg: '#445',    label: 'Suspended' },
-  failover_active:              { bg: '#fff4d6', fg: '#a06200', label: 'Failover' },
+  connector_proposed:           { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Proposed' },
+  erp_endpoint_validated:       { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Endpoint OK' },
+  company_code_mapped:          { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Company code' },
+  chart_of_accounts_bound:      { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'CoA bound' },
+  schemas_loaded:               { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Schemas' },
+  idoc_session_established:     { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'IDoc session' },
+  test_postings_validated:      { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Test postings' },
+  reconciliation_period_bound:  { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Recon bound' },
+  live_posting_active:          { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Live posting' },
+  period_close_reconciled:      { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Period closed' },
+  archived:                     { bg: 'var(--good, #1f5b3a)', fg: '#fff',    label: 'Archived' },
+  disconnected:                 { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Disconnected' },
+  credential_revoked:           { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Cred revoked' },
+  suspended:                    { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Suspended' },
+  failover_active:              { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Failover' },
 };
 
 const TIER_TONE: Record<SoecTier, { bg: string; fg: string; label: string }> = {
-  single_module:        { bg: '#e3e7ec', fg: '#557',    label: 'Single module' },
-  multi_module:         { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Multi-module' },
-  enterprise_wide:      { bg: '#daf5e2', fg: '#1f6b3a', label: 'Enterprise-wide' },
-  group_consolidation:  { bg: '#fff4d6', fg: '#a06200', label: 'Group consol.' },
-  multi_country:        { bg: '#7a0e0e', fg: '#fff',    label: 'Multi-country' },
+  single_module:        { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Single module' },
+  multi_module:         { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Multi-module' },
+  enterprise_wide:      { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Enterprise-wide' },
+  group_consolidation:  { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Group consol.' },
+  multi_country:        { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Multi-country' },
 };
 
 const HEALTH_TONE: Record<HealthBand, { bg: string; fg: string; label: string }> = {
-  green:    { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Green' },
-  amber:    { bg: '#fff4d6', fg: '#a06200', label: 'Amber' },
-  red:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Red' },
-  critical: { bg: '#7a0e0e', fg: '#fff',    label: 'Critical' },
+  green:    { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f5b3a)', label: 'Green' },
+  amber:    { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Amber' },
+  red:      { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Red' },
+  critical: { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Critical' },
 };
 
 const FILTERS_ACTION: Array<{ key: string; label: string }> = [
@@ -570,8 +570,8 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
     <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">SAP / Oracle ERP connector</h2>
-          <p className="text-[11px] text-[#4a5568]">
+          <h2 className="text-base font-semibold text-[var(--ink, #0c2a4d)]">SAP / Oracle ERP connector</h2>
+          <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
             10-state forward + 4 branch enterprise back-office GL/AP/AR posting spine - SAP S/4HANA OData v4 / SAP ECC IDoc FIDCC1/FIDCC2/REMADV/INVOIC / Oracle EBS + Fusion / Workday / SAGE 300 / Dynamics 365 / NetSuite / Epicor / IFS.
             Beats SAP S/4HANA Cloud Integration + Oracle Integration Cloud + Workday Integration Cloud + MuleSoft + Boomi + Informatica + TIBCO + IBM AppConnect + SnapLogic + Celigo integrator.io.
             INVERTED SLA HOURS (single 168 / multi-module 240 / enterprise 360 / group 480 / multi-country 720).
@@ -603,7 +603,7 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
       </div>
 
       {/* Drill rail */}
-      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[#d8dde6] bg-white px-3 py-2 text-[11px] text-[#4a5568]">
+      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2 text-[11px] text-[var(--ink-2, #4a5568)]">
         <span>Proposed: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.proposed_count}</span></span>
         <span>Endpoint: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.endpoint_v_count}</span></span>
         <span>CC mapped: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.cc_mapped_count}</span></span>
@@ -612,13 +612,13 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
         <span>IDoc session: <span className="font-semibold text-[#a06200]">{kpis.idoc_count}</span></span>
         <span>Tests OK: <span className="font-semibold text-[#a06200]">{kpis.tests_count}</span></span>
         <span>Recon bound: <span className="font-semibold text-[#a06200]">{kpis.recon_bound_count}</span></span>
-        <span>Reconciled: <span className="font-semibold text-[#1f6b3a]">{kpis.reconciled_count}</span></span>
-        <span>Archived: <span className="font-semibold text-[#1f5b3a]">{kpis.archived_count}</span></span>
-        <span>Suspended: <span className="font-semibold text-[#6b7685]">{kpis.suspended_count}</span></span>
-        <span>Reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
+        <span>Reconciled: <span className="font-semibold text-[var(--good, #1f6b3a)]">{kpis.reconciled_count}</span></span>
+        <span>Archived: <span className="font-semibold text-[var(--good, #1f5b3a)]">{kpis.archived_count}</span></span>
+        <span>Suspended: <span className="font-semibold text-[var(--ink-2, #6b7685)]">{kpis.suspended_count}</span></span>
+        <span>Reportable: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.reportable_total}</span></span>
         <span>Floor flags: <span className="font-semibold text-[#a06200]">{kpis.floor_flag_total}</span></span>
         <span>Cred {'<'}60d: <span className="font-semibold text-[#a06200]">{kpis.creds_expiring_within_60d}</span></span>
-        <span>Cred {'<'}14d: <span className="font-semibold text-[#9b1f1f]">{kpis.creds_expiring_within_14d}</span></span>
+        <span>Cred {'<'}14d: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.creds_expiring_within_14d}</span></span>
         <span>Audit chain: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
         <span>Settlement connector: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w124_bridged_count}</span></span>
         <span>Counterparty margin: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w68_bridged_count}</span></span>
@@ -635,7 +635,7 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #4a5568)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -652,7 +652,7 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -668,8 +668,8 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#7a0e0e] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                ? 'bg-[var(--bad, #7a0e0e)] text-white'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -686,7 +686,7 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -702,8 +702,8 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#1f6b3a] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                ? 'bg-[var(--good, #1f6b3a)] text-white'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -715,11 +715,11 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
         <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
       )}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-4 py-6 text-center text-sm text-[var(--ink-2, #4a5568)]">Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
+        <div className="overflow-hidden rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
           <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
+            <thead className="bg-[var(--s2, #f3f5f9)]">
               <tr className="text-left">
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Connector #</th>
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Counterparty</th>
@@ -747,21 +747,21 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
                   <tr
                     key={r.id}
                     onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
+                    className="cursor-pointer border-t border-[var(--border-subtle, #e3e7ec)] hover:bg-[var(--s1, #f8fafc)]"
                   >
-                    <td className="px-3 py-2 font-mono text-[#0c2a4d]">
+                    <td className="px-3 py-2 font-mono text-[var(--ink, #0c2a4d)]">
                       <div className="text-[11px] font-semibold">{r.connector_number}</div>
-                      <div className="text-[10px] text-[#6b7685]">{r.peer_id}</div>
-                      {r.is_reportable_flag ? <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">REG</span> : null}
-                      {r.regulator_ref ? <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">FILED</span> : null}
-                      {r.floor_at_multi_country_live ? <span className="ml-1 text-[9px] font-semibold text-[#7a0e0e]">MC</span> : null}
+                      <div className="text-[10px] text-[var(--ink-2, #6b7685)]">{r.peer_id}</div>
+                      {r.is_reportable_flag ? <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #9b1f1f)]">REG</span> : null}
+                      {r.regulator_ref ? <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #9b1f1f)]">FILED</span> : null}
+                      {r.floor_at_multi_country_live ? <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #7a0e0e)]">MC</span> : null}
                     </td>
                     <td className="px-3 py-2 text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.counterparty_name ?? '-'}
                     </td>
                     <td className="px-3 py-2 text-[11px] font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {fmtErp(r.erp_system)}
-                      <div className="text-[10px] text-[#6b7685]">{fmtProto(r.protocol)}</div>
+                      <div className="text-[10px] text-[var(--ink-2, #6b7685)]">{fmtProto(r.protocol)}</div>
                     </td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tier.bg, color: tier.fg }}>
@@ -778,26 +778,26 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
                         {cs.label}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[11px] font-mono text-[#0c2a4d]">
+                    <td className="px-3 py-2 text-right tabular-nums text-[11px] font-mono text-[var(--ink, #0c2a4d)]">
                       {scope}
                     </td>
-                    <td className={`px-3 py-2 text-center tabular-nums ${control >= 100 ? 'text-[#1f5b3a]' : control >= 60 ? 'text-[#a06200]' : 'text-[#9b1f1f] font-semibold'}`}>
+                    <td className={`px-3 py-2 text-center tabular-nums ${control >= 100 ? 'text-[var(--good, #1f5b3a)]' : control >= 60 ? 'text-[#a06200]' : 'text-[var(--bad, #9b1f1f)] font-semibold'}`}>
                       {control}/130
                     </td>
-                    <td className={`px-3 py-2 text-center text-[10px] uppercase tracking-wider ${credDays != null && credDays < 14 ? 'text-[#9b1f1f] font-semibold' : credDays != null && credDays < 60 ? 'text-[#a06200]' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-center text-[10px] uppercase tracking-wider ${credDays != null && credDays < 14 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : credDays != null && credDays < 60 ? 'text-[#a06200]' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {credDays != null ? `${credDays}d` : '-'}
                     </td>
-                    <td className={`px-3 py-2 text-center tabular-nums ${flags >= 3 ? 'text-[#7a0e0e] font-semibold' : flags >= 1 ? 'text-[#a06200]' : 'text-[#1f5b3a]'}`}>
+                    <td className={`px-3 py-2 text-center tabular-nums ${flags >= 3 ? 'text-[var(--bad, #7a0e0e)] font-semibold' : flags >= 1 ? 'text-[#a06200]' : 'text-[var(--good, #1f5b3a)]'}`}>
                       {flags}
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {r.sla_breached_live ? 'BREACHED' : fmtHoursSla(r.sla_hours_remaining_live)}
                     </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={11} className="px-3 py-6 text-center text-[#4a5568]">No connectors match.</td></tr>
+                <tr><td colSpan={11} className="px-3 py-6 text-center text-[var(--ink-2, #4a5568)]">No connectors match.</td></tr>
               )}
             </tbody>
           </table>
@@ -816,10 +816,10 @@ export function SapOracleErpConnectorTab({ regulatorView }: Props = {}) {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'ok' ? '#1f5b3a' : '#0c2a4d';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : tone === 'ok' ? 'var(--good, #1f5b3a)' : 'var(--ink, #0c2a4d)';
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
+    <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
     </div>
   );
@@ -868,10 +868,10 @@ function Drawer({
     const cls = tone === 'primary'
       ? 'bg-[#c2873a] text-white hover:bg-[#c2873a]'
       : tone === 'danger'
-        ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
+        ? 'bg-[var(--bad, #7a0e0e)] text-white hover:bg-[var(--bad, #9b1f1f)]'
         : tone === 'amber'
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
-          : 'bg-white border border-[#d8dde6] hover:bg-[#f3f5f9]';
+          : 'bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]';
     return (
       <button type="button"
         key={action}
@@ -887,21 +887,21 @@ function Drawer({
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-stretch justify-end bg-black/40">
-      <div className="w-full max-w-3xl overflow-y-auto bg-[#f3f5f9] p-4">
+      <div className="w-full max-w-3xl overflow-y-auto bg-[var(--s2, #f3f5f9)] p-4">
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">
+            <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">
               {fmtErp(row.erp_system)} {'•'} {fmtProto(row.protocol)} {'•'} {row.current_tier.replace(/_/g, ' ')}
               {row.module_count != null ? <> {'•'} {row.module_count}m/{row.company_code_count ?? 0}cc/{row.jurisdiction_count ?? 0}j</> : null}
             </div>
-            <h3 className="text-lg font-semibold text-[#0c2a4d]">{row.connector_number}</h3>
-            <p className="text-[11px] text-[#4a5568]">
+            <h3 className="text-lg font-semibold text-[var(--ink, #0c2a4d)]">{row.connector_number}</h3>
+            <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
               {row.title || 'SAP/Oracle ERP connector'} {'•'} peer <span className="font-mono">{row.peer_id}</span>
               {row.counterparty_name ? <> {'•'} {row.counterparty_name}</> : null}
               {row.endpoint_url ? <> {'•'} <span className="font-mono text-[10px]">{row.endpoint_url}</span></> : null}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] px-3 py-1 text-[12px] hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         {/* 4 scoring indexes */}
@@ -913,76 +913,76 @@ function Drawer({
         </div>
 
         {/* Posting battery */}
-        <div className="mb-3 grid grid-cols-4 gap-2 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
+        <div className="mb-3 grid grid-cols-4 gap-2 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px]">
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Postings/hr</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.posting_volume_per_hour ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Postings/hr</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.posting_volume_per_hour ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Successful 24h</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.successful_posting_count_24h ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Successful 24h</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.successful_posting_count_24h ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Failed 24h</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.failed_posting_count_24h ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Failed 24h</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.failed_posting_count_24h ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Failure %</div>
-            <div className={`font-mono text-[12px] ${(row.failure_rate_pct ?? 0) > 2 ? 'text-[#9b1f1f] font-semibold' : (row.failure_rate_pct ?? 0) > 1 ? 'text-[#a06200]' : 'text-[#1f5b3a]'}`}>{row.failure_rate_pct ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Failure %</div>
+            <div className={`font-mono text-[12px] ${(row.failure_rate_pct ?? 0) > 2 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : (row.failure_rate_pct ?? 0) > 1 ? 'text-[#a06200]' : 'text-[var(--good, #1f5b3a)]'}`}>{row.failure_rate_pct ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Latency</div>
-            <div className={`font-mono text-[12px] ${(row.average_posting_latency_ms ?? 0) > 300 ? 'text-[#9b1f1f] font-semibold' : (row.average_posting_latency_ms ?? 0) > 150 ? 'text-[#a06200]' : 'text-[#0c2a4d]'}`}>{row.average_posting_latency_ms ?? '-'} ms</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Latency</div>
+            <div className={`font-mono text-[12px] ${(row.average_posting_latency_ms ?? 0) > 300 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : (row.average_posting_latency_ms ?? 0) > 150 ? 'text-[#a06200]' : 'text-[var(--ink, #0c2a4d)]'}`}>{row.average_posting_latency_ms ?? '-'} ms</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Recon breaks</div>
-            <div className={`font-mono text-[12px] ${(row.reconciliation_break_count ?? 0) > 0 ? 'text-[#a06200]' : 'text-[#0c2a4d]'}`}>{row.reconciliation_break_count ?? 0}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Recon breaks</div>
+            <div className={`font-mono text-[12px] ${(row.reconciliation_break_count ?? 0) > 0 ? 'text-[#a06200]' : 'text-[var(--ink, #0c2a4d)]'}`}>{row.reconciliation_break_count ?? 0}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">IFRS 15 contrib</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.ifrs_15_revenue_contribution_pct ?? '-'} %</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">IFRS 15 contrib</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.ifrs_15_revenue_contribution_pct ?? '-'} %</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">IFRS 9 contrib</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.ifrs_9_financial_instrument_contribution_pct ?? '-'} %</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">IFRS 9 contrib</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.ifrs_9_financial_instrument_contribution_pct ?? '-'} %</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">SARS e-filing</div>
-            <div className={`font-mono text-[12px] ${row.sars_efiling_status === 'current' ? 'text-[#1f5b3a]' : row.sars_efiling_status === 'pending' ? 'text-[#a06200]' : row.sars_efiling_status === 'overdue' ? 'text-[#9b1f1f] font-semibold' : 'text-[#4a5568]'}`}>{row.sars_efiling_status ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">SARS e-filing</div>
+            <div className={`font-mono text-[12px] ${row.sars_efiling_status === 'current' ? 'text-[var(--good, #1f5b3a)]' : row.sars_efiling_status === 'pending' ? 'text-[#a06200]' : row.sars_efiling_status === 'overdue' ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>{row.sars_efiling_status ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">CIPC AFS</div>
-            <div className={`font-mono text-[12px] ${row.cipc_annual_filing_status === 'current' ? 'text-[#1f5b3a]' : row.cipc_annual_filing_status === 'pending' ? 'text-[#a06200]' : row.cipc_annual_filing_status === 'overdue' ? 'text-[#9b1f1f] font-semibold' : 'text-[#4a5568]'}`}>{row.cipc_annual_filing_status ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">CIPC AFS</div>
+            <div className={`font-mono text-[12px] ${row.cipc_annual_filing_status === 'current' ? 'text-[var(--good, #1f5b3a)]' : row.cipc_annual_filing_status === 'pending' ? 'text-[#a06200]' : row.cipc_annual_filing_status === 'overdue' ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>{row.cipc_annual_filing_status ?? '-'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Schemas</div>
-            <div className={`font-mono text-[12px] ${row.schemas_compliant ? 'text-[#1f5b3a]' : 'text-[#a06200]'}`}>{row.schemas_compliant ? 'COMPLIANT' : 'NO'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Schemas</div>
+            <div className={`font-mono text-[12px] ${row.schemas_compliant ? 'text-[var(--good, #1f5b3a)]' : 'text-[#a06200]'}`}>{row.schemas_compliant ? 'COMPLIANT' : 'NO'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">ISO 27001</div>
-            <div className={`font-mono text-[12px] ${row.iso27001_controls_ok ? 'text-[#1f5b3a]' : 'text-[#a06200]'}`}>{row.iso27001_controls_ok ? 'OK' : 'NO'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">ISO 27001</div>
+            <div className={`font-mono text-[12px] ${row.iso27001_controls_ok ? 'text-[var(--good, #1f5b3a)]' : 'text-[#a06200]'}`}>{row.iso27001_controls_ok ? 'OK' : 'NO'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">SOC 1 Type II</div>
-            <div className={`font-mono text-[12px] ${row.soc1_type2_audit_ok ? 'text-[#1f5b3a]' : 'text-[#a06200]'}`}>{row.soc1_type2_audit_ok ? 'OK' : 'NO'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">SOC 1 Type II</div>
+            <div className={`font-mono text-[12px] ${row.soc1_type2_audit_ok ? 'text-[var(--good, #1f5b3a)]' : 'text-[#a06200]'}`}>{row.soc1_type2_audit_ok ? 'OK' : 'NO'}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Cred expiry</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{fmtDate(row.credential_expiry_at)}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Cred expiry</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{fmtDate(row.credential_expiry_at)}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Period end</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{fmtDate(row.period_end_at)}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Period end</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{fmtDate(row.period_end_at)}</div>
           </div>
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">Schema ver</div>
-            <div className="font-mono text-[12px] text-[#0c2a4d]">{row.schema_version ?? '-'}</div>
+            <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Schema ver</div>
+            <div className="font-mono text-[12px] text-[var(--ink, #0c2a4d)]">{row.schema_version ?? '-'}</div>
           </div>
         </div>
 
         {/* Floor flags */}
-        <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">
+        <div className="mb-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px]">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">
             Floor flags ({flags}/5) - FLOOR-AT-ENTERPRISE-WIDE {'≥'}1, FLOOR-AT-MULTI-COUNTRY {'≥'}3
           </div>
           <div className="grid grid-cols-5 gap-2">
@@ -995,8 +995,8 @@ function Drawer({
         </div>
 
         {/* Bridges */}
-        <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (audit chain mandatory)</div>
+        <div className="mb-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px]">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">Cross-chain bridges (audit chain mandatory)</div>
           <div className="grid grid-cols-5 gap-2">
             <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="Audit chain" />
             <BridgePill on={!!row.bridges_to_w124_settlement_connector_live} label="Settlement connector" />
@@ -1009,7 +1009,7 @@ function Drawer({
         {/* Regulator + reason */}
         {(row.is_reportable_flag || row.regulator_ref || row.regulator_inbox_ref || row.reason_code) && (
           <div className="mb-3 rounded border border-red-200 bg-red-50 p-3 text-[11px] text-[#7a1f1f]">
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-[#9b1f1f]">Regulator crossing</div>
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-[var(--bad, #9b1f1f)]">Regulator crossing</div>
             {row.reason_code && <div>Reason: <span className="font-mono">{row.reason_code}</span></div>}
             {row.regulator_reason_text && <div>Detail: {row.regulator_reason_text}</div>}
             {row.regulator_ref && <div>Filed ref: <span className="font-mono">{row.regulator_ref}</span></div>}
@@ -1020,7 +1020,7 @@ function Drawer({
 
         {/* Action bar */}
         {!regulatorView && !row.is_hard_terminal && (
-          <div className="mb-4 flex flex-wrap gap-2 rounded border border-[#d8dde6] bg-white p-3">
+          <div className="mb-4 flex flex-wrap gap-2 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3">
             {nextAction && renderAct(nextAction, ACTION_LABEL[nextAction].split('(')[0].trim(), 'primary')}
             {canReconcile && row.chain_status !== 'period_close_reconciled' && renderAct('reconcile-period-close', 'Reconcile close', 'primary')}
             {row.chain_status === 'period_close_reconciled' && renderAct('reconcile-period-close', 'Reconcile close', 'plain')}
@@ -1033,16 +1033,16 @@ function Drawer({
         )}
 
         {/* Timeline */}
-        <div className="rounded border border-[#d8dde6] bg-white">
-          <div className="border-b border-[#e3e7ec] px-3 py-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Timeline</div>
-          <ol className="divide-y divide-[#e3e7ec]">
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
+          <div className="border-b border-[var(--border-subtle, #e3e7ec)] px-3 py-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">Timeline</div>
+          <ol className="divide-y divide-[var(--border-subtle, #e3e7ec)]">
             {events.length === 0 && (
-              <li className="px-3 py-3 text-[11px] text-[#6b7685]">No events.</li>
+              <li className="px-3 py-3 text-[11px] text-[var(--ink-2, #6b7685)]">No events.</li>
             )}
             {events.map((e) => (
               <li key={e.id} className="px-3 py-2 text-[11px]">
                 <div className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.event_type}</div>
-                <div className="text-[10px] text-[#4a5568]">
+                <div className="text-[10px] text-[var(--ink-2, #4a5568)]">
                   {e.from_status || '-'} {'→'} {e.to_status || '-'}
                   {e.actor_party ? <> {'•'} {e.actor_party}</> : null}
                   {' '}{'•'} {fmtDate(e.created_at)}
@@ -1060,7 +1060,7 @@ function Drawer({
 function FlagPill({ on, label }: { on: boolean; label: string }) {
   return (
     <span
-      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[#7a0e0e] text-white' : 'bg-[#e3e7ec] text-[#6b7685]'}`}
+      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[var(--bad, #7a0e0e)] text-white' : 'bg-[var(--border-subtle, #e3e7ec)] text-[var(--ink-2, #6b7685)]'}`}
       title={label}
     >
       {label}
@@ -1071,7 +1071,7 @@ function FlagPill({ on, label }: { on: boolean; label: string }) {
 function BridgePill({ on, label }: { on: boolean; label: string }) {
   return (
     <span
-      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[#c2873a] text-white' : 'bg-[#e3e7ec] text-[#6b7685]'}`}
+      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[#c2873a] text-white' : 'bg-[var(--border-subtle, #e3e7ec)] text-[var(--ink-2, #6b7685)]'}`}
       title={label}
     >
       {label}
@@ -1157,68 +1157,68 @@ function ProposeModal({
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
+      <div className="w-full max-w-2xl rounded bg-surface-v2 p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose SAP / Oracle ERP connector</h3>
-            <p className="text-[11px] text-[#4a5568]">
+            <h3 className="text-base font-semibold text-[var(--ink, #0c2a4d)]">Propose SAP / Oracle ERP connector</h3>
+            <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
               Audit-chain bridge mandatory. Tier auto-derived from (module_count, company_code_count, jurisdiction_count) with FLOOR-AT-ENTERPRISE-WIDE {'≥'}1 flag and FLOOR-AT-MULTI-COUNTRY {'≥'}3 flags.
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] px-3 py-1 text-[12px] hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Peer id (ERP counterparty)">
-            <input value={peerId} onChange={(e) => setPeerId(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="customer-acme-sap-s4hana" />
+            <input value={peerId} onChange={(e) => setPeerId(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="customer-acme-sap-s4hana" />
           </Field>
           <Field label="Counterparty name (legal entity)">
-            <input value={counterparty} onChange={(e) => setCounterparty(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="Acme Holdings (Pty) Ltd" />
+            <input value={counterparty} onChange={(e) => setCounterparty(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="Acme Holdings (Pty) Ltd" />
           </Field>
           <Field label="ERP system">
-            <select value={erpSystem} onChange={(e) => setErpSystem(e.target.value as SoecErpSystem)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]">
+            <select value={erpSystem} onChange={(e) => setErpSystem(e.target.value as SoecErpSystem)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]">
               {ERP_OPTIONS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </Field>
           <Field label="Protocol">
-            <select value={protocol} onChange={(e) => setProtocol(e.target.value as SoecProtocol)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]">
+            <select value={protocol} onChange={(e) => setProtocol(e.target.value as SoecProtocol)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]">
               {PROTOCOL_OPTIONS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </Field>
           <Field label="Module count">
-            <input value={modules} onChange={(e) => setModules(e.target.value)} type="number" className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="3" />
+            <input value={modules} onChange={(e) => setModules(e.target.value)} type="number" className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="3" />
           </Field>
           <Field label="Company code count">
-            <input value={companyCodes} onChange={(e) => setCompanyCodes(e.target.value)} type="number" className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="1" />
+            <input value={companyCodes} onChange={(e) => setCompanyCodes(e.target.value)} type="number" className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="1" />
           </Field>
           <Field label="Jurisdiction count">
-            <input value={jurisdictions} onChange={(e) => setJurisdictions(e.target.value)} type="number" className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="1" />
+            <input value={jurisdictions} onChange={(e) => setJurisdictions(e.target.value)} type="number" className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="1" />
           </Field>
           <Field label="Endpoint URL">
-            <input value={endpointUrl} onChange={(e) => setEndpointUrl(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="https://erp.example.za/odata/v4" />
+            <input value={endpointUrl} onChange={(e) => setEndpointUrl(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="https://erp.example.za/odata/v4" />
           </Field>
           <Field label="Title">
-            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="Acme SAP S/4HANA GL/AP/AR posting rail" />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="Acme SAP S/4HANA GL/AP/AR posting rail" />
           </Field>
           <Field label="Audit block ref (mandatory)">
-            <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
+            <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
           </Field>
           <Field label="Settlement connector ref">
-            <input value={w124} onChange={(e) => setW124(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="soec-w124-001" />
+            <input value={w124} onChange={(e) => setW124(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="soec-w124-001" />
           </Field>
           <Field label="Counterparty margin ref">
-            <input value={w68} onChange={(e) => setW68(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="ccm-2026-0021" />
+            <input value={w68} onChange={(e) => setW68(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="ccm-2026-0021" />
           </Field>
           <Field label="Settlement P6 ref">
-            <input value={w3} onChange={(e) => setW3(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="stl-2026-0011" />
+            <input value={w3} onChange={(e) => setW3(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="stl-2026-0011" />
           </Field>
           <Field label="Drawdown ref">
-            <input value={w21} onChange={(e) => setW21(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="dd-2026-0005" />
+            <input value={w21} onChange={(e) => setW21(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="dd-2026-0005" />
           </Field>
         </div>
 
-        <div className="mt-3 rounded border border-[#d8dde6] bg-[#f8fafc] p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Floor flags (FLOOR-AT-ENTERPRISE-WIDE {'≥'}1, FLOOR-AT-MULTI-COUNTRY {'≥'}3)</div>
+        <div className="mt-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-[var(--s1, #f8fafc)] p-3 text-[11px]">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">Floor flags (FLOOR-AT-ENTERPRISE-WIDE {'≥'}1, FLOOR-AT-MULTI-COUNTRY {'≥'}3)</div>
           <div className="grid grid-cols-3 gap-2">
             <Checkbox checked={sox404} onChange={setSox404} label="SOX 404 in scope" />
             <Checkbox checked={ifrsConsol} onChange={setIfrsConsol} label="IFRS consolidation" />
@@ -1230,7 +1230,7 @@ function ProposeModal({
         </div>
 
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Cancel</button>
+          <button type="button" onClick={onClose} className="rounded bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] px-3 py-1.5 text-[12px] hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.46 0.16 55)' }}>Cancel</button>
           <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose connector</button>
         </div>
       </div>
@@ -1240,7 +1240,7 @@ function ProposeModal({
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block text-[11px] text-[#4a5568]">
+    <label className="block text-[11px] text-[var(--ink-2, #4a5568)]">
       <div className="mb-1 text-[10px] uppercase tracking-wider">{label}</div>
       {children}
     </label>

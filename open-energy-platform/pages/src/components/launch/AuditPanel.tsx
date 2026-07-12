@@ -113,21 +113,21 @@ export function AuditPanel({
       {err && <ErrorBanner message={err} onDismiss={() => setErr(null)} />}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="rounded-xl border border-[#dde4ec] bg-white p-4">
-          <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Chain head (sequence)</div>
-          <div className="text-[20px] font-semibold text-[#0f1c2e] mt-1">{head?.head_sequence ?? 0}</div>
-          <div className="text-[10px] text-[#6b7685] mt-1 font-mono">{(head?.head_hash || '—').slice(0, 16)}…</div>
+        <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4">
+          <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Chain head (sequence)</div>
+          <div className="text-[20px] font-semibold text-[var(--ink, #0f1c2e)] mt-1">{head?.head_sequence ?? 0}</div>
+          <div className="text-[10px] text-[var(--ink-2, #6b7685)] mt-1 font-mono">{(head?.head_hash || '—').slice(0, 16)}…</div>
         </div>
-        <div className="rounded-xl border border-[#dde4ec] bg-white p-4">
-          <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Last verified</div>
-          <div className="text-[15px] font-semibold text-[#0f1c2e] mt-1">
+        <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4">
+          <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Last verified</div>
+          <div className="text-[15px] font-semibold text-[var(--ink, #0f1c2e)] mt-1">
             {head?.last_verified_at ? new Date(head.last_verified_at).toLocaleString() : '—'}
           </div>
-          <div className="text-[10px] text-[#6b7685] mt-1">at seq {head?.last_verified_seq ?? '—'}</div>
+          <div className="text-[10px] text-[var(--ink-2, #6b7685)] mt-1">at seq {head?.last_verified_seq ?? '—'}</div>
         </div>
-        <div className="rounded-xl border border-[#dde4ec] bg-white p-4">
-          <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Chain updated</div>
-          <div className="text-[15px] font-semibold text-[#0f1c2e] mt-1">
+        <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4">
+          <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Chain updated</div>
+          <div className="text-[15px] font-semibold text-[var(--ink, #0f1c2e)] mt-1">
             {head?.updated_at ? new Date(head.updated_at).toLocaleString() : '—'}
           </div>
         </div>
@@ -139,11 +139,11 @@ export function AuditPanel({
           {verifying ? 'Verifying…' : 'Verify chain integrity'}
         </button>
         <button type="button" onClick={runExport} disabled={exporting}
-          className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold disabled:opacity-50">
+          className="h-9 px-3 rounded-md bg-surface-v2 border border-[var(--border-subtle, #dde4ec)] text-[12px] font-semibold disabled:opacity-50">
           {exporting ? 'Generating…' : 'Generate certified export (last 90 days)'}
         </button>
         <button type="button" onClick={() => setShowEvents(true)}
-          className="h-9 px-3 rounded-md bg-white border border-[#dde4ec] text-[12px] font-semibold inline-flex items-center gap-2">
+          className="h-9 px-3 rounded-md bg-surface-v2 border border-[var(--border-subtle, #dde4ec)] text-[12px] font-semibold inline-flex items-center gap-2">
           <ListTree size={14} /> View chain events
         </button>
       </div>
@@ -155,12 +155,12 @@ export function AuditPanel({
               ? `Chain verified: ${verifyResult.scanned} events, ${verifyResult.duration_ms} ms`
               : `Divergence detected at seq ${verifyResult.first_divergence_seq}`}
           </div>
-          <div className="text-[11px] font-mono text-[#6b7685]">head: {(verifyResult.head_hash || '').slice(0, 32)}…</div>
+          <div className="text-[11px] font-mono text-[var(--ink-2, #6b7685)]">head: {(verifyResult.head_hash || '').slice(0, 32)}…</div>
         </div>
       )}
 
       <section key={`exports-${bump}`}>
-        <h3 className="text-[13px] font-semibold text-[#3d4756] mb-2">Recent certified exports</h3>
+        <h3 className="text-[13px] font-semibold text-[var(--ink-2, #3d4756)] mb-2">Recent certified exports</h3>
         <ListingTable
           endpoint={`${prefix}/audit/exports`}
           rowKey={(r) => r.id}
@@ -177,22 +177,22 @@ export function AuditPanel({
       </section>
 
       <section>
-        <h3 className="text-[13px] font-semibold text-[#3d4756] mb-2">External reconciliation</h3>
-        <div className="rounded-xl border border-[#dde4ec] bg-white p-4 space-y-3">
-          <p className="text-[12px] text-[#6b7685]">
+        <h3 className="text-[13px] font-semibold text-[var(--ink-2, #3d4756)] mb-2">External reconciliation</h3>
+        <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4 space-y-3">
+          <p className="text-[12px] text-[var(--ink-2, #6b7685)]">
             Paste a CSV from an external source. Required columns: <span className="font-mono">{reconHint}</span>.
           </p>
           <div className="flex items-end gap-3">
             <label className="block text-[13px]">
-              <span className="text-[#6b7685]">Source</span>
+              <span className="text-[var(--ink-2, #6b7685)]">Source</span>
               <select value={reconSource} onChange={(e) => setReconSource(e.target.value)}
-                className="mt-1 h-9 px-3 border border-[#dde4ec] rounded-md text-[13px]">
+                className="mt-1 h-9 px-3 border border-[var(--border-subtle, #dde4ec)] rounded-md text-[13px]">
                 {reconSourceOptions.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </label>
           </div>
           <textarea value={reconCsv} onChange={(e) => setReconCsv(e.target.value)} rows={5}
-            className="w-full px-3 py-2 border border-[#dde4ec] rounded-lg text-[12px] font-mono"
+            className="w-full px-3 py-2 border border-[var(--border-subtle, #dde4ec)] rounded-lg text-[12px] font-mono"
             placeholder={reconHint} />
           <button type="button" onClick={runRecon} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
             Run reconciliation

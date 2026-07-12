@@ -148,32 +148,32 @@ interface KpiSummary {
 }
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  draft:                 { bg: '#e3e7ec', fg: '#557',    label: 'Draft' },
-  under_review:          { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Under review' },
-  approved:              { bg: '#daf5e2', fg: '#1f6b3a', label: 'Approved' },
-  population_identified: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Population identified' },
-  notification_sent:     { bg: '#fff4d6', fg: '#a06200', label: 'Notification sent' },
-  acknowledged:          { bg: '#fff4d6', fg: '#a06200', label: 'Acknowledged' },
-  scheduling:            { bg: '#ffe9d6', fg: '#8a4a00', label: 'Scheduling' },
-  in_progress:           { bg: '#ffe4b5', fg: '#8a4a00', label: 'Rolling out' },
-  completed:             { bg: '#daf5e2', fg: '#1f6b3a', label: 'Completed' },
-  suspended:             { bg: '#fde0e0', fg: '#9b1f1f', label: 'Suspended' },
-  cancelled:             { bg: '#e3e7ec', fg: '#557',    label: 'Cancelled' },
-  withdrawn:             { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
+  draft:                 { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Draft' },
+  under_review:          { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Under review' },
+  approved:              { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Approved' },
+  population_identified: { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Population identified' },
+  notification_sent:     { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Notification sent' },
+  acknowledged:          { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Acknowledged' },
+  scheduling:            { bg: '#ffe9d6', fg: 'var(--warn)', label: 'Scheduling' },
+  in_progress:           { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Rolling out' },
+  completed:             { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Completed' },
+  suspended:             { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Suspended' },
+  cancelled:             { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Cancelled' },
+  withdrawn:             { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Withdrawn' },
 };
 
 const CLASS_TONE: Record<ChangeClass, { bg: string; fg: string; label: string }> = {
-  mandatory_safety:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Mandatory · safety' },
-  mandatory_performance: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Mandatory · performance' },
-  recommended:           { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Recommended' },
-  optional:              { bg: '#e3e7ec', fg: '#557',    label: 'Optional' },
+  mandatory_safety:      { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Mandatory · safety' },
+  mandatory_performance: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Mandatory · performance' },
+  recommended:           { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Recommended' },
+  optional:              { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Optional' },
 };
 
 const URGENCY_TONE: Record<UrgencyBand, { bg: string; fg: string; label: string }> = {
-  over_due: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Over due' },
-  urgent:   { bg: '#fde0e0', fg: '#9b1f1f', label: 'Urgent' },
-  due_soon: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Due soon' },
-  on_track: { bg: '#daf5e2', fg: '#1f6b3a', label: 'On track' },
+  over_due: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Over due' },
+  urgent:   { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Urgent' },
+  due_soon: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Due soon' },
+  on_track: { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'On track' },
 };
 
 const FILTERS: Array<{ key: string; label: string }> = [
@@ -453,8 +453,8 @@ export function OemFcoChainTab() {
     <div className="p-5">
       <header className="mb-4 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">OEM field change orders &amp; ECN campaigns · fleet retrofit management</h2>
-          <p className="text-xs text-[#4a5568]">
+          <h2 className="text-lg font-semibold text-[var(--ink, #0c2a4d)]">OEM field change orders &amp; ECN campaigns · fleet retrofit management</h2>
+          <p className="text-xs text-[var(--ink-2, #4a5568)]">
             12-stage OEM-pushed fleet-wide retrofit campaign · draft → under review → approved → population identified
             → notification sent → acknowledged → scheduling → rolling out → completed, with a suspend ↔ resume loop and
             cancel / withdraw branches. The MANUFACTURER&apos;S fleet-wide change-management lane — Tesla Megapack module
@@ -502,7 +502,7 @@ export function OemFcoChainTab() {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #4a5568)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -514,11 +514,11 @@ export function OemFcoChainTab() {
         <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
       )}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-4 py-6 text-center text-sm text-[var(--ink-2, #4a5568)]">Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
+        <div className="overflow-hidden rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
           <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
+            <thead className="bg-[var(--s2, #f3f5f9)]">
               <tr className="text-left">
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Campaign #</th>
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>OEM / product</th>
@@ -540,26 +540,26 @@ export function OemFcoChainTab() {
                   <tr
                     key={r.id}
                     onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
+                    className="cursor-pointer border-t border-[var(--border-subtle, #e3e7ec)] hover:bg-[var(--s1, #f8fafc)]"
                   >
                     <td className="px-3 py-2 font-mono text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.campaign_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator">●</span>}
+                      {r.is_reportable_flag && <span className="ml-1 text-[var(--bad, #9b1f1f)]" title="Reportable to regulator">●</span>}
                     </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[260px] truncate" title={`${r.oem_name} · ${r.product_family} ${r.product_model}`}>
+                    <td className="px-3 py-2 text-[var(--ink, #0c2a4d)] max-w-[260px] truncate" title={`${r.oem_name} · ${r.product_family} ${r.product_model}`}>
                       {r.oem_name}
-                      <span className="text-[#4a5568]"> · {r.product_family} {r.product_model}</span>
+                      <span className="text-[var(--ink-2, #4a5568)]"> · {r.product_family} {r.product_model}</span>
                     </td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
                         {tt.label}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#0c2a4d]">
-                      {(r.completed_units || 0).toLocaleString('en-ZA')}<span className="text-[#4a5568]"> / {(r.affected_units || 0).toLocaleString('en-ZA')}</span>
+                    <td className="px-3 py-2 text-right tabular-nums text-[var(--ink, #0c2a4d)]">
+                      {(r.completed_units || 0).toLocaleString('en-ZA')}<span className="text-[var(--ink-2, #4a5568)]"> / {(r.affected_units || 0).toLocaleString('en-ZA')}</span>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#0c2a4d]">{(r.affected_capacity_mw || 0).toLocaleString('en-ZA', { maximumFractionDigits: 1 })}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#0c2a4d]">{fmtPct(r.completion_pct_live)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[var(--ink, #0c2a4d)]">{(r.affected_capacity_mw || 0).toLocaleString('en-ZA', { maximumFractionDigits: 1 })}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[var(--ink, #0c2a4d)]">{fmtPct(r.completion_pct_live)}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: cs.bg, color: cs.fg }}>
                         {cs.label}
@@ -572,14 +572,14 @@ export function OemFcoChainTab() {
                         </span>
                       )}
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
                     </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-3 py-6 text-center text-[#4a5568]">No campaigns match.</td></tr>
+                <tr><td colSpan={9} className="px-3 py-6 text-center text-[var(--ink-2, #4a5568)]">No campaigns match.</td></tr>
               )}
             </tbody>
           </table>
@@ -594,10 +594,10 @@ export function OemFcoChainTab() {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : 'var(--ink, #0c2a4d)';
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
+    <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
     </div>
   );
@@ -617,31 +617,31 @@ function Drawer({
   return (
     <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
       <div
-        className="absolute right-0 top-0 h-full w-full md:w-[760px] overflow-y-auto bg-white shadow-2xl"
+        className="absolute right-0 top-0 h-full w-full md:w-[760px] overflow-y-auto bg-surface-v2 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
+        <header className="border-b border-[var(--border-subtle, #d8dde6)] bg-[var(--s2, #f3f5f9)] px-5 py-3">
           <div className="flex items-start justify-between">
             <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.campaign_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.campaign_title}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
+              <div className="font-mono text-[12px] text-[var(--ink-2, #4a5568)]">{row.campaign_number}</div>
+              <div className="text-base font-semibold text-[var(--ink, #0c2a4d)]">{row.campaign_title}</div>
+              <div className="mt-1 text-[12px] text-[var(--ink-2, #4a5568)]">
                 {row.oem_name} · {row.product_family} {row.product_model}
                 {row.firmware_baseline ? ` · fw ${row.firmware_baseline}` : ''}
               </div>
               {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
+                <div className="mt-1 text-[11px] text-[var(--ink-2, #4a5568)]">
                   Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
                 </div>
               )}
             </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
+            <button type="button" onClick={onClose} className="text-[var(--ink-2, #4a5568)] hover:text-[var(--ink, #0c2a4d)]">✕</button>
           </div>
         </header>
 
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Live fleet-coverage &amp; retrofit-economics battery</div>
+        <section className="px-5 py-4 border-b border-[var(--border-subtle, #e3e7ec)]">
+          <div className="mb-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-[var(--s1, #f8fafc)] px-3 py-2">
+            <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-1">Live fleet-coverage &amp; retrofit-economics battery</div>
             <div className="grid grid-cols-2 gap-2 text-[12px]">
               <Pair label="Completion"             value={fmtPct(row.completion_pct_live ?? 0)} />
               <Pair label="Acknowledgement"        value={fmtPct(row.acknowledgement_pct_live ?? 0)} />
@@ -699,8 +699,8 @@ function Drawer({
         </section>
 
         {(primary || secondary.length > 0) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
+          <section className="px-5 py-4 border-b border-[var(--border-subtle, #e3e7ec)]">
+            <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-2">Actions</div>
             <div className="flex flex-wrap gap-2">
               {primary && (
                 <button type="button"
@@ -718,8 +718,8 @@ function Drawer({
                     onClick={() => onAct(a, row)}
                     className={
                       danger
-                        ? 'rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50'
-                        : 'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#557] hover:bg-[#f3f5f9]'
+                        ? 'rounded border border-red-300 bg-surface-v2 px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50'
+                        : 'rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-1.5 text-[12px] font-medium text-[#557] hover:bg-[var(--s2, #f3f5f9)]'
                     }
                   >
                     {ACTION_LABEL[a]}
@@ -731,23 +731,23 @@ function Drawer({
         )}
 
         <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
+          <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-2">Audit timeline</div>
           {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
+            <div className="text-[12px] text-[var(--ink-2, #4a5568)]">No events yet.</div>
           ) : (
             <ol className="space-y-2">
               {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
+                <li key={e.id} className="rounded border border-[var(--border-subtle, #e3e7ec)] bg-[#fafbfc] px-3 py-2 text-[12px]">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
+                    <span className="font-medium text-[var(--ink, #0c2a4d)]">{e.event_type}</span>
+                    <span className="text-[var(--ink-2, #4a5568)] tabular-nums">{fmtDate(e.created_at)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
+                      <span className="text-[var(--ink-2, #4a5568)]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
                     )}
                     {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
+                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[var(--ink-2, #4a5568)]">{e.actor_party}</span>
                     )}
                   </div>
                   {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
@@ -773,8 +773,8 @@ function BasisBlock({ label, tone, text }: { label: string; tone: string; text: 
 function Pair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
+      <div className="text-[12px] text-[var(--ink, #0c2a4d)]">{value}</div>
     </div>
   );
 }

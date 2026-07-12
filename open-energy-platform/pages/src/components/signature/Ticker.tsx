@@ -85,7 +85,7 @@ export function Ticker({ rows, ariaLabel }: TickerProps) {
               style={{
                 width: 64,
                 textAlign: 'right',
-                color: up ? '#1f8a5b' : '#c0392b',
+                color: up ? '#1f8a5b' : 'var(--bad, #c0392b)',
                 fontWeight: 600,
               }}
             >

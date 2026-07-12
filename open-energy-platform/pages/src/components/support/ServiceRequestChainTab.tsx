@@ -182,34 +182,34 @@ interface KpiData {
 }
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  submitted:               { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Submitted' },
-  entitlement_checked:     { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Entitlement OK' },
-  approval_pending:        { bg: '#fff4d6', fg: '#a06200', label: 'Approval pending' },
-  approved:                { bg: '#fff4d6', fg: '#a06200', label: 'Approved' },
-  assigned:                { bg: '#fff4d6', fg: '#a06200', label: 'Assigned' },
-  fulfilment_in_progress:  { bg: '#fde0e0', fg: '#9b1f1f', label: 'Fulfilling' },
-  awaiting_user:           { bg: '#fde0e0', fg: '#9b1f1f', label: 'Awaiting user' },
-  user_responded:          { bg: '#fde0e0', fg: '#9b1f1f', label: 'User responded' },
-  fulfilled:               { bg: '#daf5e2', fg: '#1f6b3a', label: 'Fulfilled' },
-  verified:                { bg: '#daf5e2', fg: '#1f6b3a', label: 'Verified' },
-  closed:                  { bg: '#daf5e2', fg: '#1f6b3a', label: 'Closed' },
-  archived:                { bg: '#e3e7ec', fg: '#557',    label: 'Archived' },
-  rejected:                { bg: '#fbd0d0', fg: '#7a1414', label: 'Rejected' },
-  cancelled:               { bg: '#e3e7ec', fg: '#557',    label: 'Cancelled' },
+  submitted:               { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Submitted' },
+  entitlement_checked:     { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Entitlement OK' },
+  approval_pending:        { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Approval pending' },
+  approved:                { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Approved' },
+  assigned:                { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Assigned' },
+  fulfilment_in_progress:  { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Fulfilling' },
+  awaiting_user:           { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Awaiting user' },
+  user_responded:          { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'User responded' },
+  fulfilled:               { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Fulfilled' },
+  verified:                { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Verified' },
+  closed:                  { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Closed' },
+  archived:                { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Archived' },
+  rejected:                { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad)', label: 'Rejected' },
+  cancelled:               { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Cancelled' },
 };
 
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor' },
-  standard: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Standard' },
-  material: { bg: '#fff4d6', fg: '#a06200', label: 'Material' },
-  critical: { bg: '#fbd0d0', fg: '#7a1414', label: 'Critical' },
+  minor:    { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Minor' },
+  standard: { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Standard' },
+  material: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Material' },
+  critical: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad)', label: 'Critical' },
 };
 
 const URGENCY_TONE: Record<UrgencyBand, { bg: string; fg: string; label: string }> = {
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-  medium:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Medium' },
-  high:     { bg: '#fff4d6', fg: '#a06200', label: 'High' },
-  critical: { bg: '#fbd0d0', fg: '#7a1414', label: 'Critical' },
+  low:      { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Low' },
+  medium:   { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Medium' },
+  high:     { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'High' },
+  critical: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad)', label: 'Critical' },
 };
 
 const AUTH_LABEL: Record<Authority, string> = {
@@ -221,12 +221,12 @@ const AUTH_LABEL: Record<Authority, string> = {
 
 const PARTY_TONE: Record<string, { bg: string; fg: string }> = {
   requester:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)' },
-  approver:     { bg: '#fff4d6', fg: '#a06200' },
+  approver:     { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: '#a06200' },
   service_desk: { bg: '#e8defc', fg: '#5320a3' },
-  fulfiller:    { bg: '#daf5e2', fg: '#1f6b3a' },
-  verifier:     { bg: '#daf5e2', fg: '#1f6b3a' },
-  archiver:     { bg: '#e3e7ec', fg: '#557' },
-  system:       { bg: '#e3e7ec', fg: '#557' },
+  fulfiller:    { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)' },
+  verifier:     { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)' },
+  archiver:     { bg: 'var(--border-subtle, #e3e7ec)', fg: '#557' },
+  system:       { bg: 'var(--border-subtle, #e3e7ec)', fg: '#557' },
 };
 
 // UX revisit 2026-05-30 - pills grouped action-first then state. Cuts row
@@ -380,7 +380,7 @@ export function ServiceRequestChainTab() {
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]'
-                : 'bg-white text-[#4a5568] border-[#dde4ec] hover:bg-[#eef2f7]'
+                : 'bg-surface-v2 text-[var(--ink-2, #4a5568)] border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--s2, #eef2f7)]'
             }`}>
             {f.label}
           </button>
@@ -395,7 +395,7 @@ export function ServiceRequestChainTab() {
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium border ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white border-[oklch(0.46_0.16_55)]'
-                : 'bg-white text-[#6b7685] border-[#eef2f6] hover:bg-[#eef2f7]'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border-[#eef2f6] hover:bg-[var(--s2, #eef2f7)]'
             }`}>
             {f.label}
           </button>
@@ -404,9 +404,9 @@ export function ServiceRequestChainTab() {
 
       {err && <div className="px-3 py-2 bg-red-50 text-red-700 text-[12px] rounded-md">{err}</div>}
 
-      <div className="bg-white border border-[#e5ebf2] rounded-xl overflow-hidden">
+      <div className="bg-surface-v2 border border-[var(--border-subtle, #e5ebf2)] rounded-xl overflow-hidden">
         <table className="w-full">
-          <thead className="bg-[#f7f9fb] text-[11px] uppercase tracking-wide text-[#6b7685]">
+          <thead className="bg-[var(--s1, #f7f9fb)] text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">
             <tr>
               <th className="px-3 py-2 text-left">Request #</th>
               <th className="px-3 py-2 text-left">Catalog / requester</th>
@@ -420,9 +420,9 @@ export function ServiceRequestChainTab() {
           </thead>
           <tbody className="text-[13px]">
             {loading ? (
-              <tr><td colSpan={8} className="p-6 text-center text-[#6b7685]">Loading...</td></tr>
+              <tr><td colSpan={8} className="p-6 text-center text-[var(--ink-2, #6b7685)]">Loading...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={8} className="p-6 text-center text-[#6b7685]">No service requests match the current filter.</td></tr>
+              <tr><td colSpan={8} className="p-6 text-center text-[var(--ink-2, #6b7685)]">No service requests match the current filter.</td></tr>
             ) : filtered.map((r) => {
               const stateTone = STATE_TONE[r.chain_status];
               const tierTone  = TIER_TONE[r.current_tier];
@@ -435,14 +435,14 @@ export function ServiceRequestChainTab() {
                 <tr
                   key={r.id}
                   onClick={() => loadEvents(r.id)}
-                  className={`cursor-pointer hover:bg-[#f7f9fb] border-t border-[#eef2f6] ${selected?.id === r.id ? 'bg-[#fffae6]' : ''}`}>
+                  className={`cursor-pointer hover:bg-[var(--s1, #f7f9fb)] border-t border-[#eef2f6] ${selected?.id === r.id ? 'bg-[#fffae6]' : ''}`}>
                   <td className="px-3 py-2 font-mono text-[11px]">{r.request_number}</td>
                   <td className="px-3 py-2 max-w-xs truncate" title={`${r.catalog_item_label ?? r.catalog_item_id ?? '-'} - ${r.requested_for_party_label ?? r.requested_for_party_id ?? '-'}`}>
                     {r.catalog_item_label ?? r.catalog_item_id ?? '-'}
-                    <span className="text-[#6b7685]"> - {r.requested_for_party_label ?? r.requested_for_party_id ?? '-'}</span>
-                    {floored && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fff4d6] text-[#a06200]">FLOOR</span>}
+                    <span className="text-[var(--ink-2, #6b7685)]"> - {r.requested_for_party_label ?? r.requested_for_party_id ?? '-'}</span>
+                    {floored && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[color-mix(in oklab, var(--warn) 15%, var(--s1))] text-[#a06200]">FLOOR</span>}
                     {r.bridges_to_change_chain_live && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#e8defc] text-[#5320a3]">CAB</span>}
-                    {(r.reopened_count ?? 0) > 0 && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[#fde0e0] text-[#9b1f1f]">REOPEN x{r.reopened_count}</span>}
+                    {(r.reopened_count ?? 0) > 0 && <span className="ml-1 px-1 py-0.5 rounded text-[9px] font-bold bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[var(--bad, #9b1f1f)]">REOPEN x{r.reopened_count}</span>}
                   </td>
                   <td className="px-3 py-2 text-right text-[12px] tabular-nums">{fmtZar(r.severity_zar)}</td>
                   <td className="px-3 py-2 text-right text-[12px] tabular-nums">{(r.entitlement_match_score_live ?? 0).toFixed(0)}</td>
@@ -457,7 +457,7 @@ export function ServiceRequestChainTab() {
                       {stateTone.label}
                     </span>
                   </td>
-                  <td className={`px-3 py-2 text-right text-[12px] tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
+                  <td className={`px-3 py-2 text-right text-[12px] tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>
                     {r.is_terminal ? '-' : fmtMin(r.minutes_until_sla)}
                   </td>
                 </tr>
@@ -480,10 +480,10 @@ export function ServiceRequestChainTab() {
 }
 
 function Kpi({ label, value, tone = 'ok' }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const fg = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0f1c2e';
+  const fg = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : 'var(--ink, #0f1c2e)';
   return (
-    <div className="bg-white border border-[#e5ebf2] rounded-lg p-3">
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
+    <div className="bg-surface-v2 border border-[var(--border-subtle, #e5ebf2)] rounded-lg p-3">
+      <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className="text-[20px] font-semibold tabular-nums mt-0.5" style={{ color: fg }}>{value}</div>
     </div>
   );
@@ -519,11 +519,11 @@ function SrDrawer({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/30 flex items-stretch justify-end oe-overlay-in" onClick={onClose}>
-      <div className="bg-white w-full max-w-2xl shadow-xl overflow-y-auto oe-drawer-in" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-start justify-between sticky top-0 bg-white z-10">
+      <div className="bg-surface-v2 w-full max-w-2xl shadow-xl overflow-y-auto oe-drawer-in" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[var(--border-subtle, #e5ebf2)] flex items-start justify-between sticky top-0 bg-surface-v2 z-10">
           <div>
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">Service request {row.request_number}</div>
-            <h3 className="text-[16px] font-semibold text-[#0f1c2e] mt-0.5">
+            <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">Service request {row.request_number}</div>
+            <h3 className="text-[16px] font-semibold text-[var(--ink, #0f1c2e)] mt-0.5">
               {row.catalog_item_label ?? row.catalog_item_id ?? '-'} - {row.requested_for_party_label ?? row.requested_for_party_id ?? '-'}
             </h3>
             <div className="flex flex-wrap gap-2 mt-2 text-[12px]">
@@ -539,10 +539,10 @@ function SrDrawer({
                 </span>
               )}
               {floored && (
-                <span className="px-2 py-0.5 rounded-full font-bold bg-[#fff4d6] text-[#a06200]">FLOOR</span>
+                <span className="px-2 py-0.5 rounded-full font-bold bg-[color-mix(in oklab, var(--warn) 15%, var(--s1))] text-[#a06200]">FLOOR</span>
               )}
               {row.is_reportable_flag && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fde0e0] text-[#9b1f1f] font-medium">Regulator reportable</span>
+                <span className="px-2 py-0.5 rounded-full bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[var(--bad, #9b1f1f)] font-medium">Regulator reportable</span>
               )}
               {authorityNow && (
                 <span className="px-2 py-0.5 rounded-full bg-[oklch(0.94_0.02_250)] font-medium" style={{ color: 'oklch(0.46 0.16 55)' }}>Auth: {AUTH_LABEL[authorityNow]}</span>
@@ -551,48 +551,48 @@ function SrDrawer({
                 <span className="px-2 py-0.5 rounded-full bg-[#e8defc] text-[#5320a3] font-medium">CAB bridge</span>
               )}
               {row.bridges_to_problem_chain_live && (
-                <span className="px-2 py-0.5 rounded-full bg-[#fbd0d0] text-[#7a1414] font-medium">Problem bridge</span>
+                <span className="px-2 py-0.5 rounded-full bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[#7a1414] font-medium">Problem bridge</span>
               )}
             </div>
           </div>
-          <button type="button" onClick={onClose} className="text-[#6b7685] hover:text-[#0f1c2e]">X</button>
+          <button type="button" onClick={onClose} className="text-[var(--ink-2, #6b7685)] hover:text-[var(--ink, #0f1c2e)]">X</button>
         </div>
 
         <div className="p-5 space-y-4 text-[13px]">
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Catalog + entitlement</div>
+          <div className="bg-[var(--s1, #f7f9fb)] border border-[var(--border-subtle, #e5ebf2)] rounded-lg p-3">
+            <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)] mb-2">Catalog + entitlement</div>
             <div className="grid grid-cols-3 gap-3">
               <Pair label="Catalog item" value={row.catalog_item_label ?? row.catalog_item_id ?? '-'} />
               <Pair label="Category" value={row.catalog_category ?? '-'} />
               <Pair label="Urgency requested" value={row.urgency_requested ?? '-'} />
             </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
+            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[var(--border-subtle, #e5ebf2)]">
               <Pair label="Entitlement" value={row.entitlement_status ?? '-'} />
               <Pair label="Service contract" value={row.entitlement_contract_id ?? '-'} />
               <Pair label="Match score" value={`${(row.entitlement_match_score_live ?? 0).toFixed(0)} / 100`} />
             </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
+            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[var(--border-subtle, #e5ebf2)]">
               <Pair label="Requester" value={row.requested_by_actor_id ?? '-'} />
               <Pair label="For" value={row.requested_for_party_label ?? row.requested_for_party_id ?? '-'} />
               <Pair label="Justification" value={row.business_justification ?? '-'} />
             </div>
           </div>
 
-          <div className="bg-[#f7f9fb] border border-[#e5ebf2] rounded-lg p-3">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Fulfilment battery</div>
+          <div className="bg-[var(--s1, #f7f9fb)] border border-[var(--border-subtle, #e5ebf2)] rounded-lg p-3">
+            <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)] mb-2">Fulfilment battery</div>
             <div className="grid grid-cols-4 gap-3">
               <Pair label="Catalog completeness" value={`${(row.catalog_completeness_index_live ?? 0).toFixed(0)} / 130`} />
               <Pair label="FTF rate 30d" value={fmtPct(row.first_time_fix_rate_30d_live ?? 0)} />
               <Pair label="Avg fulfilment" value={fmtHours(row.avg_fulfilment_time_hours_live ?? 0)} />
               <Pair label="SLA days left" value={row.sla_days_remaining_live != null ? `${row.sla_days_remaining_live.toFixed(1)}d` : '-'} />
             </div>
-            <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
+            <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-[var(--border-subtle, #e5ebf2)]">
               <Pair label="Severity (ZAR)" value={fmtZar(row.severity_zar)} />
               <Pair label="Reopened" value={`${row.reopened_count}`} />
               <Pair label="First time fix" value={row.first_time_fix ? 'Yes' : 'No'} />
               <Pair label="CSAT" value={row.customer_satisfaction_csat != null ? `${row.customer_satisfaction_csat} / 5` : '-'} />
             </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[#e5ebf2]">
+            <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[var(--border-subtle, #e5ebf2)]">
               <Pair label="Reg filing window" value={row.regulator_filing_window_hours_live != null ? `${row.regulator_filing_window_hours_live}h` : '-'} />
               <Pair label="Assignee" value={row.assignee_team ?? row.fulfiller_actor_id ?? '-'} />
               <Pair label="Approver" value={row.approver_actor_id ?? '-'} />
@@ -631,7 +631,7 @@ function SrDrawer({
 
           {transitionable && (
             <div className="border-t border-[#eef2f6] pt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Actions</div>
+              <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)] mb-2">Actions</div>
               <div className="flex flex-wrap gap-2">
                 {cs === 'submitted' && (
                   <ActionBtn label="Check entitlement (service desk)" onClick={() => {
@@ -739,26 +739,26 @@ function SrDrawer({
           )}
 
           <div className="border-t border-[#eef2f6] pt-4">
-            <div className="text-[11px] uppercase tracking-wide text-[#6b7685] mb-2">Timeline</div>
+            <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)] mb-2">Timeline</div>
             <div className="space-y-2">
               {events.length === 0 ? (
-                <div className="text-[12px] text-[#6b7685]">No events yet.</div>
+                <div className="text-[12px] text-[var(--ink-2, #6b7685)]">No events yet.</div>
               ) : events.map((e) => {
                 const partyTone = PARTY_TONE[e.actor_party ?? 'system'] ?? PARTY_TONE.system;
                 return (
-                  <div key={e.id} className="flex gap-3 text-[12px] border-l-2 border-[#e5ebf2] pl-3 py-1">
-                    <span className="font-mono text-[11px] text-[#6b7685] whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
+                  <div key={e.id} className="flex gap-3 text-[12px] border-l-2 border-[var(--border-subtle, #e5ebf2)] pl-3 py-1">
+                    <span className="font-mono text-[11px] text-[var(--ink-2, #6b7685)] whitespace-nowrap">{new Date(e.created_at).toLocaleString()}</span>
                     <div>
-                      <span className="font-semibold text-[#0f1c2e]">{e.event_type}</span>
+                      <span className="font-semibold text-[var(--ink, #0f1c2e)]">{e.event_type}</span>
                       {e.actor_party && (
                         <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-medium uppercase" style={{ background: partyTone.bg, color: partyTone.fg }}>
                           {e.actor_party}
                         </span>
                       )}
                       {e.from_status && e.to_status && e.from_status !== e.to_status && (
-                        <span className="text-[#6b7685]"> {'· '}{e.from_status} {'→'} {e.to_status}</span>
+                        <span className="text-[var(--ink-2, #6b7685)]"> {'· '}{e.from_status} {'→'} {e.to_status}</span>
                       )}
-                      {e.notes && <div className="text-[#4a5568] mt-0.5">{e.notes}</div>}
+                      {e.notes && <div className="text-[var(--ink-2, #4a5568)] mt-0.5">{e.notes}</div>}
                     </div>
                   </div>
                 );
@@ -774,15 +774,15 @@ function SrDrawer({
 function Pair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-wide text-[#6b7685]">{label}</div>
-      <div className="text-[#0f1c2e] mt-0.5">{value}</div>
+      <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2, #6b7685)]">{label}</div>
+      <div className="text-[var(--ink, #0f1c2e)] mt-0.5">{value}</div>
     </div>
   );
 }
 
 function FlagPill({ on, label }: { on: boolean; label: string }) {
   return (
-    <div className={`flex items-center gap-2 px-2 py-1 rounded-md text-[12px] ${on ? 'bg-[#fff4d6] text-[#a06200] border border-[#f4d68f]' : 'bg-[#f7f9fb] text-[#6b7685] border border-[#e5ebf2]'}`}>
+    <div className={`flex items-center gap-2 px-2 py-1 rounded-md text-[12px] ${on ? 'bg-[color-mix(in oklab, var(--warn) 15%, var(--s1))] text-[#a06200] border border-[#f4d68f]' : 'bg-[var(--s1, #f7f9fb)] text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #e5ebf2)]'}`}>
       <span className={`inline-block w-2 h-2 rounded-full ${on ? 'bg-[#a06200]' : 'bg-[#cbd5e0]'}`} />
       <span>{label}</span>
     </div>

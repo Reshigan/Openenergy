@@ -96,7 +96,7 @@ export class ErrorBoundary extends Component<Props, State> {
           style={{
             maxWidth: 560,
             width: '100%',
-            background: '#ffffff',
+            background: 'var(--s1, #fff)',
             borderRadius: 12,
             padding: '32px 28px',
             boxShadow: '0 6px 24px rgba(15, 23, 42, 0.08)',
@@ -113,10 +113,10 @@ export class ErrorBoundary extends Component<Props, State> {
           >
             Unexpected error
           </div>
-          <h1 style={{ fontSize: 22, margin: '8px 0 12px', color: '#0f172a' }}>
+          <h1 style={{ fontSize: 22, margin: '8px 0 12px', color: 'var(--ink, #0f172a)' }}>
             Something went wrong
           </h1>
-          <p style={{ color: '#475569', lineHeight: 1.5, margin: 0 }}>
+          <p style={{ color: 'var(--ink-2, #475569)', lineHeight: 1.5, margin: 0 }}>
             We were unable to render this page. The error has been recorded and our team
             will investigate. If you keep seeing this, please share the reference below
             with support.
@@ -130,14 +130,14 @@ export class ErrorBoundary extends Component<Props, State> {
                 borderRadius: 8,
                 fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
                 fontSize: 13,
-                color: '#0f172a',
+                color: 'var(--ink, #0f172a)',
               }}
             >
               Reference: {reportId}
             </div>
           )}
           {error?.message && (
-            <details style={{ marginTop: 16, color: '#64748b', fontSize: 12 }}>
+            <details style={{ marginTop: 16, color: 'var(--ink-2, #64748b)', fontSize: 12 }}>
               <summary style={{ cursor: 'pointer' }}>Technical details</summary>
               <pre
                 style={{
@@ -145,8 +145,8 @@ export class ErrorBoundary extends Component<Props, State> {
                   wordBreak: 'break-word',
                   marginTop: 8,
                   padding: 12,
-                  background: '#0f172a',
-                  color: '#e2e8f0',
+                  background: 'var(--ink, #0f172a)',
+                  color: 'var(--border-subtle, #e2e8f0)',
                   borderRadius: 8,
                   maxHeight: 220,
                   overflow: 'auto',
@@ -163,9 +163,9 @@ export class ErrorBoundary extends Component<Props, State> {
               style={{
                 flex: 1,
                 padding: '10px 16px',
-                background: '#ffffff',
-                color: '#0f172a',
-                border: '1px solid #cbd5e1',
+                background: 'var(--s1, #fff)',
+                color: 'var(--ink, #0f172a)',
+                border: '1px solid var(--border-strong, #cbd5e1)',
                 borderRadius: 8,
                 cursor: 'pointer',
                 fontWeight: 500,
@@ -179,7 +179,7 @@ export class ErrorBoundary extends Component<Props, State> {
               style={{
                 flex: 1,
                 padding: '10px 16px',
-                background: '#0f172a',
+                background: 'var(--ink, #0f172a)',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: 8,

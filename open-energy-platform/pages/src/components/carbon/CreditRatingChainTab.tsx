@@ -30,16 +30,16 @@ import { api } from '../../lib/api';
 import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
 
 // ── design tokens (mockup-b) ─────────────────────────────────────────────
-const BG     = 'oklch(0.96 0.003 250)';
-const BG1    = 'oklch(0.99 0.002 80)';
-const BG2    = 'oklch(0.93 0.004 250)';
-const BORDER = 'oklch(0.87 0.006 250)';
-const TX1    = 'oklch(0.17 0.010 250)';
-const TX2    = 'oklch(0.40 0.009 250)';
-const TX3    = 'oklch(0.60 0.007 250)';
-const ACC    = 'oklch(0.46 0.16 55)';
-const BAD    = 'oklch(0.48 0.20 20)';
-const WARN   = 'oklch(0.50 0.18 55)';
+const BG     = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1    = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2    = 'var(--s2, oklch(0.93 0.004 250))';
+const BORDER = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1    = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2    = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3    = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC    = 'var(--accent, oklch(0.46 0.16 55))';
+const BAD    = 'var(--bad, oklch(0.48 0.20 20))';
+const WARN   = 'var(--accent, oklch(0.50 0.18 55))';
 const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
@@ -270,11 +270,11 @@ const BAND_TONE: Record<RatingBand, { bg: string; fg: string }> = {
   AAA: { bg: '#0b6e3a', fg: '#ffffff' },
   AA:  { bg: '#1f8a4d', fg: '#ffffff' },
   A:   { bg: '#3aa86b', fg: '#ffffff' },
-  BBB: { bg: '#86c79a', fg: '#0f1c2e' },
+  BBB: { bg: '#86c79a', fg: 'var(--ink, #0f1c2e)' },
   BB:  { bg: '#f4d068', fg: '#5a3d00' },
   B:   { bg: '#f2a83c', fg: '#5a3000' },
   CCC: { bg: '#d8602b', fg: '#ffffff' },
-  D:   { bg: '#9b1f1f', fg: '#ffffff' },
+  D:   { bg: 'var(--bad, #9b1f1f)', fg: '#ffffff' },
 };
 
 const AUTH_LABEL: Record<Authority, string> = {
@@ -782,7 +782,7 @@ export function CreditRatingChainTab() {
       </div>
 
       {err && (
-        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'oklch(0.97 0.04 20)', borderColor: BAD, color: BAD }}>
+        <div className="mb-3 rounded border px-3 py-2 text-[11px]" style={{ background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', borderColor: BAD, color: BAD }}>
           {err}
         </div>
       )}
@@ -857,7 +857,7 @@ function FlagPill({ on, label }: { on: boolean; label: string }) {
   return (
     <div className="flex items-center gap-2 px-2 py-1 rounded-md text-[12px]"
       style={{
-        background: on ? 'oklch(0.96 0.05 55)' : BG2,
+        background: on ? 'color-mix(in oklab, var(--warn) 15%, var(--s1))' : BG2,
         color: on ? WARN : TX3,
         border: `1px solid ${on ? 'oklch(0.80 0.12 55)' : BORDER}`,
       }}>
@@ -871,13 +871,13 @@ function BridgePill({ on, label, ref_ }: { on: boolean; label: string; ref_: str
   return (
     <div className="px-2 py-2 rounded-md text-[12px]"
       style={{
-        background: on ? 'oklch(0.95 0.04 155)' : BG2,
-        color: on ? 'oklch(0.30 0.14 155)' : TX3,
+        background: on ? 'color-mix(in oklab, var(--good) 15%, var(--s1))' : BG2,
+        color: on ? 'var(--good, oklch(0.30 0.14 155))' : TX3,
         border: `1px solid ${on ? 'oklch(0.75 0.10 155)' : BORDER}`,
       }}>
       <div className="flex items-center gap-2 font-semibold">
         <span className="inline-block w-2 h-2 rounded-full"
-          style={{ background: on ? 'oklch(0.30 0.14 155)' : TX3 }} />
+          style={{ background: on ? 'var(--good, oklch(0.30 0.14 155))' : TX3 }} />
         <span>{label}</span>
       </div>
       {ref_ && <div className="font-mono text-[10px] mt-1" style={{ color: TX3 }}>{ref_}</div>}

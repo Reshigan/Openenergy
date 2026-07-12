@@ -23,7 +23,7 @@ interface GridComplianceRecord {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  assessment_due:        'bg-[#eef2f7] text-[#6b7685]',
+  assessment_due:        'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
   test_preparation:      'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   testing_in_progress:   'bg-sky-100 text-sky-700',
   test_completed:        'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
@@ -38,10 +38,10 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const TIER_COLORS: Record<string, string> = {
-  small:     '#6b7280',
+  small:     'var(--ink-2, #6b7280)',
   medium:    '#3b82f6',
   large:     '#f59e0b',
-  utility:   '#ef4444',
+  utility:   'var(--bad, #ef4444)',
   strategic: '#7c3aed',
 };
 
@@ -60,7 +60,7 @@ const STATUSES = Object.keys(STATUS_COLORS);
 const TIERS = ['small', 'medium', 'large', 'utility', 'strategic'] as const;
 const CATEGORIES = Object.keys(CATEGORY_LABELS);
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 function fmtDate(d?: string | null): string {
   if (!d) return '—';
@@ -75,11 +75,11 @@ function hasRegulatorFlag(row: GridComplianceRecord): boolean {
 
 type KpiChipProps = { label: string; value: string | number; mode?: 'alert' | 'good' | 'danger' | 'neutral' };
 function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
-  const border = mode === 'danger' ? 'border-red-200 bg-red-50' : mode === 'alert' ? 'border-orange-200 bg-orange-50' : mode === 'good' ? 'border-green-200 bg-green-50' : 'border-[#dde4ec] bg-white';
-  const text   = mode === 'danger' ? 'text-red-700' : mode === 'alert' ? 'text-orange-700' : mode === 'good' ? 'text-green-700' : 'text-[#0f1c2e]';
+  const border = mode === 'danger' ? 'border-red-200 bg-red-50' : mode === 'alert' ? 'border-orange-200 bg-orange-50' : mode === 'good' ? 'border-green-200 bg-green-50' : 'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
+  const text   = mode === 'danger' ? 'text-red-700' : mode === 'alert' ? 'text-orange-700' : mode === 'good' ? 'text-green-700' : 'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -142,19 +142,19 @@ export function IppGridComplianceTab() {
           <option value="">All categories</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
         </select>
-        <button type="button" onClick={() => load()} className="ml-auto px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]">
+        <button type="button" onClick={() => load()} className="ml-auto px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]">
           Refresh
         </button>
       </div>
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-4">ID</th>
                 <th className="pb-2 pr-4">Project</th>
                 <th className="pb-2 pr-4">Category</th>
@@ -170,21 +170,21 @@ export function IppGridComplianceTab() {
               {items.map(item => {
                 const overdue    = !!(item.sla_breached || (item.sla_due_at && new Date(item.sla_due_at) < new Date()));
                 const regulator  = hasRegulatorFlag(item);
-                const tierColor  = TIER_COLORS[item.capacity_tier] ?? '#6b7280';
+                const tierColor  = TIER_COLORS[item.capacity_tier] ?? 'var(--ink-2, #6b7280)';
                 return (
-                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
-                    <td className="py-2 pr-4 text-xs font-mono text-[#3d4756]">{item.id.slice(0, 12)}</td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.project_id}</td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{CATEGORY_LABELS[item.compliance_category] ?? item.compliance_category}</td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">{item.assessment_year}</td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">{item.capacity_mw.toFixed(1)}</td>
+                  <tr key={item.id} className="border-b hover:bg-[var(--s2, #eef2f7)]">
+                    <td className="py-2 pr-4 text-xs font-mono text-[var(--ink-2, #3d4756)]">{item.id.slice(0, 12)}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{item.project_id}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{CATEGORY_LABELS[item.compliance_category] ?? item.compliance_category}</td>
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[var(--ink, #2d3748)]">{item.assessment_year}</td>
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[var(--ink, #2d3748)]">{item.capacity_mw.toFixed(1)}</td>
                     <td className="py-2 pr-4">
                       <span className="px-2 py-0.5 rounded text-xs text-white font-medium" style={{ backgroundColor: tierColor }}>{item.capacity_tier}</span>
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>{statusLabel(item.chain_status).text}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>{statusLabel(item.chain_status).text}</span>
                     </td>
-                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
+                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[var(--ink-2, #6b7685)]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}
                     </td>
                     <td className="py-2 pr-4">
@@ -196,7 +196,7 @@ export function IppGridComplianceTab() {
                 );
               })}
               {items.length === 0 && (
-                <tr><td colSpan={9} className="py-10 text-center text-[#9aa5b4] text-sm">No grid compliance assessments found</td></tr>
+                <tr><td colSpan={9} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">No grid compliance assessments found</td></tr>
               )}
             </tbody>
           </table>

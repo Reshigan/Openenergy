@@ -10,7 +10,7 @@ export interface StatusPulseProps {
 
 export function StatusPulse({ tone = 'live', label }: StatusPulseProps) {
   const color =
-    tone === 'critical' ? '#c0392b' : tone === 'warn' ? '#c97a14' : tone === 'idle' ? '#6b7685' : '#1f8a5b';
+    tone === 'critical' ? 'var(--bad, #c0392b)' : tone === 'warn' ? '#c97a14' : tone === 'idle' ? 'var(--ink-2, #6b7685)' : '#1f8a5b';
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
       <span

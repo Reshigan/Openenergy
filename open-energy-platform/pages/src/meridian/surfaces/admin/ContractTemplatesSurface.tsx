@@ -39,10 +39,10 @@ export default function ContractTemplatesSurface(_props: { role: string }) {
   return (
     <div>
       <div className="flex gap-2 mb-3">
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className="h-9 px-2 rounded-md border border-[var(--line)] text-[12px] bg-white">
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className="h-9 px-2 rounded-md border border-[var(--line)] text-[12px] bg-surface-v2">
           {CATEGORY_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-        <select value={docType} onChange={(e) => setDocType(e.target.value)} className="h-9 px-2 rounded-md border border-[var(--line)] text-[12px] bg-white">
+        <select value={docType} onChange={(e) => setDocType(e.target.value)} className="h-9 px-2 rounded-md border border-[var(--line)] text-[12px] bg-surface-v2">
           {DOCTYPE_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </div>

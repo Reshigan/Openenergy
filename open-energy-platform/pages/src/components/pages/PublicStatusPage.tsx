@@ -9,12 +9,12 @@
 import React, { useEffect, useState } from 'react';
 import { Activity, AlertOctagon, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 
-const BG      = 'oklch(0.96 0.003 250)';
-const BG1     = 'oklch(0.99 0.002 80)';
-const BORDER  = 'oklch(0.87 0.006 250)';
-const TX1     = 'oklch(0.17 0.010 250)';
-const TX3     = 'oklch(0.60 0.007 250)';
-const ACC     = 'oklch(0.46 0.12 230)';
+const BG      = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1     = 'var(--s1, oklch(0.99 0.002 80))';
+const BORDER  = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1     = 'var(--ink, oklch(0.17 0.010 250))';
+const TX3     = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC     = 'var(--accent, oklch(0.46 0.12 230))';
 
 type Component = { name: string; status: string; metric?: string };
 type StatusData = {
@@ -96,7 +96,7 @@ export function PublicStatusPage() {
             {data.components.map((c) => {
               const m = STATUS_META[c.status] || STATUS_META.operational;
               const I = m.icon;
-              const iconColor = c.status === 'operational' ? 'oklch(0.45 0.15 150)' : c.status === 'degraded' ? 'oklch(0.50 0.16 50)' : 'oklch(0.48 0.20 20)';
+              const iconColor = c.status === 'operational' ? 'var(--good, oklch(0.45 0.15 150))' : c.status === 'degraded' ? 'oklch(0.50 0.16 50)' : 'var(--bad, oklch(0.48 0.20 20))';
               return (
                 <li key={c.name} className="px-4 py-3 flex items-center gap-3">
                   <span style={{ color: iconColor, display: 'flex' }}><I size={14} /></span>

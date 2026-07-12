@@ -23,7 +23,7 @@ interface LandAmendment {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  amendment_requested:  'bg-[#eef2f7] text-[#6b7685]',
+  amendment_requested:  'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
   surveyor_appointed:   'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   survey_completed:     'bg-sky-100 text-sky-700',
   application_submitted:'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
@@ -38,10 +38,10 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const TIER_COLORS: Record<string, string> = {
-  minor:      '#6b7280',
+  minor:      'var(--ink-2, #6b7280)',
   moderate:   '#3b82f6',
   significant:'#f59e0b',
-  major:      '#ef4444',
+  major:      'var(--bad, #ef4444)',
   material:   '#7c3aed',
 };
 
@@ -60,7 +60,7 @@ const STATUSES = Object.keys(STATUS_COLORS);
 const TIERS = ['minor', 'moderate', 'significant', 'major', 'material'] as const;
 const CATEGORIES = Object.keys(CATEGORY_LABELS);
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 function fmtDate(d?: string | null): string {
   if (!d) return '—';
@@ -76,11 +76,11 @@ function hasRegulatorFlag(row: LandAmendment): boolean {
 
 type KpiChipProps = { label: string; value: string | number; mode?: 'alert' | 'good' | 'danger' | 'neutral' };
 function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
-  const border = mode === 'danger' ? 'border-red-200 bg-red-50' : mode === 'alert' ? 'border-orange-200 bg-orange-50' : mode === 'good' ? 'border-green-200 bg-green-50' : 'border-[#dde4ec] bg-white';
-  const text   = mode === 'danger' ? 'text-red-700' : mode === 'alert' ? 'text-orange-700' : mode === 'good' ? 'text-green-700' : 'text-[#0f1c2e]';
+  const border = mode === 'danger' ? 'border-red-200 bg-red-50' : mode === 'alert' ? 'border-orange-200 bg-orange-50' : mode === 'good' ? 'border-green-200 bg-green-50' : 'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
+  const text   = mode === 'danger' ? 'text-red-700' : mode === 'alert' ? 'text-orange-700' : mode === 'good' ? 'text-green-700' : 'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -143,19 +143,19 @@ export function IppLandAmendmentTab() {
           <option value="">All categories</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
         </select>
-        <button type="button" onClick={() => load()} className="ml-auto px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]">
+        <button type="button" onClick={() => load()} className="ml-auto px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]">
           Refresh
         </button>
       </div>
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-4">ID</th>
                 <th className="pb-2 pr-4">Project</th>
                 <th className="pb-2 pr-4">Counterparty</th>
@@ -171,21 +171,21 @@ export function IppLandAmendmentTab() {
               {items.map(item => {
                 const overdue   = !!(item.sla_breached || (item.sla_due_at && new Date(item.sla_due_at) < new Date()));
                 const regulator = hasRegulatorFlag(item);
-                const tierColor = TIER_COLORS[item.area_tier] ?? '#6b7280';
+                const tierColor = TIER_COLORS[item.area_tier] ?? 'var(--ink-2, #6b7280)';
                 return (
-                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
-                    <td className="py-2 pr-4 text-xs font-mono text-[#3d4756]">{item.id.slice(0, 12)}</td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.project_id}</td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.counterparty_name}</td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{CATEGORY_LABELS[item.amendment_category] ?? item.amendment_category}</td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">{item.land_area_hectares.toLocaleString('en-ZA')}</td>
+                  <tr key={item.id} className="border-b hover:bg-[var(--s2, #eef2f7)]">
+                    <td className="py-2 pr-4 text-xs font-mono text-[var(--ink-2, #3d4756)]">{item.id.slice(0, 12)}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{item.project_id}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{item.counterparty_name}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{CATEGORY_LABELS[item.amendment_category] ?? item.amendment_category}</td>
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[var(--ink, #2d3748)]">{item.land_area_hectares.toLocaleString('en-ZA')}</td>
                     <td className="py-2 pr-4">
                       <span className="px-2 py-0.5 rounded text-xs text-white font-medium" style={{ backgroundColor: tierColor }}>{item.area_tier}</span>
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>{statusLabel(item.chain_status).text}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>{statusLabel(item.chain_status).text}</span>
                     </td>
-                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
+                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[var(--ink-2, #6b7685)]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}
                     </td>
                     <td className="py-2 pr-4">
@@ -197,7 +197,7 @@ export function IppLandAmendmentTab() {
                 );
               })}
               {items.length === 0 && (
-                <tr><td colSpan={9} className="py-10 text-center text-[#9aa5b4] text-sm">No land amendments found</td></tr>
+                <tr><td colSpan={9} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">No land amendments found</td></tr>
               )}
             </tbody>
           </table>

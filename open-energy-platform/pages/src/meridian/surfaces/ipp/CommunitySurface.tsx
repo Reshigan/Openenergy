@@ -12,7 +12,7 @@ type Project = { id: string; project_name?: string; name?: string };
 function Card({ label, value }: { label: string; value: number | null | undefined }) {
   const formatted = value != null ? Number(value).toLocaleString('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }) : '—';
   return (
-    <div className="rounded-lg border border-[var(--line)] bg-white p-4">
+    <div className="rounded-lg border border-[var(--line)] bg-surface-v2 p-4">
       <div className="text-[10px] uppercase tracking-wider text-[var(--ink3)]">{label}</div>
       <div className="text-[20px] font-semibold text-[var(--ink)] mt-1">{formatted}</div>
     </div>

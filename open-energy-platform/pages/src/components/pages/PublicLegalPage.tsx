@@ -11,14 +11,14 @@
 import React, { useEffect, useState } from 'react';
 import { Scale, FileText, ShieldCheck, Send, Gavel, AlertCircle, CheckCircle2, Lock, BookOpen } from 'lucide-react';
 
-const BG      = 'oklch(0.96 0.003 250)';
-const BG1     = 'oklch(0.99 0.002 80)';
-const BORDER  = 'oklch(0.87 0.006 250)';
-const TX1     = 'oklch(0.17 0.010 250)';
-const TX2     = 'oklch(0.40 0.009 250)';
-const TX3     = 'oklch(0.60 0.007 250)';
-const ACC     = 'oklch(0.46 0.12 230)';
-const BAD     = 'oklch(0.48 0.20 20)';
+const BG      = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1     = 'var(--s1, oklch(0.99 0.002 80))';
+const BORDER  = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1     = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2     = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3     = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC     = 'var(--accent, oklch(0.46 0.12 230))';
+const BAD     = 'var(--bad, oklch(0.48 0.20 20))';
 
 type Manual = {
   title: string; generated_at: string;
@@ -205,7 +205,7 @@ function Applications({ apps }: { apps: App[] }) {
               {a.tariff_category ? ` · ${a.tariff_category}` : ''}
               {a.submitted_at ? ` · submitted ${new Date(a.submitted_at).toLocaleDateString('en-ZA')}` : ''}
             </div>
-            <div className="mt-1 inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded" style={{ background: 'oklch(0.93 0.005 250)', color: TX1 }}>{a.status}</div>
+            <div className="mt-1 inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded" style={{ background: 'var(--s2, oklch(0.93 0.005 250))', color: TX1 }}>{a.status}</div>
           </li>
         ))}
       </ul>
@@ -537,7 +537,7 @@ function SubmitForm() {
                  value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })}/>
         </label>
       </div>
-      {ack && <div className="text-[12px] flex items-center gap-1" style={{ color: 'oklch(0.45 0.15 150)' }}><CheckCircle2 size={14}/> {ack}</div>}
+      {ack && <div className="text-[12px] flex items-center gap-1" style={{ color: 'var(--good, oklch(0.45 0.15 150))' }}><CheckCircle2 size={14}/> {ack}</div>}
       {err && <div className="text-[12px] flex items-center gap-1" style={{ color: BAD }}><AlertCircle size={14}/> {err}</div>}
       <button type="button" disabled={busy} onClick={submit}
               className="h-9 px-4 rounded text-white text-[12px] font-semibold inline-flex items-center gap-1 disabled:opacity-50"

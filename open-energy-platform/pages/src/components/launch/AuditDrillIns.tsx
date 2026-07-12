@@ -66,20 +66,20 @@ export function ReconBreaksModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
+      <div className="bg-surface-v2 rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[var(--border-subtle, #e5ebf2)] flex items-center justify-between">
           <div>
-            <h3 className="text-[16px] font-semibold text-[#0f1c2e]">Reconciliation breaks</h3>
-            <div className="text-[12px] text-[#6b7685] mt-1 font-mono">{runId}</div>
+            <h3 className="text-[16px] font-semibold text-[var(--ink, #0f1c2e)]">Reconciliation breaks</h3>
+            <div className="text-[12px] text-[var(--ink-2, #6b7685)] mt-1 font-mono">{runId}</div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] text-[20px]">×</button>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-[var(--ink-2, #6b7685)] hover:text-[var(--ink, #0f1c2e)] text-[20px]">×</button>
         </div>
         <div className="p-5 overflow-y-auto flex-1">
           {err && <div className="text-[12px] text-red-700 mb-3">{err}</div>}
           {loading ? (
-            <div className="text-[13px] text-[#6b7685]">Loading breaks…</div>
+            <div className="text-[13px] text-[var(--ink-2, #6b7685)]">Loading breaks…</div>
           ) : rows.length === 0 ? (
-            <div className="text-[13px] text-[#6b7685] flex items-center gap-2">
+            <div className="text-[13px] text-[var(--ink-2, #6b7685)] flex items-center gap-2">
               <ShieldCheck size={14} className="text-green-600" /> No breaks — perfect reconciliation.
             </div>
           ) : (
@@ -89,12 +89,12 @@ export function ReconBreaksModal({
                 {counts.missing_in_theirs > 0 && <Pill tone="warn">{counts.missing_in_theirs} missing in theirs</Pill>}
                 {counts.field_mismatch > 0 && <Pill tone="bad">{counts.field_mismatch} field mismatch</Pill>}
               </div>
-              <div className="rounded-lg border border-[#dde4ec] divide-y divide-[#eef2f7]">
+              <div className="rounded-lg border border-[var(--border-subtle, #dde4ec)] divide-y divide-[var(--s2, #eef2f7)]">
                 {rows.map((b) => {
                   const isOpen = expanded.has(b.id);
                   return (
                     <div key={b.id}>
-                      <button type="button" onClick={() => toggle(b.id)} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-[#f8fafc] text-left">
+                      <button type="button" onClick={() => toggle(b.id)} className="w-full px-4 py-3 flex items-center gap-3 hover:bg-[var(--s1, #f8fafc)] text-left">
                         {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         <Pill tone={b.break_type === 'field_mismatch' ? 'bad' : b.break_type === 'missing_in_ours' ? 'bad' : 'warn'}>
                           {b.break_type.replace(/_/g, ' ')}
@@ -114,12 +114,12 @@ export function ReconBreaksModal({
                       {isOpen && (
                         <div className="px-4 pb-4 text-[12px] grid grid-cols-2 gap-3">
                           <div>
-                            <div className="text-[10px] uppercase text-[#6b7685] mb-1">Our value</div>
-                            <pre className="bg-[#f8fafc] border border-[#dde4ec] rounded p-2 overflow-auto text-[11px]">{b.our_value || '(none)'}</pre>
+                            <div className="text-[10px] uppercase text-[var(--ink-2, #6b7685)] mb-1">Our value</div>
+                            <pre className="bg-[var(--s1, #f8fafc)] border border-[var(--border-subtle, #dde4ec)] rounded p-2 overflow-auto text-[11px]">{b.our_value || '(none)'}</pre>
                           </div>
                           <div>
-                            <div className="text-[10px] uppercase text-[#6b7685] mb-1">Their value</div>
-                            <pre className="bg-[#f8fafc] border border-[#dde4ec] rounded p-2 overflow-auto text-[11px]">{b.their_value || '(none)'}</pre>
+                            <div className="text-[10px] uppercase text-[var(--ink-2, #6b7685)] mb-1">Their value</div>
+                            <pre className="bg-[var(--s1, #f8fafc)] border border-[var(--border-subtle, #dde4ec)] rounded p-2 overflow-auto text-[11px]">{b.their_value || '(none)'}</pre>
                           </div>
                           {!b.resolution && (
                             <div className="col-span-2 flex justify-end">
@@ -129,7 +129,7 @@ export function ReconBreaksModal({
                             </div>
                           )}
                           {b.resolution_notes && (
-                            <div className="col-span-2 text-[11px] text-[#6b7685]">
+                            <div className="col-span-2 text-[11px] text-[var(--ink-2, #6b7685)]">
                               <span className="font-semibold">Notes:</span> {b.resolution_notes}
                             </div>
                           )}
@@ -185,19 +185,19 @@ function ResolveBreakModal({
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
-          <h3 className="text-[15px] font-semibold text-[#0f1c2e]">Resolve break</h3>
-          <button type="button" onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] text-[20px]">×</button>
+      <div className="bg-surface-v2 rounded-xl shadow-xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[var(--border-subtle, #e5ebf2)] flex items-center justify-between">
+          <h3 className="text-[15px] font-semibold text-[var(--ink, #0f1c2e)]">Resolve break</h3>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-[var(--ink-2, #6b7685)] hover:text-[var(--ink, #0f1c2e)] text-[20px]">×</button>
         </div>
         <div className="p-5 space-y-3 text-[13px]">
           {err && <div className="text-[12px] text-red-700">{err}</div>}
-          <div className="text-[12px] text-[#6b7685]">
+          <div className="text-[12px] text-[var(--ink-2, #6b7685)]">
             <span className="font-mono">{breakRow.external_ref || breakRow.id}</span> · {breakRow.break_type.replace(/_/g, ' ')}
           </div>
           <label className="block">
-            <span className="text-[#6b7685]">Resolution</span>
-            <select value={resolution} onChange={(e) => setResolution(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg">
+            <span className="text-[var(--ink-2, #6b7685)]">Resolution</span>
+            <select value={resolution} onChange={(e) => setResolution(e.target.value)} className="mt-1 w-full px-3 py-2 border border-[var(--border-subtle, #dde4ec)] rounded-lg">
               <option value="accepted_ours">Accepted ours — our record is correct</option>
               <option value="accepted_theirs">Accepted theirs — adjust our record</option>
               <option value="investigating">Investigating — needs more info</option>
@@ -205,11 +205,11 @@ function ResolveBreakModal({
             </select>
           </label>
           <label className="block">
-            <span className="text-[#6b7685]">Notes</span>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="mt-1 w-full px-3 py-2 border border-[#dde4ec] rounded-lg resize-none" />
+            <span className="text-[var(--ink-2, #6b7685)]">Notes</span>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="mt-1 w-full px-3 py-2 border border-[var(--border-subtle, #dde4ec)] rounded-lg resize-none" />
           </label>
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-[#dde4ec] rounded-lg">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-[var(--border-subtle, #dde4ec)] rounded-lg">Cancel</button>
             <button type="button" onClick={submit} disabled={saving} className="px-4 py-2 bg-[#c2873a] text-white rounded-lg disabled:opacity-50">
               {saving ? 'Saving…' : 'Resolve'}
             </button>
@@ -253,22 +253,22 @@ export function AuditEventsModal({ prefix, onClose }: BaseProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
+      <div className="bg-surface-v2 rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[var(--border-subtle, #e5ebf2)] flex items-center justify-between">
           <div>
-            <h3 className="text-[16px] font-semibold text-[#0f1c2e]">Audit chain — recent events</h3>
-            <div className="text-[12px] text-[#6b7685] mt-1">Append-only · SHA-256 chained · most recent first</div>
+            <h3 className="text-[16px] font-semibold text-[var(--ink, #0f1c2e)]">Audit chain — recent events</h3>
+            <div className="text-[12px] text-[var(--ink-2, #6b7685)] mt-1">Append-only · SHA-256 chained · most recent first</div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] text-[20px]">×</button>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-[var(--ink-2, #6b7685)] hover:text-[var(--ink, #0f1c2e)] text-[20px]">×</button>
         </div>
         <div className="p-5 overflow-y-auto flex-1">
           {err && <div className="text-[12px] text-red-700 mb-3">{err}</div>}
           {loading ? (
-            <div className="text-[13px] text-[#6b7685]">Loading events…</div>
+            <div className="text-[13px] text-[var(--ink-2, #6b7685)]">Loading events…</div>
           ) : rows.length === 0 ? (
-            <div className="text-[13px] text-[#6b7685]">No events on this chain yet.</div>
+            <div className="text-[13px] text-[var(--ink-2, #6b7685)]">No events on this chain yet.</div>
           ) : (
-            <div className="rounded-lg border border-[#dde4ec] divide-y divide-[#eef2f7]">
+            <div className="rounded-lg border border-[var(--border-subtle, #dde4ec)] divide-y divide-[var(--s2, #eef2f7)]">
               {rows.map((e) => {
                 const isOpen = expanded.has(e.id);
                 const toggle = () => {
@@ -282,33 +282,33 @@ export function AuditEventsModal({ prefix, onClose }: BaseProps) {
                 try { prettyPayload = JSON.stringify(JSON.parse(e.payload_json), null, 2); } catch { prettyPayload = e.payload_json; }
                 return (
                   <div key={e.id}>
-                    <button type="button" onClick={toggle} className="w-full px-4 py-2 flex items-center gap-3 hover:bg-[#f8fafc] text-left text-[12px]">
+                    <button type="button" onClick={toggle} className="w-full px-4 py-2 flex items-center gap-3 hover:bg-[var(--s1, #f8fafc)] text-left text-[12px]">
                       {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                      <span className="font-mono text-[11px] text-[#6b7685] w-12 text-right">#{e.sequence_no}</span>
+                      <span className="font-mono text-[11px] text-[var(--ink-2, #6b7685)] w-12 text-right">#{e.sequence_no}</span>
                       <Pill tone="info">{e.event_type}</Pill>
-                      <span className="font-mono text-[10px] text-[#6b7685] truncate flex-1">
+                      <span className="font-mono text-[10px] text-[var(--ink-2, #6b7685)] truncate flex-1">
                         {(e.entity_id || '').slice(0, 24)}{(e.entity_id || '').length > 24 ? '…' : ''}
                       </span>
-                      <span className="text-[10px] text-[#6b7685]">{new Date(e.created_at).toLocaleString()}</span>
-                      <span className="font-mono text-[10px] text-[#6b7685]" title={e.content_hash}>{e.content_hash.slice(0, 10)}…</span>
+                      <span className="text-[10px] text-[var(--ink-2, #6b7685)]">{new Date(e.created_at).toLocaleString()}</span>
+                      <span className="font-mono text-[10px] text-[var(--ink-2, #6b7685)]" title={e.content_hash}>{e.content_hash.slice(0, 10)}…</span>
                     </button>
                     {isOpen && (
                       <div className="px-4 pb-3 text-[11px] grid grid-cols-1 gap-2">
                         <div className="grid grid-cols-2 gap-3 text-[11px]">
                           <div>
-                            <div className="text-[10px] uppercase text-[#6b7685]">Prev hash</div>
+                            <div className="text-[10px] uppercase text-[var(--ink-2, #6b7685)]">Prev hash</div>
                             <div className="font-mono">{e.prev_hash}</div>
                           </div>
                           <div>
-                            <div className="text-[10px] uppercase text-[#6b7685]">Content hash</div>
+                            <div className="text-[10px] uppercase text-[var(--ink-2, #6b7685)]">Content hash</div>
                             <div className="font-mono">{e.content_hash}</div>
                           </div>
                         </div>
                         <div>
-                          <div className="text-[10px] uppercase text-[#6b7685] mb-1">Payload</div>
-                          <pre className="bg-[#f8fafc] border border-[#dde4ec] rounded p-2 overflow-auto text-[10px] max-h-60">{prettyPayload}</pre>
+                          <div className="text-[10px] uppercase text-[var(--ink-2, #6b7685)] mb-1">Payload</div>
+                          <pre className="bg-[var(--s1, #f8fafc)] border border-[var(--border-subtle, #dde4ec)] rounded p-2 overflow-auto text-[10px] max-h-60">{prettyPayload}</pre>
                         </div>
-                        <div className="text-[10px] text-[#6b7685]">Actor: <span className="font-mono">{e.actor_id}</span></div>
+                        <div className="text-[10px] text-[var(--ink-2, #6b7685)]">Actor: <span className="font-mono">{e.actor_id}</span></div>
                       </div>
                     )}
                   </div>
@@ -359,47 +359,47 @@ export function ExportDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-        <div className="p-5 border-b border-[#e5ebf2] flex items-center justify-between">
+      <div className="bg-surface-v2 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 border-b border-[var(--border-subtle, #e5ebf2)] flex items-center justify-between">
           <div>
-            <h3 className="text-[16px] font-semibold text-[#0f1c2e]">Certified export</h3>
-            <div className="text-[12px] text-[#6b7685] mt-1 font-mono">{exportId}</div>
+            <h3 className="text-[16px] font-semibold text-[var(--ink, #0f1c2e)]">Certified export</h3>
+            <div className="text-[12px] text-[var(--ink-2, #6b7685)] mt-1 font-mono">{exportId}</div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="text-[#6b7685] hover:text-[#0f1c2e] text-[20px]">×</button>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-[var(--ink-2, #6b7685)] hover:text-[var(--ink, #0f1c2e)] text-[20px]">×</button>
         </div>
         <div className="p-5 overflow-y-auto flex-1 space-y-3">
           {err && <div className="text-[12px] text-red-700">{err}</div>}
           {loading ? (
-            <div className="text-[13px] text-[#6b7685]">Loading manifest…</div>
+            <div className="text-[13px] text-[var(--ink-2, #6b7685)]">Loading manifest…</div>
           ) : manifest ? (
             <>
               <div className="grid grid-cols-2 gap-3 text-[12px]">
-                <div className="rounded-lg border border-[#dde4ec] bg-white p-3">
-                  <div className="text-[10px] uppercase text-[#6b7685]">Profile</div>
+                <div className="rounded-lg border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-3">
+                  <div className="text-[10px] uppercase text-[var(--ink-2, #6b7685)]">Profile</div>
                   <div className="font-semibold mt-1">{manifest.format?.profile || '—'}</div>
                 </div>
-                <div className="rounded-lg border border-[#dde4ec] bg-white p-3">
-                  <div className="text-[10px] uppercase text-[#6b7685]">Rows</div>
+                <div className="rounded-lg border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-3">
+                  <div className="text-[10px] uppercase text-[var(--ink-2, #6b7685)]">Rows</div>
                   <div className="font-semibold mt-1">{manifest.row_count ?? '—'}</div>
                 </div>
-                <div className="rounded-lg border border-[#dde4ec] bg-white p-3">
-                  <div className="text-[10px] uppercase text-[#6b7685]">Period</div>
+                <div className="rounded-lg border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-3">
+                  <div className="text-[10px] uppercase text-[var(--ink-2, #6b7685)]">Period</div>
                   <div className="font-semibold mt-1">{manifest.from} → {manifest.to}</div>
                 </div>
-                <div className="rounded-lg border border-[#dde4ec] bg-white p-3">
-                  <div className="text-[10px] uppercase text-[#6b7685]">Generated</div>
+                <div className="rounded-lg border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-3">
+                  <div className="text-[10px] uppercase text-[var(--ink-2, #6b7685)]">Generated</div>
                   <div className="font-semibold mt-1">{manifest.generated_at ? new Date(manifest.generated_at).toLocaleString() : '—'}</div>
                 </div>
               </div>
-              <div className="rounded-lg border border-[#dde4ec] bg-white p-3 text-[12px]">
-                <div className="text-[10px] uppercase text-[#6b7685]">Chain head at export time</div>
+              <div className="rounded-lg border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-3 text-[12px]">
+                <div className="text-[10px] uppercase text-[var(--ink-2, #6b7685)]">Chain head at export time</div>
                 <div className="font-mono text-[11px] mt-1 break-all">{manifest.chain?.head_hash || '—'}</div>
-                <div className="text-[10px] text-[#6b7685] mt-1">Sequence {manifest.chain?.head_sequence ?? '—'}</div>
+                <div className="text-[10px] text-[var(--ink-2, #6b7685)] mt-1">Sequence {manifest.chain?.head_sequence ?? '—'}</div>
               </div>
-              <div className="rounded-lg border border-[#dde4ec] bg-white p-3 text-[12px]">
-                <div className="text-[10px] uppercase text-[#6b7685]">CSV SHA-256</div>
+              <div className="rounded-lg border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-3 text-[12px]">
+                <div className="text-[10px] uppercase text-[var(--ink-2, #6b7685)]">CSV SHA-256</div>
                 <div className="font-mono text-[10px] mt-1 break-all">{manifest.csv?.sha256 || '—'}</div>
-                <div className="text-[10px] text-[#6b7685] mt-1">{manifest.csv?.bytes?.toLocaleString() || 0} bytes</div>
+                <div className="text-[10px] text-[var(--ink-2, #6b7685)] mt-1">{manifest.csv?.bytes?.toLocaleString() || 0} bytes</div>
               </div>
               <div className="flex justify-end pt-2">
                 <button type="button" onClick={downloadCsv} className="inline-flex items-center gap-2 h-9 px-4 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold">
@@ -408,7 +408,7 @@ export function ExportDetailModal({
               </div>
             </>
           ) : (
-            <div className="text-[13px] text-[#6b7685]">No manifest data.</div>
+            <div className="text-[13px] text-[var(--ink-2, #6b7685)]">No manifest data.</div>
           )}
         </div>
       </div>

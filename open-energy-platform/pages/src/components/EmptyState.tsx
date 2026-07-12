@@ -17,11 +17,11 @@ export function EmptyState({ icon, title, description, subtitle, action }: Empty
   const body = description ?? subtitle;
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="w-16 h-16 bg-[#eef2f7] rounded-full flex items-center justify-center mb-4">
-        {icon || <Inbox className="w-8 h-8 text-[#9aa5b4]" />}
+      <div className="w-16 h-16 bg-[var(--s2, #eef2f7)] rounded-full flex items-center justify-center mb-4">
+        {icon || <Inbox className="w-8 h-8 text-[var(--ink-2, #9aa5b4)]" />}
       </div>
-      <h3 className="text-lg font-medium text-[#0f1c2e] mb-1">{title}</h3>
-      {body && <p className="text-sm text-[#6b7685] mb-4 max-w-sm">{body}</p>}
+      <h3 className="text-lg font-medium text-[var(--ink, #0f1c2e)] mb-1">{title}</h3>
+      {body && <p className="text-sm text-[var(--ink-2, #6b7685)] mb-4 max-w-sm">{body}</p>}
       {action && (
         <button type="button"
           onClick={action.onClick}

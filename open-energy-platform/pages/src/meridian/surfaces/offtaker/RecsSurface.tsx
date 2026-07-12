@@ -21,7 +21,7 @@ type RecsPortfolio = {
 function Card({ label, value, unit }: { label: string; value: number | null | undefined; unit?: string }) {
   const formatted = value != null ? `${Number(value).toLocaleString()}${unit ? ' ' + unit : ''}` : '—';
   return (
-    <div className="rounded-lg border border-[var(--line)] bg-white p-4">
+    <div className="rounded-lg border border-[var(--line)] bg-surface-v2 p-4">
       <div className="text-[10px] uppercase tracking-wider text-[var(--ink3)]">{label}</div>
       <div className="text-[20px] font-semibold text-[var(--ink)] mt-1">{formatted}</div>
     </div>

@@ -25,17 +25,17 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
 
-const BG     = 'oklch(0.96 0.003 250)';
-const BG1    = 'oklch(0.99 0.002 80)';
-const BG2    = 'oklch(0.93 0.004 250)';
-const BORDER = 'oklch(0.87 0.006 250)';
-const TX1    = 'oklch(0.17 0.010 250)';
-const TX2    = 'oklch(0.40 0.009 250)';
-const TX3    = 'oklch(0.60 0.007 250)';
-const ACC    = 'oklch(0.46 0.16 55)';
-const BAD    = 'oklch(0.48 0.20 20)';
-const WARN   = 'oklch(0.50 0.18 55)';
-const GOOD   = 'oklch(0.40 0.16 155)';
+const BG     = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1    = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2    = 'var(--s2, oklch(0.93 0.004 250))';
+const BORDER = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1    = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2    = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3    = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC    = 'var(--accent, oklch(0.46 0.16 55))';
+const BAD    = 'var(--bad, oklch(0.48 0.20 20))';
+const WARN   = 'var(--accent, oklch(0.50 0.18 55))';
+const GOOD   = 'var(--good, oklch(0.40 0.16 155))';
 const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
@@ -426,13 +426,13 @@ function renderDetail(row: BsohRow): React.ReactNode {
 
       <div className="flex flex-wrap gap-1.5 pt-1">
         {row.installed_capacity_mw >= 50 && (
-          <span style={{ padding: '1px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700, background: 'oklch(0.96 0.05 55)', color: WARN }}>NERSA ≥50 MW</span>
+          <span style={{ padding: '1px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700, background: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', color: WARN }}>NERSA ≥50 MW</span>
         )}
         {row.is_reportable_flag && (
-          <span style={{ padding: '1px 8px', borderRadius: 999, fontSize: 10, fontWeight: 500, background: 'oklch(0.97 0.04 20)', color: BAD }}>Regulator reportable</span>
+          <span style={{ padding: '1px 8px', borderRadius: 999, fontSize: 10, fontWeight: 500, background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', color: BAD }}>Regulator reportable</span>
         )}
         {row.warranty_recovery_eligible_live && (
-          <span style={{ padding: '1px 8px', borderRadius: 999, fontSize: 10, fontWeight: 500, background: 'oklch(0.95 0.04 155)', color: GOOD }}>Warranty eligible</span>
+          <span style={{ padding: '1px 8px', borderRadius: 999, fontSize: 10, fontWeight: 500, background: 'color-mix(in oklab, var(--good) 15%, var(--s1))', color: GOOD }}>Warranty eligible</span>
         )}
       </div>
     </div>
@@ -547,7 +547,7 @@ export function BessSohChainTab() {
       </div>
 
       {err && (
-        <div style={{ padding: '8px 12px', background: 'oklch(0.97 0.04 20)', color: BAD, borderRadius: 6, fontSize: 12 }}>
+        <div style={{ padding: '8px 12px', background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', color: BAD, borderRadius: 6, fontSize: 12 }}>
           {err}
         </div>
       )}
@@ -572,13 +572,13 @@ export function BessSohChainTab() {
                 {headroom >= 0 ? '+' : ''}{headroom.toFixed(1)}% headroom
               </span>
               {r.installed_capacity_mw >= 50 && (
-                <span style={{ marginLeft: 6, padding: '1px 5px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: 'oklch(0.96 0.05 55)', color: WARN }}>≥50MW</span>
+                <span style={{ marginLeft: 6, padding: '1px 5px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', color: WARN }}>≥50MW</span>
               )}
               {r.sla_breached && (
-                <span style={{ marginLeft: 6, padding: '1px 5px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: 'oklch(0.97 0.04 20)', color: BAD }}>SLA BREACHED</span>
+                <span style={{ marginLeft: 6, padding: '1px 5px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', color: BAD }}>SLA BREACHED</span>
               )}
               {r.is_reportable_flag && (
-                <span style={{ marginLeft: 6, padding: '1px 5px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: 'oklch(0.97 0.04 20)', color: BAD }}>REPORTABLE</span>
+                <span style={{ marginLeft: 6, padding: '1px 5px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', color: BAD }}>REPORTABLE</span>
               )}
             </span>
           );

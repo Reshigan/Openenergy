@@ -229,37 +229,37 @@ interface NcbEvent {
 }
 
 const STATE_TONE: Record<NcbStatus, { bg: string; fg: string; label: string }> = {
-  cycle_proposed:                 { bg: '#e3e7ec', fg: '#445',    label: 'Proposed' },
-  baselines_synced:               { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Baselines' },
-  telemetry_window_bound:         { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Tel. window' },
-  ntt_emulation_run:              { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'NTT emu.' },
-  champion_predictions_collected: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Champ. pred.' },
-  counterfactuals_computed:       { bg: '#fff4d6', fg: '#a06200', label: 'Counterfact.' },
-  revenue_weighted_scored:        { bg: '#fff4d6', fg: '#a06200', label: 'Rev. weighted' },
-  significance_tested:            { bg: '#fff4d6', fg: '#a06200', label: 'Sig. tested' },
-  savings_certified:              { bg: '#daf5e2', fg: '#1f6b3a', label: 'Certified' },
-  audit_published:                { bg: '#daf5e2', fg: '#1f6b3a', label: 'Audit pub.' },
-  retraining_triggered:           { bg: '#daf5e2', fg: '#1f6b3a', label: 'Retraining' },
-  archived:                       { bg: '#1f5b3a', fg: '#fff',    label: 'Archived' },
-  significance_failed:            { bg: '#fff4d6', fg: '#a06200', label: 'Sig. failed' },
-  rolled_back:                    { bg: '#7a0e0e', fg: '#fff',    label: 'Rolled back' },
-  recalled:                       { bg: '#7a0e0e', fg: '#fff',    label: 'Recalled' },
-  failover_to_prior_cycle:        { bg: '#fff4d6', fg: '#a06200', label: 'Failover' },
+  cycle_proposed:                 { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Proposed' },
+  baselines_synced:               { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Baselines' },
+  telemetry_window_bound:         { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Tel. window' },
+  ntt_emulation_run:              { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'NTT emu.' },
+  champion_predictions_collected: { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Champ. pred.' },
+  counterfactuals_computed:       { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Counterfact.' },
+  revenue_weighted_scored:        { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Rev. weighted' },
+  significance_tested:            { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Sig. tested' },
+  savings_certified:              { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Certified' },
+  audit_published:                { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Audit pub.' },
+  retraining_triggered:           { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Retraining' },
+  archived:                       { bg: 'var(--good, #1f5b3a)', fg: '#fff',    label: 'Archived' },
+  significance_failed:            { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Sig. failed' },
+  rolled_back:                    { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Rolled back' },
+  recalled:                       { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Recalled' },
+  failover_to_prior_cycle:        { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Failover' },
 };
 
 const TIER_TONE: Record<NcbTier, { bg: string; fg: string; label: string }> = {
-  single_asset:             { bg: '#e3e7ec', fg: '#557',    label: 'Single asset' },
-  small_fleet:              { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Small fleet' },
-  large_fleet:              { bg: '#daf5e2', fg: '#1f6b3a', label: 'Large fleet' },
-  multi_jurisdiction_fleet: { bg: '#fff4d6', fg: '#a06200', label: 'Multi-juris.' },
-  fleet_systemic:           { bg: '#7a0e0e', fg: '#fff',    label: 'Systemic' },
+  single_asset:             { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Single asset' },
+  small_fleet:              { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Small fleet' },
+  large_fleet:              { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Large fleet' },
+  multi_jurisdiction_fleet: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Multi-juris.' },
+  fleet_systemic:           { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Systemic' },
 };
 
 const HEALTH_TONE: Record<HealthBand, { bg: string; fg: string; label: string }> = {
-  green:    { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Green' },
-  amber:    { bg: '#fff4d6', fg: '#a06200', label: 'Amber' },
-  red:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Red' },
-  critical: { bg: '#7a0e0e', fg: '#fff',    label: 'Critical' },
+  green:    { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f5b3a)', label: 'Green' },
+  amber:    { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Amber' },
+  red:      { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Red' },
+  critical: { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Critical' },
 };
 
 const FILTERS_ACTION: Array<{ key: string; label: string }> = [
@@ -691,8 +691,8 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
     <div className="text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">NTT comparison battery</h2>
-          <p className="text-[11px] text-[#4a5568]">
+          <h2 className="text-base font-semibold text-[var(--ink, #0c2a4d)]">NTT comparison battery</h2>
+          <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
             12-state forward + 4 branch AGGREGATOR stitching anomaly LSTM-AE + RUL Cox PH survival + fault-fingerprint multi-class against an emulated NTT IoT/O&M baseline.
             Each cycle (nightly default) produces continuously-updated, revenue-weighted, significance-gated, tamper-evident "savings-vs-NTT-30%" KPI streaming into the O&M dashboard hero.
             INVERTED SLA HOURS (single 12 / small 48 / large 120 / multi-juris. 240 / systemic 480 - TIGHTER than the underlying ML chains because cycles run nightly).
@@ -726,7 +726,7 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
       </div>
 
       {/* Drill rail */}
-      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[#d8dde6] bg-white px-3 py-2 text-[11px] text-[#4a5568]">
+      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2 text-[11px] text-[var(--ink-2, #4a5568)]">
         <span>Proposed: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.proposed_count}</span></span>
         <span>Baselines: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.synced_count}</span></span>
         <span>Tel. win.: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.bound_count}</span></span>
@@ -735,15 +735,15 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
         <span>Counterfact.: <span className="font-semibold text-[#a06200]">{kpis.counterfactuals_count}</span></span>
         <span>Scored: <span className="font-semibold text-[#a06200]">{kpis.scored_count}</span></span>
         <span>Sig. tested: <span className="font-semibold text-[#a06200]">{kpis.tested_count}</span></span>
-        <span>Certified: <span className="font-semibold text-[#1f6b3a]">{kpis.certified_count}</span></span>
-        <span>Retraining: <span className="font-semibold text-[#1f6b3a]">{kpis.retrain_count}</span></span>
-        <span>Archived: <span className="font-semibold text-[#1f5b3a]">{kpis.archived_count}</span></span>
+        <span>Certified: <span className="font-semibold text-[var(--good, #1f6b3a)]">{kpis.certified_count}</span></span>
+        <span>Retraining: <span className="font-semibold text-[var(--good, #1f6b3a)]">{kpis.retrain_count}</span></span>
+        <span>Archived: <span className="font-semibold text-[var(--good, #1f5b3a)]">{kpis.archived_count}</span></span>
         <span>Sig. failed: <span className="font-semibold text-[#a06200]">{kpis.significance_failed_count}</span></span>
         <span>Failover: <span className="font-semibold text-[#a06200]">{kpis.failover_count}</span></span>
-        <span>Reportable: <span className="font-semibold text-[#9b1f1f]">{kpis.reportable_total}</span></span>
+        <span>Reportable: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.reportable_total}</span></span>
         <span>Floor flags: <span className="font-semibold text-[#a06200]">{kpis.floor_flag_total}</span></span>
-        <span>Card exp. {'<'}30d: <span className="font-semibold text-[#9b1f1f]">{kpis.model_card_expiring_30d}</span></span>
-        <span>Total ZAR: <span className="font-semibold text-[#1f5b3a]">{fmtZar(kpis.total_savings_sum_zar)}</span></span>
+        <span>Card exp. {'<'}30d: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.model_card_expiring_30d}</span></span>
+        <span>Total ZAR: <span className="font-semibold text-[var(--good, #1f5b3a)]">{fmtZar(kpis.total_savings_sum_zar)}</span></span>
         <span>Audit: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w118_bridged_count}</span></span>
         <span>Anomaly: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w127_bridged_count}</span></span>
         <span>RUL: <span className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{kpis.w128_bridged_count}</span></span>
@@ -762,7 +762,7 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #4a5568)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -779,7 +779,7 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -795,8 +795,8 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#7a0e0e] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                ? 'bg-[var(--bad, #7a0e0e)] text-white'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -813,7 +813,7 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -829,8 +829,8 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#1f6b3a] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                ? 'bg-[var(--good, #1f6b3a)] text-white'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -842,11 +842,11 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
         <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
       )}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-4 py-6 text-center text-sm text-[var(--ink-2, #4a5568)]">Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
+        <div className="overflow-hidden rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
           <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
+            <thead className="bg-[var(--s2, #f3f5f9)]">
               <tr className="text-left">
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Cycle #</th>
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Kind / asset</th>
@@ -874,19 +874,19 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
                   <tr
                     key={r.id}
                     onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
+                    className="cursor-pointer border-t border-[var(--border-subtle, #e3e7ec)] hover:bg-[var(--s1, #f8fafc)]"
                   >
-                    <td className="px-3 py-2 font-mono text-[#0c2a4d]">
+                    <td className="px-3 py-2 font-mono text-[var(--ink, #0c2a4d)]">
                       <div className="text-[11px] font-semibold">{r.cycle_number}</div>
-                      <div className="text-[10px] text-[#6b7685]">{r.title ?? '-'}</div>
-                      {r.is_reportable_flag ? <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">REG</span> : null}
-                      {r.regulator_ref ? <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">FILED</span> : null}
-                      {r.floor_at_fleet_systemic_live ? <span className="ml-1 text-[9px] font-semibold text-[#7a0e0e]">SYS</span> : null}
+                      <div className="text-[10px] text-[var(--ink-2, #6b7685)]">{r.title ?? '-'}</div>
+                      {r.is_reportable_flag ? <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #9b1f1f)]">REG</span> : null}
+                      {r.regulator_ref ? <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #9b1f1f)]">FILED</span> : null}
+                      {r.floor_at_fleet_systemic_live ? <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #7a0e0e)]">SYS</span> : null}
                       {r.ntt_contract_renegotiation_trigger ? <span className="ml-1 text-[9px] font-semibold text-[#a06200]">RENEG</span> : null}
                     </td>
                     <td className="px-3 py-2 text-[11px] font-mono" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {fmtKind(r.cycle_kind)}
-                      <div className="text-[10px] text-[#6b7685]">{fmtAssetClass(r.asset_class)}</div>
+                      <div className="text-[10px] text-[var(--ink-2, #6b7685)]">{fmtAssetClass(r.asset_class)}</div>
                     </td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tier.bg, color: tier.fg }}>
@@ -903,29 +903,29 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
                         {cs.label}
                       </span>
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums font-mono ${savingsPct == null ? 'text-[#4a5568]' : savingsPct >= target ? 'text-[#1f5b3a] font-semibold' : savingsPct >= 0 ? 'text-[#a06200]' : 'text-[#9b1f1f] font-semibold'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums font-mono ${savingsPct == null ? 'text-[var(--ink-2, #4a5568)]' : savingsPct >= target ? 'text-[var(--good, #1f5b3a)] font-semibold' : savingsPct >= 0 ? 'text-[#a06200]' : 'text-[var(--bad, #9b1f1f)] font-semibold'}`}>
                       {fmtPct(savingsPct)}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums font-mono text-[#0c2a4d]">
+                    <td className="px-3 py-2 text-right tabular-nums font-mono text-[var(--ink, #0c2a4d)]">
                       {fmtZar(r.total_savings_zar_live ?? r.total_savings_zar)}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums font-mono text-[#1f5b3a]">
+                    <td className="px-3 py-2 text-right tabular-nums font-mono text-[var(--good, #1f5b3a)]">
                       {fmtZar(r.cumulative_savings_zar_live ?? r.cumulative_savings_zar)}
                     </td>
-                    <td className={`px-3 py-2 text-center tabular-nums ${control >= 100 ? 'text-[#1f5b3a]' : control >= 60 ? 'text-[#a06200]' : 'text-[#9b1f1f] font-semibold'}`}>
+                    <td className={`px-3 py-2 text-center tabular-nums ${control >= 100 ? 'text-[var(--good, #1f5b3a)]' : control >= 60 ? 'text-[#a06200]' : 'text-[var(--bad, #9b1f1f)] font-semibold'}`}>
                       {control}/130
                     </td>
-                    <td className={`px-3 py-2 text-center tabular-nums ${flags >= 3 ? 'text-[#7a0e0e] font-semibold' : flags >= 1 ? 'text-[#a06200]' : 'text-[#1f5b3a]'}`}>
+                    <td className={`px-3 py-2 text-center tabular-nums ${flags >= 3 ? 'text-[var(--bad, #7a0e0e)] font-semibold' : flags >= 1 ? 'text-[#a06200]' : 'text-[var(--good, #1f5b3a)]'}`}>
                       {flags}
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {r.sla_breached_live ? 'BREACHED' : fmtHoursSla(r.sla_hours_remaining_live)}
                     </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={11} className="px-3 py-6 text-center text-[#4a5568]">No cycles match.</td></tr>
+                <tr><td colSpan={11} className="px-3 py-6 text-center text-[var(--ink-2, #4a5568)]">No cycles match.</td></tr>
               )}
             </tbody>
           </table>
@@ -953,10 +953,10 @@ export function NttComparisonBatteryTab({ regulatorView }: Props = {}) {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'ok' ? '#1f5b3a' : '#0c2a4d';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : tone === 'ok' ? 'var(--good, #1f5b3a)' : 'var(--ink, #0c2a4d)';
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
+    <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
     </div>
   );
@@ -1001,10 +1001,10 @@ function Drawer({
     const cls = tone === 'primary'
       ? 'bg-[#c2873a] text-white hover:bg-[#c2873a]'
       : tone === 'danger'
-        ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
+        ? 'bg-[var(--bad, #7a0e0e)] text-white hover:bg-[var(--bad, #9b1f1f)]'
         : tone === 'amber'
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
-          : 'bg-white border border-[#d8dde6] hover:bg-[#f3f5f9]';
+          : 'bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]';
     return (
       <button type="button"
         key={action}
@@ -1019,21 +1019,21 @@ function Drawer({
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-stretch justify-end bg-black/40">
-      <div className="w-full max-w-3xl overflow-y-auto bg-[#f3f5f9] p-4">
+      <div className="w-full max-w-3xl overflow-y-auto bg-[var(--s2, #f3f5f9)] p-4">
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">
+            <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">
               {fmtKind(row.cycle_kind)} {'•'} {fmtAssetClass(row.asset_class)} {'•'} {row.current_tier.replace(/_/g, ' ')}
               {row.assets_covered != null ? <> {'•'} {row.assets_covered}a/{row.jurisdiction_count ?? 0}j{row.safety_critical ? '/SC' : ''}</> : null}
             </div>
-            <h3 className="text-lg font-semibold text-[#0c2a4d]">{row.cycle_number}</h3>
-            <p className="text-[11px] text-[#4a5568]">
+            <h3 className="text-lg font-semibold text-[var(--ink, #0c2a4d)]">{row.cycle_number}</h3>
+            <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
               {row.title || 'NTT comparison battery cycle (AGGREGATOR)'}
               {row.ntt_baseline_version ? <> {'•'} NTT base <span className="font-mono">{row.ntt_baseline_version}</span></> : null}
               {row.cycle_window_start ? <> {'•'} {fmtDate(row.cycle_window_start)} → {fmtDate(row.cycle_window_end)}</> : null}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] px-3 py-1 text-[12px] hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         {/* Hero quad */}
@@ -1047,8 +1047,8 @@ function Drawer({
         </div>
 
         {/* Significance + CI panel */}
-        <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">
+        <div className="mb-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px]">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">
             Significance test + 95% confidence interval (paired-t lead, Wilcoxon backup, Brier skill)
           </div>
           <div className="grid grid-cols-4 gap-2">
@@ -1073,8 +1073,8 @@ function Drawer({
         </div>
 
         {/* Cycle counters */}
-        <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">
+        <div className="mb-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px]">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">
             Sustained-trigger counters (reneg threshold {renegCycles} consecutive above-target cycles; material floor {fmtZar(materialFloor)})
           </div>
           <div className="grid grid-cols-4 gap-2">
@@ -1107,8 +1107,8 @@ function Drawer({
         </div>
 
         {/* Floor flags */}
-        <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">
+        <div className="mb-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px]">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">
             Floor flags ({flags}/5) - FLOOR-AT-LARGE-FLEET {'≥'}1, FLOOR-AT-FLEET-SYSTEMIC {'≥'}3
           </div>
           <div className="grid grid-cols-5 gap-2">
@@ -1121,8 +1121,8 @@ function Drawer({
         </div>
 
         {/* Bridges */}
-        <div className="mb-3 rounded border border-[#d8dde6] bg-white p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Cross-chain bridges (audit MANDATORY at publish_audit)</div>
+        <div className="mb-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px]">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">Cross-chain bridges (audit MANDATORY at publish_audit)</div>
           <div className="grid grid-cols-5 gap-2">
             <BridgePill on={!!row.bridges_to_w118_audit_chain_live} label="Audit (req)" />
             <BridgePill on={!!row.bridges_to_w127_anomaly_detection_live} label="Anomaly" />
@@ -1135,7 +1135,7 @@ function Drawer({
         {/* Regulator + reason */}
         {(row.is_reportable_flag || row.regulator_ref || row.regulator_inbox_ref || row.reason_code) && (
           <div className="mb-3 rounded border border-red-200 bg-red-50 p-3 text-[11px] text-[#7a1f1f]">
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-[#9b1f1f]">Regulator crossing</div>
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-[var(--bad, #9b1f1f)]">Regulator crossing</div>
             {row.reason_code && <div>Reason: <span className="font-mono">{row.reason_code}</span></div>}
             {row.regulator_reason_text && <div>Detail: {row.regulator_reason_text}</div>}
             {row.regulator_ref && <div>Filed ref: <span className="font-mono">{row.regulator_ref}</span></div>}
@@ -1146,7 +1146,7 @@ function Drawer({
 
         {/* Action bar */}
         {!regulatorView && !row.is_hard_terminal && (
-          <div className="mb-4 flex flex-wrap gap-2 rounded border border-[#d8dde6] bg-white p-3">
+          <div className="mb-4 flex flex-wrap gap-2 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3">
             {nextAction && renderAct(nextAction, ACTION_LABEL[nextAction].split('(')[0].trim(), 'primary')}
             {canSigFailure && row.chain_status !== 'significance_failed' && renderAct('flag-significance-failure', 'Flag sig. failure', 'amber')}
             {canFailover && renderAct('activate-failover', 'Activate failover', 'amber')}
@@ -1156,16 +1156,16 @@ function Drawer({
         )}
 
         {/* Timeline */}
-        <div className="rounded border border-[#d8dde6] bg-white">
-          <div className="border-b border-[#e3e7ec] px-3 py-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Timeline</div>
-          <ol className="divide-y divide-[#e3e7ec]">
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
+          <div className="border-b border-[var(--border-subtle, #e3e7ec)] px-3 py-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">Timeline</div>
+          <ol className="divide-y divide-[var(--border-subtle, #e3e7ec)]">
             {events.length === 0 && (
-              <li className="px-3 py-3 text-[11px] text-[#6b7685]">No events.</li>
+              <li className="px-3 py-3 text-[11px] text-[var(--ink-2, #6b7685)]">No events.</li>
             )}
             {events.map((e) => (
               <li key={e.id} className="px-3 py-2 text-[11px]">
                 <div className="font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.event_type}</div>
-                <div className="text-[10px] text-[#4a5568]">
+                <div className="text-[10px] text-[var(--ink-2, #4a5568)]">
                   {e.from_status || '-'} {'→'} {e.to_status || '-'}
                   {e.actor_party ? <> {'•'} {e.actor_party}</> : null}
                   {' '}{'•'} {fmtDate(e.created_at)}
@@ -1188,11 +1188,11 @@ function Field2({
   tone?: 'ok' | 'warn' | 'bad';
   mono?: boolean;
 }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'ok' ? '#1f5b3a' : '#0c2a4d';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : tone === 'ok' ? 'var(--good, #1f5b3a)' : 'var(--ink, #0c2a4d)';
   const weight = tone === 'bad' ? 'font-semibold' : '';
   return (
     <div>
-      <div className="text-[9px] uppercase tracking-wider text-[#6b7685]">{label}</div>
+      <div className="text-[9px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-[12px] tabular-nums ${mono ? 'font-mono' : ''} ${weight}`} style={{ color }}>
         {value ?? '-'}
       </div>
@@ -1203,7 +1203,7 @@ function Field2({
 function FlagPill({ on, label }: { on: boolean; label: string }) {
   return (
     <span
-      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[#7a0e0e] text-white' : 'bg-[#e3e7ec] text-[#6b7685]'}`}
+      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[var(--bad, #7a0e0e)] text-white' : 'bg-[var(--border-subtle, #e3e7ec)] text-[var(--ink-2, #6b7685)]'}`}
       title={label}
     >
       {label}
@@ -1214,7 +1214,7 @@ function FlagPill({ on, label }: { on: boolean; label: string }) {
 function BridgePill({ on, label }: { on: boolean; label: string }) {
   return (
     <span
-      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[#c2873a] text-white' : 'bg-[#e3e7ec] text-[#6b7685]'}`}
+      className={`rounded px-2 py-0.5 text-center text-[10px] font-medium ${on ? 'bg-[#c2873a] text-white' : 'bg-[var(--border-subtle, #e3e7ec)] text-[var(--ink-2, #6b7685)]'}`}
       title={label}
     >
       {label}
@@ -1310,35 +1310,35 @@ function ProposeModal({
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-2xl rounded bg-white p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
+      <div className="w-full max-w-2xl rounded bg-surface-v2 p-4 text-[12px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <h3 className="text-base font-semibold text-[#0c2a4d]">Propose NTT comparison cycle</h3>
-            <p className="text-[11px] text-[#4a5568]">
+            <h3 className="text-base font-semibold text-[var(--ink, #0c2a4d)]">Propose NTT comparison cycle</h3>
+            <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
               Audit bridge advisable at propose; MANDATORY at publish_audit (route will 422 reject otherwise).
               Tier auto-derived from (assets_covered, jurisdiction_count, safety_critical) with FLOOR-AT-LARGE-FLEET {'≥'}1 flag and FLOOR-AT-FLEET-SYSTEMIC {'≥'}3 flags.
               recall_certification crosses regulator EVERY tier (SIGNATURE).
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] px-3 py-1 text-[12px] hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.46 0.16 55)' }}>Close</button>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Cycle kind">
-            <select value={kind} onChange={(e) => setKind(e.target.value as CycleKind)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]">
+            <select value={kind} onChange={(e) => setKind(e.target.value as CycleKind)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]">
               {KIND_OPTIONS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </Field>
           <Field label="Asset class">
-            <select value={assetClass} onChange={(e) => setAssetClass(e.target.value as AssetClass)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]">
+            <select value={assetClass} onChange={(e) => setAssetClass(e.target.value as AssetClass)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]">
               {ASSET_OPTIONS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </Field>
           <Field label="Assets covered (fleet scope)">
-            <input value={assetsCovered} onChange={(e) => setAssetsCovered(e.target.value)} type="number" className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="50" />
+            <input value={assetsCovered} onChange={(e) => setAssetsCovered(e.target.value)} type="number" className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="50" />
           </Field>
           <Field label="Jurisdiction count">
-            <input value={jurisdictions} onChange={(e) => setJurisdictions(e.target.value)} type="number" className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="1" />
+            <input value={jurisdictions} onChange={(e) => setJurisdictions(e.target.value)} type="number" className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="1" />
           </Field>
           <Field label="Safety-critical (national)?">
             <label className="flex items-center gap-2 text-[12px]">
@@ -1347,54 +1347,54 @@ function ProposeModal({
             </label>
           </Field>
           <Field label="Cycle window start (ISO)">
-            <input value={windowStart} onChange={(e) => setWindowStart(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="2026-05-30T00:00:00Z" />
+            <input value={windowStart} onChange={(e) => setWindowStart(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="2026-05-30T00:00:00Z" />
           </Field>
           <Field label="Cycle window end (ISO)">
-            <input value={windowEnd} onChange={(e) => setWindowEnd(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="2026-05-31T00:00:00Z" />
+            <input value={windowEnd} onChange={(e) => setWindowEnd(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="2026-05-31T00:00:00Z" />
           </Field>
           <Field label="NTT baseline version">
-            <input value={nttVersion} onChange={(e) => setNttVersion(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="ntt-iot-v6.2" />
+            <input value={nttVersion} onChange={(e) => setNttVersion(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="ntt-iot-v6.2" />
           </Field>
           <Field label="Champion anomaly version">
-            <input value={championAnomaly} onChange={(e) => setChampionAnomaly(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="1.0.0" />
+            <input value={championAnomaly} onChange={(e) => setChampionAnomaly(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="1.0.0" />
           </Field>
           <Field label="Champion RUL version">
-            <input value={championRul} onChange={(e) => setChampionRul(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="1.0.0" />
+            <input value={championRul} onChange={(e) => setChampionRul(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="1.0.0" />
           </Field>
           <Field label="Champion fault version">
-            <input value={championFault} onChange={(e) => setChampionFault(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="1.0.0" />
+            <input value={championFault} onChange={(e) => setChampionFault(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="1.0.0" />
           </Field>
           <Field label="Prior cycle ref (chain link)">
-            <input value={priorCycleRef} onChange={(e) => setPriorCycleRef(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="ncb-015" />
+            <input value={priorCycleRef} onChange={(e) => setPriorCycleRef(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="ncb-015" />
           </Field>
           <Field label="Next cycle due (ISO)">
-            <input value={nextCycleDue} onChange={(e) => setNextCycleDue(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="2026-06-01T04:00:00Z" />
+            <input value={nextCycleDue} onChange={(e) => setNextCycleDue(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="2026-06-01T04:00:00Z" />
           </Field>
           <Field label="Model card expiry (ISO)">
-            <input value={mcardExpiry} onChange={(e) => setMcardExpiry(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="2026-11-30T00:00:00Z" />
+            <input value={mcardExpiry} onChange={(e) => setMcardExpiry(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="2026-11-30T00:00:00Z" />
           </Field>
           <Field label="Title">
-            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="Nightly fleet-wide PV comparison 2026-05-30" />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="Nightly fleet-wide PV comparison 2026-05-30" />
           </Field>
           <Field label="Audit block ref (MANDATORY at publish_audit)">
-            <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
+            <input value={w118} onChange={(e) => setW118(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="audit-block-2026-1234" />
           </Field>
           <Field label="Anomaly detection ref">
-            <input value={w127} onChange={(e) => setW127(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="ad-2026-007" />
+            <input value={w127} onChange={(e) => setW127(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="ad-2026-007" />
           </Field>
           <Field label="RUL survival ref">
-            <input value={w128} onChange={(e) => setW128(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="rul-2026-011" />
+            <input value={w128} onChange={(e) => setW128(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="rul-2026-011" />
           </Field>
           <Field label="Fault fingerprint ref">
-            <input value={w129} onChange={(e) => setW129(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="ffml-2026-005" />
+            <input value={w129} onChange={(e) => setW129(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="ffml-2026-005" />
           </Field>
           <Field label="Asset prognostics ref (control variable)">
-            <input value={w71} onChange={(e) => setW71(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1 text-[12px]" placeholder="aprog-2026-007" />
+            <input value={w71} onChange={(e) => setW71(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1 text-[12px]" placeholder="aprog-2026-007" />
           </Field>
         </div>
 
-        <div className="mt-3 rounded border border-[#d8dde6] bg-[#f8fafc] p-3 text-[11px]">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-[#4a5568]">Floor flags (FLOOR-AT-LARGE-FLEET {'≥'}1, FLOOR-AT-FLEET-SYSTEMIC {'≥'}3)</div>
+        <div className="mt-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-[var(--s1, #f8fafc)] p-3 text-[11px]">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">Floor flags (FLOOR-AT-LARGE-FLEET {'≥'}1, FLOOR-AT-FLEET-SYSTEMIC {'≥'}3)</div>
           <div className="grid grid-cols-3 gap-2">
             <Checkbox checked={materialSavings} onChange={setMaterialSavings} label="Material savings threshold" />
             <Checkbox checked={renegTrigger} onChange={setRenegTrigger} label="NTT contract renegotiation" />
@@ -1406,7 +1406,7 @@ function ProposeModal({
         </div>
 
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1.5 text-[12px] hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}>Cancel</button>
+          <button type="button" onClick={onClose} className="rounded bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] px-3 py-1.5 text-[12px] hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.46 0.16 55)' }}>Cancel</button>
           <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose cycle</button>
         </div>
       </div>
@@ -1416,7 +1416,7 @@ function ProposeModal({
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block text-[11px] text-[#4a5568]">
+    <label className="block text-[11px] text-[var(--ink-2, #4a5568)]">
       <div className="mb-1 text-[10px] uppercase tracking-wider">{label}</div>
       {children}
     </label>

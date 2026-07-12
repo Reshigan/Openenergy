@@ -55,20 +55,20 @@ interface ChainEvent {
 }
 
 const TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  draft:                  { bg: '#f0f3f7', fg: '#445566', label: 'Draft' },
-  submitted:              { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Submitted' },
-  doe_assigned:           { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'DOE assigned' },
-  doe_review:             { bg: '#fff4d6', fg: '#a06200', label: 'DOE reviewing' },
-  doe_opinion_positive:   { bg: '#daf5e2', fg: '#1f6b3a', label: 'DOE positive' },
-  doe_opinion_qualified:  { bg: '#fff4d6', fg: '#a06200', label: 'DOE qualified' },
+  draft:                  { bg: 'var(--s2, #f0f3f7)', fg: 'var(--ink-2, #445566)', label: 'Draft' },
+  submitted:              { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Submitted' },
+  doe_assigned:           { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'DOE assigned' },
+  doe_review:             { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'DOE reviewing' },
+  doe_opinion_positive:   { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'DOE positive' },
+  doe_opinion_qualified:  { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'DOE qualified' },
   doe_opinion_adverse:    { bg: '#3a0f0f', fg: '#ffd6d6', label: 'DOE adverse' },
-  doe_opinion_disclaimer: { bg: '#fde0e0', fg: '#9b1f1f', label: 'DOE disclaimer' },
-  cra_review:             { bg: '#fff4d6', fg: '#a06200', label: 'CRA reviewing' },
-  cra_approved:           { bg: '#daf5e2', fg: '#1f6b3a', label: 'CRA approved' },
-  cra_rejected:           { bg: '#fde0e0', fg: '#9b1f1f', label: 'CRA rejected' },
-  issuance_authorized:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Issuance authorized' },
-  issued:                 { bg: '#daf5e2', fg: '#1f6b3a', label: 'Issued' },
-  withdrawn:              { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
+  doe_opinion_disclaimer: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'DOE disclaimer' },
+  cra_review:             { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'CRA reviewing' },
+  cra_approved:           { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'CRA approved' },
+  cra_rejected:           { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'CRA rejected' },
+  issuance_authorized:    { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Issuance authorized' },
+  issued:                 { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Issued' },
+  withdrawn:              { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Withdrawn' },
 };
 
 const FILTERS: Array<{ key: string; label: string }> = [
@@ -86,10 +86,10 @@ const FILTERS: Array<{ key: string; label: string }> = [
 
 function Kpi({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
+    <div style={{ background: 'var(--s1, #fff)', border: '1px solid var(--border-subtle, #e3e7ec)', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
       <div style={{ fontSize: 11, color: '#557', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#0f1c2e', marginTop: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: '#7a8a9a', marginTop: 2 }}>{sub}</div>}
+      <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink, #0f1c2e)', marginTop: 4 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--ink-2, #7a8a9a)', marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
@@ -168,7 +168,7 @@ export function MrvChainTab() {
 
   return (
     <div data-testid="carbon-mrv-chain-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1c2e', marginTop: 0 }}>MRV verification chain</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink, #0f1c2e)', marginTop: 0 }}>MRV verification chain</h2>
       <p style={{ fontSize: 13, color: '#557', marginTop: 4 }}>
         UNFCCC Article 6 verification workflow — draft → DOE assigned → DOE review →
         DOE opinion → CRA review → CRA approve / reject → issuance authorized → issued.
@@ -192,9 +192,9 @@ export function MrvChainTab() {
             data-testid={`carbon-mrv-chain-filter-${f.key}`}
             onClick={() => setFilter(f.key)}
             style={{
-              padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
+              padding: '6px 12px', borderRadius: 999, border: '1px solid var(--border-subtle, #e3e7ec)',
               background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff',
-              color: filter === f.key ? '#fff' : '#0f1c2e', fontSize: 12, fontWeight: 600,
+              color: filter === f.key ? '#fff' : 'var(--ink, #0f1c2e)', fontSize: 12, fontWeight: 600,
               cursor: 'pointer',
             }}
           >{f.label}</button>
@@ -202,15 +202,15 @@ export function MrvChainTab() {
       </div>
 
       {error && (
-        <div style={{ marginTop: 12, padding: '8px 12px', background: '#fde0e0', color: '#9b1f1f', borderRadius: 6, fontSize: 13 }}>
+        <div style={{ marginTop: 12, padding: '8px 12px', background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', color: 'var(--bad, #9b1f1f)', borderRadius: 6, fontSize: 13 }}>
           {error}
         </div>
       )}
 
-      <div data-testid="carbon-mrv-chain-table" style={{ marginTop: 14, background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, overflow: 'hidden' }}>
+      <div data-testid="carbon-mrv-chain-table" style={{ marginTop: 14, background: 'var(--s1, #fff)', border: '1px solid var(--border-subtle, #e3e7ec)', borderRadius: 8, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
-            <tr style={{ background: '#f6f8fb', textAlign: 'left', color: '#557' }}>
+            <tr style={{ background: 'var(--s1, #f6f8fb)', textAlign: 'left', color: '#557' }}>
               <th style={{ padding: '8px 12px' }}>Submission</th>
               <th style={{ padding: '8px 12px' }}>Project</th>
               <th style={{ padding: '8px 12px' }}>Period</th>
@@ -221,7 +221,7 @@ export function MrvChainTab() {
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: '#7a8a9a' }}>
+              <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: 'var(--ink-2, #7a8a9a)' }}>
                 {loading ? 'Loading…' : 'No submissions in this view.'}
               </td></tr>
             )}
@@ -232,7 +232,7 @@ export function MrvChainTab() {
                   key={r.id}
                   data-testid={`carbon-mrv-chain-row-${r.id}`}
                   onClick={() => openDrill(r)}
-                  style={{ borderTop: '1px solid #eef1f5', cursor: 'pointer' }}
+                  style={{ borderTop: '1px solid var(--border-subtle, #eef1f5)', cursor: 'pointer' }}
                 >
                   <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 12 }}>{r.id}</td>
                   <td style={{ padding: '8px 12px' }}>{r.project_id}</td>
@@ -247,7 +247,7 @@ export function MrvChainTab() {
                       {tone.label}
                     </span>
                   </td>
-                  <td style={{ padding: '8px 12px', fontSize: 12, color: r.sla_breached ? '#9b1f1f' : '#557' }}>
+                  <td style={{ padding: '8px 12px', fontSize: 12, color: r.sla_breached ? 'var(--bad, #9b1f1f)' : '#557' }}>
                     {fmtSla(r.days_until_sla, r.sla_breached)}
                   </td>
                 </tr>
@@ -261,8 +261,8 @@ export function MrvChainTab() {
         <div
           data-testid="carbon-mrv-chain-drill"
           style={{
-            position: 'fixed', top: 0, right: 0, bottom: 0, width: 560, background: '#fff',
-            borderLeft: '1px solid #e3e7ec', boxShadow: '-4px 0 16px rgba(0,0,0,0.08)',
+            position: 'fixed', top: 0, right: 0, bottom: 0, width: 560, background: 'var(--s1, #fff)',
+            borderLeft: '1px solid var(--border-subtle, #e3e7ec)', boxShadow: '-4px 0 16px rgba(0,0,0,0.08)',
             zIndex: 50, padding: 20, overflowY: 'auto',
           }}
         >
@@ -291,7 +291,7 @@ export function MrvChainTab() {
           </div>
 
           {drill.cra_rejection_reason && (
-            <div style={{ marginTop: 10, padding: 10, background: '#fde0e0', color: '#9b1f1f', borderRadius: 6, fontSize: 12 }}>
+            <div style={{ marginTop: 10, padding: 10, background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', color: 'var(--bad, #9b1f1f)', borderRadius: 6, fontSize: 12 }}>
               <strong>CRA rejection:</strong> {drill.cra_rejection_reason}
             </div>
           )}
@@ -299,17 +299,17 @@ export function MrvChainTab() {
           <h4 style={{ marginTop: 18, fontSize: 13, color: '#557' }}>Chain timeline</h4>
           <div data-testid="carbon-mrv-chain-events" style={{ marginTop: 6, maxHeight: 320, overflowY: 'auto' }}>
             {drillEvents.length === 0 && (
-              <div style={{ fontSize: 12, color: '#7a8a9a' }}>No events recorded.</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-2, #7a8a9a)' }}>No events recorded.</div>
             )}
             {drillEvents.map((ev) => (
               <div
                 key={ev.id}
                 data-testid={`carbon-mrv-chain-event-${ev.id}`}
-                style={{ padding: '8px 10px', borderBottom: '1px solid #eef1f5' }}
+                style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-subtle, #eef1f5)' }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ fontWeight: 600, fontSize: 12 }}>{ev.event_type}</div>
-                  <span style={{ fontSize: 10, color: '#7a8a9a' }}>{ev.created_at.slice(0, 16).replace('T', ' ')}</span>
+                  <span style={{ fontSize: 10, color: 'var(--ink-2, #7a8a9a)' }}>{ev.created_at.slice(0, 16).replace('T', ' ')}</span>
                 </div>
                 <div style={{ marginTop: 2, fontSize: 12 }}>{ev.notes ?? ''}</div>
                 <div style={{ marginTop: 2, fontSize: 11, color: '#557', fontFamily: 'monospace' }}>
@@ -342,7 +342,7 @@ export function MrvChainTab() {
               <>
                 <button type="button" data-testid="carbon-mrv-chain-opinion-positive"
                   onClick={() => void act('record-opinion', { doe_opinion: 'positive' }, drill.id)}
-                  style={{ padding: '6px 12px', background: '#1f6b3a', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'var(--good, #1f6b3a)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >Positive</button>
                 <button type="button" data-testid="carbon-mrv-chain-opinion-qualified"
                   onClick={() => void act('record-opinion', { doe_opinion: 'qualified' }, drill.id)}
@@ -353,7 +353,7 @@ export function MrvChainTab() {
                     const notes = prompt('Adverse finding — provide reason:');
                     if (notes) void act('record-opinion', { doe_opinion: 'adverse', notes }, drill.id);
                   }}
-                  style={{ padding: '6px 12px', background: '#9b1f1f', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'var(--bad, #9b1f1f)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >Adverse</button>
               </>
             )}
@@ -367,14 +367,14 @@ export function MrvChainTab() {
               <>
                 <button type="button" data-testid="carbon-mrv-chain-approve-cra"
                   onClick={() => void act('approve-cra', {}, drill.id)}
-                  style={{ padding: '6px 12px', background: '#1f6b3a', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'var(--good, #1f6b3a)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >CRA approve</button>
                 <button type="button" data-testid="carbon-mrv-chain-reject-cra"
                   onClick={() => {
                     const reason = prompt('CRA rejection reason?');
                     if (reason) void act('reject-cra', { rejection_reason: reason }, drill.id);
                   }}
-                  style={{ padding: '6px 12px', background: '#9b1f1f', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'var(--bad, #9b1f1f)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >CRA reject</button>
               </>
             )}
@@ -387,7 +387,7 @@ export function MrvChainTab() {
             {drill.chain_status === 'issuance_authorized' && (
               <button type="button" data-testid="carbon-mrv-chain-issue"
                 onClick={() => void act('issue', {}, drill.id)}
-                style={{ padding: '6px 12px', background: '#1f6b3a', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: 'var(--good, #1f6b3a)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
               >Issue credits</button>
             )}
             {!drill.is_terminal && (

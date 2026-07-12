@@ -7,17 +7,17 @@ import { EmptyState } from '../EmptyState';
 import { useAuth } from '../../lib/useAuth';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 
-const BG     = 'oklch(0.96 0.003 250)';
-const BG1    = 'oklch(0.99 0.002 80)';
-const BG2    = 'oklch(0.93 0.004 250)';
-const BORDER = 'oklch(0.87 0.006 250)';
-const TX1    = 'oklch(0.17 0.010 250)';
-const TX2    = 'oklch(0.40 0.009 250)';
-const TX3    = 'oklch(0.60 0.007 250)';
-const ACC    = 'oklch(0.46 0.12 230)';
-const BAD    = 'oklch(0.48 0.20 20)';
-const WARN   = 'oklch(0.50 0.18 55)';
-const GOOD   = 'oklch(0.40 0.16 155)';
+const BG     = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1    = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2    = 'var(--s2, oklch(0.93 0.004 250))';
+const BORDER = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1    = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2    = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3    = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC    = 'var(--accent, oklch(0.46 0.12 230))';
+const BAD    = 'var(--bad, oklch(0.48 0.20 20))';
+const WARN   = 'var(--accent, oklch(0.50 0.18 55))';
+const GOOD   = 'var(--good, oklch(0.40 0.16 155))';
 const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type Severity = 'info' | 'warning' | 'critical';
@@ -47,12 +47,12 @@ interface Summary {
 function sevColor(sev: Severity): string {
   if (sev === 'critical') return BAD;
   if (sev === 'warning') return WARN;
-  return 'oklch(0.46 0.15 250)';
+  return 'var(--accent, oklch(0.46 0.15 250))';
 }
 
 function sevBg(sev: Severity): string {
-  if (sev === 'critical') return 'oklch(0.96 0.04 20)';
-  if (sev === 'warning') return 'oklch(0.97 0.04 55)';
+  if (sev === 'critical') return 'color-mix(in oklab, var(--bad) 15%, var(--s1))';
+  if (sev === 'warning') return 'color-mix(in oklab, var(--warn) 15%, var(--s1))';
   return 'oklch(0.96 0.03 250)';
 }
 
@@ -63,7 +63,7 @@ function sevBorder(sev: Severity): string {
 }
 
 function KpiTile({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' | 'info' }) {
-  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : tone === 'info' ? 'oklch(0.46 0.15 250)' : TX1;
+  const color = tone === 'bad' ? BAD : tone === 'warn' ? WARN : tone === 'ok' ? GOOD : tone === 'info' ? 'var(--accent, oklch(0.46 0.15 250))' : TX1;
   return (
     <div style={{ borderRadius: 6, border: `1px solid ${BORDER}`, background: BG1, padding: '8px 12px', minWidth: 80 }}>
       <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: TX3, marginBottom: 2 }}>{label}</div>
@@ -287,7 +287,7 @@ export function Intelligence() {
           <div style={{ fontSize: 11, fontWeight: 700, color: ACC, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>AI Assist</div>
           <p style={{ fontSize: 12, color: TX2, lineHeight: 1.6, margin: 0 }}>{aiInsight}</p>
           {counts.critical > 0 && (
-            <div style={{ marginTop: 10, padding: '8px 10px', borderRadius: 6, background: 'oklch(0.96 0.04 20)', border: `1px solid oklch(0.85 0.10 20)`, fontSize: 11, color: BAD, fontWeight: 600 }}>
+            <div style={{ marginTop: 10, padding: '8px 10px', borderRadius: 6, background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', border: `1px solid oklch(0.85 0.10 20)`, fontSize: 11, color: BAD, fontWeight: 600 }}>
               {counts.critical} critical signal{counts.critical > 1 ? 's' : ''} — immediate resolution recommended
             </div>
           )}
@@ -397,7 +397,7 @@ function DetailModal({ item, canResolve, onClose, onResolve }: {
           <p style={{ fontSize: 13, color: TX2, lineHeight: 1.65, whiteSpace: 'pre-wrap', margin: '0 0 12px' }}>{item.description}</p>
 
           {item.action_required && (
-            <div style={{ padding: '10px 12px', background: 'oklch(0.97 0.04 55)', border: `1px solid oklch(0.85 0.10 55)`, borderRadius: 8, marginBottom: 14 }}>
+            <div style={{ padding: '10px 12px', background: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', border: `1px solid oklch(0.85 0.10 55)`, borderRadius: 8, marginBottom: 14 }}>
               <div style={{ fontSize: 10, textTransform: 'uppercase', color: WARN, fontWeight: 700, marginBottom: 4, letterSpacing: '0.07em' }}>Action required</div>
               <div style={{ fontSize: 13, color: TX1 }}>{item.action_required}</div>
             </div>

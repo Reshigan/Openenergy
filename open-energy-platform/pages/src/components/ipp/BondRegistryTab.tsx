@@ -51,11 +51,11 @@ interface NoticeRow {
 }
 
 const STATUS_TONE: Record<ExpiryStatus, { bg: string; fg: string; label: string }> = {
-  green:     { bg: '#daf5e2', fg: '#1f6b3a', label: 'Active' },
-  warning:   { bg: '#fff4d6', fg: '#a06200', label: 'Renew soon' },
-  cycle_1:   { bg: '#ffe0c2', fg: '#a04200', label: 'Notice 1' },
-  cycle_2:   { bg: '#fdc4b0', fg: '#8a2200', label: 'Notice 2' },
-  cycle_3:   { bg: '#fde0e0', fg: '#9b1f1f', label: 'Notice 3 — final' },
+  green:     { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Active' },
+  warning:   { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Renew soon' },
+  cycle_1:   { bg: '#ffe0c2', fg: 'var(--warn)', label: 'Notice 1' },
+  cycle_2:   { bg: '#fdc4b0', fg: 'var(--warn)', label: 'Notice 2' },
+  cycle_3:   { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Notice 3 — final' },
   escalated: { bg: '#3a0f0f', fg: '#ffd6d6', label: 'Expired — regulator' },
 };
 
@@ -72,10 +72,10 @@ const FILTERS: Array<{ key: string; label: string }> = [
 
 function Kpi({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
+    <div style={{ background: 'var(--s1, #fff)', border: '1px solid var(--border-subtle, #e3e7ec)', borderRadius: 8, padding: '12px 16px', minWidth: 140 }}>
       <div style={{ fontSize: 11, color: '#557', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#0f1c2e', marginTop: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: '#7a8a9a', marginTop: 2 }}>{sub}</div>}
+      <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink, #0f1c2e)', marginTop: 4 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--ink-2, #7a8a9a)', marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
@@ -155,7 +155,7 @@ export function BondRegistryTab() {
 
   return (
     <div data-testid="ipp-bond-registry-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1c2e', marginTop: 0 }}>Performance bonds</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink, #0f1c2e)', marginTop: 0 }}>Performance bonds</h2>
       <p style={{ fontSize: 13, color: '#557', marginTop: 4 }}>
         Performance, advance-payment, retention, warranty, environmental-rehabilitation and parent-guarantee
         bonds. The daily sweep escalates each bond through warning → notice 1 → notice 2 → notice 3 → regulator
@@ -178,9 +178,9 @@ export function BondRegistryTab() {
             data-testid={`ipp-bond-registry-filter-${f.key}`}
             onClick={() => setFilter(f.key)}
             style={{
-              padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
+              padding: '6px 12px', borderRadius: 999, border: '1px solid var(--border-subtle, #e3e7ec)',
               background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff',
-              color: filter === f.key ? '#fff' : '#0f1c2e', fontSize: 12, fontWeight: 600,
+              color: filter === f.key ? '#fff' : 'var(--ink, #0f1c2e)', fontSize: 12, fontWeight: 600,
               cursor: 'pointer',
             }}
           >{f.label}</button>
@@ -188,15 +188,15 @@ export function BondRegistryTab() {
       </div>
 
       {error && (
-        <div style={{ marginTop: 12, padding: '8px 12px', background: '#fde0e0', color: '#9b1f1f', borderRadius: 6, fontSize: 13 }}>
+        <div style={{ marginTop: 12, padding: '8px 12px', background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', color: 'var(--bad, #9b1f1f)', borderRadius: 6, fontSize: 13 }}>
           {error}
         </div>
       )}
 
-      <div data-testid="ipp-bond-registry-table" style={{ marginTop: 14, background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, overflow: 'hidden' }}>
+      <div data-testid="ipp-bond-registry-table" style={{ marginTop: 14, background: 'var(--s1, #fff)', border: '1px solid var(--border-subtle, #e3e7ec)', borderRadius: 8, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
-            <tr style={{ background: '#f6f8fb', textAlign: 'left', color: '#557' }}>
+            <tr style={{ background: 'var(--s1, #f6f8fb)', textAlign: 'left', color: '#557' }}>
               <th style={{ padding: '8px 12px' }}>Bond #</th>
               <th style={{ padding: '8px 12px' }}>Type</th>
               <th style={{ padding: '8px 12px' }}>Project</th>
@@ -207,7 +207,7 @@ export function BondRegistryTab() {
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: '#7a8a9a' }}>
+              <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: 'var(--ink-2, #7a8a9a)' }}>
                 {loading ? 'Loading…' : 'No bonds in this view.'}
               </td></tr>
             )}
@@ -218,7 +218,7 @@ export function BondRegistryTab() {
                   key={r.id}
                   data-testid={`ipp-bond-registry-row-${r.id}`}
                   onClick={() => openDrill(r)}
-                  style={{ borderTop: '1px solid #eef1f5', cursor: 'pointer' }}
+                  style={{ borderTop: '1px solid var(--border-subtle, #eef1f5)', cursor: 'pointer' }}
                 >
                   <td style={{ padding: '8px 12px', fontWeight: 600 }}>{r.bond_number}</td>
                   <td style={{ padding: '8px 12px' }}>{r.bond_type}</td>
@@ -244,8 +244,8 @@ export function BondRegistryTab() {
         <div
           data-testid="ipp-bond-registry-drill"
           style={{
-            position: 'fixed', top: 0, right: 0, bottom: 0, width: 540, background: '#fff',
-            borderLeft: '1px solid #e3e7ec', boxShadow: '-4px 0 16px rgba(0,0,0,0.08)',
+            position: 'fixed', top: 0, right: 0, bottom: 0, width: 540, background: 'var(--s1, #fff)',
+            borderLeft: '1px solid var(--border-subtle, #e3e7ec)', boxShadow: '-4px 0 16px rgba(0,0,0,0.08)',
             zIndex: 50, padding: 20, overflowY: 'auto',
           }}
         >
@@ -268,7 +268,7 @@ export function BondRegistryTab() {
           </div>
 
           {drillRow.release_conditions && (
-            <div style={{ marginTop: 10, padding: 10, background: '#f6f8fb', borderRadius: 6, fontSize: 12 }}>
+            <div style={{ marginTop: 10, padding: 10, background: 'var(--s1, #f6f8fb)', borderRadius: 6, fontSize: 12 }}>
               <strong>Release conditions:</strong> {drillRow.release_conditions}
             </div>
           )}
@@ -276,23 +276,23 @@ export function BondRegistryTab() {
           <h4 style={{ marginTop: 18, fontSize: 13, color: '#557' }}>Notice history</h4>
           <div data-testid="ipp-bond-registry-notices" style={{ marginTop: 6, maxHeight: 320, overflowY: 'auto' }}>
             {drillNotices.length === 0 && (
-              <div style={{ fontSize: 12, color: '#7a8a9a' }}>No notices issued yet.</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-2, #7a8a9a)' }}>No notices issued yet.</div>
             )}
             {drillNotices.map((n) => (
               <div
                 key={n.id}
                 data-testid={`ipp-bond-registry-notice-${n.id}`}
-                style={{ padding: '8px 10px', borderBottom: '1px solid #eef1f5' }}
+                style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-subtle, #eef1f5)' }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ fontWeight: 600, fontSize: 12 }}>Cycle {n.cycle}</div>
                   <span style={{
                     background: n.status === 'escalated' ? '#3a0f0f'
-                              : n.status === 'acknowledged' ? '#daf5e2'
-                              : n.status === 'superseded' ? '#e3e7ec'
-                              : '#fff4d6',
+                              : n.status === 'acknowledged' ? 'color-mix(in oklab, var(--good) 15%, var(--s1))'
+                              : n.status === 'superseded' ? 'var(--border-subtle, #e3e7ec)'
+                              : 'color-mix(in oklab, var(--warn) 15%, var(--s1))',
                     color: n.status === 'escalated' ? '#ffd6d6'
-                         : n.status === 'acknowledged' ? '#1f6b3a'
+                         : n.status === 'acknowledged' ? 'var(--good, #1f6b3a)'
                          : n.status === 'superseded' ? '#557'
                          : '#a06200',
                     padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 600,
@@ -325,7 +325,7 @@ export function BondRegistryTab() {
                       void act('release', {}, drillRow.id);
                     }
                   }}
-                  style={{ padding: '6px 12px', background: '#1f6b3a', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'var(--good, #1f6b3a)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >Release</button>
                 <button
                   type="button"
@@ -334,7 +334,7 @@ export function BondRegistryTab() {
                     const reason = prompt('Forfeit reason?');
                     if (reason) void act('forfeit', { claim_reason: reason }, drillRow.id);
                   }}
-                  style={{ padding: '6px 12px', background: '#9b1f1f', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'var(--bad, #9b1f1f)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >Forfeit / call</button>
               </>
             )}

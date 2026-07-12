@@ -123,7 +123,7 @@ const MATERIAL_TIER_COLOR: Record<MaterialTier, string> = {
   critical_structural: 'bg-red-100 text-red-800',
   electrical_mechanical: 'bg-orange-100 text-orange-700',
   civil: 'bg-amber-100 text-amber-700',
-  general: 'bg-[#eef2f7] text-[#3d4756]',
+  general: 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
 };
 
 const MATERIAL_CATEGORY_LABEL: Record<MaterialCategory, string> = {
@@ -140,7 +140,7 @@ const MATERIAL_CATEGORY_LABEL: Record<MaterialCategory, string> = {
 };
 
 const STATUS_COLOR: Record<MirStatus, string> = {
-  delivery_notified:    'bg-[#eef2f7] text-[#2d3748]',
+  delivery_notified:    'bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)]',
   delivered:            'bg-[oklch(0.97_0.003_250)] text-[oklch(0.46_0.16_55)]',
   initial_inspection:   'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   detailed_inspection:  'bg-violet-100 text-violet-700',
@@ -148,10 +148,10 @@ const STATUS_COLOR: Record<MirStatus, string> = {
   results_pending:      'bg-cyan-100 text-cyan-700',
   approved:             'bg-green-100 text-green-800',
   conditional_approval: 'bg-teal-100 text-teal-700',
-  incorporated:         'bg-[#eef2f7] text-[#3d4756]',
+  incorporated:         'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   rejected_on_site:     'bg-red-100 text-red-800',
   quarantined:          'bg-orange-100 text-orange-800',
-  returned_to_supplier: 'bg-[#e8ecf0] text-[#6b7685]',
+  returned_to_supplier: 'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink-2, #6b7685)]',
 };
 
 const ACTIONS: Record<MirStatus, Array<{ action: string; label: string; danger?: boolean }>> = {
@@ -217,7 +217,7 @@ function KpiCard({ label, value, color }: { label: string; value: number; color:
     orange: 'bg-orange-50 text-orange-900 border-orange-200',
     green: 'bg-green-50 text-green-900 border-green-200',
     amber: 'bg-amber-50 text-amber-900 border-amber-200',
-    gray: 'bg-[#f8fafc] text-[#2d3748] border-[#dde4ec]',
+    gray: 'bg-[var(--s1, #f8fafc)] text-[var(--ink, #2d3748)] border-[var(--border-subtle, #dde4ec)]',
   };
   return (
     <div className={`rounded-lg border px-3 py-2 ${colors[color] ?? colors.gray}`}>
@@ -228,7 +228,7 @@ function KpiCard({ label, value, color }: { label: string; value: number; color:
 }
 
 function CheckIndicator({ passed }: { passed: number | null }) {
-  if (passed === null) return <span className="text-[#9aa5b4] text-xs">—</span>;
+  if (passed === null) return <span className="text-[var(--ink-2, #9aa5b4)] text-xs">—</span>;
   return passed
     ? <span className="text-green-600 text-xs font-bold">✓</span>
     : <span className="text-red-600 text-xs font-bold">✗</span>;
@@ -437,13 +437,13 @@ export default function IppMirTab({ readOnly = false }: Props) {
           <option value="">All categories</option>
           {MATERIAL_CATEGORIES.map(c => <option key={c} value={c}>{MATERIAL_CATEGORY_LABEL[c]}</option>)}
         </select>
-        <span className="text-xs text-[#9aa5b4] ml-auto">{filtered.length} MIRs</span>
+        <span className="text-xs text-[var(--ink-2, #9aa5b4)] ml-auto">{filtered.length} MIRs</span>
         {!readOnly && (
           <button type="button" className="text-xs bg-green-600 text-white rounded px-3 py-1 hover:bg-green-700" onClick={() => setShowCreate(true)}>
             + Create MIR
           </button>
         )}
-        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-[#eef2f7]" onClick={load}>Refresh</button>
+        <button type="button" className="text-xs border rounded px-2 py-1 hover:bg-[var(--s2, #eef2f7)]" onClick={load}>Refresh</button>
       </div>
 
       {actionResult && (
@@ -452,30 +452,30 @@ export default function IppMirTab({ readOnly = false }: Props) {
         </div>
       )}
       {error && <div className="text-xs text-red-600 bg-red-50 rounded px-3 py-2">{error}</div>}
-      {loading && <div className="text-xs text-[#9aa5b4]">Loading material inspection register…</div>}
+      {loading && <div className="text-xs text-[var(--ink-2, #9aa5b4)]">Loading material inspection register…</div>}
 
       {/* Table */}
       {!loading && (
-        <div className="overflow-x-auto rounded-lg border border-[#dde4ec]">
+        <div className="overflow-x-auto rounded-lg border border-[var(--border-subtle, #dde4ec)]">
           <table className="w-full text-xs">
-            <thead className="bg-[#f8fafc]">
+            <thead className="bg-[var(--s1, #f8fafc)]">
               <tr>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">MIR No.</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Description</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Category</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Tier</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Supplier</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Qty</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Status</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">SLA</th>
-                <th className="text-left px-3 py-2 font-medium text-[#6b7685]">Flags</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">MIR No.</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Description</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Category</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Tier</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Supplier</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Qty</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Status</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">SLA</th>
+                <th className="text-left px-3 py-2 font-medium text-[var(--ink-2, #6b7685)]">Flags</th>
                 {!readOnly && <th className="px-3 py-2" />}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={readOnly ? 9 : 10} className="px-3 py-6 text-center text-[#9aa5b4]">
+                  <td colSpan={readOnly ? 9 : 10} className="px-3 py-6 text-center text-[var(--ink-2, #9aa5b4)]">
                     No material inspection records
                   </td>
                 </tr>
@@ -483,15 +483,15 @@ export default function IppMirTab({ readOnly = false }: Props) {
               {filtered.map(row => (
                 <tr
                   key={row.id}
-                  className={`border-t border-[#eef2f7] hover:bg-[#eef2f7] cursor-pointer ${row.is_rejected_live ? 'bg-red-50/40' : ''}`}
+                  className={`border-t border-[var(--s2, #eef2f7)] hover:bg-[var(--s2, #eef2f7)] cursor-pointer ${row.is_rejected_live ? 'bg-red-50/40' : ''}`}
                   onClick={() => setSelected(row)}
                 >
-                  <td className="px-3 py-2 font-mono text-[#9aa5b4]">{row.mir_number ?? row.id}</td>
+                  <td className="px-3 py-2 font-mono text-[var(--ink-2, #9aa5b4)]">{row.mir_number ?? row.id}</td>
                   <td className="px-3 py-2 max-w-[180px]">
-                    <span className="text-[#1e2a38] block truncate">{row.material_description}</span>
-                    {row.project_name && <span className="text-[#9aa5b4] truncate block">{row.project_name}</span>}
+                    <span className="text-[var(--ink, #1e2a38)] block truncate">{row.material_description}</span>
+                    {row.project_name && <span className="text-[var(--ink-2, #9aa5b4)] truncate block">{row.project_name}</span>}
                   </td>
-                  <td className="px-3 py-2 text-[#3d4756]">
+                  <td className="px-3 py-2 text-[var(--ink-2, #3d4756)]">
                     {row.material_category ? MATERIAL_CATEGORY_LABEL[row.material_category] : '—'}
                   </td>
                   <td className="px-3 py-2">
@@ -501,8 +501,8 @@ export default function IppMirTab({ readOnly = false }: Props) {
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-[#3d4756] max-w-[120px] truncate">{row.supplier_name ?? '—'}</td>
-                  <td className="px-3 py-2 text-[#3d4756]">
+                  <td className="px-3 py-2 text-[var(--ink-2, #3d4756)] max-w-[120px] truncate">{row.supplier_name ?? '—'}</td>
+                  <td className="px-3 py-2 text-[var(--ink-2, #3d4756)]">
                     {row.quantity != null ? `${row.quantity} ${row.quantity_unit ?? ''}`.trim() : '—'}
                   </td>
                   <td className="px-3 py-2">
@@ -518,7 +518,7 @@ export default function IppMirTab({ readOnly = false }: Props) {
                         breached={!!row.sla_breached}
                         compact
                       />
-                    ) : <span className="text-[#9aa5b4]">—</span>}
+                    ) : <span className="text-[var(--ink-2, #9aa5b4)]">—</span>}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex gap-1 flex-wrap">
@@ -554,7 +554,7 @@ export default function IppMirTab({ readOnly = false }: Props) {
           onClick={() => { setSelected(null); setActionResult(null); }}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto"
+            className="bg-surface-v2 rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -566,7 +566,7 @@ export default function IppMirTab({ readOnly = false }: Props) {
                     </span>
                   )}
                   {selected.material_category && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#eef2f7] text-[#3d4756]">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]">
                       {MATERIAL_CATEGORY_LABEL[selected.material_category]}
                     </span>
                   )}
@@ -577,12 +577,12 @@ export default function IppMirTab({ readOnly = false }: Props) {
                     <span className="px-1 py-0.5 rounded text-[10px] bg-red-200 text-red-800">REGULATOR CROSSED</span>
                   )}
                 </div>
-                <h3 className="font-semibold text-[#0f1c2e] text-sm">{selected.material_description}</h3>
-                <p className="text-xs text-[#9aa5b4] font-mono mt-0.5">
+                <h3 className="font-semibold text-[var(--ink, #0f1c2e)] text-sm">{selected.material_description}</h3>
+                <p className="text-xs text-[var(--ink-2, #9aa5b4)] font-mono mt-0.5">
                   {selected.mir_number ?? selected.id} · {selected.project_name ?? selected.project_id}
                 </p>
               </div>
-              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl leading-none" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
+              <button type="button" className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink-2, #3d4756)] text-xl leading-none" onClick={() => { setSelected(null); setActionResult(null); }}>×</button>
             </div>
 
             {/* Chain state bar */}
@@ -643,84 +643,84 @@ export default function IppMirTab({ readOnly = false }: Props) {
             {/* Material details */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs mb-4">
               <div>
-                <span className="text-[#6b7685]">Supplier</span>
-                <p className="font-medium text-[#1e2a38]">{selected.supplier_name ?? '—'}</p>
+                <span className="text-[var(--ink-2, #6b7685)]">Supplier</span>
+                <p className="font-medium text-[var(--ink, #1e2a38)]">{selected.supplier_name ?? '—'}</p>
               </div>
               <div>
-                <span className="text-[#6b7685]">Manufacturer</span>
-                <p className="font-medium text-[#1e2a38]">{selected.manufacturer ?? '—'}</p>
+                <span className="text-[var(--ink-2, #6b7685)]">Manufacturer</span>
+                <p className="font-medium text-[var(--ink, #1e2a38)]">{selected.manufacturer ?? '—'}</p>
               </div>
               <div>
-                <span className="text-[#6b7685]">Batch / heat number</span>
-                <p className="font-medium text-[#1e2a38]">{selected.batch_number ?? '—'}</p>
+                <span className="text-[var(--ink-2, #6b7685)]">Batch / heat number</span>
+                <p className="font-medium text-[var(--ink, #1e2a38)]">{selected.batch_number ?? '—'}</p>
               </div>
               <div>
-                <span className="text-[#6b7685]">Certificate number</span>
-                <p className="font-medium text-[#1e2a38]">{selected.certificate_number ?? '—'}</p>
+                <span className="text-[var(--ink-2, #6b7685)]">Certificate number</span>
+                <p className="font-medium text-[var(--ink, #1e2a38)]">{selected.certificate_number ?? '—'}</p>
               </div>
               <div>
-                <span className="text-[#6b7685]">Quantity</span>
-                <p className="font-medium text-[#1e2a38]">
+                <span className="text-[var(--ink-2, #6b7685)]">Quantity</span>
+                <p className="font-medium text-[var(--ink, #1e2a38)]">
                   {selected.quantity != null ? `${selected.quantity} ${selected.quantity_unit ?? ''}`.trim() : '—'}
                 </p>
               </div>
               <div>
-                <span className="text-[#6b7685]">PO reference</span>
-                <p className="font-medium text-[#1e2a38]">{selected.po_reference ?? '—'}</p>
+                <span className="text-[var(--ink-2, #6b7685)]">PO reference</span>
+                <p className="font-medium text-[var(--ink, #1e2a38)]">{selected.po_reference ?? '—'}</p>
               </div>
             </div>
 
             {/* Delivery details */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs mb-4">
               <div>
-                <span className="text-[#6b7685]">Scheduled delivery</span>
-                <p className="font-medium text-[#1e2a38]">{selected.scheduled_delivery_date ?? '—'}</p>
+                <span className="text-[var(--ink-2, #6b7685)]">Scheduled delivery</span>
+                <p className="font-medium text-[var(--ink, #1e2a38)]">{selected.scheduled_delivery_date ?? '—'}</p>
               </div>
               <div>
-                <span className="text-[#6b7685]">Actual delivery</span>
-                <p className="font-medium text-[#1e2a38]">{selected.actual_delivery_date ?? '—'}</p>
+                <span className="text-[var(--ink-2, #6b7685)]">Actual delivery</span>
+                <p className="font-medium text-[var(--ink, #1e2a38)]">{selected.actual_delivery_date ?? '—'}</p>
               </div>
               {selected.delivery_note_ref && (
                 <div>
-                  <span className="text-[#6b7685]">Delivery note ref</span>
-                  <p className="font-medium text-[#1e2a38]">{selected.delivery_note_ref}</p>
+                  <span className="text-[var(--ink-2, #6b7685)]">Delivery note ref</span>
+                  <p className="font-medium text-[var(--ink, #1e2a38)]">{selected.delivery_note_ref}</p>
                 </div>
               )}
               {selected.delivery_vehicle_ref && (
                 <div>
-                  <span className="text-[#6b7685]">Vehicle ref</span>
-                  <p className="font-medium text-[#1e2a38]">{selected.delivery_vehicle_ref}</p>
+                  <span className="text-[var(--ink-2, #6b7685)]">Vehicle ref</span>
+                  <p className="font-medium text-[var(--ink, #1e2a38)]">{selected.delivery_vehicle_ref}</p>
                 </div>
               )}
             </div>
 
             {/* Inspection checklist */}
             {selected.inspector_name && (
-              <div className="mb-4 p-3 rounded-lg bg-[#f8fafc] border border-[#dde4ec]">
-                <p className="text-xs font-semibold text-[#0f1c2e] mb-2">
+              <div className="mb-4 p-3 rounded-lg bg-[var(--s1, #f8fafc)] border border-[var(--border-subtle, #dde4ec)]">
+                <p className="text-xs font-semibold text-[var(--ink, #0f1c2e)] mb-2">
                   Inspection checklist · {selected.inspector_name}
-                  {selected.inspection_type && <span className="ml-2 text-[#6b7685] font-normal">({selected.inspection_type})</span>}
+                  {selected.inspection_type && <span className="ml-2 text-[var(--ink-2, #6b7685)] font-normal">({selected.inspection_type})</span>}
                 </p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="flex items-center gap-2">
                     <CheckIndicator passed={selected.dimensional_check_passed} />
-                    <span className="text-[#2d3748]">Dimensional check</span>
+                    <span className="text-[var(--ink, #2d3748)]">Dimensional check</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckIndicator passed={selected.quantity_check_passed} />
-                    <span className="text-[#2d3748]">Quantity check</span>
+                    <span className="text-[var(--ink, #2d3748)]">Quantity check</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckIndicator passed={selected.documentation_check_passed} />
-                    <span className="text-[#2d3748]">Documentation / certs</span>
+                    <span className="text-[var(--ink, #2d3748)]">Documentation / certs</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckIndicator passed={selected.visual_check_passed} />
-                    <span className="text-[#2d3748]">Visual check</span>
+                    <span className="text-[var(--ink, #2d3748)]">Visual check</span>
                   </div>
                 </div>
                 {selected.inspection_findings && (
-                  <p className="text-xs text-[#2d3748] mt-2 whitespace-pre-wrap">{selected.inspection_findings}</p>
+                  <p className="text-xs text-[var(--ink, #2d3748)] mt-2 whitespace-pre-wrap">{selected.inspection_findings}</p>
                 )}
               </div>
             )}
@@ -732,26 +732,26 @@ export default function IppMirTab({ readOnly = false }: Props) {
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   {selected.lab_name && (
                     <div>
-                      <span className="text-[#6b7685]">Lab</span>
-                      <p className="font-medium text-[#1e2a38]">{selected.lab_name}</p>
+                      <span className="text-[var(--ink-2, #6b7685)]">Lab</span>
+                      <p className="font-medium text-[var(--ink, #1e2a38)]">{selected.lab_name}</p>
                     </div>
                   )}
                   {selected.lab_sample_ref && (
                     <div>
-                      <span className="text-[#6b7685]">Sample ref</span>
-                      <p className="font-medium text-[#1e2a38]">{selected.lab_sample_ref}</p>
+                      <span className="text-[var(--ink-2, #6b7685)]">Sample ref</span>
+                      <p className="font-medium text-[var(--ink, #1e2a38)]">{selected.lab_sample_ref}</p>
                     </div>
                   )}
                   {selected.test_results && (
                     <div className="col-span-2">
-                      <span className="text-[#6b7685]">Results</span>
-                      <p className="font-medium text-[#1e2a38]">{selected.test_results}</p>
+                      <span className="text-[var(--ink-2, #6b7685)]">Results</span>
+                      <p className="font-medium text-[var(--ink, #1e2a38)]">{selected.test_results}</p>
                     </div>
                   )}
                   {selected.test_passed !== null && (
                     <div className="flex items-center gap-2">
                       <CheckIndicator passed={selected.test_passed} />
-                      <span className="font-medium text-[#1e2a38]">
+                      <span className="font-medium text-[var(--ink, #1e2a38)]">
                         {selected.test_passed ? 'Tests passed' : 'Tests FAILED'}
                       </span>
                     </div>
@@ -790,7 +790,7 @@ export default function IppMirTab({ readOnly = false }: Props) {
             {/* Cross-references */}
             {(selected.ncr_ref || selected.submittal_ref || selected.rfi_ref || selected.change_order_ref) && (
               <div className="mb-4">
-                <p className="text-xs text-[#6b7685] mb-1">Cross-references</p>
+                <p className="text-xs text-[var(--ink-2, #6b7685)] mb-1">Cross-references</p>
                 <div className="flex flex-wrap gap-2">
                   {selected.ncr_ref && <span className="text-xs text-[oklch(0.46_0.16_55)]">NCR: {selected.ncr_ref}</span>}
                   {selected.submittal_ref && <span className="text-xs text-[oklch(0.46_0.16_55)]">Submittal: {selected.submittal_ref}</span>}
@@ -802,7 +802,7 @@ export default function IppMirTab({ readOnly = false }: Props) {
 
             {/* SLA details */}
             {selected.sla_breach_count > 0 && (
-              <div className="mb-4 text-xs text-[#3d4756]">
+              <div className="mb-4 text-xs text-[var(--ink-2, #3d4756)]">
                 SLA breach count: <span className="font-medium text-red-700">{selected.sla_breach_count}</span>
                 {selected.regulator_ref && <span className="ml-3">Regulator ref: <span className="font-mono">{selected.regulator_ref}</span></span>}
               </div>
@@ -810,8 +810,8 @@ export default function IppMirTab({ readOnly = false }: Props) {
 
             {/* Actions */}
             {!readOnly && (
-              <div className="mt-4 pt-4 border-t border-[#eef2f7]">
-                <p className="text-xs text-[#6b7685] mb-2">Actions</p>
+              <div className="mt-4 pt-4 border-t border-[var(--s2, #eef2f7)]">
+                <p className="text-xs text-[var(--ink-2, #6b7685)] mb-2">Actions</p>
                 {actionResult && (
                   <div className={`text-xs rounded px-2 py-1 mb-2 ${actionResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
                     {actionResult}
@@ -833,7 +833,7 @@ export default function IppMirTab({ readOnly = false }: Props) {
                     </button>
                   ))}
                   {(ACTIONS[selected.chain_status] ?? []).length === 0 && (
-                    <span className="text-xs text-[#9aa5b4] italic">No actions available (terminal state)</span>
+                    <span className="text-xs text-[var(--ink-2, #9aa5b4)] italic">No actions available (terminal state)</span>
                   )}
                 </div>
               </div>
@@ -849,12 +849,12 @@ export default function IppMirTab({ readOnly = false }: Props) {
           onClick={() => setShowCreate(false)}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto"
+            className="bg-surface-v2 rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-[#0f1c2e]">Create Material Inspection Record</h3>
-              <button type="button" className="text-[#9aa5b4] hover:text-[#3d4756] text-xl leading-none" onClick={() => setShowCreate(false)}>×</button>
+              <h3 className="font-semibold text-[var(--ink, #0f1c2e)]">Create Material Inspection Record</h3>
+              <button type="button" className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink-2, #3d4756)] text-xl leading-none" onClick={() => setShowCreate(false)}>×</button>
             </div>
 
             {/* SIGNATURE warning */}
@@ -872,59 +872,59 @@ export default function IppMirTab({ readOnly = false }: Props) {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
-                  <label className="text-xs text-[#6b7685] block mb-1">Material description *</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">Material description *</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="e.g. 33kV Power Transformer 40MVA" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">MIR number</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">MIR number</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newMirNumber} onChange={e => setNewMirNumber(e.target.value)} placeholder="e.g. K500-MIR-013" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Project ID *</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">Project ID *</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newProject} onChange={e => setNewProject(e.target.value)} placeholder="project-id" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Project name</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">Project name</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} placeholder="Display name" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Category *</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">Category *</label>
                   <select className="text-xs border rounded px-2 py-1.5 w-full" value={newCategory} onChange={e => setNewCategory(e.target.value as MaterialCategory)}>
                     {MATERIAL_CATEGORIES.map(c => <option key={c} value={c}>{MATERIAL_CATEGORY_LABEL[c]}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Material tier *</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">Material tier *</label>
                   <select className="text-xs border rounded px-2 py-1.5 w-full" value={newTier} onChange={e => setNewTier(e.target.value as MaterialTier)}>
                     {MATERIAL_TIERS.map(t => <option key={t} value={t}>{MATERIAL_TIER_LABEL[t]} ({SLA_HOURS_BY_TIER[t]}h SLA)</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Supplier</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">Supplier</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newSupplier} onChange={e => setNewSupplier(e.target.value)} placeholder="e.g. Actom" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Manufacturer</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">Manufacturer</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newManufacturer} onChange={e => setNewManufacturer(e.target.value)} placeholder="e.g. ABB" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Batch / heat number</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">Batch / heat number</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newBatch} onChange={e => setNewBatch(e.target.value)} placeholder="e.g. HN-2026-001" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Certificate number</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">Certificate number</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newCertNumber} onChange={e => setNewCertNumber(e.target.value)} placeholder="Mill cert / type test cert" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Quantity</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">Quantity</label>
                   <input type="number" className="text-xs border rounded px-2 py-1.5 w-full" value={newQty} onChange={e => setNewQty(e.target.value)} placeholder="e.g. 45.2" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Unit</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">Unit</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newQtyUnit} onChange={e => setNewQtyUnit(e.target.value)} placeholder="tons / m / m³ / units…" />
                 </div>
                 <div className="col-span-2">
-                  <label className="text-xs text-[#6b7685] block mb-1">PO reference</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">PO reference</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newPoRef} onChange={e => setNewPoRef(e.target.value)} placeholder="e.g. PO-K500-2026-041" />
                 </div>
               </div>
@@ -944,25 +944,25 @@ export default function IppMirTab({ readOnly = false }: Props) {
               {/* Cross-references */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">NCR ref</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">NCR ref</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newNcrRef} onChange={e => setNewNcrRef(e.target.value)} placeholder="ncr-xxx" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Submittal ref</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">Submittal ref</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newSubmittalRef} onChange={e => setNewSubmittalRef(e.target.value)} placeholder="sub-xxx" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">RFI ref</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">RFI ref</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newRfiRef} onChange={e => setNewRfiRef(e.target.value)} placeholder="rfi-xxx" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#6b7685] block mb-1">Change order ref</label>
+                  <label className="text-xs text-[var(--ink-2, #6b7685)] block mb-1">Change order ref</label>
                   <input className="text-xs border rounded px-2 py-1.5 w-full" value={newChangeOrderRef} onChange={e => setNewChangeOrderRef(e.target.value)} placeholder="co-xxx" />
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-3 mt-4 pt-4 border-t border-[#eef2f7]">
+            <div className="flex gap-3 mt-4 pt-4 border-t border-[var(--s2, #eef2f7)]">
               <button type="button"
                 onClick={handleCreate}
                 disabled={createLoading || !newDesc || !newProject}
@@ -970,7 +970,7 @@ export default function IppMirTab({ readOnly = false }: Props) {
               >
                 {createLoading ? 'Creating…' : 'Create MIR'}
               </button>
-              <button type="button" onClick={() => setShowCreate(false)} className="text-xs border rounded px-3 py-1.5 hover:bg-[#eef2f7]">
+              <button type="button" onClick={() => setShowCreate(false)} className="text-xs border rounded px-3 py-1.5 hover:bg-[var(--s2, #eef2f7)]">
                 Cancel
               </button>
             </div>

@@ -112,10 +112,10 @@ export function PpaRevenueModel({
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7] flex flex-wrap items-center justify-between gap-2">
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)] flex flex-wrap items-center justify-between gap-2">
         <div>
-          <div className="text-[13px] font-semibold text-[#0f1c2e]">PPA economics — {horizonYears || 15}-year model</div>
-          <div className="text-[11px] text-[#6b7685]">
+          <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">PPA economics — {horizonYears || 15}-year model</div>
+          <div className="text-[11px] text-[var(--ink-2, #6b7685)]">
             Volume {annualMwh ? `${annualMwh.toLocaleString()} MWh/yr` : '—'} · base price {formatZAR(blendedPriceZarPerMwh)}/MWh
           </div>
         </div>
@@ -140,21 +140,21 @@ export function PpaRevenueModel({
       <div style={{ height: 260 }} className="px-2 pt-3">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={model.rows} margin={{ top: 8, right: 16, bottom: 16, left: 0 }}>
-            <CartesianGrid stroke="#eef2f7" />
-            <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#6b7685' }} tickFormatter={(v) => `Y${v}`} />
-            <YAxis yAxisId="zar" tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(0)}m`} />
-            <YAxis yAxisId="dscr" orientation="right" domain={[0, 'auto']} tick={{ fontSize: 10, fill: '#6b7685' }} />
+            <CartesianGrid stroke="var(--s2, #eef2f7)" />
+            <XAxis dataKey="year" tick={{ fontSize: 11, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => `Y${v}`} />
+            <YAxis yAxisId="zar" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(0)}m`} />
+            <YAxis yAxisId="dscr" orientation="right" domain={[0, 'auto']} tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} />
             <Tooltip formatter={(v: any, name: string) => name === 'DSCR' ? Number(v).toFixed(2) : formatZAR(Number(v))} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Bar isAnimationActive={false} yAxisId="zar" dataKey="revenue"  name="Revenue"      stackId="x" fill="oklch(0.46 0.16 55)" />
             <Bar isAnimationActive={false} yAxisId="zar" dataKey="opex"     name="Opex"         stackId="x" fill="#b04e0f" />
             <Bar isAnimationActive={false} yAxisId="zar" dataKey="debtSvc"  name="Debt service" stackId="x" fill="#6b3a82" />
-            <Line isAnimationActive={false} yAxisId="dscr" type="monotone" dataKey="dscr" name="DSCR" stroke="#1a8a5b" strokeWidth={2} dot={false} />
+            <Line isAnimationActive={false} yAxisId="dscr" type="monotone" dataKey="dscr" name="DSCR" stroke="var(--good, #1a8a5b)" strokeWidth={2} dot={false} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
 
-      <footer className="px-4 py-2 border-t border-[#eef2f7] text-[11px] text-[#6b7685]">
+      <footer className="px-4 py-2 border-t border-[var(--s2, #eef2f7)] text-[11px] text-[var(--ink-2, #6b7685)]">
         Implied capex {formatZAR(model.capex)} = equity {formatZAR(model.equity)} + debt {formatZAR(model.debt)} ·
         annuity debt service {formatZAR(model.rows[0]?.debtSvc ? -model.rows[0].debtSvc : 0)}/yr.
         Model is indicative — change capex assumptions on the project record to refine.
@@ -165,14 +165,14 @@ export function PpaRevenueModel({
 
 function Kpi({ label, value, tone }: { label: string; value: string; tone: 'good' | 'warn' | 'bad' | 'info' }) {
   const map = {
-    good: 'text-[#1a8a5b]',
+    good: 'text-[var(--good, #1a8a5b)]',
     warn: 'text-[#b04e0f]',
-    bad:  'text-[#c0392b]',
+    bad:  'text-[var(--bad, #c0392b)]',
     info: 'text-[oklch(0.46_0.16_55)]',
   } as const;
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-[13px] font-mono font-semibold ${map[tone]}`}>{value}</div>
     </div>
   );
@@ -184,9 +184,9 @@ function Slider({ label, value, min, max, step, onChange, format }: {
 }) {
   return (
     <label className="block text-[11px]">
-      <div className="flex justify-between text-[#3d4756]">
+      <div className="flex justify-between text-[var(--ink-2, #3d4756)]">
         <span className="font-medium">{label}</span>
-        <span className="font-mono text-[#0f1c2e]">{format(value)}</span>
+        <span className="font-mono text-[var(--ink, #0f1c2e)]">{format(value)}</span>
       </div>
       <input
         type="range"

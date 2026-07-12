@@ -33,7 +33,7 @@ function varTone(v?: number): 'good' | 'warn' | 'bad' | 'neutral' {
 
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-lg border border-[var(--line)] bg-white px-4 py-3 min-w-[150px]">
+    <div className="rounded-lg border border-[var(--line)] bg-surface-v2 px-4 py-3 min-w-[150px]">
       <div className="text-[11px] uppercase tracking-wide text-[var(--ink3)]">{label}</div>
       <div className="text-[20px] font-semibold text-[var(--ink)] tabular-nums">{value}</div>
       {sub && <div className="text-[11px] text-[var(--ink3)]">{sub}</div>}

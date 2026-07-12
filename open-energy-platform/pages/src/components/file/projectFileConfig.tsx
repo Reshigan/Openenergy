@@ -532,7 +532,7 @@ export const projectFileTabs: EntityFileTab<ProjectFileData>[] = [
               { key: 'counterparty_name', label: 'Counterparty' },
               { key: 'phase', label: 'Phase', render: (r: any) => <StatusCell value={r.phase} /> },
               { key: 'version', label: 'Version', mono: true },
-              { key: 'id', label: 'Open', render: (r: any) => <a href={`/contracts/${r.id}`} className="text-[#1a5d97] font-semibold hover:underline">Open</a> },
+              { key: 'id', label: 'Open', render: (r: any) => <a href={`/contracts/${r.id}`} className="text-[var(--info, #1a5d97)] font-semibold hover:underline">Open</a> },
             ]}
           />
         </FileSection>
@@ -547,7 +547,7 @@ export const projectFileTabs: EntityFileTab<ProjectFileData>[] = [
               { key: 'blended_price', label: 'Blended R/MWh', align: 'right', mono: true, render: (r: any) => r.blended_price ? `R${fmtNum(r.blended_price)}` : '—' },
               { key: 'sent_at', label: 'Sent', mono: true, render: (r: any) => fmtDate(r.sent_at) },
               { key: 'status', label: 'Status', render: (r: any) => <StatusCell value={r.status} /> },
-              { key: 'resulting_contract_document_id', label: 'Contract', render: (r: any) => r.resulting_contract_document_id ? <a href={`/contracts/${r.resulting_contract_document_id}`} className="text-[#1a5d97] font-semibold hover:underline">Open</a> : '—' },
+              { key: 'resulting_contract_document_id', label: 'Contract', render: (r: any) => r.resulting_contract_document_id ? <a href={`/contracts/${r.resulting_contract_document_id}`} className="text-[var(--info, #1a5d97)] font-semibold hover:underline">Open</a> : '—' },
             ]}
           />
         </FileSection>
@@ -618,7 +618,7 @@ export const projectFileTabs: EntityFileTab<ProjectFileData>[] = [
           title="Linked O&M sites"
           subtitle="The asset cockpit drives 24/7 telemetry, fault detection, work orders, spares and AI predictions."
           action={data.operations.om_sites.length > 0 ? (
-            <a href={`/esums/sites/${(data.operations.om_sites[0] as any).id}`} className="text-[12px] font-semibold text-[#1a5d97] hover:underline">
+            <a href={`/esums/sites/${(data.operations.om_sites[0] as any).id}`} className="text-[12px] font-semibold text-[var(--info, #1a5d97)] hover:underline">
               Open in O&M →
             </a>
           ) : null}
@@ -700,8 +700,8 @@ export const projectFileTabs: EntityFileTab<ProjectFileData>[] = [
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-2">
-      <dt className="text-[#6b7685]">{label}</dt>
-      <dd className="text-[#0f1c2e] font-medium text-right">{value}</dd>
+      <dt className="text-[var(--ink-2, #6b7685)]">{label}</dt>
+      <dd className="text-[var(--ink, #0f1c2e)] font-medium text-right">{value}</dd>
     </div>
   );
 }
@@ -711,10 +711,10 @@ function MicroKpi({ label, value, tone }: { label: string; value: React.ReactNod
     tone === 'good' ? '#1f8a4f'
       : tone === 'warn' ? '#b27a00'
       : tone === 'bad' ? '#b3261e'
-      : '#0f1c2e';
+      : 'var(--ink, #0f1c2e)';
   return (
-    <div className="rounded-lg border border-[#dde4ec] bg-white p-3">
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
+    <div className="rounded-lg border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-3">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className="mt-1 font-mono text-[18px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums', color: toneColor }}>
         {value}
       </div>

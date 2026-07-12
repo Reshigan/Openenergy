@@ -29,7 +29,7 @@ interface AudKpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  audit_cycle_opened:          'bg-[#eef2f7] text-[#6b7685]',
+  audit_cycle_opened:          'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
   trial_balance_preparation:   'bg-[#e8edf5]',
   year_end_journals:           'bg-cyan-100 text-cyan-700',
   audit_fieldwork:             'bg-[#e8edf5]',
@@ -40,7 +40,7 @@ const STATUS_COLORS: Record<string, string> = {
   cipc_submission:             'bg-teal-100 text-teal-700',
   audit_completed:             'bg-green-100 text-green-700',
   audit_qualified:             'bg-red-100 text-red-700',
-  audit_lapsed:                'bg-[#eef2f7] text-[#9aa5b4]',
+  audit_lapsed:                'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]',
 };
 
 const STATUS_COLOR_STYLES: Record<string, React.CSSProperties> = {
@@ -101,7 +101,7 @@ const REVENUE_TIERS = ['small', 'medium', 'large', 'major', 'flagship'] as const
 
 const PAGE_SIZE = 20;
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 function fmtDate(dateStr: string | null | undefined): { text: string; isPast: boolean } {
   if (!dateStr) return { text: '—', isPast: false };
@@ -123,15 +123,15 @@ function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-[#dde4ec] bg-white';
+    'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-[#0f1c2e]';
+    'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -369,7 +369,7 @@ export function IppAnnualAuditTab() {
         </select>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
+          className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]"
         >
           Refresh
         </button>
@@ -391,7 +391,7 @@ export function IppAnnualAuditTab() {
           <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New Annual Financial Statements & Independent Audit</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Financial Year *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Financial Year *</label>
               <input
                 type="text"
                 value={formFinancialYear}
@@ -402,7 +402,7 @@ export function IppAnnualAuditTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Annual Revenue (ZAR) *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Annual Revenue (ZAR) *</label>
               <input
                 type="number"
                 value={formAnnualRevenueZar}
@@ -415,7 +415,7 @@ export function IppAnnualAuditTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Year End Date</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Year End Date</label>
               <input
                 type="date"
                 value={formYearEndDate}
@@ -424,7 +424,7 @@ export function IppAnnualAuditTab() {
               />
             </div>
             <div className="col-span-2 md:col-span-2">
-              <label className="block text-xs text-[#3d4756] mb-1">Auditor Firm</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Auditor Firm</label>
               <input
                 type="text"
                 value={formAuditorFirm}
@@ -434,7 +434,7 @@ export function IppAnnualAuditTab() {
               />
             </div>
             <div className="col-span-2 md:col-span-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Notes (optional)</label>
               <textarea
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
@@ -460,7 +460,7 @@ export function IppAnnualAuditTab() {
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
+              className="px-3 py-1.5 bg-surface-v2 border rounded text-xs text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
             >
               Cancel
             </button>
@@ -477,12 +477,12 @@ export function IppAnnualAuditTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-3">Financial Year</th>
                 <th className="pb-2 pr-3">Year End</th>
                 <th className="pb-2 pr-3">Auditor Firm</th>
@@ -501,27 +501,27 @@ export function IppAnnualAuditTab() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b hover:bg-[#eef2f7] cursor-pointer"
+                    className="border-b hover:bg-[var(--s2, #eef2f7)] cursor-pointer"
                     onClick={() => setDetailItem(item)}
                   >
-                    <td className="py-2 pr-3 text-xs font-mono text-[#2d3748]">{item.financial_year}</td>
-                    <td className="py-2 pr-3 text-xs text-[#2d3748]">{fmtDate(item.year_end_date).text}</td>
-                    <td className="py-2 pr-3 text-xs text-[#1e2a38] max-w-[160px] truncate" title={item.auditor_firm ?? ''}>
+                    <td className="py-2 pr-3 text-xs font-mono text-[var(--ink, #2d3748)]">{item.financial_year}</td>
+                    <td className="py-2 pr-3 text-xs text-[var(--ink, #2d3748)]">{fmtDate(item.year_end_date).text}</td>
+                    <td className="py-2 pr-3 text-xs text-[var(--ink, #1e2a38)] max-w-[160px] truncate" title={item.auditor_firm ?? ''}>
                       {item.auditor_firm ?? '—'}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_COLOR_STYLES[item.chain_status] ?? {}}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`} style={STATUS_COLOR_STYLES[item.chain_status] ?? {}}>
                         {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.revenue_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={TIER_COLOR_STYLES[item.revenue_tier] ?? {}}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.revenue_tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`} style={TIER_COLOR_STYLES[item.revenue_tier] ?? {}}>
                         {item.revenue_tier.charAt(0).toUpperCase() + item.revenue_tier.slice(1)}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748]">{fmtZar(item.annual_revenue_zar)}</td>
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[var(--ink, #2d3748)]">{fmtZar(item.annual_revenue_zar)}</td>
                     <td className="py-2 pr-3 text-xs tabular-nums">
-                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
+                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[var(--ink-2, #3d4756)]'}>
                         {due.text}
                       </span>
                     </td>
@@ -529,7 +529,7 @@ export function IppAnnualAuditTab() {
                       {item.sla_breached === 1 ? (
                         <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">Yes</span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-[#eef2f7] text-[#9aa5b4]">No</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]">No</span>
                       )}
                     </td>
                     <td
@@ -551,7 +551,7 @@ export function IppAnnualAuditTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="py-10 text-center text-[#9aa5b4] text-sm">
+                  <td colSpan={9} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">
                     No annual audit records found
                   </td>
                 </tr>
@@ -567,17 +567,17 @@ export function IppAnnualAuditTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-[#6b7685]">
+          <span className="text-xs text-[var(--ink-2, #6b7685)]">
             Page {page} of {totalPages}
           </span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             Next &rarr;
           </button>
@@ -587,19 +587,19 @@ export function IppAnnualAuditTab() {
       {/* Detail drawer */}
       {detailItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setDetailItem(null); }} className="fixed inset-0 z-50 flex items-center justify-end bg-black/30">
-          <div className="bg-white h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
+          <div className="bg-surface-v2 h-full w-full max-w-lg shadow-2xl overflow-y-auto flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <div>
-                <div className="text-sm font-semibold text-[#1e2a38]">
+                <div className="text-sm font-semibold text-[var(--ink, #1e2a38)]">
                   Annual Financial Audit — {detailItem.financial_year}
                 </div>
-                <div className="text-xs text-[#6b7685] mt-0.5">
+                <div className="text-xs text-[var(--ink-2, #6b7685)] mt-0.5">
                   {detailItem.auditor_firm ?? 'Auditor TBC'}
                 </div>
               </div>
               <button type="button"
                 onClick={() => setDetailItem(null)}
-                className="text-[#9aa5b4] hover:text-[#2d3748] text-lg leading-none"
+                className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink, #2d3748)] text-lg leading-none"
               >
                 &times;
               </button>
@@ -608,10 +608,10 @@ export function IppAnnualAuditTab() {
             <div className="flex-1 p-5 space-y-5">
               {/* Status badge */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_COLOR_STYLES[detailItem.chain_status] ?? {}}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[detailItem.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`} style={STATUS_COLOR_STYLES[detailItem.chain_status] ?? {}}>
                   {STATUS_LABELS[detailItem.chain_status] ?? statusLabel(detailItem.chain_status).text}
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.revenue_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={TIER_COLOR_STYLES[detailItem.revenue_tier] ?? {}}>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[detailItem.revenue_tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`} style={TIER_COLOR_STYLES[detailItem.revenue_tier] ?? {}}>
                   {detailItem.revenue_tier.charAt(0).toUpperCase() + detailItem.revenue_tier.slice(1)}
                 </span>
                 {detailItem.sla_breached === 1 && (
@@ -622,54 +622,54 @@ export function IppAnnualAuditTab() {
               {/* Core audit details */}
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Financial Year</div>
-                  <div className="font-mono text-[#1e2a38]">{detailItem.financial_year}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Financial Year</div>
+                  <div className="font-mono text-[var(--ink, #1e2a38)]">{detailItem.financial_year}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Year End Date</div>
-                  <div className="text-[#1e2a38]">{fmtDate(detailItem.year_end_date).text}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Year End Date</div>
+                  <div className="text-[var(--ink, #1e2a38)]">{fmtDate(detailItem.year_end_date).text}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Auditor Firm</div>
-                  <div className="font-medium text-[#1e2a38]">{detailItem.auditor_firm ?? '—'}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Auditor Firm</div>
+                  <div className="font-medium text-[var(--ink, #1e2a38)]">{detailItem.auditor_firm ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">SLA Deadline</div>
-                  <div className={`tabular-nums ${fmtDate(detailItem.sla_due_date).isPast ? 'text-red-600 font-medium' : 'text-[#1e2a38]'}`}>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">SLA Deadline</div>
+                  <div className={`tabular-nums ${fmtDate(detailItem.sla_due_date).isPast ? 'text-red-600 font-medium' : 'text-[var(--ink, #1e2a38)]'}`}>
                     {fmtDate(detailItem.sla_due_date).text}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Annual Revenue (ZAR)</div>
-                  <div className="tabular-nums font-semibold text-[#1e2a38]">{fmtZar(detailItem.annual_revenue_zar)}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Annual Revenue (ZAR)</div>
+                  <div className="tabular-nums font-semibold text-[var(--ink, #1e2a38)]">{fmtZar(detailItem.annual_revenue_zar)}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Total Assets (ZAR)</div>
-                  <div className="tabular-nums text-[#1e2a38]">{fmtZar(detailItem.total_assets_zar)}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Total Assets (ZAR)</div>
+                  <div className="tabular-nums text-[var(--ink, #1e2a38)]">{fmtZar(detailItem.total_assets_zar)}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Net Profit (ZAR)</div>
-                  <div className="tabular-nums text-[#1e2a38]">{fmtZar(detailItem.net_profit_zar)}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Net Profit (ZAR)</div>
+                  <div className="tabular-nums text-[var(--ink, #1e2a38)]">{fmtZar(detailItem.net_profit_zar)}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Opinion Type</div>
-                  <div className="text-[#1e2a38] capitalize">{detailItem.opinion_type?.replace(/_/g, ' ') ?? '—'}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Opinion Type</div>
+                  <div className="text-[var(--ink, #1e2a38)] capitalize">{detailItem.opinion_type?.replace(/_/g, ' ') ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Created</div>
-                  <div className="text-[#3d4756]">{fmtDate(detailItem.created_at).text}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Created</div>
+                  <div className="text-[var(--ink-2, #3d4756)]">{fmtDate(detailItem.created_at).text}</div>
                 </div>
                 <div>
-                  <div className="text-[#9aa5b4] mb-0.5">Updated</div>
-                  <div className="text-[#3d4756]">{fmtDate(detailItem.updated_at).text}</div>
+                  <div className="text-[var(--ink-2, #9aa5b4)] mb-0.5">Updated</div>
+                  <div className="text-[var(--ink-2, #3d4756)]">{fmtDate(detailItem.updated_at).text}</div>
                 </div>
               </div>
 
               {/* Qualification basis */}
               {detailItem.qualification_basis && (
                 <div>
-                  <div className="text-xs text-[#9aa5b4] mb-1">Qualification Basis</div>
-                  <div className="text-xs text-[#2d3748] bg-red-50 rounded p-2 border border-red-200 whitespace-pre-wrap">
+                  <div className="text-xs text-[var(--ink-2, #9aa5b4)] mb-1">Qualification Basis</div>
+                  <div className="text-xs text-[var(--ink, #2d3748)] bg-red-50 rounded p-2 border border-red-200 whitespace-pre-wrap">
                     {detailItem.qualification_basis}
                   </div>
                 </div>
@@ -678,8 +678,8 @@ export function IppAnnualAuditTab() {
               {/* Notes */}
               {detailItem.notes && (
                 <div>
-                  <div className="text-xs text-[#9aa5b4] mb-1">Notes</div>
-                  <div className="text-xs text-[#2d3748] bg-[#f8fafc] rounded p-2 border whitespace-pre-wrap">
+                  <div className="text-xs text-[var(--ink-2, #9aa5b4)] mb-1">Notes</div>
+                  <div className="text-xs text-[var(--ink, #2d3748)] bg-[var(--s1, #f8fafc)] rounded p-2 border whitespace-pre-wrap">
                     {detailItem.notes}
                   </div>
                 </div>
@@ -688,7 +688,7 @@ export function IppAnnualAuditTab() {
               {/* Actions section */}
               {!HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs font-semibold text-[#2d3748] mb-2">Advance State Machine</div>
+                  <div className="text-xs font-semibold text-[var(--ink, #2d3748)] mb-2">Advance State Machine</div>
                   <button type="button"
                     onClick={() => {
                       setDetailItem(null);
@@ -703,7 +703,7 @@ export function IppAnnualAuditTab() {
 
               {HARD_TERMINALS.has(detailItem.chain_status) && (
                 <div className="border-t pt-4">
-                  <div className="text-xs text-[#9aa5b4] italic">
+                  <div className="text-xs text-[var(--ink-2, #9aa5b4)] italic">
                     This audit record is in a terminal state — no further actions are available.
                   </div>
                 </div>
@@ -716,19 +716,19 @@ export function IppAnnualAuditTab() {
       {/* Action modal */}
       {actionItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setActionItem(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-[#1e2a38] mb-1">Annual Audit Action</div>
-            <div className="text-xs text-[#6b7685] mb-4">
+          <div className="bg-surface-v2 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="text-sm font-semibold text-[var(--ink, #1e2a38)] mb-1">Annual Audit Action</div>
+            <div className="text-xs text-[var(--ink-2, #6b7685)] mb-4">
               {actionItem.financial_year} &mdash; {actionItem.auditor_firm ?? 'Auditor TBC'} &mdash;{' '}
               {STATUS_LABELS[actionItem.chain_status] ?? actionItem.chain_status}
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Action *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Action *</label>
               <select
                 value={selectedAction}
                 onChange={e => setSelectedAction(e.target.value)}
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {modalActions.map(a => (
                   <option key={a.name} value={a.name}>{a.label}</option>
@@ -737,7 +737,7 @@ export function IppAnnualAuditTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Reason (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Reason (optional)</label>
               <input
                 type="text"
                 value={actionReason}
@@ -748,7 +748,7 @@ export function IppAnnualAuditTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Notes (optional)</label>
               <textarea
                 value={actionNotes}
                 onChange={e => setActionNotes(e.target.value)}
@@ -767,7 +767,7 @@ export function IppAnnualAuditTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
+                className="px-3 py-1.5 text-xs border rounded bg-surface-v2 text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
               >
                 Cancel
               </button>

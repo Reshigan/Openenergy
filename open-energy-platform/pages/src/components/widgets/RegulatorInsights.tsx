@@ -25,10 +25,10 @@ const COS_BASE = [
   { component: 'Primary energy (coal/gas)', share: 0.32, fill: '#3d3d3d' },
   { component: 'Wages & salaries',          share: 0.15, fill: 'oklch(0.46 0.16 55)' },
   { component: 'Capital depreciation',      share: 0.12, fill: '#6b3a82' },
-  { component: 'IPP purchases',             share: 0.18, fill: '#1a8a5b' },
+  { component: 'IPP purchases',             share: 0.18, fill: 'var(--good, #1a8a5b)' },
   { component: 'Operations & maintenance',  share: 0.10, fill: '#b04e0f' },
-  { component: 'Finance charges',           share: 0.08, fill: '#c0392b' },
-  { component: 'Levies & regulatory',       share: 0.05, fill: '#6b7685' },
+  { component: 'Finance charges',           share: 0.08, fill: 'var(--bad, #c0392b)' },
+  { component: 'Levies & regulatory',       share: 0.05, fill: 'var(--ink-2, #6b7685)' },
 ];
 
 // ─── 1 ─── MYPD tariff revenue calculator ────────────────────────────
@@ -45,9 +45,9 @@ function MypdTariffCalc() {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">NERSA MYPD allowed-revenue</div>
-        <div className="text-[11px] text-[#6b7685]">Methodology: opex + depreciation + (WACC × RAB) divided by sales volume → allowed tariff</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">NERSA MYPD allowed-revenue</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Methodology: opex + depreciation + (WACC × RAB) divided by sales volume → allowed tariff</div>
       </header>
       <div className="grid grid-cols-5 gap-3 px-4 py-3 widget-control-band">
         <Slider label="RAB (R m)"          value={rab}          min={10_000} max={500_000} step={1_000} onChange={setRab}          fmt={(v) => v.toLocaleString()} />
@@ -71,9 +71,9 @@ function CostOfServiceBreakout() {
   const data = COS_BASE.map((c) => ({ ...c, amount: totalCost * c.share }));
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Cost of service breakout</div>
-        <div className="text-[11px] text-[#6b7685]">Typical SA utility cost split at R{totalCost.toLocaleString()}m base</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Cost of service breakout</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Typical SA utility cost split at R{totalCost.toLocaleString()}m base</div>
       </header>
       <div className="grid grid-cols-2 gap-3 p-3">
         <div style={{ height: 200 }}>
@@ -88,7 +88,7 @@ function CostOfServiceBreakout() {
         </div>
         <div className="text-[12px] space-y-1">
           {data.map((d) => (
-            <div key={d.component} className="flex justify-between items-center border-b border-[#eef2f7] py-1">
+            <div key={d.component} className="flex justify-between items-center border-b border-[var(--s2, #eef2f7)] py-1">
               <span className="inline-flex items-center gap-2">
                 <span className="w-3 h-3 rounded-sm" style={{ background: d.fill }} />
                 {d.component}
@@ -116,9 +116,9 @@ function AffordabilityGauge() {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Affordability gauge</div>
-        <div className="text-[11px] text-[#6b7685]">Electricity bill as % of monthly income, by household decile</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Affordability gauge</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Electricity bill as % of monthly income, by household decile</div>
       </header>
       <div className="grid grid-cols-2 gap-3 px-4 py-3 widget-control-band">
         <Slider label="Tariff (R/kWh)" value={tariffKwh}   min={0.5} max={5}    step={0.05} onChange={setTariffKwh}   fmt={(v) => `R${v.toFixed(2)}`} />
@@ -127,14 +127,14 @@ function AffordabilityGauge() {
       <div style={{ height: 220 }} className="px-2 pt-3">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 12, bottom: 12, left: 0 }}>
-            <CartesianGrid stroke="#eef2f7" />
-            <XAxis dataKey="decile" tick={{ fontSize: 10, fill: '#6b7685' }} />
-            <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `${v}%`} unit="" />
+            <CartesianGrid stroke="var(--s2, #eef2f7)" />
+            <XAxis dataKey="decile" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} />
+            <YAxis tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => `${v}%`} unit="" />
             <Tooltip formatter={(v: any) => `${Number(v).toFixed(2)}%`} labelFormatter={(l: any) => `Decile ${l}`} />
-            <ReferenceLine y={10} stroke="#c0392b" strokeDasharray="4 4" label={{ value: 'Energy poverty (>10%)', fontSize: 10, fill: '#c0392b' }} />
+            <ReferenceLine y={10} stroke="var(--bad, #c0392b)" strokeDasharray="4 4" label={{ value: 'Energy poverty (>10%)', fontSize: 10, fill: 'var(--bad, #c0392b)' }} />
             <ReferenceLine y={5}  stroke="#b04e0f" strokeDasharray="4 4" label={{ value: 'Affordability concern (>5%)', fontSize: 10, fill: '#b04e0f' }} />
             <Bar isAnimationActive={false} dataKey="share">
-              {data.map((d, i) => <Cell key={i} fill={d.tone === 'bad' ? '#c0392b' : d.tone === 'warn' ? '#b04e0f' : '#1a8a5b'} />)}
+              {data.map((d, i) => <Cell key={i} fill={d.tone === 'bad' ? 'var(--bad, #c0392b)' : d.tone === 'warn' ? '#b04e0f' : 'var(--good, #1a8a5b)'} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -149,7 +149,7 @@ function Slider({ label, value, min, max, step, onChange, fmt }: {
 }) {
   return (
     <label className="block text-[11px]">
-      <div className="flex justify-between"><span className="text-[#3d4756] font-medium">{label}</span><span className="font-mono">{fmt(value)}</span></div>
+      <div className="flex justify-between"><span className="text-[var(--ink-2, #3d4756)] font-medium">{label}</span><span className="font-mono">{fmt(value)}</span></div>
       <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[oklch(0.46_0.16_55)]" />
     </label>
   );
@@ -157,10 +157,10 @@ function Slider({ label, value, min, max, step, onChange, fmt }: {
 
 function Tile({ label, value, tone }: { label: string; value: string; tone: string }) {
   const map: Record<string, string> = {
-    good: 'bg-[#e7f4ea] text-[#1a8a5b]',
+    good: 'bg-[#e7f4ea] text-[var(--good, #1a8a5b)]',
     warn: 'bg-[#fef3e6] text-[#b04e0f]',
-    bad:  'bg-[#fde0db] text-[#c0392b]',
-    info: 'bg-[#eef2f7] text-[oklch(0.46_0.16_55)]',
+    bad:  'bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[var(--bad, #c0392b)]',
+    info: 'bg-[var(--s2, #eef2f7)] text-[oklch(0.46_0.16_55)]',
   };
   return (
     <div className={`rounded p-2 ${map[tone] || map.info}`}>

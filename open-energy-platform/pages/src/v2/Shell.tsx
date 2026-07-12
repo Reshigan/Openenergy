@@ -101,6 +101,19 @@ export function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
+// ── full-surface load-failure state with a retry ─────────────────────────────
+export function LoadError({ what, onRetry }: { what: string; onRetry: () => void }) {
+  return (
+    <div className="v2-empty">
+      <div style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: 'var(--sp-2)' }}>
+        Couldn’t load {what}.
+      </div>
+      <div style={{ marginBottom: 'var(--sp-4)' }}>The connection dropped or the service is busy.</div>
+      <button className="v2-btn" onClick={onRetry}>Try again</button>
+    </div>
+  );
+}
+
 // ── notifications bell: unread badge + click-to-open popover ─────────────────
 function Bell() {
   const nav = useNavigate();

@@ -29,7 +29,7 @@ interface ReippppReportKpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  report_cycle_opened:        'bg-[#eef2f7] text-[#6b7685]',
+  report_cycle_opened:        'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
   data_collection:            'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   local_content_verification: 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   ed_spend_reconciliation:    'bg-yellow-100 text-yellow-800',
@@ -40,7 +40,7 @@ const STATUS_COLORS: Record<string, string> = {
   acknowledgement_pending:    'bg-purple-100 text-purple-700',
   report_accepted:            'bg-green-100 text-green-700',
   report_rejected:            'bg-red-100 text-red-700',
-  report_lapsed:              'bg-[#eef2f7] text-[#6b7685]',
+  report_lapsed:              'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -59,7 +59,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const CAPACITY_TIER_COLORS: Record<string, string> = {
-  small:    'bg-[#eef2f7] text-[#2d3748]',
+  small:    'bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)]',
   medium:   'bg-[oklch(0.94_0.008_250)] text-[oklch(0.40_0.009_250)]',
   large:    'bg-yellow-100 text-yellow-800',
   major:    'bg-orange-100 text-orange-800',
@@ -85,7 +85,7 @@ const CAPACITY_TIERS = ['small', 'medium', 'large', 'major', 'flagship'] as cons
 
 const PAGE_SIZE = 20;
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 function fmtDate(dateStr: string | null | undefined): { text: string; isPast: boolean } {
   if (!dateStr) return { text: '—', isPast: false };
@@ -117,15 +117,15 @@ function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-[#dde4ec] bg-white';
+    'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-[#0f1c2e]';
+    'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -386,7 +386,7 @@ export function IppReippppReportsTab() {
         </select>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
+          className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]"
         >
           Refresh
         </button>
@@ -407,7 +407,7 @@ export function IppReippppReportsTab() {
           <div className="text-sm font-semibold text-[oklch(0.40_0.009_250)]">New REIPPPP Annual Progress Report</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Project Ref *</label>
               <input
                 type="text"
                 value={formProjectRef}
@@ -418,7 +418,7 @@ export function IppReippppReportsTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">REIPPPP Bid Ref (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">REIPPPP Bid Ref (optional)</label>
               <input
                 type="text"
                 value={formBidRef}
@@ -428,7 +428,7 @@ export function IppReippppReportsTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Report Period *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Report Period *</label>
               <input
                 type="text"
                 value={formReportPeriod}
@@ -439,7 +439,7 @@ export function IppReippppReportsTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Project MW *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Project MW *</label>
               <input
                 type="number"
                 value={formProjectMw}
@@ -452,12 +452,12 @@ export function IppReippppReportsTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Report Type *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Report Type *</label>
               <select
                 value={formReportType}
                 onChange={e => setFormReportType(e.target.value)}
                 required
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {REPORT_TYPES.map(rt => (
                   <option key={rt} value={rt}>{REPORT_TYPE_LABELS[rt]}</option>
@@ -465,7 +465,7 @@ export function IppReippppReportsTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Local Content % (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Local Content % (optional)</label>
               <input
                 type="number"
                 value={formLocalContentPct}
@@ -478,7 +478,7 @@ export function IppReippppReportsTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">ED Spend ZAR (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">ED Spend ZAR (optional)</label>
               <input
                 type="number"
                 value={formEdSpendZar}
@@ -490,7 +490,7 @@ export function IppReippppReportsTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Direct Jobs (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Direct Jobs (optional)</label>
               <input
                 type="number"
                 value={formJobsDirect}
@@ -502,7 +502,7 @@ export function IppReippppReportsTab() {
               />
             </div>
             <div className="col-span-2 md:col-span-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Notes (optional)</label>
               <textarea
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
@@ -528,7 +528,7 @@ export function IppReippppReportsTab() {
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
+              className="px-3 py-1.5 bg-surface-v2 border rounded text-xs text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
             >
               Cancel
             </button>
@@ -545,12 +545,12 @@ export function IppReippppReportsTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-3">ID</th>
                 <th className="pb-2 pr-3">Project Ref</th>
                 <th className="pb-2 pr-3">REIPPPP Bid Ref</th>
@@ -572,40 +572,40 @@ export function IppReippppReportsTab() {
                 const actions = getActions(item);
                 const due     = fmtDate(item.sla_due_date);
                 return (
-                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
-                    <td className="py-2 pr-3 text-xs font-mono text-[#9aa5b4]">{item.id.slice(0, 8)}</td>
-                    <td className="py-2 pr-3 text-xs font-mono text-[#2d3748]">{item.project_ref}</td>
-                    <td className="py-2 pr-3 text-xs text-[#6b7685] max-w-[130px] truncate" title={item.reipppp_bid_ref ?? ''}>
+                  <tr key={item.id} className="border-b hover:bg-[var(--s2, #eef2f7)]">
+                    <td className="py-2 pr-3 text-xs font-mono text-[var(--ink-2, #9aa5b4)]">{item.id.slice(0, 8)}</td>
+                    <td className="py-2 pr-3 text-xs font-mono text-[var(--ink, #2d3748)]">{item.project_ref}</td>
+                    <td className="py-2 pr-3 text-xs text-[var(--ink-2, #6b7685)] max-w-[130px] truncate" title={item.reipppp_bid_ref ?? ''}>
                       {item.reipppp_bid_ref ?? '—'}
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-[#3d4756]">{item.report_period}</td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748] font-medium">
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[var(--ink-2, #3d4756)]">{item.report_period}</td>
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[var(--ink, #2d3748)] font-medium">
                       {fmtMw(item.project_mw)}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${CAPACITY_TIER_COLORS[item.capacity_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${CAPACITY_TIER_COLORS[item.capacity_tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {item.capacity_tier.charAt(0).toUpperCase() + item.capacity_tier.slice(1)}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-xs text-[#3d4756]">
+                    <td className="py-2 pr-3 text-xs text-[var(--ink-2, #3d4756)]">
                       {REPORT_TYPE_LABELS[item.report_type] ?? item.report_type.replace(/_/g, ' ')}
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-[#3d4756]">
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[var(--ink-2, #3d4756)]">
                       {fmtPct(item.local_content_pct)}
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-[#3d4756]">
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[var(--ink-2, #3d4756)]">
                       {fmtZar(item.ed_spend_zar)}
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-[#3d4756]">
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[var(--ink-2, #3d4756)]">
                       {item.jobs_direct != null ? item.jobs_direct.toLocaleString('en-ZA') : '—'}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                     </td>
                     <td className="py-2 pr-3 text-xs tabular-nums">
-                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
+                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[var(--ink-2, #3d4756)]'}>
                         {due.text}
                       </span>
                     </td>
@@ -613,7 +613,7 @@ export function IppReippppReportsTab() {
                       {item.sla_breached === 1 ? (
                         <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">Yes</span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-[#eef2f7] text-[#9aa5b4]">No</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]">No</span>
                       )}
                     </td>
                     <td className="py-2 pr-3">
@@ -631,7 +631,7 @@ export function IppReippppReportsTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={14} className="py-10 text-center text-[#9aa5b4] text-sm">
+                  <td colSpan={14} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">
                     No REIPPPP reports found
                   </td>
                 </tr>
@@ -647,17 +647,17 @@ export function IppReippppReportsTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-[#6b7685]">
+          <span className="text-xs text-[var(--ink-2, #6b7685)]">
             Page {page} of {totalPages}
           </span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             Next &rarr;
           </button>
@@ -667,18 +667,18 @@ export function IppReippppReportsTab() {
       {/* Action modal */}
       {actionItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setActionItem(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-[#1e2a38] mb-1">REIPPPP Annual Progress Report Action</div>
-            <div className="text-xs text-[#6b7685] mb-4">
+          <div className="bg-surface-v2 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="text-sm font-semibold text-[var(--ink, #1e2a38)] mb-1">REIPPPP Annual Progress Report Action</div>
+            <div className="text-xs text-[var(--ink-2, #6b7685)] mb-4">
               {actionItem.project_ref} &mdash; {STATUS_LABELS[actionItem.chain_status] ?? actionItem.chain_status}
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Action *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Action *</label>
               <select
                 value={selectedAction}
                 onChange={e => handleActionChange(e.target.value)}
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {modalActions.map(a => (
                   <option key={a.name} value={a.name}>{a.label}</option>
@@ -687,7 +687,7 @@ export function IppReippppReportsTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Reason (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Reason (optional)</label>
               <input
                 type="text"
                 value={actionReason}
@@ -698,7 +698,7 @@ export function IppReippppReportsTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Notes (optional)</label>
               <textarea
                 value={actionNotes}
                 onChange={e => setActionNotes(e.target.value)}
@@ -717,7 +717,7 @@ export function IppReippppReportsTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
+                className="px-3 py-1.5 text-xs border rounded bg-surface-v2 text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
               >
                 Cancel
               </button>

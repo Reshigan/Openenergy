@@ -31,7 +31,7 @@ interface Kpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  default_identified:         'bg-[#eef2f7] text-[#6b7685]',
+  default_identified:         'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
   notice_of_default_issued:   'bg-yellow-100 text-yellow-800',
   cure_period_in_progress:    'bg-yellow-100 text-yellow-800',
   default_confirmed:          'bg-orange-100 text-orange-700',
@@ -42,13 +42,13 @@ const STATUS_COLORS: Record<string, string> = {
   replacement_tendering:      'bg-amber-100 text-amber-700',
   replacement_appointed:      'bg-green-100 text-green-800',
   settlement_agreed:          'bg-teal-100 text-teal-700',
-  withdrawn:                  'bg-[#eef2f7] text-[#9aa5b4]',
+  withdrawn:                  'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]',
 };
 
 const TIER_COLORS: Record<string, string> = {
-  small:     'bg-[#eef2f7] text-[#3d4756]',
-  medium:    'bg-[#eef2f7] text-[#3d4756]',
-  large:     'bg-[#e8ecf0] text-[#3d4756]',
+  small:     'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
+  medium:    'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
+  large:     'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink-2, #3d4756)]',
   utility:   'bg-orange-100 text-orange-800',
   strategic: 'bg-red-100 text-red-700',
 };
@@ -66,7 +66,7 @@ const STATUSES = Object.keys(STATUS_COLORS);
 const TIERS = ['small', 'medium', 'large', 'utility', 'strategic'] as const;
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as (keyof typeof CATEGORY_LABELS)[];
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 function fmtDate(d?: string | null): string {
   if (!d) return '—';
@@ -85,11 +85,11 @@ function hasRegulatorFlag(row: ContractorDefault): boolean {
 
 type KpiChipProps = { label: string; value: string | number; mode?: 'alert' | 'good' | 'danger' | 'neutral' };
 function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
-  const border = mode === 'danger' ? 'border-red-200 bg-red-50' : mode === 'alert' ? 'border-orange-200 bg-orange-50' : mode === 'good' ? 'border-green-200 bg-green-50' : 'border-[#dde4ec] bg-white';
-  const text   = mode === 'danger' ? 'text-red-700' : mode === 'alert' ? 'text-orange-700' : mode === 'good' ? 'text-green-700' : 'text-[#0f1c2e]';
+  const border = mode === 'danger' ? 'border-red-200 bg-red-50' : mode === 'alert' ? 'border-orange-200 bg-orange-50' : mode === 'good' ? 'border-green-200 bg-green-50' : 'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
+  const text   = mode === 'danger' ? 'text-red-700' : mode === 'alert' ? 'text-orange-700' : mode === 'good' ? 'text-green-700' : 'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -187,19 +187,19 @@ export function IppContractorDefaultTab() {
         <button type="button" onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]">
           + New Default Event
         </button>
-        <button type="button" onClick={() => load()} className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]">
+        <button type="button" onClick={() => load()} className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]">
           Refresh
         </button>
       </div>
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-4">ID</th>
                 <th className="pb-2 pr-4">Contractor</th>
                 <th className="pb-2 pr-4">Contract Value</th>
@@ -227,31 +227,31 @@ export function IppContractorDefaultTab() {
                   : item.settlement_agreed_at
                   ? 'text-teal-700'
                   : item.withdrawn_at
-                  ? 'text-[#6b7685]'
-                  : 'text-[#9aa5b4]';
+                  ? 'text-[var(--ink-2, #6b7685)]'
+                  : 'text-[var(--ink-2, #9aa5b4)]';
                 return (
-                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
-                    <td className="py-2 pr-4 text-xs font-mono text-[#3d4756]">{item.id.slice(0, 12)}</td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.contractor_name ?? '—'}</td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">{fmtZar(item.contract_value_zar)}</td>
+                  <tr key={item.id} className="border-b hover:bg-[var(--s2, #eef2f7)]">
+                    <td className="py-2 pr-4 text-xs font-mono text-[var(--ink-2, #3d4756)]">{item.id.slice(0, 12)}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{item.contractor_name ?? '—'}</td>
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[var(--ink, #2d3748)]">{fmtZar(item.contract_value_zar)}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.contract_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>{item.contract_tier}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.contract_tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>{item.contract_tier}</span>
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#3d4756]">{CATEGORY_LABELS[item.default_category] ?? item.default_category}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #3d4756)]">{CATEGORY_LABELS[item.default_category] ?? item.default_category}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>{statusLabel(item.chain_status).text}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>{statusLabel(item.chain_status).text}</span>
                       {regulator && <span className="ml-1 px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">REGULATOR</span>}
                     </td>
-                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
+                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[var(--ink-2, #6b7685)]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#6b7685]">{fmtDate(item.default_confirmed_at)}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #6b7685)]">{fmtDate(item.default_confirmed_at)}</td>
                     <td className={`py-2 pr-4 text-xs font-medium ${outcomeColor}`}>{outcome}</td>
                   </tr>
                 );
               })}
               {items.length === 0 && (
-                <tr><td colSpan={9} className="py-10 text-center text-[#9aa5b4] text-sm">No contractor default events found</td></tr>
+                <tr><td colSpan={9} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">No contractor default events found</td></tr>
               )}
             </tbody>
           </table>
@@ -261,13 +261,13 @@ export function IppContractorDefaultTab() {
       {/* New Default Event modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowCreate(false)}>
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-surface-v2 rounded-xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold mb-1">New EPC Contractor Default Event</h3>
-            <p className="text-xs text-[#6b7685] mb-4">REIPPPP EPC &mdash; Records a contractor default event. Tier and SLA are derived from contract value.</p>
+            <p className="text-xs text-[var(--ink-2, #6b7685)] mb-4">REIPPPP EPC &mdash; Records a contractor default event. Tier and SLA are derived from contract value.</p>
             <div className="space-y-3">
               <input placeholder="Project ID *" value={form.project_id} onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm" />
               <input placeholder="Contract Value (ZAR) *" type="number" min={0} step="1" value={form.contract_value_zar} onChange={e => setForm(f => ({ ...f, contract_value_zar: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm" />
-              <select value={form.default_category} onChange={e => setForm(f => ({ ...f, default_category: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm text-[#2d3748]">
+              <select value={form.default_category} onChange={e => setForm(f => ({ ...f, default_category: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm text-[var(--ink, #2d3748)]">
                 {CATEGORIES.map(cat => <option key={cat} value={cat}>{CATEGORY_LABELS[cat]}</option>)}
               </select>
               <input placeholder="Contractor Name" value={form.contractor_name} onChange={e => setForm(f => ({ ...f, contractor_name: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm" />
@@ -278,7 +278,7 @@ export function IppContractorDefaultTab() {
               <button type="button" onClick={createDefault} disabled={createPending || !form.project_id || !form.contract_value_zar} className="px-4 py-2 bg-[#c2873a] text-white rounded text-sm hover:bg-[#a3702f] disabled:opacity-50">
                 {createPending ? 'Submitting…' : 'Create event'}
               </button>
-              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 bg-[#eef2f7] text-[#2d3748] rounded text-sm hover:bg-[#e8ecf0]">Cancel</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-sm hover:bg-[var(--border-subtle, #e8ecf0)]">Cancel</button>
             </div>
           </div>
         </div>

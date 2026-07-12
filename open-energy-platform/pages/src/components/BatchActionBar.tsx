@@ -16,7 +16,7 @@ export function BatchActionBar({ selectedCount, onClear, actions }: BatchActionB
   if (selectedCount === 0) return null;
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#1e2a38] text-white rounded-xl shadow-xl px-4 py-3 flex items-center gap-4">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[var(--ink, #1e2a38)] text-white rounded-xl shadow-xl px-4 py-3 flex items-center gap-4">
       <div className="flex items-center gap-2">
         <CheckSquare className="w-5 h-5 text-oe-accent" />
         <span className="font-medium">{selectedCount} selected</span>

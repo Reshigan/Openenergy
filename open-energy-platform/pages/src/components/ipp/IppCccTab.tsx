@@ -24,7 +24,7 @@ interface CccNegotiation {
 
 type StatusStyle = { cls: string; style?: React.CSSProperties };
 const STATUS_COLORS: Record<string, StatusStyle> = {
-  ccc_initiated:             { cls: 'bg-[#eef2f7] text-[#6b7685]' },
+  ccc_initiated:             { cls: 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]' },
   load_flow_study:           { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
   cost_assessment:           { cls: 'bg-sky-100 text-sky-700' },
   ipp_review:                { cls: '', style: { background: 'oklch(0.94 0.006 250)', color: 'oklch(0.46 0.16 55)' } },
@@ -39,10 +39,10 @@ const STATUS_COLORS: Record<string, StatusStyle> = {
 };
 
 const TIER_COLORS: Record<string, string> = {
-  minor:       '#6b7280',
+  minor:       'var(--ink-2, #6b7280)',
   moderate:    '#3b82f6',
   significant: '#f59e0b',
-  major:       '#ef4444',
+  major:       'var(--bad, #ef4444)',
   material:    '#7c3aed',
 };
 
@@ -61,7 +61,7 @@ const STATUSES = Object.keys(STATUS_COLORS);
 const TIERS = ['minor', 'moderate', 'significant', 'major', 'material'] as const;
 const CATEGORIES = Object.keys(CATEGORY_LABELS);
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 function fmtDate(d?: string | null): string {
   if (!d) return '—';
@@ -79,11 +79,11 @@ function hasRegulatorFlag(row: CccNegotiation): boolean {
 
 type KpiChipProps = { label: string; value: string | number; mode?: 'alert' | 'good' | 'danger' | 'neutral' };
 function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
-  const border = mode === 'danger' ? 'border-red-200 bg-red-50' : mode === 'alert' ? 'border-orange-200 bg-orange-50' : mode === 'good' ? 'border-green-200 bg-green-50' : 'border-[#dde4ec] bg-white';
-  const text   = mode === 'danger' ? 'text-red-700' : mode === 'alert' ? 'text-orange-700' : mode === 'good' ? 'text-green-700' : 'text-[#0f1c2e]';
+  const border = mode === 'danger' ? 'border-red-200 bg-red-50' : mode === 'alert' ? 'border-orange-200 bg-orange-50' : mode === 'good' ? 'border-green-200 bg-green-50' : 'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
+  const text   = mode === 'danger' ? 'text-red-700' : mode === 'alert' ? 'text-orange-700' : mode === 'good' ? 'text-green-700' : 'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -146,19 +146,19 @@ export function IppCccTab() {
           <option value="">All categories</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
         </select>
-        <button type="button" onClick={() => load()} className="ml-auto px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]">
+        <button type="button" onClick={() => load()} className="ml-auto px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]">
           Refresh
         </button>
       </div>
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-4">ID</th>
                 <th className="pb-2 pr-4">Network Operator</th>
                 <th className="pb-2 pr-4">Category</th>
@@ -174,23 +174,23 @@ export function IppCccTab() {
               {items.map(item => {
                 const overdue   = !!(item.sla_breached || (item.sla_due_at && new Date(item.sla_due_at) < new Date()));
                 const regulator = hasRegulatorFlag(item);
-                const tierColor = TIER_COLORS[item.ccc_tier] ?? '#6b7280';
+                const tierColor = TIER_COLORS[item.ccc_tier] ?? 'var(--ink-2, #6b7280)';
                 return (
-                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
-                    <td className="py-2 pr-4 text-xs font-mono text-[#3d4756]">{item.id.slice(0, 12)}</td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.network_operator}</td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{CATEGORY_LABELS[item.ccc_category] ?? item.ccc_category}</td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">{fmtZar(item.ccc_amount_zar)}</td>
+                  <tr key={item.id} className="border-b hover:bg-[var(--s2, #eef2f7)]">
+                    <td className="py-2 pr-4 text-xs font-mono text-[var(--ink-2, #3d4756)]">{item.id.slice(0, 12)}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{item.network_operator}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{CATEGORY_LABELS[item.ccc_category] ?? item.ccc_category}</td>
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[var(--ink, #2d3748)]">{fmtZar(item.ccc_amount_zar)}</td>
                     <td className="py-2 pr-4">
                       <span className="px-2 py-0.5 rounded text-xs text-white font-medium" style={{ backgroundColor: tierColor }}>{item.ccc_tier}</span>
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${(STATUS_COLORS[item.chain_status] ?? { cls: 'bg-[#eef2f7] text-[#6b7685]' }).cls}`} style={(STATUS_COLORS[item.chain_status] ?? {}).style}>{statusLabel(item.chain_status).text}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${(STATUS_COLORS[item.chain_status] ?? { cls: 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]' }).cls}`} style={(STATUS_COLORS[item.chain_status] ?? {}).style}>{statusLabel(item.chain_status).text}</span>
                     </td>
-                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
+                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[var(--ink-2, #6b7685)]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#6b7685]">{item.grid_connection_ref ?? '—'}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #6b7685)]">{item.grid_connection_ref ?? '—'}</td>
                     <td className="py-2 pr-4">
                       {regulator && (
                         <span className="px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">REGULATOR</span>
@@ -200,7 +200,7 @@ export function IppCccTab() {
                 );
               })}
               {items.length === 0 && (
-                <tr><td colSpan={9} className="py-10 text-center text-[#9aa5b4] text-sm">No CCC negotiations found</td></tr>
+                <tr><td colSpan={9} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">No CCC negotiations found</td></tr>
               )}
             </tbody>
           </table>

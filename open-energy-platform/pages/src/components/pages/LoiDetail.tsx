@@ -17,17 +17,17 @@ import { loiFileTabs, loiHero, type LoiFileData } from '../file/loiFileConfig';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/useAuth';
 
-const BAD     = 'oklch(0.48 0.20 20)';
-const BAD_BG  = 'oklch(0.97 0.04 20)';
-const BORDER  = 'oklch(0.87 0.006 250)';
-const TX1     = 'oklch(0.17 0.010 250)';
-const TX2     = 'oklch(0.40 0.009 250)';
-const TX3     = 'oklch(0.60 0.007 250)';
-const BG1     = 'oklch(0.99 0.002 80)';
-const BG2     = 'oklch(0.93 0.004 250)';
-const GOOD    = 'oklch(0.40 0.16 155)';
-const GOOD_BG = 'oklch(0.95 0.04 155)';
-const ACC     = 'oklch(0.46 0.12 230)';
+const BAD     = 'var(--bad, oklch(0.48 0.20 20))';
+const BAD_BG  = 'color-mix(in oklab, var(--bad) 15%, var(--s1))';
+const BORDER  = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1     = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2     = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3     = 'var(--ink-2, oklch(0.60 0.007 250))';
+const BG1     = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2     = 'var(--s2, oklch(0.93 0.004 250))';
+const GOOD    = 'var(--good, oklch(0.40 0.16 155))';
+const GOOD_BG = 'color-mix(in oklab, var(--good) 15%, var(--s1))';
+const ACC     = 'var(--accent, oklch(0.46 0.12 230))';
 
 export function LoiDetail() {
   const { id = '' } = useParams<{ id: string }>();
@@ -138,7 +138,7 @@ export function LoiDetail() {
                       height: 36,
                       padding: '0 12px',
                       borderRadius: 6,
-                      background: '#fff',
+                      background: 'var(--s1, #fff)',
                       border: 'none',
                       color: '#3a1f5d',
                       fontSize: 12,
@@ -160,7 +160,7 @@ export function LoiDetail() {
                       height: 36,
                       padding: '0 12px',
                       borderRadius: 6,
-                      background: '#fff',
+                      background: 'var(--s1, #fff)',
                       border: 'none',
                       color: '#3a1f5d',
                       fontSize: 12,

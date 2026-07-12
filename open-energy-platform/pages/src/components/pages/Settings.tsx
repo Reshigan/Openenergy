@@ -13,18 +13,18 @@ import { Skeleton } from '../Skeleton';
 //   3. Password     — current + new (POST /auth/change-password)
 //   4. Security     — link to /settings/security (MFA + sessions)
 
-const BG      = 'oklch(0.96 0.003 250)';
-const BG1     = 'oklch(0.99 0.002 80)';
-const BG2     = 'oklch(0.93 0.004 250)';
-const BORDER  = 'oklch(0.87 0.006 250)';
-const TX1     = 'oklch(0.17 0.010 250)';
-const TX2     = 'oklch(0.40 0.009 250)';
-const TX3     = 'oklch(0.60 0.007 250)';
-const ACC     = 'oklch(0.46 0.16 250)';
-const BAD     = 'oklch(0.48 0.20 20)';
-const BAD_BG  = 'oklch(0.97 0.04 20)';
-const GOOD    = 'oklch(0.40 0.16 155)';
-const GOOD_BG = 'oklch(0.95 0.04 155)';
+const BG      = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1     = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2     = 'var(--s2, oklch(0.93 0.004 250))';
+const BORDER  = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1     = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2     = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3     = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC     = 'var(--accent, oklch(0.46 0.16 250))';
+const BAD     = 'var(--bad, oklch(0.48 0.20 20))';
+const BAD_BG  = 'color-mix(in oklab, var(--bad) 15%, var(--s1))';
+const GOOD    = 'var(--good, oklch(0.40 0.16 155))';
+const GOOD_BG = 'color-mix(in oklab, var(--good) 15%, var(--s1))';
 const MONO    = '"IBM Plex Mono","Fira Code",monospace';
 
 type Prefs = {
@@ -145,7 +145,7 @@ function PrefRow({ label, on, onChange }: { label: string; on: boolean; onChange
           height: 14,
           width: 14,
           borderRadius: '50%',
-          background: '#fff',
+          background: 'var(--s1, #fff)',
           transform: on ? 'translateX(18px)' : 'translateX(3px)',
           transition: 'transform 0.15s',
         }} />

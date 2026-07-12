@@ -179,31 +179,31 @@ export function ReportPanel({ config }: { config: ReportConfig }) {
   return (
     <div className="space-y-4">
       {/* ── Filter bar ─────────────────────────────────────────────────────── */}
-      <div className="bg-[#f8fafc] border border-[#dde4ec] rounded-lg p-3 space-y-2">
+      <div className="bg-[var(--s1, #f8fafc)] border border-[var(--border-subtle, #dde4ec)] rounded-lg p-3 space-y-2">
         <div className="flex flex-wrap gap-3 items-end">
           <div className="flex flex-col gap-0.5">
-            <label className="text-[10px] font-semibold text-[#6b7685] uppercase tracking-wide">From</label>
+            <label className="text-[10px] font-semibold text-[var(--ink-2, #6b7685)] uppercase tracking-wide">From</label>
             <input type="date" value={from} onChange={e => setFrom(e.target.value)}
-              className="h-7 px-2 text-xs border border-[#dde4ec] rounded bg-white focus:outline-none focus:ring-1 focus:ring-[#c2873a]" />
+              className="h-7 px-2 text-xs border border-[var(--border-subtle, #dde4ec)] rounded bg-surface-v2 focus:outline-none focus:ring-1 focus:ring-[#c2873a]" />
           </div>
           <div className="flex flex-col gap-0.5">
-            <label className="text-[10px] font-semibold text-[#6b7685] uppercase tracking-wide">To</label>
+            <label className="text-[10px] font-semibold text-[var(--ink-2, #6b7685)] uppercase tracking-wide">To</label>
             <input type="date" value={to} onChange={e => setTo(e.target.value)}
-              className="h-7 px-2 text-xs border border-[#dde4ec] rounded bg-white focus:outline-none focus:ring-1 focus:ring-[#c2873a]" />
+              className="h-7 px-2 text-xs border border-[var(--border-subtle, #dde4ec)] rounded bg-surface-v2 focus:outline-none focus:ring-1 focus:ring-[#c2873a]" />
           </div>
           {(config.filters ?? []).map(f => (
             <div key={f.key} className="flex flex-col gap-0.5">
-              <label className="text-[10px] font-semibold text-[#6b7685] uppercase tracking-wide">{f.label}</label>
+              <label className="text-[10px] font-semibold text-[var(--ink-2, #6b7685)] uppercase tracking-wide">{f.label}</label>
               {f.type === 'select' ? (
                 <select value={attrFilters[f.key] ?? ''} onChange={e => setAttrFilters(prev => ({ ...prev, [f.key]: e.target.value }))}
-                  className="h-7 px-2 text-xs border border-[#dde4ec] rounded bg-white focus:outline-none focus:ring-1 focus:ring-[#c2873a]">
+                  className="h-7 px-2 text-xs border border-[var(--border-subtle, #dde4ec)] rounded bg-surface-v2 focus:outline-none focus:ring-1 focus:ring-[#c2873a]">
                   <option value="">All</option>
                   {f.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               ) : (
                 <input type="text" placeholder="Filter…" value={attrFilters[f.key] ?? ''}
                   onChange={e => setAttrFilters(prev => ({ ...prev, [f.key]: e.target.value }))}
-                  className="h-7 px-2 text-xs border border-[#dde4ec] rounded bg-white focus:outline-none focus:ring-1 focus:ring-[#c2873a]" />
+                  className="h-7 px-2 text-xs border border-[var(--border-subtle, #dde4ec)] rounded bg-surface-v2 focus:outline-none focus:ring-1 focus:ring-[#c2873a]" />
               )}
             </div>
           ))}
@@ -217,13 +217,13 @@ export function ReportPanel({ config }: { config: ReportConfig }) {
       {/* ── Toolbar ────────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2 justify-between">
         {/* View switcher */}
-        <div className="flex rounded overflow-hidden text-xs" style={{ border: '1px solid #dde4ec' }}>
+        <div className="flex rounded overflow-hidden text-xs" style={{ border: '1px solid var(--border-subtle, #dde4ec)' }}>
           {(['report', 'table', 'pivot'] as ViewMode[]).map(v => (
             <button key={v} onClick={() => setView(v)}
               className="px-3 py-1.5 font-medium capitalize transition-colors"
               style={view === v
                 ? { background: '#c2873a', color: '#fff' }
-                : { background: 'oklch(0.99 0.002 80)', color: '#3d4756' }
+                : { background: 'oklch(0.99 0.002 80)', color: 'var(--ink-2, #3d4756)' }
               }>
               {v}
             </button>
@@ -238,14 +238,14 @@ export function ReportPanel({ config }: { config: ReportConfig }) {
           </button>
           <button onClick={() => window.print()}
             className="px-3 py-1.5 text-xs rounded font-medium"
-            style={{ background: 'oklch(0.99 0.002 80)', border: '1px solid #dde4ec', color: '#3d4756' }}>
+            style={{ background: 'oklch(0.99 0.002 80)', border: '1px solid var(--border-subtle, #dde4ec)', color: 'var(--ink-2, #3d4756)' }}>
             Print / PDF
           </button>
           <div className="flex items-center gap-1">
             <input type="email" placeholder="mail report to…" value={mailTo}
               onChange={e => setMailTo(e.target.value)}
               className="h-7 px-2 text-xs rounded focus:outline-none focus:ring-1 focus:ring-[#c2873a] w-48"
-              style={{ border: '1px solid #dde4ec' }} />
+              style={{ border: '1px solid var(--border-subtle, #dde4ec)' }} />
             <button onClick={sendMail} disabled={mailing || !mailTo.trim()}
               className="h-7 px-2 text-xs text-white rounded disabled:opacity-40 font-medium"
               style={{ background: '#c2873a' }}>
@@ -258,7 +258,7 @@ export function ReportPanel({ config }: { config: ReportConfig }) {
 
       {/* ── Content ────────────────────────────────────────────────────────── */}
       {loading && (
-        <div className="h-24 flex items-center justify-center text-xs text-[#6b7685]">Loading…</div>
+        <div className="h-24 flex items-center justify-center text-xs text-[var(--ink-2, #6b7685)]">Loading…</div>
       )}
       {!loading && err && (
         <div className="text-xs text-red-500 border border-red-200 bg-red-50 rounded p-3 flex items-center justify-between gap-3">
@@ -270,7 +270,7 @@ export function ReportPanel({ config }: { config: ReportConfig }) {
         </div>
       )}
       {!loading && !err && rows.length === 0 && (
-        <div className="rounded-lg border border-[#e3e8ef] bg-white px-4 py-10 text-center text-xs text-[#6b7685]">
+        <div className="rounded-lg border border-[#e3e8ef] bg-surface-v2 px-4 py-10 text-center text-xs text-[var(--ink-2, #6b7685)]">
           No data for the selected filters. Widen the date range or clear filters.
         </div>
       )}
@@ -308,22 +308,22 @@ function ReportView({ rows, columns, numerics, title, from, to }: {
   const latest5 = rows.slice(0, 5);
   return (
     <div className="space-y-4 print:space-y-3">
-      <div className="border border-[#dde4ec] rounded-lg p-4 bg-white">
+      <div className="border border-[var(--border-subtle, #dde4ec)] rounded-lg p-4 bg-surface-v2">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-sm font-semibold text-[#1e2a38]">{title}</div>
-            <div className="text-[10px] text-[#6b7685] mt-0.5">
+            <div className="text-sm font-semibold text-[var(--ink, #1e2a38)]">{title}</div>
+            <div className="text-[10px] text-[var(--ink-2, #6b7685)] mt-0.5">
               {from || to ? `${from || '–'} → ${to || '–'}` : 'All time'} · {rows.length} records
             </div>
           </div>
-          <div className="text-[10px] text-[#6b7685]">{new Date().toLocaleDateString()}</div>
+          <div className="text-[10px] text-[var(--ink-2, #6b7685)]">{new Date().toLocaleDateString()}</div>
         </div>
         {numCols.length > 0 && (
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {numCols.map(c => (
-              <div key={c.key} className="rounded bg-[#f8fafc] border border-[#eef2f7] p-2">
-                <div className="text-[9px] text-[#6b7685] uppercase tracking-wide">{c.label}</div>
-                <div className="text-sm font-semibold text-[#1e2a38] mt-0.5">
+              <div key={c.key} className="rounded bg-[var(--s1, #f8fafc)] border border-[var(--s2, #eef2f7)] p-2">
+                <div className="text-[9px] text-[var(--ink-2, #6b7685)] uppercase tracking-wide">{c.label}</div>
+                <div className="text-sm font-semibold text-[var(--ink, #1e2a38)] mt-0.5">
                   {numerics[c.key]?.toLocaleString(undefined, { maximumFractionDigits: 2 }) ?? '0'}
                 </div>
               </div>
@@ -333,14 +333,14 @@ function ReportView({ rows, columns, numerics, title, from, to }: {
       </div>
       {latest5.length > 0 && (
         <div>
-          <div className="text-[10px] font-semibold text-[#6b7685] uppercase tracking-wide mb-2">Recent records</div>
-          <div className="divide-y divide-[#eef2f7] border border-[#dde4ec] rounded-lg overflow-hidden">
+          <div className="text-[10px] font-semibold text-[var(--ink-2, #6b7685)] uppercase tracking-wide mb-2">Recent records</div>
+          <div className="divide-y divide-[var(--s2, #eef2f7)] border border-[var(--border-subtle, #dde4ec)] rounded-lg overflow-hidden">
             {latest5.map((r, i) => (
-              <div key={i} className="flex flex-wrap gap-3 px-3 py-2 text-xs bg-white">
+              <div key={i} className="flex flex-wrap gap-3 px-3 py-2 text-xs bg-surface-v2">
                 {columns.slice(0, 5).map(c => (
                   <span key={c.key} className="flex flex-col gap-0.5 min-w-0">
-                    <span className="text-[9px] text-[#6b7685] uppercase">{c.label}</span>
-                    <span className="text-[#2d3748] truncate max-w-[120px]">
+                    <span className="text-[9px] text-[var(--ink-2, #6b7685)] uppercase">{c.label}</span>
+                    <span className="text-[var(--ink, #2d3748)] truncate max-w-[120px]">
                       {c.render ? c.render(r) : String(r[c.key] ?? '')}
                     </span>
                   </span>
@@ -351,7 +351,7 @@ function ReportView({ rows, columns, numerics, title, from, to }: {
         </div>
       )}
       {rows.length === 0 && (
-        <div className="text-xs text-[#6b7685] text-center py-8">No records match the selected filters.</div>
+        <div className="text-xs text-[var(--ink-2, #6b7685)] text-center py-8">No records match the selected filters.</div>
       )}
     </div>
   );
@@ -368,28 +368,28 @@ function TableView({ rows, columns, sortKey, sortDir, onSort, page, totalPages, 
   total: number;
 }) {
   if (!rows.length) return (
-    <div className="text-xs text-[#6b7685] text-center py-8">No records match the selected filters.</div>
+    <div className="text-xs text-[var(--ink-2, #6b7685)] text-center py-8">No records match the selected filters.</div>
   );
   return (
     <div className="space-y-2">
-      <div className="overflow-x-auto rounded-lg border border-[#dde4ec]">
+      <div className="overflow-x-auto rounded-lg border border-[var(--border-subtle, #dde4ec)]">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-[#f8fafc] border-b border-[#dde4ec]">
+            <tr className="bg-[var(--s1, #f8fafc)] border-b border-[var(--border-subtle, #dde4ec)]">
               {columns.map(c => (
                 <th key={c.key}
-                  className={`px-3 py-2 text-left font-semibold text-[#4a5568] cursor-pointer select-none whitespace-nowrap hover:text-[#1e2a38] ${c.align === 'right' ? 'text-right' : ''}`}
+                  className={`px-3 py-2 text-left font-semibold text-[var(--ink-2, #4a5568)] cursor-pointer select-none whitespace-nowrap hover:text-[var(--ink, #1e2a38)] ${c.align === 'right' ? 'text-right' : ''}`}
                   onClick={() => onSort(c.key)}>
                   {c.label}{sortKey === c.key ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#eef2f7]">
+          <tbody className="divide-y divide-[var(--s2, #eef2f7)]">
             {rows.map((r, i) => (
-              <tr key={i} className="hover:bg-[#f8fafc]">
+              <tr key={i} className="hover:bg-[var(--s1, #f8fafc)]">
                 {columns.map(c => (
-                  <td key={c.key} className={`px-3 py-2 text-[#2d3748] ${c.align === 'right' ? 'text-right tabular-nums' : ''}`}>
+                  <td key={c.key} className={`px-3 py-2 text-[var(--ink, #2d3748)] ${c.align === 'right' ? 'text-right tabular-nums' : ''}`}>
                     {c.render ? c.render(r) : String(r[c.key] ?? '')}
                   </td>
                 ))}
@@ -399,13 +399,13 @@ function TableView({ rows, columns, sortKey, sortDir, onSort, page, totalPages, 
         </table>
       </div>
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-xs text-[#4a5568]">
+        <div className="flex items-center justify-between text-xs text-[var(--ink-2, #4a5568)]">
           <span>{total} records · page {page + 1} / {totalPages}</span>
           <div className="flex gap-1">
             <button disabled={page === 0} onClick={() => onPage(page - 1)}
-              className="px-2 py-1 border border-[#dde4ec] rounded disabled:opacity-40 hover:bg-[#f8fafc]">‹ Prev</button>
+              className="px-2 py-1 border border-[var(--border-subtle, #dde4ec)] rounded disabled:opacity-40 hover:bg-[var(--s1, #f8fafc)]">‹ Prev</button>
             <button disabled={page >= totalPages - 1} onClick={() => onPage(page + 1)}
-              className="px-2 py-1 border border-[#dde4ec] rounded disabled:opacity-40 hover:bg-[#f8fafc]">Next ›</button>
+              className="px-2 py-1 border border-[var(--border-subtle, #dde4ec)] rounded disabled:opacity-40 hover:bg-[var(--s1, #f8fafc)]">Next ›</button>
           </div>
         </div>
       )}
@@ -424,33 +424,33 @@ function PivotView({ data, columns, numericKeys, pivotField, onPivotField, total
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <label className="text-[10px] font-semibold text-[#6b7685] uppercase tracking-wide">Group by</label>
+        <label className="text-[10px] font-semibold text-[var(--ink-2, #6b7685)] uppercase tracking-wide">Group by</label>
         <select value={pivotField} onChange={e => onPivotField(e.target.value)}
-          className="h-7 px-2 text-xs border border-[#dde4ec] rounded bg-white focus:outline-none focus:ring-1 focus:ring-[#c2873a]">
+          className="h-7 px-2 text-xs border border-[var(--border-subtle, #dde4ec)] rounded bg-surface-v2 focus:outline-none focus:ring-1 focus:ring-[#c2873a]">
           {nonNumericCols.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
         </select>
-        <span className="text-[10px] text-[#6b7685]">{total} records · {data.length} groups</span>
+        <span className="text-[10px] text-[var(--ink-2, #6b7685)]">{total} records · {data.length} groups</span>
       </div>
-      <div className="overflow-x-auto rounded-lg border border-[#dde4ec]">
+      <div className="overflow-x-auto rounded-lg border border-[var(--border-subtle, #dde4ec)]">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-[#f8fafc] border-b border-[#dde4ec]">
-              <th className="px-3 py-2 text-left font-semibold text-[#4a5568]">
+            <tr className="bg-[var(--s1, #f8fafc)] border-b border-[var(--border-subtle, #dde4ec)]">
+              <th className="px-3 py-2 text-left font-semibold text-[var(--ink-2, #4a5568)]">
                 {columns.find(c => c.key === pivotField)?.label ?? pivotField}
               </th>
-              <th className="px-3 py-2 text-right font-semibold text-[#4a5568]">Count</th>
+              <th className="px-3 py-2 text-right font-semibold text-[var(--ink-2, #4a5568)]">Count</th>
               {numericCols.map(c => (
-                <th key={c.key} className="px-3 py-2 text-right font-semibold text-[#4a5568]">{c.label} (Σ)</th>
+                <th key={c.key} className="px-3 py-2 text-right font-semibold text-[var(--ink-2, #4a5568)]">{c.label} (Σ)</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#eef2f7]">
+          <tbody className="divide-y divide-[var(--s2, #eef2f7)]">
             {data.map((row, i) => (
-              <tr key={i} className="hover:bg-[#f8fafc]">
-                <td className="px-3 py-2 text-[#2d3748] font-medium">{row.group}</td>
-                <td className="px-3 py-2 text-right tabular-nums text-[#2d3748]">{row.count}</td>
+              <tr key={i} className="hover:bg-[var(--s1, #f8fafc)]">
+                <td className="px-3 py-2 text-[var(--ink, #2d3748)] font-medium">{row.group}</td>
+                <td className="px-3 py-2 text-right tabular-nums text-[var(--ink, #2d3748)]">{row.count}</td>
                 {numericCols.map(c => (
-                  <td key={c.key} className="px-3 py-2 text-right tabular-nums text-[#2d3748]">
+                  <td key={c.key} className="px-3 py-2 text-right tabular-nums text-[var(--ink, #2d3748)]">
                     {(row[`sum_${c.key}`] as number)?.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                   </td>
                 ))}
@@ -459,11 +459,11 @@ function PivotView({ data, columns, numericKeys, pivotField, onPivotField, total
           </tbody>
           {data.length > 0 && (
             <tfoot>
-              <tr className="bg-[#f8fafc] border-t border-[#dde4ec] font-semibold">
-                <td className="px-3 py-2 text-[#3d4756]">Total</td>
-                <td className="px-3 py-2 text-right tabular-nums text-[#2d3748]">{total}</td>
+              <tr className="bg-[var(--s1, #f8fafc)] border-t border-[var(--border-subtle, #dde4ec)] font-semibold">
+                <td className="px-3 py-2 text-[var(--ink-2, #3d4756)]">Total</td>
+                <td className="px-3 py-2 text-right tabular-nums text-[var(--ink, #2d3748)]">{total}</td>
                 {numericCols.map(c => (
-                  <td key={c.key} className="px-3 py-2 text-right tabular-nums text-[#2d3748]">
+                  <td key={c.key} className="px-3 py-2 text-right tabular-nums text-[var(--ink, #2d3748)]">
                     {data.reduce((s, r) => s + (r[`sum_${c.key}`] as number), 0)
                       .toLocaleString(undefined, { maximumFractionDigits: 2 })}
                   </td>
@@ -474,7 +474,7 @@ function PivotView({ data, columns, numericKeys, pivotField, onPivotField, total
         </table>
       </div>
       {data.length === 0 && (
-        <div className="text-xs text-[#6b7685] text-center py-8">No records match the selected filters.</div>
+        <div className="text-xs text-[var(--ink-2, #6b7685)] text-center py-8">No records match the selected filters.</div>
       )}
     </div>
   );

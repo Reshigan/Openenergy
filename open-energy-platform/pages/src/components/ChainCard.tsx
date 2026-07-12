@@ -16,24 +16,24 @@ import { statusLabel as easeStatusLabel } from '../meridian/ease/statusLabel';
 import { ActionModal, type FieldSpec } from './launch/WorkstationShell';
 
 // ─── Design tokens (mockup-b) ─────────────────────────────────────────
-const BG1    = 'oklch(0.99 0.002 80)';
-const BG2    = 'oklch(0.93 0.004 250)';
-const BG3    = 'oklch(0.90 0.006 250)';
-const BORDER = 'oklch(0.87 0.006 250)';
-const TX1    = 'oklch(0.17 0.010 250)';
-const TX2    = 'oklch(0.40 0.009 250)';
-const TX3    = 'oklch(0.60 0.007 250)';
-const ACC    = 'oklch(0.46 0.12 230)';
+const BG1    = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2    = 'var(--s2, oklch(0.93 0.004 250))';
+const BG3    = 'var(--border-subtle, oklch(0.90 0.006 250))';
+const BORDER = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1    = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2    = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3    = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC    = 'var(--accent, oklch(0.46 0.12 230))';
 const ACC_BG = 'oklch(0.96 0.02 230)';
 const ACC_BDR= 'oklch(0.80 0.06 230)';
-const GOOD   = 'oklch(0.40 0.16 155)';
-const GOOD_BG= 'oklch(0.95 0.04 155)';
-const BAD    = 'oklch(0.48 0.20 20)';
-const BAD_BG = 'oklch(0.97 0.04 20)';
-const WARN   = 'oklch(0.50 0.18 55)';
-const WARN_BG= 'oklch(0.96 0.05 55)';
+const GOOD   = 'var(--good, oklch(0.40 0.16 155))';
+const GOOD_BG= 'color-mix(in oklab, var(--good) 15%, var(--s1))';
+const BAD    = 'var(--bad, oklch(0.48 0.20 20))';
+const BAD_BG = 'color-mix(in oklab, var(--bad) 15%, var(--s1))';
+const WARN   = 'var(--accent, oklch(0.50 0.18 55))';
+const WARN_BG= 'color-mix(in oklab, var(--warn) 15%, var(--s1))';
 const INFO   = 'oklch(0.42 0.16 240)';
-const INFO_BG= 'oklch(0.95 0.04 240)';
+const INFO_BG= 'color-mix(in oklab, var(--info) 15%, var(--s1))';
 const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 // Cascade role display names
@@ -55,16 +55,16 @@ const CASCADE_ROLE_LABELS: Record<string, string> = {
 };
 
 const CASCADE_ROLE_COLORS: Record<string, { bg: string; color: string }> = {
-  regulator:     { bg: 'oklch(0.95 0.04 240)', color: 'oklch(0.35 0.14 240)' },
-  grid_operator: { bg: 'oklch(0.95 0.06 155)', color: 'oklch(0.30 0.14 155)' },
-  grid:          { bg: 'oklch(0.95 0.06 155)', color: 'oklch(0.30 0.14 155)' },
-  ipp_developer: { bg: 'oklch(0.95 0.05 80)',  color: 'oklch(0.40 0.18 55)'  },
-  ipp:           { bg: 'oklch(0.95 0.05 80)',  color: 'oklch(0.40 0.18 55)'  },
+  regulator:     { bg: 'color-mix(in oklab, var(--info) 15%, var(--s1))', color: 'oklch(0.35 0.14 240)' },
+  grid_operator: { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', color: 'var(--good, oklch(0.30 0.14 155))' },
+  grid:          { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', color: 'var(--good, oklch(0.30 0.14 155))' },
+  ipp_developer: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))',  color: 'oklch(0.40 0.18 55)'  },
+  ipp:           { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))',  color: 'oklch(0.40 0.18 55)'  },
   lender:        { bg: 'oklch(0.95 0.04 280)', color: 'oklch(0.35 0.14 280)' },
   offtaker:      { bg: 'oklch(0.95 0.05 30)',  color: 'oklch(0.38 0.16 30)'  },
-  carbon_fund:   { bg: 'oklch(0.95 0.04 155)', color: 'oklch(0.30 0.14 155)' },
-  carbon:        { bg: 'oklch(0.95 0.04 155)', color: 'oklch(0.30 0.14 155)' },
-  trader:        { bg: 'oklch(0.95 0.04 250)', color: 'oklch(0.35 0.12 250)' },
+  carbon_fund:   { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', color: 'var(--good, oklch(0.30 0.14 155))' },
+  carbon:        { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', color: 'var(--good, oklch(0.30 0.14 155))' },
+  trader:        { bg: 'color-mix(in oklab, var(--accent) 15%, var(--s1))', color: 'oklch(0.35 0.12 250)' },
   admin:         { bg: BG2,                    color: TX2                     },
   support:       { bg: 'oklch(0.95 0.04 300)', color: 'oklch(0.38 0.14 300)' },
 };

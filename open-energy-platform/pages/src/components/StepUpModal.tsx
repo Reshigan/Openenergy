@@ -137,13 +137,13 @@ export function StepUpModal() {
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) close(false); }}>
-      <div className="bg-white rounded-lg max-w-md w-full">
-        <div className="p-4 border-b border-[#dde4ec] flex items-center justify-between">
+      <div className="bg-surface-v2 rounded-lg max-w-md w-full">
+        <div className="p-4 border-b border-[var(--border-subtle, #dde4ec)] flex items-center justify-between">
           <div className="inline-flex items-center gap-2">
             <Shield size={18} style={{ color: 'oklch(0.46 0.16 55)' }}/>
             <div>
-              <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">Step-up authentication</div>
-              <div className="font-semibold text-[#0f1c2e]">Confirm a fresh second factor</div>
+              <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Step-up authentication</div>
+              <div className="font-semibold text-[var(--ink, #0f1c2e)]">Confirm a fresh second factor</div>
             </div>
           </div>
           <button type="button" onClick={() => close(false)} aria-label="Cancel"><X size={16}/></button>
@@ -161,7 +161,7 @@ export function StepUpModal() {
             ] as const).map(([k, label, Icon]) => (
               <button type="button" key={k} onClick={() => setMethod(k)}
                 className={`flex-1 h-8 px-2 rounded inline-flex items-center justify-center gap-1 ${
-                  method === k ? 'bg-[#c2873a] text-white' : 'border border-[#dde4ec] text-[#0f1c2e]'
+                  method === k ? 'bg-[#c2873a] text-white' : 'border border-[var(--border-subtle, #dde4ec)] text-[var(--ink, #0f1c2e)]'
                 }`}>
                 <Icon size={11}/> {label}
               </button>
@@ -172,7 +172,7 @@ export function StepUpModal() {
             <>
               <label className="block text-[11px] font-semibold text-[#3a4658]">6-digit code from your authenticator app
                 <input type="text" inputMode="numeric" autoFocus pattern="\d{6}" maxLength={6}
-                       className="mt-1 w-full h-10 px-3 rounded border border-[#dde4ec] text-[18px] font-mono tracking-widest"
+                       className="mt-1 w-full h-10 px-3 rounded border border-[var(--border-subtle, #dde4ec)] text-[18px] font-mono tracking-widest"
                        value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}/>
               </label>
               <button type="button" disabled={busy || code.length !== 6} onClick={verifyTotp}
@@ -184,7 +184,7 @@ export function StepUpModal() {
 
           {method === 'webauthn' && (
             <>
-              <p className="text-[12px] text-[#6b7685]">
+              <p className="text-[12px] text-[var(--ink-2, #6b7685)]">
                 Use your registered passkey (Touch ID, Windows Hello, security key) when prompted.
               </p>
               <button type="button" disabled={busy} onClick={verifyPasskey}
@@ -198,7 +198,7 @@ export function StepUpModal() {
             <>
               <label className="block text-[11px] font-semibold text-[#3a4658]">One-time recovery code
                 <input type="text" autoFocus
-                       className="mt-1 w-full h-10 px-3 rounded border border-[#dde4ec] text-[14px] font-mono"
+                       className="mt-1 w-full h-10 px-3 rounded border border-[var(--border-subtle, #dde4ec)] text-[14px] font-mono"
                        value={code} onChange={(e) => setCode(e.target.value)}/>
               </label>
               <button type="button" disabled={busy || !code} onClick={verifyRecovery}
@@ -208,11 +208,11 @@ export function StepUpModal() {
             </>
           )}
 
-          {err && <div className="text-[12px] text-[#c0392b] inline-flex items-center gap-1"><AlertCircle size={13}/> {err}</div>}
-          {ack && <div className="text-[12px] text-[#1a8a5b] inline-flex items-center gap-1"><CheckCircle2 size={13}/> {ack}</div>}
+          {err && <div className="text-[12px] text-[var(--bad, #c0392b)] inline-flex items-center gap-1"><AlertCircle size={13}/> {err}</div>}
+          {ack && <div className="text-[12px] text-[var(--good, #1a8a5b)] inline-flex items-center gap-1"><CheckCircle2 size={13}/> {ack}</div>}
         </div>
-        <div className="p-3 border-t border-[#dde4ec] text-right">
-          <button type="button" onClick={() => close(false)} className="h-8 px-3 text-[12px] text-[#6b7685]">Cancel</button>
+        <div className="p-3 border-t border-[var(--border-subtle, #dde4ec)] text-right">
+          <button type="button" onClick={() => close(false)} className="h-8 px-3 text-[12px] text-[var(--ink-2, #6b7685)]">Cancel</button>
         </div>
       </div>
     </div>

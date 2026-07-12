@@ -66,7 +66,7 @@ export default function InvitePartnersSurface(_props: { role: string }) {
   return (
     <div className="space-y-6">
       {/* Send invite form */}
-      <div className="rounded-lg border border-[var(--line)] bg-white p-5">
+      <div className="rounded-lg border border-[var(--line)] bg-surface-v2 p-5">
         <h3 className="text-sm font-semibold text-[var(--ink)] mb-1">Invite a partner</h3>
         <p className="text-xs text-[var(--ink3)] mb-4">
           Send a direct invitation. The partner registers via a unique link and their account is immediately active — no admin approval required.
@@ -77,7 +77,7 @@ export default function InvitePartnersSurface(_props: { role: string }) {
         {sent && (
           <div className="mb-4 rounded-lg border border-[var(--petrol-tint)] bg-[var(--petrol-tint)] p-3">
             <p className="text-xs font-semibold text-[var(--ink)] mb-1">Invitation created</p>
-            <div className="flex items-center gap-2 font-mono text-xs text-[var(--petrol)] bg-white rounded-md border border-[var(--line)] px-2 py-1.5 break-all">
+            <div className="flex items-center gap-2 font-mono text-xs text-[var(--petrol)] bg-surface-v2 rounded-md border border-[var(--line)] px-2 py-1.5 break-all">
               {window.location.origin}{sent.invite_url}
               <button type="button"
                 onClick={() => copyUrl(sent.invite_url)}
@@ -103,7 +103,7 @@ export default function InvitePartnersSurface(_props: { role: string }) {
                   className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${
                     selectedRole === r.role
                       ? 'border-[var(--petrol)] bg-[var(--petrol-tint)] text-[var(--ink)]'
-                      : 'border-[var(--line)] bg-white text-[var(--ink3)] hover:border-[var(--petrol)]'
+                      : 'border-[var(--line)] bg-surface-v2 text-[var(--ink3)] hover:border-[var(--petrol)]'
                   }`}
                 >
                   <div className="text-xs font-semibold">{r.label.split(' /')[0]}</div>
@@ -182,7 +182,7 @@ export default function InvitePartnersSurface(_props: { role: string }) {
       </div>
 
       {/* Invitation history */}
-      <div className="rounded-lg border border-[var(--line)] bg-white">
+      <div className="rounded-lg border border-[var(--line)] bg-surface-v2">
         <div className="px-4 py-3 border-b border-[var(--raised)]">
           <h3 className="text-sm font-semibold text-[var(--ink)]">Sent invitations</h3>
         </div>

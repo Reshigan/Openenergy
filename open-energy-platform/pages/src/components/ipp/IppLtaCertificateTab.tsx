@@ -29,7 +29,7 @@ interface Kpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  certificate_requested:            'bg-[#eef2f7] text-[#6b7685]',
+  certificate_requested:            'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
   site_inspection_in_progress:      'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   progress_assessment:              'bg-yellow-100 text-yellow-800',
   draft_certificate_issued:         'bg-amber-100 text-amber-700',
@@ -44,7 +44,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const TIER_COLORS: Record<string, string> = {
-  minor:      'bg-[#eef2f7] text-[#3d4756]',
+  minor:      'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   moderate:   'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   significant:'bg-[oklch(0.94_0.006_250)] text-[oklch(0.46_0.16_55)]',
   major:      'bg-orange-100 text-orange-800',
@@ -62,7 +62,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 const STATUSES = Object.keys(STATUS_COLORS);
 const TIERS = ['minor', 'moderate', 'significant', 'major', 'material'] as const;
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 function fmtDate(d?: string | null): string {
   if (!d) return '—';
@@ -84,11 +84,11 @@ function hasRegulatorFlag(row: LtaCertificate): boolean {
 
 type KpiChipProps = { label: string; value: string | number; mode?: 'alert' | 'good' | 'danger' | 'neutral' };
 function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
-  const border = mode === 'danger' ? 'border-red-200 bg-red-50' : mode === 'alert' ? 'border-orange-200 bg-orange-50' : mode === 'good' ? 'border-green-200 bg-green-50' : 'border-[#dde4ec] bg-white';
-  const text   = mode === 'danger' ? 'text-red-700' : mode === 'alert' ? 'text-orange-700' : mode === 'good' ? 'text-green-700' : 'text-[#0f1c2e]';
+  const border = mode === 'danger' ? 'border-red-200 bg-red-50' : mode === 'alert' ? 'border-orange-200 bg-orange-50' : mode === 'good' ? 'border-green-200 bg-green-50' : 'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
+  const text   = mode === 'danger' ? 'text-red-700' : mode === 'alert' ? 'text-orange-700' : mode === 'good' ? 'text-green-700' : 'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -178,19 +178,19 @@ export function IppLtaCertificateTab() {
         <button type="button" onClick={() => setShowCreate(true)} className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]">
           + New Certificate Request
         </button>
-        <button type="button" onClick={() => load()} className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]">
+        <button type="button" onClick={() => load()} className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]">
           Refresh
         </button>
       </div>
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-4">ID</th>
                 <th className="pb-2 pr-4">LTA Firm</th>
                 <th className="pb-2 pr-4">Amount</th>
@@ -210,30 +210,30 @@ export function IppLtaCertificateTab() {
                   ? { label: '✓ Approved', cls: 'text-green-700' }
                   : item.certificate_refused_at
                   ? { label: '✗ Refused', cls: 'text-red-700' }
-                  : { label: '—', cls: 'text-[#9aa5b4]' };
+                  : { label: '—', cls: 'text-[var(--ink-2, #9aa5b4)]' };
                 return (
-                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
-                    <td className="py-2 pr-4 text-xs font-mono text-[#3d4756]">{item.id.slice(0, 12)}</td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.lta_firm_name ?? '—'}</td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">{fmtZar(item.drawdown_amount_zar)}</td>
+                  <tr key={item.id} className="border-b hover:bg-[var(--s2, #eef2f7)]">
+                    <td className="py-2 pr-4 text-xs font-mono text-[var(--ink-2, #3d4756)]">{item.id.slice(0, 12)}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{item.lta_firm_name ?? '—'}</td>
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[var(--ink, #2d3748)]">{fmtZar(item.drawdown_amount_zar)}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.drawdown_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>{item.drawdown_tier}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.drawdown_tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>{item.drawdown_tier}</span>
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{CATEGORY_LABELS[item.certificate_category] ?? item.certificate_category}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{CATEGORY_LABELS[item.certificate_category] ?? item.certificate_category}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>{statusLabel(item.chain_status).text}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>{statusLabel(item.chain_status).text}</span>
                       {regulator && <span className="ml-1 px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">REGULATOR</span>}
                     </td>
-                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
+                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[var(--ink-2, #6b7685)]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#3d4756]">{fmtDate(item.site_inspection_at)}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #3d4756)]">{fmtDate(item.site_inspection_at)}</td>
                     <td className={`py-2 pr-4 text-xs font-medium ${outcome.cls}`}>{outcome.label}</td>
                   </tr>
                 );
               })}
               {items.length === 0 && (
-                <tr><td colSpan={9} className="py-10 text-center text-[#9aa5b4] text-sm">No LTA drawdown certificates found</td></tr>
+                <tr><td colSpan={9} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">No LTA drawdown certificates found</td></tr>
               )}
             </tbody>
           </table>
@@ -243,13 +243,13 @@ export function IppLtaCertificateTab() {
       {/* New Certificate Request modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowCreate(false)}>
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-surface-v2 rounded-xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold mb-1">New Certificate Request</h3>
-            <p className="text-xs text-[#6b7685] mb-4">LTA drawdown certificate — Tier and SLA are derived from the drawdown amount at submission.</p>
+            <p className="text-xs text-[var(--ink-2, #6b7685)] mb-4">LTA drawdown certificate — Tier and SLA are derived from the drawdown amount at submission.</p>
             <div className="space-y-3">
               <input placeholder="Project ID *" value={form.project_id} onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm" />
               <input placeholder="Drawdown Amount (ZAR) *" type="number" min={0} step="0.01" value={form.drawdown_amount_zar} onChange={e => setForm(f => ({ ...f, drawdown_amount_zar: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm" />
-              <select value={form.certificate_category} onChange={e => setForm(f => ({ ...f, certificate_category: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm text-[#2d3748]">
+              <select value={form.certificate_category} onChange={e => setForm(f => ({ ...f, certificate_category: e.target.value }))} className="w-full border rounded px-3 py-2 text-sm text-[var(--ink, #2d3748)]">
                 <option value="">Certificate Category *</option>
                 {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
@@ -260,7 +260,7 @@ export function IppLtaCertificateTab() {
               <button type="button" onClick={createCertificate} disabled={createPending || !form.project_id || !form.drawdown_amount_zar || !form.certificate_category} className="px-4 py-2 bg-[#c2873a] text-white rounded text-sm hover:bg-[#a3702f] disabled:opacity-50">
                 {createPending ? 'Submitting…' : 'Create request'}
               </button>
-              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 bg-[#eef2f7] text-[#2d3748] rounded text-sm hover:bg-[#e8ecf0]">Cancel</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-sm hover:bg-[var(--border-subtle, #e8ecf0)]">Cancel</button>
             </div>
           </div>
         </div>

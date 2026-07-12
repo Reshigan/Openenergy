@@ -35,7 +35,7 @@ type DvpLock = {
 };
 
 const LOCK_PILL: Record<string, string> = {
-  open: 'bg-[#e8ecf0] text-[#2d3748]',
+  open: 'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink, #2d3748)]',
   cash_in: '',
   energy_in: 'bg-amber-100 text-amber-800',
   locked: 'bg-green-100 text-green-700',
@@ -147,7 +147,7 @@ export function DvpPanel() {
         <div className="min-w-[140px]">
           <div className="text-[10px] uppercase tracking-wider text-[#7a90a8]">Lock status</div>
           <div className="mt-1">
-            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold capitalize ${LOCK_PILL[lockStatus] || 'bg-[#e8ecf0]'}`} style={LOCK_PILL_STYLE[lockStatus] || {}} data-testid="dvp-status">
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold capitalize ${LOCK_PILL[lockStatus] || 'bg-[var(--border-subtle, #e8ecf0)]'}`} style={LOCK_PILL_STYLE[lockStatus] || {}} data-testid="dvp-status">
               {lockStatus.replace(/_/g, ' ')}
             </span>
           </div>
@@ -166,7 +166,7 @@ export function DvpPanel() {
 
       {err && <div className="rounded-lg bg-red-50 text-red-700 px-3 py-2 text-sm">{err}</div>}
 
-      {loading && <div className="rounded-xl bg-[#eef2f7] p-4 text-sm text-ionex-text-mute">Loading lock state…</div>}
+      {loading && <div className="rounded-xl bg-[var(--s2, #eef2f7)] p-4 text-sm text-ionex-text-mute">Loading lock state…</div>}
 
       {/* State machine card */}
       {lock && !loading && (
@@ -235,7 +235,7 @@ export function DvpPanel() {
 
       {/* Pipeline diagram */}
       {lock && (
-        <div className="rounded-xl border border-ionex-border-100 bg-white p-4">
+        <div className="rounded-xl border border-ionex-border-100 bg-surface-v2 p-4">
           <div className="text-[10px] uppercase tracking-wide font-semibold text-ionex-text-mute mb-3">State pipeline</div>
           <div className="flex items-center justify-between gap-2 text-[11px]">
             {(['open', 'cash_in', 'energy_in', 'locked', 'released'] as const).map((stage, idx, arr) => {
@@ -244,10 +244,10 @@ export function DvpPanel() {
               const isPast = idx < order;
               return (
                 <React.Fragment key={stage}>
-                  <div className={`flex-1 text-center px-2 py-1.5 rounded ${isActive ? 'bg-ionex-brand text-white font-semibold' : isPast ? 'bg-green-100 text-green-800' : 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                  <div className={`flex-1 text-center px-2 py-1.5 rounded ${isActive ? 'bg-ionex-brand text-white font-semibold' : isPast ? 'bg-green-100 text-green-800' : 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                     {stage.replace(/_/g, ' ')}
                   </div>
-                  {idx < arr.length - 1 && <div className="text-[#9aa5b4]">→</div>}
+                  {idx < arr.length - 1 && <div className="text-[var(--ink-2, #9aa5b4)]">→</div>}
                 </React.Fragment>
               );
             })}
@@ -284,7 +284,7 @@ function ConfirmLegModal({ leg, onClose, onConfirm, busy }: { leg: 'cash' | 'ene
   const [ref, setRef] = useState('');
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
+      <div className="bg-surface-v2 rounded-xl shadow-xl max-w-md w-full p-5" onClick={e => e.stopPropagation()}>
         <h3 className="text-lg font-semibold mb-3">Confirm {leg} leg</h3>
         <p className="text-sm text-ionex-text-mute mb-3">
           {leg === 'cash'

@@ -47,17 +47,17 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
 
-const BG     = 'oklch(0.96 0.003 250)';
-const BG1    = 'oklch(0.99 0.002 80)';
-const BG2    = 'oklch(0.93 0.004 250)';
-const BORDER = 'oklch(0.87 0.006 250)';
-const TX1    = 'oklch(0.17 0.010 250)';
-const TX2    = 'oklch(0.40 0.009 250)';
-const TX3    = 'oklch(0.60 0.007 250)';
-const ACC    = 'oklch(0.46 0.16 55)';
-const BAD    = 'oklch(0.48 0.20 20)';
-const WARN   = 'oklch(0.50 0.18 55)';
-const GOOD   = 'oklch(0.40 0.16 155)';
+const BG     = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1    = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2    = 'var(--s2, oklch(0.93 0.004 250))';
+const BORDER = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1    = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2    = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3    = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC    = 'var(--accent, oklch(0.46 0.16 55))';
+const BAD    = 'var(--bad, oklch(0.48 0.20 20))';
+const WARN   = 'var(--accent, oklch(0.50 0.18 55))';
+const GOOD   = 'var(--good, oklch(0.40 0.16 155))';
 const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
@@ -616,7 +616,7 @@ function renderDetail(row: AcbRow): React.ReactNode {
                 padding: '2px 8px',
                 fontSize: 11,
                 fontWeight: 500,
-                background: on ? 'oklch(0.95 0.04 155)' : BG2,
+                background: on ? 'color-mix(in oklab, var(--good) 15%, var(--s1))' : BG2,
                 color: on ? GOOD : TX3,
                 border: `1px solid ${BORDER}`,
               }}
@@ -648,7 +648,7 @@ function renderDetail(row: AcbRow): React.ReactNode {
                 padding: '2px 8px',
                 fontSize: 11,
                 fontWeight: 500,
-                background: on ? 'oklch(0.97 0.04 20)' : BG2,
+                background: on ? 'color-mix(in oklab, var(--bad) 15%, var(--s1))' : BG2,
                 color: on ? BAD : TX3,
                 border: `1px solid ${BORDER}`,
               }}
@@ -905,7 +905,7 @@ export function AuditChainBlockTab() {
       </div>
 
       {err && (
-        <div style={{ marginBottom: 12, borderRadius: 6, border: `1px solid ${BAD}40`, background: 'oklch(0.97 0.04 20)', padding: '8px 12px', fontSize: 12, color: BAD }}>
+        <div style={{ marginBottom: 12, borderRadius: 6, border: `1px solid ${BAD}40`, background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', padding: '8px 12px', fontSize: 12, color: BAD }}>
           {err}
         </div>
       )}

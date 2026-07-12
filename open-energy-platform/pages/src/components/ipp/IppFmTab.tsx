@@ -32,7 +32,7 @@ interface Kpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  fm_event_occurred:          'bg-[#eef2f7] text-[#6b7685]',
+  fm_event_occurred:          'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
   fm_notice_issued:           'bg-orange-100 text-orange-700',
   fm_notice_verified:         'bg-yellow-100 text-yellow-800',
   fm_relief_in_progress:      'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
@@ -40,13 +40,13 @@ const STATUS_COLORS: Record<string, string> = {
   fm_resolved:                'bg-green-100 text-green-800',
   fm_disputed:                'bg-red-100 text-red-700',
   fm_arbitration:             'bg-red-200 text-red-900',
-  fm_arbitration_determined:  'bg-[#e8ecf0] text-[#2d3748]',
+  fm_arbitration_determined:  'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink, #2d3748)]',
   fm_prolonged_termination:   'bg-red-300 text-red-950 font-semibold animate-pulse',
-  withdrawn:                  'bg-[#eef2f7] text-[#9aa5b4]',
+  withdrawn:                  'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]',
 };
 
 const TIER_COLORS: Record<string, string> = {
-  minor:       'bg-[#eef2f7] text-[#3d4756]',
+  minor:       'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   moderate:    'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   significant: 'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   major:       'bg-orange-100 text-orange-800',
@@ -177,10 +177,10 @@ export function IppFmTab() {
                   ? 'border-orange-200 bg-orange-50'
                   : (k as any).good
                   ? 'border-green-200 bg-green-50'
-                  : 'border-[#dde4ec] bg-white'
+                  : 'border-[var(--border-subtle, #dde4ec)] bg-surface-v2'
               }`}
             >
-              <div className="text-xs text-[#6b7685]">{k.label}</div>
+              <div className="text-xs text-[var(--ink-2, #6b7685)]">{k.label}</div>
               <div
                 className={`text-xl font-bold ${
                   (k as any).danger
@@ -189,7 +189,7 @@ export function IppFmTab() {
                     ? 'text-orange-700'
                     : (k as any).good
                     ? 'text-green-700'
-                    : 'text-[#0f1c2e]'
+                    : 'text-[var(--ink, #0f1c2e)]'
                 }`}
               >
                 {k.value}
@@ -204,7 +204,7 @@ export function IppFmTab() {
         <select
           value={filterStatus}
           onChange={e => { setFilterStatus(e.target.value); load(e.target.value, filterTier, filterCategory); }}
-          className="border rounded px-2 py-1 text-xs text-[#2d3748] bg-white"
+          className="border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2"
         >
           <option value="">All statuses</option>
           {Object.keys(STATUS_COLORS).map(s => (
@@ -214,25 +214,25 @@ export function IppFmTab() {
         <select
           value={filterCategory}
           onChange={e => { setFilterCategory(e.target.value); load(filterStatus, filterTier, e.target.value); }}
-          className="border rounded px-2 py-1 text-xs text-[#2d3748] bg-white"
+          className="border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2"
         >
           <option value="">All categories</option>
           {FM_CATEGORIES.map(cat => (
             <option key={cat} value={cat}>{FM_CATEGORY_LABELS[cat]}</option>
           ))}
         </select>
-        <span className="text-[#9aa5b4]">|</span>
+        <span className="text-[var(--ink-2, #9aa5b4)]">|</span>
         {TIERS.map(t => (
           <button type="button"
             key={t}
             onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt, filterCategory); }}
-            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'text-white' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
+            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'text-white' : 'bg-surface-v2 text-[var(--ink-2, #3d4756)] border-[var(--border-subtle, #dde4ec)]'}`}
             style={filterTier === t ? { background: 'oklch(0.46 0.16 55)', borderColor: 'oklch(0.46 0.16 55)' } : undefined}
           >
             {t}
           </button>
         ))}
-        <span className="text-[#9aa5b4]">|</span>
+        <span className="text-[var(--ink-2, #9aa5b4)]">|</span>
         <button type="button"
           onClick={() => setShowCreate(true)}
           className="ml-auto px-3 py-1 bg-[#c2873a] text-white rounded text-xs hover:bg-[#a3702f]"
@@ -241,7 +241,7 @@ export function IppFmTab() {
         </button>
         <button type="button"
           onClick={() => load(filterStatus, filterTier, filterCategory)}
-          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
+          className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]"
         >
           Refresh
         </button>
@@ -249,12 +249,12 @@ export function IppFmTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-4">Project / Description</th>
                 <th className="pb-2 pr-4">Category</th>
                 <th className="pb-2 pr-4">Lost gen</th>
@@ -270,26 +270,26 @@ export function IppFmTab() {
                 const overdue   = isOverdue(item.sla_due_at, item.sla_breached);
                 const regulator = hasRegulatorFlag(item);
                 return (
-                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
+                  <tr key={item.id} className="border-b hover:bg-[var(--s2, #eef2f7)]">
                     <td className="py-2 pr-4 text-xs max-w-[220px]">
-                      <div className="truncate font-medium text-[#1e2a38] font-mono">{item.project_id}</div>
+                      <div className="truncate font-medium text-[var(--ink, #1e2a38)] font-mono">{item.project_id}</div>
                       {item.description && (
-                        <div className="text-[#9aa5b4] truncate">{item.description}</div>
+                        <div className="text-[var(--ink-2, #9aa5b4)] truncate">{item.description}</div>
                       )}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#3d4756]">
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #3d4756)]">
                       {FM_CATEGORY_LABELS[item.fm_category] ?? item.fm_category}
                     </td>
                     <td className="py-2 pr-4 text-xs font-medium tabular-nums">
                       {fmtMwh(item.lost_generation_mwh)}
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.fm_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.fm_tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {item.fm_tier}
                       </span>
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {statusLabel(item.chain_status).text}
                       </span>
                       {regulator && (
@@ -298,17 +298,17 @@ export function IppFmTab() {
                         </span>
                       )}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#6b7685]">{fmtDate(item.event_date)}</td>
-                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #6b7685)]">{fmtDate(item.event_date)}</td>
+                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[var(--ink-2, #6b7685)]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#9aa5b4]">{fmtDate(item.created_at)}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #9aa5b4)]">{fmtDate(item.created_at)}</td>
                   </tr>
                 );
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-10 text-center text-[#9aa5b4] text-sm">
+                  <td colSpan={8} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">
                     No force majeure declarations found
                   </td>
                 </tr>
@@ -325,11 +325,11 @@ export function IppFmTab() {
           onClick={() => setShowCreate(false)}
         >
           <div
-            className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl"
+            className="bg-surface-v2 rounded-xl p-6 w-full max-w-md shadow-xl"
             onClick={e => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold mb-4">New FM Declaration</h3>
-            <p className="text-xs text-[#6b7685] mb-4">
+            <p className="text-xs text-[var(--ink-2, #6b7685)] mb-4">
               REIPPPP PPA Schedule 6 &mdash; Force Majeure notice. SLA deadline is set automatically from
               the lost generation quantum.
             </p>
@@ -343,7 +343,7 @@ export function IppFmTab() {
               <select
                 value={form.fm_category}
                 onChange={e => setForm(f => ({ ...f, fm_category: e.target.value }))}
-                className="w-full border rounded px-3 py-2 text-sm text-[#2d3748]"
+                className="w-full border rounded px-3 py-2 text-sm text-[var(--ink, #2d3748)]"
               >
                 {FM_CATEGORIES.map(cat => (
                   <option key={cat} value={cat}>{FM_CATEGORY_LABELS[cat]}</option>
@@ -363,7 +363,7 @@ export function IppFmTab() {
                 type="date"
                 value={form.event_date}
                 onChange={e => setForm(f => ({ ...f, event_date: e.target.value }))}
-                className="w-full border rounded px-3 py-2 text-sm text-[#2d3748]"
+                className="w-full border rounded px-3 py-2 text-sm text-[var(--ink, #2d3748)]"
               />
               <textarea
                 placeholder="Description (optional)"
@@ -383,7 +383,7 @@ export function IppFmTab() {
               </button>
               <button type="button"
                 onClick={() => setShowCreate(false)}
-                className="px-4 py-2 bg-[#eef2f7] text-[#2d3748] rounded text-sm hover:bg-[#e8ecf0]"
+                className="px-4 py-2 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-sm hover:bg-[var(--border-subtle, #e8ecf0)]"
               >
                 Cancel
               </button>

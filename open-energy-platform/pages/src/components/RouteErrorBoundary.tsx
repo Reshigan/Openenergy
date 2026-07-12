@@ -74,7 +74,7 @@ export class RouteErrorBoundary extends Component<Props, State> {
                 </pre>
               </details>
               <button type="button" onClick={this.retry}
-                      className="mt-3 h-8 px-3 rounded bg-white/40 hover:bg-[#f8fafc]/60 text-[12px] font-semibold inline-flex items-center gap-1">
+                      className="mt-3 h-8 px-3 rounded bg-white/40 hover:bg-[var(--s1, #f8fafc)]/60 text-[12px] font-semibold inline-flex items-center gap-1">
                 <RefreshCw size={12}/> Try again
               </button>
             </div>

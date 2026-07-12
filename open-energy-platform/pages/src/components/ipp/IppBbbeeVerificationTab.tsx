@@ -28,7 +28,7 @@ interface BbbeeVerificationKpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  verification_triggered:   'bg-[#eef2f7] text-[#6b7685]',
+  verification_triggered:   'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
   documentation_preparation:'',
   agency_engagement:        'bg-cyan-100 text-cyan-700',
   data_submission:          'bg-sky-100 text-sky-700',
@@ -86,7 +86,7 @@ const TIERS    = ['standard', 'enhanced', 'majority', 'transformative', 'exempla
 
 const PAGE_SIZE = 20;
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 function fmtPct(pct: number | null | undefined): string {
   if (pct == null) return '—';
@@ -119,15 +119,15 @@ function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-[#dde4ec] bg-white';
+    'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-[#0f1c2e]';
+    'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -356,7 +356,7 @@ export function IppBbbeeVerificationTab() {
         </select>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
+          className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]"
         >
           Refresh
         </button>
@@ -378,7 +378,7 @@ export function IppBbbeeVerificationTab() {
           <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New BBBEE Verification Record</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Project Ref *</label>
               <input
                 type="text"
                 value={formProjectRef}
@@ -389,7 +389,7 @@ export function IppBbbeeVerificationTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Verification Year *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Verification Year *</label>
               <input
                 type="number"
                 value={formVerificationYear}
@@ -403,12 +403,12 @@ export function IppBbbeeVerificationTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Equity Tier *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Equity Tier *</label>
               <select
                 value={formTier}
                 onChange={e => setFormTier(e.target.value as typeof formTier)}
                 required
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {TIERS.map(t => (
                   <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
@@ -416,7 +416,7 @@ export function IppBbbeeVerificationTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">BBBEE Target % (e.g. 26.0)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">BBBEE Target % (e.g. 26.0)</label>
               <input
                 type="number"
                 value={formBbbeeTargetPct}
@@ -429,7 +429,7 @@ export function IppBbbeeVerificationTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Agency Name (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Agency Name (optional)</label>
               <input
                 type="text"
                 value={formAgencyName}
@@ -439,7 +439,7 @@ export function IppBbbeeVerificationTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Certificate Expiry (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Certificate Expiry (optional)</label>
               <input
                 type="date"
                 value={formCertificateExpiry}
@@ -448,7 +448,7 @@ export function IppBbbeeVerificationTab() {
               />
             </div>
             <div className="col-span-2 md:col-span-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Notes</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Notes</label>
               <textarea
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
@@ -474,7 +474,7 @@ export function IppBbbeeVerificationTab() {
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
+              className="px-3 py-1.5 bg-surface-v2 border rounded text-xs text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
             >
               Cancel
             </button>
@@ -491,12 +491,12 @@ export function IppBbbeeVerificationTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-4">Project Ref</th>
                 <th className="pb-2 pr-4">Year</th>
                 <th className="pb-2 pr-4">Equity Tier</th>
@@ -515,33 +515,33 @@ export function IppBbbeeVerificationTab() {
                 const actions = getActions(item);
                 const expiry  = fmtDate(item.certificate_expiry);
                 return (
-                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
-                    <td className="py-2 pr-4 text-xs font-mono text-[#2d3748]">{item.project_ref}</td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-[#3d4756]">{item.verification_year}</td>
+                  <tr key={item.id} className="border-b hover:bg-[var(--s2, #eef2f7)]">
+                    <td className="py-2 pr-4 text-xs font-mono text-[var(--ink, #2d3748)]">{item.project_ref}</td>
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[var(--ink-2, #3d4756)]">{item.verification_year}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_BADGE_COLORS[item.equity_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={TIER_BADGE_STYLES[item.equity_tier]}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_BADGE_COLORS[item.equity_tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`} style={TIER_BADGE_STYLES[item.equity_tier]}>
                         {item.equity_tier.charAt(0).toUpperCase() + item.equity_tier.slice(1)}
                       </span>
                     </td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-[#3d4756]">
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[var(--ink-2, #3d4756)]">
                       {fmtPct(item.bbbee_target_pct)}
                     </td>
-                    <td className="py-2 pr-4 text-xs tabular-nums text-[#2d3748]">
+                    <td className="py-2 pr-4 text-xs tabular-nums text-[var(--ink, #2d3748)]">
                       {fmtScore(item.bbbee_score)}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#3d4756]">
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #3d4756)]">
                       {fmtLevel(item.bbbee_level)}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#6b7685] max-w-[140px] truncate" title={item.agency_name ?? ''}>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #6b7685)] max-w-[140px] truncate" title={item.agency_name ?? ''}>
                       {item.agency_name ?? '—'}
                     </td>
                     <td className="py-2 pr-4 text-xs tabular-nums">
-                      <span className={expiry.isExpired ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
+                      <span className={expiry.isExpired ? 'text-red-600 font-medium' : 'text-[var(--ink-2, #3d4756)]'}>
                         {expiry.text}
                       </span>
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`} style={STATUS_STYLES[item.chain_status]}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`} style={STATUS_STYLES[item.chain_status]}>
                         {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                     </td>
@@ -549,7 +549,7 @@ export function IppBbbeeVerificationTab() {
                       {item.sla_breached === 1 ? (
                         <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">Yes</span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-[#eef2f7] text-[#9aa5b4]">No</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]">No</span>
                       )}
                     </td>
                     <td className="py-2 pr-4">
@@ -583,7 +583,7 @@ export function IppBbbeeVerificationTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="py-10 text-center text-[#9aa5b4] text-sm">
+                  <td colSpan={11} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">
                     No BBBEE verification records found
                   </td>
                 </tr>
@@ -599,17 +599,17 @@ export function IppBbbeeVerificationTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-[#6b7685]">
+          <span className="text-xs text-[var(--ink-2, #6b7685)]">
             Page {page} of {totalPages}
           </span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             Next &rarr;
           </button>
@@ -619,13 +619,13 @@ export function IppBbbeeVerificationTab() {
       {/* Action modal */}
       {actionItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setActionItem(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-[#1e2a38] mb-1">{actionLabel}</div>
-            <div className="text-xs text-[#6b7685] mb-4">
+          <div className="bg-surface-v2 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="text-sm font-semibold text-[var(--ink, #1e2a38)] mb-1">{actionLabel}</div>
+            <div className="text-xs text-[var(--ink-2, #6b7685)] mb-4">
               BBBEE Verification &mdash; {actionItem.project_ref} / {actionItem.verification_year}
             </div>
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Notes (optional)</label>
               <textarea
                 value={actionNotes}
                 onChange={e => setActionNotes(e.target.value)}
@@ -642,7 +642,7 @@ export function IppBbbeeVerificationTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
+                className="px-3 py-1.5 text-xs border rounded bg-surface-v2 text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
               >
                 Cancel
               </button>

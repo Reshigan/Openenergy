@@ -76,16 +76,16 @@ function EnvComplianceHeatmap({ conditions }: { conditions: EaCondition[] }) {
     return 'good';
   };
   const tones: Record<string, string> = {
-    good: 'bg-[#e7f4ea] text-[#1a8a5b]',
+    good: 'bg-[#e7f4ea] text-[var(--good, #1a8a5b)]',
     warn: 'bg-[#fef3e6] text-[#b04e0f]',
-    bad:  'bg-[#fde0db] text-[#c0392b]',
-    info: 'bg-[#eef2f7] text-[oklch(0.46_0.16_55)]',
+    bad:  'bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[var(--bad, #c0392b)]',
+    info: 'bg-[var(--s2, #eef2f7)] text-[oklch(0.46_0.16_55)]',
   };
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Environmental compliance heatmap</div>
-        <div className="text-[11px] text-[#6b7685]">EA conditions tinted by days-to-deadline and compliance status</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Environmental compliance heatmap</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">EA conditions tinted by days-to-deadline and compliance status</div>
       </header>
       <div className="p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
         {enriched.map((c) => {
@@ -138,21 +138,21 @@ function MilestoneCriticalPath({ milestones }: { milestones: Milestone[] }) {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Milestone critical path</div>
-        <div className="text-[11px] text-[#6b7685]">Slip days vs plan — positive bars = late</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Milestone critical path</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Slip days vs plan — positive bars = late</div>
       </header>
       <div style={{ height: 280 }} className="px-2 pt-3">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 8, right: 16, bottom: 12, left: 60 }}>
-            <CartesianGrid stroke="#eef2f7" />
-            <XAxis type="number" tick={{ fontSize: 10, fill: '#6b7685' }} />
-            <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#6b7685' }} width={140} />
+            <CartesianGrid stroke="var(--s2, #eef2f7)" />
+            <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} />
+            <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} width={140} />
             <Tooltip formatter={(v: any) => `${Number(v)}d`} />
             <ReferenceLine x={0} stroke="oklch(0.46 0.16 55)" />
             <Bar isAnimationActive={false} dataKey="slipDays" name="Slip days">
               {data.map((d, i) => (
-                <Cell key={i} fill={d.slipDays > 14 ? '#c0392b' : d.slipDays > 0 ? '#b04e0f' : '#1a8a5b'} />
+                <Cell key={i} fill={d.slipDays > 14 ? 'var(--bad, #c0392b)' : d.slipDays > 0 ? '#b04e0f' : 'var(--good, #1a8a5b)'} />
               ))}
             </Bar>
           </BarChart>
@@ -176,9 +176,9 @@ function LdCalculator({ epcs }: { epcs: Epc[] }) {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Liquidated damages calculator</div>
-        <div className="text-[11px] text-[#6b7685]">
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Liquidated damages calculator</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">
           {epc ? `${epc.contractor_name} · R${dailyRate.toLocaleString()}/day · cap ${capPct}% of ${formatZAR(lumpSum)}`
                : 'No EPC contract on this project'}
         </div>
@@ -193,15 +193,15 @@ function LdCalculator({ epcs }: { epcs: Epc[] }) {
       </div>
       <div className="px-4 py-3 text-[11px]">
         <div className="flex justify-between mb-1">
-          <span className="text-[#6b7685]">Cap utilisation</span>
+          <span className="text-[var(--ink-2, #6b7685)]">Cap utilisation</span>
           <span className="font-mono font-semibold">{utilisationPct.toFixed(1)}%</span>
         </div>
-        <div className="h-2 rounded-full bg-[#eef2f7] overflow-hidden">
+        <div className="h-2 rounded-full bg-[var(--s2, #eef2f7)] overflow-hidden">
           <div
             className="h-full"
             style={{
               width: `${utilisationPct}%`,
-              background: utilisationPct >= 100 ? '#c0392b' : utilisationPct >= 75 ? '#b04e0f' : 'oklch(0.46 0.16 55)',
+              background: utilisationPct >= 100 ? 'var(--bad, #c0392b)' : utilisationPct >= 75 ? '#b04e0f' : 'oklch(0.46 0.16 55)',
             }}
           />
         </div>
@@ -225,9 +225,9 @@ function TariffComparison({ project }: { project: Project | null }) {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Tariff comparison</div>
-        <div className="text-[11px] text-[#6b7685]">
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Tariff comparison</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">
           PPA vs utility vs spot — annualised at {(annualMwh / 1000).toFixed(0)} GWh
         </div>
       </header>
@@ -243,14 +243,14 @@ function TariffComparison({ project }: { project: Project | null }) {
       </div>
       <div className="p-3">
         <table className="w-full text-[12px]">
-          <thead className="text-[#6b7685] text-[11px]">
+          <thead className="text-[var(--ink-2, #6b7685)] text-[11px]">
             <tr><th className="text-left py-1">Tariff</th>
                 <th className="text-right py-1">R/MWh</th>
                 <th className="text-right py-1">Annual</th></tr>
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.tariff} className="border-t border-[#eef2f7]">
+              <tr key={r.tariff} className="border-t border-[var(--s2, #eef2f7)]">
                 <td className="py-1.5">{r.tariff}</td>
                 <td className="py-1.5 text-right font-mono">R{r.rate}</td>
                 <td className="py-1.5 text-right font-mono">{formatZAR(r.annual)}</td>
@@ -258,7 +258,7 @@ function TariffComparison({ project }: { project: Project | null }) {
             ))}
           </tbody>
         </table>
-        <div className={`mt-2 text-[12px] font-semibold ${savings > 0 ? 'text-[#1a8a5b]' : 'text-[#c0392b]'}`}>
+        <div className={`mt-2 text-[12px] font-semibold ${savings > 0 ? 'text-[var(--good, #1a8a5b)]' : 'text-[var(--bad, #c0392b)]'}`}>
           PPA saves {formatZAR(savings)}/yr vs utility flat
         </div>
       </div>
@@ -302,17 +302,17 @@ function ProjectHealthScorecard({
   ];
 
   const tones: Record<string, string> = {
-    good: 'border-[#1a8a5b] bg-[#f4faf6] text-[#1a8a5b]',
+    good: 'border-[var(--good, #1a8a5b)] bg-[#f4faf6] text-[var(--good, #1a8a5b)]',
     warn: 'border-[#b04e0f] bg-[#fefaf2] text-[#b04e0f]',
-    bad:  'border-[#c0392b] bg-[#fdf3f1] text-[#c0392b]',
-    info: 'border-[#dde4ec] bg-white text-[#3d4756]',
+    bad:  'border-[var(--bad, #c0392b)] bg-[#fdf3f1] text-[var(--bad, #c0392b)]',
+    info: 'border-[var(--border-subtle, #dde4ec)] bg-surface-v2 text-[var(--ink-2, #3d4756)]',
   };
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Project health scorecard</div>
-        <div className="text-[11px] text-[#6b7685]">Schedule · environmental · EPC · PPA · financials</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Project health scorecard</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Schedule · environmental · EPC · PPA · financials</div>
       </header>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2 p-3">
         {dims.map((d) => (
@@ -328,11 +328,11 @@ function ProjectHealthScorecard({
 
 function Tile({ label, value, tone }: { label: string; value: string; tone: string }) {
   const map: Record<string, string> = {
-    good: 'text-[#1a8a5b]', warn: 'text-[#b04e0f]', bad: 'text-[#c0392b]', info: 'text-[oklch(0.46_0.16_55)]',
+    good: 'text-[var(--good, #1a8a5b)]', warn: 'text-[#b04e0f]', bad: 'text-[var(--bad, #c0392b)]', info: 'text-[oklch(0.46_0.16_55)]',
   };
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`mt-1 text-[14px] font-mono font-semibold ${map[tone]}`}>{value}</div>
     </div>
   );
@@ -379,13 +379,13 @@ export function IppInsights() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-[12px]">
-        <span className="text-[#6b7685]">Project:</span>
-        <select value={chosen} onChange={(e) => setChosen(e.target.value)} className="h-8 px-2 rounded border border-[#dde4ec] text-[12px] min-w-[240px]">
+        <span className="text-[var(--ink-2, #6b7685)]">Project:</span>
+        <select value={chosen} onChange={(e) => setChosen(e.target.value)} className="h-8 px-2 rounded border border-[var(--border-subtle, #dde4ec)] text-[12px] min-w-[240px]">
           {projects.map((p) => <option key={p.id} value={p.id}>{p.project_name}</option>)}
         </select>
       </div>
-      {err && <div className="text-[12px] text-[#c0392b]">{err}</div>}
-      {loading ? <div className="text-[12px] text-[#6b7685]">Loading…</div> : (
+      {err && <div className="text-[12px] text-[var(--bad, #c0392b)]">{err}</div>}
+      {loading ? <div className="text-[12px] text-[var(--ink-2, #6b7685)]">Loading…</div> : (
         <>
           <ProjectHealthScorecard project={project} milestones={milestones} conditions={conditions} epcs={epcs} />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">

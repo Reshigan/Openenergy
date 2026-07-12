@@ -162,32 +162,32 @@ interface KpiSummary {
 }
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  instruction_pending:     { bg: '#e3e7ec', fg: '#557',    label: 'Instruction pending' },
-  fail_recorded:           { bg: '#fff4d6', fg: '#a06200', label: 'Fail recorded' },
-  extension_granted:       { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Extension granted' },
-  penalty_accruing:        { bg: '#ffe9d6', fg: '#8a4a00', label: 'Penalty accruing' },
-  buy_in_initiated:        { bg: '#ffe4b5', fg: '#8a4a00', label: 'Buy-in initiated' },
-  buy_in_executing:        { bg: '#ffd9a0', fg: '#8a4a00', label: 'Buy-in executing' },
-  buy_in_settled:          { bg: '#d4edda', fg: '#155724', label: 'Buy-in settled' },
-  cash_compensation:       { bg: '#fde0e0', fg: '#9b1f1f', label: 'Cash compensation' },
-  closed_resolved:         { bg: '#d4edda', fg: '#155724', label: 'Closed resolved' },
-  dispute_raised:          { bg: '#fde0e0', fg: '#9b1f1f', label: 'Dispute raised' },
-  force_majeure_suspended: { bg: '#e3e7ec', fg: '#4a5568', label: 'Force majeure' },
-  written_off:             { bg: '#f3e0e0', fg: '#6b1f1f', label: 'WRITTEN OFF' },
+  instruction_pending:     { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Instruction pending' },
+  fail_recorded:           { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Fail recorded' },
+  extension_granted:       { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Extension granted' },
+  penalty_accruing:        { bg: '#ffe9d6', fg: 'var(--warn)', label: 'Penalty accruing' },
+  buy_in_initiated:        { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Buy-in initiated' },
+  buy_in_executing:        { bg: '#ffd9a0', fg: 'var(--warn)', label: 'Buy-in executing' },
+  buy_in_settled:          { bg: '#d4edda', fg: 'var(--good)', label: 'Buy-in settled' },
+  cash_compensation:       { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Cash compensation' },
+  closed_resolved:         { bg: '#d4edda', fg: 'var(--good)', label: 'Closed resolved' },
+  dispute_raised:          { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Dispute raised' },
+  force_majeure_suspended: { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2, #4a5568)', label: 'Force majeure' },
+  written_off:             { bg: '#f3e0e0', fg: 'var(--bad)', label: 'WRITTEN OFF' },
 };
 
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor (<R100k)' },
-  standard: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Standard (<R1m)' },
-  material: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Material (<R10m)' },
-  systemic: { bg: '#fde0e0', fg: '#9b1f1f', label: 'Systemic (≥R10m)' },
+  minor:    { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Minor (<R100k)' },
+  standard: { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Standard (<R1m)' },
+  material: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Material (<R10m)' },
+  systemic: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Systemic (≥R10m)' },
 };
 
 const URGENCY_TONE: Record<UrgencyBand, { bg: string; fg: string; label: string }> = {
-  green:    { bg: '#d4edda', fg: '#155724', label: 'Green' },
-  amber:    { bg: '#fff4d6', fg: '#a06200', label: 'Amber' },
-  red:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Red' },
-  critical: { bg: '#f3e0e0', fg: '#6b1f1f', label: 'Critical' },
+  green:    { bg: '#d4edda', fg: 'var(--good)', label: 'Green' },
+  amber:    { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Amber' },
+  red:      { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Red' },
+  critical: { bg: '#f3e0e0', fg: 'var(--bad)', label: 'Critical' },
 };
 
 const INSTRUMENT_LABEL: Record<InstrumentClass, string> = {
@@ -444,8 +444,8 @@ export function SettlementFailChainTab() {
     <div className="p-5">
       <header className="mb-4 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Settlement fails &amp; buy-in/sell-out</h2>
-          <p className="text-xs text-[#4a5568]">
+          <h2 className="text-lg font-semibold text-[var(--ink, #0c2a4d)]">Settlement fails &amp; buy-in/sell-out</h2>
+          <p className="text-xs text-[var(--ink-2, #4a5568)]">
             12-stage SA Financial Markets Act 19/2012 + JSE SRL Schedule SC + STRATE Settlement
             Rules + FSCA Conduct Standard 1/2020 + FMA Chapter X settlement-discipline chain ·
             instruction pending → fail recorded → (extension granted →) penalty accruing →
@@ -491,7 +491,7 @@ export function SettlementFailChainTab() {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #4a5568)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -503,11 +503,11 @@ export function SettlementFailChainTab() {
         <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
       )}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-4 py-6 text-center text-sm text-[var(--ink-2, #4a5568)]">Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
+        <div className="overflow-hidden rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
           <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
+            <thead className="bg-[var(--s2, #f3f5f9)]">
               <tr className="text-left">
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Fail #</th>
                 <th className="px-3 py-2 font-semibold" style={{ color: 'oklch(0.46 0.16 55)' }}>Counterparty</th>
@@ -531,27 +531,27 @@ export function SettlementFailChainTab() {
                   <tr
                     key={r.id}
                     onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
+                    className="cursor-pointer border-t border-[var(--border-subtle, #e3e7ec)] hover:bg-[var(--s1, #f8fafc)]"
                   >
                     <td className="px-3 py-2 font-mono text-[11px]" style={{ color: 'oklch(0.46 0.16 55)' }}>
                       {r.fail_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to FSCA/JSE-STRATE">●</span>}
+                      {r.is_reportable_flag && <span className="ml-1 text-[var(--bad, #9b1f1f)]" title="Reportable to FSCA/JSE-STRATE">●</span>}
                       {r.is_systemic_carrier_flag && <span className="ml-1 text-[#8a4a00]" title="Systemic carrier">★</span>}
                     </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[180px] truncate" title={r.counterparty_name}>
+                    <td className="px-3 py-2 text-[var(--ink, #0c2a4d)] max-w-[180px] truncate" title={r.counterparty_name}>
                       {r.counterparty_name}
                     </td>
-                    <td className="px-3 py-2 text-[#4a5568] max-w-[160px] truncate" title={r.instrument_name || r.isin || ''}>
+                    <td className="px-3 py-2 text-[var(--ink-2, #4a5568)] max-w-[160px] truncate" title={r.instrument_name || r.isin || ''}>
                       {r.instrument_name || r.isin || '—'}
                     </td>
-                    <td className="px-3 py-2 text-[#4a5568]">{INSTRUMENT_LABEL[r.instrument_class]}</td>
+                    <td className="px-3 py-2 text-[var(--ink-2, #4a5568)]">{INSTRUMENT_LABEL[r.instrument_class]}</td>
                     <td className="px-3 py-2 text-right tabular-nums" style={{ color: 'oklch(0.46 0.16 55)' }}>{fmtZar(r.fail_value_zar)}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
                         {tt.label}
                       </span>
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${(r.fail_age_days_live ?? r.fail_age_days) >= 5 ? 'text-[#9b1f1f] font-medium' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${(r.fail_age_days_live ?? r.fail_age_days) >= 5 ? 'text-[var(--bad, #9b1f1f)] font-medium' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {(r.fail_age_days_live ?? r.fail_age_days)}d
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums text-[#a06200]">{fmtZar(r.accrued_penalty_zar_live ?? r.accrued_penalty_zar)}</td>
@@ -565,14 +565,14 @@ export function SettlementFailChainTab() {
                         {cs.label}
                       </span>
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
                     </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={11} className="px-3 py-6 text-center text-[#4a5568]">No settlement fails match.</td></tr>
+                <tr><td colSpan={11} className="px-3 py-6 text-center text-[var(--ink-2, #4a5568)]">No settlement fails match.</td></tr>
               )}
             </tbody>
           </table>
@@ -595,10 +595,10 @@ export function SettlementFailChainTab() {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : 'var(--ink, #0c2a4d)';
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
+    <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
     </div>
   );
@@ -629,31 +629,31 @@ function Drawer({
   return (
     <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
       <div
-        className="absolute right-0 top-0 h-full w-full md:w-[820px] overflow-y-auto bg-white shadow-2xl"
+        className="absolute right-0 top-0 h-full w-full md:w-[820px] overflow-y-auto bg-surface-v2 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
+        <header className="border-b border-[var(--border-subtle, #d8dde6)] bg-[var(--s2, #f3f5f9)] px-5 py-3">
           <div className="flex items-start justify-between">
             <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.fail_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.counterparty_name}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
+              <div className="font-mono text-[12px] text-[var(--ink-2, #4a5568)]">{row.fail_number}</div>
+              <div className="text-base font-semibold text-[var(--ink, #0c2a4d)]">{row.counterparty_name}</div>
+              <div className="mt-1 text-[12px] text-[var(--ink-2, #4a5568)]">
                 {TIER_TONE[row.fail_tier].label} · {INSTRUMENT_LABEL[row.instrument_class]} · {row.instrument_name || row.isin || '—'}
                 {row.systemic_instrument_flag_bool ? ' · systemic instrument' : ''}
                 {row.is_systemic_carrier_flag ? ' · systemic carrier' : ''}
               </div>
-              <div className="mt-1 text-[11px] text-[#4a5568]">
+              <div className="mt-1 text-[11px] text-[var(--ink-2, #4a5568)]">
                 Trader desk: {row.trader_desk_name}
                 {row.buy_in_agent_name ? ` · Buy-in agent: ${row.buy_in_agent_name}` : ''}
                 {row.escalation_level > 0 ? ` · escalation lvl ${row.escalation_level}` : ''}
               </div>
             </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
+            <button type="button" onClick={onClose} className="text-[var(--ink-2, #4a5568)] hover:text-[var(--ink, #0c2a4d)]">✕</button>
           </div>
         </header>
 
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Live delivery-integrity battery</div>
+        <section className="px-5 py-4 border-b border-[var(--border-subtle, #e3e7ec)]">
+          <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-2">Live delivery-integrity battery</div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px]">
             <Pair label="Fail value" value={fmtZar(row.fail_value_zar)} />
             <Pair label="Accrued penalty" value={fmtZar(accrued)} />
@@ -670,8 +670,8 @@ function Drawer({
           </div>
         </section>
 
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Trade &amp; counterparty</div>
+        <section className="px-5 py-4 border-b border-[var(--border-subtle, #e3e7ec)]">
+          <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-2">Trade &amp; counterparty</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-[12px]">
             <Pair label="Trade ref" value={row.trade_ref ?? '—'} />
             <Pair label="Allocation ref" value={row.allocation_ref ?? '—'} />
@@ -686,8 +686,8 @@ function Drawer({
           </div>
         </section>
 
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Buy-in / cash compensation</div>
+        <section className="px-5 py-4 border-b border-[var(--border-subtle, #e3e7ec)]">
+          <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-2">Buy-in / cash compensation</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-[12px]">
             <Pair label="Extension until" value={fmtDate(row.extension_granted_until)} />
             <Pair label="Agent appointed" value={fmtDate(row.buy_in_agent_appointed_at)} />
@@ -699,8 +699,8 @@ function Drawer({
           </div>
         </section>
 
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Lifecycle</div>
+        <section className="px-5 py-4 border-b border-[var(--border-subtle, #e3e7ec)]">
+          <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-2">Lifecycle</div>
           <div className="grid grid-cols-2 gap-3 text-[12px]">
             <Pair label="State" value={STATE_TONE[row.chain_status].label} />
             <Pair label="Instructed settle date" value={fmtDate(row.instructed_settlement_date)} />
@@ -730,8 +730,8 @@ function Drawer({
         </section>
 
         {(primary || canExtend || canDispute || canFm || canSwitchCash || canWriteOff) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
+          <section className="px-5 py-4 border-b border-[var(--border-subtle, #e3e7ec)]">
+            <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-2">Actions</div>
             <div className="flex flex-wrap gap-2">
               {primary && (
                 <button type="button"
@@ -744,7 +744,7 @@ function Drawer({
               {canExtend && (
                 <button type="button"
                   onClick={() => onAct('grant-extension', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium hover:bg-[#f3f5f9]" style={{ color: 'oklch(0.46 0.16 55)' }}
+                  className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-1.5 text-[12px] font-medium hover:bg-[var(--s2, #f3f5f9)]" style={{ color: 'oklch(0.46 0.16 55)' }}
                 >
                   {ACTION_LABEL['grant-extension']}
                 </button>
@@ -752,7 +752,7 @@ function Drawer({
               {canSwitchCash && (
                 <button type="button"
                   onClick={() => onAct('switch-cash-compensation', row)}
-                  className="rounded border border-orange-300 bg-white px-3 py-1.5 text-[12px] font-medium text-[#a06200] hover:bg-orange-50"
+                  className="rounded border border-orange-300 bg-surface-v2 px-3 py-1.5 text-[12px] font-medium text-[#a06200] hover:bg-orange-50"
                 >
                   {ACTION_LABEL['switch-cash-compensation']}
                 </button>
@@ -760,7 +760,7 @@ function Drawer({
               {canDispute && (
                 <button type="button"
                   onClick={() => onAct('raise-dispute', row)}
-                  className="rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
+                  className="rounded border border-red-300 bg-surface-v2 px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
                 >
                   {ACTION_LABEL['raise-dispute']}
                 </button>
@@ -768,7 +768,7 @@ function Drawer({
               {canFm && (
                 <button type="button"
                   onClick={() => onAct('suspend-force-majeure', row)}
-                  className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#4a5568] hover:bg-[#f3f5f9]"
+                  className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-1.5 text-[12px] font-medium text-[var(--ink-2, #4a5568)] hover:bg-[var(--s2, #f3f5f9)]"
                 >
                   {ACTION_LABEL['suspend-force-majeure']}
                 </button>
@@ -786,23 +786,23 @@ function Drawer({
         )}
 
         <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
+          <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-2">Audit timeline</div>
           {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
+            <div className="text-[12px] text-[var(--ink-2, #4a5568)]">No events yet.</div>
           ) : (
             <ol className="space-y-2">
               {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
+                <li key={e.id} className="rounded border border-[var(--border-subtle, #e3e7ec)] bg-[#fafbfc] px-3 py-2 text-[12px]">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
+                    <span className="font-medium text-[var(--ink, #0c2a4d)]">{e.event_type}</span>
+                    <span className="text-[var(--ink-2, #4a5568)] tabular-nums">{fmtDate(e.created_at)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
+                      <span className="text-[var(--ink-2, #4a5568)]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
                     )}
                     {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
+                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[var(--ink-2, #4a5568)]">{e.actor_party}</span>
                     )}
                   </div>
                   {e.notes && <div className="mt-1" style={{ color: 'oklch(0.46 0.16 55)' }}>{e.notes}</div>}
@@ -828,8 +828,8 @@ function BasisBlock({ label, tone, text }: { label: string; tone: string; text: 
 function Pair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
+      <div className="text-[12px] text-[var(--ink, #0c2a4d)]">{value}</div>
     </div>
   );
 }
@@ -854,17 +854,17 @@ function ActionPromptModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onCancel}>
       <div
-        className="w-full max-w-md rounded-lg bg-white shadow-2xl"
+        className="w-full max-w-md rounded-lg bg-surface-v2 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="border-b border-[#d8dde6] px-5 py-3">
-          <div className="text-[13px] font-semibold text-[#0c2a4d]">{title}</div>
+        <header className="border-b border-[var(--border-subtle, #d8dde6)] px-5 py-3">
+          <div className="text-[13px] font-semibold text-[var(--ink, #0c2a4d)]">{title}</div>
         </header>
         <form ref={formRef} onSubmit={handleSubmit}>
           <div className="px-5 py-4 space-y-3">
             {fields.map((f) => (
               <div key={f.key}>
-                <label className="block text-[11px] uppercase tracking-wider text-[#4a5568] mb-1">
+                <label className="block text-[11px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-1">
                   {f.label}{f.required && <span className="text-red-600 ml-0.5">*</span>}
                 </label>
                 <input
@@ -872,16 +872,16 @@ function ActionPromptModal({
                   defaultValue={f.defaultValue ?? ''}
                   placeholder={f.placeholder ?? ''}
                   required={f.required}
-                  className="w-full rounded border border-[#d8dde6] px-3 py-1.5 text-[12px] text-[#0c2a4d] outline-none focus:border-[#c2873a]"
+                  className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-3 py-1.5 text-[12px] text-[var(--ink, #0c2a4d)] outline-none focus:border-[#c2873a]"
                 />
               </div>
             ))}
           </div>
-          <footer className="flex justify-end gap-2 border-t border-[#d8dde6] px-5 py-3">
+          <footer className="flex justify-end gap-2 border-t border-[var(--border-subtle, #d8dde6)] px-5 py-3">
             <button
               type="button"
               onClick={onCancel}
-              className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#4a5568] hover:bg-[#f3f5f9]"
+              className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-1.5 text-[12px] font-medium text-[var(--ink-2, #4a5568)] hover:bg-[var(--s2, #f3f5f9)]"
             >
               Cancel
             </button>

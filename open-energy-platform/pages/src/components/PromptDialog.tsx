@@ -91,9 +91,9 @@ export function PromptHost() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="prompt-dialog-title"
-        className="w-full max-w-sm rounded-lg bg-white p-5 shadow-xl"
+        className="w-full max-w-sm rounded-lg bg-surface-v2 p-5 shadow-xl"
       >
-        <h3 id="prompt-dialog-title" className="mb-3 text-sm font-semibold text-[#0f1c2e]">{active.message}</h3>
+        <h3 id="prompt-dialog-title" className="mb-3 text-sm font-semibold text-[var(--ink, #0f1c2e)]">{active.message}</h3>
         {active.kind === 'prompt' ? (
           <>
             <input
@@ -101,10 +101,10 @@ export function PromptHost() {
               value={value}
               onChange={(e) => setValue(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') closePrompt(value); }}
-              className="mb-4 w-full rounded border border-[#cbd5e1] px-3 py-2 text-sm text-[#0f1c2e] focus:border-[#c2873a] focus:outline-none"
+              className="mb-4 w-full rounded border border-[var(--border-strong, #cbd5e1)] px-3 py-2 text-sm text-[var(--ink, #0f1c2e)] focus:border-[#c2873a] focus:outline-none"
             />
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => closePrompt(null)} className="rounded px-3 py-1.5 text-sm text-[#4a5568] hover:bg-[#f1f5f9]">
+              <button type="button" onClick={() => closePrompt(null)} className="rounded px-3 py-1.5 text-sm text-[var(--ink-2, #4a5568)] hover:bg-[#f1f5f9]">
                 Cancel
               </button>
               <button type="button" onClick={() => closePrompt(value)} className="rounded bg-[#c2873a] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#a3702f]">
@@ -114,7 +114,7 @@ export function PromptHost() {
           </>
         ) : (
           <div className="flex justify-end gap-2">
-            <button type="button" autoFocus onClick={() => closeConfirm(false)} className="rounded px-3 py-1.5 text-sm text-[#4a5568] hover:bg-[#f1f5f9]">
+            <button type="button" autoFocus onClick={() => closeConfirm(false)} className="rounded px-3 py-1.5 text-sm text-[var(--ink-2, #4a5568)] hover:bg-[#f1f5f9]">
               No
             </button>
             <button type="button" onClick={() => closeConfirm(true)} className="rounded bg-[#c2873a] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#a3702f]">

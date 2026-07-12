@@ -154,25 +154,25 @@ interface KpiSummary {
 }
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  case_opened:            { bg: '#e3e7ec', fg: '#557',    label: 'Case opened' },
-  allegations_drafted:    { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Allegations drafted' },
-  allegations_served:     { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Allegations served' },
-  representations_period: { bg: '#fff4d6', fg: '#a06200', label: 'Audi (representations open)' },
-  hearing_held:           { bg: '#fff4d6', fg: '#a06200', label: 'Hearing held' },
-  determination:          { bg: '#ffe4b5', fg: '#8a4a00', label: 'Determination' },
-  penalty_imposed:        { bg: '#fde0e0', fg: '#9b1f1f', label: 'Penalty imposed' },
-  appealed:               { bg: '#ffe4b5', fg: '#8a4a00', label: 'Appealed (Tribunal)' },
-  enforced_via_court:     { bg: '#fde0e0', fg: '#9b1f1f', label: 'Enforced via court' },
-  paid:                   { bg: '#d4edda', fg: '#155724', label: 'Paid' },
-  dismissed:              { bg: '#e3e7ec', fg: '#557',    label: 'Dismissed' },
-  withdrawn:              { bg: '#e3e7ec', fg: '#557',    label: 'Withdrawn' },
+  case_opened:            { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Case opened' },
+  allegations_drafted:    { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Allegations drafted' },
+  allegations_served:     { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Allegations served' },
+  representations_period: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Audi (representations open)' },
+  hearing_held:           { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Hearing held' },
+  determination:          { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Determination' },
+  penalty_imposed:        { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Penalty imposed' },
+  appealed:               { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Appealed (Tribunal)' },
+  enforced_via_court:     { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Enforced via court' },
+  paid:                   { bg: '#d4edda', fg: 'var(--good)', label: 'Paid' },
+  dismissed:              { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Dismissed' },
+  withdrawn:              { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Withdrawn' },
 };
 
 const TIER_TONE: Record<Tier, { bg: string; fg: string; label: string }> = {
-  severe:   { bg: '#fde0e0', fg: '#9b1f1f', label: 'Severe (≥R1m)' },
-  material: { bg: '#ffe4b5', fg: '#8a4a00', label: 'Material (R500k–R1m)' },
-  standard: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Standard (R100k–R500k)' },
-  minor:    { bg: '#e3e7ec', fg: '#557',    label: 'Minor (<R100k)' },
+  severe:   { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Severe (≥R1m)' },
+  material: { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Material (R500k–R1m)' },
+  standard: { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Standard (R100k–R500k)' },
+  minor:    { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Minor (<R100k)' },
 };
 
 const AUTHORITY_LABEL: Record<string, string> = {
@@ -468,8 +468,8 @@ export function EnforcementActionChainTab() {
     <div className="p-5">
       <header className="mb-4 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-[#0c2a4d]">Enforcement actions &amp; administrative penalties (ERA s35)</h2>
-          <p className="text-xs text-[#4a5568]">
+          <h2 className="text-lg font-semibold text-[var(--ink, #0c2a4d)]">Enforcement actions &amp; administrative penalties (ERA s35)</h2>
+          <p className="text-xs text-[var(--ink-2, #4a5568)]">
             12-state administrative-penalty chain · case_opened → allegations_drafted → allegations_served
             → representations_period (PAJA s4 + ERA s35(3) audi) → (hearing_held optional) → determination
             → penalty_imposed → paid (clean terminal), with appealed (Tribunal), enforced_via_court
@@ -516,7 +516,7 @@ export function EnforcementActionChainTab() {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #4a5568)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -528,11 +528,11 @@ export function EnforcementActionChainTab() {
         <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
       )}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-4 py-6 text-center text-sm text-[var(--ink-2, #4a5568)]">Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
+        <div className="overflow-hidden rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
           <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
+            <thead className="bg-[var(--s2, #f3f5f9)]">
               <tr className="text-left">
                 <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Case #</th>
                 <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Respondent / allegation</th>
@@ -554,28 +554,28 @@ export function EnforcementActionChainTab() {
                   <tr
                     key={r.id}
                     onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
+                    className="cursor-pointer border-t border-[var(--border-subtle, #e3e7ec)] hover:bg-[var(--s1, #f8fafc)]"
                   >
                     <td className="px-3 py-2 font-mono text-[11px] text-[oklch(0.46_0.16_55)]">
                       {r.case_number}
-                      {r.is_reportable_flag && <span className="ml-1 text-[#9b1f1f]" title="Reportable to regulator (public register)">●</span>}
-                      {r.signature_class_flag && <span className="ml-1 text-[#9b1f1f]" title="Floor-at-severe class (safety_violation / systemic_market_abuse / repeat_offender)">★</span>}
-                      {r.procedural_irregularity_flag_live && <span className="ml-1 text-[#9b1f1f]" title="Procedural irregularity (PAJA s4 / ERA s35(3) judicial-review tripwire)">▲</span>}
-                      {r.repeat_offender_flag_live && <span className="ml-1 text-[#9b1f1f]" title="Repeat offender">◆</span>}
+                      {r.is_reportable_flag && <span className="ml-1 text-[var(--bad, #9b1f1f)]" title="Reportable to regulator (public register)">●</span>}
+                      {r.signature_class_flag && <span className="ml-1 text-[var(--bad, #9b1f1f)]" title="Floor-at-severe class (safety_violation / systemic_market_abuse / repeat_offender)">★</span>}
+                      {r.procedural_irregularity_flag_live && <span className="ml-1 text-[var(--bad, #9b1f1f)]" title="Procedural irregularity (PAJA s4 / ERA s35(3) judicial-review tripwire)">▲</span>}
+                      {r.repeat_offender_flag_live && <span className="ml-1 text-[var(--bad, #9b1f1f)]" title="Repeat offender">◆</span>}
                     </td>
-                    <td className="px-3 py-2 text-[#0c2a4d] max-w-[260px] truncate" title={`${r.respondent_party_name ?? ''} · ${r.allegation_summary ?? ''}`}>
+                    <td className="px-3 py-2 text-[var(--ink, #0c2a4d)] max-w-[260px] truncate" title={`${r.respondent_party_name ?? ''} · ${r.allegation_summary ?? ''}`}>
                       {r.respondent_party_name ?? '—'}
-                      <span className="text-[#4a5568]"> · {r.allegation_summary ?? ''}</span>
+                      <span className="text-[var(--ink-2, #4a5568)]"> · {r.allegation_summary ?? ''}</span>
                     </td>
-                    <td className="px-3 py-2 text-[11px] text-[#4a5568]">{r.allegation_class}</td>
+                    <td className="px-3 py-2 text-[11px] text-[var(--ink-2, #4a5568)]">{r.allegation_class}</td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-medium" style={{ background: tt.bg, color: tt.fg }}>
                         {r.penalty_tier}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#0c2a4d]">{fmtZar(r.proposed_penalty_total_zar_live ?? r.proposed_penalty_total_zar)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[#0c2a4d]">{fmtZar(r.imposed_penalty_zar)}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${recPct != null && recPct < 100 && (r.imposed_penalty_zar ?? 0) > 0 ? 'text-[#a06200]' : 'text-[#4a5568]'}`}>
+                    <td className="px-3 py-2 text-right tabular-nums text-[var(--ink, #0c2a4d)]">{fmtZar(r.proposed_penalty_total_zar_live ?? r.proposed_penalty_total_zar)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-[var(--ink, #0c2a4d)]">{fmtZar(r.imposed_penalty_zar)}</td>
+                    <td className={`px-3 py-2 text-right tabular-nums ${recPct != null && recPct < 100 && (r.imposed_penalty_zar ?? 0) > 0 ? 'text-[#a06200]' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {recPct != null && (r.imposed_penalty_zar ?? 0) > 0 ? fmtPct(recPct, 0) : '—'}
                     </td>
                     <td className="px-3 py-2">
@@ -583,14 +583,14 @@ export function EnforcementActionChainTab() {
                         {cs.label}
                       </span>
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached ? 'text-red-700 font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {r.is_terminal ? '—' : r.sla_breached ? 'BREACHED' : fmtMinutes(r.minutes_until_sla)}
                     </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-3 py-6 text-center text-[#4a5568]">No cases match.</td></tr>
+                <tr><td colSpan={9} className="px-3 py-6 text-center text-[var(--ink-2, #4a5568)]">No cases match.</td></tr>
               )}
             </tbody>
           </table>
@@ -632,23 +632,23 @@ function ActionModal({
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onCancel}>
       <div
-        className="w-full max-w-lg bg-white rounded-lg shadow-2xl overflow-y-auto max-h-[90vh]"
+        className="w-full max-w-lg bg-surface-v2 rounded-lg shadow-2xl overflow-y-auto max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3 flex items-center justify-between">
-          <div className="text-sm font-semibold text-[#0c2a4d]">{ACTION_LABEL[pending.action]}</div>
-          <button type="button" onClick={onCancel} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
+        <header className="border-b border-[var(--border-subtle, #d8dde6)] bg-[var(--s2, #f3f5f9)] px-5 py-3 flex items-center justify-between">
+          <div className="text-sm font-semibold text-[var(--ink, #0c2a4d)]">{ACTION_LABEL[pending.action]}</div>
+          <button type="button" onClick={onCancel} className="text-[var(--ink-2, #4a5568)] hover:text-[var(--ink, #0c2a4d)]">✕</button>
         </header>
         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-3">
           {pending.fields.map((f) => (
             <div key={f.key}>
-              <label className="block text-[11px] uppercase tracking-wider text-[#4a5568] mb-1">
+              <label className="block text-[11px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-1">
                 {f.label}{f.required && <span className="ml-1 text-red-600">*</span>}
               </label>
               {f.type === 'number' ? (
                 <input
                   type="number"
-                  className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[13px] text-[#0c2a4d] focus:outline-none focus:border-[#c2873a]"
+                  className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1.5 text-[13px] text-[var(--ink, #0c2a4d)] focus:outline-none focus:border-[#c2873a]"
                   value={vals[f.key] ?? ''}
                   onChange={(e) => setVals((v) => ({ ...v, [f.key]: e.target.value }))}
                   required={f.required}
@@ -656,7 +656,7 @@ function ActionModal({
               ) : f.type === 'date' ? (
                 <input
                   type="date"
-                  className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[13px] text-[#0c2a4d] focus:outline-none focus:border-[#c2873a]"
+                  className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1.5 text-[13px] text-[var(--ink, #0c2a4d)] focus:outline-none focus:border-[#c2873a]"
                   value={vals[f.key] ?? ''}
                   onChange={(e) => setVals((v) => ({ ...v, [f.key]: e.target.value }))}
                   required={f.required}
@@ -664,20 +664,20 @@ function ActionModal({
               ) : (
                 <textarea
                   rows={2}
-                  className="w-full rounded border border-[#d8dde6] px-2 py-1.5 text-[13px] text-[#0c2a4d] focus:outline-none focus:border-[#c2873a] resize-y"
+                  className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1.5 text-[13px] text-[var(--ink, #0c2a4d)] focus:outline-none focus:border-[#c2873a] resize-y"
                   value={vals[f.key] ?? ''}
                   onChange={(e) => setVals((v) => ({ ...v, [f.key]: e.target.value }))}
                   required={f.required}
                 />
               )}
-              {f.hint && <div className="mt-0.5 text-[10px] text-[#4a5568]">{f.hint}</div>}
+              {f.hint && <div className="mt-0.5 text-[10px] text-[var(--ink-2, #4a5568)]">{f.hint}</div>}
             </div>
           ))}
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
               onClick={onCancel}
-              className="rounded border border-[#d8dde6] bg-white px-4 py-1.5 text-[12px] font-medium text-[#557] hover:bg-[#f3f5f9]"
+              className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-4 py-1.5 text-[12px] font-medium text-[#557] hover:bg-[var(--s2, #f3f5f9)]"
             >
               Cancel
             </button>
@@ -695,10 +695,10 @@ function ActionModal({
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : '#0c2a4d';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : 'var(--ink, #0c2a4d)';
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
+    <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
     </div>
   );
@@ -719,34 +719,34 @@ function Drawer({
   return (
     <div className="fixed inset-0 z-30 bg-black/40" onClick={onClose}>
       <div
-        className="absolute right-0 top-0 h-full w-full md:w-[760px] overflow-y-auto bg-white shadow-2xl"
+        className="absolute right-0 top-0 h-full w-full md:w-[760px] overflow-y-auto bg-surface-v2 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="border-b border-[#d8dde6] bg-[#f3f5f9] px-5 py-3">
+        <header className="border-b border-[var(--border-subtle, #d8dde6)] bg-[var(--s2, #f3f5f9)] px-5 py-3">
           <div className="flex items-start justify-between">
             <div>
-              <div className="font-mono text-[12px] text-[#4a5568]">{row.case_number}</div>
-              <div className="text-base font-semibold text-[#0c2a4d]">{row.respondent_party_name ?? '—'} · {row.allegation_summary ?? ''}</div>
-              <div className="mt-1 text-[12px] text-[#4a5568]">
+              <div className="font-mono text-[12px] text-[var(--ink-2, #4a5568)]">{row.case_number}</div>
+              <div className="text-base font-semibold text-[var(--ink, #0c2a4d)]">{row.respondent_party_name ?? '—'} · {row.allegation_summary ?? ''}</div>
+              <div className="mt-1 text-[12px] text-[var(--ink-2, #4a5568)]">
                 {TIER_TONE[row.penalty_tier].label}
                 {row.allegation_class ? ` · ${row.allegation_class}` : ''}
                 {row.respondent_persona ? ` · ${row.respondent_persona}` : ''}
                 {row.respondent_licence_no ? ` · ${row.respondent_licence_no}` : ''}
               </div>
               {row.source_wave && (
-                <div className="mt-1 text-[11px] text-[#4a5568]">
+                <div className="mt-1 text-[11px] text-[var(--ink-2, #4a5568)]">
                   Sourced from {row.source_wave}{row.source_entity_id ? ` · ${row.source_entity_id}` : ''}
                 </div>
               )}
             </div>
-            <button type="button" onClick={onClose} className="text-[#4a5568] hover:text-[#0c2a4d]">✕</button>
+            <button type="button" onClick={onClose} className="text-[var(--ink-2, #4a5568)] hover:text-[var(--ink, #0c2a4d)]">✕</button>
           </div>
         </header>
 
         {/* The distinctive layer — live AUDI-WINDOW + PAJA-procedural + ERA s35 cap + interest + recovery + repeat-offender battery. */}
-        <section className="px-5 py-4 border-b border-[#e3e7ec]">
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Live audi-window compliance (PAJA s4 + ERA s35(3))</div>
+        <section className="px-5 py-4 border-b border-[var(--border-subtle, #e3e7ec)]">
+          <div className="mb-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-[var(--s1, #f8fafc)] px-3 py-2">
+            <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-1">Live audi-window compliance (PAJA s4 + ERA s35(3))</div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
               <Metric label="Audi days remaining" value={row.audi_window_days_remaining_live != null ? `${fmtNum(row.audi_window_days_remaining_live, 1)}d` : '—'} bad={(row.audi_window_days_remaining_live ?? 0) <= 0} hint="Countdown from representations_period opened" />
               <Metric label="Audi minimum met" value={row.audi_minimum_met_flag ? 'Yes (≥21d)' : 'No (under 21d)'} bad={!row.audi_minimum_met_flag} hint="ERA s35(3) minimum 21 days" />
@@ -758,8 +758,8 @@ function Drawer({
               <Metric label="Floor at severe" value={row.floor_at_severe_class_flag ? 'Yes' : 'No'} bad={!!row.floor_at_severe_class_flag} hint="safety_violation / systemic_market_abuse / repeat_offender" />
             </div>
           </div>
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">ERA s35 penalty quantum &amp; recovery (R1m/offence cap, 15.5% interest)</div>
+          <div className="mb-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-[var(--s1, #f8fafc)] px-3 py-2">
+            <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-1">ERA s35 penalty quantum &amp; recovery (R1m/offence cap, 15.5% interest)</div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
               <Metric label="Offence count" value={fmtNum(row.offence_count, 0)} hint="ERA s35 allows stacking per offence" />
               <Metric label="Proposed per-offence" value={fmtZar(row.proposed_penalty_per_offence_zar)} hint="Pre-cap" />
@@ -771,8 +771,8 @@ function Drawer({
               <Metric label="Accrued interest (15.5%)" value={fmtZar(row.accrued_interest_zar_live)} bad={(row.accrued_interest_zar_live ?? 0) > 0} hint={`${row.days_overdue}d overdue · Prescribed Rate of Interest Act 55/1975`} />
             </div>
           </div>
-          <div className="mb-3 rounded border border-[#d8dde6] bg-[#f8fafc] px-3 py-2">
-            <div className="text-[10px] uppercase tracking-wider text-[#4a5568] mb-1">Repeat offender &amp; recovery prediction</div>
+          <div className="mb-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-[var(--s1, #f8fafc)] px-3 py-2">
+            <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-1">Repeat offender &amp; recovery prediction</div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
               <Metric label="Prior penalties" value={fmtNum(row.prior_penalty_count, 0)} bad={row.prior_penalty_count >= 2} />
               <Metric label="Days since last" value={row.days_since_last_penalty != null ? `${row.days_since_last_penalty}d` : '—'} />
@@ -820,14 +820,14 @@ function Drawer({
           {row.representations_summary && <BasisBlock label="Representations summary" tone="#a06200" text={row.representations_summary} />}
           {row.determination_basis && <BasisBlock label="Determination basis (PAJA s5 reasons)" tone="#8a4a00" text={row.determination_basis} />}
           {row.determination_summary && <BasisBlock label="Determination summary" tone="#8a4a00" text={row.determination_summary} />}
-          {row.penalty_basis && <BasisBlock label="Penalty quantum basis" tone="#9b1f1f" text={row.penalty_basis} />}
+          {row.penalty_basis && <BasisBlock label="Penalty quantum basis" tone="var(--bad, #9b1f1f)" text={row.penalty_basis} />}
           {row.appeal_basis && <BasisBlock label="Appeal basis" tone="#8a4a00" text={row.appeal_basis} />}
-          {row.enforcement_basis && <BasisBlock label="Enforcement basis" tone="#9b1f1f" text={row.enforcement_basis} />}
+          {row.enforcement_basis && <BasisBlock label="Enforcement basis" tone="var(--bad, #9b1f1f)" text={row.enforcement_basis} />}
         </section>
 
         {(primary || secondary.length > 0) && (
-          <section className="px-5 py-4 border-b border-[#e3e7ec]">
-            <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Actions</div>
+          <section className="px-5 py-4 border-b border-[var(--border-subtle, #e3e7ec)]">
+            <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-2">Actions</div>
             <div className="flex flex-wrap gap-2">
               {primary && (
                 <button type="button"
@@ -845,8 +845,8 @@ function Drawer({
                     onClick={() => onAct(a, row)}
                     className={
                       danger
-                        ? 'rounded border border-red-300 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50'
-                        : 'rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] font-medium text-[#557] hover:bg-[#f3f5f9]'
+                        ? 'rounded border border-red-300 bg-surface-v2 px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50'
+                        : 'rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-1.5 text-[12px] font-medium text-[#557] hover:bg-[var(--s2, #f3f5f9)]'
                     }
                   >
                     {ACTION_LABEL[a]}
@@ -858,23 +858,23 @@ function Drawer({
         )}
 
         <section className="px-5 py-4">
-          <div className="text-[11px] uppercase tracking-wider text-[#4a5568] mb-2">Audit timeline</div>
+          <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #4a5568)] mb-2">Audit timeline</div>
           {events.length === 0 ? (
-            <div className="text-[12px] text-[#4a5568]">No events yet.</div>
+            <div className="text-[12px] text-[var(--ink-2, #4a5568)]">No events yet.</div>
           ) : (
             <ol className="space-y-2">
               {events.map((e) => (
-                <li key={e.id} className="rounded border border-[#e3e7ec] bg-[#fafbfc] px-3 py-2 text-[12px]">
+                <li key={e.id} className="rounded border border-[var(--border-subtle, #e3e7ec)] bg-[#fafbfc] px-3 py-2 text-[12px]">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-[#0c2a4d]">{e.event_type}</span>
-                    <span className="text-[#4a5568] tabular-nums">{fmtDate(e.created_at)}</span>
+                    <span className="font-medium text-[var(--ink, #0c2a4d)]">{e.event_type}</span>
+                    <span className="text-[var(--ink-2, #4a5568)] tabular-nums">{fmtDate(e.created_at)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     {(e.from_status || e.to_status) && (
-                      <span className="text-[#4a5568]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
+                      <span className="text-[var(--ink-2, #4a5568)]">{e.from_status ?? '—'} → {e.to_status ?? '—'}</span>
                     )}
                     {e.actor_party && (
-                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#4a5568]">{e.actor_party}</span>
+                      <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[var(--ink-2, #4a5568)]">{e.actor_party}</span>
                     )}
                   </div>
                   {e.notes && <div className="mt-1 text-[oklch(0.46_0.16_55)]">{e.notes}</div>}
@@ -891,8 +891,8 @@ function Drawer({
 function Metric({ label, value, bad, hint }: { label: string; value: string; bad?: boolean; hint?: string }) {
   return (
     <div title={hint}>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className={`text-[13px] font-semibold tabular-nums ${bad ? 'text-[#9b1f1f]' : 'text-[#0c2a4d]'}`}>{value}</div>
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
+      <div className={`text-[13px] font-semibold tabular-nums ${bad ? 'text-[var(--bad, #9b1f1f)]' : 'text-[var(--ink, #0c2a4d)]'}`}>{value}</div>
     </div>
   );
 }
@@ -909,8 +909,8 @@ function BasisBlock({ label, tone, text }: { label: string; tone: string; text: 
 function Pair({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
-      <div className="text-[12px] text-[#0c2a4d]">{value}</div>
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
+      <div className="text-[12px] text-[var(--ink, #0c2a4d)]">{value}</div>
     </div>
   );
 }

@@ -104,7 +104,7 @@ export function EsumsOmOpportunities() {
           <div className="flex items-center gap-2 text-[11px]" style={{ color: 'oklch(0.55 0.008 250)' }}>
             <span>Last scan</span>
             <span className="font-mono">{new Date(data.generated_at).toLocaleTimeString('en-ZA', { timeZone: 'Africa/Johannesburg', hour: '2-digit', minute: '2-digit' })}</span>
-            <button type="button" onClick={load} className="ml-2 px-2 h-7 rounded text-[11px] border hover:bg-[#eef2f7]" style={{ color: 'oklch(0.45 0.015 250)', borderColor: 'oklch(0.88 0.006 250)' }}>
+            <button type="button" onClick={load} className="ml-2 px-2 h-7 rounded text-[11px] border hover:bg-[var(--s2, #eef2f7)]" style={{ color: 'oklch(0.45 0.015 250)', borderColor: 'oklch(0.88 0.006 250)' }}>
               Re-scan
             </button>
           </div>
@@ -112,10 +112,10 @@ export function EsumsOmOpportunities() {
       </header>
 
       <section className="widget-card">
-        <div className="px-4 py-2 flex flex-wrap gap-2 items-center border-b border-[#eef2f7]">
+        <div className="px-4 py-2 flex flex-wrap gap-2 items-center border-b border-[var(--s2, #eef2f7)]">
           <button type="button"
             onClick={() => setFilter('all')}
-            className={`h-7 px-2.5 rounded-full text-[11px] font-semibold border ${filter === 'all' ? 'bg-[#c2873a] text-white border-[#c2873a]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
+            className={`h-7 px-2.5 rounded-full text-[11px] font-semibold border ${filter === 'all' ? 'bg-[#c2873a] text-white border-[#c2873a]' : 'bg-surface-v2 text-[var(--ink-2, #3d4756)] border-[var(--border-subtle, #dde4ec)]'}`}
           >
             All <span className="opacity-70 ml-1">{data.count}</span>
           </button>
@@ -128,7 +128,7 @@ export function EsumsOmOpportunities() {
                 <button type="button"
                   key={cat}
                   onClick={() => setFilter(cat)}
-                  className={`h-7 px-2.5 rounded-full text-[11px] font-semibold border inline-flex items-center gap-1 ${filter === cat ? 'bg-[#c2873a] text-white border-[#c2873a]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
+                  className={`h-7 px-2.5 rounded-full text-[11px] font-semibold border inline-flex items-center gap-1 ${filter === cat ? 'bg-[#c2873a] text-white border-[#c2873a]' : 'bg-surface-v2 text-[var(--ink-2, #3d4756)] border-[var(--border-subtle, #dde4ec)]'}`}
                 >
                   <Icon size={11} />
                   {meta.label}
@@ -138,14 +138,14 @@ export function EsumsOmOpportunities() {
             })}
         </div>
 
-        <ul className="divide-y divide-[#eef2f7]">
+        <ul className="divide-y divide-[var(--s2, #eef2f7)]">
           {filtered.length === 0 ? (
             <li className="widget-empty">No opportunities in this category — fleet is humming.</li>
           ) : filtered.map((o) => {
             const meta = CAT_META[o.category] || { icon: TrendingUp, tone: 'widget-tone-info', label: o.category };
             const Icon = meta.icon;
             return (
-              <li key={o.id} className="p-4 hover:bg-[#fafbfd]">
+              <li key={o.id} className="p-4 hover:bg-[var(--s1, #fafbfd)]">
                 <div className="flex items-start gap-3">
                   <span className={`inline-flex items-center justify-center w-9 h-9 rounded-md ${meta.tone}`}>
                     <Icon size={16} />
@@ -153,8 +153,8 @@ export function EsumsOmOpportunities() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="text-[13px] font-semibold text-[#0f1c2e]">{o.title}</div>
-                        <div className="text-[12px] text-[#3d4756] mt-0.5">{o.detail}</div>
+                        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">{o.title}</div>
+                        <div className="text-[12px] text-[var(--ink-2, #3d4756)] mt-0.5">{o.detail}</div>
                       </div>
                       <div className="text-right whitespace-nowrap">
                         <div className="widget-kpi-label">Annual upside</div>
@@ -183,7 +183,7 @@ export function EsumsOmOpportunities() {
                       <summary className="cursor-pointer text-[oklch(0.46_0.16_55)] hover:underline">
                         Evidence ({o.evidence.length})
                       </summary>
-                      <ul className="mt-1 pl-4 list-disc text-[#3d4756] space-y-0.5">
+                      <ul className="mt-1 pl-4 list-disc text-[var(--ink-2, #3d4756)] space-y-0.5">
                         {o.evidence.map((e, i) => <li key={i}>{e}</li>)}
                       </ul>
                     </details>

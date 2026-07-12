@@ -20,10 +20,10 @@ type ActionItem = {
 };
 
 const priorityColor: Record<string, { bg: string; text: string; dot: string }> = {
-  urgent: { bg: '#fde7e9', text: '#c0392b', dot: '#c0392b' },
+  urgent: { bg: '#fde7e9', text: 'var(--bad, #c0392b)', dot: 'var(--bad, #c0392b)' },
   high: { bg: '#fef3e6', text: '#b04e0f', dot: '#c97a14' },
   normal: { bg: '#d4e7f6', text: 'oklch(0.46 0.16 55)', dot: 'oklch(0.46 0.16 55)' },
-  low: { bg: '#eef1f4', text: '#6b7685', dot: '#8c8f94' },
+  low: { bg: '#eef1f4', text: 'var(--ink-2, #6b7685)', dot: '#8c8f94' },
 };
 
 function iconForType(type: string) {
@@ -90,14 +90,14 @@ export function ActionQueueCard() {
     <section
       className="rounded-xl border overflow-hidden"
       style={{
-        background: '#ffffff',
-        borderColor: '#dde4ec',
+        background: 'var(--s1, #fff)',
+        borderColor: 'var(--border-subtle, #dde4ec)',
         boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 0 0 1px rgba(59,130,196,0.08)',
       }}
     >
       <header
         className="flex items-center justify-between px-5 py-4 border-b"
-        style={{ borderColor: '#e5ebf2' }}
+        style={{ borderColor: 'var(--border-subtle, #e5ebf2)' }}
       >
         <div className="flex items-center gap-3">
           <div
@@ -110,30 +110,30 @@ export function ActionQueueCard() {
             <Inbox size={18} />
           </div>
           <div className="leading-tight">
-            <h2 className="text-[15px] font-semibold" style={{ color: '#0f1c2e' }}>
+            <h2 className="text-[15px] font-semibold" style={{ color: 'var(--ink, #0f1c2e)' }}>
               Awaiting your action
             </h2>
-            <p className="text-[12px]" style={{ color: '#6b7685' }}>
+            <p className="text-[12px]" style={{ color: 'var(--ink-2, #6b7685)' }}>
               Items queued to you by the platform and counterparties
             </p>
           </div>
         </div>
         <div
           className="text-[12px] font-semibold px-2.5 py-1 rounded-full"
-          style={{ background: items.length ? '#d4e7f6' : '#eef1f4', color: items.length ? 'oklch(0.46 0.16 55)' : '#6b7685' }}
+          style={{ background: items.length ? '#d4e7f6' : '#eef1f4', color: items.length ? 'oklch(0.46 0.16 55)' : 'var(--ink-2, #6b7685)' }}
         >
           {loading ? '…' : `${items.length} open`}
         </div>
       </header>
 
-      <div className="divide-y" style={{ borderColor: '#e5ebf2' }}>
+      <div className="divide-y" style={{ borderColor: 'var(--border-subtle, #e5ebf2)' }}>
         {loading && (
-          <div className="px-5 py-6 text-[13px]" style={{ color: '#6b7685' }}>
+          <div className="px-5 py-6 text-[13px]" style={{ color: 'var(--ink-2, #6b7685)' }}>
             Loading your queue…
           </div>
         )}
         {!loading && error && (
-          <div className="px-5 py-6 text-[13px]" style={{ color: '#c0392b' }}>
+          <div className="px-5 py-6 text-[13px]" style={{ color: 'var(--bad, #c0392b)' }}>
             {error}
           </div>
         )}
@@ -141,12 +141,12 @@ export function ActionQueueCard() {
           <div className="px-5 py-10 text-center">
             <div
               className="mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-3"
-              style={{ background: '#e5f7ec', color: '#1a8a5b' }}
+              style={{ background: '#e5f7ec', color: 'var(--good, #1a8a5b)' }}
             >
               <CheckCircle2 size={22} />
             </div>
-            <div className="text-[13px] font-semibold" style={{ color: '#0f1c2e' }}>Inbox zero</div>
-            <div className="text-[12px] mt-0.5" style={{ color: '#6b7685' }}>
+            <div className="text-[13px] font-semibold" style={{ color: 'var(--ink, #0f1c2e)' }}>Inbox zero</div>
+            <div className="text-[12px] mt-0.5" style={{ color: 'var(--ink-2, #6b7685)' }}>
               Nothing is waiting on you right now.
             </div>
           </div>
@@ -158,7 +158,7 @@ export function ActionQueueCard() {
           return (
             <div
               key={it.id}
-              className="flex items-start gap-3 px-5 py-3 hover:bg-[#eef2f7] transition-colors"
+              className="flex items-start gap-3 px-5 py-3 hover:bg-[var(--s2, #eef2f7)] transition-colors"
             >
               <div
                 className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
@@ -168,7 +168,7 @@ export function ActionQueueCard() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <div className="text-[13px] font-semibold truncate" style={{ color: '#0f1c2e' }}>
+                  <div className="text-[13px] font-semibold truncate" style={{ color: 'var(--ink, #0f1c2e)' }}>
                     {it.title}
                   </div>
                   <span
@@ -179,14 +179,14 @@ export function ActionQueueCard() {
                   </span>
                 </div>
                 {it.description && (
-                  <div className="text-[12px] mt-0.5 truncate" style={{ color: '#6b7685' }}>
+                  <div className="text-[12px] mt-0.5 truncate" style={{ color: 'var(--ink-2, #6b7685)' }}>
                     {it.description}
                   </div>
                 )}
                 {it.due_date && (
                   <div
                     className="text-[11px] mt-1 inline-flex items-center gap-1"
-                    style={{ color: '#6b7685' }}
+                    style={{ color: 'var(--ink-2, #6b7685)' }}
                   >
                     <Clock size={11} /> Due {it.due_date}
                   </div>
@@ -195,7 +195,7 @@ export function ActionQueueCard() {
               <div className="flex items-center gap-1 shrink-0">
                 <button type="button"
                   onClick={() => navigate(href)}
-                  className="text-[12px] font-semibold px-2.5 h-8 rounded-md flex items-center gap-1 hover:bg-[#e5ebf2]"
+                  className="text-[12px] font-semibold px-2.5 h-8 rounded-md flex items-center gap-1 hover:bg-[var(--border-subtle, #e5ebf2)]"
                   style={{ color: 'oklch(0.46 0.16 55)' }}
                 >
                   Open <ArrowRight size={12} />
@@ -203,7 +203,7 @@ export function ActionQueueCard() {
                 <button type="button"
                   onClick={() => complete(it.id)}
                   className="text-[12px] font-semibold px-2.5 h-8 rounded-md hover:bg-[#e5f7ec]"
-                  style={{ color: '#1a8a5b' }}
+                  style={{ color: 'var(--good, #1a8a5b)' }}
                   title="Mark as done"
                 >
                   Done

@@ -68,9 +68,9 @@ function CovenantHeadroomGauge({ covenants }: { covenants: Covenant[] }) {
   }
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Covenant headroom</div>
-        <div className="text-[11px] text-[#6b7685]">Each gauge: latest test value vs threshold</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Covenant headroom</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Each gauge: latest test value vs threshold</div>
       </header>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-3">
         {covenants.slice(0, 9).map((c) => {
@@ -78,24 +78,24 @@ function CovenantHeadroomGauge({ covenants }: { covenants: Covenant[] }) {
           const t = Number(c.threshold ?? 0);
           const headroom = c.operator === '<=' ? (t === 0 ? 0 : (t - v) / t) : (v - t) / (t || 1);
           const status = c.status || (headroom >= 0.2 ? 'pass' : headroom >= 0 ? 'warn' : 'breach');
-          const colour = status === 'pass' ? '#1a8a5b' : status === 'warn' ? '#b04e0f' : '#c0392b';
+          const colour = status === 'pass' ? 'var(--good, #1a8a5b)' : status === 'warn' ? '#b04e0f' : 'var(--bad, #c0392b)';
           const pct = Math.max(0, Math.min(100, (Math.abs(headroom) * 100)));
           // Server returns covenants with `covenant_code`/`covenant_name`; the
           // older shape used `metric`. Stay defensive so neither blows up.
           const label = String(c.metric ?? c.covenant_code ?? c.covenant_name ?? 'covenant').replace(/_/g, ' ');
           return (
-            <div key={c.id} className="rounded border border-[#eef2f7] p-3">
-              <div className="text-[11px] text-[#6b7685] uppercase tracking-wider">{label}</div>
+            <div key={c.id} className="rounded border border-[var(--s2, #eef2f7)] p-3">
+              <div className="text-[11px] text-[var(--ink-2, #6b7685)] uppercase tracking-wider">{label}</div>
               <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-[16px] font-mono font-semibold text-[#0f1c2e]">{v.toFixed(2)}</span>
-                <span className="text-[11px] text-[#6b7685]">{c.operator} {t.toFixed(2)}</span>
+                <span className="text-[16px] font-mono font-semibold text-[var(--ink, #0f1c2e)]">{v.toFixed(2)}</span>
+                <span className="text-[11px] text-[var(--ink-2, #6b7685)]">{c.operator} {t.toFixed(2)}</span>
               </div>
-              <div className="mt-2 h-1.5 rounded-full bg-[#eef2f7] overflow-hidden">
+              <div className="mt-2 h-1.5 rounded-full bg-[var(--s2, #eef2f7)] overflow-hidden">
                 <div className="h-full" style={{ width: `${pct}%`, background: colour }} />
               </div>
               <div className="mt-1 flex justify-between text-[10px]">
                 <span style={{ color: colour }} className="font-semibold uppercase">{status}</span>
-                <span className="text-[#6b7685] font-mono">{(headroom * 100).toFixed(1)}% headroom</span>
+                <span className="text-[var(--ink-2, #6b7685)] font-mono">{(headroom * 100).toFixed(1)}% headroom</span>
               </div>
             </div>
           );
@@ -129,20 +129,20 @@ function DebtServiceWaterfall({ waterfall }: { waterfall: Waterfall | null }) {
   });
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Debt service waterfall — {waterfall.period}</div>
-        <div className="text-[11px] text-[#6b7685]">Cashflow priority through the capital stack</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Debt service waterfall — {waterfall.period}</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Cashflow priority through the capital stack</div>
       </header>
       <div style={{ height: 240 }} className="px-2 pt-3">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 12, bottom: 36, left: 0 }}>
-            <CartesianGrid stroke="#eef2f7" />
-            <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#6b7685' }} angle={-25} textAnchor="end" height={50} />
-            <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(0)}m`} />
+            <CartesianGrid stroke="var(--s2, #eef2f7)" />
+            <XAxis dataKey="label" tick={{ fontSize: 9, fill: 'var(--ink-2, #6b7685)' }} angle={-25} textAnchor="end" height={50} />
+            <YAxis tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(0)}m`} />
             <Tooltip formatter={(v: any, _n: any, p: any) => [formatZAR(Math.abs(Number(v))), p?.payload?.label]} labelFormatter={() => ''} />
             <Bar isAnimationActive={false} dataKey="base" stackId="a" fill="transparent" />
             <Bar isAnimationActive={false} dataKey="bar" stackId="a">
-              {data.map((s, i) => <Cell key={i} fill={s.kind === 'add' ? '#1a8a5b' : 'oklch(0.46 0.16 55)'} />)}
+              {data.map((s, i) => <Cell key={i} fill={s.kind === 'add' ? 'var(--good, #1a8a5b)' : 'oklch(0.46 0.16 55)'} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -186,10 +186,10 @@ function FacilityIrr() {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between">
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)] flex items-center justify-between">
         <div>
-          <div className="text-[13px] font-semibold text-[#0f1c2e]">Facility IRR</div>
-          <div className="text-[11px] text-[#6b7685]">Lender economics: principal → fees → annuity over tenor</div>
+          <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Facility IRR</div>
+          <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Lender economics: principal → fees → annuity over tenor</div>
         </div>
         <div className="text-[14px] font-mono font-semibold text-[oklch(0.46_0.16_55)]">
           {lifetimeIrr == null ? '—' : `${(lifetimeIrr * 100).toFixed(2)}%`}
@@ -203,7 +203,7 @@ function FacilityIrr() {
       </div>
       <div className="p-3 overflow-x-auto">
         <table className="w-full text-[11px]">
-          <thead className="text-[#6b7685]">
+          <thead className="text-[var(--ink-2, #6b7685)]">
             <tr>
               <th className="text-left py-1">Coupon \ Tenor</th>
               {[10, 12, 15, 18, 20].map((t) => <th key={t} className="text-right py-1">{t}y</th>)}
@@ -211,7 +211,7 @@ function FacilityIrr() {
           </thead>
           <tbody>
             {grid.map((row: any) => (
-              <tr key={row.coupon} className="border-t border-[#eef2f7]">
+              <tr key={row.coupon} className="border-t border-[var(--s2, #eef2f7)]">
                 <td className="py-1 font-mono">{(row.coupon * 100).toFixed(2)}%</td>
                 {[10, 12, 15, 18, 20].map((t) => {
                   const cell = row[`t${t}`];
@@ -249,12 +249,12 @@ function RecoveryNpv() {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between">
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)] flex items-center justify-between">
         <div>
-          <div className="text-[13px] font-semibold text-[#0f1c2e]">Workout recovery NPV</div>
-          <div className="text-[11px] text-[#6b7685]">Cure vs liquidate — what's the higher-NPV path?</div>
+          <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Workout recovery NPV</div>
+          <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Cure vs liquidate — what's the higher-NPV path?</div>
         </div>
-        <div className={`text-[13px] font-mono font-semibold ${optimal === 'Cure' ? 'text-[oklch(0.46_0.16_55)]' : 'text-[#c0392b]'}`}>
+        <div className={`text-[13px] font-mono font-semibold ${optimal === 'Cure' ? 'text-[oklch(0.46_0.16_55)]' : 'text-[var(--bad, #c0392b)]'}`}>
           {optimal} · ΔNPV {formatZAR(valueDiff)}
         </div>
       </header>
@@ -289,9 +289,9 @@ function PortfolioStressTest() {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Portfolio stress test</div>
-        <div className="text-[11px] text-[#6b7685]">Capex blow-out, fuel cost, default rate — sensitivities on portfolio IRR / DSCR / loss</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Portfolio stress test</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Capex blow-out, fuel cost, default rate — sensitivities on portfolio IRR / DSCR / loss</div>
       </header>
       <div className="grid grid-cols-3 gap-3 px-4 py-3 widget-control-band">
         <Slider label="Capex shock"   value={capexShock}  min={0} max={0.40} step={0.01} onChange={setCapexShock}  fmt={(v) => `+${(v * 100).toFixed(0)}%`} />
@@ -303,7 +303,7 @@ function PortfolioStressTest() {
         <Tile label="Stressed DSCR" value={stressedDscr.toFixed(2)}              tone={stressedDscr > 1.2 ? 'good' : stressedDscr > 1.0 ? 'warn' : 'bad'} />
         <Tile label="Expected loss" value={formatZAR(expectedLoss)}              tone={defaultRate > 0.07 ? 'bad' : defaultRate > 0.03 ? 'warn' : 'good'} />
       </div>
-      <footer className="px-4 py-2 border-t border-[#eef2f7] text-[11px] text-[#6b7685]">
+      <footer className="px-4 py-2 border-t border-[var(--s2, #eef2f7)] text-[11px] text-[var(--ink-2, #6b7685)]">
         Base: R5bn deployed · IRR 11.0% · DSCR 1.42. Loss given default 55%.
       </footer>
     </section>
@@ -324,16 +324,16 @@ function PortfolioWaterfall() {
 
   const data = [
     { name: 'Called',      value: called,      fill: 'oklch(0.46 0.16 55)' },
-    { name: 'Distributed', value: distributed, fill: '#1a8a5b' },
+    { name: 'Distributed', value: distributed, fill: 'var(--good, #1a8a5b)' },
     { name: 'NAV',         value: nav,         fill: '#6b3a82' },
-    { name: 'Uncalled',    value: committed - called, fill: '#dde4ec' },
+    { name: 'Uncalled',    value: committed - called, fill: 'var(--border-subtle, #dde4ec)' },
   ];
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Portfolio waterfall</div>
-        <div className="text-[11px] text-[#6b7685]">Fund-level called / distributed / NAV — MOIC, DPI, TVPI</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Portfolio waterfall</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Fund-level called / distributed / NAV — MOIC, DPI, TVPI</div>
       </header>
       <div className="grid grid-cols-3 gap-3 px-4 py-3 widget-control-band">
         <Slider label="Called"      value={called}      min={0} max={committed} step={50_000_000} onChange={setCalled}      fmt={(v) => `R${(v / 1_000_000_000).toFixed(2)}bn`} />
@@ -369,7 +369,7 @@ function Slider({ label, value, min, max, step, onChange, fmt }: {
 }) {
   return (
     <label className="block text-[11px]">
-      <div className="flex justify-between"><span className="text-[#3d4756] font-medium">{label}</span><span className="font-mono">{fmt(value)}</span></div>
+      <div className="flex justify-between"><span className="text-[var(--ink-2, #3d4756)] font-medium">{label}</span><span className="font-mono">{fmt(value)}</span></div>
       <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[oklch(0.46_0.16_55)]" />
     </label>
   );
@@ -377,10 +377,10 @@ function Slider({ label, value, min, max, step, onChange, fmt }: {
 
 function Tile({ label, value, tone }: { label: string; value: string; tone: string }) {
   const map: Record<string, string> = {
-    good: 'bg-[#e7f4ea] text-[#1a8a5b]',
+    good: 'bg-[#e7f4ea] text-[var(--good, #1a8a5b)]',
     warn: 'bg-[#fef3e6] text-[#b04e0f]',
-    bad:  'bg-[#fde0db] text-[#c0392b]',
-    info: 'bg-[#eef2f7] text-[oklch(0.46_0.16_55)]',
+    bad:  'bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[var(--bad, #c0392b)]',
+    info: 'bg-[var(--s2, #eef2f7)] text-[oklch(0.46_0.16_55)]',
   };
   return (
     <div className={`rounded p-2 ${map[tone] || map.info}`}>

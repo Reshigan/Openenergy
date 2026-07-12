@@ -57,20 +57,20 @@ interface TicketEvent {
 }
 
 const STATE_TONE: Record<ChainStatus, { bg: string; fg: string; label: string }> = {
-  open:          { bg: '#fde0e0', fg: '#9b1f1f', label: 'Open (untriaged)' },
-  triaged:       { bg: '#fff4d6', fg: '#a06200', label: 'Triaged' },
-  in_progress:   { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'In progress' },
-  awaiting_user: { bg: '#e3e7ec', fg: '#557',    label: 'Awaiting user' },
-  resolved:      { bg: '#daf5e2', fg: '#1f6b3a', label: 'Resolved' },
-  closed:        { bg: '#e3e7ec', fg: '#557',    label: 'Closed' },
-  escalated:     { bg: '#fde0e0', fg: '#9b1f1f', label: 'Escalated' },
+  open:          { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Open (untriaged)' },
+  triaged:       { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Triaged' },
+  in_progress:   { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'In progress' },
+  awaiting_user: { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Awaiting user' },
+  resolved:      { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Resolved' },
+  closed:        { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Closed' },
+  escalated:     { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Escalated' },
 };
 
 const PRIORITY_TONE: Record<Priority, { bg: string; fg: string; label: string }> = {
-  urgent: { bg: '#fde0e0', fg: '#9b1f1f', label: 'P1' },
-  high:   { bg: '#fff4d6', fg: '#a06200', label: 'P2' },
-  normal: { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'P3' },
-  low:    { bg: '#e3e7ec', fg: '#557',    label: 'P4' },
+  urgent: { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'P1' },
+  high:   { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'P2' },
+  normal: { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'P3' },
+  low:    { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'P4' },
 };
 
 const FILTERS: Array<{ key: string; label: string }> = [
@@ -91,10 +91,10 @@ const IN_OPEN = new Set<ChainStatus>(['open', 'triaged', 'in_progress', 'awaitin
 
 function Kpi({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, padding: '12px 16px', minWidth: 150 }}>
+    <div style={{ background: 'var(--s1, #fff)', border: '1px solid var(--border-subtle, #e3e7ec)', borderRadius: 8, padding: '12px 16px', minWidth: 150 }}>
       <div style={{ fontSize: 11, color: '#557', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#0f1c2e', marginTop: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: '#7a8a9a', marginTop: 2 }}>{sub}</div>}
+      <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink, #0f1c2e)', marginTop: 4 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: 'var(--ink-2, #7a8a9a)', marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
@@ -181,7 +181,7 @@ export function SupportTicketChainTab() {
 
   return (
     <div data-testid="support-ticket-chain-tab" style={{ padding: '16px 20px', minHeight: 600 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f1c2e', marginTop: 0 }}>Support ticket chain</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink, #0f1c2e)', marginTop: 0 }}>Support ticket chain</h2>
       <p style={{ fontSize: 13, color: '#557', marginTop: 4 }}>
         Priority-tiered ticket lifecycle: open → triaged → in progress → resolved → closed,
         with awaiting-user (clock paused), reopen, and escalation branches. SLA windows are
@@ -206,9 +206,9 @@ export function SupportTicketChainTab() {
             data-testid={`support-ticket-chain-filter-${f.key}`}
             onClick={() => setFilter(f.key)}
             style={{
-              padding: '6px 12px', borderRadius: 999, border: '1px solid #e3e7ec',
+              padding: '6px 12px', borderRadius: 999, border: '1px solid var(--border-subtle, #e3e7ec)',
               background: filter === f.key ? 'oklch(0.46 0.16 55)' : '#fff',
-              color: filter === f.key ? '#fff' : '#0f1c2e', fontSize: 12, fontWeight: 600,
+              color: filter === f.key ? '#fff' : 'var(--ink, #0f1c2e)', fontSize: 12, fontWeight: 600,
               cursor: 'pointer',
             }}
           >{f.label}</button>
@@ -216,15 +216,15 @@ export function SupportTicketChainTab() {
       </div>
 
       {error && (
-        <div style={{ marginTop: 12, padding: '8px 12px', background: '#fde0e0', color: '#9b1f1f', borderRadius: 6, fontSize: 13 }}>
+        <div style={{ marginTop: 12, padding: '8px 12px', background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', color: 'var(--bad, #9b1f1f)', borderRadius: 6, fontSize: 13 }}>
           {error}
         </div>
       )}
 
-      <div data-testid="support-ticket-chain-table" style={{ marginTop: 14, background: '#fff', border: '1px solid #e3e7ec', borderRadius: 8, overflow: 'hidden' }}>
+      <div data-testid="support-ticket-chain-table" style={{ marginTop: 14, background: 'var(--s1, #fff)', border: '1px solid var(--border-subtle, #e3e7ec)', borderRadius: 8, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
-            <tr style={{ background: '#f6f8fb', textAlign: 'left', color: '#557' }}>
+            <tr style={{ background: 'var(--s1, #f6f8fb)', textAlign: 'left', color: '#557' }}>
               <th style={{ padding: '8px 12px' }}>Ticket</th>
               <th style={{ padding: '8px 12px' }}>Subject</th>
               <th style={{ padding: '8px 12px' }}>Category</th>
@@ -236,7 +236,7 @@ export function SupportTicketChainTab() {
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: '#7a8a9a' }}>
+              <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: 'var(--ink-2, #7a8a9a)' }}>
                 {loading ? 'Loading…' : 'No tickets in this view.'}
               </td></tr>
             )}
@@ -248,7 +248,7 @@ export function SupportTicketChainTab() {
                   key={r.id}
                   data-testid={`support-ticket-chain-row-${r.id}`}
                   onClick={() => openDrill(r)}
-                  style={{ borderTop: '1px solid #eef1f5', cursor: 'pointer' }}
+                  style={{ borderTop: '1px solid var(--border-subtle, #eef1f5)', cursor: 'pointer' }}
                 >
                   <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 12 }}>{r.ticket_number}</td>
                   <td style={{ padding: '8px 12px', maxWidth: 360 }}>
@@ -270,7 +270,7 @@ export function SupportTicketChainTab() {
                   <td style={{ padding: '8px 12px', fontSize: 11, color: '#557' }}>
                     {r.sla_window ? WINDOW_LABEL[r.sla_window] ?? r.sla_window : '—'}
                   </td>
-                  <td style={{ padding: '8px 12px', fontSize: 12, color: r.sla_breached ? '#9b1f1f' : '#557' }}>
+                  <td style={{ padding: '8px 12px', fontSize: 12, color: r.sla_breached ? 'var(--bad, #9b1f1f)' : '#557' }}>
                     {fmtSla(r.minutes_until_sla, r.sla_breached)}
                   </td>
                 </tr>
@@ -284,8 +284,8 @@ export function SupportTicketChainTab() {
         <div
           data-testid="support-ticket-chain-drill"
           style={{
-            position: 'fixed', top: 0, right: 0, bottom: 0, width: 580, background: '#fff',
-            borderLeft: '1px solid #e3e7ec', boxShadow: '-4px 0 16px rgba(0,0,0,0.08)',
+            position: 'fixed', top: 0, right: 0, bottom: 0, width: 580, background: 'var(--s1, #fff)',
+            borderLeft: '1px solid var(--border-subtle, #e3e7ec)', boxShadow: '-4px 0 16px rgba(0,0,0,0.08)',
             zIndex: 50, padding: 20, overflowY: 'auto',
           }}
         >
@@ -298,7 +298,7 @@ export function SupportTicketChainTab() {
           <div style={{ fontSize: 12, color: '#557', marginTop: 2 }}>
             Reporter: <span style={{ fontFamily: 'monospace' }}>{drill.reporter_id}</span> · Category: {drill.category}
           </div>
-          <div style={{ marginTop: 8, fontSize: 14, color: '#0f1c2e', fontWeight: 600 }}>{drill.subject}</div>
+          <div style={{ marginTop: 8, fontSize: 14, color: 'var(--ink, #0f1c2e)', fontWeight: 600 }}>{drill.subject}</div>
 
           <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 12 }}>
             <div><span style={{ color: '#557' }}>Priority:</span> <strong>{PRIORITY_TONE[drill.priority].label}</strong></div>
@@ -313,7 +313,7 @@ export function SupportTicketChainTab() {
           </div>
 
           {drill.escalation_reason && (
-            <div style={{ marginTop: 10, padding: 10, background: '#fde0e0', color: '#9b1f1f', borderRadius: 6, fontSize: 12 }}>
+            <div style={{ marginTop: 10, padding: 10, background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', color: 'var(--bad, #9b1f1f)', borderRadius: 6, fontSize: 12 }}>
               <strong>Escalation reason:</strong> {drill.escalation_reason}
             </div>
           )}
@@ -321,17 +321,17 @@ export function SupportTicketChainTab() {
           <h4 style={{ marginTop: 18, fontSize: 13, color: '#557' }}>Chain timeline</h4>
           <div data-testid="support-ticket-chain-events" style={{ marginTop: 6, maxHeight: 320, overflowY: 'auto' }}>
             {drillEvents.length === 0 && (
-              <div style={{ fontSize: 12, color: '#7a8a9a' }}>No events recorded.</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-2, #7a8a9a)' }}>No events recorded.</div>
             )}
             {drillEvents.map((ev) => (
               <div
                 key={ev.id}
                 data-testid={`support-ticket-chain-event-${ev.id}`}
-                style={{ padding: '8px 10px', borderBottom: '1px solid #eef1f5' }}
+                style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-subtle, #eef1f5)' }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ fontWeight: 600, fontSize: 12 }}>{ev.event_type}</div>
-                  <span style={{ fontSize: 10, color: '#7a8a9a' }}>{ev.created_at.slice(0, 16).replace('T', ' ')}</span>
+                  <span style={{ fontSize: 10, color: 'var(--ink-2, #7a8a9a)' }}>{ev.created_at.slice(0, 16).replace('T', ' ')}</span>
                 </div>
                 <div style={{ marginTop: 2, fontSize: 12 }}>{ev.notes ?? ''}</div>
                 <div style={{ marginTop: 2, fontSize: 11, color: '#557', fontFamily: 'monospace' }}>
@@ -354,7 +354,7 @@ export function SupportTicketChainTab() {
                     const reason = prompt('Escalate — provide reason:');
                     if (reason) void act('escalate', { reason }, drill.id);
                   }}
-                  style={{ padding: '6px 12px', background: '#9b1f1f', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'var(--bad, #9b1f1f)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >Escalate</button>
               </>
             )}
@@ -369,7 +369,7 @@ export function SupportTicketChainTab() {
                     const reason = prompt('Escalate — provide reason:');
                     if (reason) void act('escalate', { reason }, drill.id);
                   }}
-                  style={{ padding: '6px 12px', background: '#9b1f1f', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'var(--bad, #9b1f1f)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >Escalate</button>
               </>
             )}
@@ -384,14 +384,14 @@ export function SupportTicketChainTab() {
                     const resolution = prompt('Resolve — provide resolution (optional):');
                     void act('resolve', resolution ? { resolution } : {}, drill.id);
                   }}
-                  style={{ padding: '6px 12px', background: '#1f6b3a', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'var(--good, #1f6b3a)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >Resolve</button>
                 <button type="button" data-testid="support-ticket-chain-escalate"
                   onClick={() => {
                     const reason = prompt('Escalate — provide reason:');
                     if (reason) void act('escalate', { reason }, drill.id);
                   }}
-                  style={{ padding: '6px 12px', background: '#9b1f1f', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'var(--bad, #9b1f1f)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >Escalate</button>
               </>
             )}
@@ -406,14 +406,14 @@ export function SupportTicketChainTab() {
                     const resolution = prompt('Resolve — provide resolution (optional):');
                     void act('resolve', resolution ? { resolution } : {}, drill.id);
                   }}
-                  style={{ padding: '6px 12px', background: '#1f6b3a', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'var(--good, #1f6b3a)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >Resolve</button>
                 <button type="button" data-testid="support-ticket-chain-escalate"
                   onClick={() => {
                     const reason = prompt('Escalate — provide reason:');
                     if (reason) void act('escalate', { reason }, drill.id);
                   }}
-                  style={{ padding: '6px 12px', background: '#9b1f1f', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'var(--bad, #9b1f1f)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 12, cursor: 'pointer' }}
                 >Escalate</button>
               </>
             )}

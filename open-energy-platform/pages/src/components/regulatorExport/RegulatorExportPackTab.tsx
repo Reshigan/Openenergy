@@ -183,56 +183,56 @@ interface RepEvent {
 }
 
 const STATE_TONE: Record<RepStatus, { bg: string; fg: string; label: string }> = {
-  pack_proposed:            { bg: '#e3e7ec', fg: '#445',    label: 'Pack proposed' },
-  blocks_selected:          { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Blocks selected' },
-  leaves_filtered:          { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Leaves filtered' },
-  xbrl_assembled:           { bg: '#fff4d6', fg: '#a06200', label: 'XBRL assembled' },
-  narratives_attached:      { bg: '#fff4d6', fg: '#a06200', label: 'Narratives attached' },
-  internal_qa:              { bg: '#fff4d6', fg: '#a06200', label: 'Internal QA' },
-  counterparty_signoff:     { bg: '#daf5e2', fg: '#1f6b3a', label: 'Counterparty sign-off' },
-  packaged:                 { bg: '#daf5e2', fg: '#1f6b3a', label: 'Packaged' },
-  countersigned:            { bg: '#daf5e2', fg: '#1f6b3a', label: 'Countersigned' },
-  lodged_via_api:           { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Lodged via mTLS' },
-  acknowledged_by_regulator:{ bg: '#cfe6d3', fg: '#1f5b3a', label: 'Acknowledged' },
-  archived:                 { bg: '#1f5b3a', fg: '#fff',    label: 'Archived' },
-  rejected_by_regulator:    { bg: '#7a0e0e', fg: '#fff',    label: 'Rejected by regulator' },
-  withdrawn:                { bg: '#7a0e0e', fg: '#fff',    label: 'Withdrawn' },
-  restated:                 { bg: '#fff4d6', fg: '#a06200', label: 'Restated' },
-  suspended:                { bg: '#e3e7ec', fg: '#445',    label: 'Suspended' },
+  pack_proposed:            { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Pack proposed' },
+  blocks_selected:          { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Blocks selected' },
+  leaves_filtered:          { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Leaves filtered' },
+  xbrl_assembled:           { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'XBRL assembled' },
+  narratives_attached:      { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Narratives attached' },
+  internal_qa:              { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Internal QA' },
+  counterparty_signoff:     { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Counterparty sign-off' },
+  packaged:                 { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Packaged' },
+  countersigned:            { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Countersigned' },
+  lodged_via_api:           { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f5b3a)', label: 'Lodged via mTLS' },
+  acknowledged_by_regulator:{ bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f5b3a)', label: 'Acknowledged' },
+  archived:                 { bg: 'var(--good, #1f5b3a)', fg: '#fff',    label: 'Archived' },
+  rejected_by_regulator:    { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Rejected by regulator' },
+  withdrawn:                { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Withdrawn' },
+  restated:                 { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Restated' },
+  suspended:                { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Suspended' },
 };
 
 const TIER_TONE: Record<RepTier, { bg: string; fg: string; label: string }> = {
-  ad_hoc:                 { bg: '#e3e7ec', fg: '#557',    label: 'Ad hoc' },
-  monthly_return:         { bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', label: 'Monthly' },
-  quarterly_attestation:  { bg: '#fff4d6', fg: '#a06200', label: 'Quarterly' },
-  half_year:              { bg: '#daf5e2', fg: '#1f6b3a', label: 'Half-year' },
-  annual_audit:           { bg: '#7a0e0e', fg: '#fff',    label: 'Annual audit' },
+  ad_hoc:                 { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Ad hoc' },
+  monthly_return:         { bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', label: 'Monthly' },
+  quarterly_attestation:  { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Quarterly' },
+  half_year:              { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Half-year' },
+  annual_audit:           { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Annual audit' },
 };
 
 const URGENCY_TONE: Record<RepUrgency, { bg: string; fg: string; label: string }> = {
-  low:      { bg: '#e3e7ec', fg: '#557',    label: 'Low' },
-  medium:   { bg: '#daf5e2', fg: '#1f6b3a', label: 'Medium' },
-  high:     { bg: '#fff4d6', fg: '#a06200', label: 'High' },
-  critical: { bg: '#7a0e0e', fg: '#fff',    label: 'Critical' },
+  low:      { bg: 'var(--s2, #eef1f5)', fg: 'var(--ink-2)',    label: 'Low' },
+  medium:   { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f6b3a)', label: 'Medium' },
+  high:     { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'High' },
+  critical: { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Critical' },
 };
 
 const HEALTH_TONE: Record<HealthBand, { bg: string; fg: string; label: string }> = {
-  green:    { bg: '#cfe6d3', fg: '#1f5b3a', label: 'Green' },
-  amber:    { bg: '#fff4d6', fg: '#a06200', label: 'Amber' },
-  red:      { bg: '#fde0e0', fg: '#9b1f1f', label: 'Red' },
-  critical: { bg: '#7a0e0e', fg: '#fff',    label: 'Critical' },
+  green:    { bg: 'color-mix(in oklab, var(--good) 15%, var(--s1))', fg: 'var(--good, #1f5b3a)', label: 'Green' },
+  amber:    { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))', fg: 'var(--warn)', label: 'Amber' },
+  red:      { bg: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', fg: 'var(--bad, #9b1f1f)', label: 'Red' },
+  critical: { bg: 'var(--bad, #7a0e0e)', fg: '#fff',    label: 'Critical' },
 };
 
 const TARGET_TONE: Record<RegulatorTarget, { bg: string; fg: string }> = {
-  NERSA: { bg: '#0c2a4d', fg: '#fff'    },
+  NERSA: { bg: 'var(--ink, #0c2a4d)', fg: '#fff'    },
   IPPO:  { bg: 'oklch(0.46 0.16 55)', fg: '#fff'    },
-  SARB:  { bg: '#1f5b3a', fg: '#fff'    },
+  SARB:  { bg: 'var(--good, #1f5b3a)', fg: '#fff'    },
   DMRE:  { bg: '#a06200', fg: '#fff'    },
-  FSCA:  { bg: '#7a0e0e', fg: '#fff'    },
-  DFFE:  { bg: '#1f6b3a', fg: '#fff'    },
-  DTI:   { bg: '#4a5568', fg: '#fff'    },
+  FSCA:  { bg: 'var(--bad, #7a0e0e)', fg: '#fff'    },
+  DFFE:  { bg: 'var(--good, #1f6b3a)', fg: '#fff'    },
+  DTI:   { bg: 'var(--ink-2, #4a5568)', fg: '#fff'    },
   JSE:   { bg: '#000',    fg: '#fff'    },
-  SARS:  { bg: '#9b1f1f', fg: '#fff'    },
+  SARS:  { bg: 'var(--bad, #9b1f1f)', fg: '#fff'    },
   CIPC:  { bg: '#557',    fg: '#fff'    },
 };
 
@@ -594,8 +594,8 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
     <div className="text-[12px] text-[oklch(0.46_0.16_55)]">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-[#0c2a4d]">Certified regulator export packs</h2>
-          <p className="text-[11px] text-[#4a5568]">
+          <h2 className="text-base font-semibold text-[var(--ink, #0c2a4d)]">Certified regulator export packs</h2>
+          <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
             12-state XBRL/iXBRL/ESG-narrative chain lodged via mTLS to NERSA, IPPO, SARB, DMRE, FSCA, DFFE, DTI, JSE, SARS, CIPC.
             INVERTED SLA. FLOOR-AT-QUARTERLY {'≥'}1 flag / FLOOR-AT-ANNUAL {'≥'}2 flags. Mandatory audit bridge.
           </p>
@@ -623,20 +623,20 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
       </div>
 
       {/* Drill rail */}
-      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[#d8dde6] bg-white px-3 py-2 text-[11px] text-[#4a5568]">
+      <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2 text-[11px] text-[var(--ink-2, #4a5568)]">
         <span>Proposed: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.proposed_count}</span></span>
         <span>Blocks selected: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.selected_count}</span></span>
         <span>Filtered: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.filtered_count}</span></span>
         <span>XBRL assembled: <span className="font-semibold text-[#a06200]">{kpis.xbrl_count}</span></span>
         <span>Narratives: <span className="font-semibold text-[#a06200]">{kpis.narratives_count}</span></span>
         <span>Internal QA: <span className="font-semibold text-[#a06200]">{kpis.internal_qa_count}</span></span>
-        <span>Sign-off: <span className="font-semibold text-[#1f6b3a]">{kpis.signoff_count}</span></span>
-        <span>Packaged: <span className="font-semibold text-[#1f6b3a]">{kpis.packaged_count}</span></span>
-        <span>Countersigned: <span className="font-semibold text-[#1f6b3a]">{kpis.countersigned_count}</span></span>
-        <span>Archived: <span className="font-semibold text-[#1f5b3a]">{kpis.archived_count}</span></span>
-        <span>Withdrawn: <span className="font-semibold text-[#9b1f1f]">{kpis.withdrawn_count}</span></span>
+        <span>Sign-off: <span className="font-semibold text-[var(--good, #1f6b3a)]">{kpis.signoff_count}</span></span>
+        <span>Packaged: <span className="font-semibold text-[var(--good, #1f6b3a)]">{kpis.packaged_count}</span></span>
+        <span>Countersigned: <span className="font-semibold text-[var(--good, #1f6b3a)]">{kpis.countersigned_count}</span></span>
+        <span>Archived: <span className="font-semibold text-[var(--good, #1f5b3a)]">{kpis.archived_count}</span></span>
+        <span>Withdrawn: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{kpis.withdrawn_count}</span></span>
         <span>Restated: <span className="font-semibold text-[#a06200]">{kpis.restated_count}</span></span>
-        <span>Suspended: <span className="font-semibold text-[#6b7685]">{kpis.suspended_count}</span></span>
+        <span>Suspended: <span className="font-semibold text-[var(--ink-2, #6b7685)]">{kpis.suspended_count}</span></span>
         <span>Completeness avg: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.completeness_avg}/140</span></span>
         <span>XBRL avg: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.xbrl_avg}/140</span></span>
         <span>ESG avg: <span className="font-semibold text-[oklch(0.46_0.16_55)]">{kpis.esg_avg}/100</span></span>
@@ -659,7 +659,7 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#4a5568] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #4a5568)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -676,7 +676,7 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
                 ? 'bg-[#c2873a] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -692,8 +692,8 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
             onClick={() => setFilter(f.key)}
             className={`rounded px-2 py-1 text-[11px] font-medium ${
               filter === f.key
-                ? 'bg-[#7a0e0e] text-white'
-                : 'bg-white text-[#6b7685] border border-[#d8dde6] hover:bg-[#f3f5f9]'
+                ? 'bg-[var(--bad, #7a0e0e)] text-white'
+                : 'bg-surface-v2 text-[var(--ink-2, #6b7685)] border border-[var(--border-subtle, #d8dde6)] hover:bg-[var(--s2, #f3f5f9)]'
             }`}
           >
             {f.label}
@@ -705,11 +705,11 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
         <div className="mb-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-800">{err}</div>
       )}
       {loading ? (
-        <div className="rounded border border-[#d8dde6] bg-white px-4 py-6 text-center text-sm text-[#4a5568]">Loading...</div>
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-4 py-6 text-center text-sm text-[var(--ink-2, #4a5568)]">Loading...</div>
       ) : (
-        <div className="overflow-hidden rounded border border-[#d8dde6] bg-white">
+        <div className="overflow-hidden rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
           <table className="w-full text-[12px]">
-            <thead className="bg-[#f3f5f9]">
+            <thead className="bg-[var(--s2, #f3f5f9)]">
               <tr className="text-left">
                 <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Pack #</th>
                 <th className="px-3 py-2 font-semibold text-[oklch(0.46_0.16_55)]">Target</th>
@@ -738,13 +738,13 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
                   <tr
                     key={r.id}
                     onClick={() => loadEvents(r.id)}
-                    className="cursor-pointer border-t border-[#e3e7ec] hover:bg-[#f8fafc]"
+                    className="cursor-pointer border-t border-[var(--border-subtle, #e3e7ec)] hover:bg-[var(--s1, #f8fafc)]"
                   >
-                    <td className="px-3 py-2 font-mono text-[#0c2a4d]">
+                    <td className="px-3 py-2 font-mono text-[var(--ink, #0c2a4d)]">
                       <div className="text-[11px] font-semibold">{r.pack_number}</div>
-                      <div className="text-[10px] text-[#6b7685]">{r.reporting_period_start} {'→'} {r.reporting_period_end}</div>
-                      {r.is_reportable_flag && <span className="ml-1 text-[9px] font-semibold text-[#9b1f1f]">REG</span>}
-                      {r.regulator_ack_received ? <span className="ml-1 text-[9px] font-semibold text-[#1f5b3a]">ACK</span> : null}
+                      <div className="text-[10px] text-[var(--ink-2, #6b7685)]">{r.reporting_period_start} {'→'} {r.reporting_period_end}</div>
+                      {r.is_reportable_flag && <span className="ml-1 text-[9px] font-semibold text-[var(--bad, #9b1f1f)]">REG</span>}
+                      {r.regulator_ack_received ? <span className="ml-1 text-[9px] font-semibold text-[var(--good, #1f5b3a)]">ACK</span> : null}
                     </td>
                     <td className="px-3 py-2">
                       <span className="inline-block rounded px-2 py-0.5 text-[11px] font-semibold" style={{ background: target.bg, color: target.fg }}>
@@ -767,26 +767,26 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
                         {cs.label}
                       </span>
                     </td>
-                    <td className={`px-3 py-2 text-center tabular-nums ${xbrl >= 100 ? 'text-[#1f5b3a]' : xbrl >= 60 ? 'text-[#a06200]' : 'text-[#9b1f1f] font-semibold'}`}>
+                    <td className={`px-3 py-2 text-center tabular-nums ${xbrl >= 100 ? 'text-[var(--good, #1f5b3a)]' : xbrl >= 60 ? 'text-[#a06200]' : 'text-[var(--bad, #9b1f1f)] font-semibold'}`}>
                       {xbrl}/140
                     </td>
-                    <td className={`px-3 py-2 text-center tabular-nums ${integrity >= 100 ? 'text-[#1f5b3a]' : integrity >= 60 ? 'text-[#a06200]' : 'text-[#9b1f1f] font-semibold'}`}>
+                    <td className={`px-3 py-2 text-center tabular-nums ${integrity >= 100 ? 'text-[var(--good, #1f5b3a)]' : integrity >= 60 ? 'text-[#a06200]' : 'text-[var(--bad, #9b1f1f)] font-semibold'}`}>
                       {integrity}/140
                     </td>
-                    <td className={`px-3 py-2 text-center tabular-nums ${flags >= 2 ? 'text-[#9b1f1f] font-semibold' : flags === 1 ? 'text-[#a06200]' : 'text-[#1f5b3a]'}`}>
+                    <td className={`px-3 py-2 text-center tabular-nums ${flags >= 2 ? 'text-[var(--bad, #9b1f1f)] font-semibold' : flags === 1 ? 'text-[#a06200]' : 'text-[var(--good, #1f5b3a)]'}`}>
                       {flags}
                     </td>
-                    <td className="px-3 py-2 text-right font-mono text-[#4a5568]">
+                    <td className="px-3 py-2 text-right font-mono text-[var(--ink-2, #4a5568)]">
                       {fmtHoursSla(ageHours)}
                     </td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[#4a5568]'}`}>
+                    <td className={`px-3 py-2 text-right tabular-nums ${r.sla_breached_live ? 'text-red-700 font-semibold' : 'text-[var(--ink-2, #4a5568)]'}`}>
                       {r.sla_breached_live ? 'BREACHED' : fmtHoursSla(r.sla_hours_remaining_live)}
                     </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={11} className="px-3 py-6 text-center text-[#4a5568]">No packs match.</td></tr>
+                <tr><td colSpan={11} className="px-3 py-6 text-center text-[var(--ink-2, #4a5568)]">No packs match.</td></tr>
               )}
             </tbody>
           </table>
@@ -805,10 +805,10 @@ export function RegulatorExportPackTab({ regulatorView }: Props = {}) {
 }
 
 function Kpi({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' | 'bad' }) {
-  const color = tone === 'bad' ? '#9b1f1f' : tone === 'warn' ? '#a06200' : tone === 'ok' ? '#1f5b3a' : '#0c2a4d';
+  const color = tone === 'bad' ? 'var(--bad, #9b1f1f)' : tone === 'warn' ? '#a06200' : tone === 'ok' ? 'var(--good, #1f5b3a)' : 'var(--ink, #0c2a4d)';
   return (
-    <div className="rounded border border-[#d8dde6] bg-white px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-[#4a5568]">{label}</div>
+    <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #4a5568)]">{label}</div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>{value}</div>
     </div>
   );
@@ -859,10 +859,10 @@ function Drawer({
     const cls = tone === 'primary'
       ? 'bg-[#c2873a] text-white hover:bg-[#c2873a]'
       : tone === 'danger'
-        ? 'bg-[#7a0e0e] text-white hover:bg-[#9b1f1f]'
+        ? 'bg-[var(--bad, #7a0e0e)] text-white hover:bg-[var(--bad, #9b1f1f)]'
         : tone === 'amber'
           ? 'bg-[#a06200] text-white hover:bg-[#c97a00]'
-          : 'bg-white border border-[#d8dde6] text-[oklch(0.46_0.16_55)] hover:bg-[#f3f5f9]';
+          : 'bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] text-[oklch(0.46_0.16_55)] hover:bg-[var(--s2, #f3f5f9)]';
     return (
       <button type="button"
         key={action}
@@ -877,16 +877,16 @@ function Drawer({
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-stretch justify-end bg-black/40">
-      <div className="w-full max-w-3xl overflow-y-auto bg-[#f3f5f9] p-4">
+      <div className="w-full max-w-3xl overflow-y-auto bg-[var(--s2, #f3f5f9)] p-4">
         <div className="mb-3 flex items-start justify-between">
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-[#6b7685]">{row.regulator_target} {'•'} {row.pack_cadence}</div>
-            <h3 className="text-lg font-semibold text-[#0c2a4d]">{row.pack_number}</h3>
-            <p className="text-[11px] text-[#4a5568]">
+            <div className="text-[11px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{row.regulator_target} {'•'} {row.pack_cadence}</div>
+            <h3 className="text-lg font-semibold text-[var(--ink, #0c2a4d)]">{row.pack_number}</h3>
+            <p className="text-[11px] text-[var(--ink-2, #4a5568)]">
               {row.title || 'Regulator export pack'} {'•'} {row.reporting_period_start} {'→'} {row.reporting_period_end}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded bg-white border border-[#d8dde6] px-3 py-1 text-[12px] text-[oklch(0.46_0.16_55)] hover:bg-[#f3f5f9]">Close</button>
+          <button type="button" onClick={onClose} className="rounded bg-surface-v2 border border-[var(--border-subtle, #d8dde6)] px-3 py-1 text-[12px] text-[oklch(0.46_0.16_55)] hover:bg-[var(--s2, #f3f5f9)]">Close</button>
         </div>
 
         {/* Scoring */}
@@ -899,34 +899,34 @@ function Drawer({
         </div>
 
         {/* Bridges + flags */}
-        <div className="mb-3 grid grid-cols-2 gap-3 rounded border border-[#d8dde6] bg-white p-3">
+        <div className="mb-3 grid grid-cols-2 gap-3 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3">
           <div>
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-[#6b7685]">Bridges</div>
-            <ul className="space-y-0.5 text-[11px] text-[#4a5568]">
-              <li>Audit chain: <span className={row.bridges_to_w118_audit_chain_live ? 'text-[#1f5b3a] font-semibold' : 'text-[#9b1f1f] font-semibold'}>
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Bridges</div>
+            <ul className="space-y-0.5 text-[11px] text-[var(--ink-2, #4a5568)]">
+              <li>Audit chain: <span className={row.bridges_to_w118_audit_chain_live ? 'text-[var(--good, #1f5b3a)] font-semibold' : 'text-[var(--bad, #9b1f1f)] font-semibold'}>
                 {row.bridges_to_w118_audit_chain_live ? 'BRIDGED (mandatory)' : 'MISSING (mandatory)'}
               </span></li>
-              <li>EVM: <span className={row.bridges_to_w113_evm_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w113_evm_chain_live ? 'bridged' : '-'}</span></li>
-              <li>Doc control: <span className={row.bridges_to_w114_doc_control_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w114_doc_control_chain_live ? 'bridged' : '-'}</span></li>
-              <li>Submittal: <span className={row.bridges_to_w115_submittal_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w115_submittal_chain_live ? 'bridged' : '-'}</span></li>
-              <li>RFI: <span className={row.bridges_to_w116_rfi_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w116_rfi_chain_live ? 'bridged' : '-'}</span></li>
-              <li>Change order: <span className={row.bridges_to_w117_change_order_chain_live ? 'text-[#1f5b3a]' : 'text-[#6b7685]'}>{row.bridges_to_w117_change_order_chain_live ? 'bridged' : '-'}</span></li>
+              <li>EVM: <span className={row.bridges_to_w113_evm_chain_live ? 'text-[var(--good, #1f5b3a)]' : 'text-[var(--ink-2, #6b7685)]'}>{row.bridges_to_w113_evm_chain_live ? 'bridged' : '-'}</span></li>
+              <li>Doc control: <span className={row.bridges_to_w114_doc_control_chain_live ? 'text-[var(--good, #1f5b3a)]' : 'text-[var(--ink-2, #6b7685)]'}>{row.bridges_to_w114_doc_control_chain_live ? 'bridged' : '-'}</span></li>
+              <li>Submittal: <span className={row.bridges_to_w115_submittal_chain_live ? 'text-[var(--good, #1f5b3a)]' : 'text-[var(--ink-2, #6b7685)]'}>{row.bridges_to_w115_submittal_chain_live ? 'bridged' : '-'}</span></li>
+              <li>RFI: <span className={row.bridges_to_w116_rfi_chain_live ? 'text-[var(--good, #1f5b3a)]' : 'text-[var(--ink-2, #6b7685)]'}>{row.bridges_to_w116_rfi_chain_live ? 'bridged' : '-'}</span></li>
+              <li>Change order: <span className={row.bridges_to_w117_change_order_chain_live ? 'text-[var(--good, #1f5b3a)]' : 'text-[var(--ink-2, #6b7685)]'}>{row.bridges_to_w117_change_order_chain_live ? 'bridged' : '-'}</span></li>
             </ul>
           </div>
           <div>
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-[#6b7685]">Floor flags ({row.floor_flag_count_live ?? 0})</div>
-            <ul className="space-y-0.5 text-[11px] text-[#4a5568]">
-              <li>JSE SRL listed: <span className={row.jse_srl_listed ? 'text-[#9b1f1f] font-semibold' : 'text-[#6b7685]'}>{row.jse_srl_listed ? 'YES' : 'no'}</span></li>
-              <li>Cross-border filing: <span className={row.cross_border_filing ? 'text-[#9b1f1f] font-semibold' : 'text-[#6b7685]'}>{row.cross_border_filing ? 'YES' : 'no'}</span></li>
-              <li>Prior restatement 12m: <span className={row.prior_restatement_within_12m ? 'text-[#9b1f1f] font-semibold' : 'text-[#6b7685]'}>{row.prior_restatement_within_12m ? 'YES' : 'no'}</span></li>
-              <li>Regulator audit in progress: <span className={row.regulator_audit_in_progress ? 'text-[#9b1f1f] font-semibold' : 'text-[#6b7685]'}>{row.regulator_audit_in_progress ? 'YES' : 'no'}</span></li>
-              <li>Sig-chain break in window: <span className={row.signature_chain_break_in_window ? 'text-[#9b1f1f] font-semibold' : 'text-[#6b7685]'}>{row.signature_chain_break_in_window ? 'YES' : 'no'}</span></li>
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Floor flags ({row.floor_flag_count_live ?? 0})</div>
+            <ul className="space-y-0.5 text-[11px] text-[var(--ink-2, #4a5568)]">
+              <li>JSE SRL listed: <span className={row.jse_srl_listed ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--ink-2, #6b7685)]'}>{row.jse_srl_listed ? 'YES' : 'no'}</span></li>
+              <li>Cross-border filing: <span className={row.cross_border_filing ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--ink-2, #6b7685)]'}>{row.cross_border_filing ? 'YES' : 'no'}</span></li>
+              <li>Prior restatement 12m: <span className={row.prior_restatement_within_12m ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--ink-2, #6b7685)]'}>{row.prior_restatement_within_12m ? 'YES' : 'no'}</span></li>
+              <li>Regulator audit in progress: <span className={row.regulator_audit_in_progress ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--ink-2, #6b7685)]'}>{row.regulator_audit_in_progress ? 'YES' : 'no'}</span></li>
+              <li>Sig-chain break in window: <span className={row.signature_chain_break_in_window ? 'text-[var(--bad, #9b1f1f)] font-semibold' : 'text-[var(--ink-2, #6b7685)]'}>{row.signature_chain_break_in_window ? 'YES' : 'no'}</span></li>
             </ul>
           </div>
         </div>
 
         {/* Timestamps */}
-        <div className="mb-3 grid grid-cols-2 gap-2 rounded border border-[#d8dde6] bg-white p-3 text-[11px] text-[#4a5568]">
+        <div className="mb-3 grid grid-cols-2 gap-2 rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 p-3 text-[11px] text-[var(--ink-2, #4a5568)]">
           <div>Proposed: {fmtDate(row.pack_proposed_at)}</div>
           <div>Blocks selected: {fmtDate(row.blocks_selected_at)}</div>
           <div>Leaves filtered: {fmtDate(row.leaves_filtered_at)}</div>
@@ -939,11 +939,11 @@ function Drawer({
           <div>Lodged via mTLS: {fmtDate(row.lodged_via_api_at)}</div>
           <div>Acknowledged: {fmtDate(row.acknowledged_by_regulator_at)}</div>
           <div>Archived: {fmtDate(row.archived_at)}</div>
-          {row.regulator_crossed_at && <div>Regulator crossed: <span className="font-semibold text-[#9b1f1f]">{fmtDate(row.regulator_crossed_at)}</span></div>}
+          {row.regulator_crossed_at && <div>Regulator crossed: <span className="font-semibold text-[var(--bad, #9b1f1f)]">{fmtDate(row.regulator_crossed_at)}</span></div>}
           {row.regulator_inbox_ref && <div>Regulator inbox: <span className="font-mono text-[10px]">{row.regulator_inbox_ref}</span></div>}
           {row.regulator_ref && <div>Regulator ref: <span className="font-mono text-[10px]">{row.regulator_ref}</span></div>}
           {row.regulator_ack_code && <div>Ack code: <span className="font-mono text-[10px]">{row.regulator_ack_code}</span></div>}
-          {row.regulator_reject_code && <div>Reject code: <span className="font-mono text-[10px] text-[#9b1f1f]">{row.regulator_reject_code}</span></div>}
+          {row.regulator_reject_code && <div>Reject code: <span className="font-mono text-[10px] text-[var(--bad, #9b1f1f)]">{row.regulator_reject_code}</span></div>}
         </div>
 
         {/* Action buttons */}
@@ -958,24 +958,24 @@ function Drawer({
         </div>
 
         {/* Event log */}
-        <div className="rounded border border-[#d8dde6] bg-white">
-          <div className="border-b border-[#e3e7ec] px-3 py-2 text-[11px] font-semibold text-[#0c2a4d]">Event log ({events.length})</div>
-          <ul className="divide-y divide-[#e3e7ec] text-[11px]">
+        <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2">
+          <div className="border-b border-[var(--border-subtle, #e3e7ec)] px-3 py-2 text-[11px] font-semibold text-[var(--ink, #0c2a4d)]">Event log ({events.length})</div>
+          <ul className="divide-y divide-[var(--border-subtle, #e3e7ec)] text-[11px]">
             {events.map((e) => (
               <li key={e.id} className="px-3 py-2">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-[oklch(0.46_0.16_55)]">{e.event_type}</span>
-                  <span className="text-[#6b7685]">{fmtDate(e.created_at)}</span>
+                  <span className="text-[var(--ink-2, #6b7685)]">{fmtDate(e.created_at)}</span>
                 </div>
-                <div className="text-[#4a5568]">
+                <div className="text-[var(--ink-2, #4a5568)]">
                   {e.from_status} {'→'} {e.to_status}
                   {e.from_tier && e.to_tier && e.from_tier !== e.to_tier ? ` ${'•'} ${e.from_tier} → ${e.to_tier}` : ''}
                 </div>
-                {e.notes && <div className="text-[#6b7685]">{e.notes}</div>}
+                {e.notes && <div className="text-[var(--ink-2, #6b7685)]">{e.notes}</div>}
               </li>
             ))}
             {events.length === 0 && (
-              <li className="px-3 py-3 text-center text-[#6b7685]">No events yet.</li>
+              <li className="px-3 py-3 text-center text-[var(--ink-2, #6b7685)]">No events yet.</li>
             )}
           </ul>
         </div>
@@ -1021,20 +1021,20 @@ function ProposeModal({
 
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-lg rounded bg-white p-4 shadow-lg">
-        <h3 className="mb-3 text-base font-semibold text-[#0c2a4d]">Propose regulator export pack</h3>
+      <div className="w-full max-w-lg rounded bg-surface-v2 p-4 shadow-lg">
+        <h3 className="mb-3 text-base font-semibold text-[var(--ink, #0c2a4d)]">Propose regulator export pack</h3>
         <div className="space-y-2 text-[12px]">
           <label className="block">
-            <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Regulator target</div>
-            <select value={target} onChange={(e) => setTarget(e.target.value as RegulatorTarget)} className="w-full rounded border border-[#d8dde6] px-2 py-1">
+            <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Regulator target</div>
+            <select value={target} onChange={(e) => setTarget(e.target.value as RegulatorTarget)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1">
               {(['NERSA','IPPO','SARB','DMRE','FSCA','DFFE','DTI','JSE','SARS','CIPC'] as RegulatorTarget[]).map((t) => (
                 <option key={t} value={t}>{t}</option>
               ))}
             </select>
           </label>
           <label className="block">
-            <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Cadence (INVERTED SLA: bigger = more time)</div>
-            <select value={cadence} onChange={(e) => setCadence(e.target.value as Cadence)} className="w-full rounded border border-[#d8dde6] px-2 py-1">
+            <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Cadence (INVERTED SLA: bigger = more time)</div>
+            <select value={cadence} onChange={(e) => setCadence(e.target.value as Cadence)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1">
               <option value="ad_hoc">Ad hoc (24h)</option>
               <option value="monthly_return">Monthly return (72h)</option>
               <option value="quarterly_attestation">Quarterly attestation (168h)</option>
@@ -1044,24 +1044,24 @@ function ProposeModal({
           </label>
           <div className="grid grid-cols-2 gap-2">
             <label>
-              <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Period start</div>
-              <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1" />
+              <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Period start</div>
+              <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1" />
             </label>
             <label>
-              <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Period end</div>
-              <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1" />
+              <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Period end</div>
+              <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1" />
             </label>
           </div>
           <label className="block">
-            <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Title</div>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[#d8dde6] px-2 py-1" />
+            <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Title</div>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1" />
           </label>
           <label className="block">
-            <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">Reason code</div>
-            <input value={reasonCode} onChange={(e) => setReasonCode(e.target.value)} placeholder="e.g. quarterly_routine" className="w-full rounded border border-[#d8dde6] px-2 py-1" />
+            <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">Reason code</div>
+            <input value={reasonCode} onChange={(e) => setReasonCode(e.target.value)} placeholder="e.g. quarterly_routine" className="w-full rounded border border-[var(--border-subtle, #d8dde6)] px-2 py-1" />
           </label>
-          <div className="rounded border border-[#d8dde6] bg-[#f8fafc] p-2">
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-[#6b7685]">
+          <div className="rounded border border-[var(--border-subtle, #d8dde6)] bg-[var(--s1, #f8fafc)] p-2">
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">
               Floor flags ({'≥'}1 lifts to quarterly; {'≥'}2 lifts to annual)
             </div>
             <label className="flex items-center gap-2"><input type="checkbox" checked={flagJse} onChange={(e) => setFlagJse(e.target.checked)} /> JSE SRL listed</label>
@@ -1072,7 +1072,7 @@ function ProposeModal({
           </div>
         </div>
         <div className="mt-3 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded border border-[#d8dde6] bg-white px-3 py-1.5 text-[12px] text-[oklch(0.46_0.16_55)] hover:bg-[#f3f5f9]">Cancel</button>
+          <button type="button" onClick={onClose} className="rounded border border-[var(--border-subtle, #d8dde6)] bg-surface-v2 px-3 py-1.5 text-[12px] text-[oklch(0.46_0.16_55)] hover:bg-[var(--s2, #f3f5f9)]">Cancel</button>
           <button type="button" onClick={submit} className="rounded bg-[#c2873a] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#c2873a]">Propose</button>
         </div>
       </div>

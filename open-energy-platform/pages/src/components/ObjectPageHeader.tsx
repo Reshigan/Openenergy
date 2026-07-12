@@ -22,10 +22,10 @@ interface ObjectPageHeaderProps {
 }
 
 const toneColor: Record<NonNullable<ObjectKPI['tone']>, string> = {
-  default: '#0f1c2e',
-  good: '#1a8a5b',
+  default: 'var(--ink, #0f1c2e)',
+  good: 'var(--good, #1a8a5b)',
   critical: '#c97a14',
-  negative: '#c0392b',
+  negative: 'var(--bad, #c0392b)',
   info: 'oklch(0.46 0.16 55)',
 };
 
@@ -60,7 +60,7 @@ export function ObjectPageHeader({
           <div className="flex items-center gap-3 flex-wrap">
             <h1
               className="text-[24px] font-bold tracking-tight"
-              style={{ color: '#0f1c2e' }}
+              style={{ color: 'var(--ink, #0f1c2e)' }}
             >
               {title}
             </h1>
@@ -69,7 +69,7 @@ export function ObjectPageHeader({
             )}
           </div>
           {subtitle && (
-            <p className="text-[14px] mt-1" style={{ color: '#6b7685' }}>
+            <p className="text-[14px] mt-1" style={{ color: 'var(--ink-2, #6b7685)' }}>
               {subtitle}
             </p>
           )}
@@ -83,7 +83,7 @@ export function ObjectPageHeader({
             <div key={i} className="min-w-[120px]">
               <div
                 className="text-[11px] font-semibold uppercase tracking-wider"
-                style={{ color: '#6b7685' }}
+                style={{ color: 'var(--ink-2, #6b7685)' }}
               >
                 {kpi.label}
               </div>
@@ -95,7 +95,7 @@ export function ObjectPageHeader({
                   {kpi.value}
                 </span>
                 {kpi.unit && (
-                  <span className="text-[12px]" style={{ color: '#6b7685' }}>
+                  <span className="text-[12px]" style={{ color: 'var(--ink-2, #6b7685)' }}>
                     {kpi.unit}
                   </span>
                 )}

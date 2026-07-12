@@ -26,7 +26,7 @@ interface Kpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  variation_requested:   'bg-[#eef2f7] text-[#6b7685]',
+  variation_requested:   'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
   regulatory_screen:     'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   technical_review:      'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   commercial_review:     'bg-purple-100 text-purple-700',
@@ -34,14 +34,14 @@ const STATUS_COLORS: Record<string, string> = {
   nersa_assessment:      'bg-yellow-100 text-yellow-800',
   variation_approved:    'bg-teal-100 text-teal-700',
   ppa_amended:           'bg-green-100 text-green-800',
-  withdrawn:             'bg-[#eef2f7] text-[#9aa5b4]',
+  withdrawn:             'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]',
   rejected:              'bg-red-100 text-red-700',
   appeal_filed:          'bg-orange-100 text-orange-700',
-  appeal_determined:     'bg-[#e8ecf0] text-[#3d4756]',
+  appeal_determined:     'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink-2, #3d4756)]',
 };
 
 const TIER_COLORS: Record<string, string> = {
-  minor:        'bg-[#eef2f7] text-[#3d4756]',
+  minor:        'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   moderate:     'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   significant:  'bg-[oklch(0.94_0.008_250)] text-[oklch(0.46_0.16_55)]',
   major:        'bg-orange-100 text-orange-800',
@@ -158,13 +158,13 @@ export function IppPpaVariationTab() {
                   ? 'border-orange-300 bg-orange-50'
                   : k.good
                   ? 'border-green-200 bg-green-50'
-                  : 'border-[#dde4ec] bg-white'
+                  : 'border-[var(--border-subtle, #dde4ec)] bg-surface-v2'
               }`}
             >
-              <div className="text-xs text-[#6b7685]">{k.label}</div>
+              <div className="text-xs text-[var(--ink-2, #6b7685)]">{k.label}</div>
               <div
                 className={`text-xl font-bold ${
-                  k.danger ? 'text-red-700' : k.alert ? 'text-orange-700' : k.good ? 'text-green-700' : 'text-[#0f1c2e]'
+                  k.danger ? 'text-red-700' : k.alert ? 'text-orange-700' : k.good ? 'text-green-700' : 'text-[var(--ink, #0f1c2e)]'
                 }`}
               >
                 {k.value}
@@ -178,7 +178,7 @@ export function IppPpaVariationTab() {
       <div className="flex flex-wrap gap-2 items-center">
         <button type="button"
           onClick={() => { setFilterStatus(''); load('', filterTier); }}
-          className={`px-3 py-1 rounded text-xs border ${!filterStatus ? 'bg-[#1e2a38] text-white border-gray-800' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
+          className={`px-3 py-1 rounded text-xs border ${!filterStatus ? 'bg-[var(--ink, #1e2a38)] text-white border-gray-800' : 'bg-surface-v2 text-[var(--ink-2, #3d4756)] border-[var(--border-subtle, #dde4ec)]'}`}
         >
           All
         </button>
@@ -186,17 +186,17 @@ export function IppPpaVariationTab() {
           <button type="button"
             key={s}
             onClick={() => { setFilterStatus(s); load(s, filterTier); }}
-            className={`px-3 py-1 rounded text-xs border ${filterStatus === s ? 'bg-[#1e2a38] text-white border-gray-800' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
+            className={`px-3 py-1 rounded text-xs border ${filterStatus === s ? 'bg-[var(--ink, #1e2a38)] text-white border-gray-800' : 'bg-surface-v2 text-[var(--ink-2, #3d4756)] border-[var(--border-subtle, #dde4ec)]'}`}
           >
             {s.replace(/_/g, ' ')}
           </button>
         ))}
-        <span className="text-[#9aa5b4]">|</span>
+        <span className="text-[var(--ink-2, #9aa5b4)]">|</span>
         {(['minor', 'moderate', 'significant', 'major', 'material'] as const).map(t => (
           <button type="button"
             key={t}
             onClick={() => { const nt = filterTier === t ? '' : t; setFilterTier(nt); load(filterStatus, nt); }}
-            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-[oklch(0.40_0.15_55)] text-white border-[oklch(0.46_0.16_55)]' : 'bg-white text-[#3d4756] border-[#dde4ec]'}`}
+            className={`px-2 py-1 rounded text-xs border ${filterTier === t ? 'bg-[oklch(0.40_0.15_55)] text-white border-[oklch(0.46_0.16_55)]' : 'bg-surface-v2 text-[var(--ink-2, #3d4756)] border-[var(--border-subtle, #dde4ec)]'}`}
           >
             {t}
           </button>
@@ -209,7 +209,7 @@ export function IppPpaVariationTab() {
         </button>
         <button type="button"
           onClick={() => load(filterStatus, filterTier)}
-          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
+          className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]"
         >
           Refresh
         </button>
@@ -217,12 +217,12 @@ export function IppPpaVariationTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading…</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading…</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-4">Project / Description</th>
                 <th className="pb-2 pr-4">Type</th>
                 <th className="pb-2 pr-4">Cap (MW)</th>
@@ -240,41 +240,41 @@ export function IppPpaVariationTab() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b hover:bg-[#eef2f7] cursor-pointer"
+                    className="border-b hover:bg-[var(--s2, #eef2f7)] cursor-pointer"
                     onClick={() => setSelected(item)}
                   >
                     <td className="py-2 pr-4 text-xs max-w-[200px]">
-                      <div className="truncate font-medium text-[#1e2a38]">{item.description?.slice(0, 60) ?? item.project_id}</div>
-                      <div className="text-[#9aa5b4] truncate">{item.project_id}</div>
+                      <div className="truncate font-medium text-[var(--ink, #1e2a38)]">{item.description?.slice(0, 60) ?? item.project_id}</div>
+                      <div className="text-[var(--ink-2, #9aa5b4)] truncate">{item.project_id}</div>
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#3d4756]">
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #3d4756)]">
                       {VARIATION_TYPE_LABELS[item.variation_type] ?? item.variation_type}
                     </td>
                     <td className="py-2 pr-4 text-xs font-medium">{item.capacity_mw ?? '—'}</td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.variation_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[item.variation_tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {item.variation_tier}
                       </span>
                     </td>
                     <td className="py-2 pr-4">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {statusLabel(item.chain_status).text}
                       </span>
                       {hasRegulator && (
                         <span className="ml-1 px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">REGULATOR</span>
                       )}
                     </td>
-                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
+                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[var(--ink-2, #6b7685)]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#9aa5b4]">{fmtDate(item.created_at)}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink-2, #9aa5b4)]">{fmtDate(item.created_at)}</td>
                     <td className="py-2 text-xs text-[oklch(0.46_0.16_55)] whitespace-nowrap">View →</td>
                   </tr>
                 );
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-10 text-center text-[#9aa5b4] text-sm">
+                  <td colSpan={8} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">
                     No PPA variation applications found
                   </td>
                 </tr>
@@ -291,28 +291,28 @@ export function IppPpaVariationTab() {
           onClick={() => setSelected(null)}
         >
           <div
-            className="bg-white w-full max-w-xl h-full overflow-y-auto p-6 shadow-xl"
+            className="bg-surface-v2 w-full max-w-xl h-full overflow-y-auto p-6 shadow-xl"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h2 className="text-lg font-bold">PPA Variation</h2>
-                <div className="text-xs text-[#6b7685] mt-1">
+                <div className="text-xs text-[var(--ink-2, #6b7685)] mt-1">
                   {VARIATION_TYPE_LABELS[selected.variation_type] ?? selected.variation_type}
                   {' · '}
                   <span className={`px-2 py-0.5 rounded text-xs ${TIER_COLORS[selected.variation_tier] ?? ''}`}>{selected.variation_tier}</span>
                 </div>
               </div>
-              <button type="button" onClick={() => setSelected(null)} className="text-[#9aa5b4] hover:text-[#2d3748] text-lg leading-none">✕</button>
+              <button type="button" onClick={() => setSelected(null)} className="text-[var(--ink-2, #9aa5b4)] hover:text-[var(--ink, #2d3748)] text-lg leading-none">✕</button>
             </div>
 
             {selected.description && (
-              <div className="text-sm text-[#3d4756] bg-[#f8fafc] rounded p-3 mb-4">{selected.description}</div>
+              <div className="text-sm text-[var(--ink-2, #3d4756)] bg-[var(--s1, #f8fafc)] rounded p-3 mb-4">{selected.description}</div>
             )}
 
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">
               <div>
-                <span className="text-[#6b7685] text-xs">Status</span>
+                <span className="text-[var(--ink-2, #6b7685)] text-xs">Status</span>
                 <div>
                   <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[selected.chain_status] ?? ''}`}>
                     {statusLabel(selected.chain_status).text}
@@ -323,35 +323,35 @@ export function IppPpaVariationTab() {
                 </div>
               </div>
               <div>
-                <span className="text-[#6b7685] text-xs">Project</span>
+                <span className="text-[var(--ink-2, #6b7685)] text-xs">Project</span>
                 <div className="text-xs font-mono">{selected.project_id}</div>
               </div>
               {selected.capacity_mw != null && (
                 <div>
-                  <span className="text-[#6b7685] text-xs">Capacity</span>
+                  <span className="text-[var(--ink-2, #6b7685)] text-xs">Capacity</span>
                   <div className="font-medium">{selected.capacity_mw} MW</div>
                 </div>
               )}
               <div>
-                <span className="text-[#6b7685] text-xs">SLA due</span>
+                <span className="text-[var(--ink-2, #6b7685)] text-xs">SLA due</span>
                 <div className={isOverdue(selected.sla_due_at, selected.sla_breached) ? 'text-red-600 font-semibold' : ''}>
                   {isOverdue(selected.sla_due_at, selected.sla_breached) ? '⚠ ' : ''}{fmtDate(selected.sla_due_at)}
                 </div>
               </div>
               {selected.variation_approved_at && (
                 <div>
-                  <span className="text-[#6b7685] text-xs">Approved</span>
+                  <span className="text-[var(--ink-2, #6b7685)] text-xs">Approved</span>
                   <div className="text-green-700">{fmtDate(selected.variation_approved_at)}</div>
                 </div>
               )}
               {selected.ppa_amended_at && (
                 <div>
-                  <span className="text-[#6b7685] text-xs">PPA amended</span>
+                  <span className="text-[var(--ink-2, #6b7685)] text-xs">PPA amended</span>
                   <div className="text-green-700">{fmtDate(selected.ppa_amended_at)}</div>
                 </div>
               )}
               <div>
-                <span className="text-[#6b7685] text-xs">Created</span>
+                <span className="text-[var(--ink-2, #6b7685)] text-xs">Created</span>
                 <div>{fmtDate(selected.created_at)}</div>
               </div>
             </div>
@@ -366,7 +366,7 @@ export function IppPpaVariationTab() {
           onClick={() => setShowCreate(false)}
         >
           <div
-            className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl"
+            className="bg-surface-v2 rounded-xl p-6 w-full max-w-md shadow-xl"
             onClick={e => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold mb-4">New PPA Variation</h3>
@@ -380,7 +380,7 @@ export function IppPpaVariationTab() {
               <select
                 value={form.variation_type}
                 onChange={e => setForm(f => ({ ...f, variation_type: e.target.value }))}
-                className="w-full border rounded px-3 py-2 text-sm text-[#2d3748]"
+                className="w-full border rounded px-3 py-2 text-sm text-[var(--ink, #2d3748)]"
               >
                 {Object.entries(VARIATION_TYPE_LABELS).map(([v, l]) => (
                   <option key={v} value={v}>{l}</option>
@@ -411,7 +411,7 @@ export function IppPpaVariationTab() {
               </button>
               <button type="button"
                 onClick={() => setShowCreate(false)}
-                className="px-4 py-2 bg-[#eef2f7] text-[#2d3748] rounded text-sm hover:bg-[#e8ecf0]"
+                className="px-4 py-2 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-sm hover:bg-[var(--border-subtle, #e8ecf0)]"
               >
                 Cancel
               </button>

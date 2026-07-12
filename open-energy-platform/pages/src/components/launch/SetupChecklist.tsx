@@ -28,10 +28,10 @@ export function SetupChecklist({ role }: { role: string }) {
   const next = remaining[0];
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #e3e7ec', borderRadius: 10, padding: 16, marginBottom: 16 }}>
+    <div style={{ background: 'var(--s1, #fff)', border: '1px solid var(--border-subtle, #e3e7ec)', borderRadius: 10, padding: 16, marginBottom: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#0f1c2e' }}>Finish setting up</div>
-        <button type="button" onClick={() => void dismiss()} style={{ fontSize: 11, color: '#6b7685', background: 'none', border: 'none', cursor: 'pointer' }}>Hide</button>
+        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink, #0f1c2e)' }}>Finish setting up</div>
+        <button type="button" onClick={() => void dismiss()} style={{ fontSize: 11, color: 'var(--ink-2, #6b7685)', background: 'none', border: 'none', cursor: 'pointer' }}>Hide</button>
       </div>
       <button type="button" onClick={() => navigate(next.href)}
         style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', marginTop: 10, padding: '10px 12px', borderRadius: 8, border: '1px solid #cfe0f0', background: '#eaf3fb', cursor: 'pointer' }}>
@@ -45,8 +45,8 @@ export function SetupChecklist({ role }: { role: string }) {
         {items.map((i) => (
           <button type="button" key={i.id} onClick={() => !i.done && navigate(i.href)} disabled={i.done}
             style={{ display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left', padding: '6px 4px', border: 'none', background: 'none', cursor: i.done ? 'default' : 'pointer' }}>
-            {i.done ? <CheckCircle2 size={16} style={{ color: '#1f6b3a', flexShrink: 0 }} /> : <Circle size={16} style={{ color: '#9aa6b4', flexShrink: 0 }} />}
-            <span style={{ fontSize: 13, color: i.done ? '#7a8a9a' : '#0f1c2e', textDecoration: i.done ? 'line-through' : 'none' }}>{i.label}</span>
+            {i.done ? <CheckCircle2 size={16} style={{ color: 'var(--good, #1f6b3a)', flexShrink: 0 }} /> : <Circle size={16} style={{ color: '#9aa6b4', flexShrink: 0 }} />}
+            <span style={{ fontSize: 13, color: i.done ? 'var(--ink-2, #7a8a9a)' : 'var(--ink, #0f1c2e)', textDecoration: i.done ? 'line-through' : 'none' }}>{i.label}</span>
           </button>
         ))}
       </div>

@@ -93,7 +93,7 @@ export default function ReportsSurface(_props: { role: string }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Link
           to="/ledger/pnl_attribution"
-          className="block rounded-lg border border-[var(--line)] bg-white p-4 hover:border-[var(--petrol)] hover:shadow-sm transition-all"
+          className="block rounded-lg border border-[var(--line)] bg-surface-v2 p-4 hover:border-[var(--petrol)] hover:shadow-sm transition-all"
         >
           <p className="text-sm font-semibold text-[var(--ink)]">P&amp;L attribution</p>
           <p className="mt-1 text-xs text-[var(--ink2)]">Daily P&amp;L attribution by book and strategy. View and manage the P&amp;L attribution chain.</p>

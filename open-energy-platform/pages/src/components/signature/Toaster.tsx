@@ -47,7 +47,7 @@ const TONE_COLORS: Record<ToastTone, { border: string; pip: string }> = {
   info: { border: 'var(--role-accent)', pip: 'var(--role-accent)' },
   good: { border: '#1f8a5b', pip: '#1f8a5b' },
   warn: { border: '#d97706', pip: '#d97706' },
-  bad: { border: '#c0392b', pip: '#c0392b' },
+  bad: { border: 'var(--bad, #c0392b)', pip: 'var(--bad, #c0392b)' },
 };
 
 export function ToasterProvider({ children }: { children: ReactNode }) {

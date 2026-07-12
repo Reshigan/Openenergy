@@ -27,9 +27,9 @@ interface EquityTransferKpis {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  transfer_initiated:             'bg-[#eef2f7] text-[#6b7685]',
-  due_diligence:                  'bg-[#eef2f7] text-[#3d4756]',
-  regulatory_notification:        'bg-[#eef2f7] text-[#3d4756]',
+  transfer_initiated:             'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
+  due_diligence:                  'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
+  regulatory_notification:        'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   lender_consent_requested:       'bg-yellow-100 text-yellow-800',
   offtaker_notification:          'bg-yellow-100 text-yellow-800',
   nersa_review:                   'bg-orange-100 text-orange-700',
@@ -38,7 +38,7 @@ const STATUS_COLORS: Record<string, string> = {
   cp_documentation_submitted:     'bg-purple-100 text-purple-700',
   transfer_completed:             'bg-green-100 text-green-700',
   transfer_rejected:              'bg-red-100 text-red-700',
-  transfer_lapsed:                'bg-[#eef2f7] text-[#6b7685]',
+  transfer_lapsed:                'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -57,8 +57,8 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const TIER_COLORS: Record<string, string> = {
-  micro:    'bg-[#eef2f7] text-[#2d3748]',
-  small:    'bg-[#eef2f7] text-[#3d4756]',
+  micro:    'bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)]',
+  small:    'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   medium:   'bg-yellow-100 text-yellow-800',
   large:    'bg-orange-100 text-orange-800',
   flagship: 'bg-red-100 text-red-800',
@@ -84,7 +84,7 @@ const EQUITY_TIERS   = ['micro', 'small', 'medium', 'large', 'flagship'] as cons
 
 const PAGE_SIZE = 20;
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 function fmtDate(dateStr: string | null | undefined): { text: string; isPast: boolean } {
   if (!dateStr) return { text: '—', isPast: false };
@@ -112,15 +112,15 @@ function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
     mode === 'danger' ? 'border-red-200 bg-red-50'       :
     mode === 'alert'  ? 'border-orange-200 bg-orange-50' :
     mode === 'good'   ? 'border-green-200 bg-green-50'   :
-    'border-[#dde4ec] bg-white';
+    'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
   const text =
     mode === 'danger' ? 'text-red-700'    :
     mode === 'alert'  ? 'text-orange-700' :
     mode === 'good'   ? 'text-green-700'  :
-    'text-[#0f1c2e]';
+    'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -378,7 +378,7 @@ export function IppEquityTransferTab() {
         </select>
         <button type="button"
           onClick={() => load()}
-          className="px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
+          className="px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]"
         >
           Refresh
         </button>
@@ -400,7 +400,7 @@ export function IppEquityTransferTab() {
           <div className="text-sm font-semibold" style={{ color: 'oklch(0.17 0.010 250)' }}>New SPV Equity Transfer</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Project Ref *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Project Ref *</label>
               <input
                 type="text"
                 value={formProjectRef}
@@ -411,12 +411,12 @@ export function IppEquityTransferTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Transfer Type *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Transfer Type *</label>
               <select
                 value={formTransferType}
                 onChange={e => setFormTransferType(e.target.value)}
                 required
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {TRANSFER_TYPES.map(tt => (
                   <option key={tt} value={tt}>{TRANSFER_TYPE_LABELS[tt]}</option>
@@ -424,7 +424,7 @@ export function IppEquityTransferTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Equity Quantum ZAR *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Equity Quantum ZAR *</label>
               <input
                 type="number"
                 value={formEquityQuantum}
@@ -437,7 +437,7 @@ export function IppEquityTransferTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Transferor Name (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Transferor Name (optional)</label>
               <input
                 type="text"
                 value={formTransferorName}
@@ -447,7 +447,7 @@ export function IppEquityTransferTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Transferee Name (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Transferee Name (optional)</label>
               <input
                 type="text"
                 value={formTransfereeName}
@@ -457,7 +457,7 @@ export function IppEquityTransferTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-[#3d4756] mb-1">Equity % (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Equity % (optional)</label>
               <input
                 type="number"
                 value={formEquityPct}
@@ -470,7 +470,7 @@ export function IppEquityTransferTab() {
               />
             </div>
             <div className="col-span-2 md:col-span-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Notes (optional)</label>
               <textarea
                 value={formNotes}
                 onChange={e => setFormNotes(e.target.value)}
@@ -496,7 +496,7 @@ export function IppEquityTransferTab() {
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 bg-white border rounded text-xs text-[#3d4756] hover:bg-[#eef2f7]"
+              className="px-3 py-1.5 bg-surface-v2 border rounded text-xs text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
             >
               Cancel
             </button>
@@ -513,12 +513,12 @@ export function IppEquityTransferTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-3">ID</th>
                 <th className="pb-2 pr-3">Project Ref</th>
                 <th className="pb-2 pr-3">Transfer Type</th>
@@ -538,36 +538,36 @@ export function IppEquityTransferTab() {
                 const actions = getActions(item);
                 const due     = fmtDate(item.sla_due_date);
                 return (
-                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
-                    <td className="py-2 pr-3 text-xs font-mono text-[#9aa5b4]">{item.id.slice(0, 8)}</td>
-                    <td className="py-2 pr-3 text-xs font-mono text-[#2d3748]">{item.project_ref}</td>
-                    <td className="py-2 pr-3 text-xs text-[#3d4756]">
+                  <tr key={item.id} className="border-b hover:bg-[var(--s2, #eef2f7)]">
+                    <td className="py-2 pr-3 text-xs font-mono text-[var(--ink-2, #9aa5b4)]">{item.id.slice(0, 8)}</td>
+                    <td className="py-2 pr-3 text-xs font-mono text-[var(--ink, #2d3748)]">{item.project_ref}</td>
+                    <td className="py-2 pr-3 text-xs text-[var(--ink-2, #3d4756)]">
                       {TRANSFER_TYPE_LABELS[item.transfer_type] ?? item.transfer_type.replace(/_/g, ' ')}
                     </td>
-                    <td className="py-2 pr-3 text-xs text-[#6b7685] max-w-[120px] truncate" title={item.transferor_name ?? ''}>
+                    <td className="py-2 pr-3 text-xs text-[var(--ink-2, #6b7685)] max-w-[120px] truncate" title={item.transferor_name ?? ''}>
                       {item.transferor_name ?? '—'}
                     </td>
-                    <td className="py-2 pr-3 text-xs text-[#6b7685] max-w-[120px] truncate" title={item.transferee_name ?? ''}>
+                    <td className="py-2 pr-3 text-xs text-[var(--ink-2, #6b7685)] max-w-[120px] truncate" title={item.transferee_name ?? ''}>
                       {item.transferee_name ?? '—'}
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-[#2d3748] font-medium">
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[var(--ink, #2d3748)] font-medium">
                       {fmtZar(item.equity_quantum_zar)}
                     </td>
-                    <td className="py-2 pr-3 text-xs tabular-nums text-[#3d4756]">
+                    <td className="py-2 pr-3 text-xs tabular-nums text-[var(--ink-2, #3d4756)]">
                       {fmtPct(item.equity_pct)}
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.equity_tier] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${TIER_COLORS[item.equity_tier] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {item.equity_tier.charAt(0).toUpperCase() + item.equity_tier.slice(1)}
                       </span>
                     </td>
                     <td className="py-2 pr-3">
-                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                      <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                         {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                       </span>
                     </td>
                     <td className="py-2 pr-3 text-xs tabular-nums">
-                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[#3d4756]'}>
+                      <span className={due.isPast ? 'text-red-600 font-medium' : 'text-[var(--ink-2, #3d4756)]'}>
                         {due.text}
                       </span>
                     </td>
@@ -575,7 +575,7 @@ export function IppEquityTransferTab() {
                       {item.sla_breached === 1 ? (
                         <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">Yes</span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-[#eef2f7] text-[#9aa5b4]">No</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]">No</span>
                       )}
                     </td>
                     <td className="py-2 pr-3">
@@ -594,7 +594,7 @@ export function IppEquityTransferTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="py-10 text-center text-[#9aa5b4] text-sm">
+                  <td colSpan={12} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">
                     No SPV equity transfers found
                   </td>
                 </tr>
@@ -610,17 +610,17 @@ export function IppEquityTransferTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             &larr; Prev
           </button>
-          <span className="text-xs text-[#6b7685]">
+          <span className="text-xs text-[var(--ink-2, #6b7685)]">
             Page {page} of {totalPages}
           </span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             Next &rarr;
           </button>
@@ -630,18 +630,18 @@ export function IppEquityTransferTab() {
       {/* Action modal */}
       {actionItem && (
         <div onMouseDown={(e) => { if (e.target === e.currentTarget) setActionItem(null); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="text-sm font-semibold text-[#1e2a38] mb-1">SPV Equity Transfer Action</div>
-            <div className="text-xs text-[#6b7685] mb-4">
+          <div className="bg-surface-v2 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="text-sm font-semibold text-[var(--ink, #1e2a38)] mb-1">SPV Equity Transfer Action</div>
+            <div className="text-xs text-[var(--ink-2, #6b7685)] mb-4">
               {actionItem.project_ref} &mdash; {STATUS_LABELS[actionItem.chain_status] ?? actionItem.chain_status}
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Action *</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Action *</label>
               <select
                 value={selectedAction}
                 onChange={e => handleActionChange(e.target.value)}
-                className="w-full border rounded px-2 py-1 text-xs bg-white"
+                className="w-full border rounded px-2 py-1 text-xs bg-surface-v2"
               >
                 {modalActions.map(a => (
                   <option key={a.name} value={a.name}>{a.label}</option>
@@ -650,7 +650,7 @@ export function IppEquityTransferTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Reason (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Reason (optional)</label>
               <input
                 type="text"
                 value={actionReason}
@@ -661,7 +661,7 @@ export function IppEquityTransferTab() {
             </div>
 
             <div className="mb-3">
-              <label className="block text-xs text-[#3d4756] mb-1">Notes (optional)</label>
+              <label className="block text-xs text-[var(--ink-2, #3d4756)] mb-1">Notes (optional)</label>
               <textarea
                 value={actionNotes}
                 onChange={e => setActionNotes(e.target.value)}
@@ -680,7 +680,7 @@ export function IppEquityTransferTab() {
             <div className="flex gap-2 justify-end">
               <button type="button"
                 onClick={closeAction}
-                className="px-3 py-1.5 text-xs border rounded bg-white text-[#3d4756] hover:bg-[#eef2f7]"
+                className="px-3 py-1.5 text-xs border rounded bg-surface-v2 text-[var(--ink-2, #3d4756)] hover:bg-[var(--s2, #eef2f7)]"
               >
                 Cancel
               </button>

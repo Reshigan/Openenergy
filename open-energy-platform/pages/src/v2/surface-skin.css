@@ -1,0 +1,343 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   v2 surface skin — makes every LEGACY management surface (master-data CRUD,
+   analytics, connectors, reports) render inside the dark v2 system instead of
+   the light Meridian chrome, WITHOUT rebuilding 118 screens.
+
+   How it works: 57 of ~90 surface files are thin declarations over the shared
+   WorkstationShell primitives (ListingTable / Pill / ActionModal), whose every
+   colour is an inline style drawn from the `--ws-*` custom properties. Redefine
+   those properties once, here, under `.v2-surface`, and all of them re-skin at
+   once. The remaining bespoke surfaces inherit ink/bg/border and pick up the
+   button + control rules below; the long-tail visual polish is a follow-up pass.
+
+   Scope: `.v2-surface` is the wrapper v2/Surface.tsx puts around the registered
+   surface component. It lives inside `.v2` (dark tokens from tokens.css).
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.v2-surface {
+  /* Primitive palette — map WorkstationShell's --ws-* onto the v2 dark system.
+     TX3 (muted body/labels) maps to --ink-2, NOT --ink-3: --ink-3 is flagged
+     NON-TEXT-ONLY in tokens.css and would fail AA as label text. */
+  --ws-bg:       var(--s0);
+  --ws-bg1:      var(--s1);
+  --ws-bg2:      var(--s2);
+  --ws-border:   var(--border-subtle);
+  --ws-borders:  var(--border-strong);
+  --ws-tx1:      var(--ink);
+  --ws-tx2:      var(--ink-2);
+  --ws-tx3:      var(--ink-2);
+  --ws-acc:      var(--accent);
+  --ws-acc-bg:   color-mix(in oklab, var(--accent) 16%, transparent);
+  --ws-acc-bdr:  color-mix(in oklab, var(--accent) 40%, transparent);
+  --ws-good:     var(--good);
+  --ws-good-bg:  color-mix(in oklab, var(--good) 14%, transparent);
+  --ws-bad:      var(--bad);
+  --ws-bad-bg:   color-mix(in oklab, var(--bad) 14%, transparent);
+  --ws-warn:     var(--warn);
+  --ws-warn-bg:  color-mix(in oklab, var(--warn) 14%, transparent);
+  --ws-info:     var(--info);
+  --ws-info-bg:  color-mix(in oklab, var(--info) 14%, transparent);
+
+  display: block;
+  padding: var(--sp-6);
+  max-width: 1400px;
+  margin: 0 auto;
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+/* A surface title lead — Surface.tsx renders one above the component. */
+.v2-surface-head { margin-bottom: var(--sp-6); }
+.v2-surface-head h1 {
+  font-size: var(--t-24); font-weight: 650; letter-spacing: -0.02em; color: var(--ink);
+}
+.v2-surface-head .sub {
+  margin-top: 2px; font-size: var(--t-13); color: var(--ink-2);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────
+   The base `.btn` (index.css) is global, but its colour variants .pri/.ox/
+   .ghost/.gold live ONLY under `.mer`. Restate them under `.v2-surface` so the
+   action triggers inside surface files render on the dark system. */
+.v2-surface .btn.pri {
+  background: var(--accent);
+  color: oklch(0.16 0.006 250);
+  border-color: transparent;
+  font-weight: 650;
+}
+.v2-surface .btn.pri:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 88%, white);
+}
+.v2-surface .btn.ghost {
+  background: transparent;
+  border-color: var(--border-strong);
+  color: var(--ink-2);
+}
+.v2-surface .btn.ghost:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+.v2-surface .btn.ox,
+.v2-surface .btn.danger {
+  background: var(--bad);
+  color: oklch(0.98 0.01 20);
+  border-color: transparent;
+}
+.v2-surface .btn.gold {
+  background: var(--warn);
+  color: oklch(0.20 0.03 75);
+  border-color: transparent;
+}
+.v2-surface .btn.sm { height: 30px; padding: 0 12px; font-size: var(--t-12); }
+
+/* Generic links inside a surface pick up the accent, not the default blue. */
+.v2-surface a:not(.btn) { color: var(--accent); }
+.v2-surface a:not(.btn):hover { text-decoration: underline; }
+
+/* Raw <input>/<select>/<textarea> a bespoke surface renders WITHOUT the
+   ActionModal wrapper (rare) still land on the dark system rather than a white
+   native control. Primitive-driven fields already inherit via --ws-*. */
+.v2-surface input:not([type="checkbox"]):not([type="radio"]),
+.v2-surface select,
+.v2-surface textarea {
+  background: var(--s0);
+  color: var(--ink);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-control);
+}
+.v2-surface input::placeholder,
+.v2-surface textarea::placeholder { color: var(--ink-3); }
+
+/* Section headings a surface emits with plain tags read as ink, not black. */
+.v2-surface h2, .v2-surface h3, .v2-surface h4 { color: var(--ink); }
+
+/* Ease Kit state surfaces (EaseEmpty/EaseLoading/EaseError) render a bare `.mer`
+   block early — outside the --ws-* container — so they carry Meridian's light
+   --paper background. Neutralise the retired light chrome onto the dark v2 system
+   here; one rule covers empty/loading/error on every primitive surface. */
+.v2-surface .mer,
+.v2-surface .mer.mer-loading,
+.v2-surface .mer.mer-error,
+.v2-surface .mer .mer-loading { background: transparent; color: var(--ink-2); }
+.v2-surface .mer p { color: var(--ink-2); }
+.v2-surface .mer h1, .v2-surface .mer h2 { color: var(--ink); }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BESPOKE long-tail re-skin. ~33 surface files paint with a light Tailwind
+   palette baked as arbitrary-value classes (bg-white, bg-[#eef2f7], text-
+   [#6b7685], …) + hardcoded semantic hexes. They ignore --ws-* (that only
+   reaches the shared WorkstationShell primitives). These utilities compile to
+   real selectors; we override each at higher specificity under .v2-surface
+   (unlayered → wins the Tailwind @layer utilities). Maps light→dark v2 tokens.
+   Saturated fills that carry text-white map to DARK tokens (v2 semantics are
+   LIGHT L≈0.7 → white-on-light would fail); light tint chips (dark text) map
+   to translucent dark mixes. text-white / bg-black left alone (correct on dark).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.v2-surface .text-\[\#6b7685\],
+.v2-surface .text-\[\#9aa5b4\],
+.v2-surface .text-\[\#7a90a8\],
+.v2-surface .text-\[\#5b6b85\],
+.v2-surface .text-\[\#557\],
+.v2-surface .text-\[\#445\],
+.v2-surface .text-\[\#445566\],
+.v2-surface .text-\[\#4a5568\],
+.v2-surface .text-\[\#3a4760\],
+.v2-surface .text-\[\#3a4658\],
+.v2-surface .text-slate-400,
+.v2-surface .text-slate-500,
+.v2-surface .text-slate-600,
+.v2-surface .text-slate-300 { color: var(--ink-2); }
+
+.v2-surface .text-\[\#3d4756\],
+.v2-surface .text-\[\#2d3748\],
+.v2-surface .text-\[\#0f1c2e\],
+.v2-surface .text-\[\#0c2a4d\],
+.v2-surface .text-\[\#0e1726\],
+.v2-surface .text-\[\#1e2a38\],
+.v2-surface .text-slate-900,
+.v2-surface .text-stone-700 { color: var(--ink); }
+
+.v2-surface .text-\[\#1f5b3a\],
+.v2-surface .text-\[\#1a8a5b\],
+.v2-surface .text-\[\#1f6b3a\] { color: var(--good); }
+
+.v2-surface .text-\[\#9b1f1f\],
+.v2-surface .text-\[\#c0392b\],
+.v2-surface .text-\[\#7a0e0e\],
+.v2-surface .text-\[\#7a1f1f\],
+.v2-surface .text-\[\#7a1414\] { color: var(--bad); }
+
+.v2-surface .text-\[\#a06200\],
+.v2-surface .text-\[\#b04e0f\],
+.v2-surface .text-\[\#7a4500\],
+.v2-surface .text-\[\#f6c44a\] { color: var(--warn); }
+
+.v2-surface .text-\[\#1a5d97\] { color: var(--info); }
+
+.v2-surface .text-\[\#5320a3\] { color: var(--neutral); }
+
+.v2-surface .bg-white { background-color: var(--s1); }
+
+.v2-surface .bg-black { background-color: var(--s0); }
+
+.v2-surface .bg-\[\#eef2f7\],
+.v2-surface .bg-\[\#f8fafc\],
+.v2-surface .bg-\[\#f3f5f9\],
+.v2-surface .bg-\[\#e8ecf0\],
+.v2-surface .bg-\[\#f7f9fb\],
+.v2-surface .bg-\[\#fafbfd\],
+.v2-surface .bg-\[\#e3e7ec\],
+.v2-surface .bg-\[\#fafbfc\],
+.v2-surface .bg-\[\#f1f5f9\],
+.v2-surface .bg-\[\#eef1f6\],
+.v2-surface .bg-\[\#e8edf5\],
+.v2-surface .bg-\[\#f4f7fb\],
+.v2-surface .bg-\[\#f4f6fa\],
+.v2-surface .bg-gray-300,
+.v2-surface .bg-gray-700 { background-color: var(--s2); }
+
+.v2-surface .bg-\[\#c2873a\],
+.v2-surface .bg-\[\#a3702f\],
+.v2-surface .bg-\[\#a06200\],
+.v2-surface .bg-\[\#c97a00\] { background-color: var(--s2); }
+
+.v2-surface .bg-\[\#1e2a38\] { background-color: var(--s2); }
+
+.v2-surface .bg-\[\#16273e\] { background-color: var(--s0); }
+
+.v2-surface .bg-\[\#2a64a8\],
+.v2-surface .bg-\[\#1a5d97\] { background-color: color-mix(in oklab, var(--accent) 30%, var(--s2)); }
+
+.v2-surface .bg-\[\#9b1f1f\],
+.v2-surface .bg-\[\#7a0e0e\] { background-color: color-mix(in oklab, var(--bad) 42%, var(--s0)); }
+
+.v2-surface .bg-\[\#1f6b3a\],
+.v2-surface .bg-\[\#1a8a5b\] { background-color: color-mix(in oklab, var(--good) 34%, var(--s0)); }
+
+.v2-surface .bg-\[\#fde0e0\],
+.v2-surface .bg-\[\#fde0db\],
+.v2-surface .bg-\[\#fcebea\],
+.v2-surface .bg-\[\#fbd0d0\] { background-color: color-mix(in oklab, var(--bad) 15%, var(--s1)); }
+
+.v2-surface .bg-\[\#fff4d6\],
+.v2-surface .bg-\[\#fef3e6\] { background-color: color-mix(in oklab, var(--warn) 15%, var(--s1)); }
+
+.v2-surface .bg-\[\#e7f4ea\] { background-color: color-mix(in oklab, var(--good) 15%, var(--s1)); }
+
+.v2-surface .bg-\[\#e8defc\] { background-color: color-mix(in oklab, var(--info) 15%, var(--s1)); }
+
+.v2-surface .border-\[\#dde4ec\],
+.v2-surface .border-\[\#d8dde6\],
+.v2-surface .border-\[\#eef2f7\],
+.v2-surface .border-\[\#e5ebf2\],
+.v2-surface .border-\[\#e3e7ec\],
+.v2-surface .border-\[\#d8dee6\],
+.v2-surface .border-\[\#e5e9ee\],
+.v2-surface .border-\[\#eef2f6\],
+.v2-surface .border-\[\#dde3ee\],
+.v2-surface .border-\[\#dbe4ee\],
+.v2-surface .border-\[\#dde4ed\],
+.v2-surface .border-\[\#e2e8f0\],
+.v2-surface .border-\[\#f0c2c0\],
+.v2-surface .border-\[\#2c4868\],
+.v2-surface .border-gray-400,
+.v2-surface .border-gray-800,
+.v2-surface .border-gray-50,
+.v2-surface .border-slate-200,
+.v2-surface .border-white { border-color: var(--border-subtle); }
+
+.v2-surface .border-\[\#c2873a\] { border-color: var(--border-strong); }
+
+.v2-surface .ring-\[\#c2873a\] { --tw-ring-color: var(--accent); }
+
+.v2-surface [class*="divide-"] > :not([hidden]) ~ :not([hidden]) { border-color: var(--border-subtle); }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   GLOBAL DESIGN-SYSTEM re-skin. ~40 bespoke full-page components reached via
+   the App <Layout> (Settings, ESG, Reports, Support, portfolio/meter/project
+   workbenches, …) don't use --ws-* OR arbitrary-hex Tailwind — they use the
+   shared light design-system classes from index.css (.card / .input /
+   .btn-primary / .table / .alert / .label + hardcoded #fff). index.css defines
+   them light and global; restate each under .v2-surface (unlayered → higher
+   specificity than the global rule) mapped to the v2 dark tokens. This is the
+   lever that turns every Layout-wrapped page body dark in one place.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Cards — the dominant container on these pages */
+.v2-surface .card {
+  background: var(--s1);
+  border-color: var(--border-subtle);
+  box-shadow: none;
+}
+.v2-surface .card-header { border-bottom-color: var(--border-subtle); }
+.v2-surface .card-header h2,
+.v2-surface .card-header h3 { color: var(--ink); }
+
+/* Buttons */
+.v2-surface .btn-primary,
+.v2-surface .btn-primary-accent {
+  background: var(--accent);
+  color: oklch(0.16 0.006 250);
+  box-shadow: none;
+}
+.v2-surface .btn-primary:hover:not(:disabled),
+.v2-surface .btn-primary-accent:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 88%, white);
+  box-shadow: none;
+}
+.v2-surface .btn-secondary {
+  background: transparent;
+  color: var(--ink-2);
+  border-color: var(--border-strong);
+}
+.v2-surface .btn-secondary:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  color: var(--ink);
+}
+.v2-surface .btn-ghost { color: var(--ink-2); }
+.v2-surface .btn-ghost:hover:not(:disabled) {
+  background: var(--s2); color: var(--ink);
+}
+.v2-surface .btn-danger { background: var(--bad); color: oklch(0.98 0.01 20); }
+
+/* Form controls (index.css .input is a hard #fff) */
+.v2-surface .input {
+  background: var(--s0);
+  color: var(--ink);
+  border-color: var(--border-subtle);
+}
+.v2-surface .input:focus { border-color: var(--accent); }
+.v2-surface select.input {
+  /* light-arrow SVG; the index.css one is #3d4756 → invisible on dark */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b97a8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+.v2-surface .label { color: var(--ink-2); }
+
+/* Tables */
+.v2-surface .table th {
+  background: var(--s2);
+  color: var(--ink-2);
+  border-bottom-color: var(--border-strong);
+}
+.v2-surface .table td {
+  color: var(--ink);
+  border-bottom-color: var(--border-subtle);
+}
+.v2-surface .table tbody tr:hover td { background: var(--s2); }
+.v2-surface .data-grid-row { border-bottom-color: var(--border-subtle); }
+.v2-surface .data-grid-row:hover { background: var(--s2); }
+
+/* Alerts — tint mixes over the dark surface, saturated border + text */
+.v2-surface .alert-success { background: color-mix(in oklab, var(--good) 14%, var(--s1)); border-color: color-mix(in oklab, var(--good) 40%, transparent); color: var(--good); }
+.v2-surface .alert-error   { background: color-mix(in oklab, var(--bad) 14%, var(--s1));  border-color: color-mix(in oklab, var(--bad) 40%, transparent);  color: var(--bad);  }
+.v2-surface .alert-warning { background: color-mix(in oklab, var(--warn) 14%, var(--s1)); border-color: color-mix(in oklab, var(--warn) 40%, transparent); color: var(--warn); }
+.v2-surface .alert-info    { background: color-mix(in oklab, var(--info) 14%, var(--s1)); border-color: color-mix(in oklab, var(--info) 40%, transparent); color: var(--info); }
+
+/* Skeleton loaders read as light bands otherwise */
+.v2-surface .skeleton {
+  background: linear-gradient(90deg, var(--s1) 0%, var(--s2) 50%, var(--s1) 100%);
+  background-size: 200% 100%;
+}

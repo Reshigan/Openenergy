@@ -114,7 +114,7 @@ export function EsumsMeterScan() {
           <label className="block">
             <span className="widget-kpi-label">Meter type</span>
             <select value={medium} onChange={(e) => setMedium(e.target.value as Medium)}
-              className="mt-1 w-full h-9 px-2 rounded-md border text-[13px] bg-white" style={{ borderColor: 'oklch(0.88 0.006 250)' }}>
+              className="mt-1 w-full h-9 px-2 rounded-md border text-[13px] bg-surface-v2" style={{ borderColor: 'oklch(0.88 0.006 250)' }}>
               {MEDIA.map((m) => <option key={m.key} value={m.key}>{m.label} ({m.unit})</option>)}
             </select>
           </label>
@@ -130,7 +130,7 @@ export function EsumsMeterScan() {
           {advanced ? '− Hide' : '+ Show'} time-of-use options
         </button>
         {advanced && (
-          <div className="grid gap-3 sm:grid-cols-3 rounded-md p-3" style={{ background: '#fafbfd' }}>
+          <div className="grid gap-3 sm:grid-cols-3 rounded-md p-3" style={{ background: 'var(--s1, #fafbfd)' }}>
             <label className="block">
               <span className="widget-kpi-label">Off-peak price (R per {unit})</span>
               <input value={offpeak} onChange={(e) => setOffpeak(e.target.value)} inputMode="decimal" placeholder="e.g. 1.10"
@@ -185,7 +185,7 @@ export function EsumsMeterScan() {
               </div>
               {result.count > 0 && (
                 <button type="button" onClick={() => run('full')} disabled={busy !== null}
-                  className="h-9 px-4 rounded-md bg-[#0f1c2e] hover:bg-[#1b2b40] text-white text-[12px] font-semibold inline-flex items-center gap-1.5 disabled:opacity-50">
+                  className="h-9 px-4 rounded-md bg-[var(--ink, #0f1c2e)] hover:bg-[#1b2b40] text-white text-[12px] font-semibold inline-flex items-center gap-1.5 disabled:opacity-50">
                   <Lock size={12} /> {busy === 'full' ? 'Preparing…' : 'Get full report'}
                 </button>
               )}
@@ -199,31 +199,31 @@ export function EsumsMeterScan() {
         )
         : (
           <section className="widget-card">
-            <div className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between">
-              <div className="text-[13px] font-semibold text-[#0f1c2e]">
+            <div className="px-4 py-3 border-b border-[var(--s2, #eef2f7)] flex items-center justify-between">
+              <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">
                 Full report · {result.count} opportunit{result.count === 1 ? 'y' : 'ies'}
               </div>
               <div className="text-[13px] font-mono font-bold widget-tone-good-text" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {formatZAR(result.totalEstZarYr)}/yr
               </div>
             </div>
-            <ul className="divide-y divide-[#eef2f7]">
+            <ul className="divide-y divide-[var(--s2, #eef2f7)]">
               {(result.opportunities || []).map((o, i) => {
                 const meta = OPP_META[o.code] || { icon: TrendingUp, tone: 'widget-tone-info' };
                 const Icon = meta.icon;
                 return (
-                  <li key={i} className="p-4 hover:bg-[#fafbfd]">
+                  <li key={i} className="p-4 hover:bg-[var(--s1, #fafbfd)]">
                     <div className="flex items-start gap-3">
                       <span className={`inline-flex items-center justify-center w-9 h-9 rounded-md ${meta.tone}`}><Icon size={16} /></span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <div className="text-[13px] font-semibold text-[#0f1c2e]">{o.title}</div>
+                          <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">{o.title}</div>
                           <div className="text-right whitespace-nowrap">
                             <div className="widget-kpi-label">Est. saving</div>
                             <div className="text-[15px] font-mono font-bold widget-tone-good-text" style={{ fontVariantNumeric: 'tabular-nums' }}>{formatZAR(o.estimatedSavingZarYr)}/yr</div>
                           </div>
                         </div>
-                        <div className="text-[12px] text-[#3d4756] mt-0.5">{o.detail}</div>
+                        <div className="text-[12px] text-[var(--ink-2, #3d4756)] mt-0.5">{o.detail}</div>
                         <div className="mt-2">
                           <span className={`px-1.5 py-0.5 rounded text-[10px] ${CONF_TONE[o.confidence]} font-semibold`}>{o.confidence} confidence</span>
                         </div>

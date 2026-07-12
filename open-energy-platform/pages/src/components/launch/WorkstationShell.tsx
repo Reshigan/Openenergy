@@ -38,11 +38,11 @@ import { useTour } from '../../lib/useTour';
 const BG     = '#f4f6fa';                  // --paper (input/field surface)
 const BG1    = '#ffffff';                  // --raised (modal/card surface)
 const BG2    = '#eef1f7';                  // hover wash (between paper and line)
-const BORDER = '#dde3ee';                  // --line
+const BORDER = 'var(--border-subtle, #dde3ee)';                  // --line
 const BORDERS= '#c3cdde';                  // stronger divider
 const TX1    = '#0e1726';                  // --ink
 const TX2    = '#3a4760';                  // --ink2
-const TX3    = '#5b6b85';                  // --ink3 (WCAG-AA muted)
+const TX3    = 'var(--ink-2, #5b6b85)';                  // --ink3 (WCAG-AA muted)
 const ACC    = '#1f3bb3';                  // --petrol (primary)
 const ACC_BG = '#e8ecfb';                  // --petrol-tint
 const ACC_BDR= 'oklch(0.80 0.07 265)';     // petrol-tinted border

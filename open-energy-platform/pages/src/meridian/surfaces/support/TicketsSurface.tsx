@@ -31,7 +31,7 @@ function FileTicketModal({ onClose, onDone }: { onClose: () => void; onDone: () 
   };
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-surface-v2 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="p-5 border-b border-[var(--line)] flex items-center justify-between">
           <h3 className="text-[16px] font-semibold text-[var(--ink)]">File a ticket</h3>
           <button type="button" onClick={onClose} aria-label="Close"><X className="w-5 h-5" /></button>

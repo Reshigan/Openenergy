@@ -63,14 +63,14 @@ function TariffOptimizer({ annualMwh, peakPct, stdPct, offPeakPct }:
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between gap-2">
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)] flex items-center justify-between gap-2">
         <div>
-          <div className="text-[13px] font-semibold text-[#0f1c2e]">Tariff optimiser</div>
-          <div className="text-[11px] text-[#6b7685]">Annual cost across Eskom tariffs vs PPA — current load shape applied</div>
+          <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Tariff optimiser</div>
+          <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Annual cost across Eskom tariffs vs PPA — current load shape applied</div>
         </div>
         <div className="text-[11px] text-right">
-          <div className="text-[#6b7685]">Cheapest</div>
-          <div className="font-mono font-semibold text-[#1a8a5b]">{cheapest.name} · {formatZAR(cheapest.total)}</div>
+          <div className="text-[var(--ink-2, #6b7685)]">Cheapest</div>
+          <div className="font-mono font-semibold text-[var(--good, #1a8a5b)]">{cheapest.name} · {formatZAR(cheapest.total)}</div>
         </div>
       </header>
       <div className="grid grid-cols-3 gap-3 px-4 py-3 widget-control-band">
@@ -81,9 +81,9 @@ function TariffOptimizer({ annualMwh, peakPct, stdPct, offPeakPct }:
       <div style={{ height: 220 }} className="px-2 pt-3">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={allRows} margin={{ top: 8, right: 12, bottom: 12, left: 0 }}>
-            <CartesianGrid stroke="#eef2f7" />
-            <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#6b7685' }} />
-            <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(1)}m`} />
+            <CartesianGrid stroke="var(--s2, #eef2f7)" />
+            <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} />
+            <YAxis tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => `R${(v / 1_000_000).toFixed(1)}m`} />
             <Tooltip formatter={(v: any) => formatZAR(Number(v))} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Bar isAnimationActive={false} dataKey="energy" name="Energy" stackId="x" fill="oklch(0.46 0.16 55)" />
@@ -129,9 +129,9 @@ function LoadShapeClassifier({ profile }: { profile: ConsumptionProfile[] }) {
   }, [profile]);
 
   const data = [
-    { tier: 'Peak',    pct: buckets.peak,    fill: '#c0392b' },
+    { tier: 'Peak',    pct: buckets.peak,    fill: 'var(--bad, #c0392b)' },
     { tier: 'Std',     pct: buckets.std,     fill: 'oklch(0.46 0.16 55)' },
-    { tier: 'Off-pk',  pct: buckets.offPeak, fill: '#1a8a5b' },
+    { tier: 'Off-pk',  pct: buckets.offPeak, fill: 'var(--good, #1a8a5b)' },
   ];
   const dominantTier = data.reduce((a, b) => a.pct > b.pct ? a : b);
   const classification =
@@ -141,9 +141,9 @@ function LoadShapeClassifier({ profile }: { profile: ConsumptionProfile[] }) {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Load shape classifier</div>
-        <div className="text-[11px] text-[#6b7685]">{classification}</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Load shape classifier</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">{classification}</div>
       </header>
       <div className="grid grid-cols-2 gap-3 p-3">
         <div style={{ height: 160 }}>
@@ -160,20 +160,20 @@ function LoadShapeClassifier({ profile }: { profile: ConsumptionProfile[] }) {
           {buckets.hours.length ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={buckets.hours} margin={{ top: 8, right: 8, bottom: 12, left: 0 }}>
-                <XAxis dataKey="hour" tick={{ fontSize: 9, fill: '#6b7685' }} />
-                <YAxis tick={{ fontSize: 9, fill: '#6b7685' }} />
+                <XAxis dataKey="hour" tick={{ fontSize: 9, fill: 'var(--ink-2, #6b7685)' }} />
+                <YAxis tick={{ fontSize: 9, fill: 'var(--ink-2, #6b7685)' }} />
                 <Tooltip />
                 <Area isAnimationActive={false} type="monotone" dataKey="kwh" stroke="oklch(0.46 0.16 55)" fill="#d4e7f6" />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-full grid place-items-center text-[11px] text-[#6b7685]">
+            <div className="h-full grid place-items-center text-[11px] text-[var(--ink-2, #6b7685)]">
               No hourly profile — default shape shown.<br />Upload consumption profile to refine.
             </div>
           )}
         </div>
       </div>
-      <footer className="px-4 py-2 border-t border-[#eef2f7] text-[11px] text-[#6b7685]">
+      <footer className="px-4 py-2 border-t border-[var(--s2, #eef2f7)] text-[11px] text-[var(--ink-2, #6b7685)]">
         Dominant tier: <strong>{dominantTier.tier} ({dominantTier.pct.toFixed(1)}%)</strong>
       </footer>
     </section>
@@ -195,9 +195,9 @@ function CarbonOffsetRoi({ annualMwh }: { annualMwh: number }) {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Carbon offset ROI</div>
-        <div className="text-[11px] text-[#6b7685]">Rooftop PV / wheeled REC programme — simple payback + NPV @ 10%</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Carbon offset ROI</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Rooftop PV / wheeled REC programme — simple payback + NPV @ 10%</div>
       </header>
       <div className="grid grid-cols-3 gap-3 px-4 py-3 widget-control-band">
         <Slider label="Capex (R)"          value={capex}        min={1_000_000} max={500_000_000} step={1_000_000} onChange={setCapex}        fmt={(v) => `R${(v / 1_000_000).toFixed(0)}m`} />
@@ -210,7 +210,7 @@ function CarbonOffsetRoi({ annualMwh }: { annualMwh: number }) {
         <Tile label="NPV (25y, 10%)"   value={formatZAR(npv25)}            tone={npv25 > 0 ? 'good' : 'bad'} />
         <Tile label="CO₂ avoided"      value={`${(tCo2 / 1000).toFixed(0)} kt/yr`} tone="good" />
       </div>
-      <footer className="px-4 py-2 border-t border-[#eef2f7] text-[11px] text-[#6b7685]">
+      <footer className="px-4 py-2 border-t border-[var(--s2, #eef2f7)] text-[11px] text-[var(--ink-2, #6b7685)]">
         Lifetime gross revenue {formatZAR(lifetimeRevenue)} · grid emissions factor 0.95 tCO₂e/MWh
       </footer>
     </section>
@@ -235,9 +235,9 @@ function RevenueRequirementCalc() {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">NERSA revenue requirement</div>
-        <div className="text-[11px] text-[#6b7685]">Opex + depreciation + (WACC × regulatory asset base) — values in R millions</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">NERSA revenue requirement</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Opex + depreciation + (WACC × regulatory asset base) — values in R millions</div>
       </header>
       <div className="grid grid-cols-4 gap-3 px-4 py-3 widget-control-band">
         <Slider label="RAB (R m)"         value={rab}          min={10_000} max={500_000} step={5_000} onChange={setRab}          fmt={(v) => `R${v.toLocaleString()}m`} />
@@ -252,8 +252,8 @@ function RevenueRequirementCalc() {
       <div style={{ height: 160 }} className="px-2 pb-3">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 4, right: 12, bottom: 8, left: 60 }}>
-            <XAxis type="number" tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${v.toLocaleString()}m`} />
-            <YAxis type="category" dataKey="component" tick={{ fontSize: 10, fill: '#6b7685' }} />
+            <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => `R${v.toLocaleString()}m`} />
+            <YAxis type="category" dataKey="component" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} />
             <Tooltip formatter={(v: any) => `R${Number(v).toLocaleString()}m`} />
             <Bar isAnimationActive={false} dataKey="value">
               {data.map((d, i) => <Cell key={i} fill={d.fill} />)}
@@ -272,7 +272,7 @@ function Slider({ label, value, min, max, step, onChange, fmt }: {
 }) {
   return (
     <label className="block text-[11px]">
-      <div className="flex justify-between"><span className="text-[#3d4756] font-medium">{label}</span><span className="font-mono">{fmt(value)}</span></div>
+      <div className="flex justify-between"><span className="text-[var(--ink-2, #3d4756)] font-medium">{label}</span><span className="font-mono">{fmt(value)}</span></div>
       <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[oklch(0.46_0.16_55)]" />
     </label>
   );
@@ -280,10 +280,10 @@ function Slider({ label, value, min, max, step, onChange, fmt }: {
 
 function Tile({ label, value, tone }: { label: string; value: string; tone: string }) {
   const map: Record<string, string> = {
-    good: 'bg-[#e7f4ea] text-[#1a8a5b]',
+    good: 'bg-[#e7f4ea] text-[var(--good, #1a8a5b)]',
     warn: 'bg-[#fef3e6] text-[#b04e0f]',
-    bad:  'bg-[#fde0db] text-[#c0392b]',
-    info: 'bg-[#eef2f7] text-[oklch(0.46_0.16_55)]',
+    bad:  'bg-[color-mix(in oklab, var(--bad) 15%, var(--s1))] text-[var(--bad, #c0392b)]',
+    info: 'bg-[var(--s2, #eef2f7)] text-[oklch(0.46_0.16_55)]',
   };
   return (
     <div className={`rounded p-2 ${map[tone] || map.info}`}>

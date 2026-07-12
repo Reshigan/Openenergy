@@ -13,16 +13,16 @@ import {
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 // ─── Design tokens ───────────────────────────────────────────────────────────
-const BG     = 'oklch(0.96 0.003 250)';
-const BG1    = 'oklch(0.99 0.002 80)';
-const BG2    = 'oklch(0.93 0.004 250)';
-const BORDER = 'oklch(0.87 0.006 250)';
-const TX1    = 'oklch(0.17 0.010 250)';
-const TX2    = 'oklch(0.40 0.009 250)';
-const TX3    = 'oklch(0.60 0.007 250)';
-const ACC    = 'oklch(0.46 0.16 55)';
-const BAD    = 'oklch(0.48 0.20 20)';
-const GOOD   = 'oklch(0.40 0.16 155)';
+const BG     = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1    = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2    = 'var(--s2, oklch(0.93 0.004 250))';
+const BORDER = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1    = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2    = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3    = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC    = 'var(--accent, oklch(0.46 0.16 55))';
+const BAD    = 'var(--bad, oklch(0.48 0.20 20))';
+const GOOD   = 'var(--good, oklch(0.40 0.16 155))';
 const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -271,8 +271,8 @@ export function ESG() {
         <div style={{ background: BG1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 20px' }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: TX3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Scope Reference</div>
           {[
-            { scope: 'Scope 1', def: 'Direct combustion, process, fugitive', color: 'oklch(0.46 0.16 55)' },
-            { scope: 'Scope 2', def: 'Purchased electricity & heat',         color: 'oklch(0.46 0.16 55)' },
+            { scope: 'Scope 1', def: 'Direct combustion, process, fugitive', color: 'var(--accent, oklch(0.46 0.16 55))' },
+            { scope: 'Scope 2', def: 'Purchased electricity & heat',         color: 'var(--accent, oklch(0.46 0.16 55))' },
             { scope: 'Scope 3', def: '15 upstream + downstream categories',  color: '#1f9b95' },
           ].map(s => (
             <div key={s.scope} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
@@ -340,8 +340,8 @@ function OverviewTab() {
   })();
 
   const scopeData = rollup ? [
-    { name: 'Scope 1',         tco2e: rollup.scope1_tco2e || 0,           color: 'oklch(0.46 0.16 55)' },
-    { name: 'Scope 2 (loc)',   tco2e: rollup.scope2_location_tco2e || 0,  color: 'oklch(0.46 0.16 55)' },
+    { name: 'Scope 1',         tco2e: rollup.scope1_tco2e || 0,           color: 'var(--accent, oklch(0.46 0.16 55))' },
+    { name: 'Scope 2 (loc)',   tco2e: rollup.scope2_location_tco2e || 0,  color: 'var(--accent, oklch(0.46 0.16 55))' },
     { name: 'Scope 2 (mkt)',   tco2e: rollup.scope2_market_tco2e || 0,    color: '#5fa8e8' },
     { name: 'Scope 3',         tco2e: rollup.scope3_tco2e || 0,           color: '#1f9b95' },
   ] : [];
@@ -350,7 +350,7 @@ function OverviewTab() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
         <StitchField label="Reporting year">
-          <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+          <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
             {[2026, 2025, 2024, 2023, 2022].map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
         </StitchField>
@@ -358,7 +358,7 @@ function OverviewTab() {
           <OEIcon name="refresh" size={14} /> Recompute rollup
         </button>
         {rollup?.computed_at && (
-          <span className="text-[11px] text-[#6b7685] font-mono">last computed {new Date(rollup.computed_at).toLocaleString()}</span>
+          <span className="text-[11px] text-[var(--ink-2, #6b7685)] font-mono">last computed {new Date(rollup.computed_at).toLocaleString()}</span>
         )}
       </div>
 
@@ -379,9 +379,9 @@ function OverviewTab() {
         <StitchCard title="Emissions by scope">
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={scopeData}>
-              <CartesianGrid stroke="#eef2f7" strokeDasharray="3 3" />
-              <XAxis dataKey="name" fontSize={11} stroke="#3d4756" />
-              <YAxis fontSize={11} stroke="#3d4756" tickFormatter={(v) => fmtN(v)} />
+              <CartesianGrid stroke="var(--s2, #eef2f7)" strokeDasharray="3 3" />
+              <XAxis dataKey="name" fontSize={11} stroke="var(--ink-2, #3d4756)" />
+              <YAxis fontSize={11} stroke="var(--ink-2, #3d4756)" tickFormatter={(v) => fmtN(v)} />
               <Tooltip formatter={(v: number) => [`${fmtN(v, 1)} tCO₂e`]} />
               <Bar isAnimationActive={false} dataKey="tco2e" radius={[4, 4, 0, 0]}>
                 {scopeData.map((d, i) => <Cell key={i} fill={d.color} />)}
@@ -397,9 +397,9 @@ function OverviewTab() {
                 const max = scope3Cats[0].value || 1;
                 return (
                   <div key={c.id} className="flex items-center gap-2 text-[12px]">
-                    <span className="w-5 font-mono text-[#6b7685]">{c.id}</span>
-                    <span className="flex-1 truncate text-[#3d4756]">{c.name}</span>
-                    <div className="w-28 h-2 rounded bg-[#eef2f7] overflow-hidden">
+                    <span className="w-5 font-mono text-[var(--ink-2, #6b7685)]">{c.id}</span>
+                    <span className="flex-1 truncate text-[var(--ink-2, #3d4756)]">{c.name}</span>
+                    <div className="w-28 h-2 rounded bg-[var(--s2, #eef2f7)] overflow-hidden">
                       <div className="h-full bg-[#1f9b95]" style={{ width: `${(c.value / max) * 100}%` }} />
                     </div>
                     <span className="w-24 text-right font-mono">{fmtN(c.value, 1)} t</span>
@@ -445,9 +445,9 @@ function TransactionsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex flex-wrap items-end gap-3">
+      <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4 flex flex-wrap items-end gap-3">
         <StitchField label="Scope">
-          <select value={scope} onChange={(e) => setScope(e.target.value)} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+          <select value={scope} onChange={(e) => setScope(e.target.value)} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
             <option value="">All scopes</option>
             <option value="1">Scope 1 — direct</option>
             <option value="2">Scope 2 — electricity</option>
@@ -455,12 +455,12 @@ function TransactionsTab() {
           </select>
         </StitchField>
         <StitchField label="Year">
-          <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+          <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
             {[2026, 2025, 2024, 2023].map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
         </StitchField>
         <div className="ml-auto flex gap-2">
-          <button type="button" onClick={refresh} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[12px] font-semibold inline-flex items-center gap-1">
+          <button type="button" onClick={refresh} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[12px] font-semibold inline-flex items-center gap-1">
             <OEIcon name="refresh" size={14} /> Refresh
           </button>
           <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-1">
@@ -484,8 +484,8 @@ function TransactionsTab() {
             <ExportBar data={txs as unknown as Record<string, unknown>[]} filename={`esg_transactions_${year}`} />
             <div className="overflow-auto">
               <table className="w-full text-[12px]">
-                <thead className="bg-[#fafbfd]">
-                  <tr className="text-[10px] uppercase text-[#6b7685]">
+                <thead className="bg-[var(--s1, #fafbfd)]">
+                  <tr className="text-[10px] uppercase text-[var(--ink-2, #6b7685)]">
                     <th className="px-3 py-2 text-left">Date</th>
                     <th className="px-3 py-2 text-left">Activity</th>
                     <th className="px-3 py-2 text-left">Scope</th>
@@ -498,13 +498,13 @@ function TransactionsTab() {
                 </thead>
                 <tbody>
                   {txs.map((t) => (
-                    <tr key={t.id} className="border-t border-[#eef2f7] hover:bg-[#fafbfd]">
+                    <tr key={t.id} className="border-t border-[var(--s2, #eef2f7)] hover:bg-[var(--s1, #fafbfd)]">
                       <td className="px-3 py-2 font-mono">{new Date(t.activity_date).toLocaleDateString()}</td>
                       <td className="px-3 py-2 font-medium">{t.activity_code}</td>
                       <td className="px-3 py-2"><ScopePill scope={t.scope} cat={t.scope3_category} /></td>
                       <td className="px-3 py-2 text-right font-mono">{fmtN(t.quantity, 2)} {t.unit}</td>
                       <td className="px-3 py-2 text-right font-mono">{fmtN((t.emissions_kg_co2e || 0) / 1000, 3)} t</td>
-                      <td className="px-3 py-2 truncate max-w-[200px] text-[#3d4756]">{t.counterparty_name || '—'}</td>
+                      <td className="px-3 py-2 truncate max-w-[200px] text-[var(--ink-2, #3d4756)]">{t.counterparty_name || '—'}</td>
                       <td className="px-3 py-2"><StitchPill label={t.data_quality || 'measured'} tone={t.data_quality === 'measured' ? 'good' : t.data_quality === 'calculated' ? 'info' : 'warn'} /></td>
                       <td className="px-3 py-2"><StitchPill status={t.status} /></td>
                     </tr>
@@ -558,7 +558,7 @@ function NewTransactionModal({ year, onClose, onCreated }: { year: number; onClo
         {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
         <div className="grid grid-cols-2 gap-3">
           <StitchField label="Activity code" required>
-            <select value={form.activity_code} onChange={(e) => setForm({ ...form, activity_code: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+            <select value={form.activity_code} onChange={(e) => setForm({ ...form, activity_code: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
               <optgroup label="Scope 1 — direct combustion">
                 <option value="fuel.diesel.litre">Diesel (litre)</option>
                 <option value="fuel.petrol.litre">Petrol (litre)</option>
@@ -583,7 +583,7 @@ function NewTransactionModal({ year, onClose, onCreated }: { year: number; onClo
             </select>
           </StitchField>
           <StitchField label="Scope" required>
-            <select value={form.scope} onChange={(e) => setForm({ ...form, scope: Number(e.target.value) as 1 | 2 | 3 })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+            <select value={form.scope} onChange={(e) => setForm({ ...form, scope: Number(e.target.value) as 1 | 2 | 3 })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
               <option value="1">1 — Direct</option>
               <option value="2">2 — Electricity</option>
               <option value="3">3 — Value chain</option>
@@ -591,14 +591,14 @@ function NewTransactionModal({ year, onClose, onCreated }: { year: number; onClo
           </StitchField>
           {form.scope === 3 && (
             <StitchField label="Scope 3 category" required>
-              <select value={form.scope3_category} onChange={(e) => setForm({ ...form, scope3_category: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+              <select value={form.scope3_category} onChange={(e) => setForm({ ...form, scope3_category: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
                 <option value="">— select —</option>
                 {SCOPE3_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.id}. {c.name}</option>)}
               </select>
             </StitchField>
           )}
           <StitchField label="Region">
-            <select value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+            <select value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
               <option value="ZA">South Africa (ZA)</option>
               <option value="GB">United Kingdom (GB)</option>
               <option value="EU">European Union (EU)</option>
@@ -607,19 +607,19 @@ function NewTransactionModal({ year, onClose, onCreated }: { year: number; onClo
             </select>
           </StitchField>
           <StitchField label="Activity date" required>
-            <input type="date" required value={form.activity_date} onChange={(e) => setForm({ ...form, activity_date: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" />
+            <input type="date" required value={form.activity_date} onChange={(e) => setForm({ ...form, activity_date: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" />
           </StitchField>
           <StitchField label="Quantity" required>
-            <input type="number" step="any" required value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" />
+            <input type="number" step="any" required value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" />
           </StitchField>
           <StitchField label="Unit" required>
-            <input required value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} placeholder="kWh, litre, tkm, ZAR…" className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" />
+            <input required value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} placeholder="kWh, litre, tkm, ZAR…" className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" />
           </StitchField>
           <StitchField label="Counterparty / supplier">
-            <input value={form.counterparty_name} onChange={(e) => setForm({ ...form, counterparty_name: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" />
+            <input value={form.counterparty_name} onChange={(e) => setForm({ ...form, counterparty_name: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" />
           </StitchField>
           <StitchField label="Data quality">
-            <select value={form.data_quality} onChange={(e) => setForm({ ...form, data_quality: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+            <select value={form.data_quality} onChange={(e) => setForm({ ...form, data_quality: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
               <option value="measured">Measured (high)</option>
               <option value="calculated">Calculated</option>
               <option value="estimated">Estimated</option>
@@ -628,10 +628,10 @@ function NewTransactionModal({ year, onClose, onCreated }: { year: number; onClo
           </StitchField>
         </div>
         <StitchField label="Notes">
-          <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full px-3 py-2 rounded-md border border-[#dde4ec] text-[13px]" />
+          <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full px-3 py-2 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" />
         </StitchField>
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
+          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px] font-semibold">Cancel</button>
           <button type="submit" disabled={busy} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">{busy ? 'Saving…' : 'Log activity'}</button>
         </div>
       </form>
@@ -656,8 +656,8 @@ function TargetsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
-        <div className="text-[13px] text-[#3d4756]">SBTi-aligned absolute & intensity targets. Validate with a third-party assurance provider to qualify for SBTi.</div>
+      <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4 flex items-center justify-between">
+        <div className="text-[13px] text-[var(--ink-2, #3d4756)]">SBTi-aligned absolute & intensity targets. Validate with a third-party assurance provider to qualify for SBTi.</div>
         <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-1">
           <OEIcon name="plus" size={14} /> New target
         </button>
@@ -666,8 +666,8 @@ function TargetsTab() {
         {loading ? <Skeleton variant="card" rows={2} /> : targets.length === 0 ? <EmptyMsg>No targets set.</EmptyMsg> : (
           <div className="overflow-auto">
             <table className="w-full text-[13px]">
-              <thead className="bg-[#fafbfd]">
-                <tr className="text-[11px] uppercase text-[#6b7685]">
+              <thead className="bg-[var(--s1, #fafbfd)]">
+                <tr className="text-[11px] uppercase text-[var(--ink-2, #6b7685)]">
                   <th className="px-4 py-2 text-left">Type</th>
                   <th className="px-4 py-2 text-left">Framework</th>
                   <th className="px-4 py-2 text-right">Base year</th>
@@ -680,14 +680,14 @@ function TargetsTab() {
               </thead>
               <tbody>
                 {targets.map((t) => (
-                  <tr key={t.id} className="border-t border-[#eef2f7]">
+                  <tr key={t.id} className="border-t border-[var(--s2, #eef2f7)]">
                     <td className="px-4 py-2 capitalize">{t.target_type.replace(/_/g, ' ')}</td>
                     <td className="px-4 py-2">{t.framework || '—'}</td>
                     <td className="px-4 py-2 text-right font-mono">{t.base_year}</td>
                     <td className="px-4 py-2 text-right font-mono">{fmtN(t.base_value, 1)}</td>
                     <td className="px-4 py-2 text-right font-mono">{t.target_year}</td>
                     <td className="px-4 py-2 text-right font-mono">{fmtN(t.target_value, 1)}</td>
-                    <td className="px-4 py-2 text-right font-mono text-[#1a8a5b]">{t.target_pct ? `${fmtN(t.target_pct, 1)}%` : '—'}</td>
+                    <td className="px-4 py-2 text-right font-mono text-[var(--good, #1a8a5b)]">{t.target_pct ? `${fmtN(t.target_pct, 1)}%` : '—'}</td>
                     <td className="px-4 py-2"><StitchPill status={t.status} /></td>
                   </tr>
                 ))}
@@ -722,7 +722,7 @@ function NewTargetModal({ onClose, onCreated }: { onClose: () => void; onCreated
     <Modal title="New emissions target" onClose={onClose}>
       <form onSubmit={submit} className="space-y-3">
         <StitchField label="Type">
-          <select value={form.target_type} onChange={(e) => setForm({ ...form, target_type: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+          <select value={form.target_type} onChange={(e) => setForm({ ...form, target_type: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
             <option value="absolute">Absolute reduction</option>
             <option value="intensity">Intensity</option>
             <option value="net_zero">Net zero</option>
@@ -731,16 +731,16 @@ function NewTargetModal({ onClose, onCreated }: { onClose: () => void; onCreated
             <option value="sbti_2c">SBTi well-below 2°C</option>
           </select>
         </StitchField>
-        <StitchField label="Framework"><input value={form.framework} onChange={(e) => setForm({ ...form, framework: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
+        <StitchField label="Framework"><input value={form.framework} onChange={(e) => setForm({ ...form, framework: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
         <div className="grid grid-cols-2 gap-3">
-          <StitchField label="Base year"><input type="number" value={form.base_year} onChange={(e) => setForm({ ...form, base_year: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
-          <StitchField label="Base value (tCO₂e)"><input type="number" value={form.base_value} onChange={(e) => setForm({ ...form, base_value: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
-          <StitchField label="Target year"><input type="number" value={form.target_year} onChange={(e) => setForm({ ...form, target_year: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
-          <StitchField label="Target value (tCO₂e)"><input type="number" value={form.target_value} onChange={(e) => setForm({ ...form, target_value: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
+          <StitchField label="Base year"><input type="number" value={form.base_year} onChange={(e) => setForm({ ...form, base_year: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
+          <StitchField label="Base value (tCO₂e)"><input type="number" value={form.base_value} onChange={(e) => setForm({ ...form, base_value: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
+          <StitchField label="Target year"><input type="number" value={form.target_year} onChange={(e) => setForm({ ...form, target_year: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
+          <StitchField label="Target value (tCO₂e)"><input type="number" value={form.target_value} onChange={(e) => setForm({ ...form, target_value: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
         </div>
-        <StitchField label="Description"><textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
+        <StitchField label="Description"><textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
+          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px] font-semibold">Cancel</button>
           <button type="submit" disabled={busy} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">{busy ? 'Saving…' : 'Save target'}</button>
         </div>
       </form>
@@ -769,8 +769,8 @@ function InitiativesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
-        <div className="text-[13px] text-[#3d4756]">Reduction initiatives ordered by marginal abatement cost (MACC). Low cost-per-tCO₂e ranks first.</div>
+      <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4 flex items-center justify-between">
+        <div className="text-[13px] text-[var(--ink-2, #3d4756)]">Reduction initiatives ordered by marginal abatement cost (MACC). Low cost-per-tCO₂e ranks first.</div>
         <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-1">
           <OEIcon name="plus" size={14} /> New initiative
         </button>
@@ -780,12 +780,12 @@ function InitiativesTab() {
         <StitchCard title="Marginal Abatement Cost Curve (MACC)">
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={macc}>
-              <CartesianGrid stroke="#eef2f7" />
-              <XAxis dataKey="name" fontSize={10} stroke="#3d4756" angle={-20} height={50} />
-              <YAxis fontSize={11} stroke="#3d4756" tickFormatter={(v) => `R${fmtN(v)}/t`} />
+              <CartesianGrid stroke="var(--s2, #eef2f7)" />
+              <XAxis dataKey="name" fontSize={10} stroke="var(--ink-2, #3d4756)" angle={-20} height={50} />
+              <YAxis fontSize={11} stroke="var(--ink-2, #3d4756)" tickFormatter={(v) => `R${fmtN(v)}/t`} />
               <Tooltip formatter={(v: number) => fmtZ(v)} />
               <Bar isAnimationActive={false} dataKey="mac">
-                {macc.map((d, i) => <Cell key={i} fill={d.mac < 0 ? '#1a8a5b' : d.mac < 500 ? 'oklch(0.46 0.16 55)' : '#c97a14'} />)}
+                {macc.map((d, i) => <Cell key={i} fill={d.mac < 0 ? 'var(--good, #1a8a5b)' : d.mac < 500 ? 'var(--accent, oklch(0.46 0.16 55))' : '#c97a14'} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -796,8 +796,8 @@ function InitiativesTab() {
         {loading ? <Skeleton variant="card" rows={2} /> : items.length === 0 ? <EmptyMsg>No initiatives logged.</EmptyMsg> : (
           <div className="overflow-auto">
             <table className="w-full text-[13px]">
-              <thead className="bg-[#fafbfd]">
-                <tr className="text-[11px] uppercase text-[#6b7685]">
+              <thead className="bg-[var(--s1, #fafbfd)]">
+                <tr className="text-[11px] uppercase text-[var(--ink-2, #6b7685)]">
                   <th className="px-4 py-2 text-left">Initiative</th>
                   <th className="px-4 py-2 text-left">Category</th>
                   <th className="px-4 py-2 text-right">Abatement (tCO₂e/yr)</th>
@@ -808,9 +808,9 @@ function InitiativesTab() {
               </thead>
               <tbody>
                 {items.map((i) => (
-                  <tr key={i.id} className="border-t border-[#eef2f7]">
+                  <tr key={i.id} className="border-t border-[var(--s2, #eef2f7)]">
                     <td className="px-4 py-2 font-medium">{i.name}</td>
-                    <td className="px-4 py-2 text-[#3d4756]">{i.category || '—'}</td>
+                    <td className="px-4 py-2 text-[var(--ink-2, #3d4756)]">{i.category || '—'}</td>
                     <td className="px-4 py-2 text-right font-mono">{fmtN(i.abatement_tco2e_yr || 0, 1)}</td>
                     <td className="px-4 py-2 text-right font-mono">{i.capex_zar ? fmtZ(i.capex_zar) : '—'}</td>
                     <td className="px-4 py-2 text-right font-mono">{i.marginal_abatement_cost_zar_tco2e ? fmtZ(i.marginal_abatement_cost_zar_tco2e) : '—'}</td>
@@ -841,9 +841,9 @@ function NewInitiativeModal({ onClose, onCreated }: { onClose: () => void; onCre
   return (
     <Modal title="New reduction initiative" onClose={onClose}>
       <form onSubmit={submit} className="space-y-3">
-        <StitchField label="Name"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
+        <StitchField label="Name"><input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
         <StitchField label="Category">
-          <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+          <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
             <option value="energy_efficiency">Energy efficiency</option>
             <option value="renewable_purchase">Renewable purchase (PPA/REC)</option>
             <option value="onsite_solar">On-site solar</option>
@@ -854,14 +854,14 @@ function NewInitiativeModal({ onClose, onCreated }: { onClose: () => void; onCre
           </select>
         </StitchField>
         <div className="grid grid-cols-2 gap-3">
-          <StitchField label="Abatement (tCO₂e/yr)"><input type="number" value={form.abatement_tco2e_yr} onChange={(e) => setForm({ ...form, abatement_tco2e_yr: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
-          <StitchField label="Capex (ZAR)"><input type="number" value={form.capex_zar} onChange={(e) => setForm({ ...form, capex_zar: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
-          <StitchField label="Annual opex (ZAR)"><input type="number" value={form.opex_zar_yr} onChange={(e) => setForm({ ...form, opex_zar_yr: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
-          <StitchField label="Lifetime (years)"><input type="number" value={form.lifetime_years} onChange={(e) => setForm({ ...form, lifetime_years: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
+          <StitchField label="Abatement (tCO₂e/yr)"><input type="number" value={form.abatement_tco2e_yr} onChange={(e) => setForm({ ...form, abatement_tco2e_yr: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
+          <StitchField label="Capex (ZAR)"><input type="number" value={form.capex_zar} onChange={(e) => setForm({ ...form, capex_zar: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
+          <StitchField label="Annual opex (ZAR)"><input type="number" value={form.opex_zar_yr} onChange={(e) => setForm({ ...form, opex_zar_yr: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
+          <StitchField label="Lifetime (years)"><input type="number" value={form.lifetime_years} onChange={(e) => setForm({ ...form, lifetime_years: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
         </div>
-        <StitchField label="Description"><textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
+        <StitchField label="Description"><textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
+          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px] font-semibold">Cancel</button>
           <button type="submit" disabled={busy} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">{busy ? 'Saving…' : 'Save initiative'}</button>
         </div>
       </form>
@@ -885,8 +885,8 @@ function SuppliersTab() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
-        <div className="text-[13px] text-[#3d4756]">Send Scope 3 surveys to suppliers (Cat 1, 4, 11) and track responses for value-chain emissions accuracy.</div>
+      <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4 flex items-center justify-between">
+        <div className="text-[13px] text-[var(--ink-2, #3d4756)]">Send Scope 3 surveys to suppliers (Cat 1, 4, 11) and track responses for value-chain emissions accuracy.</div>
         <button type="button" onClick={() => setShowInv(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-1">
           <OEIcon name="plus" size={14} /> Invite supplier
         </button>
@@ -895,8 +895,8 @@ function SuppliersTab() {
         {loading ? <Skeleton variant="card" rows={2} /> : items.length === 0 ? <EmptyMsg>No suppliers invited.</EmptyMsg> : (
           <div className="overflow-auto">
             <table className="w-full text-[13px]">
-              <thead className="bg-[#fafbfd]">
-                <tr className="text-[11px] uppercase text-[#6b7685]">
+              <thead className="bg-[var(--s1, #fafbfd)]">
+                <tr className="text-[11px] uppercase text-[var(--ink-2, #6b7685)]">
                   <th className="px-4 py-2 text-left">Supplier</th>
                   <th className="px-4 py-2 text-left">Scope 3 cat</th>
                   <th className="px-4 py-2 text-left">Survey</th>
@@ -909,7 +909,7 @@ function SuppliersTab() {
                 {items.map((s) => {
                   const cat = SCOPE3_CATEGORIES.find((c) => c.id === Number(s.scope3_category));
                   return (
-                    <tr key={String(s.id)} className="border-t border-[#eef2f7]">
+                    <tr key={String(s.id)} className="border-t border-[var(--s2, #eef2f7)]">
                       <td className="px-4 py-2 font-medium">{String(s.supplier_name || '—')}</td>
                       <td className="px-4 py-2">{cat ? `${cat.id} · ${cat.name}` : String(s.scope3_category)}</td>
                       <td className="px-4 py-2">{String(s.survey_type || '—')}</td>
@@ -943,22 +943,22 @@ function InviteSupplierModal({ onClose, onSent }: { onClose: () => void; onSent:
   return (
     <Modal title="Invite supplier to Scope 3 survey" onClose={onClose}>
       <form onSubmit={submit} className="space-y-3">
-        <StitchField label="Supplier name"><input required value={f.supplier_name} onChange={(e) => setF({ ...f, supplier_name: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
+        <StitchField label="Supplier name"><input required value={f.supplier_name} onChange={(e) => setF({ ...f, supplier_name: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
         <StitchField label="Scope 3 category">
-          <select value={f.scope3_category} onChange={(e) => setF({ ...f, scope3_category: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+          <select value={f.scope3_category} onChange={(e) => setF({ ...f, scope3_category: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
             {SCOPE3_CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.id}. {c.name}</option>)}
           </select>
         </StitchField>
         <StitchField label="Survey type">
-          <select value={f.survey_type} onChange={(e) => setF({ ...f, survey_type: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+          <select value={f.survey_type} onChange={(e) => setF({ ...f, survey_type: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
             <option value="custom">Custom (CEC)</option>
             <option value="CDP_supply_chain">CDP Supply Chain</option>
             <option value="SBTi_PRTS">SBTi PRTS</option>
           </select>
         </StitchField>
-        <StitchField label="Notes"><textarea rows={2} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
+        <StitchField label="Notes"><textarea rows={2} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
+          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px] font-semibold">Cancel</button>
           <button type="submit" disabled={busy} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">{busy ? 'Sending…' : 'Send invite'}</button>
         </div>
       </form>
@@ -990,8 +990,8 @@ function RecsTab() {
         <StitchKpi label="Retired this period (MWh)" value={fmtN(totalRetired)} icon={() => <OEIcon name="check-circle" size={14} />} />
         <StitchKpi label="Certificates"              value={fmtN(items.length)} icon={() => <OEIcon name="doc-stack" size={14} />} />
       </div>
-      <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
-        <div className="text-[13px] text-[#3d4756]">REC / Guarantee-of-Origin certificates for Scope 2 market-based accounting. Retire against an electricity transaction to zero its market-based emissions.</div>
+      <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4 flex items-center justify-between">
+        <div className="text-[13px] text-[var(--ink-2, #3d4756)]">REC / Guarantee-of-Origin certificates for Scope 2 market-based accounting. Retire against an electricity transaction to zero its market-based emissions.</div>
         <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-1">
           <OEIcon name="plus" size={14} /> Register REC
         </button>
@@ -1000,8 +1000,8 @@ function RecsTab() {
         {loading ? <Skeleton variant="card" rows={2} /> : items.length === 0 ? <EmptyMsg>No RECs registered.</EmptyMsg> : (
           <div className="overflow-auto">
             <table className="w-full text-[13px]">
-              <thead className="bg-[#fafbfd]">
-                <tr className="text-[11px] uppercase text-[#6b7685]">
+              <thead className="bg-[var(--s1, #fafbfd)]">
+                <tr className="text-[11px] uppercase text-[var(--ink-2, #6b7685)]">
                   <th className="px-3 py-2 text-left">Serial</th>
                   <th className="px-3 py-2 text-left">Registry</th>
                   <th className="px-3 py-2 text-left">Technology</th>
@@ -1013,7 +1013,7 @@ function RecsTab() {
               </thead>
               <tbody>
                 {items.map((c) => (
-                  <tr key={String(c.id)} className="border-t border-[#eef2f7]">
+                  <tr key={String(c.id)} className="border-t border-[var(--s2, #eef2f7)]">
                     <td className="px-3 py-2 font-mono text-[11px]">{String(c.serial_number)}</td>
                     <td className="px-3 py-2">{String(c.registry)}</td>
                     <td className="px-3 py-2 capitalize">{String(c.technology || '—').replace(/_/g, ' ')}</td>
@@ -1047,10 +1047,10 @@ function NewRecModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
   return (
     <Modal title="Register REC certificate" onClose={onClose}>
       <form onSubmit={submit} className="space-y-3">
-        <StitchField label="Serial number"><input required value={f.serial_number} onChange={(e) => setF({ ...f, serial_number: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
+        <StitchField label="Serial number"><input required value={f.serial_number} onChange={(e) => setF({ ...f, serial_number: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
         <div className="grid grid-cols-2 gap-3">
           <StitchField label="Registry">
-            <select value={f.registry} onChange={(e) => setF({ ...f, registry: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+            <select value={f.registry} onChange={(e) => setF({ ...f, registry: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
               <option value="I-REC">I-REC</option>
               <option value="GO_EU">EU GO</option>
               <option value="SAREMI">SAREMI</option>
@@ -1059,20 +1059,20 @@ function NewRecModal({ onClose, onCreated }: { onClose: () => void; onCreated: (
             </select>
           </StitchField>
           <StitchField label="Technology">
-            <select value={f.technology} onChange={(e) => setF({ ...f, technology: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+            <select value={f.technology} onChange={(e) => setF({ ...f, technology: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
               <option value="solar_pv">Solar PV</option>
               <option value="wind">Wind</option>
               <option value="hydro">Hydro</option>
               <option value="biomass">Biomass</option>
             </select>
           </StitchField>
-          <StitchField label="Vintage year"><input type="number" value={f.vintage_year} onChange={(e) => setF({ ...f, vintage_year: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
-          <StitchField label="Vintage month"><input type="number" min={1} max={12} value={f.vintage_month} onChange={(e) => setF({ ...f, vintage_month: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
-          <StitchField label="MWh certified" required><input type="number" required value={f.mwh_certified} onChange={(e) => setF({ ...f, mwh_certified: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
-          <StitchField label="Acquisition cost (ZAR)"><input type="number" value={f.acquisition_cost_zar} onChange={(e) => setF({ ...f, acquisition_cost_zar: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
+          <StitchField label="Vintage year"><input type="number" value={f.vintage_year} onChange={(e) => setF({ ...f, vintage_year: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
+          <StitchField label="Vintage month"><input type="number" min={1} max={12} value={f.vintage_month} onChange={(e) => setF({ ...f, vintage_month: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
+          <StitchField label="MWh certified" required><input type="number" required value={f.mwh_certified} onChange={(e) => setF({ ...f, mwh_certified: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
+          <StitchField label="Acquisition cost (ZAR)"><input type="number" value={f.acquisition_cost_zar} onChange={(e) => setF({ ...f, acquisition_cost_zar: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
         </div>
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
+          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px] font-semibold">Cancel</button>
           <button type="submit" disabled={busy} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">{busy ? 'Registering…' : 'Register'}</button>
         </div>
       </form>
@@ -1103,8 +1103,8 @@ function DisclosuresTab() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
-        <div className="text-[13px] text-[#3d4756]">Generate disclosure-ready exports for CDP, TCFD, CSRD, ISSB, JSE-SRL, SEC and the GHG Protocol from your year's emissions rollup.</div>
+      <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4 flex items-center justify-between">
+        <div className="text-[13px] text-[var(--ink-2, #3d4756)]">Generate disclosure-ready exports for CDP, TCFD, CSRD, ISSB, JSE-SRL, SEC and the GHG Protocol from your year's emissions rollup.</div>
         <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-1">
           <OEIcon name="plus" size={14} /> New disclosure
         </button>
@@ -1113,8 +1113,8 @@ function DisclosuresTab() {
         {loading ? <Skeleton variant="card" rows={2} /> : items.length === 0 ? <EmptyMsg>No disclosures generated.</EmptyMsg> : (
           <div className="overflow-auto">
             <table className="w-full text-[13px]">
-              <thead className="bg-[#fafbfd]">
-                <tr className="text-[11px] uppercase text-[#6b7685]">
+              <thead className="bg-[var(--s1, #fafbfd)]">
+                <tr className="text-[11px] uppercase text-[var(--ink-2, #6b7685)]">
                   <th className="px-4 py-2 text-left">Framework</th>
                   <th className="px-4 py-2 text-right">Year</th>
                   <th className="px-4 py-2 text-right">Scope 1</th>
@@ -1127,7 +1127,7 @@ function DisclosuresTab() {
               </thead>
               <tbody>
                 {items.map((d) => (
-                  <tr key={String(d.id)} className="border-t border-[#eef2f7]">
+                  <tr key={String(d.id)} className="border-t border-[var(--s2, #eef2f7)]">
                     <td className="px-4 py-2 font-medium">{String(d.framework)}</td>
                     <td className="px-4 py-2 text-right font-mono">{String(d.reporting_year)}</td>
                     <td className="px-4 py-2 text-right font-mono">{fmtN(Number(d.scope1_tco2e || 0), 1)}</td>
@@ -1168,21 +1168,21 @@ function NewDisclosureModal({ onClose, onCreated }: { onClose: () => void; onCre
     <Modal title="Generate disclosure" onClose={onClose}>
       <form onSubmit={submit} className="space-y-3">
         <StitchField label="Framework">
-          <select value={f.framework} onChange={(e) => setF({ ...f, framework: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+          <select value={f.framework} onChange={(e) => setF({ ...f, framework: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
             {FRAMEWORKS.map((fw) => <option key={fw} value={fw}>{fw.replace(/_/g, ' ')}</option>)}
           </select>
         </StitchField>
-        <StitchField label="Reporting year"><input type="number" value={f.reporting_year} onChange={(e) => setF({ ...f, reporting_year: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
+        <StitchField label="Reporting year"><input type="number" value={f.reporting_year} onChange={(e) => setF({ ...f, reporting_year: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
         <StitchField label="Assurance level">
-          <select value={f.assurance_level} onChange={(e) => setF({ ...f, assurance_level: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+          <select value={f.assurance_level} onChange={(e) => setF({ ...f, assurance_level: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
             <option value="none">None</option>
             <option value="limited">Limited</option>
             <option value="reasonable">Reasonable</option>
           </select>
         </StitchField>
-        <StitchField label="Notes"><textarea rows={2} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
+        <StitchField label="Notes"><textarea rows={2} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
+          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px] font-semibold">Cancel</button>
           <button type="submit" disabled={busy} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">{busy ? 'Generating…' : 'Generate'}</button>
         </div>
       </form>
@@ -1200,9 +1200,9 @@ function ExportPreviewModal({ framework, data, onClose }: { framework: string; d
   return (
     <Modal title={`${framework} export preview`} onClose={onClose} wide>
       <div className="space-y-3">
-        <pre className="bg-[#0f1c2e] text-[#a3eaf0] text-[11px] font-mono p-3 rounded-md max-h-[400px] overflow-auto">{JSON.stringify(data, null, 2)}</pre>
+        <pre className="bg-[var(--ink, #0f1c2e)] text-[#a3eaf0] text-[11px] font-mono p-3 rounded-md max-h-[400px] overflow-auto">{JSON.stringify(data, null, 2)}</pre>
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Close</button>
+          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px] font-semibold">Close</button>
           <button type="button" onClick={downloadJson} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold inline-flex items-center gap-1">
             <OEIcon name="download" size={14} /> Download JSON
           </button>
@@ -1228,8 +1228,8 @@ function RisksTab() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[#dde4ec] bg-white p-4 flex items-center justify-between">
-        <div className="text-[13px] text-[#3d4756]">TCFD physical + transition climate risks. Plot against NGFS scenarios for stress testing.</div>
+      <div className="rounded-xl border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-4 flex items-center justify-between">
+        <div className="text-[13px] text-[var(--ink-2, #3d4756)]">TCFD physical + transition climate risks. Plot against NGFS scenarios for stress testing.</div>
         <button type="button" onClick={() => setShowNew(true)} className="h-9 px-3 rounded-md bg-[#c2873a] text-white text-[12px] font-semibold inline-flex items-center gap-1">
           <OEIcon name="plus" size={14} /> New risk
         </button>
@@ -1238,8 +1238,8 @@ function RisksTab() {
         {loading ? <Skeleton variant="card" rows={2} /> : items.length === 0 ? <EmptyMsg>No risks logged.</EmptyMsg> : (
           <div className="overflow-auto">
             <table className="w-full text-[13px]">
-              <thead className="bg-[#fafbfd]">
-                <tr className="text-[11px] uppercase text-[#6b7685]">
+              <thead className="bg-[var(--s1, #fafbfd)]">
+                <tr className="text-[11px] uppercase text-[var(--ink-2, #6b7685)]">
                   <th className="px-4 py-2 text-left">Type</th>
                   <th className="px-4 py-2 text-left">Title</th>
                   <th className="px-4 py-2 text-left">Horizon</th>
@@ -1250,7 +1250,7 @@ function RisksTab() {
               </thead>
               <tbody>
                 {items.map((r) => (
-                  <tr key={String(r.id)} className="border-t border-[#eef2f7]">
+                  <tr key={String(r.id)} className="border-t border-[var(--s2, #eef2f7)]">
                     <td className="px-4 py-2 capitalize">{String(r.risk_type).replace(/_/g, ' ')}</td>
                     <td className="px-4 py-2 font-medium">{String(r.title)}</td>
                     <td className="px-4 py-2 capitalize">{String(r.time_horizon || '—')}</td>
@@ -1284,7 +1284,7 @@ function NewRiskModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     <Modal title="Add climate risk" onClose={onClose}>
       <form onSubmit={submit} className="space-y-3">
         <StitchField label="Risk type">
-          <select value={f.risk_type} onChange={(e) => setF({ ...f, risk_type: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+          <select value={f.risk_type} onChange={(e) => setF({ ...f, risk_type: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
             <option value="physical_acute">Physical · acute</option>
             <option value="physical_chronic">Physical · chronic</option>
             <option value="transition_policy">Transition · policy</option>
@@ -1293,29 +1293,29 @@ function NewRiskModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
             <option value="transition_reputation">Transition · reputation</option>
           </select>
         </StitchField>
-        <StitchField label="Title"><input required value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
-        <StitchField label="Description"><textarea rows={2} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
+        <StitchField label="Title"><input required value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
+        <StitchField label="Description"><textarea rows={2} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} className="w-full px-3 py-2 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
         <div className="grid grid-cols-2 gap-3">
           <StitchField label="Horizon">
-            <select value={f.time_horizon} onChange={(e) => setF({ ...f, time_horizon: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+            <select value={f.time_horizon} onChange={(e) => setF({ ...f, time_horizon: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
               <option value="short">Short (&lt; 3y)</option>
               <option value="medium">Medium (3–10y)</option>
               <option value="long">Long (&gt; 10y)</option>
             </select>
           </StitchField>
           <StitchField label="Scenario">
-            <select value={f.scenario} onChange={(e) => setF({ ...f, scenario: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]">
+            <select value={f.scenario} onChange={(e) => setF({ ...f, scenario: e.target.value })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]">
               <option value="NGFS Orderly">NGFS Orderly</option>
               <option value="NGFS Disorderly">NGFS Disorderly</option>
               <option value="NGFS Hot House">NGFS Hot House World</option>
               <option value="IEA NZE">IEA Net-Zero by 2050</option>
             </select>
           </StitchField>
-          <StitchField label="Likelihood (0–1)"><input type="number" min={0} max={1} step={0.05} value={f.likelihood} onChange={(e) => setF({ ...f, likelihood: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
-          <StitchField label="Annual impact (ZAR)"><input type="number" value={f.impact_zar} onChange={(e) => setF({ ...f, impact_zar: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[#dde4ec] text-[13px]" /></StitchField>
+          <StitchField label="Likelihood (0–1)"><input type="number" min={0} max={1} step={0.05} value={f.likelihood} onChange={(e) => setF({ ...f, likelihood: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
+          <StitchField label="Annual impact (ZAR)"><input type="number" value={f.impact_zar} onChange={(e) => setF({ ...f, impact_zar: Number(e.target.value) })} className="w-full h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px]" /></StitchField>
         </div>
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[#dde4ec] text-[13px] font-semibold">Cancel</button>
+          <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px] font-semibold">Cancel</button>
           <button type="submit" disabled={busy} className="h-9 px-4 rounded-md bg-[#c2873a] text-white text-[13px] font-semibold disabled:opacity-50">{busy ? 'Saving…' : 'Save risk'}</button>
         </div>
       </form>
@@ -1327,22 +1327,22 @@ function NewRiskModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 //  Shared bits
 // ════════════════════════════════════════════════════════════════════════
 function ScopePill({ scope, cat }: { scope: number; cat: number | null }) {
-  const tone = scope === 1 ? 'bg-[#c2873a] text-white' : scope === 2 ? 'bg-[oklch(0.94_0.02_250)] text-[#1a5d97]' : 'bg-[#b8eae6] text-[#0e6d68]';
+  const tone = scope === 1 ? 'bg-[#c2873a] text-white' : scope === 2 ? 'bg-[oklch(0.94_0.02_250)] text-[var(--info, #1a5d97)]' : 'bg-[#b8eae6] text-[#0e6d68]';
   const label = scope === 3 && cat ? `S3-${cat}` : `S${scope}`;
   return <span className={`px-2 py-[2px] text-[10px] uppercase font-bold rounded ${tone}`}>{label}</span>;
 }
 
 function EmptyMsg({ children }: { children: React.ReactNode }) {
-  return <div className="py-8 text-center text-[13px] text-[#6b7685]">{children}</div>;
+  return <div className="py-8 text-center text-[13px] text-[var(--ink-2, #6b7685)]">{children}</div>;
 }
 
 function Modal({ title, children, onClose, wide }: { title: string; children: React.ReactNode; onClose: () => void; wide?: boolean }) {
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-label={title}>
-      <div className={`bg-white rounded-xl shadow-xl w-full ${wide ? 'max-w-3xl' : 'max-w-md'} max-h-[90vh] overflow-auto`}>
-        <header className="px-5 py-3 border-b border-[#eef2f7] flex items-center justify-between sticky top-0 bg-white">
-          <div className="font-display font-semibold text-[15px] text-[#0f1c2e]">{title}</div>
-          <button type="button" onClick={onClose} aria-label="Close dialog" className="text-[#6b7685] hover:text-[#0f1c2e]"><OEIcon name="close" size={18} /></button>
+      <div className={`bg-surface-v2 rounded-xl shadow-xl w-full ${wide ? 'max-w-3xl' : 'max-w-md'} max-h-[90vh] overflow-auto`}>
+        <header className="px-5 py-3 border-b border-[var(--s2, #eef2f7)] flex items-center justify-between sticky top-0 bg-surface-v2">
+          <div className="font-display font-semibold text-[15px] text-[var(--ink, #0f1c2e)]">{title}</div>
+          <button type="button" onClick={onClose} aria-label="Close dialog" className="text-[var(--ink-2, #6b7685)] hover:text-[var(--ink, #0f1c2e)]"><OEIcon name="close" size={18} /></button>
         </header>
         <div className="p-5">{children}</div>
       </div>
@@ -1367,13 +1367,13 @@ function Field({ label, value, onChange, type = 'text', placeholder, className }
 }) {
   return (
     <label className={`block ${className || ''}`}>
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6b7685]">{label}</span>
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{label}</span>
       <input
         type={type}
         value={value ?? ''}
         onChange={onChange}
         placeholder={placeholder}
-        className="mt-1 h-9 w-full px-3 rounded-md border border-[#dde4ec] text-[13px] focus:outline-none focus:ring-2 focus:ring-[oklch(0.46_0.16_55)]/30"
+        className="mt-1 h-9 w-full px-3 rounded-md border border-[var(--border-subtle, #dde4ec)] text-[13px] focus:outline-none focus:ring-2 focus:ring-[oklch(0.46_0.16_55)]/30"
       />
     </label>
   );
@@ -1437,11 +1437,11 @@ function FinancedEmissionsTab() {
       <StitchCard title="PCAF coverage by asset class">
         {coverage.loading ? <Skeleton /> : (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Asset class</th><th>Rows</th><th>Exposure (ZAR)</th><th>Financed tCO₂e</th><th>Avg PCAF DQ</th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Asset class</th><th>Rows</th><th>Exposure (ZAR)</th><th>Financed tCO₂e</th><th>Avg PCAF DQ</th></tr></thead>
             <tbody>
               {(coverage.data || []).map((c: any) => (
-                <tr key={c.code} className="border-t border-[#eef2f7]">
-                  <td className="py-2"><div className="font-medium text-[#0f1c2e]">{c.name}</div><div className="text-[12px] text-[#6b7685]">{c.category}</div></td>
+                <tr key={c.code} className="border-t border-[var(--s2, #eef2f7)]">
+                  <td className="py-2"><div className="font-medium text-[var(--ink, #0f1c2e)]">{c.name}</div><div className="text-[12px] text-[var(--ink-2, #6b7685)]">{c.category}</div></td>
                   <td>{c.rows_recorded || 0}</td>
                   <td>{fmtZ(c.total_exposure_zar || 0)}</td>
                   <td>{fmtN(c.financed_total_tco2e || 0, 2)}</td>
@@ -1458,11 +1458,11 @@ function FinancedEmissionsTab() {
           ? <EmptyState icon="database" title="No exposures recorded" subtitle="Add your first financed exposure to start computing PCAF financed emissions." />
           : (
             <table className="w-full text-sm">
-              <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Counterparty</th><th>Asset class</th><th>Exposure</th><th>Attribution</th><th>Financed tCO₂e</th><th>DQ</th></tr></thead>
+              <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Counterparty</th><th>Asset class</th><th>Exposure</th><th>Attribution</th><th>Financed tCO₂e</th><th>DQ</th></tr></thead>
               <tbody>
                 {(rows.data || []).map((r: any) => (
-                  <tr key={r.id} className="border-t border-[#eef2f7]">
-                    <td className="py-2"><div className="font-medium">{r.counterparty_name}</div><div className="text-[12px] text-[#6b7685]">{r.counterparty_sector_nace || ''}</div></td>
+                  <tr key={r.id} className="border-t border-[var(--s2, #eef2f7)]">
+                    <td className="py-2"><div className="font-medium">{r.counterparty_name}</div><div className="text-[12px] text-[var(--ink-2, #6b7685)]">{r.counterparty_sector_nace || ''}</div></td>
                     <td>{r.asset_class}</td>
                     <td>{fmtZ(r.outstanding_amount_zar)}</td>
                     <td>{r.attribution_factor ? (r.attribution_factor * 100).toFixed(2) + '%' : '—'}</td>
@@ -1477,13 +1477,13 @@ function FinancedEmissionsTab() {
 
       <StitchCard title="Portfolio temperature alignment">
         {(temp.data || []).length === 0
-          ? <div className="text-sm text-[#6b7685]">No temperature alignment records yet.</div>
+          ? <div className="text-sm text-[var(--ink-2, #6b7685)]">No temperature alignment records yet.</div>
           : (
             <table className="w-full text-sm">
-              <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Year</th><th>Sector</th><th>Methodology</th><th>Implied °C</th><th>Pathway</th></tr></thead>
+              <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Year</th><th>Sector</th><th>Methodology</th><th>Implied °C</th><th>Pathway</th></tr></thead>
               <tbody>
                 {(temp.data || []).map((t: any) => (
-                  <tr key={t.id} className="border-t border-[#eef2f7]">
+                  <tr key={t.id} className="border-t border-[var(--s2, #eef2f7)]">
                     <td className="py-2">{t.reporting_year}</td><td>{t.sector || 'portfolio'}</td><td>{t.methodology || '—'}</td>
                     <td><span className={t.temperature_c <= 1.5 ? 'text-green-600 font-semibold' : t.temperature_c <= 2 ? 'text-amber-600' : 'text-red-600 font-semibold'}>{t.temperature_c?.toFixed(2)}°C</span></td>
                     <td>{t.pathway || '—'}</td>
@@ -1517,7 +1517,7 @@ function ExposureModal({ year, onClose }: { year: number; onClose: () => void })
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Field label="Reporting year" type="number" value={f.reporting_year} onChange={e => setF({ ...f, reporting_year: Number(e.target.value) })} />
         <label className="block">
-          <div className="text-[12px] font-medium text-[#0f1c2e] mb-1">Asset class</div>
+          <div className="text-[12px] font-medium text-[var(--ink, #0f1c2e)] mb-1">Asset class</div>
           <select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.asset_class} onChange={e => setF({ ...f, asset_class: e.target.value })}>
             {classes.map((c: any) => <option key={c.code} value={c.code}>{c.name}</option>)}
           </select>
@@ -1529,7 +1529,7 @@ function ExposureModal({ year, onClose }: { year: number; onClose: () => void })
         <Field label="EVIC (ZAR)" type="number" value={f.counterparty_evic_zar || ''} onChange={e => setF({ ...f, counterparty_evic_zar: Number(e.target.value) })} />
         <Field label="Outstanding (ZAR)" type="number" value={f.outstanding_amount_zar || ''} onChange={e => setF({ ...f, outstanding_amount_zar: Number(e.target.value) })} />
         <label className="block">
-          <div className="text-[12px] font-medium text-[#0f1c2e] mb-1">Attribution method</div>
+          <div className="text-[12px] font-medium text-[var(--ink, #0f1c2e)] mb-1">Attribution method</div>
           <select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.attribution_method} onChange={e => setF({ ...f, attribution_method: e.target.value })}>
             <option value="evic">EVIC</option><option value="total_equity">Total equity</option><option value="property_value">Property value</option><option value="vehicle_value">Vehicle value</option><option value="revenue">Revenue</option><option value="asset_value">Asset value</option>
           </select>
@@ -1538,7 +1538,7 @@ function ExposureModal({ year, onClose }: { year: number; onClose: () => void })
         <Field label="Scope 2 (tCO₂e)" type="number" value={f.counterparty_scope2_tco2e || ''} onChange={e => setF({ ...f, counterparty_scope2_tco2e: Number(e.target.value) })} />
         <Field label="Scope 3 (tCO₂e)" type="number" value={f.counterparty_scope3_tco2e || ''} onChange={e => setF({ ...f, counterparty_scope3_tco2e: Number(e.target.value) })} />
         <label className="block">
-          <div className="text-[12px] font-medium text-[#0f1c2e] mb-1">Data source</div>
+          <div className="text-[12px] font-medium text-[var(--ink, #0f1c2e)] mb-1">Data source</div>
           <select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.emissions_data_source || 'reported'} onChange={e => setF({ ...f, emissions_data_source: e.target.value })}>
             <option value="reported">Counterparty reported</option><option value="CDP">CDP</option><option value="proxy">Proxy</option><option value="sector_average">Sector average</option>
           </select>
@@ -1563,12 +1563,12 @@ function PcafTargetModal({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="PCAF / NZBA target" onClose={onClose}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <label className="block"><div className="text-[12px] font-medium text-[#0f1c2e] mb-1">Framework</div>
+        <label className="block"><div className="text-[12px] font-medium text-[var(--ink, #0f1c2e)] mb-1">Framework</div>
           <select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.framework} onChange={e => setF({ ...f, framework: e.target.value })}>
             <option>NZBA</option><option>SBTi_FI</option><option>GFANZ</option>
           </select>
         </label>
-        <label className="block"><div className="text-[12px] font-medium text-[#0f1c2e] mb-1">Scope</div>
+        <label className="block"><div className="text-[12px] font-medium text-[var(--ink, #0f1c2e)] mb-1">Scope</div>
           <select className="w-full border rounded-lg px-3 py-2 text-sm" value={f.scope} onChange={e => setF({ ...f, scope: e.target.value })}>
             <option value="portfolio_wide">Portfolio-wide</option><option value="sector">Sector</option><option value="asset_class">Asset class</option>
           </select>
@@ -1611,13 +1611,13 @@ function RemovalsTab() {
         {projects.loading ? <Skeleton /> : (projects.data || []).length === 0 ? <EmptyState icon="leaf" title="No CDR projects listed" subtitle="No removals projects in the marketplace yet." /> : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {(projects.data || []).map((p: any) => (
-              <div key={p.id} className="border border-[#eef2f7] rounded-xl p-3 hover:border-[#0f1c2e] transition">
+              <div key={p.id} className="border border-[var(--s2, #eef2f7)] rounded-xl p-3 hover:border-[var(--ink, #0f1c2e)] transition">
                 <div className="flex items-center justify-between mb-2">
                   <div className="font-display font-semibold text-[14px]">{p.project_name}</div>
                   <StitchPill label={p.category} tone={p.category === 'engineered' ? 'info' : p.category === 'nature' ? 'good' : 'warn'} />
                 </div>
-                <div className="text-[12px] text-[#6b7685] mb-2">{p.technology} · {p.host_country || 'Global'} · {p.permanence_years || 0}y</div>
-                <div className="text-[13px] text-[#0f1c2e] mb-2 line-clamp-2">{p.description}</div>
+                <div className="text-[12px] text-[var(--ink-2, #6b7685)] mb-2">{p.technology} · {p.host_country || 'Global'} · {p.permanence_years || 0}y</div>
+                <div className="text-[13px] text-[var(--ink, #0f1c2e)] mb-2 line-clamp-2">{p.description}</div>
                 <div className="flex items-center justify-between text-[12px] mb-2">
                   <span>{fmtZ(p.price_zar_per_tco2e || 0)}/tCO₂e</span>
                   <span>{fmtN(p.expected_tco2e_yr || 0)} t/yr</span>
@@ -1630,12 +1630,12 @@ function RemovalsTab() {
       </StitchCard>
 
       <StitchCard title="My offtake agreements">
-        {(offtakes.data || []).length === 0 ? <div className="text-sm text-[#6b7685]">No offtakes signed.</div> : (
+        {(offtakes.data || []).length === 0 ? <div className="text-sm text-[var(--ink-2, #6b7685)]">No offtakes signed.</div> : (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Project</th><th>Tech</th><th>Committed</th><th>Retired</th><th>Status</th><th></th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Project</th><th>Tech</th><th>Committed</th><th>Retired</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {(offtakes.data || []).map((o: any) => (
-                <tr key={o.id} className="border-t border-[#eef2f7]">
+                <tr key={o.id} className="border-t border-[var(--s2, #eef2f7)]">
                   <td className="py-2 font-medium">{o.project_name}</td>
                   <td>{o.technology}</td>
                   <td>{fmtN(o.total_tco2e, 1)}</td>
@@ -1670,7 +1670,7 @@ function OfftakeModal({ projectId, onClose }: { projectId: string; onClose: () =
         <Field label="Start vintage" type="number" value={f.start_vintage_year} onChange={e => setF({ ...f, start_vintage_year: Number(e.target.value) })} />
         <Field label="End vintage" type="number" value={f.end_vintage_year || ''} onChange={e => setF({ ...f, end_vintage_year: Number(e.target.value) })} />
       </div>
-      <div className="mt-3 text-sm text-[#0f1c2e]">Total: <strong>{fmtZ(f.total_tco2e * f.price_zar_per_tco2e)}</strong></div>
+      <div className="mt-3 text-sm text-[var(--ink, #0f1c2e)]">Total: <strong>{fmtZ(f.total_tco2e * f.price_zar_per_tco2e)}</strong></div>
       <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button type="button" onClick={save} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg">Sign offtake</button></div>
     </Modal>
   );
@@ -1705,16 +1705,16 @@ function CFETab() {
   return (
     <div className="space-y-5">
       <div className="flex justify-between items-center">
-        <p className="text-sm text-[#6b7685]">24/7 carbon-free energy hourly matching — load vs. carbon-free generation, hour by hour.</p>
+        <p className="text-sm text-[var(--ink-2, #6b7685)]">24/7 carbon-free energy hourly matching — load vs. carbon-free generation, hour by hour.</p>
         <button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg">Compute CFE score</button>
       </div>
       <StitchCard title="Recent CFE periods">
         {summary.loading ? <Skeleton /> : (summary.data || []).length === 0 ? <EmptyState icon="bolt" title="No CFE scores yet" subtitle="Upload hourly load & generation data, then compute a CFE score for the period." /> : (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Period</th><th>Load MWh</th><th>Carbon-free MWh</th><th>Match %</th><th>Full-match hrs</th><th>Avoided tCO₂e</th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Period</th><th>Load MWh</th><th>Carbon-free MWh</th><th>Match %</th><th>Full-match hrs</th><th>Avoided tCO₂e</th></tr></thead>
             <tbody>
               {(summary.data || []).map((s: any, i: number) => (
-                <tr key={i} className="border-t border-[#eef2f7]">
+                <tr key={i} className="border-t border-[var(--s2, #eef2f7)]">
                   <td className="py-2">{s.reporting_period_start?.slice(0, 10)} → {s.reporting_period_end?.slice(0, 10)}</td>
                   <td>{fmtN((s.total_load_kwh || 0) / 1000, 1)}</td>
                   <td>{fmtN((s.total_carbon_free_kwh || 0) / 1000, 1)}</td>
@@ -1768,14 +1768,14 @@ function PCFTab() {
   const [open, setOpen] = useState(false);
   return (
     <div className="space-y-5">
-      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">SKU-level lifecycle carbon — cradle-to-gate per ISO 14067.</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg">+ Add product</button></div>
+      <div className="flex justify-between"><p className="text-sm text-[var(--ink-2, #6b7685)]">SKU-level lifecycle carbon — cradle-to-gate per ISO 14067.</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg">+ Add product</button></div>
       <StitchCard title="Product footprints">
         {rows.loading ? <Skeleton /> : (rows.data || []).length === 0 ? <EmptyState icon="tag" title="No PCFs yet" subtitle="Add a product to compute its lifecycle carbon footprint." /> : (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">SKU</th><th>Product</th><th>Unit</th><th>Year</th><th>tCO₂e/unit</th><th>Lifecycle tCO₂e</th><th>DQ</th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">SKU</th><th>Product</th><th>Unit</th><th>Year</th><th>tCO₂e/unit</th><th>Lifecycle tCO₂e</th><th>DQ</th></tr></thead>
             <tbody>
               {(rows.data || []).map((r: any) => (
-                <tr key={r.id} className="border-t border-[#eef2f7]">
+                <tr key={r.id} className="border-t border-[var(--s2, #eef2f7)]">
                   <td className="py-2 font-mono text-[12px]">{r.product_code}</td><td>{r.product_name}</td><td>{r.functional_unit}</td><td>{r.reporting_year}</td>
                   <td>{(r.total_tco2e_per_unit || 0).toFixed(4)}</td>
                   <td>{r.total_lifecycle_tco2e ? fmtN(r.total_lifecycle_tco2e, 2) : '—'}</td>
@@ -1827,14 +1827,14 @@ function AssuranceTab() {
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Auditor engagements with finding tracking and evidence-pack assembly (ISAE 3000/3410, AA1000AS, ISO 14064-3).</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg">+ Open engagement</button></div>
+      <div className="flex justify-between"><p className="text-sm text-[var(--ink-2, #6b7685)]">Auditor engagements with finding tracking and evidence-pack assembly (ISAE 3000/3410, AA1000AS, ISO 14064-3).</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg">+ Open engagement</button></div>
       <StitchCard title="Engagements">
         {eng.loading ? <Skeleton /> : (eng.data || []).length === 0 ? <EmptyState icon="shield" title="No engagements" subtitle="Open your first assurance engagement to start the audit trail." /> : (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Year</th><th>Scope</th><th>Auditor</th><th>Standard</th><th>Level</th><th>Status</th><th>Opinion</th><th></th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Year</th><th>Scope</th><th>Auditor</th><th>Standard</th><th>Level</th><th>Status</th><th>Opinion</th><th></th></tr></thead>
             <tbody>
               {(eng.data || []).map((e: any) => (
-                <tr key={e.id} className="border-t border-[#eef2f7]">
+                <tr key={e.id} className="border-t border-[var(--s2, #eef2f7)]">
                   <td className="py-2">{e.reporting_year}</td><td>{e.scope}</td><td>{e.auditor_name || '—'}</td><td>{e.assurance_standard}</td>
                   <td><StitchPill label={e.assurance_level} tone={e.assurance_level === 'reasonable' ? 'good' : 'info'} /></td>
                   <td>{e.engagement_status}</td>
@@ -1891,14 +1891,14 @@ function FindingsModal({ engagementId, onClose }: { engagementId: string; onClos
   return (
     <Modal title="Audit findings" onClose={onClose}>
       <div className="space-y-2 mb-3">
-        {findings.length === 0 && <div className="text-sm text-[#6b7685]">No findings yet.</div>}
+        {findings.length === 0 && <div className="text-sm text-[var(--ink-2, #6b7685)]">No findings yet.</div>}
         {findings.map((x: any) => (
-          <div key={x.id} className="border border-[#eef2f7] rounded-lg p-3">
+          <div key={x.id} className="border border-[var(--s2, #eef2f7)] rounded-lg p-3">
             <div className="flex items-center justify-between mb-1">
               <div className="font-medium text-sm">{x.title}</div>
               <StitchPill label={x.severity} tone={x.severity === 'critical' || x.severity === 'material' ? 'critical' : x.severity === 'significant' ? 'warn' : 'info'} />
             </div>
-            <div className="text-[12px] text-[#6b7685]">{x.category} · {x.status}</div>
+            <div className="text-[12px] text-[var(--ink-2, #6b7685)]">{x.category} · {x.status}</div>
             {x.description && <div className="text-[13px] mt-1">{x.description}</div>}
           </div>
         ))}
@@ -1942,30 +1942,30 @@ function MaturityTab() {
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Climate maturity assessment — five pillars graded against your platform activity, not self-reported.</p><button type="button" onClick={score} disabled={busy} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg disabled:opacity-50">{busy ? 'Scoring…' : 'Compute current score'}</button></div>
+      <div className="flex justify-between"><p className="text-sm text-[var(--ink-2, #6b7685)]">Climate maturity assessment — five pillars graded against your platform activity, not self-reported.</p><button type="button" onClick={score} disabled={busy} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg disabled:opacity-50">{busy ? 'Scoring…' : 'Compute current score'}</button></div>
 
       {latest && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <StitchCard title={`${latest.reporting_year} — ${latest.band.toUpperCase()}`}>
             <div className="flex items-center justify-center my-2">
               <div className="text-center">
-                <div className="text-[44px] font-display font-bold text-[#0f1c2e]">{(latest.overall_score || 0).toFixed(0)}</div>
-                <div className="text-[12px] text-[#6b7685] uppercase tracking-wide">Overall climate maturity</div>
+                <div className="text-[44px] font-display font-bold text-[var(--ink, #0f1c2e)]">{(latest.overall_score || 0).toFixed(0)}</div>
+                <div className="text-[12px] text-[var(--ink-2, #6b7685)] uppercase tracking-wide">Overall climate maturity</div>
               </div>
             </div>
             <div className="grid grid-cols-5 gap-2 text-center text-[12px]">
-              <div><div className="font-semibold">{(latest.measurement_score || 0).toFixed(0)}</div><div className="text-[#6b7685]">Measure</div></div>
-              <div><div className="font-semibold">{(latest.governance_score || 0).toFixed(0)}</div><div className="text-[#6b7685]">Govern</div></div>
-              <div><div className="font-semibold">{(latest.target_score || 0).toFixed(0)}</div><div className="text-[#6b7685]">Target</div></div>
-              <div><div className="font-semibold">{(latest.action_score || 0).toFixed(0)}</div><div className="text-[#6b7685]">Act</div></div>
-              <div><div className="font-semibold">{(latest.disclosure_score || 0).toFixed(0)}</div><div className="text-[#6b7685]">Disclose</div></div>
+              <div><div className="font-semibold">{(latest.measurement_score || 0).toFixed(0)}</div><div className="text-[var(--ink-2, #6b7685)]">Measure</div></div>
+              <div><div className="font-semibold">{(latest.governance_score || 0).toFixed(0)}</div><div className="text-[var(--ink-2, #6b7685)]">Govern</div></div>
+              <div><div className="font-semibold">{(latest.target_score || 0).toFixed(0)}</div><div className="text-[var(--ink-2, #6b7685)]">Target</div></div>
+              <div><div className="font-semibold">{(latest.action_score || 0).toFixed(0)}</div><div className="text-[var(--ink-2, #6b7685)]">Act</div></div>
+              <div><div className="font-semibold">{(latest.disclosure_score || 0).toFixed(0)}</div><div className="text-[var(--ink-2, #6b7685)]">Disclose</div></div>
             </div>
           </StitchCard>
           <StitchCard title="Pillar radar">
             <ResponsiveContainer width="100%" height={240}>
               <RadarChart data={pillarData}>
                 <PolarGrid /><PolarAngleAxis dataKey="pillar" />
-                <Radar isAnimationActive={false} name="Score" dataKey="score" stroke="#0f1c2e" fill="#0f1c2e" fillOpacity={0.3} />
+                <Radar isAnimationActive={false} name="Score" dataKey="score" stroke="var(--ink, #0f1c2e)" fill="var(--ink, #0f1c2e)" fillOpacity={0.3} />
                 <Tooltip />
               </RadarChart>
             </ResponsiveContainer>
@@ -1976,10 +1976,10 @@ function MaturityTab() {
       <StitchCard title="Industry benchmarks">
         {benchmarks.loading ? <Skeleton /> : (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Sector</th><th>Region</th><th>Year</th><th>Metric</th><th>P25</th><th>P50</th><th>P75</th><th>Unit</th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Sector</th><th>Region</th><th>Year</th><th>Metric</th><th>P25</th><th>P50</th><th>P75</th><th>Unit</th></tr></thead>
             <tbody>
               {(benchmarks.data || []).map((b: any) => (
-                <tr key={b.id} className="border-t border-[#eef2f7]">
+                <tr key={b.id} className="border-t border-[var(--s2, #eef2f7)]">
                   <td className="py-2">{b.sector_name}</td><td>{b.region}</td><td>{b.reporting_year}</td><td className="text-[12px]">{b.metric}</td>
                   <td>{b.p25}</td><td className="font-semibold">{b.p50}</td><td>{b.p75}</td><td className="text-[12px]">{b.unit}</td>
                 </tr>
@@ -2000,18 +2000,18 @@ function JurisdictionsTab() {
   return (
     <div className="space-y-5">
       <div className="flex justify-between">
-        <p className="text-sm text-[#6b7685]">File one fiscal-year dataset to many regulators — CSRD, SEC, CA SB-253, UK SECR, SGX, Japan TCFD, JSE-SRL.</p>
+        <p className="text-sm text-[var(--ink-2, #6b7685)]">File one fiscal-year dataset to many regulators — CSRD, SEC, CA SB-253, UK SECR, SGX, Japan TCFD, JSE-SRL.</p>
         <button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg">+ New submission</button>
       </div>
 
       <StitchCard title="My submissions">
         {subs.loading ? <Skeleton /> : (subs.data || []).length === 0 ? <EmptyState icon="globe" title="No submissions filed yet" subtitle="Create a submission against any registered jurisdiction." /> : (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Jurisdiction</th><th>Region</th><th>Year</th><th>Status</th><th>Submitted</th><th>Reference</th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Jurisdiction</th><th>Region</th><th>Year</th><th>Status</th><th>Submitted</th><th>Reference</th></tr></thead>
             <tbody>
               {(subs.data || []).map((s: any) => (
-                <tr key={s.id} className="border-t border-[#eef2f7]">
-                  <td className="py-2"><div className="font-medium">{s.jurisdiction_name}</div><div className="text-[12px] text-[#6b7685]">{s.jurisdiction}</div></td>
+                <tr key={s.id} className="border-t border-[var(--s2, #eef2f7)]">
+                  <td className="py-2"><div className="font-medium">{s.jurisdiction_name}</div><div className="text-[12px] text-[var(--ink-2, #6b7685)]">{s.jurisdiction}</div></td>
                   <td>{s.region}</td><td>{s.reporting_year}</td>
                   <td><StitchPill status={s.status} /></td>
                   <td className="text-[12px]">{s.submitted_at?.slice(0, 10) || '—'}</td>
@@ -2026,13 +2026,13 @@ function JurisdictionsTab() {
       <StitchCard title="Available jurisdictions">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {(jurs.data || []).map((j: any) => (
-            <div key={j.code} className="border border-[#eef2f7] rounded-lg p-3">
+            <div key={j.code} className="border border-[var(--s2, #eef2f7)] rounded-lg p-3">
               <div className="flex items-start justify-between mb-1">
                 <div className="font-display font-semibold text-[13px]">{j.name}</div>
                 {j.mandatory ? <StitchPill label="Mandatory" tone="critical" /> : <StitchPill label="Voluntary" tone="info" />}
               </div>
-              <div className="text-[12px] text-[#6b7685] mb-1">{j.region} · {j.effective_year}</div>
-              <div className="text-[12px] text-[#0f1c2e]">{j.description}</div>
+              <div className="text-[12px] text-[var(--ink-2, #6b7685)] mb-1">{j.region} · {j.effective_year}</div>
+              <div className="text-[12px] text-[var(--ink, #0f1c2e)]">{j.description}</div>
             </div>
           ))}
         </div>
@@ -2078,14 +2078,14 @@ function AnomaliesTab() {
   };
   return (
     <div className="space-y-5">
-      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Heuristic anomaly detection — spikes, duplicates, impossible values, factor mismatches.</p><button type="button" onClick={scan} disabled={busy} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg disabled:opacity-50">{busy ? 'Scanning…' : 'Run scan'}</button></div>
+      <div className="flex justify-between"><p className="text-sm text-[var(--ink-2, #6b7685)]">Heuristic anomaly detection — spikes, duplicates, impossible values, factor mismatches.</p><button type="button" onClick={scan} disabled={busy} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg disabled:opacity-50">{busy ? 'Scanning…' : 'Run scan'}</button></div>
       <StitchCard title="Open anomalies">
         {rows.loading ? <Skeleton /> : (rows.data || []).length === 0 ? <EmptyState icon="check-circle" title="No open anomalies" subtitle="All your ESG transactions pass the anomaly heuristics." /> : (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Rule</th><th>Severity</th><th>Detail</th><th>Expected</th><th>Observed</th><th>Detected</th><th></th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Rule</th><th>Severity</th><th>Detail</th><th>Expected</th><th>Observed</th><th>Detected</th><th></th></tr></thead>
             <tbody>
               {(rows.data || []).map((r: any) => (
-                <tr key={r.id} className="border-t border-[#eef2f7]">
+                <tr key={r.id} className="border-t border-[var(--s2, #eef2f7)]">
                   <td className="py-2 font-mono text-[12px]">{r.rule}</td>
                   <td><StitchPill label={r.severity} tone={r.severity === 'critical' ? 'critical' : r.severity === 'high' ? 'warn' : 'info'} /></td>
                   <td className="text-[12px]">{r.detail}</td>
@@ -2094,7 +2094,7 @@ function AnomaliesTab() {
                   <td className="text-[12px]">{r.detected_at?.slice(0, 16) || '—'}</td>
                   <td className="space-x-2">
                     <button type="button" onClick={() => update(r.id, 'resolved')} className="text-green-700 text-[12px] hover:underline">Resolve</button>
-                    <button type="button" onClick={() => update(r.id, 'dismissed')} className="text-[#6b7685] text-[12px] hover:underline">Dismiss</button>
+                    <button type="button" onClick={() => update(r.id, 'dismissed')} className="text-[var(--ink-2, #6b7685)] text-[12px] hover:underline">Dismiss</button>
                   </td>
                 </tr>
               ))}
@@ -2118,18 +2118,18 @@ function ScenariosTab() {
   const [detail, setDetail] = useState<any>(null);
   return (
     <div className="space-y-5">
-      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">NGFS / IEA / IPCC scenario analysis. Runs your portfolio through orderly / disorderly / hot-house pathways to compute emissions-at-risk and financial VaR.</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg">Run scenario</button></div>
+      <div className="flex justify-between"><p className="text-sm text-[var(--ink-2, #6b7685)]">NGFS / IEA / IPCC scenario analysis. Runs your portfolio through orderly / disorderly / hot-house pathways to compute emissions-at-risk and financial VaR.</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg">Run scenario</button></div>
 
       <StitchCard title="Reference scenarios">
         {scenarios.loading ? <Skeleton /> : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             {(scenarios.data || []).map((s: any) => (
-              <div key={s.code} className="border border-[#eef2f7] rounded-lg p-3">
+              <div key={s.code} className="border border-[var(--s2, #eef2f7)] rounded-lg p-3">
                 <div className="flex justify-between mb-1">
                   <div className="font-display font-semibold text-[13px]">{s.name}</div>
                   <StitchPill label={`${s.temperature_2100_c}°C`} tone={s.temperature_2100_c <= 1.5 ? 'good' : s.temperature_2100_c <= 2 ? 'info' : 'warn'} />
                 </div>
-                <div className="text-[12px] text-[#6b7685] mb-1">{s.family} · {s.category}</div>
+                <div className="text-[12px] text-[var(--ink-2, #6b7685)] mb-1">{s.family} · {s.category}</div>
                 <div className="text-[12px] flex gap-3">
                   <span>Transition: {s.transition_risk}</span><span>Physical: {s.physical_risk}</span>
                 </div>
@@ -2142,11 +2142,11 @@ function ScenariosTab() {
       <StitchCard title="My scenario runs">
         {(runs.data || []).length === 0 ? <EmptyState icon="workflow" title="No scenario runs yet" subtitle="Run a scenario against your financed-emissions portfolio." /> : (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Scenario</th><th>Horizon</th><th>Base tCO₂e</th><th>Target tCO₂e</th><th>At risk</th><th>Financial VaR</th><th>Worst sector</th><th></th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Scenario</th><th>Horizon</th><th>Base tCO₂e</th><th>Target tCO₂e</th><th>At risk</th><th>Financial VaR</th><th>Worst sector</th><th></th></tr></thead>
             <tbody>
               {(runs.data || []).map((r: any) => (
-                <tr key={r.id} className="border-t border-[#eef2f7]">
-                  <td className="py-2"><div className="font-medium">{r.scenario_name}</div><div className="text-[12px] text-[#6b7685]">{r.family}</div></td>
+                <tr key={r.id} className="border-t border-[var(--s2, #eef2f7)]">
+                  <td className="py-2"><div className="font-medium">{r.scenario_name}</div><div className="text-[12px] text-[var(--ink-2, #6b7685)]">{r.family}</div></td>
                   <td>{r.horizon_years}y</td>
                   <td>{fmtN(r.portfolio_emissions_base_tco2e, 1)}</td>
                   <td>{fmtN(r.portfolio_emissions_target_tco2e, 1)}</td>
@@ -2205,10 +2205,10 @@ function ScenarioDetailModal({ run, onClose }: { run: any; onClose: () => void }
         <StitchKpi label="Financial VaR" value={fmtZ(run.financial_value_at_risk_zar, 0)} tone="down" />
       </div>
       <table className="w-full text-sm">
-        <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Sector</th><th>Exposure</th><th>Base tCO₂e</th><th>Target tCO₂e</th><th>At risk</th><th>Financial VaR</th></tr></thead>
+        <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Sector</th><th>Exposure</th><th>Base tCO₂e</th><th>Target tCO₂e</th><th>At risk</th><th>Financial VaR</th></tr></thead>
         <tbody>
           {impacts.map((s: any, i: number) => (
-            <tr key={i} className="border-t border-[#eef2f7]">
+            <tr key={i} className="border-t border-[var(--s2, #eef2f7)]">
               <td className="py-2 font-mono text-[12px]">{s.sector}</td>
               <td>{fmtZ(s.exposure_zar, 0)}</td>
               <td>{fmtN(s.base_emissions_tco2e, 1)}</td>
@@ -2229,14 +2229,14 @@ function CounterpartiesTab() {
   const [open, setOpen] = useState(false);
   return (
     <div className="space-y-5">
-      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Send share-links to counterparties so they can submit their emissions (PCAF data-quality 1-2).</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg">+ Request data</button></div>
+      <div className="flex justify-between"><p className="text-sm text-[var(--ink-2, #6b7685)]">Send share-links to counterparties so they can submit their emissions (PCAF data-quality 1-2).</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg">+ Request data</button></div>
       <StitchCard title="Open requests">
         {requests.loading ? <Skeleton /> : (requests.data || []).length === 0 ? <EmptyState icon="people" title="No counterparty requests" subtitle="Send your first data request to a financed counterparty." /> : (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Counterparty</th><th>Email</th><th>Year</th><th>Scope</th><th>Status</th><th>Sent</th><th>Share link</th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Counterparty</th><th>Email</th><th>Year</th><th>Scope</th><th>Status</th><th>Sent</th><th>Share link</th></tr></thead>
             <tbody>
               {(requests.data || []).map((r: any) => (
-                <tr key={r.id} className="border-t border-[#eef2f7]">
+                <tr key={r.id} className="border-t border-[var(--s2, #eef2f7)]">
                   <td className="py-2 font-medium">{r.counterparty_name}</td>
                   <td className="text-[12px]">{r.counterparty_email || '—'}</td>
                   <td>{r.reporting_year}</td>
@@ -2286,7 +2286,7 @@ function MACCTab() {
   const rows = useWatershed<any[]>(`/macc`, []);
   return (
     <div className="space-y-5">
-      <p className="text-sm text-[#6b7685]">Marginal abatement cost curve — initiatives sorted by ZAR/tCO₂e. Bars to the left of zero are net-negative (saves money while reducing).</p>
+      <p className="text-sm text-[var(--ink-2, #6b7685)]">Marginal abatement cost curve — initiatives sorted by ZAR/tCO₂e. Bars to the left of zero are net-negative (saves money while reducing).</p>
       <StitchCard title="MACC chart">
         {rows.loading ? <Skeleton /> : (rows.data || []).length === 0 ? <EmptyState icon="chart-line" title="No initiatives with abatement data" subtitle="Add initiatives with abatement_tco2e_yr and capex to populate the MACC." /> : (
           <ResponsiveContainer width="100%" height={380}>
@@ -2297,7 +2297,7 @@ function MACCTab() {
               <Tooltip />
               <Bar isAnimationActive={false} dataKey="cost" name="MACC (ZAR/tCO₂e)">
                 {(rows.data || []).map((r: any, i: number) => (
-                  <Cell key={i} fill={(r.computed_macc_zar_per_tco2e || 0) < 0 ? '#1a8a5b' : (r.computed_macc_zar_per_tco2e || 0) < 500 ? 'oklch(0.46 0.16 55)' : '#c97a14'} />
+                  <Cell key={i} fill={(r.computed_macc_zar_per_tco2e || 0) < 0 ? 'var(--good, #1a8a5b)' : (r.computed_macc_zar_per_tco2e || 0) < 500 ? 'var(--accent, oklch(0.46 0.16 55))' : '#c97a14'} />
                 ))}
               </Bar>
             </BarChart>
@@ -2307,10 +2307,10 @@ function MACCTab() {
       <StitchCard title="Initiatives in order of cost-effectiveness">
         {(rows.data || []).length > 0 && (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Initiative</th><th>Abatement t/yr</th><th>Cumulative t/yr</th><th>Capex</th><th>MACC (ZAR/tCO₂e)</th><th>Status</th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Initiative</th><th>Abatement t/yr</th><th>Cumulative t/yr</th><th>Capex</th><th>MACC (ZAR/tCO₂e)</th><th>Status</th></tr></thead>
             <tbody>
               {(rows.data || []).map((r: any) => (
-                <tr key={r.id} className="border-t border-[#eef2f7]">
+                <tr key={r.id} className="border-t border-[var(--s2, #eef2f7)]">
                   <td className="py-2">{r.name}</td>
                   <td>{fmtN(r.abatement_tco2e_yr, 1)}</td>
                   <td>{fmtN(r.cumulative_abatement_tco2e, 1)}</td>
@@ -2347,7 +2347,7 @@ function PathwaysTab() {
               <XAxis dataKey="year" />
               <YAxis label={{ value: sectorData[0]?.unit || '', angle: -90, position: 'insideLeft' }} />
               <Tooltip />
-              <Bar isAnimationActive={false} dataKey="intensity_value" fill="#0f1c2e" name="Intensity" />
+              <Bar isAnimationActive={false} dataKey="intensity_value" fill="var(--ink, #0f1c2e)" name="Intensity" />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -2380,7 +2380,7 @@ function AIClassifierTab() {
   };
   return (
     <div className="space-y-5">
-      <p className="text-sm text-[#6b7685]">AI carbon-accountant — paste any invoice line, expense description, or activity. Returns suggested activity code, scope, and confidence.</p>
+      <p className="text-sm text-[var(--ink-2, #6b7685)]">AI carbon-accountant — paste any invoice line, expense description, or activity. Returns suggested activity code, scope, and confidence.</p>
       <StitchCard title="Classify">
         <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
           <div className="md:col-span-3"><Field label="Description" value={desc} onChange={e => setDesc(e.target.value)} placeholder="e.g. Sasol natural gas Q1 invoice" /></div>
@@ -2392,12 +2392,12 @@ function AIClassifierTab() {
           <div className="mt-4 p-3 bg-[#f6f9fc] rounded-lg">
             <div className="flex justify-between items-start mb-2">
               <div>
-                <div className="text-[11px] text-[#6b7685] uppercase tracking-wide">Suggested activity code</div>
+                <div className="text-[11px] text-[var(--ink-2, #6b7685)] uppercase tracking-wide">Suggested activity code</div>
                 <div className="font-mono text-[14px] font-semibold">{result.activity_code}</div>
-                <div className="text-[12px] text-[#6b7685] mt-1">Scope {result.scope}{result.scope3_category ? ', cat ' + result.scope3_category : ''} · model: {result.model_id}</div>
+                <div className="text-[12px] text-[var(--ink-2, #6b7685)] mt-1">Scope {result.scope}{result.scope3_category ? ', cat ' + result.scope3_category : ''} · model: {result.model_id}</div>
               </div>
               <div className="text-right">
-                <div className="text-[11px] text-[#6b7685]">Confidence</div>
+                <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Confidence</div>
                 <div className={`text-[20px] font-bold ${result.confidence >= 0.8 ? 'text-green-700' : result.confidence >= 0.5 ? 'text-amber-700' : 'text-red-700'}`}>{((result.confidence || 0) * 100).toFixed(0)}%</div>
               </div>
             </div>
@@ -2407,17 +2407,17 @@ function AIClassifierTab() {
         )}
       </StitchCard>
       <StitchCard title="Recent classifications">
-        {(logs.data || []).length === 0 ? <div className="text-sm text-[#6b7685]">No classifications yet.</div> : (
+        {(logs.data || []).length === 0 ? <div className="text-sm text-[var(--ink-2, #6b7685)]">No classifications yet.</div> : (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Input</th><th>Suggested</th><th>Scope</th><th>Conf</th><th>Model</th><th>Accepted</th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Input</th><th>Suggested</th><th>Scope</th><th>Conf</th><th>Model</th><th>Accepted</th></tr></thead>
             <tbody>
               {(logs.data || []).map((l: any) => (
-                <tr key={l.id} className="border-t border-[#eef2f7]">
+                <tr key={l.id} className="border-t border-[var(--s2, #eef2f7)]">
                   <td className="py-2 text-[12px] max-w-xs truncate">{l.input_text}</td>
                   <td className="font-mono text-[12px]">{l.suggested_activity_code}</td>
                   <td>{l.suggested_scope}</td>
                   <td>{l.confidence ? ((l.confidence * 100).toFixed(0) + '%') : '—'}</td>
-                  <td className="text-[10px] font-mono text-[#6b7685]">{l.model_id}</td>
+                  <td className="text-[10px] font-mono text-[var(--ink-2, #6b7685)]">{l.model_id}</td>
                   <td>{l.user_accepted ? <StitchPill label="Accepted" tone="good" /> : '—'}</td>
                 </tr>
               ))}
@@ -2437,14 +2437,14 @@ function RecMarketTab() {
   const [buyOpen, setBuyOpen] = useState<any>(null);
   return (
     <div className="space-y-5">
-      <div className="flex justify-between"><p className="text-sm text-[#6b7685]">Hourly REC marketplace — time-matched energy attribute certificates for 24/7 CFE.</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg">+ List RECs</button></div>
+      <div className="flex justify-between"><p className="text-sm text-[var(--ink-2, #6b7685)]">Hourly REC marketplace — time-matched energy attribute certificates for 24/7 CFE.</p><button type="button" onClick={() => setOpen(true)} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg">+ List RECs</button></div>
       <StitchCard title="Active listings">
         {listings.loading ? <Skeleton /> : (listings.data || []).length === 0 ? <EmptyState icon="store" title="No listings" subtitle="Be the first to list hourly RECs." /> : (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Hour</th><th>Zone</th><th>Tech</th><th>Available kWh</th><th>Remaining</th><th>Price ZAR/kWh</th><th>Status</th><th></th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Hour</th><th>Zone</th><th>Tech</th><th>Available kWh</th><th>Remaining</th><th>Price ZAR/kWh</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {(listings.data || []).map((l: any) => (
-                <tr key={l.id} className="border-t border-[#eef2f7]">
+                <tr key={l.id} className="border-t border-[var(--s2, #eef2f7)]">
                   <td className="py-2 text-[12px] font-mono">{l.hour_utc?.slice(0, 13)}h</td>
                   <td>{l.grid_zone}</td>
                   <td>{l.technology}</td>
@@ -2460,12 +2460,12 @@ function RecMarketTab() {
         )}
       </StitchCard>
       <StitchCard title="My trades">
-        {(trades.data || []).length === 0 ? <div className="text-sm text-[#6b7685]">No trades yet.</div> : (
+        {(trades.data || []).length === 0 ? <div className="text-sm text-[var(--ink-2, #6b7685)]">No trades yet.</div> : (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Hour</th><th>Zone</th><th>Tech</th><th>kWh</th><th>Total</th><th>Retired</th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Hour</th><th>Zone</th><th>Tech</th><th>kWh</th><th>Total</th><th>Retired</th></tr></thead>
             <tbody>
               {(trades.data || []).map((t: any) => (
-                <tr key={t.id} className="border-t border-[#eef2f7]">
+                <tr key={t.id} className="border-t border-[var(--s2, #eef2f7)]">
                   <td className="py-2 text-[12px] font-mono">{t.hour_utc?.slice(0, 13)}h</td>
                   <td>{t.grid_zone}</td><td>{t.technology}</td>
                   <td>{fmtN(t.kwh)}</td>
@@ -2519,7 +2519,7 @@ function BuyRecModal({ listing, onClose }: { listing: any; onClose: () => void }
       <div className="space-y-3">
         <Field label="kWh to buy" type="number" value={kwh} onChange={e => setKwh(Number(e.target.value))} />
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={retire} onChange={e => setRetire(e.target.checked)} /> Retire immediately for 24/7 CFE matching</label>
-        <div className="text-sm text-[#0f1c2e]">Total: <strong>{fmtZ(total, 2)}</strong> ({fmtN(kwh)} kWh @ {listing.price_zar_per_kwh.toFixed(2)}/kWh)</div>
+        <div className="text-sm text-[var(--ink, #0f1c2e)]">Total: <strong>{fmtZ(total, 2)}</strong> ({fmtN(kwh)} kWh @ {listing.price_zar_per_kwh.toFixed(2)}/kWh)</div>
       </div>
       <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={onClose} className="px-3 py-1.5 text-sm border rounded-lg">Cancel</button><button type="button" onClick={save} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg">Buy</button></div>
     </Modal>
@@ -2540,7 +2540,7 @@ function AuditChainTab() {
   return (
     <div className="space-y-5">
       <div className="flex justify-between">
-        <p className="text-sm text-[#6b7685]">Hash-chained immutable audit log. Each entry stores SHA-256(prev_hash · payload), enabling external auditors to detect tampering.</p>
+        <p className="text-sm text-[var(--ink-2, #6b7685)]">Hash-chained immutable audit log. Each entry stores SHA-256(prev_hash · payload), enabling external auditors to detect tampering.</p>
         <button type="button" onClick={doVerify} disabled={busy} className="px-3 py-1.5 text-sm bg-[#c2873a] text-white rounded-lg disabled:opacity-50">{busy ? 'Verifying…' : 'Verify chain'}</button>
       </div>
       {verify && (
@@ -2553,15 +2553,15 @@ function AuditChainTab() {
       <StitchCard title="Audit chain entries">
         {chain.loading ? <Skeleton /> : (chain.data || []).length === 0 ? <EmptyState icon="layers" title="No chain entries yet" subtitle="Audit-chain entries are created as records are appended via /audit-chain/append." /> : (
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-[#6b7685]"><th className="py-2">Seq</th><th>Table</th><th>Entity ID</th><th>Op</th><th>Hash</th><th>Time</th></tr></thead>
+            <thead><tr className="text-left text-[var(--ink-2, #6b7685)]"><th className="py-2">Seq</th><th>Table</th><th>Entity ID</th><th>Op</th><th>Hash</th><th>Time</th></tr></thead>
             <tbody>
               {(chain.data || []).map((r: any) => (
-                <tr key={r.id} className="border-t border-[#eef2f7]">
+                <tr key={r.id} className="border-t border-[var(--s2, #eef2f7)]">
                   <td className="py-2 font-mono">{r.sequence_no}</td>
                   <td className="font-mono text-[12px]">{r.entity_table}</td>
                   <td className="font-mono text-[12px]">{r.entity_id}</td>
                   <td>{r.operation}</td>
-                  <td className="font-mono text-[10px] text-[#6b7685]">{r.this_hash?.slice(0, 12)}…</td>
+                  <td className="font-mono text-[10px] text-[var(--ink-2, #6b7685)]">{r.this_hash?.slice(0, 12)}…</td>
                   <td className="text-[12px]">{r.created_at?.slice(0, 16)}</td>
                 </tr>
               ))}

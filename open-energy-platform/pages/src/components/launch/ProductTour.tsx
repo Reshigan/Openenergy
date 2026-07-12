@@ -164,7 +164,7 @@ export function ProductTour({
         transition={{ duration: 0.2, delay: 0.1 }}
         style={{
           ...tipStyle,
-          background: '#fff',
+          background: 'var(--s1, #fff)',
           borderRadius: 12,
           boxShadow: '0 8px 32px rgba(10,20,34,0.22), 0 0 0 1px rgba(59,130,196,0.15)',
           padding: '16px 18px',
@@ -177,7 +177,7 @@ export function ProductTour({
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'oklch(0.46 0.16 55)', marginBottom: 3 }}>
               Step {stepIndex + 1} of {def.steps.length}
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#0f1c2e', lineHeight: 1.25 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink, #0f1c2e)', lineHeight: 1.25 }}>
               {step.title}
             </div>
           </div>
@@ -191,7 +191,7 @@ export function ProductTour({
           </button>
         </div>
 
-        <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, marginTop: 8 }}>
+        <p style={{ fontSize: 12, color: 'var(--ink-2, #4a5568)', lineHeight: 1.55, marginTop: 8 }}>
           {step.body}
         </p>
 
@@ -204,7 +204,7 @@ export function ProductTour({
                 width: i === stepIndex ? 18 : 6,
                 height: 6,
                 borderRadius: 3,
-                background: i === stepIndex ? 'oklch(0.46 0.16 55)' : i < stepIndex ? '#1a8a5b' : '#dde4ec',
+                background: i === stepIndex ? 'oklch(0.46 0.16 55)' : i < stepIndex ? 'var(--good, #1a8a5b)' : 'var(--border-subtle, #dde4ec)',
                 transition: 'width 0.2s, background 0.2s',
               }}
             />
@@ -225,7 +225,7 @@ export function ProductTour({
               <button
                 type="button"
                 onClick={onPrev}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, height: 30, paddingLeft: 10, paddingRight: 12, borderRadius: 6, border: '1px solid #dde4ec', background: '#fff', cursor: 'pointer', fontSize: 12, color: '#0f1c2e', fontWeight: 600 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, height: 30, paddingLeft: 10, paddingRight: 12, borderRadius: 6, border: '1px solid var(--border-subtle, #dde4ec)', background: 'var(--s1, #fff)', cursor: 'pointer', fontSize: 12, color: 'var(--ink, #0f1c2e)', fontWeight: 600 }}
               >
                 <ChevronLeft size={13} /> Back
               </button>

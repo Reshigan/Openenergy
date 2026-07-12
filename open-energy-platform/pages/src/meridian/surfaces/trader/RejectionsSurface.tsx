@@ -47,7 +47,7 @@ function ExplainButton({ id }: { id: string }) {
       <button type="button" onClick={() => { setOpen(true); if (!data) void load(); }} className="btn pri">AI: why?</button>
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-surface-v2 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="p-5 border-b border-[var(--line)]">
               <h3 className="text-[16px] font-semibold text-[var(--ink)]">Why was this rejected?</h3>
             </div>

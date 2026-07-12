@@ -15,23 +15,23 @@ import { AiBriefPanel, BriefRole } from './AiBriefPanel';
 import { SuiteHero } from './SuiteHero';
 
 // ─── OKLCH design tokens ───────────────────────────────────────────────────
-const BG      = 'oklch(0.96 0.003 250)';
-const BG1     = 'oklch(0.99 0.002 80)';
-const BORDER  = 'oklch(0.87 0.006 250)';
-const TX1     = 'oklch(0.17 0.010 250)';
-const TX2     = 'oklch(0.40 0.009 250)';
-const TX3     = 'oklch(0.60 0.007 250)';
-const ACC     = 'oklch(0.46 0.16 55)';
+const BG      = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1     = 'var(--s1, oklch(0.99 0.002 80))';
+const BORDER  = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1     = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2     = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3     = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC     = 'var(--accent, oklch(0.46 0.16 55))';
 const ACC_HVR = 'oklch(0.40 0.15 55)';
-const BAD     = 'oklch(0.48 0.20 20)';
-const BAD_BG  = 'oklch(0.97 0.04 20)';
+const BAD     = 'var(--bad, oklch(0.48 0.20 20))';
+const BAD_BG  = 'color-mix(in oklab, var(--bad) 15%, var(--s1))';
 const BAD_BDR = 'oklch(0.85 0.08 20)';
-const OK      = 'oklch(0.45 0.15 150)';
+const OK      = 'var(--good, oklch(0.45 0.15 150))';
 const OK_BG   = 'oklch(0.97 0.04 150)';
 const OK_BDR  = 'oklch(0.85 0.08 150)';
-const ROW_HOVER  = 'oklch(0.975 0.002 250)';
-const HEADER_BG  = 'oklch(0.94 0.004 250)';
-const ROW_BORDER = 'oklch(0.91 0.004 250)';
+const ROW_HOVER  = 'var(--s1, oklch(0.975 0.002 250))';
+const HEADER_BG  = 'var(--s2, oklch(0.94 0.004 250))';
+const ROW_BORDER = 'var(--border-subtle, oklch(0.91 0.004 250))';
 
 // ─── Field & form specs ────────────────────────────────────────────────────
 // `datetime-local` mirrors the native HTML input type; FormField renders
@@ -1152,7 +1152,7 @@ export function StatusPill({ status, label, tone }: { status?: string; label?: s
   const text = label ?? status ?? '';
   const palette: Record<string, { bg: string; text: string }> = {
     good:     { bg: OK_BG,                        text: OK },
-    warn:     { bg: 'oklch(0.97 0.04 55)',         text: 'oklch(0.45 0.15 55)' },
+    warn:     { bg: 'color-mix(in oklab, var(--warn) 15%, var(--s1))',         text: 'var(--accent, oklch(0.45 0.15 55))' },
     bad:      { bg: BAD_BG,                        text: BAD },
     critical: { bg: BAD_BG,                        text: BAD },
     info:     { bg: 'oklch(0.96 0.04 250)',         text: ACC },

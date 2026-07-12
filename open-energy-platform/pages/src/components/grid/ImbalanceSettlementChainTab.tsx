@@ -42,17 +42,17 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { ChainCard, type ChainAction, type ChainEvent } from '../ChainCard';
 
-const BG     = 'oklch(0.96 0.003 250)';
-const BG1    = 'oklch(0.99 0.002 80)';
-const BG2    = 'oklch(0.93 0.004 250)';
-const BORDER = 'oklch(0.87 0.006 250)';
-const TX1    = 'oklch(0.17 0.010 250)';
-const TX2    = 'oklch(0.40 0.009 250)';
-const TX3    = 'oklch(0.60 0.007 250)';
-const ACC    = 'oklch(0.46 0.16 55)';
-const BAD    = 'oklch(0.48 0.20 20)';
-const WARN   = 'oklch(0.50 0.18 55)';
-const GOOD   = 'oklch(0.40 0.16 155)';
+const BG     = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1    = 'var(--s1, oklch(0.99 0.002 80))';
+const BG2    = 'var(--s2, oklch(0.93 0.004 250))';
+const BORDER = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1    = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2    = 'var(--ink-2, oklch(0.40 0.009 250))';
+const TX3    = 'var(--ink-2, oklch(0.60 0.007 250))';
+const ACC    = 'var(--accent, oklch(0.46 0.16 55))';
+const BAD    = 'var(--bad, oklch(0.48 0.20 20))';
+const WARN   = 'var(--accent, oklch(0.50 0.18 55))';
+const GOOD   = 'var(--good, oklch(0.40 0.16 155))';
 const MONO   = '"IBM Plex Mono","Fira Code",monospace';
 
 type ChainStatus =
@@ -513,7 +513,7 @@ function renderDetail(row: ImbRow): React.ReactNode {
               key={label}
               className="flex items-center gap-2 px-2 py-1 rounded"
               style={{
-                background: on ? 'oklch(0.97 0.04 55)' : BG2,
+                background: on ? 'color-mix(in oklab, var(--warn) 15%, var(--s1))' : BG2,
                 border: `1px solid ${on ? 'oklch(0.80 0.12 55)' : BORDER}`,
                 color: on ? WARN : TX3,
               }}
@@ -679,7 +679,7 @@ export function ImbalanceSettlementChainTab() {
       </div>
 
       {err && (
-        <div style={{ padding: '8px 12px', background: 'oklch(0.97 0.04 20)', border: `1px solid ${BAD}30`, borderRadius: 8, color: BAD, fontSize: 12 }}>
+        <div style={{ padding: '8px 12px', background: 'color-mix(in oklab, var(--bad) 15%, var(--s1))', border: `1px solid ${BAD}30`, borderRadius: 8, color: BAD, fontSize: 12 }}>
           {err}
         </div>
       )}

@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { Home, ArrowLeft } from 'lucide-react';
 
-const TX1    = 'oklch(0.17 0.010 250)';
-const TX3    = 'oklch(0.60 0.007 250)';
-const BORDER = 'oklch(0.87 0.006 250)';
-const BG1    = 'oklch(0.99 0.002 80)';
-const BG_DIM = 'oklch(0.93 0.005 250)';
-const ACC    = 'oklch(0.46 0.16 55)';
+const TX1    = 'var(--ink, oklch(0.17 0.010 250))';
+const TX3    = 'var(--ink-2, oklch(0.60 0.007 250))';
+const BORDER = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const BG1    = 'var(--s1, oklch(0.99 0.002 80))';
+const BG_DIM = 'var(--s2, oklch(0.93 0.005 250))';
+const ACC    = 'var(--accent, oklch(0.46 0.16 55))';
 
 export function NotFoundPage() {
   const navigate = useNavigate();

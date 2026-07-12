@@ -93,7 +93,7 @@ export function AutoTable({
     </div>
   );
   if (rows == null) return <TableSkeleton columns={Math.min(maxCols, 5)} rows={5} />;
-  if (rows.length === 0) return <div className="rounded-lg border border-[var(--line)] bg-white px-4 py-8 text-center text-[12px] text-[var(--ink3)]">{empty}</div>;
+  if (rows.length === 0) return <div className="rounded-lg border border-[var(--line)] bg-surface-v2 px-4 py-8 text-center text-[12px] text-[var(--ink3)]">{empty}</div>;
 
   const seen = new Set<string>();
   const sample = rows.slice(0, 8);
@@ -106,7 +106,7 @@ export function AutoTable({
   ].slice(0, maxCols);
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-[var(--line)] bg-white">
+    <div className="overflow-x-auto rounded-lg border border-[var(--line)] bg-surface-v2">
       <table className="w-full text-[12px]">
         <thead className="bg-[var(--raised)] text-[var(--ink3)] text-[10px] uppercase tracking-wide">
           <tr>{ordered.map((k) => <th key={k} className="text-left px-3 py-2 font-semibold">{prettify(k)}</th>)}</tr>

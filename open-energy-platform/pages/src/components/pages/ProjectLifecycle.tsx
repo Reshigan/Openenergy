@@ -55,10 +55,10 @@ type LifecyclePayload = {
 };
 
 const statusStyle: Record<StageStatus, { label: string; bg: string; fg: string; icon: typeof Circle }> = {
-  not_started: { label: 'Not started', bg: '#eef1f4', fg: '#6b7685', icon: Circle },
-  in_progress: { label: 'In progress', bg: 'oklch(0.94 0.02 250)', fg: 'oklch(0.46 0.16 55)', icon: Clock },
-  completed: { label: 'Completed', bg: '#cdf0dd', fg: '#1f7a4a', icon: CheckCircle2 },
-  blocked: { label: 'Blocked', bg: '#fde7e9', fg: '#c0392b', icon: AlertCircle },
+  not_started: { label: 'Not started', bg: '#eef1f4', fg: 'var(--ink-2, #6b7685)', icon: Circle },
+  in_progress: { label: 'In progress', bg: 'color-mix(in oklab, var(--warn) 18%, var(--s1))', fg: 'var(--warn)', icon: Clock },
+  completed: { label: 'Completed', bg: '#cdf0dd', fg: 'var(--good)', icon: CheckCircle2 },
+  blocked: { label: 'Blocked', bg: '#fde7e9', fg: 'var(--bad, #c0392b)', icon: AlertCircle },
 };
 
 const phaseLabel: Record<string, string> = {
@@ -101,7 +101,7 @@ function StageCard({
         {!isLast && (
           <div
             className="w-px flex-1 my-2 min-h-[24px]"
-            style={{ background: '#dde4ec' }}
+            style={{ background: 'var(--border-subtle, #dde4ec)' }}
             aria-hidden
           />
         )}
@@ -110,14 +110,14 @@ function StageCard({
       {/* Card */}
       <div
         className="rounded-xl border p-5 flex-1 mb-5 last:mb-0"
-        style={{ background: '#ffffff', borderColor: '#dde4ec' }}
+        style={{ background: 'var(--s1, #fff)', borderColor: 'var(--border-subtle, #dde4ec)' }}
       >
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0">
-            <h3 className="text-[16px] font-semibold leading-snug" style={{ color: '#0f1c2e' }}>
+            <h3 className="text-[16px] font-semibold leading-snug" style={{ color: 'var(--ink, #0f1c2e)' }}>
               {stage.label}
             </h3>
-            <p className="mt-0.5 text-[12px]" style={{ color: '#6b7685' }}>
+            <p className="mt-0.5 text-[12px]" style={{ color: 'var(--ink-2, #6b7685)' }}>
               {stage.summary}
             </p>
           </div>
@@ -136,12 +136,12 @@ function StageCard({
               <div
                 key={k}
                 className="rounded-lg border p-2"
-                style={{ borderColor: '#e5ebf2', background: '#f8fafc' }}
+                style={{ borderColor: 'var(--border-subtle, #e5ebf2)', background: 'var(--s1, #f8fafc)' }}
               >
-                <div className="text-[10px] uppercase tracking-wide" style={{ color: '#6b7685' }}>
+                <div className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--ink-2, #6b7685)' }}>
                   {titleCase(k)}
                 </div>
-                <div className="text-[18px] font-bold leading-none mt-1" style={{ color: '#0f1c2e' }}>
+                <div className="text-[18px] font-bold leading-none mt-1" style={{ color: 'var(--ink, #0f1c2e)' }}>
                   {v}
                 </div>
               </div>
@@ -207,25 +207,25 @@ function SuggestionBanner({
     >
       <div
         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ background: '#fff', color: '#b04e0f' }}
+        style={{ background: 'var(--s1, #fff)', color: '#b04e0f' }}
       >
         <Lightbulb size={16} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-3">
-          <h4 className="text-[14px] font-semibold" style={{ color: '#0f1c2e' }}>
+          <h4 className="text-[14px] font-semibold" style={{ color: 'var(--ink, #0f1c2e)' }}>
             {suggestion.title}
           </h4>
           <button
             type="button"
             onClick={() => onDismiss(suggestion.key)}
             aria-label="Dismiss"
-            style={{ color: '#6b7685' }}
+            style={{ color: 'var(--ink-2, #6b7685)' }}
           >
             <X size={14} />
           </button>
         </div>
-        <p className="mt-1 text-[12px]" style={{ color: '#6b7685' }}>
+        <p className="mt-1 text-[12px]" style={{ color: 'var(--ink-2, #6b7685)' }}>
           {suggestion.why}
         </p>
         {suggestion.accept && (
@@ -291,14 +291,14 @@ export function ProjectLifecycle() {
   return (
     <div className="space-y-6">
       {/* Crumb back to project */}
-      <div className="flex items-center gap-2 text-[12px]" style={{ color: '#6b7685' }}>
+      <div className="flex items-center gap-2 text-[12px]" style={{ color: 'var(--ink-2, #6b7685)' }}>
         <Link to="/projects" className="hover:underline">All projects</Link>
         <span>/</span>
         <Link to={`/projects/${project.id}`} className="hover:underline">
           {project.project_name}
         </Link>
         <span>/</span>
-        <span style={{ color: '#0f1c2e', fontWeight: 600 }}>Lifecycle</span>
+        <span style={{ color: 'var(--ink, #0f1c2e)', fontWeight: 600 }}>Lifecycle</span>
       </div>
 
       {/* Project header */}
@@ -342,7 +342,7 @@ export function ProjectLifecycle() {
           <button
             type="button"
             onClick={() => navigate(`/projects/${project.id}`)}
-            className="h-9 px-4 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 border hover:bg-[#eef2f7]" style={{ color: 'oklch(0.45 0.015 250)', borderColor: 'oklch(0.88 0.006 250)' } as React.CSSProperties}
+            className="h-9 px-4 rounded text-[12px] font-semibold inline-flex items-center gap-1.5 border hover:bg-[var(--s2, #eef2f7)]" style={{ color: 'oklch(0.45 0.015 250)', borderColor: 'oklch(0.88 0.006 250)' } as React.CSSProperties}
           >
             <ArrowLeft size={12} /> Back to project file
           </button>
@@ -365,7 +365,7 @@ export function ProjectLifecycle() {
 
       {/* Stage timeline */}
       <div>
-        <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-3" style={{ color: '#6b7685' }}>
+        <h2 className="text-[13px] font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--ink-2, #6b7685)' }}>
           Lifecycle stages
         </h2>
         <div>

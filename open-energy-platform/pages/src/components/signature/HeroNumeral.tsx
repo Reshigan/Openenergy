@@ -59,7 +59,7 @@ export function HeroNumeral({
   const enableCountUp = countUp && !prefersReducedMotion();
   const animated = useCountUp(value, enableCountUp);
   const toneColor =
-    delta?.tone === 'good' ? '#1f8a5b' : delta?.tone === 'bad' ? '#c0392b' : 'var(--role-on-surface-muted)';
+    delta?.tone === 'good' ? '#1f8a5b' : delta?.tone === 'bad' ? 'var(--bad, #c0392b)' : 'var(--role-on-surface-muted)';
   const arrow = delta && delta.value > 0 ? '▲' : delta && delta.value < 0 ? '▼' : '▬';
   return (
     <motion.div

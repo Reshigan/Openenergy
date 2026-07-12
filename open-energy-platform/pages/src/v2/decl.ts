@@ -127,8 +127,9 @@ export interface Candidate {
   reason?: string; // why disabled (for the disabled tooltip)
 }
 
-/** Edges fireable FROM a state: `from` includes the state (never '@new'). */
-export function candidatesFor(chain: ChainDecl, state: string, role: string): Candidate[] {
+/** Edges fireable FROM a state: `from` includes the state (never '@new').
+ *  `roles` are the viewer's party-roles on the txn (a user may hold several). */
+export function candidatesFor(chain: ChainDecl, state: string, roles: string[]): Candidate[] {
   return chain.transitions
     .filter((t) => t.from !== '@new' && fromStates(t).includes(state))
     .map((t) => {
@@ -136,11 +137,35 @@ export function candidatesFor(chain: ChainDecl, state: string, role: string): Ca
       if (t.by.includes('system') && !t.by.some((r) => r !== 'system')) {
         return { t, enabled: false, reason: 'System-driven — fires automatically' };
       }
-      const allowed = t.by.includes(role) || t.by.includes('system');
+      const allowed = t.by.some((r) => roles.includes(r)) || t.by.includes('system');
       return allowed
         ? { t, enabled: true }
         : { t, enabled: false, reason: `Only ${t.by.filter((r) => r !== 'system').join(' / ')} can do this` };
     });
+}
+
+/** snake_case / kebab / SCREAMING_CODE → human sentence-case. */
+export function humanize(s: string): string {
+  const words = s.replace(/[_-]+/g, ' ').trim().toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/** Props to make a table row behave as an accessible clickable control.
+ *  Spread onto a <tr>: click + Enter/Space activate, keyboard-focusable, labelled. */
+export function rowProps(onActivate: () => void, label: string) {
+  return {
+    onClick: onActivate,
+    onKeyDown: (e: { key: string; preventDefault: () => void }) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onActivate();
+      }
+    },
+    role: 'button' as const,
+    tabIndex: 0,
+    'aria-label': label,
+    style: { cursor: 'pointer' as const },
+  };
 }
 
 /** The '@new' edges of a chain — the "Start something" set for Find. */

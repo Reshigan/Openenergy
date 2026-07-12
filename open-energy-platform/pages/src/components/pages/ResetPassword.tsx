@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../context/AuthContext';
 
-const BG      = 'oklch(0.96 0.003 250)';
-const BG1     = 'oklch(0.99 0.002 80)';
-const BORDER  = 'oklch(0.87 0.006 250)';
-const TX1     = 'oklch(0.17 0.010 250)';
-const TX2     = 'oklch(0.40 0.009 250)';
-const ACC     = 'oklch(0.46 0.12 230)';
-const BAD     = 'oklch(0.48 0.20 20)';
-const BAD_BG  = 'oklch(0.97 0.04 20)';
+const BG      = 'var(--s0, oklch(0.96 0.003 250))';
+const BG1     = 'var(--s1, oklch(0.99 0.002 80))';
+const BORDER  = 'var(--border-subtle, oklch(0.87 0.006 250))';
+const TX1     = 'var(--ink, oklch(0.17 0.010 250))';
+const TX2     = 'var(--ink-2, oklch(0.40 0.009 250))';
+const ACC     = 'var(--accent, oklch(0.46 0.12 230))';
+const BAD     = 'var(--bad, oklch(0.48 0.20 20))';
+const BAD_BG  = 'color-mix(in oklab, var(--bad) 15%, var(--s1))';
 const BAD_BDR = 'oklch(0.85 0.08 20)';
 
 export default function ResetPassword() {
@@ -51,7 +51,7 @@ export default function ResetPassword() {
         <p className="mt-1 text-[13px]" style={{ color: TX2 }}>Enter your new password below.</p>
 
         {done ? (
-          <div className="mt-6 rounded-lg border px-3 py-3 text-[13px]" style={{ background: 'oklch(0.96 0.05 150)', borderColor: 'oklch(0.75 0.10 150)', color: 'oklch(0.30 0.12 150)' }}>
+          <div className="mt-6 rounded-lg border px-3 py-3 text-[13px]" style={{ background: 'color-mix(in oklab, var(--good) 15%, var(--s1))', borderColor: 'oklch(0.75 0.10 150)', color: 'oklch(0.30 0.12 150)' }}>
             Password reset. Redirecting to sign in…
           </div>
         ) : (

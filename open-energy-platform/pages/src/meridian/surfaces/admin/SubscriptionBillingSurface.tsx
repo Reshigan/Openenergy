@@ -146,7 +146,7 @@ export default function SubscriptionBillingSurface(_props: { role: string }) {
       )}
 
       {loading ? (
-        <div className="rounded-lg border border-[var(--line)] bg-white p-6 text-[12px] text-[var(--ink3)]">Loading invoices…</div>
+        <div className="rounded-lg border border-[var(--line)] bg-surface-v2 p-6 text-[12px] text-[var(--ink3)]">Loading invoices…</div>
       ) : err ? (
         <div className="rounded-lg border border-[var(--oxide)] bg-[var(--oxide-tint)] p-4 text-[12px] text-[var(--oxide-deep)]">{err}</div>
       ) : rows.length === 0 ? (
@@ -155,7 +155,7 @@ export default function SubscriptionBillingSurface(_props: { role: string }) {
           <div className="text-[12px] text-[var(--ink3)] mt-1">Generate a monthly subscription invoice to start the billing chain.</div>
         </div>
       ) : (
-        <div className="rounded-lg border border-[var(--line)] bg-white overflow-x-auto text-[var(--ink)]">
+        <div className="rounded-lg border border-[var(--line)] bg-surface-v2 overflow-x-auto text-[var(--ink)]">
           <table className="w-full text-[13px] min-w-[860px]">
             <thead className="bg-[var(--raised)] text-left text-[10px] uppercase tracking-wide text-[var(--ink3)]">
               <tr>

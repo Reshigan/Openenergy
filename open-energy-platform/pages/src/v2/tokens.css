@@ -61,6 +61,13 @@
 .v2[data-role="operator"],
 .v2[data-role="support"]    { --accent: oklch(0.60 0.08 250); }
 
+/* v2 reskin surfaces: bespoke pages hardcoded opaque white card/control bgs that
+   the hex/oklch reskin passes skip. Map to dark tokens; the fallback keeps public
+   pages and any off-.v2 consumer (shared dialogs) light. Global on purpose so the
+   fallback resolves where --s1/--s2 are undefined. */
+.bg-surface-v2 { background-color: var(--s1, #fff); }
+.bg-raised-v2  { background-color: var(--s2, #fff); }
+
 .v2 *, .v2 *::before, .v2 *::after { box-sizing: border-box; }
 .v2 a { color: inherit; text-decoration: none; }
 .v2 h1, .v2 h2, .v2 h3, .v2 p { margin: 0; }

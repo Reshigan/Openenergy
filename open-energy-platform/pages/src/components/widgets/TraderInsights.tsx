@@ -39,7 +39,7 @@ const formatZARm = (v: number) => `R${(v / 1_000_000).toFixed(2)}m`;
 
 const ENERGY_COLOUR: Record<string, string> = {
   solar: '#f6c44a', wind: 'oklch(0.46 0.16 55)', battery: '#6b3a82', power: 'oklch(0.46 0.16 55)',
-  coal: '#3d3d3d', gas: '#e63946', carbon: '#1a8a5b',
+  coal: '#3d3d3d', gas: '#e63946', carbon: 'var(--good, #1a8a5b)',
 };
 
 // ─── 1 ─── PnL waterfall ──────────────────────────────────────────────
@@ -70,25 +70,25 @@ function PnlWaterfall({ positions }: { positions: Position[] }) {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between">
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)] flex items-center justify-between">
         <div>
-          <div className="text-[13px] font-semibold text-[#0f1c2e]">P&L waterfall</div>
-          <div className="text-[11px] text-[#6b7685]">Unrealised → realised → fees → net</div>
+          <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">P&L waterfall</div>
+          <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Unrealised → realised → fees → net</div>
         </div>
-        <div className={`text-[14px] font-mono font-semibold ${net >= 0 ? 'text-[#1a8a5b]' : 'text-[#c0392b]'}`}>
+        <div className={`text-[14px] font-mono font-semibold ${net >= 0 ? 'text-[var(--good, #1a8a5b)]' : 'text-[var(--bad, #c0392b)]'}`}>
           {formatZAR(net)}
         </div>
       </header>
       <div style={{ height: 200 }} className="px-2 pt-3">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={steps} margin={{ top: 8, right: 12, bottom: 12, left: 0 }}>
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#6b7685' }} />
-            <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => formatZARm(Number(v))} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--ink-2, #6b7685)' }} />
+            <YAxis tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => formatZARm(Number(v))} />
             <Tooltip formatter={(v: any, _n: any, p: any) => [formatZAR(Math.abs(Number(v))), p?.payload?.label]} labelFormatter={() => ''} />
             <Bar isAnimationActive={false} dataKey="base" stackId="a" fill="transparent" />
             <Bar isAnimationActive={false} dataKey="bar" stackId="a">
               {steps.map((s, i) => (
-                <Cell key={i} fill={s.kind === 'total' ? (net >= 0 ? '#1a8a5b' : '#c0392b') : s.kind === 'add' ? '#1a8a5b' : '#c0392b'} />
+                <Cell key={i} fill={s.kind === 'total' ? (net >= 0 ? 'var(--good, #1a8a5b)' : 'var(--bad, #c0392b)') : s.kind === 'add' ? 'var(--good, #1a8a5b)' : 'var(--bad, #c0392b)'} />
               ))}
             </Bar>
           </BarChart>
@@ -122,16 +122,16 @@ function MarkTermStructure({ marks }: { marks: Mark[] }) {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7]">
-        <div className="text-[13px] font-semibold text-[#0f1c2e]">Mark term structure</div>
-        <div className="text-[11px] text-[#6b7685]">Mark price by delivery date — contango (up) or backwardation (down)</div>
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)]">
+        <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Mark term structure</div>
+        <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Mark price by delivery date — contango (up) or backwardation (down)</div>
       </header>
       <div style={{ height: 220 }} className="px-2 pt-3">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data.rows} margin={{ top: 8, right: 12, bottom: 12, left: 0 }}>
-            <CartesianGrid stroke="#eef2f7" />
-            <XAxis dataKey="delivery" tick={{ fontSize: 10, fill: '#6b7685' }} />
-            <YAxis tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${v}`} />
+            <CartesianGrid stroke="var(--s2, #eef2f7)" />
+            <XAxis dataKey="delivery" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} />
+            <YAxis tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => `R${v}`} />
             <Tooltip formatter={(v: any) => `R${Number(v).toFixed(0)}/MWh`} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             {data.energies.map((e) => (
@@ -193,13 +193,13 @@ function OrderBookDepth() {
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7] flex flex-wrap items-center justify-between gap-2">
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)] flex flex-wrap items-center justify-between gap-2">
         <div>
-          <div className="text-[13px] font-semibold text-[#0f1c2e]">Order book depth</div>
-          <div className="text-[11px] text-[#6b7685]">Bid (green) vs ask (red) volume by price bucket</div>
+          <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Order book depth</div>
+          <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Bid (green) vs ask (red) volume by price bucket</div>
         </div>
         <div className="flex items-center gap-2">
-          <select value={pair} onChange={(e) => setPair(e.target.value)} className="h-8 px-2 rounded border border-[#dde4ec] text-[11px]">
+          <select value={pair} onChange={(e) => setPair(e.target.value)} className="h-8 px-2 rounded border border-[var(--border-subtle, #dde4ec)] text-[11px]">
             <option value="solar:2026-06">solar · 2026-06</option>
             <option value="wind:2026-06">wind · 2026-06</option>
             <option value="solar:2026-07">solar · 2026-07</option>
@@ -207,27 +207,27 @@ function OrderBookDepth() {
             <option value="battery:2026-06">battery · 2026-06</option>
           </select>
           {spread != null && (
-            <span className="text-[11px] text-[#6b7685]">
-              Spread <span className="font-mono font-semibold text-[#0f1c2e]">R{spread.toFixed(0)}</span>
+            <span className="text-[11px] text-[var(--ink-2, #6b7685)]">
+              Spread <span className="font-mono font-semibold text-[var(--ink, #0f1c2e)]">R{spread.toFixed(0)}</span>
             </span>
           )}
         </div>
       </header>
       <div style={{ height: 220 }} className="px-2 pt-3">
         {loading ? (
-          <div className="h-full grid place-items-center text-[12px] text-[#6b7685]">Loading depth…</div>
+          <div className="h-full grid place-items-center text-[12px] text-[var(--ink-2, #6b7685)]">Loading depth…</div>
         ) : ladder.length === 0 ? (
-          <div className="h-full grid place-items-center text-[12px] text-[#6b7685]">No open orders for this pair.</div>
+          <div className="h-full grid place-items-center text-[12px] text-[var(--ink-2, #6b7685)]">No open orders for this pair.</div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={ladder} layout="vertical" stackOffset="sign" margin={{ top: 8, right: 16, bottom: 12, left: 28 }}>
-              <CartesianGrid stroke="#eef2f7" />
-              <XAxis type="number" tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `${Math.abs(Number(v))}`} />
-              <YAxis type="category" dataKey="price" tick={{ fontSize: 10, fill: '#6b7685' }} tickFormatter={(v) => `R${v}`} />
+              <CartesianGrid stroke="var(--s2, #eef2f7)" />
+              <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => `${Math.abs(Number(v))}`} />
+              <YAxis type="category" dataKey="price" tick={{ fontSize: 10, fill: 'var(--ink-2, #6b7685)' }} tickFormatter={(v) => `R${v}`} />
               <Tooltip formatter={(v: any) => `${Math.abs(Number(v)).toFixed(1)} MWh`} />
               <ReferenceLine x={0} stroke="oklch(0.46 0.16 55)" />
-              <Bar isAnimationActive={false} dataKey="bid" name="Bid" stackId="x" fill="#1a8a5b" />
-              <Bar isAnimationActive={false} dataKey="ask" name="Ask" stackId="x" fill="#c0392b" />
+              <Bar isAnimationActive={false} dataKey="bid" name="Bid" stackId="x" fill="var(--good, #1a8a5b)" />
+              <Bar isAnimationActive={false} dataKey="ask" name="Ask" stackId="x" fill="var(--bad, #c0392b)" />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -268,19 +268,19 @@ function ExecutionCostCard({ positions, marks }: { positions: Position[]; marks:
 
   return (
     <section className="widget-card">
-      <header className="px-4 py-3 border-b border-[#eef2f7] flex items-center justify-between">
+      <header className="px-4 py-3 border-b border-[var(--s2, #eef2f7)] flex items-center justify-between">
         <div>
-          <div className="text-[13px] font-semibold text-[#0f1c2e]">Execution cost</div>
-          <div className="text-[11px] text-[#6b7685]">Slippage vs mark — top positions by absolute bps</div>
+          <div className="text-[13px] font-semibold text-[var(--ink, #0f1c2e)]">Execution cost</div>
+          <div className="text-[11px] text-[var(--ink-2, #6b7685)]">Slippage vs mark — top positions by absolute bps</div>
         </div>
-        <div className={`text-[13px] font-mono font-semibold ${totalCost <= 0 ? 'text-[#1a8a5b]' : 'text-[#c0392b]'}`}>
+        <div className={`text-[13px] font-mono font-semibold ${totalCost <= 0 ? 'text-[var(--good, #1a8a5b)]' : 'text-[var(--bad, #c0392b)]'}`}>
           Net {formatZAR(-totalCost)}
         </div>
       </header>
       <div className="p-3">
         <table className="w-full text-[11px]">
           <thead>
-            <tr className="text-[#6b7685]">
+            <tr className="text-[var(--ink-2, #6b7685)]">
               <th className="text-left py-1">Pair</th>
               <th className="text-right py-1">Vol (MWh)</th>
               <th className="text-right py-1">Slippage (bps)</th>
@@ -289,10 +289,10 @@ function ExecutionCostCard({ positions, marks }: { positions: Position[]; marks:
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.key} className="border-t border-[#eef2f7]">
+              <tr key={r.key} className="border-t border-[var(--s2, #eef2f7)]">
                 <td className="py-1">{r.key}</td>
                 <td className="py-1 text-right font-mono">{r.vol.toFixed(0)}</td>
-                <td className={`py-1 text-right font-mono ${r.slippageBps > 50 ? 'text-[#c0392b]' : r.slippageBps < -50 ? 'text-[#1a8a5b]' : 'text-[#3d4756]'}`}>
+                <td className={`py-1 text-right font-mono ${r.slippageBps > 50 ? 'text-[var(--bad, #c0392b)]' : r.slippageBps < -50 ? 'text-[var(--good, #1a8a5b)]' : 'text-[var(--ink-2, #3d4756)]'}`}>
                   {r.slippageBps > 0 ? '+' : ''}{r.slippageBps.toFixed(1)}
                 </td>
                 <td className="py-1 text-right font-mono">{formatZAR(r.slippageZar)}</td>
@@ -327,8 +327,8 @@ export function TraderInsights() {
     return () => { cancelled = true; };
   }, []);
 
-  if (loading) return <div className="text-[12px] text-[#6b7685]">Loading insights…</div>;
-  if (err) return <div className="text-[12px] text-[#c0392b]">{err}</div>;
+  if (loading) return <div className="text-[12px] text-[var(--ink-2, #6b7685)]">Loading insights…</div>;
+  if (err) return <div className="text-[12px] text-[var(--bad, #c0392b)]">{err}</div>;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">

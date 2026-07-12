@@ -159,7 +159,7 @@ export const fundFileTabs: EntityFileTab<FundFileData>[] = [
               {data.project ? (
                 <div className="p-5 grid grid-cols-2 md:grid-cols-4 gap-3 text-[13px]">
                   <Kv label="Project" value={
-                    <a href={`/projects/${data.project.id}`} className="text-[#1a5d97] font-semibold hover:underline">
+                    <a href={`/projects/${data.project.id}`} className="text-[var(--info, #1a5d97)] font-semibold hover:underline">
                       {data.project.project_name || data.project.id}
                     </a>
                   } />
@@ -171,7 +171,7 @@ export const fundFileTabs: EntityFileTab<FundFileData>[] = [
                   <Kv label="PPA price" value={data.project.tariff_zar_per_mwh ? `R${fmtNum(Number(data.project.tariff_zar_per_mwh), 0)}/MWh` : '—'} />
                 </div>
               ) : (
-                <div className="px-5 py-8 text-center text-[13px] text-[#6b7685]">No project linked to this facility.</div>
+                <div className="px-5 py-8 text-center text-[13px] text-[var(--ink-2, #6b7685)]">No project linked to this facility.</div>
               )}
             </FileSection>
           </div>
@@ -347,17 +347,17 @@ export const fundFileTabs: EntityFileTab<FundFileData>[] = [
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-2">
-      <dt className="text-[#6b7685]">{label}</dt>
-      <dd className="text-[#0f1c2e] font-medium text-right">{value}</dd>
+      <dt className="text-[var(--ink-2, #6b7685)]">{label}</dt>
+      <dd className="text-[var(--ink, #0f1c2e)] font-medium text-right">{value}</dd>
     </div>
   );
 }
 
 function Kv({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-[#dde4ec] bg-[#fafbfd] p-3">
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
-      <div className="mt-1 text-[#0f1c2e] font-semibold leading-tight">{value}</div>
+    <div className="rounded-lg border border-[var(--border-subtle, #dde4ec)] bg-[var(--s1, #fafbfd)] p-3">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{label}</div>
+      <div className="mt-1 text-[var(--ink, #0f1c2e)] font-semibold leading-tight">{value}</div>
     </div>
   );
 }
@@ -367,10 +367,10 @@ function MicroKpi({ label, value, tone }: { label: string; value: React.ReactNod
     tone === 'good' ? '#1f8a4f'
       : tone === 'warn' ? '#b27a00'
       : tone === 'bad' ? '#b3261e'
-      : '#0f1c2e';
+      : 'var(--ink, #0f1c2e)';
   return (
-    <div className="rounded-lg border border-[#dde4ec] bg-white p-3">
-      <div className="text-[10px] uppercase tracking-wider text-[#6b7685]">{label}</div>
+    <div className="rounded-lg border border-[var(--border-subtle, #dde4ec)] bg-surface-v2 p-3">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className="mt-1 font-mono text-[18px] font-bold leading-tight" style={{ fontVariantNumeric: 'tabular-nums', color: toneColor }}>
         {value}
       </div>

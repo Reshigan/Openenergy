@@ -180,7 +180,7 @@ function LatencyPanel({ rows }: { rows: Row[] }) {
         <Tooltip formatter={(v: number) => `${v.toFixed(0)} ms`} />
         <Legend wrapperStyle={{ fontSize: 11 }} />
         <Bar isAnimationActive={false} dataKey="p50" name="p50" fill={ACC} radius={[3, 3, 0, 0]} />
-        <Bar isAnimationActive={false} dataKey="p99" name="p99" fill="#9b1f1f" radius={[3, 3, 0, 0]} />
+        <Bar isAnimationActive={false} dataKey="p99" name="p99" fill="var(--bad, #9b1f1f)" radius={[3, 3, 0, 0]} />
       </BarChart>
     </Panel>
   );

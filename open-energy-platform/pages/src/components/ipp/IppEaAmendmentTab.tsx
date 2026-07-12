@@ -34,10 +34,10 @@ interface EaAmendment {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  ea_amendment_triggered:      'bg-[#eef2f7] text-[#6b7685]',
-  scope_defined:               'bg-[#eef2f7] text-[#3d4756]',
+  ea_amendment_triggered:      'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]',
+  scope_defined:               'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #3d4756)]',
   application_in_preparation:  'bg-sky-100 text-sky-700',
-  application_submitted:       'bg-[#e8ecf0] text-[#3d4756]',
+  application_submitted:       'bg-[var(--border-subtle, #e8ecf0)] text-[var(--ink-2, #3d4756)]',
   dffe_completeness_review:    'bg-yellow-100 text-yellow-800',
   public_participation_open:   'bg-teal-100 text-teal-700',
   public_participation_closed: 'bg-cyan-100 text-cyan-700',
@@ -64,10 +64,10 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const TIER_COLORS: Record<string, string> = {
-  small:     '#6b7280',
+  small:     'var(--ink-2, #6b7280)',
   medium:    'oklch(0.46 0.16 55)',
   large:     '#f59e0b',
-  utility:   '#ef4444',
+  utility:   'var(--bad, #ef4444)',
   strategic: '#7c3aed',
 };
 
@@ -96,7 +96,7 @@ const TRIGGER_CATEGORIES = Object.keys(TRIGGER_LABELS);
 
 const PAGE_SIZE = 20;
 
-const sel = 'border rounded px-2 py-1 text-xs text-[#2d3748] bg-white';
+const sel = 'border rounded px-2 py-1 text-xs text-[var(--ink, #2d3748)] bg-surface-v2';
 
 function fmtDate(d?: string | null): string {
   if (!d) return '—';
@@ -119,15 +119,15 @@ function KpiChip({ label, value, mode = 'neutral' }: KpiChipProps) {
     mode === 'danger'  ? 'border-red-200 bg-red-50'    :
     mode === 'alert'   ? 'border-orange-200 bg-orange-50' :
     mode === 'good'    ? 'border-green-200 bg-green-50' :
-    'border-[#dde4ec] bg-white';
+    'border-[var(--border-subtle, #dde4ec)] bg-surface-v2';
   const text =
     mode === 'danger'  ? 'text-red-700'    :
     mode === 'alert'   ? 'text-orange-700' :
     mode === 'good'    ? 'text-green-700'  :
-    'text-[#0f1c2e]';
+    'text-[var(--ink, #0f1c2e)]';
   return (
     <div className={`rounded-lg p-3 border ${border}`}>
-      <div className="text-xs text-[#6b7685]">{label}</div>
+      <div className="text-xs text-[var(--ink-2, #6b7685)]">{label}</div>
       <div className={`text-xl font-bold ${text}`}>{value}</div>
     </div>
   );
@@ -223,7 +223,7 @@ export function IppEaAmendmentTab() {
         </select>
         <button type="button"
           onClick={() => load()}
-          className="ml-auto px-3 py-1 bg-[#eef2f7] text-[#2d3748] rounded text-xs border border-[#dde4ec] hover:bg-[#e8ecf0]"
+          className="ml-auto px-3 py-1 bg-[var(--s2, #eef2f7)] text-[var(--ink, #2d3748)] rounded text-xs border border-[var(--border-subtle, #dde4ec)] hover:bg-[var(--border-subtle, #e8ecf0)]"
         >
           Refresh
         </button>
@@ -238,12 +238,12 @@ export function IppEaAmendmentTab() {
 
       {/* Table */}
       {loading ? (
-        <div className="text-sm text-[#9aa5b4] py-8 text-center">Loading&hellip;</div>
+        <div className="text-sm text-[var(--ink-2, #9aa5b4)] py-8 text-center">Loading&hellip;</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-[#6b7685]">
+              <tr className="border-b text-left text-xs text-[var(--ink-2, #6b7685)]">
                 <th className="pb-2 pr-4">ID</th>
                 <th className="pb-2 pr-4">Project</th>
                 <th className="pb-2 pr-4">Trigger Category</th>
@@ -260,19 +260,19 @@ export function IppEaAmendmentTab() {
               {pageItems.map(item => {
                 const overdue    = !!(item.sla_breached || (item.sla_due_at && new Date(item.sla_due_at) < new Date()));
                 const regulator  = hasRegulatorFlag(item);
-                const tierColor  = TIER_COLORS[item.ea_capacity_tier] ?? '#6b7280';
+                const tierColor  = TIER_COLORS[item.ea_capacity_tier] ?? 'var(--ink-2, #6b7280)';
                 return (
-                  <tr key={item.id} className="border-b hover:bg-[#eef2f7]">
-                    <td className="py-2 pr-4 text-xs font-mono text-[#3d4756]">{item.id.slice(0, 12)}</td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.project_name ?? item.project_id?.slice(0, 12) ?? '—'}</td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">
+                  <tr key={item.id} className="border-b hover:bg-[var(--s2, #eef2f7)]">
+                    <td className="py-2 pr-4 text-xs font-mono text-[var(--ink-2, #3d4756)]">{item.id.slice(0, 12)}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{item.project_name ?? item.project_id?.slice(0, 12) ?? '—'}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">
                       {TRIGGER_LABELS[item.trigger_category] ?? item.trigger_category}
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">
                       {AMENDMENT_CATEGORY_LABELS[item.amendment_category] ?? item.amendment_category}
                     </td>
                     <td className="py-2 pr-4">
-                      <span className="text-xs tabular-nums text-[#2d3748] mr-1">{item.capacity_mw.toFixed(1)}</span>
+                      <span className="text-xs tabular-nums text-[var(--ink, #2d3748)] mr-1">{item.capacity_mw.toFixed(1)}</span>
                       <span
                         className="px-1.5 py-0.5 rounded text-xs text-white font-medium"
                         style={{ backgroundColor: tierColor }}
@@ -282,7 +282,7 @@ export function IppEaAmendmentTab() {
                     </td>
                     <td className="py-2 pr-4">
                       <div className="flex items-center gap-1 flex-wrap">
-                        <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[#eef2f7] text-[#6b7685]'}`}>
+                        <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[item.chain_status] ?? 'bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #6b7685)]'}`}>
                           {STATUS_LABELS[item.chain_status] ?? statusLabel(item.chain_status).text}
                         </span>
                         {regulator && (
@@ -292,16 +292,16 @@ export function IppEaAmendmentTab() {
                         )}
                       </div>
                     </td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.dffe_reference ?? '—'}</td>
-                    <td className="py-2 pr-4 text-xs text-[#2d3748]">{item.environmental_consultant ?? '—'}</td>
-                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[#6b7685]'}`}>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{item.dffe_reference ?? '—'}</td>
+                    <td className="py-2 pr-4 text-xs text-[var(--ink, #2d3748)]">{item.environmental_consultant ?? '—'}</td>
+                    <td className={`py-2 pr-4 text-xs ${overdue ? 'text-red-600 font-semibold' : 'text-[var(--ink-2, #6b7685)]'}`}>
                       {overdue ? '⚠ ' : ''}{fmtDate(item.sla_due_at)}
                     </td>
                     <td className="py-2 pr-4">
                       {item.sla_breached === 1 ? (
                         <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 font-semibold">Yes</span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-[#eef2f7] text-[#9aa5b4]">No</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-[var(--s2, #eef2f7)] text-[var(--ink-2, #9aa5b4)]">No</span>
                       )}
                     </td>
                   </tr>
@@ -309,7 +309,7 @@ export function IppEaAmendmentTab() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="py-10 text-center text-[#9aa5b4] text-sm">
+                  <td colSpan={10} className="py-10 text-center text-[var(--ink-2, #9aa5b4)] text-sm">
                     No EA amendment records found
                   </td>
                 </tr>
@@ -325,17 +325,17 @@ export function IppEaAmendmentTab() {
           <button type="button"
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             ← Prev
           </button>
-          <span className="text-xs text-[#6b7685]">
+          <span className="text-xs text-[var(--ink-2, #6b7685)]">
             Page {page} of {totalPages}
           </span>
           <button type="button"
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[#eef2f7]"
+            className="px-2 py-1 text-xs border rounded disabled:opacity-40 hover:bg-[var(--s2, #eef2f7)]"
           >
             Next →
           </button>

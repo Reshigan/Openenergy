@@ -34,7 +34,7 @@ export function RfpDetail() {
                 type="button"
                 onClick={() => navigate(`/contracts/${data.award.linked_contract.id}`)}
                 className="h-9 px-3 rounded-md text-[12px] font-semibold inline-flex items-center gap-1"
-                style={{ background: '#fff', color: 'oklch(0.46 0.16 55)' }}
+                style={{ background: 'var(--s1, #fff)', color: 'oklch(0.46 0.16 55)' }}
               >
                 <OEIcon name="doc" size={14} /> Open contract file
               </button>

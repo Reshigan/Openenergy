@@ -13,14 +13,14 @@ import { ArrowRight, ShieldCheck, Layers, Repeat, FileCheck2, ScanLine } from 'l
 
 // A committed dark hero, a cool near-white body — the current/signal accent is
 // a teal-cyan, deliberately NOT the navy-and-gold fintech reflex.
-const INK   = 'oklch(0.18 0.028 250)';
+const INK   = 'var(--ink, oklch(0.18 0.028 250))';
 const INK2  = 'oklch(0.24 0.030 250)';
-const PAPER = 'oklch(0.985 0.004 250)';
-const CARD  = 'oklch(1 0 0)';
-const BORDER= 'oklch(0.88 0.006 250)';
-const TX1   = 'oklch(0.19 0.012 250)';
-const TX2   = 'oklch(0.42 0.010 250)';
-const TX3   = 'oklch(0.60 0.008 250)';
+const PAPER = 'var(--s1, oklch(0.985 0.004 250))';
+const CARD  = 'var(--s1, oklch(1 0 0))';
+const BORDER= 'var(--border-subtle, oklch(0.88 0.006 250))';
+const TX1   = 'var(--ink, oklch(0.19 0.012 250))';
+const TX2   = 'var(--ink-2, oklch(0.42 0.010 250))';
+const TX3   = 'var(--ink-2, oklch(0.60 0.008 250))';
 const CUR   = 'oklch(0.70 0.135 195)';   // current — teal-cyan signal
 const CURD  = 'oklch(0.55 0.13 200)';    // deeper current for text-on-light
 const EMBER = 'oklch(0.74 0.15 62)';     // sparing warm accent
@@ -81,7 +81,7 @@ export function WelcomePage() {
       </header>
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section style={{ background: INK, color: 'oklch(0.97 0.006 250)' }} className="relative overflow-hidden">
+      <section style={{ background: INK, color: 'var(--s1, oklch(0.97 0.006 250))' }} className="relative overflow-hidden">
         <div aria-hidden className="absolute inset-0" style={{
           background: `radial-gradient(80% 120% at 78% -10%, ${CUR.replace(')', ' / 0.20)')}, transparent 60%), radial-gradient(60% 90% at 0% 110%, ${EMBER.replace(')', ' / 0.10)')}, transparent 55%)`,
         }} />
@@ -95,7 +95,7 @@ export function WelcomePage() {
                 style={{ fontSize: 'clamp(2.4rem, 6vw, 4.4rem)', textWrap: 'balance' }}>
               Trade energy, carbon and capacity on one accountable venue.
             </h1>
-            <p className="oe-rise oe-d2 mt-6 text-[16px] leading-relaxed" style={{ color: 'oklch(0.82 0.012 250)', maxWidth: '38rem' }}>
+            <p className="oe-rise oe-d2 mt-6 text-[16px] leading-relaxed" style={{ color: 'var(--border-strong, oklch(0.82 0.012 250))', maxWidth: '38rem' }}>
               Open Energy clears power, PPAs, carbon and the full IPP lifecycle end to end —
               matched, contracted, settled and audit-chained in one place. On-platform is the
               cheapest, most compliant and most defensible way to transact.
@@ -106,11 +106,11 @@ export function WelcomePage() {
                 Request access <ArrowRight size={16} />
               </Link>
               <Link to="/login" className="oe-cta inline-flex items-center px-5 py-3 rounded-lg font-semibold text-[15px]"
-                    style={{ color: 'oklch(0.97 0.006 250)', border: `1px solid oklch(1 0 0 / 0.18)` }}>
+                    style={{ color: 'var(--s1, oklch(0.97 0.006 250))', border: `1px solid oklch(1 0 0 / 0.18)` }}>
                 Sign in
               </Link>
             </div>
-            <div className="oe-rise oe-d4 mt-10 flex flex-wrap gap-x-5 gap-y-2 text-[12px]" style={{ color: 'oklch(0.72 0.010 250)' }}>
+            <div className="oe-rise oe-d4 mt-10 flex flex-wrap gap-x-5 gap-y-2 text-[12px]" style={{ color: 'var(--ink-2, oklch(0.72 0.010 250))' }}>
               {CREDS.map((c) => <span key={c}>{c}</span>)}
             </div>
           </div>
@@ -140,13 +140,13 @@ export function WelcomePage() {
       </section>
 
       {/* ── Who it serves ─────────────────────────────────────────────────── */}
-      <section style={{ background: INK2, color: 'oklch(0.96 0.006 250)' }}>
+      <section style={{ background: INK2, color: 'var(--s1, oklch(0.96 0.006 250))' }}>
         <div className="max-w-6xl mx-auto px-6 py-16 lg:py-20 grid gap-10 lg:grid-cols-[1fr_1.3fr] items-center">
           <div>
             <h2 className="font-display text-[28px] font-bold tracking-tight" style={{ textWrap: 'balance' }}>
               Ten roles, one shared ledger
             </h2>
-            <p className="mt-3 text-[15px] leading-relaxed" style={{ color: 'oklch(0.80 0.012 250)' }}>
+            <p className="mt-3 text-[15px] leading-relaxed" style={{ color: 'var(--border-strong, oklch(0.80 0.012 250))' }}>
               Each participant sees the same transaction from their own side — a two-sided,
               cross-role thread — with role-scoped actions and full audit visibility.
             </p>
@@ -206,13 +206,13 @@ export function WelcomePage() {
 
       {/* ── CTA band ──────────────────────────────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-6 py-16 lg:py-24">
-        <div className="rounded-2xl px-8 py-12 lg:px-14 lg:py-16 text-center relative overflow-hidden" style={{ background: INK, color: 'oklch(0.97 0.006 250)' }}>
+        <div className="rounded-2xl px-8 py-12 lg:px-14 lg:py-16 text-center relative overflow-hidden" style={{ background: INK, color: 'var(--s1, oklch(0.97 0.006 250))' }}>
           <div aria-hidden className="absolute inset-0" style={{ background: `radial-gradient(60% 120% at 50% -20%, ${CUR.replace(')', ' / 0.22)')}, transparent 60%)` }} />
           <div className="relative">
             <h2 className="font-display font-bold tracking-tight mx-auto" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', textWrap: 'balance', maxWidth: '24ch' }}>
               Bring your energy business onto an accountable venue.
             </h2>
-            <p className="mt-4 text-[15px] mx-auto" style={{ color: 'oklch(0.82 0.012 250)', maxWidth: '46ch' }}>
+            <p className="mt-4 text-[15px] mx-auto" style={{ color: 'var(--border-strong, oklch(0.82 0.012 250))', maxWidth: '46ch' }}>
               Admission runs through onboarding and KYC. Request access and we'll take it from there.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 justify-center">
@@ -221,7 +221,7 @@ export function WelcomePage() {
                 Request access <ArrowRight size={16} />
               </Link>
               <Link to="/login" className="oe-cta inline-flex items-center px-6 py-3 rounded-lg font-semibold text-[15px]"
-                    style={{ color: 'oklch(0.97 0.006 250)', border: `1px solid oklch(1 0 0 / 0.18)` }}>
+                    style={{ color: 'var(--s1, oklch(0.97 0.006 250))', border: `1px solid oklch(1 0 0 / 0.18)` }}>
                 Sign in
               </Link>
             </div>

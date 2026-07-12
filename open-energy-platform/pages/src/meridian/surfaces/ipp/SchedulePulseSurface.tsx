@@ -16,7 +16,7 @@ type ScheduleRow = {
 function Card({ label, value }: { label: string; value: number | null | undefined }) {
   const formatted = value != null ? Number(value).toLocaleString('en-ZA') : '—';
   return (
-    <div className="rounded-lg border border-[var(--line)] bg-white p-4">
+    <div className="rounded-lg border border-[var(--line)] bg-surface-v2 p-4">
       <div className="text-[10px] uppercase tracking-wider text-[var(--ink3)]">{label}</div>
       <div className="text-[20px] font-semibold text-[var(--ink)] mt-1">{formatted}</div>
     </div>
@@ -77,7 +77,7 @@ export default function SchedulePulseSurface(_props: { role: string }) {
         <Card label="Over-allocations" value={overAlloc} />
         <Card label="Look-ahead (21d)" value={lookAhead.length} />
       </div>
-      <div className="rounded-md border border-[var(--line)] bg-white">
+      <div className="rounded-md border border-[var(--line)] bg-surface-v2">
         <div className="px-3 py-2 text-xs uppercase tracking-wide text-[var(--ink3)]">Next 21 days</div>
         {lookAhead.length === 0 ? (
           <div className="px-3 py-4 text-xs text-[var(--ink3)]">No activities scheduled in window.</div>

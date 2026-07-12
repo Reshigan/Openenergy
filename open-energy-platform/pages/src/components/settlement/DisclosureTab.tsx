@@ -141,7 +141,7 @@ export function DisclosureTab() {
         <div className="min-w-[160px]">
           <div className="text-[10px] uppercase tracking-wider text-[#7a90a8]">Cover-1 verdict</div>
           {cover1Pass === null ? (
-            <span className="inline-block mt-1 px-3 py-1 rounded-full text-[11px] font-semibold bg-[#f8fafc]0">—</span>
+            <span className="inline-block mt-1 px-3 py-1 rounded-full text-[11px] font-semibold bg-[var(--s1, #f8fafc)]0">—</span>
           ) : cover1Pass ? (
             <span className="inline-block mt-1 px-3 py-1 rounded-full text-[11px] font-semibold bg-green-600" data-testid="disclosure-cover1-pass">PASS</span>
           ) : (
@@ -194,7 +194,7 @@ export function DisclosureTab() {
 
       {/* Detail strip */}
       {current && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px] bg-white border border-ionex-border-100 rounded-xl p-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px] bg-surface-v2 border border-ionex-border-100 rounded-xl p-4">
           <Cell label="Initial margin" value={ZAR(current.initial_margin_total_zar)} />
           <Cell label="Variation margin" value={ZAR(current.variation_margin_total_zar)} />
           <Cell label="QLR" value={ZAR(current.qualifying_liquid_resources_zar)} />
@@ -229,12 +229,12 @@ export function DisclosureTab() {
       )}
 
       {/* Snapshot history */}
-      <div className="rounded-xl border border-ionex-border-100 bg-white overflow-hidden" data-testid="disclosure-table">
+      <div className="rounded-xl border border-ionex-border-100 bg-surface-v2 overflow-hidden" data-testid="disclosure-table">
         <div className="px-4 py-2 border-b border-ionex-border-100 text-[11px] uppercase tracking-wide font-semibold text-ionex-text-mute">
           Monthly snapshots
         </div>
         <table className="w-full text-sm">
-          <thead className="bg-[#f8fafc] text-left text-xs uppercase text-ionex-text-mute">
+          <thead className="bg-[var(--s1, #f8fafc)] text-left text-xs uppercase text-ionex-text-mute">
             <tr>
               <th className="px-4 py-2">As of</th>
               <th className="px-4 py-2">Margin %</th>
@@ -250,7 +250,7 @@ export function DisclosureTab() {
             ) : list.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-6 text-center text-ionex-text-mute">No snapshots yet.</td></tr>
             ) : list.map(r => (
-              <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[#eef2f7]">
+              <tr key={r.id} className="border-t border-ionex-border-100 hover:bg-[var(--s2, #eef2f7)]">
                 <td className="px-4 py-2 font-medium">{r.as_of_date}</td>
                 <td className="px-4 py-2">{pct(r.margin_coverage_pct)}</td>
                 <td className="px-4 py-2">{ratio(r.liquidity_coverage_ratio)}</td>
@@ -268,7 +268,7 @@ export function DisclosureTab() {
       </div>
 
       {/* AI summary card */}
-      <div className="rounded-xl border border-ionex-border-100 bg-white p-4" data-testid="disclosure-ai-card">
+      <div className="rounded-xl border border-ionex-border-100 bg-surface-v2 p-4" data-testid="disclosure-ai-card">
         <div className="flex items-center justify-between mb-2">
           <div className="text-[11px] uppercase tracking-wide font-semibold text-ionex-text-mute">AI summary</div>
           <button type="button"
@@ -280,7 +280,7 @@ export function DisclosureTab() {
             {busy === 'ai' ? 'Asking…' : 'Generate'}
           </button>
         </div>
-        <div className="text-[13px] text-[#1e2a38] whitespace-pre-wrap min-h-[60px]">
+        <div className="text-[13px] text-[var(--ink, #1e2a38)] whitespace-pre-wrap min-h-[60px]">
           {aiSummary || (
             <span className="text-ionex-text-mute italic">
               Click "Generate" for a regulator-grade narrative summary of this month's PFMI metrics, Cover-1 verdict, and notable changes vs. prior periods.

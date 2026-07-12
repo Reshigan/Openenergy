@@ -39,7 +39,7 @@ export default function CronSurface(_props: { role: string }) {
   };
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-[var(--line)] bg-white">
+    <div className="overflow-x-auto rounded-lg border border-[var(--line)] bg-surface-v2">
       <table className="w-full text-[12px]">
         <thead className="bg-[var(--raised)] text-[var(--ink3)] uppercase text-[10px] tracking-wide">
           <tr>

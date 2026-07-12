@@ -15,7 +15,7 @@ export interface StepProps {
 // ─── Shared primitives ──────────────────────────────────────────────────────
 
 const LABEL_CLS = 'block text-[12px] font-medium text-[#3a4760] mb-1';
-const INPUT_CLS = 'w-full h-9 px-3 rounded border border-[#dde3ee] text-[13px] text-[#0e1726] bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.46_0.16_55)] focus-visible:border-[oklch(0.46_0.16_55)]';
+const INPUT_CLS = 'w-full h-9 px-3 rounded border border-[var(--border-subtle, #dde3ee)] text-[13px] text-[#0e1726] bg-surface-v2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.46_0.16_55)] focus-visible:border-[oklch(0.46_0.16_55)]';
 const SELECT_CLS = INPUT_CLS;
 const FIELD_CLS = 'space-y-1';
 const GRID2 = 'grid grid-cols-2 gap-x-4 gap-y-3';
@@ -51,7 +51,7 @@ function CheckRow({
       <input
         id={id}
         type="checkbox"
-        className="h-3.5 w-3.5 rounded border-[#dde3ee] accent-[oklch(0.46_0.16_55)]"
+        className="h-3.5 w-3.5 rounded border-[var(--border-subtle, #dde3ee)] accent-[oklch(0.46_0.16_55)]"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />
@@ -115,10 +115,10 @@ function TakeOnChoice({ data, onChange, role }: { data: Record<string, unknown>;
         aria-pressed={on}
         className={`flex-1 text-left rounded-lg border p-3 transition ${
           on ? 'border-[oklch(0.46_0.16_55)] bg-[oklch(0.46_0.16_55)]/[0.04] ring-2 ring-[oklch(0.46_0.16_55)]/30'
-             : 'border-[#dde3ee] hover:border-[#c4cedb]'}`}
+             : 'border-[var(--border-subtle, #dde3ee)] hover:border-[#c4cedb]'}`}
       >
         <div className="text-[13px] font-semibold text-[#0e1726]">{label}</div>
-        <div className="mt-1 text-[12px] text-[#5b6b85] leading-snug">{desc}</div>
+        <div className="mt-1 text-[12px] text-[var(--ink-2, #5b6b85)] leading-snug">{desc}</div>
       </button>
     );
   };
@@ -144,7 +144,7 @@ export function WelcomeStep({ data, onChange, role = 'admin', userName = '' }: S
         <h2 className="text-[26px] font-bold text-[#0e1726] leading-snug tracking-tight">
           Welcome to your cockpit, {firstName}
         </h2>
-        <p className="mt-3 text-[14px] text-[#5b6b85] leading-relaxed max-w-[46ch]">{desc}</p>
+        <p className="mt-3 text-[14px] text-[var(--ink-2, #5b6b85)] leading-relaxed max-w-[46ch]">{desc}</p>
       </div>
       <TakeOnChoice data={data} onChange={onChange} role={role} />
     </div>
@@ -287,7 +287,7 @@ function DataSourceForm({
   const isRest = entry.source_type === 'rest_api';
 
   return (
-    <div className="rounded-lg border border-[#dde3ee] bg-[#f9fafb] p-4 space-y-3">
+    <div className="rounded-lg border border-[var(--border-subtle, #dde3ee)] bg-[var(--s1, #f9fafb)] p-4 space-y-3">
       <div className="flex items-start gap-2">
         <div className="flex-1 grid grid-cols-2 gap-3">
           <Field label="Label">
@@ -305,7 +305,7 @@ function DataSourceForm({
           </Field>
         </div>
         <button type="button" onClick={onRemove}
-          className="mt-6 text-[#5b6b85] hover:text-[#dc2626] text-[11px] flex-none">✕</button>
+          className="mt-6 text-[var(--ink-2, #5b6b85)] hover:text-[var(--bad, #dc2626)] text-[11px] flex-none">✕</button>
       </div>
 
       {isTcp && (
@@ -365,7 +365,7 @@ function DataSourceForm({
       )}
 
       {entry.source_type === 'push_ingest' && (
-        <p className="text-[12px] text-[#5b6b85] bg-white rounded border border-[#dde3ee] px-3 py-2">
+        <p className="text-[12px] text-[var(--ink-2, #5b6b85)] bg-surface-v2 rounded border border-[var(--border-subtle, #dde3ee)] px-3 py-2">
           Your device will POST readings to <code className="font-mono">/api/esums-ingest/:site_key</code>.
           An ingest key is generated automatically for your site.
         </p>
@@ -374,7 +374,7 @@ function DataSourceForm({
       {entry.source_type && (
         <div className="flex items-center gap-1.5 mt-1">
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: accentColor }} />
-          <span className="text-[11px] text-[#5b6b85]">
+          <span className="text-[11px] text-[var(--ink-2, #5b6b85)]">
             {isTcp ? 'Polling via edge agent — TCP devices require on-site connectivity'
               : isMqtt ? 'Edge agent subscribes to broker — requires LAN access'
               : isRest ? 'Cloud-polled — URL must be publicly reachable'
@@ -386,7 +386,7 @@ function DataSourceForm({
   );
 }
 
-export function EsumsDataSourcesStep({ data, onChange, accentColor = '#16a34a' }: StepProps) {
+export function EsumsDataSourcesStep({ data, onChange, accentColor = 'var(--good, #16a34a)' }: StepProps) {
   const sources: DataSourceEntry[] = (data.sources as DataSourceEntry[]) || [];
 
   const update = (updated: DataSourceEntry[]) => onChange('sources', updated);
@@ -399,8 +399,8 @@ export function EsumsDataSourcesStep({ data, onChange, accentColor = '#16a34a' }
   return (
     <div className="space-y-4">
       {sources.length === 0 && (
-        <div className="rounded-lg border border-dashed border-[#dde3ee] bg-[#f9fafb] p-6 text-center">
-          <div className="text-[13px] text-[#5b6b85] mb-1">No data sources added yet</div>
+        <div className="rounded-lg border border-dashed border-[var(--border-subtle, #dde3ee)] bg-[var(--s1, #f9fafb)] p-6 text-center">
+          <div className="text-[13px] text-[var(--ink-2, #5b6b85)] mb-1">No data sources added yet</div>
           <div className="text-[11px] text-[#9ca3af]">Add your inverters, meters, MQTT brokers or REST APIs</div>
         </div>
       )}
@@ -418,8 +418,8 @@ export function EsumsDataSourcesStep({ data, onChange, accentColor = '#16a34a' }
       <button
         type="button"
         onClick={addEntry}
-        className="w-full h-9 rounded border border-dashed border-[#dde3ee] text-[12px] font-medium hover:border-[oklch(0.46_0.16_55)] hover:text-[oklch(0.46_0.16_55)] transition-colors"
-        style={{ color: '#5b6b85' }}
+        className="w-full h-9 rounded border border-dashed border-[var(--border-subtle, #dde3ee)] text-[12px] font-medium hover:border-[oklch(0.46_0.16_55)] hover:text-[oklch(0.46_0.16_55)] transition-colors"
+        style={{ color: 'var(--ink-2, #5b6b85)' }}
       >
         + Add data source
       </button>
@@ -453,7 +453,7 @@ export function EsumsAlertsStep({ data, onChange }: StepProps) {
           value={(data.alert_threshold_pct as number) ?? 90}
           onChange={(e) => onChange('alert_threshold_pct', Number(e.target.value))}
         />
-        <div className="flex justify-between text-[11px] text-[#5b6b85] mt-1"><span>80%</span><span>100%</span></div>
+        <div className="flex justify-between text-[11px] text-[var(--ink-2, #5b6b85)] mt-1"><span>80%</span><span>100%</span></div>
       </Field>
       <div>
         <p className={LABEL_CLS}>Notify on</p>
@@ -711,7 +711,7 @@ export function OfftakerPpaPrefsStep({ data, onChange }: StepProps) {
           value={(data.green_commitment_pct as number) ?? 0}
           onChange={(e) => onChange('green_commitment_pct', Number(e.target.value))}
         />
-        <div className="flex justify-between text-[11px] text-[#5b6b85] mt-1"><span>0%</span><span>100%</span></div>
+        <div className="flex justify-between text-[11px] text-[var(--ink-2, #5b6b85)] mt-1"><span>0%</span><span>100%</span></div>
       </Field>
       <Field label={`Required availability: ${data.required_availability_pct ?? 95}%`}>
         <input
@@ -720,7 +720,7 @@ export function OfftakerPpaPrefsStep({ data, onChange }: StepProps) {
           value={(data.required_availability_pct as number) ?? 95}
           onChange={(e) => onChange('required_availability_pct', Number(e.target.value))}
         />
-        <div className="flex justify-between text-[11px] text-[#5b6b85] mt-1"><span>80%</span><span>100%</span></div>
+        <div className="flex justify-between text-[11px] text-[var(--ink-2, #5b6b85)] mt-1"><span>80%</span><span>100%</span></div>
       </Field>
     </div>
   );
