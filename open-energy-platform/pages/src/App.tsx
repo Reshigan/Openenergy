@@ -106,6 +106,7 @@ const ComplianceAdminPage   = React.lazy(() => import('./components/pages/Compli
 const DepthOpsPage          = React.lazy(() => import('./components/pages/DepthOpsPage').then(m => ({ default: m.DepthOpsPage })));
 const OpsL5Page             = React.lazy(() => import('./components/pages/OpsL5Page').then(m => ({ default: m.OpsL5Page })));
 const PublicLegalPage       = React.lazy(() => import('./components/pages/PublicLegalPage').then(m => ({ default: m.PublicLegalPage })));
+const WelcomePage           = React.lazy(() => import('./components/pages/WelcomePage').then(m => ({ default: m.WelcomePage })));
 const PublicAuditPage       = React.lazy(() => import('./components/pages/PublicAuditPage').then(m => ({ default: m.PublicAuditPage })));
 const PlatformAdminConsolePage = React.lazy(() => import('./components/pages/PlatformAdminConsolePage').then(m => ({ default: m.PlatformAdminConsolePage })));
 const DocumentsPage         = React.lazy(() => import('./components/pages/DocumentsPage').then(m => ({ default: m.DocumentsPage })));
@@ -176,6 +177,14 @@ function LazyWorkbench({ children }: { children: ReactNode }) {
 }
 
 // Protected Route Wrapper
+// Root: signed-in users go to their cockpit, everyone else lands on the public
+// marketing page (instead of being bounced to /login).
+function RootLanding() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return <Navigate to={user ? '/cockpit' : '/welcome'} replace />;
+}
+
 function ProtectedRoute({ children }: { children?: ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -759,7 +768,8 @@ function AppRoutes() {
         <Route path="/ux-prototype/cockpit-grid"  element={<LazyWorkbench><CockpitGridPrototype /></LazyWorkbench>} />
         <Route path="/ux-prototype/launchpad-nav" element={<LazyWorkbench><LaunchpadNavPrototype /></LazyWorkbench>} />
       </Route>
-      <Route path="/" element={<Navigate to="/cockpit" replace />} />
+      <Route path="/welcome" element={<WelcomePage />} />
+      <Route path="/" element={<RootLanding />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
     {/* Meridian ⌘K palette — global on every authed page; renders null when
