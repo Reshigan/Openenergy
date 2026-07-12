@@ -11,13 +11,19 @@ import {
 } from 'recharts';
 
 // ─── tokens (match the ML tabs) ─────────────────────────────────────────────
-const INK = '#0c2a4d';
-const MUTED = '#4a5568';
-const GRID = '#e6eaf1';
+const INK = 'var(--ink, #0c2a4d)';
+const MUTED = 'var(--ink-2, #4a5568)';
+// GRID is drawn as an SVG stroke attr (CartesianGrid/axis lines) where var() does
+// NOT resolve — must be a literal. This viz only ever renders inside the authed v2
+// dark app, so a dark-appropriate hairline hex is correct here.
+const GRID = '#2a3038';
+// CARD/BORDER are used in style={{}} (Panel + tooltip) where var() resolves.
+const CARD = 'var(--s1, #fff)';
+const BORDER = 'var(--border-subtle, #e6eaf1)';
 const ACC = 'oklch(0.46 0.16 55)';
 const TICK = { fontSize: 10, fill: MUTED };
 // HealthBand palette — same tones the tabs use inline
-const BAND: Record<string, string> = { green: '#1f5b3a', amber: '#a06200', red: '#9b1f1f', critical: '#7a0e0e' };
+const BAND: Record<string, string> = { green: 'var(--good, #1f5b3a)', amber: '#a06200', red: 'var(--bad, #9b1f1f)', critical: 'var(--bad, #7a0e0e)' };
 const bandColor = (b: unknown) => BAND[String(b ?? '').toLowerCase()] ?? '#8a94a6';
 const pct = new Intl.NumberFormat('en-ZA', { style: 'percent', maximumFractionDigits: 1 });
 
@@ -31,8 +37,8 @@ const band = (r: Row) => String(r.model_health_band_live ?? r.model_health_band 
 // ─── chrome ─────────────────────────────────────────────────────────────────
 function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <section style={{ border: `1px solid ${GRID}`, borderRadius: 8, background: '#fff', overflow: 'hidden' }}>
-      <header style={{ padding: '10px 14px', borderBottom: `1px solid ${GRID}` }}>
+    <section style={{ border: `1px solid ${BORDER}`, borderRadius: 8, background: CARD, overflow: 'hidden' }}>
+      <header style={{ padding: '10px 14px', borderBottom: `1px solid ${BORDER}` }}>
         <h3 style={{ fontSize: 13, fontWeight: 600, color: INK, margin: 0 }}>{title}</h3>
         {subtitle && <p style={{ fontSize: 11, color: MUTED, margin: '2px 0 0' }}>{subtitle}</p>}
       </header>
@@ -115,7 +121,7 @@ function ScatterPanel({
             const p = payload?.[0]?.payload as (typeof data)[number] | undefined;
             if (!p) return null;
             return (
-              <div style={{ background: '#fff', border: `1px solid ${GRID}`, borderRadius: 8, padding: '6px 8px', fontSize: 11 }}>
+              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '6px 8px', fontSize: 11 }}>
                 <div style={{ fontWeight: 600, color: INK }}>{p.model || 'model'}</div>
                 <div style={{ color: MUTED }}>{xLabel}: {xPct ? pct.format(p.x) : p.x.toFixed(3)}</div>
                 <div style={{ color: MUTED }}>{yLabel}: {yPct ? pct.format(p.y) : p.y.toFixed(3)}</div>
