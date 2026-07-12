@@ -26,6 +26,7 @@ export class MemoryStore implements Store {
   private idem = new Map<string, EventRow>();
   private eventIds = new Set<string>();
   private humanRefs = new Set<string>();
+  private claims = new Set<string>();
   private timers: TimerRow[] = [];
   private outbox: OutboxRow[] = [];
   private roots: MerkleRootRow[] = [];
@@ -72,6 +73,7 @@ export class MemoryStore implements Store {
       const cur = this.txns.get(batch.updateTxn.id);
       if (!cur || cur.seq !== batch.updateTxn.expectSeq) throw new ConstraintViolation('txn_seq');
     }
+    if (batch.claims?.some((k) => this.claims.has(k))) throw new ConstraintViolation('unique_claim');
 
     // --- apply atomically ---
     const global_seq = this.events.length + 1;
@@ -103,6 +105,7 @@ export class MemoryStore implements Store {
     if (batch.clearTimersForTxn) this.timers = this.timers.filter((t) => t.txn_id !== batch.clearTimersForTxn);
     if (batch.insertTimers) this.timers.push(...batch.insertTimers);
     if (batch.insertOutbox) this.outbox.push(...batch.insertOutbox);
+    if (batch.claims) for (const k of batch.claims) this.claims.add(k);
 
     return { global_seq };
   }

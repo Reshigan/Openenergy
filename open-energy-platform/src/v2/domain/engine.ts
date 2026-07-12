@@ -270,17 +270,25 @@ export async function applyTransition(cmd: Command, deps: EngineDeps): Promise<R
     const seq = txn.seq + 1;
     const prev_hash = isNew || events.length === 0 ? await genesisPrevHash(chain.key) : events[events.length - 1].hash;
 
-    const ref = isNew ? humanRef(chain.refPrefix, new Date(at.epoch_ms).getUTCFullYear(), cmd.actor.id + occurred_at) : txn.human_ref;
+    // event_id is a fresh uuid per attempt — deriving human_ref from it means a
+    // collision self-heals on retry (actor.id+occurred_at was deterministic, so
+    // two txns by one actor in the same second collided forever → CONTENTION).
+    const event_id = deps.ids.uuid();
+    const ref = isNew ? humanRef(chain.refPrefix, new Date(at.epoch_ms).getUTCFullYear(), event_id) : txn.human_ref;
     const coercedAndDerived = rejected
       ? {}
       : { ...coerced.values, ...(edge.derive ? edge.derive({ ...txn.fields, ...coerced.values }, at) : {}) };
     const mergedFields = rejected ? txn.fields : { ...txn.fields, ...coercedAndDerived };
     const title = rejected ? txn.title : chain.title(mergedFields);
 
+    // pure claim key (double-spend): the DB UNIQUE index is the real constraint;
+    // a friendly guard may pre-read it via reference('claim:'+key). Never on a reject.
+    const claimKey = !rejected && edge.claim ? edge.claim(mergedFields) : null;
+
     const base: Omit<EventRow, 'hash'> = {
       txn_id: txn.id,
       seq,
-      event_id: deps.ids.uuid(),
+      event_id,
       chain_key: chain.key,
       type: rejected ? `${chain.key}.${edge.id}.rejected` : `${chain.key}.${edge.id}`,
       from_state: isNew ? null : from_state,
@@ -356,6 +364,7 @@ export async function applyTransition(cmd: Command, deps: EngineDeps): Promise<R
       insertOutbox: outbox.length ? outbox : undefined,
       insertTimers: timers.length ? timers : undefined,
       clearTimersForTxn: !rejected && !isNew ? txn.id : undefined,
+      claims: claimKey ? [claimKey] : undefined,
     };
     if (isNew) {
       batch.insertTxn = {
@@ -394,6 +403,8 @@ export async function applyTransition(cmd: Command, deps: EngineDeps): Promise<R
             return { ok: true, event: dup, txn: bundle.txn, actions: acts, replayed: true };
           }
         }
+        // a claimed unique key is permanent — retrying a double-claim is pointless.
+        if (e.constraint === 'unique_claim') throw e;
         continue; // event_pk / txn_seq / human_ref — retry the whole thing
       }
       throw e;

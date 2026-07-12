@@ -104,3 +104,11 @@ CREATE TABLE IF NOT EXISTS v2_reference (
   key    TEXT PRIMARY KEY,
   value  TEXT NOT NULL
 );
+
+-- Append-only unique-claim ledger (double-spend prevention, e.g. carbon serial
+-- ranges). The UNIQUE(key) index IS the enforcement: a concurrent double-claim
+-- has its loser trip this atomically. A claimed key is permanent, never deleted.
+CREATE TABLE IF NOT EXISTS v2_claims (
+  key  TEXT NOT NULL,
+  UNIQUE(key)
+);

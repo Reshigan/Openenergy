@@ -133,6 +133,13 @@ function mapUniqueError(err: unknown): ConstraintViolation | null {
     return new ConstraintViolation('event_pk');
   }
   if (msg.includes('v2_txns.human_ref')) return new ConstraintViolation('human_ref');
+  if (msg.includes('v2_claims')) return new ConstraintViolation('unique_claim');
+  // idx_v2_events_global_seq is UNIQUE: a write race can have two commits compute
+  // the same (count)+1. Loser trips this — map to a retriable violation so the
+  // engine recomputes a fresh COUNT. SQLite names the index, not the column.
+  if (msg.includes('global_seq') || msg.includes('idx_v2_events_global_seq')) {
+    return new ConstraintViolation('global_seq');
+  }
   return null;
 }
 
@@ -232,6 +239,16 @@ export class D1Store implements Store {
         .first<{ seq: number }>();
       if (!cur || cur.seq !== batch.updateTxn.expectSeq) {
         throw new ConstraintViolation('txn_seq');
+      }
+    }
+
+    if (batch.claims) {
+      for (const k of batch.claims) {
+        const dupClaim = await this.db
+          .prepare(`SELECT 1 FROM v2_claims WHERE key = ?`)
+          .bind(k)
+          .first();
+        if (dupClaim) throw new ConstraintViolation('unique_claim');
       }
     }
 
@@ -369,6 +386,12 @@ export class D1Store implements Store {
             )
             .bind(o.id, o.caused_by, o.effect, o.txn_id, o.created_at),
         );
+      }
+    }
+
+    if (batch.claims) {
+      for (const k of batch.claims) {
+        stmts.push(this.db.prepare(`INSERT INTO v2_claims (key) VALUES (?)`).bind(k));
       }
     }
 

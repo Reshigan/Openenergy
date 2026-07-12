@@ -19,6 +19,28 @@ import { applyTransition, type EngineDeps } from '../v2/domain/engine';
 import type { Actor, Clock, Command, IdSource, Json, ExportQuery } from '../v2/domain/types';
 import { ConstraintViolation } from '../v2/domain/types';
 import { ppaContract } from '../v2/domain/chains/ppa_contract';
+import { drawdown } from '../v2/domain/chains/drawdown';
+import { carbonRetirement } from '../v2/domain/chains/carbon_retirement';
+import { licenceApplication } from '../v2/domain/chains/licence_application';
+import { wo } from '../v2/domain/chains/wo';
+import { permitToWork } from '../v2/domain/chains/permit_to_work';
+import { algoCert } from '../v2/domain/chains/algo_cert';
+import { bestExecution } from '../v2/domain/chains/best_execution';
+import { capitalAdequacyReturn } from '../v2/domain/chains/capital_adequacy';
+import { ccpAssessment } from '../v2/domain/chains/ccp_assessment';
+import { counterpartyMargin } from '../v2/domain/chains/counterparty_margin';
+import { creditInsurance } from '../v2/domain/chains/credit_insurance';
+import { crossBorderTrade } from '../v2/domain/chains/cross_border_trade';
+import { fscaCompliance } from '../v2/domain/chains/fsca_compliance';
+import { fscaConductReport } from '../v2/domain/chains/fsca_conduct_report';
+import { isdaAgreement } from '../v2/domain/chains/isda_agreement';
+import { marketAbuse } from '../v2/domain/chains/market_abuse';
+import { marketConductExam } from '../v2/domain/chains/market_conduct_exam';
+import { ppaAnnualRecon } from '../v2/domain/chains/ppa_annual_recon';
+import { ppaChangeInLaw } from '../v2/domain/chains/ppa_change_in_law';
+import { settlementFail } from '../v2/domain/chains/settlement_fail';
+import { tradeAllocation } from '../v2/domain/chains/trade_allocation';
+import { tradeReporting } from '../v2/domain/chains/trade_reporting';
 import { GUARDS } from '../v2/domain/guards/registry';
 import { exportPack } from '../v2/domain/export';
 import { sealPendingEvents } from '../v2/domain/merkle-seal';
@@ -37,7 +59,31 @@ const OPERATOR_ROLES = ['admin', 'operator', 'regulator', 'support'];
 // The chain registry lives inline in deps, chains-as-data. More chains get
 // added to this Record as they are transcribed; there is no separate registry
 // file by design.
-const CHAINS = { ppa_contract: ppaContract };
+const CHAINS = {
+  ppa_contract: ppaContract,
+  drawdown,
+  carbon_retirement: carbonRetirement,
+  licence_application: licenceApplication,
+  wo,
+  permit_to_work: permitToWork,
+  algo_cert: algoCert,
+  best_execution: bestExecution,
+  capital_adequacy: capitalAdequacyReturn,
+  ccp_assessment: ccpAssessment,
+  counterparty_margin: counterpartyMargin,
+  credit_insurance: creditInsurance,
+  cross_border_trade: crossBorderTrade,
+  fsca_compliance: fscaCompliance,
+  fsca_conduct_report: fscaConductReport,
+  isda_agreement: isdaAgreement,
+  market_abuse: marketAbuse,
+  market_conduct_exam: marketConductExam,
+  ppa_annual_recon: ppaAnnualRecon,
+  ppa_change_in_law: ppaChangeInLaw,
+  settlement_fail: settlementFail,
+  trade_allocation: tradeAllocation,
+  trade_reporting: tradeReporting,
+};
 
 const clock: Clock = { now: () => ({ epoch_ms: Date.now(), zone: 'UTC' }) };
 const ids: IdSource = { uuid: () => crypto.randomUUID() };

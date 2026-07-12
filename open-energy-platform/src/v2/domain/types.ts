@@ -72,6 +72,10 @@ export interface TransitionDecl {
   compensates?: string;
   /** pure computed fields merged after coercion (fields + event instant only) */
   derive?: (fields: Record<string, Json>, at: Instant) => Record<string, Json>;
+  /** pure: the unique key this edge claims (double-spend prevention). Null = no
+   *  claim. The store inserts it under a UNIQUE index; a friendly guard may read
+   *  it back via reference('claim:'+key) to surface a nice reason pre-commit. */
+  claim?: (fields: Record<string, Json>) => string | null;
 }
 
 export interface TimerDecl {
@@ -252,7 +256,9 @@ export type ConstraintName =
   | 'event_id'
   | 'idempotency_key'
   | 'txn_seq'
-  | 'human_ref';
+  | 'human_ref'
+  | 'global_seq'
+  | 'unique_claim';
 
 export class ConstraintViolation extends Error {
   constructor(public constraint: ConstraintName) {
@@ -277,6 +283,10 @@ export interface CommitBatch {
   insertTimers?: TimerRow[];
   /** re-arm semantics: clear all pending timers for this txn, then insertTimers */
   clearTimersForTxn?: string;
+  /** append-only unique keys claimed by this commit (e.g. carbon serial ranges).
+   *  A duplicate throws ConstraintViolation('unique_claim') — the DB index, not a
+   *  read-then-write guard, is what rejects a concurrent double-claim atomically. */
+  claims?: string[];
 }
 
 export interface ExportQuery {
