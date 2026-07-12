@@ -163,6 +163,12 @@
 .v2-next .why { font-size: var(--t-13); color: var(--ink-2); margin-top: 2px; }
 .v2-next-row { display: flex; align-items: flex-start; gap: var(--sp-4); }
 .v2-next-row > div:first-child { flex: 1; }
+/* Next card fact row — value / waiting / holder as labelled figures */
+.v2-next-facts { display: flex; flex-wrap: wrap; gap: var(--sp-5); margin-top: var(--sp-4); }
+.v2-next-facts .f { display: flex; flex-direction: column; gap: 2px; }
+.v2-next-facts .fk { font-size: var(--t-11); text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
+.v2-next-facts .fv { font-size: var(--t-15); font-weight: 600; font-variant-numeric: tabular-nums; }
+.v2-next-facts .fv.hot { color: var(--warn); }
 
 /* ── queue table ────────────────────────────────────────────────────── */
 .v2-queue-head { display: flex; align-items: baseline; justify-content: space-between; margin: var(--sp-6) 0 var(--sp-2); }
@@ -181,6 +187,7 @@
 .v2-row .ttl { color: var(--ink); }
 .v2-row .muted { color: var(--ink-2); }
 .v2-row .money { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.v2-row-sub { color: var(--ink-2); font-size: var(--t-12); margin-left: var(--sp-2); }
 .v2-collapse { margin-top: var(--sp-6); }
 .v2-collapse summary {
   cursor: pointer; font-size: var(--t-13); color: var(--ink-2); padding: var(--sp-2) 0;
@@ -348,6 +355,123 @@
 .v2-notif-item .m { font-size: var(--t-12); color: var(--ink-2); margin-top: 2px; }
 .v2-notif-item .w { font-size: var(--t-11); color: var(--ink-3); font-family: var(--font-mono); margin-top: 3px; }
 .v2-notif-empty { padding: var(--sp-6); text-align: center; color: var(--ink-2); font-size: var(--t-13); }
+
+/* ── command-center vocabulary (fundamental-upgrade surfaces) ─────────────
+   Shared components the four surfaces compose: metric strip, facet chips,
+   segmented control, state-spine stepper, party chips, value bars. On-brand
+   with the tokens above — no new colors, no slop tropes. */
+
+/* metric strip — Home/Trade command-center header */
+.v2-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--sp-3); margin-bottom: var(--sp-6); }
+.v2-stat { background: var(--s1); border: 1px solid var(--border-subtle); border-radius: var(--r-card); padding: var(--sp-3) var(--sp-4); display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.v2-stat .k { font-size: var(--t-11); text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
+.v2-stat .v { font-size: var(--t-24); font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.v2-stat .v.mono { font-family: var(--font-mono); }
+.v2-stat .d { font-size: var(--t-12); color: var(--ink-2); }
+.v2-stat.alert .v { color: var(--warn); }
+.v2-stat.accent .v { color: var(--accent); }
+
+/* facet chips + segmented control — Find/Trade filtering */
+.v2-facets { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.v2-chip { font: inherit; font-size: var(--t-12); color: var(--ink-2); cursor: pointer; background: var(--s1); border: 1px solid var(--border-subtle); border-radius: 999px; padding: 4px 12px; display: inline-flex; align-items: center; gap: 6px; transition: color var(--dur-fast), border-color var(--dur-fast), background var(--dur-fast); }
+.v2-chip:hover { color: var(--ink); border-color: var(--border-strong); }
+.v2-chip.on { color: var(--accent); border-color: var(--accent); background: color-mix(in oklch, var(--accent) 12%, var(--s1)); }
+.v2-chip .n { font-family: var(--font-mono); font-size: var(--t-11); opacity: 0.8; }
+.v2-seg { display: inline-flex; background: var(--s1); border: 1px solid var(--border-subtle); border-radius: var(--r-control); padding: 2px; }
+.v2-seg button { font: inherit; font-size: var(--t-12); font-weight: 600; color: var(--ink-2); cursor: pointer; background: none; border: 0; border-radius: 4px; padding: 5px 12px; transition: color var(--dur-fast), background var(--dur-fast); }
+.v2-seg button:hover { color: var(--ink); }
+.v2-seg button.on { color: var(--ink); background: var(--s2); }
+
+/* state-spine stepper — Transaction chain progress */
+.v2-stepper { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1) var(--sp-2); margin: var(--sp-4) 0 var(--sp-6); }
+.v2-step { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-12); color: var(--ink-3); white-space: nowrap; }
+.v2-step .mk { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--ink-3); background: transparent; flex: none; }
+.v2-step.done { color: var(--ink-2); }
+.v2-step.done .mk { background: var(--good); border-color: var(--good); }
+.v2-step.now { color: var(--ink); font-weight: 600; }
+.v2-step.now .mk { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 24%, transparent); }
+.v2-step.dead.now .mk { background: var(--bad); border-color: var(--bad); box-shadow: 0 0 0 3px oklch(0.62 0.22 20 / 0.24); }
+.v2-step-sep { color: var(--ink-3); font-size: var(--t-11); }
+
+/* party chips — Transaction participants */
+.v2-partychips { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
+.v2-partychip { display: inline-flex; align-items: center; gap: var(--sp-2); background: var(--s1); border: 1px solid var(--border-subtle); border-radius: 999px; padding: 3px 12px 3px 3px; font-size: var(--t-12); }
+.v2-partychip .av { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-mono); font-size: var(--t-11); font-weight: 700; color: var(--s0); background: var(--accent); flex: none; }
+.v2-partychip .rl { color: var(--ink); font-weight: 600; }
+.v2-partychip .idf { color: var(--ink-2); font-family: var(--font-mono); font-size: var(--t-11); }
+.v2-partychip.you { border-color: var(--accent); }
+
+/* value mini-bar — table cells */
+.v2-bar { position: relative; height: 4px; border-radius: 2px; background: var(--s2); overflow: hidden; min-width: 44px; }
+.v2-bar > span { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 2px; opacity: 0.7; }
+
+/* section bar with a right-aligned total */
+.v2-sectionbar { display: flex; align-items: baseline; gap: var(--sp-3); margin: var(--sp-6) 0 var(--sp-2); }
+.v2-sectionbar h3 { font-size: var(--t-15); font-weight: 600; }
+.v2-sectionbar .badge { font-size: var(--t-11); font-family: var(--font-mono); border-radius: 10px; padding: 1px 8px; background: oklch(0.72 0.18 240 / 0.16); color: var(--info); }
+.v2-sectionbar.mine .badge { background: oklch(0.70 0.20 145 / 0.18); color: var(--good); }
+.v2-sectionbar .tot { margin-left: auto; font-size: var(--t-12); color: var(--ink-2); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* age / SLA-urgency indicator for queue rows */
+.v2-age { font-size: var(--t-12); color: var(--ink-2); font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 6px; }
+.v2-age .u { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); flex: none; }
+.v2-age.warn { color: var(--warn); } .v2-age.warn .u { background: var(--warn); }
+.v2-age.bad { color: var(--bad); } .v2-age.bad .u { background: var(--bad); }
+
+/* ── premium polish ─────────────────────────────────────────────────────
+   Finish pass: entrance motion, hero weight on the Next card, dark-theme
+   details (scrollbars, selection, caret), micro-interactions. All motion is
+   auto-neutered by the reduced-motion clamp at the bottom of the file. */
+
+/* text selection + input caret pick up the role accent */
+.v2 ::selection { background: color-mix(in oklch, var(--accent) 32%, transparent); }
+.v2-input, .v2-select { caret-color: var(--accent); }
+.v2-input::placeholder { color: var(--ink-2); opacity: 1; }
+.v2-input:hover:not(:focus), .v2-select:hover:not(:focus) { border-color: var(--ink-3); }
+
+/* thin, themed scrollbars — default chrome bars read as unfinished on dark */
+.v2 * { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.v2 *::-webkit-scrollbar { width: 10px; height: 10px; }
+.v2 *::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 6px; border: 2px solid var(--s0); }
+.v2 *::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
+.v2 *::-webkit-scrollbar-track { background: transparent; }
+
+/* sticky topbar gets a hair of depth so content scrolls *under* it */
+.v2-topbar { box-shadow: 0 6px 20px -16px oklch(0 0 0 / 0.7); }
+.v2-nav a { position: relative; }
+.v2-nav a[aria-current="page"]::after {
+  content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px;
+  background: var(--accent); border-radius: 2px;
+}
+
+/* button press feedback + a touch of lift on the primary CTA */
+.v2-btn-primary { box-shadow: 0 1px 2px oklch(0 0 0 / 0.3); }
+.v2-btn:active:not(:disabled) { transform: translateY(1px); }
+
+/* the Next card is THE thing on Home — accent-tinted surface + a soft corner glow */
+.v2-next {
+  position: relative; overflow: hidden;
+  background: color-mix(in oklch, var(--accent) 5%, var(--s1));
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--accent) 22%, transparent);
+}
+.v2-next::after {
+  content: ""; position: absolute; top: -45%; right: -8%; width: 300px; height: 300px;
+  background: radial-gradient(circle, color-mix(in oklch, var(--accent) 15%, transparent), transparent 68%);
+  pointer-events: none;
+}
+.v2-next > * { position: relative; }
+
+/* manage-link arrow nudges on hover; journey-start plus warms up */
+.v2-jlink .arw { transition: transform var(--dur-fast) var(--ease-out), color var(--dur-fast); }
+.v2-jlink:hover .arw { transform: translateX(3px); }
+
+/* entrance motion — route-level blocks rise once on mount. Row-level content
+   inside re-renders freely (search-as-you-type) without re-animating. */
+@keyframes v2-rise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+.v2-hero, .v2-next, .v2-journeys, .v2-txn-head { animation: v2-rise var(--dur-slow) var(--ease-out) both; }
+.v2-split-hd { animation: v2-rise var(--dur-slow) var(--ease-out) both; animation-delay: 40ms; }
+.v2-col { animation: v2-rise var(--dur-slow) var(--ease-out) both; animation-delay: 60ms; }
+.v2-notice { animation: v2-rise var(--dur) var(--ease-out) both; animation-delay: 30ms; }
 
 @media (prefers-reduced-motion: reduce) {
   .v2 *, .v2 *::before, .v2 *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }

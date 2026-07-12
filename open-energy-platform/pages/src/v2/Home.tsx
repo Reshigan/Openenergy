@@ -1,8 +1,10 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// Home (/v2) — the per-role work queue. One "Next" card (the single highest-
-// consequence open item) + the ranked queue, split into "Waiting on you" vs
-// "Waiting on others / in progress". When nothing is open, a first-run hero +
-// the role's journey starts (grouped by domain). No dashboards-as-destination.
+// Home (/v2) — the per-role work queue, framed as a command centre. A metric
+// strip states the shape of the day (open · your move · at stake · oldest) →
+// the single highest-consequence "Next" card → the queue split into "Waiting on
+// you" vs "Waiting on others", each row carrying state, holder, age+urgency and
+// an honest value. When nothing is open, a first-run hero + the role's journey
+// starts. No dashboards-as-destination; every number is a door into a txn.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useState } from 'react';
@@ -11,19 +13,24 @@ import { useAuth } from '../lib/useAuth';
 import { Shell } from './Shell';
 import { getChains, listTxns } from './api';
 import { groupedStarts } from './starts';
-import { homeSort, moneyValue, stateKind, candidatesFor, type ChainMap, type TxnRow } from './decl';
-
-function money(n: number): string {
-  if (!n) return '';
-  const abs = Math.abs(n);
-  const s = abs >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : abs >= 1e3 ? `${(n / 1e3).toFixed(0)}k` : `${n}`;
-  return s;
-}
+import {
+  homeSort, moneyValue, zarValue, valueText, ageSince, stateKind, candidatesFor,
+  type ChainMap, type TxnRow,
+} from './decl';
 
 function Pill({ chain, state }: { chain: ChainMap[string] | undefined; state: string }) {
   const kind = chain ? stateKind(chain, state) : 'open';
   const label = chain?.states[state]?.label ?? state;
   return <span className={`v2-pill is-${kind}`}>{label}</span>;
+}
+
+// Sum of money-valued positions in a set, as an honest "R …" (or "—").
+function stakeText(rows: TxnRow[]): string {
+  let sum = 0;
+  for (const r of rows) { const v = zarValue(r); if (v.isMoney) sum += Math.abs(v.amount); }
+  if (!sum) return '—';
+  const a = sum;
+  return a >= 1e9 ? `R ${(a / 1e9).toFixed(1)}B` : a >= 1e6 ? `R ${(a / 1e6).toFixed(1)}M` : a >= 1e3 ? `R ${(a / 1e3).toFixed(0)}k` : `R ${Math.round(a)}`;
 }
 
 export default function Home() {
@@ -56,10 +63,24 @@ export default function Home() {
     return { mine, others };
   }, [rest, chains, role]);
 
+  // The day's shape — computed from what's already loaded, no extra endpoint.
+  const stats = useMemo(() => {
+    const nextIsMine = next && chains[next.chain_key]
+      && candidatesFor(chains[next.chain_key], next.state, role).some((x) => x.enabled);
+    const oldest = ranked.length ? ageSince(ranked[ranked.length - 1].opened_at) : null;
+    return {
+      open: ranked.length,
+      yours: mine.length + (nextIsMine ? 1 : 0),
+      stake: stakeText(ranked),
+      oldest,
+    };
+  }, [ranked, mine, next, chains, role]);
+
   return (
     <Shell>
       {rows === null ? (
         <>
+          <div className="v2-skeleton" style={{ height: 76, marginBottom: 'var(--sp-6)' }} />
           <div className="v2-skeleton" style={{ height: 120 }} />
           {Array.from({ length: 6 }).map((_, i) => <div key={i} className="v2-skeleton" />)}
         </>
@@ -108,16 +129,25 @@ export default function Home() {
         </>
       ) : (
         <>
+          <div className="v2-stats">
+            <div className="v2-stat"><span className="k">Open</span><span className="v">{stats.open}</span><span className="d">on your desk</span></div>
+            <div className={`v2-stat ${stats.yours > 0 ? 'accent' : ''}`}><span className="k">Your move</span><span className="v">{stats.yours}</span><span className="d">awaiting you</span></div>
+            <div className="v2-stat"><span className="k">At stake</span><span className="v mono">{stats.stake}</span><span className="d">across open items</span></div>
+            {stats.oldest && (
+              <div className={`v2-stat ${stats.oldest.tier === 'ok' ? '' : 'alert'}`}><span className="k">Oldest</span><span className="v mono">{stats.oldest.text}</span><span className="d">waiting longest</span></div>
+            )}
+          </div>
+
           {next && (
             <NextCard row={next} chain={chains[next.chain_key]} onOpen={() => nav(`/v2/t/${next.id}`)} />
           )}
 
           {mine.length > 0 && (
             <>
-              <div className="v2-split-hd mine">
+              <div className="v2-sectionbar mine">
                 <h3>Waiting on you</h3>
                 <span className="badge">{mine.length}</span>
-                <span className="sub">your move</span>
+                <span className="tot">{stakeText(mine)}</span>
               </div>
               <QueueTable rows={mine} chains={chains} onOpen={(id) => nav(`/v2/t/${id}`)} />
             </>
@@ -125,10 +155,10 @@ export default function Home() {
 
           {others.length > 0 && (
             <>
-              <div className="v2-split-hd">
+              <div className="v2-sectionbar">
                 <h3>Waiting on others</h3>
                 <span className="badge">{others.length}</span>
-                <span className="sub">held elsewhere or in progress</span>
+                <span className="tot">{stakeText(others)}</span>
               </div>
               <QueueTable rows={others} chains={chains} onOpen={(id) => nav(`/v2/t/${id}`)} />
             </>
@@ -145,20 +175,23 @@ function QueueTable({ rows, chains, onOpen }: { rows: TxnRow[]; chains: ChainMap
       <thead>
         <tr>
           <th>Ref</th><th>What</th><th>State</th><th>Holder</th>
-          <th style={{ textAlign: 'right' }}>Value</th><th>Opened</th>
+          <th style={{ textAlign: 'right' }}>Value</th><th style={{ textAlign: 'right' }}>Age</th>
         </tr>
       </thead>
       <tbody>
         {rows.map((r) => {
           const holder = chains[r.chain_key]?.states[r.state]?.holder;
+          const age = ageSince(r.opened_at);
           return (
             <tr key={r.id} className="v2-row" onClick={() => onOpen(r.id)}>
               <td className="ref">{r.human_ref}</td>
               <td className="ttl">{r.title}</td>
               <td><Pill chain={chains[r.chain_key]} state={r.state} /></td>
               <td className="muted">{holder && holder !== 'none' ? holder : '—'}</td>
-              <td className="money">{money(moneyValue(r))}</td>
-              <td className="muted">{r.opened_at.slice(0, 10)}</td>
+              <td className="money">{valueText(r)}</td>
+              <td style={{ textAlign: 'right' }}>
+                <span className={`v2-age ${age.tier}`}><span className="u" />{age.text}</span>
+              </td>
             </tr>
           );
         })}
@@ -170,6 +203,8 @@ function QueueTable({ rows, chains, onOpen }: { rows: TxnRow[]; chains: ChainMap
 function NextCard({ row, chain, onOpen }: { row: TxnRow; chain?: ChainMap[string]; onOpen: () => void }) {
   const holder = chain?.states[row.state]?.holder;
   const why = holder && holder !== 'none' ? `Held by ${holder} — awaiting the next move.` : 'Open and progressing.';
+  const age = ageSince(row.opened_at);
+  const hasValue = moneyValue(row) !== 0;
   return (
     <div className="v2-card v2-next">
       <div className="v2-label">Next</div>
@@ -178,6 +213,11 @@ function NextCard({ row, chain, onOpen }: { row: TxnRow; chain?: ChainMap[string
           <h2>{row.title}</h2>
           <div className="sub">{row.human_ref} · {chain?.noun ?? row.chain_key}</div>
           <div className="why">{why}</div>
+          <div className="v2-next-facts">
+            {hasValue && <span className="f"><span className="fk">Value</span><span className="fv mono">{valueText(row)}</span></span>}
+            <span className="f"><span className="fk">Waiting</span><span className={`fv mono ${age.tier === 'ok' ? '' : 'hot'}`}>{age.text}</span></span>
+            {holder && holder !== 'none' && <span className="f"><span className="fk">Holder</span><span className="fv">{holder}</span></span>}
+          </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
           <Pill chain={chain} state={row.state} />

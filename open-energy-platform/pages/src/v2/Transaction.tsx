@@ -5,7 +5,7 @@
 // + the terms. `/` focuses a command bar that fires an edge by name.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../lib/useAuth';
 import { Shell } from './Shell';
@@ -13,7 +13,7 @@ import { getChains, getTxn, actTxn } from './api';
 import { TransitionForm } from './FieldForm';
 import {
   candidatesFor, stateKind, fromStates, fieldLabel, fmtDuration,
-  explainReject, tsToSAST,
+  explainReject, tsToSAST, spineStates,
   RECORD_ONLY_NOTICE,
   type ChainDecl, type TxnBundle, type Candidate, type Json,
 } from './decl';
@@ -121,12 +121,17 @@ export default function Transaction() {
           {txn.closed_at && <><span>·</span><span>closed {tsToSAST(txn.closed_at)}</span></>}
         </div>
         {live.length > 0 && (
-          <div className="v2-parties">
-            {live.map((p, i) => (
-              <span key={p.participant_id + i}>
-                {i > 0 && ' · '}<b>{p.role_on_txn}</b> {p.participant_id === user?.id ? '(you)' : p.participant_id.slice(0, 8)}
-              </span>
-            ))}
+          <div className="v2-partychips">
+            {live.map((p, i) => {
+              const you = p.participant_id === user?.id;
+              return (
+                <span key={p.participant_id + i} className={`v2-partychip ${you ? 'you' : ''}`}>
+                  <span className="av">{(you ? 'you' : p.role_on_txn).slice(0, 1).toUpperCase()}</span>
+                  <span className="rl">{p.role_on_txn}</span>
+                  <span className="idf">{you ? 'you' : p.participant_id.slice(0, 8)}</span>
+                </span>
+              );
+            })}
           </div>
         )}
         {!txn.closed_at && chain && (
@@ -139,6 +144,8 @@ export default function Transaction() {
           </div>
         )}
       </div>
+
+      {chain && <Stepper chain={chain} events={events} currentState={txn.state} kind={kind} />}
 
       {chain && chain.settles === false && (
         <div className="v2-notice" role="note">
@@ -212,6 +219,34 @@ const CommandBar = forwardRef<HTMLInputElement, { candidates: Candidate[]; onPic
     );
   },
 );
+
+// Progress ribbon: the chain's main-line states in reachable order, each marked
+// done (already visited) / now (current) / todo (not yet). A dead current state
+// isn't on the spine (destructive exits are excluded), so it's appended and
+// flagged so the ribbon reads red instead of pretending the flow is mid-track.
+function Stepper({ chain, events, currentState, kind }: { chain: ChainDecl; events: TxnBundle['events']; currentState: string; kind: string }) {
+  const visited = useMemo(() => new Set(events.map((e) => e.to_state).concat(chain.initial)), [events, chain.initial]);
+  const spine = useMemo(() => spineStates(chain), [chain]);
+  const steps = spine.includes(currentState) ? spine : [...spine, currentState];
+  if (steps.length < 2) return null;
+  return (
+    <div className="v2-stepper">
+      {steps.map((s, i) => {
+        const now = s === currentState;
+        const status = now ? (kind === 'dead' ? 'dead now' : 'now') : visited.has(s) ? 'done' : '';
+        return (
+          <Fragment key={s}>
+            {i > 0 && <span className="v2-step-sep">›</span>}
+            <span className={`v2-step ${status}`}>
+              <span className="mk" />
+              {chain.states[s]?.label ?? s}
+            </span>
+          </Fragment>
+        );
+      })}
+    </div>
+  );
+}
 
 function Timeline({ chain, events, currentState }: { chain: ChainDecl | null; events: TxnBundle['events']; currentState: string }) {
   // Project the immediate next states (edges out of the current state) as ghost

@@ -1,9 +1,10 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// Trade (/v2/trade) — the focused surface for the trading family: open a
-// position (the trading-chain openers) + your live positions (open txns on
-// those chains), biggest first. There is no v2 order-book/matching endpoint
-// yet, so this is a position book, not a depth ladder — when /v2 exposes book
-// depth, the left column becomes a real ladder.
+// Trade (/v2/trade) — the focused surface for the trading family. A summary
+// strip (positions · gross value · live · at-risk) frames the book; your live
+// positions list biggest-first with a relative-size bar per row; the right rail
+// opens new positions from the trading-chain openers. There is no v2 order-book/
+// matching endpoint yet, so this is a position book, not a depth ladder — when
+// /v2 exposes book depth, the left column becomes a real ladder.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useState } from 'react';
@@ -12,12 +13,17 @@ import { useAuth } from '../lib/useAuth';
 import { Shell } from './Shell';
 import { getChains, listTxns } from './api';
 import { tradeStarts } from './starts';
-import { moneyValue, homeSort, stateKind, type ChainMap, type TxnRow } from './decl';
+import {
+  moneyValue, homeSort, zarValue, valueText, stateKind,
+  type ChainMap, type TxnRow,
+} from './decl';
 
-function money(n: number): string {
-  if (!n) return '—';
-  const a = Math.abs(n);
-  return a >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : a >= 1e3 ? `${(n / 1e3).toFixed(0)}k` : `${n}`;
+function grossText(rows: TxnRow[]): string {
+  let sum = 0;
+  for (const r of rows) { const v = zarValue(r); if (v.isMoney) sum += Math.abs(v.amount); }
+  if (!sum) return '—';
+  const a = sum;
+  return a >= 1e9 ? `R ${(a / 1e9).toFixed(1)}B` : a >= 1e6 ? `R ${(a / 1e6).toFixed(1)}M` : a >= 1e3 ? `R ${(a / 1e3).toFixed(0)}k` : `R ${Math.round(a)}`;
 }
 
 export default function Trade() {
@@ -44,6 +50,24 @@ export default function Trade() {
     [rows, tradeKeys],
   );
 
+  // Largest absolute magnitude drives the relative-size bar width.
+  const peak = useMemo(
+    () => positions.reduce((m, r) => Math.max(m, Math.abs(moneyValue(r))), 0),
+    [positions],
+  );
+
+  const stats = useMemo(() => {
+    const live = positions.filter((r) => {
+      const c = chains[r.chain_key];
+      return c ? stateKind(c, r.state) === 'open' : true;
+    }).length;
+    const hold = positions.filter((r) => {
+      const c = chains[r.chain_key];
+      return c ? stateKind(c, r.state) === 'hold' : false;
+    }).length;
+    return { count: positions.length, gross: grossText(positions), live, hold };
+  }, [positions, chains]);
+
   // Role doesn't trade: nothing to show on either side.
   if (chains && Object.keys(chains).length > 0 && domains.length === 0) {
     return (
@@ -55,6 +79,15 @@ export default function Trade() {
 
   return (
     <Shell>
+      {rows !== null && positions.length > 0 && (
+        <div className="v2-stats">
+          <div className="v2-stat"><span className="k">Positions</span><span className="v">{stats.count}</span><span className="d">open on your book</span></div>
+          <div className="v2-stat accent"><span className="k">Gross value</span><span className="v mono">{stats.gross}</span><span className="d">money-valued legs</span></div>
+          <div className="v2-stat"><span className="k">Live</span><span className="v">{stats.live}</span><span className="d">actively trading</span></div>
+          <div className={`v2-stat ${stats.hold > 0 ? 'alert' : ''}`}><span className="k">On hold</span><span className="v">{stats.hold}</span><span className="d">awaiting a party</span></div>
+        </div>
+      )}
+
       <div className="v2-cols" style={{ gridTemplateColumns: '1.4fr 1fr' }}>
         <div className="v2-col">
           <h4>Your positions</h4>
@@ -65,18 +98,20 @@ export default function Trade() {
           ) : (
             <table className="v2-table">
               <thead>
-                <tr><th>Ref</th><th>Position</th><th>State</th><th style={{ textAlign: 'right' }}>Value</th></tr>
+                <tr><th>Ref</th><th>Position</th><th>State</th><th style={{ width: 90 }}>Size</th><th style={{ textAlign: 'right' }}>Value</th></tr>
               </thead>
               <tbody>
                 {positions.map((r) => {
                   const kind = chains[r.chain_key] ? stateKind(chains[r.chain_key], r.state) : 'open';
                   const label = chains[r.chain_key]?.states[r.state]?.label ?? r.state;
+                  const pct = peak > 0 ? Math.max(6, Math.round((Math.abs(moneyValue(r)) / peak) * 100)) : 0;
                   return (
                     <tr key={r.id} className="v2-row" onClick={() => nav(`/v2/t/${r.id}`)}>
                       <td className="ref" style={{ width: 1, whiteSpace: 'nowrap' }}>{r.human_ref}</td>
                       <td className="ttl">{r.title}</td>
                       <td style={{ width: 1 }}><span className={`v2-pill is-${kind}`}>{label}</span></td>
-                      <td className="money">{money(moneyValue(r))}</td>
+                      <td>{pct > 0 && <span className="v2-bar"><span style={{ width: `${pct}%` }} /></span>}</td>
+                      <td className="money">{valueText(r)}</td>
                     </tr>
                   );
                 })}

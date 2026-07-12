@@ -170,6 +170,80 @@ export function moneyValue(row: TxnRow): number {
   return m;
 }
 
+// Display value: prefer a money-named numeric field (so "R" is only asserted
+// when the number really is currency); else the largest numeric — shown bare,
+// because it may be MWh/MW/% and labelling it Rand would be a lie.
+// ponytail: name-hint heuristic; a unit tariff (R/kWh) could beat a notional if
+// the notional isn't money-named — acceptable, upgrade when the server types fields.
+const MONEY_HINT = /(zar|rand|price|amount|value|cost|fee|premium|penalty|payment|notional|charge|invoice|settle)/i;
+export function zarValue(row: TxnRow): { amount: number; isMoney: boolean } {
+  let money = 0, any = 0;
+  for (const [k, v] of Object.entries(row.fields)) {
+    if (typeof v !== 'number' || !Number.isFinite(v)) continue;
+    if (Math.abs(v) > Math.abs(any)) any = v;
+    if (MONEY_HINT.test(k) && Math.abs(v) > Math.abs(money)) money = v;
+  }
+  return money !== 0 ? { amount: money, isMoney: true } : { amount: any, isMoney: false };
+}
+
+/** Compact number: 1.5M / 50k / 812. Sign preserved; 0 → '—'. */
+export function compact(n: number): string {
+  if (!n) return '—';
+  const a = Math.abs(n);
+  if (a >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
+  if (a >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+  if (a >= 1e3) return `${(n / 1e3).toFixed(0)}k`;
+  return `${n}`;
+}
+
+/** Value cell text with an honest currency prefix. */
+export function valueText(row: TxnRow): string {
+  const { amount, isMoney } = zarValue(row);
+  if (!amount) return '—';
+  return isMoney ? `R ${compact(amount)}` : compact(amount);
+}
+
+// Age since a transaction opened, as a compact human string + an urgency tier.
+// ponytail: age-since-opened, not age-in-current-state — list rows carry only
+// opened_at, not the last-event ts. Upgrade the tier when the server projects
+// state-entry time or an SLA-breach flag (see homeSort note).
+export function ageSince(iso: string, now: number = Date.now()): { text: string; tier: 'ok' | 'warn' | 'bad' } {
+  const t = new Date(iso).getTime();
+  if (isNaN(t)) return { text: '', tier: 'ok' };
+  const mins = Math.max(0, Math.floor((now - t) / 60000));
+  const h = mins / 60, d = h / 24;
+  const text = d >= 1 ? `${Math.floor(d)}d` : h >= 1 ? `${Math.floor(h)}h` : `${mins}m`;
+  const tier = d >= 7 ? 'bad' : d >= 2 ? 'warn' : 'ok';
+  return { text, tier };
+}
+
+/** The chain's main-line states in reachable order (destructive exits excluded),
+ *  for the Transaction progress spine. ponytail: BFS from initial — branches
+ *  interleave rather than resolve to one true path, fine for a progress ribbon. */
+export function spineStates(chain: ChainDecl): string[] {
+  const adj = new Map<string, string[]>();
+  for (const t of chain.transitions) {
+    if (t.intent === 'destructive') continue;
+    for (const f of fromStates(t)) {
+      const to = t.to;
+      const arr = adj.get(f) ?? [];
+      arr.push(to);
+      adj.set(f, arr);
+    }
+  }
+  const order: string[] = [];
+  const seen = new Set<string>();
+  const queue: string[] = [chain.initial];
+  while (queue.length) {
+    const s = queue.shift()!;
+    if (seen.has(s)) continue;
+    seen.add(s);
+    order.push(s);
+    for (const n of adj.get(s) ?? []) if (!seen.has(n)) queue.push(n);
+  }
+  return order;
+}
+
 export function homeSort(rows: TxnRow[]): TxnRow[] {
   return [...rows].sort((a, b) => {
     const dm = Math.abs(moneyValue(b)) - Math.abs(moneyValue(a));

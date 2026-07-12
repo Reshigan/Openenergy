@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // Find (/v2/find) — search objects, not functions. Type to filter open/closed
-// transactions across every chain; the "Start something" rail is now journey-
+// transactions across every chain; facet chips narrow the results by lifecycle
+// (open/hold/done/dead) with live counts. The "Start something" rail is journey-
 // grouped: the role's domains, each with its startable chains + management
 // screens (no flat 142-chain dump, no "not your role" rows). Typing folds the
 // rail to matching domains/starts/links too. ?start=<chainKey>:<edgeId> still
@@ -14,7 +15,15 @@ import { Shell } from './Shell';
 import { getChains, listTxns, openTxn } from './api';
 import { TransitionForm } from './FieldForm';
 import { groupedStarts } from './starts';
-import { newEdges, idemKey, stateKind, type ChainMap, type TxnRow, type TransitionDecl, type Json } from './decl';
+import { newEdges, idemKey, stateKind, valueText, type ChainMap, type TxnRow, type TransitionDecl, type Json } from './decl';
+
+type Kind = 'open' | 'hold' | 'done' | 'dead';
+const FACETS: { key: Kind; label: string }[] = [
+  { key: 'open', label: 'Open' },
+  { key: 'hold', label: 'On hold' },
+  { key: 'done', label: 'Done' },
+  { key: 'dead', label: 'Cancelled' },
+];
 
 export default function Find() {
   const { user } = useAuth();
@@ -22,6 +31,7 @@ export default function Find() {
   const [params, setParams] = useSearchParams();
   const [chains, setChains] = useState<ChainMap>({});
   const [q, setQ] = useState('');
+  const [facet, setFacet] = useState<Kind | null>(null);
   const [rows, setRows] = useState<TxnRow[] | null>(null);
   const role = user?.role ?? '';
 
@@ -40,6 +50,19 @@ export default function Find() {
     const t = chain && newEdges(chain).find((e) => e.id === edge);
     return chain && t ? { chainKey, chain, t } : null;
   }, [start, chains]);
+
+  const kindOf = (r: TxnRow): Kind => (chains[r.chain_key] ? stateKind(chains[r.chain_key], r.state) : 'open');
+
+  // Facet counts over the loaded result set, and the filtered view.
+  const counts = useMemo(() => {
+    const c: Record<Kind, number> = { open: 0, hold: 0, done: 0, dead: 0 };
+    for (const r of rows ?? []) c[kindOf(r)]++;
+    return c;
+  }, [rows, chains]);
+  const shownRows = useMemo(
+    () => (rows ?? []).filter((r) => !facet || kindOf(r) === facet),
+    [rows, facet, chains],
+  );
 
   // The role's journey home: domains, each with its startable chains + manage
   // links. groupedStarts already gates on the curated role taxonomy — do NOT
@@ -79,7 +102,7 @@ export default function Find() {
     <Shell>
       <input
         className="v2-input"
-        style={{ fontSize: 'var(--t-18)', padding: '12px 14px', marginBottom: 'var(--sp-6)' }}
+        style={{ fontSize: 'var(--t-18)', padding: '12px 14px', marginBottom: 'var(--sp-4)' }}
         autoFocus
         placeholder="Find a transaction, or start something…"
         value={q}
@@ -103,20 +126,34 @@ export default function Find() {
       <div className="v2-cols">
         <div className="v2-col">
           <h4>Transactions</h4>
+          {rows !== null && rows.length > 0 && (
+            <div className="v2-facets">
+              <button className={`v2-chip ${!facet ? 'on' : ''}`} onClick={() => setFacet(null)}>
+                All <span className="n">{rows.length}</span>
+              </button>
+              {FACETS.filter((f) => counts[f.key] > 0).map((f) => (
+                <button key={f.key} className={`v2-chip ${facet === f.key ? 'on' : ''}`} onClick={() => setFacet(facet === f.key ? null : f.key)}>
+                  {f.label} <span className="n">{counts[f.key]}</span>
+                </button>
+              ))}
+            </div>
+          )}
           {rows === null ? (
             Array.from({ length: 6 }).map((_, i) => <div key={i} className="v2-skeleton" />)
-          ) : rows.length === 0 ? (
-            <div className="v2-empty">Nothing matches “{q}”.</div>
+          ) : shownRows.length === 0 ? (
+            <div className="v2-empty">{rows.length === 0 ? `Nothing matches “${q}”.` : 'No transactions in that state.'}</div>
           ) : (
             <table className="v2-table">
               <tbody>
-                {rows.map((r) => {
-                  const kind = chains[r.chain_key] ? stateKind(chains[r.chain_key], r.state) : 'open';
+                {shownRows.map((r) => {
+                  const kind = kindOf(r);
                   const label = chains[r.chain_key]?.states[r.state]?.label ?? r.state;
+                  const noun = chains[r.chain_key]?.noun;
                   return (
                     <tr key={r.id} className="v2-row" onClick={() => nav(`/v2/t/${r.id}`)}>
                       <td className="ref" style={{ width: 1, whiteSpace: 'nowrap' }}>{r.human_ref}</td>
-                      <td className="ttl">{r.title}</td>
+                      <td className="ttl">{r.title}{noun && <span className="v2-row-sub">{noun}</span>}</td>
+                      <td className="money" style={{ width: 1, whiteSpace: 'nowrap' }}>{valueText(r)}</td>
                       <td style={{ width: 1 }}><span className={`v2-pill is-${kind}`}>{label}</span></td>
                     </tr>
                   );
