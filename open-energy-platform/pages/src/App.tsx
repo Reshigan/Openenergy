@@ -43,6 +43,7 @@ const V2Home                = React.lazy(() => import('./v2/Home'));
 const V2Transaction         = React.lazy(() => import('./v2/Transaction'));
 const V2Find                = React.lazy(() => import('./v2/Find'));
 const V2Trade               = React.lazy(() => import('./v2/Trade'));
+const V2Surface             = React.lazy(() => import('./v2/Surface'));
 
 // The cockpit is the post-login home; if it throws at runtime, show a graceful
 // fallback with an escape to the (still-live) classic Horizon board rather than
@@ -643,6 +644,7 @@ function AppRoutes() {
       <Route path="/v2/find" element={<ProtectedRoute><V2Find /></ProtectedRoute>} />
       <Route path="/v2/trade" element={<ProtectedRoute><V2Trade /></ProtectedRoute>} />
       <Route path="/v2/t/:id" element={<ProtectedRoute><V2Transaction /></ProtectedRoute>} />
+      <Route path="/v2/s/:key" element={<ProtectedRoute><V2Surface /></ProtectedRoute>} />
       <Route path="/thread/:chainKey/:id" element={<ProtectedRoute><ThreadPage /></ProtectedRoute>} />
       {/* Retired browse planes — create is in-journey, search is the ⌘K palette.
          Redirect into the cockpit so old links/bookmarks land on the single plane. */}
